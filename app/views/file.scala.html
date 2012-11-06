@@ -1,5 +1,10 @@
-@(file: com.mongodb.DBObject)
+@(file: com.mongodb.DBObject, id: String)
 
 @main("File Uploaded") {
-    @file
+  <div class="row">
+    <div class="span12">@file</div>
+  </div>
+  <div class="row">
+    <div class="span12"><a href="@routes.Application.download(id)" class="btn">Download</a></div>
+  </div>
 }

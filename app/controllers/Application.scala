@@ -85,7 +85,7 @@ object Application extends Controller {
   def file(id: String) = Action {
     Logger.info("GET file with id " + id)
     mongoCollection("uploads.files").findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
-      case Some(file) => Ok(views.html.file(file))
+      case Some(file) => Ok(views.html.file(file, id))
       case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
   }
@@ -126,7 +126,8 @@ object Application extends Controller {
             val mongoFile = files.createFile(f.ref.file)
             mongoFile.filename = f.ref.file.getName()
             mongoFile.save
-            Ok(views.html.file(mongoFile.asDBObject))
+            val id = mongoFile.getAs[String]("_id").get
+            Ok(views.html.file(mongoFile.asDBObject, id))
          }.getOrElse{
             BadRequest("Form binding error.")
          }
