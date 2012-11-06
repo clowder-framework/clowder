@@ -1,0 +1,9 @@
+@(myForm: Form[FileMD])
+
+@main("Medici 2.0") {
+  @helper.form(action = routes.Application.upload, 'enctype -> "multipart/form-data") {
+    @helper.inputText(myForm("userid"))
+    @helper.inputFile(myForm("file"))
+    <input type="submit" class="btn" value="Upload"/>
+  }
+}

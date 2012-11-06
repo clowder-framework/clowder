@@ -1,0 +1,9 @@
+@(files: List[com.mongodb.DBObject])
+
+@main("Files") {
+    <ul>
+        @files.map { file =>
+            <li><a href="@(routes.Application.file(file.get("_id").asInstanceOf[ObjectId].toString))">@file</a></li>
+        }
+    </ul>
+}
