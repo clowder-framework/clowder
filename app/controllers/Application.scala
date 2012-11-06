@@ -8,9 +8,9 @@ import models._
 import com.mongodb.casbah.Imports._
 import java.io.File
 import com.mongodb.casbah.gridfs.Imports._
-
 import play.api.Play.current
 import se.radley.plugin.salat._
+import play.api.libs.iteratee.Enumerator
 
 /**
  * Main application controller.
@@ -86,7 +86,7 @@ object Application extends Controller {
     Logger.info("GET file with id " + id)
     mongoCollection("uploads.files").findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
       case Some(file) => Ok(views.html.file(file))
-      case None => {Logger.error("Error getting file" + id); NotFound}
+      case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
   }
   
@@ -107,7 +107,7 @@ object Application extends Controller {
   /**
    * Upload file.
    */
-  def upload = Action(parse.multipartFormData) { implicit request =>
+  def upload() = Action(parse.multipartFormData) { implicit request =>
       val sp : Option[FileMD] = uploadForm.bindFromRequest().fold (
             errFrm => None,
             file => Some(file)
@@ -133,6 +133,23 @@ object Application extends Controller {
       }.getOrElse {
          BadRequest("File not attached.")
       }
+  }
+  
+  /**
+   * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+   */
+  def download(id: String) = Action {
+    val files = gridFS("uploads")
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+      case Some(file) => {
+    	Ok.stream(Enumerator.fromStream(file.inputStream))
+    	  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + file.filename.getOrElse("unknown-filename")))
+      }
+      case None => {
+        Logger.error("Error getting file" + id)
+        NotFound
+      }
+    }
   }
   
 }

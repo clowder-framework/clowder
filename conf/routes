@@ -21,4 +21,5 @@ GET     /users/view/:id                   controllers.Application.view(id: Objec
 GET		/files					          controllers.Application.files
 GET		/files/new					      controllers.Application.fileNew
 GET		/files/:id					      controllers.Application.file(id)
+GET		/files/:id/download			      controllers.Application.download(id)
 POST    /upload					          controllers.Application.upload
