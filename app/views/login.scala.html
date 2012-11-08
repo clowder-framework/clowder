@@ -1,0 +1,17 @@
+@(myForm: Form[Credentials])
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@main("Login") {
+  @helper.form(action = routes.Application.loginSubmit) {
+  
+    <fieldset>
+      <legend>Login</legend>
+      @helper.inputText(myForm("Email"))
+      @helper.inputPassword(myForm("Password"))
+    </fieldset>
+    <input type="submit" class="btn" value="Login"/>
+    
+  }
+}

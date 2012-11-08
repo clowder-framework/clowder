@@ -11,6 +11,9 @@ import com.mongodb.casbah.gridfs.Imports._
 import play.api.Play.current
 import se.radley.plugin.salat._
 import play.api.libs.iteratee.Enumerator
+import java.io.PipedOutputStream
+import java.io.PipedInputStream
+import play.api.libs.iteratee.Iteratee
 
 /**
  * Main application controller.
@@ -24,6 +27,37 @@ object Application extends Controller {
    */
   def index = Action {
     Ok(views.html.index("Application online."))
+  }
+  
+  /**
+   * Login form.
+   */
+  val loginForm = Form(
+    mapping(
+      "email" -> nonEmptyText,
+      "password" -> nonEmptyText
+    )(Credentials.apply)(Credentials.unapply)
+   )
+   
+  
+  /**
+   * Login page.
+   */
+  def login = Action {
+    Ok(views.html.login(loginForm))
+  }
+  
+  /**
+   * Handle login submission.
+   */
+  def loginSubmit = Action { implicit request =>
+    loginForm.bindFromRequest.fold(
+      // Form has errors, redisplay it
+      errors => BadRequest(views.html.login(errors)),
+      
+      // We got a valid User value, display the summary
+      user => Ok("Login successfull")
+    )
   }
   
   /**
@@ -108,33 +142,63 @@ object Application extends Controller {
    * Upload file.
    */
   def upload() = Action(parse.multipartFormData) { implicit request =>
-      val sp : Option[FileMD] = uploadForm.bindFromRequest().fold (
-            errFrm => None,
-            file => Some(file)
-      )
-      request.body.file("file").map { f =>
-         sp.map { file =>
+      request.body.file("File").map { f =>
 //            val filePath = "/tmp/" + file.userid + "/" + f.filename
 //            f.ref.moveTo(new File(filePath), replace=true)
-            
-            // TODO there should be a way to get gridFS from mongo context
-            val files = gridFS("uploads")
-//            val fileMD = files(f.ref.file) { fh =>
-//			  fh.filename = f.ref.file.getName()
-//			  fh.contentType = f.contentType.getOrElse("application/octet-stream") // TODO default mime type?
-//			}
-            val mongoFile = files.createFile(f.ref.file)
-            mongoFile.filename = f.ref.file.getName()
-            mongoFile.save
-            val id = mongoFile.getAs[String]("_id").get
-            Ok(views.html.file(mongoFile.asDBObject, id))
-         }.getOrElse{
-            BadRequest("Form binding error.")
-         }
+        val files = gridFS("uploads")
+        val mongoFile = files.createFile(f.ref.file)
+        val filename = f.ref.file.getName()
+        Logger.info("Uploading file " + filename)
+        mongoFile.filename = filename
+        mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+        mongoFile.save
+        val id = mongoFile.getAs[ObjectId]("_id").get.toString
+        Redirect(routes.Application.file(id))    
       }.getOrElse {
          BadRequest("File not attached.")
       }
   }
+  
+  /**
+   * Stream based uploading of files.
+   */
+  def uploadFileStreaming() = Action(parse.multipartFormData(myPartHandler)) {
+      request => Ok("Done")
+  }
+
+  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {
+        parse.Multipart.handleFilePart {
+          case parse.Multipart.FileInfo(partName, filename, contentType) =>
+            Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
+            val files = gridFS("uploads")
+            
+            //Set up the PipedOutputStream here, give the input stream to a worker thread
+            val pos:PipedOutputStream = new PipedOutputStream();
+            val pis:PipedInputStream  = new PipedInputStream(pos);
+            val worker:foo.UploadFileWorker = new foo.UploadFileWorker(pis, files);
+            worker.contentType = contentType.get;
+            worker.start();
+
+//            val mongoFile = files.createFile(f.ref.file)
+//            val filename = f.ref.file.getName()
+//            Logger.info("Uploading file " + filename)
+//            mongoFile.filename = filename
+//            mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+//            mongoFile.save
+//            val id = mongoFile.getAs[ObjectId]("_id").get.toString
+//            Ok(views.html.file(mongoFile.asDBObject, id))
+            
+            
+            //Read content to the POS
+            Iteratee.fold[Array[Byte], PipedOutputStream](pos) { (os, data) =>
+              os.write(data)
+              os
+            }.mapDone { os =>
+              os.close()
+              Ok("upload done")
+            }
+        }
+   }
   
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
