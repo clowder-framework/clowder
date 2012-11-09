@@ -1,9 +1,24 @@
-@(files: List[com.mongodb.DBObject])
-
-@main("Files") {
-    <ul>
-        @files.map { file =>
-            <li><a href="@(routes.Application.file(file.get("_id").asInstanceOf[ObjectId].toString))">@file</a></li>
-        }
-    </ul>
+@(files: List[com.mongodb.DBObject]) @main("Files") {
+<div class="row-fluid">
+	<div class="span12">
+		<table class="table table-bordered table-hover">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Type</th>
+					<th>Uploaded</th>
+				</tr>
+			</thead>
+			<tbody>
+				@files.map { file =>
+					<tr>
+						<td><a href="@(routes.Application.file(file.get("_id").asInstanceOf[ObjectId].toString))">@file.get("filename")</a></td>
+						<td>@file.get("contentType")</td>
+						<td>@file.get("uploadDate")</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
 }
