@@ -63,6 +63,13 @@ object Application extends Controller {
   }
   
   /**
+   * Search results.
+   */
+  def search(query: String) = Action {
+    Ok(views.html.searchResults(query))
+  }
+  
+  /**
    * Testing action.
    */
   def testJson = Action {

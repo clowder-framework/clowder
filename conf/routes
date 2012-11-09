@@ -27,3 +27,6 @@ POST    /upload					          controllers.Application.upload
 # Authentication
 GET     /login                            controllers.Application.login
 POST    /loginSubmit                      controllers.Application.loginSubmit
+
+# Search
+GET    /search                           controllers.Application.search(query: String ?= "")
