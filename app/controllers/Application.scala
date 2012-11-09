@@ -14,6 +14,7 @@ import play.api.libs.iteratee.Enumerator
 import java.io.PipedOutputStream
 import java.io.PipedInputStream
 import play.api.libs.iteratee.Iteratee
+import repository.DBRegistry
 
 /**
  * Main application controller.
@@ -142,17 +143,8 @@ object Application extends Controller {
    * Upload file.
    */
   def upload() = Action(parse.multipartFormData) { implicit request =>
-      request.body.file("File").map { f =>
-//            val filePath = "/tmp/" + file.userid + "/" + f.filename
-//            f.ref.moveTo(new File(filePath), replace=true)
-        val files = gridFS("uploads")
-        val mongoFile = files.createFile(f.ref.file)
-        val filename = f.ref.file.getName()
-        Logger.info("Uploading file " + filename)
-        mongoFile.filename = filename
-        mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-        mongoFile.save
-        val id = mongoFile.getAs[ObjectId]("_id").get.toString
+      request.body.file("File").map { f =>        
+        val id = DBRegistry.fileRepository.save(f.ref.file)
         Redirect(routes.Application.file(id))    
       }.getOrElse {
          BadRequest("File not attached.")
@@ -204,11 +196,11 @@ object Application extends Controller {
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
   def download(id: String) = Action {
-    val files = gridFS("uploads")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
-      case Some(file) => {
-    	Ok.stream(Enumerator.fromStream(file.inputStream))
-    	  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + file.filename.getOrElse("unknown-filename")))
+    DBRegistry.fileService.get(id) match {
+      case Some(inputStream) => {
+        val filename = "filename"
+    	Ok.stream(Enumerator.fromStream(inputStream))
+    	  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       }
       case None => {
         Logger.error("Error getting file" + id)
