@@ -1,5 +1,6 @@
 package repository
 import java.io.File
+import java.io.InputStream
 
 /**
  * Client service to access file store.
@@ -13,7 +14,7 @@ trait FileServiceComponent {
   val fileService: FileService
   
   class FileService {
-    def save(file: File) = fileRepository.save(file)
-    def get(id: String) = fileRepository.get(id)
+    def save(inputStream: InputStream, filename: String) = fileRepository.save(inputStream, filename)
+    def get(id: String):Option[(InputStream,String)] = fileRepository.get(id)
   }
 }

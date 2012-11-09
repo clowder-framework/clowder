@@ -19,11 +19,9 @@ trait MongoDBFileRepositoryComponent {
   
   class FileRepository {
     
-    def save(file: File): String = {
-      println("Saved file " + file.getAbsolutePath() + " in mongodb")
+    def save(inputStream: InputStream, filename: String): String = {
       val files = gridFS("uploads")
-      val mongoFile = files.createFile(file)
-      val filename = file.getName()
+      val mongoFile = files.createFile(inputStream)
       Logger.info("Uploading file " + filename)
       mongoFile.filename = filename
       mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
@@ -31,10 +29,10 @@ trait MongoDBFileRepositoryComponent {
       mongoFile.getAs[ObjectId]("_id").get.toString
     }
     
-    def get(id: String): Option[InputStream] = {
+    def get(id: String): Option[(InputStream, String)] = {
       val files = gridFS("uploads")
       files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
-        case Some(file) => Some(file.inputStream)
+        case Some(file) => Some(file.inputStream, file.getAs[String]("filename").getOrElse("unknown-name"))
         case None => None
       }
     }

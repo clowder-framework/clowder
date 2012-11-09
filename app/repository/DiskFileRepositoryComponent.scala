@@ -21,14 +21,14 @@ trait DiskFileRepositoryComponent {
   
   class FileRepository {
     
-    def save(file: File): String = {
+    def save(inputStream: InputStream, filename: String): String = {
       Play.current.configuration.getString("files.path") match {
         case Some(path) => {
-          println("Saved file " + file.getAbsoluteFile + " on file system")
 	      val id = UUID.randomUUID().toString()
 	      val filePath =  if (path.last != '/') path + "/" + id else path + id
 	      Logger.info("Copying file to " + filePath)
-	      val f = new FileInputStream(new File(file.getAbsolutePath())).getChannel()
+	      // FIXME is there a better way than casting to FileInputStream?
+	      val f = inputStream.asInstanceOf[FileInputStream].getChannel()
 	      val f2 = new FileOutputStream(new File(filePath)).getChannel()
 	      f.transferTo(0, f.size(), f2)
 	      f2.close()
@@ -37,7 +37,6 @@ trait DiskFileRepositoryComponent {
 	      // store metadata to mongo
 	      val files = gridFS("uploads")
 	      val mongoFile = files.createFile(Array[Byte]())
-	      val filename = file.getName()
 	      mongoFile.filename = filename
 	      mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
 	      mongoFile.put("path", id)
@@ -51,7 +50,7 @@ trait DiskFileRepositoryComponent {
       }
     }
     
-    def get(id: String): Option[InputStream] = {
+    def get(id: String): Option[(InputStream, String)] = {
       Play.current.configuration.getString("files.path") match {
         case Some(path) => {
           val files = gridFS("uploads")
@@ -61,7 +60,7 @@ trait DiskFileRepositoryComponent {
                 case Some(relativePath) => {
                   val filePath =  if (path.last != '/') path + "/" + relativePath else path + relativePath
                   Logger.info("Serving file " + filePath)
-                  Some(new FileInputStream(filePath))
+                  Some(new FileInputStream(filePath), file.getAs[String]("filename").getOrElse("unknown-name"))
                 }
                 case None => None
               }

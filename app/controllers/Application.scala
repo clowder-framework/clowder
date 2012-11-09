@@ -15,6 +15,7 @@ import java.io.PipedOutputStream
 import java.io.PipedInputStream
 import play.api.libs.iteratee.Iteratee
 import repository.DBRegistry
+import java.io.FileInputStream
 
 /**
  * Main application controller.
@@ -144,7 +145,8 @@ object Application extends Controller {
    */
   def upload() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
-        val id = DBRegistry.fileRepository.save(f.ref.file)
+        Logger.info("Filename " + f.filename)
+        val id = DBRegistry.fileService.save(new FileInputStream(f.ref.file), f.filename)
         Redirect(routes.Application.file(id))    
       }.getOrElse {
          BadRequest("File not attached.")
@@ -197,8 +199,7 @@ object Application extends Controller {
    */
   def download(id: String) = Action {
     DBRegistry.fileService.get(id) match {
-      case Some(inputStream) => {
-        val filename = "filename"
+      case Some((inputStream, filename)) => {
     	Ok.stream(Enumerator.fromStream(inputStream))
     	  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       }
