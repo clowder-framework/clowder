@@ -12,7 +12,7 @@
 			<tbody>
 				@files.map { file =>
 					<tr>
-						<td><a href="@(routes.Application.file(file.get("_id").asInstanceOf[ObjectId].toString))">@file.get("filename")</a></td>
+						<td><a href="@(routes.Files.file(file.get("_id").asInstanceOf[ObjectId].toString))">@file.get("filename")</a></td>
 						<td>@file.get("contentType")</td>
 						<td>@file.get("uploadDate")</td>
 					</tr>

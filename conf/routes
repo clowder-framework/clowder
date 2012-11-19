@@ -3,13 +3,13 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
+GET     /                                 controllers.Application.index
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /assets/*file                     controllers.Assets.at(path="/public", file)
 
 # test json
-GET		/test						controllers.Application.testJson
+GET		/test						      controllers.Application.testJson
 
 # Users
 GET     /users                            controllers.Users.list
@@ -18,11 +18,11 @@ GET     /users/create/:username           controllers.Users.create(username)
 GET     /users/view/:id                   controllers.Users.view(id: ObjectId)
 
 # Upload
-GET		/files					          controllers.Application.files
-GET		/files/new					      controllers.Application.fileNew
-GET		/files/:id					      controllers.Application.file(id)
-GET		/files/:id/download			      controllers.Application.download(id)
-POST    /upload					          controllers.Application.upload
+GET		/files					          controllers.Files.files
+GET		/files/new					      controllers.Files.fileNew
+GET		/files/:id					      controllers.Files.file(id)
+GET		/files/:id/download			      controllers.Files.download(id)
+POST    /upload					          controllers.Files.upload
 
 # Authentication
 GET     /login                            controllers.Application.login

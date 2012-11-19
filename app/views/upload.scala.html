@@ -4,7 +4,7 @@
 @import helper.twitterBootstrap._
 
 @main("Medici 2.0") {
-  @helper.form(action = routes.Application.upload, 'enctype -> "multipart/form-data") {
+  @helper.form(action = routes.Files.upload, 'enctype -> "multipart/form-data") {
     <fieldset>
       <legend>Select file to upload</legend>
       @helper.inputFile(myForm("File"))
