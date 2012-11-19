@@ -29,4 +29,4 @@ GET     /login                            controllers.Authentication.login
 POST    /loginSubmit                      controllers.Authentication.loginSubmit
 
 # Search
-GET    /search                           controllers.Application.search(query: String ?= "")
+GET    /search                           controllers.Search.search(query: String ?= "")
