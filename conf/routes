@@ -12,10 +12,10 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 GET		/test						controllers.Application.testJson
 
 # Users
-GET     /users                            controllers.Application.list
-GET     /users/by-country/:country        controllers.Application.listByCountry(country)
-GET     /users/create/:username           controllers.Application.create(username)
-GET     /users/view/:id                   controllers.Application.view(id: ObjectId)
+GET     /users                            controllers.Users.list
+GET     /users/by-country/:country        controllers.Users.listByCountry(country)
+GET     /users/create/:username           controllers.Users.create(username)
+GET     /users/view/:id                   controllers.Users.view(id: ObjectId)
 
 # Upload
 GET		/files					          controllers.Application.files
