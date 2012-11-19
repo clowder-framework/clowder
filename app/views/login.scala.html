@@ -4,12 +4,12 @@
 @import helper.twitterBootstrap._
 
 @main("Login") {
-  @helper.form(action = routes.Application.loginSubmit) {
+  @form(action = routes.Application.loginSubmit) {
   
     <fieldset>
       <legend>Login</legend>
-      @helper.inputText(myForm("Email"))
-      @helper.inputPassword(myForm("Password"))
+      @inputText(myForm("Email"))
+      @inputPassword(myForm("Password"))
     </fieldset>
     <input type="submit" class="btn" value="Login"/>
     
