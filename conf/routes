@@ -25,8 +25,8 @@ GET		/files/:id/download			      controllers.Files.download(id)
 POST    /upload					          controllers.Files.upload
 
 # Authentication
-GET     /login                            controllers.Application.login
-POST    /loginSubmit                      controllers.Application.loginSubmit
+GET     /login                            controllers.Authentication.login
+POST    /loginSubmit                      controllers.Authentication.loginSubmit
 
 # Search
 GET    /search                           controllers.Application.search(query: String ?= "")
