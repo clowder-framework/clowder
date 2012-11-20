@@ -5,28 +5,28 @@
 # Home page
 GET     /                                 controllers.Application.index
 
-# Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file                     controllers.Assets.at(path="/public", file)
-
-# test json
-GET		/test						      controllers.Application.testJson
-
 # Users
 GET     /users                            controllers.Users.list
 GET     /users/by-country/:country        controllers.Users.listByCountry(country)
 GET     /users/create/:username           controllers.Users.create(username)
 GET     /users/view/:id                   controllers.Users.view(id: ObjectId)
 
-# Upload
-GET		/files					          controllers.Files.files
-GET		/files/new					      controllers.Files.fileNew
+# Files
+GET		/files					          controllers.Files.list
 GET		/files/:id					      controllers.Files.file(id)
-GET		/files/:id/download			      controllers.Files.download(id)
+GET		/files/:id/blob			          controllers.Files.download(id)
+GET		/files/new					      controllers.Files.uploadFile
 POST    /upload					          controllers.Files.upload
 
 # Authentication
 GET     /login                            controllers.Authentication.login
-POST    /loginSubmit                      controllers.Authentication.loginSubmit
+POST    /login                            controllers.Authentication.loginSubmit
 
 # Search
 GET    /search                           controllers.Search.search(query: String ?= "")
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file                     controllers.Assets.at(path="/public", file)
+
+# test json
+GET		/test						      controllers.Application.testJson

@@ -47,14 +47,14 @@ object Files extends Controller {
   /**
    * List files.
    */
-  def files() = Action {
+  def list() = Action {
     Ok(views.html.filesList(mongoCollection("uploads.files").find().toList))
   }
    
   /**
    * Upload file.
    */
-  def fileNew() = Action {
+  def uploadFile() = Action {
     Ok(views.html.upload(uploadForm))
   }
    
