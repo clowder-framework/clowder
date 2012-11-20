@@ -20,7 +20,7 @@ object Authentication extends Controller {
   val loginForm = Form(
     mapping(
       "email" -> nonEmptyText,
-      "password" -> nonEmptyText
+      "password" -> text(minLength = 6)
     )(Credentials.apply)(Credentials.unapply)
    )
    

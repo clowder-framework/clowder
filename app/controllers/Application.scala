@@ -28,7 +28,7 @@ object Application extends Controller {
    * Main page.
    */
   def index = Action {
-    Ok(views.html.index("Application online."))
+    Ok(views.html.index())
   }
   
   /**

@@ -1,17 +1,39 @@
 @(myForm: Form[Credentials])
 
 @import helper._
-@import helper.twitterBootstrap._
+
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @main("Login") {
-  @form(action = routes.Authentication.loginSubmit) {
-  
+
+  <div class="page-header">
+    <h1>Login</h1>
+  </div>
+
+  @form(action = routes.Authentication.loginSubmit,  'class -> "form-horizontal") {
+    @if(myForm.hasErrors) {
+        <div class="alert">
+            <p><strong>Oops</strong> Please fix all errors</p>
+        </div>
+    }
     <fieldset>
-      <legend>Login</legend>
-      @inputText(myForm("Email"))
-      @inputPassword(myForm("Password"))
+      @inputText(
+        myForm("email"),
+        '_label -> "Email Address",
+        'placeholder -> "Email",
+        '_error -> myForm.error("email")
+      )
+      @inputPassword(
+        myForm("password"),
+        '_label -> "Password",
+        '_error -> myForm.error("password"),
+        'placeholder -> "Password" 
+      )
     </fieldset>
-    <input type="submit" class="btn" value="Login"/>
-    
+    <div class="control-group">
+      <div class="controls"> 
+        <input type="submit" class="btn" value="Login"/>
+      </div>
+    </div>
   }
 }
