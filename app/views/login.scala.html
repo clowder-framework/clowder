@@ -1,7 +1,6 @@
 @(myForm: Form[Credentials])
 
 @import helper._
-
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @main("Login") {
@@ -10,7 +9,7 @@
     <h1>Login</h1>
   </div>
 
-  @form(action = routes.Authentication.loginSubmit,  'class -> "form-horizontal") {
+  @form(action = routes.Authentication.loginSubmit, 'class -> "form-horizontal") {
     @if(myForm.hasErrors) {
         <div class="alert">
             <p><strong>Oops</strong> Please fix all errors</p>
