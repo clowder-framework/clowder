@@ -13,9 +13,9 @@ GET     /users/view/:id                   controllers.Users.view(id: ObjectId)
 
 # Files
 GET		/files					          controllers.Files.list
+GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
-GET		/files/new					      controllers.Files.uploadFile
 POST    /upload					          controllers.Files.upload
 
 # Authentication
