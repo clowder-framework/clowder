@@ -22,12 +22,15 @@ import java.io.FileInputStream
  * 
  * @author Luigi Marini
  */
-object Application extends Controller {
+object Application extends Controller with securesocial.core.SecureSocial {
   
   /**
    * Main page.
    */
-  def index = Action {
+//  def index = Action { implicit request =>
+//    Ok(views.html.index())
+//  }
+  def index = UserAwareAction { implicit request =>
     Ok(views.html.index())
   }
   

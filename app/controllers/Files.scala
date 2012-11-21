@@ -22,7 +22,7 @@ import play.api.libs.iteratee.Enumerator
  * 
  * @author Luigi Marini
  */
-object Files extends Controller {
+object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * Upload form.
    */
@@ -54,7 +54,7 @@ object Files extends Controller {
   /**
    * Upload file.
    */
-  def uploadFile() = Action {
+  def uploadFile = SecuredAction() { implicit request =>
     Ok(views.html.upload(uploadForm))
   }
    

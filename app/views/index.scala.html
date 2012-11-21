@@ -1,6 +1,9 @@
+@()(implicit request: controllers.Application.RequestWithUser[play.api.mvc.AnyContent])
+
 @main("Medici 2.0") {
 <div class="hero-unit">
   <h1>Digital Data Playground</h1>
-  <p>Share, organize and analyze data.</p>
+  <p>Hello @(request.user.map{_.firstName}.getOrElse("stranger"))! 
+     Welcome to the digital data playground, where you can share, organize and analyze data.</p>
 </div>
 }
