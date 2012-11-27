@@ -48,6 +48,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
    * List files.
    */
   def list() = Action {
+    import com.mongodb.casbah.commons.conversions.scala._
+    RegisterJodaTimeConversionHelpers()
     Ok(views.html.filesList(mongoCollection("uploads.files").find().toList))
   }
    
