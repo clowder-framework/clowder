@@ -19,7 +19,6 @@ package service
 import play.api.{Logger, Application}
 import securesocial.core.{UserServicePlugin, UserId, SocialUser}
 import java.util.UUID
-import org.joda.time.DateTime
 import securesocial.core.providers.Token
 
 

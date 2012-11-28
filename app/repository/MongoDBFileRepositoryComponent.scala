@@ -6,6 +6,9 @@ import play.api.Play.current
 import se.radley.plugin.salat._
 import play.api._
 import java.io.InputStream
+import com.mongodb.casbah.gridfs.JodaGridFS
+import models.MongoContext
+import models.SocialUserDAO
 
 /**
  * Save files in MongoDB.
@@ -20,7 +23,8 @@ trait MongoDBFileRepositoryComponent {
   class FileRepository {
     
     def save(inputStream: InputStream, filename: String): String = {
-      val files = gridFS("uploads")
+//      val files = gridFS("uploads") 
+      val files = JodaGridFS(SocialUserDAO.dao.collection.db, "uploads")
       val mongoFile = files.createFile(inputStream)
       Logger.info("Uploading file " + filename)
       mongoFile.filename = filename
@@ -30,7 +34,8 @@ trait MongoDBFileRepositoryComponent {
     }
     
     def get(id: String): Option[(InputStream, String)] = {
-      val files = gridFS("uploads")
+//      val files = gridFS("uploads")
+      val files = JodaGridFS(SocialUserDAO.dao.collection.db, "uploads")
       files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
         case Some(file) => Some(file.inputStream, file.getAs[String]("filename").getOrElse("unknown-name"))
         case None => None

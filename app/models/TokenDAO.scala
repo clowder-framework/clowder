@@ -15,7 +15,5 @@ import MongoContext._
 import securesocial.core.SocialUser
 
 object TokenDAO extends ModelCompanion[Token, ObjectId] {
-  import com.mongodb.casbah.commons.conversions.scala._
-  RegisterJodaTimeConversionHelpers()
   val dao = new SalatDAO[Token, ObjectId](collection = mongoCollection("social.token")) {}
 }

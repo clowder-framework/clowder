@@ -17,6 +17,7 @@ import play.api.Play.current
  *
  */
 object MongoContext {
+  
   implicit val context = {
     val context = new Context {
       val name = "global"

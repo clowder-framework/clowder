@@ -16,6 +16,11 @@ import play.api.Play.current
 import se.radley.plugin.salat._
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.iteratee.Enumerator
+import play.libs.Akka
+import akka.actor.Props
+import service.SendingActor
+import service.RabbitMQ
+import models.SocialUserDAO
 
 /**
  * Manage files.
@@ -23,6 +28,7 @@ import play.api.libs.iteratee.Enumerator
  * @author Luigi Marini
  */
 object Files extends Controller with securesocial.core.SecureSocial {
+  
   /**
    * Upload form.
    */
@@ -38,7 +44,11 @@ object Files extends Controller with securesocial.core.SecureSocial {
   def file(id: String) = Action {
     Logger.info("GET file with id " + id)
 
-    mongoCollection("uploads.files").findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+    val mongoConn = MongoConnection()
+    val db = mongoConn("test")
+    val files = JodaGridFS(db, "uploads")
+  
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
       case Some(file) => Ok(views.html.file(file, id))
       case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
@@ -48,13 +58,15 @@ object Files extends Controller with securesocial.core.SecureSocial {
    * List files.
    */
   def list() = Action {
-    import com.mongodb.casbah.commons.conversions.scala._
-    RegisterJodaTimeConversionHelpers()
-    Ok(views.html.filesList(mongoCollection("uploads.files").find().toList))
+    val mongoConn = MongoConnection()
+    val db = mongoConn("test")
+    val files = JodaGridFS(db, "uploads")
+    Ok(views.html.filesList(files.find(MongoDBObject()).toList))
+//    Ok(views.html.filesList(mongoCollection("uploads.files").find().toList))
   }
    
   /**
-   * Upload file.
+   * Upload file page.
    */
   def uploadFile = SecuredAction() { implicit request =>
     Ok(views.html.upload(uploadForm))
@@ -65,8 +77,12 @@ object Files extends Controller with securesocial.core.SecureSocial {
    */
   def upload() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
-        Logger.info("Filename " + f.filename)
+        Logger.info("Uploading file " + f.filename)
+        // store file
         val id = DBRegistry.fileService.save(new FileInputStream(f.ref.file), f.filename)
+        // submit file for extraction
+        RabbitMQ.extract(id)
+        // redirect to file page
         Redirect(routes.Files.file(id))    
       }.getOrElse {
          BadRequest("File not attached.")

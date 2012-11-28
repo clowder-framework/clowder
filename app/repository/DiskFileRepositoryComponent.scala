@@ -8,6 +8,8 @@ import com.mongodb.casbah.Imports._
 import play.api.Play.current
 import se.radley.plugin.salat._
 import java.io.InputStream
+import com.mongodb.casbah.gridfs.JodaGridFS
+import models.SocialUserDAO
   
 /**
  * Save files on disk.
@@ -35,7 +37,8 @@ trait DiskFileRepositoryComponent {
 	      f.close()
 	      
 	      // store metadata to mongo
-	      val files = gridFS("uploads")
+//	      val files = gridFS("uploads")
+	      val files = JodaGridFS(SocialUserDAO.dao.collection.db, "uploads")
 	      val mongoFile = files.createFile(Array[Byte]())
 	      mongoFile.filename = filename
 	      mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
@@ -53,7 +56,8 @@ trait DiskFileRepositoryComponent {
     def get(id: String): Option[(InputStream, String)] = {
       Play.current.configuration.getString("files.path") match {
         case Some(path) => {
-          val files = gridFS("uploads")
+//          val files = gridFS("uploads")
+          val files = JodaGridFS(SocialUserDAO.dao.collection.db, "uploads")
           files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
             case Some(file) => {
               file.getAs[String]("path") match {

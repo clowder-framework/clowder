@@ -9,7 +9,7 @@ import java.io.InputStream
  *
  */
 trait FileServiceComponent {
-  this: DiskFileRepositoryComponent => 
+  this: MongoDBFileRepositoryComponent => 
     
   val fileService: FileService
   
