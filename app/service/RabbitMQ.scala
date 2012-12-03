@@ -10,6 +10,7 @@ import akka.actor.Actor
 import play.Logger
 import com.rabbitmq.client.QueueingConsumer
 import akka.actor.ActorSystem
+import akka.actor.PoisonPill
 
 /**
  * RabbitMQ configuration.
@@ -23,14 +24,30 @@ object RabbitMQ {
   val exchange = ConfigFactory.load().getString("rabbitmq.exchange");
   val factory = new ConnectionFactory();
   factory.setHost(host);
-  lazy val connection: Connection = factory.newConnection()
-  val sendingChannel = connection.createChannel()
-  def extract(msg: String) = {
-     
-     sendingChannel.queueDeclare(queue, false, false, false, null)
- 
-     var extract = Akka.system.actorOf(Props(new SendingActor(channel = sendingChannel, queue = queue))) ! msg
+  val sendingChannel: Option[Channel] = None
+  try {
+    val connection: Connection = factory.newConnection()
+    val sendingChannel = Some(connection.createChannel())
+  } catch {
+    case ioe: java.io.IOException => Logger.error("Error connecting to rabbitmq broker")
+    case _ => Logger.error("Unknown error connecting to rabbitmq broker")
   }
+  
+  def extract(msg: String) = {
+    sendingChannel match {
+      case Some(channel) => {
+        channel.queueDeclare(queue, false, false, false, null)
+        val extract = Akka.system.actorOf(Props(new SendingActor(channel = channel, queue = queue))) 
+        extract ! msg
+      }
+      case None => Logger.error("Extraction msg for file " + msg + " not sent. No channel available to rabbitmq broker.")
+    }
+//     Akka.system.registerOnTermination(() => {
+//       Akka.system.stop(extract)
+//       extract ! PoisonPill
+//     })
+  }
+  
   
   
   object Sender {
@@ -39,14 +56,14 @@ object RabbitMQ {
       
      // setup listening
      val callback1 = (x: String) => Logger.info("QUEUE 1: Recieved on queue callback 1: " + x);
-     setupListener(connection.createChannel(),queue, callback1);
+//     setupListener(connection.createChannel(),queue, callback1);
  
      // create an actor that starts listening on the specified queue and passes the
      // received message to the provided callback
      val callback2 = (x: String) => Logger.info("QUEUE 2: Recieved on queue callback 2: " + x);
  
      // setup the listener that sends to a specific queue using the SendingActor
-     setupListener(connection.createChannel(),queue, callback2);
+//     setupListener(connection.createChannel(),queue, callback2);
       
      // setup sending
 //     val sendingChannel = connection.createChannel()
@@ -60,8 +77,14 @@ object RabbitMQ {
     }
     
     private def setupListener(receivingChannel: Channel, queue: String, f: (String) => Any) {
-    Akka.system.scheduler.scheduleOnce(2 seconds, 
-        Akka.system.actorOf(Props(new ListeningActor(receivingChannel, queue, f))), "");
+      val listener = Akka.system.actorOf(Props(new ListeningActor(receivingChannel, queue, f)))
+      val scheduled = Akka.system.scheduler.scheduleOnce(2 seconds, listener, "")
+
+      Akka.system.registerOnTermination(() => {
+        scheduled.cancel
+        listener ! PoisonPill
+        Akka.system.stop(listener)
+      })
     }
   }
 }
