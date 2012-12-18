@@ -2,9 +2,7 @@ import com.mongodb.casbah.Imports._
 import play.api._
 import models._
 import se.radley.plugin.salat._
-import service.RabbitMQ._
 import play.libs.Akka
-import service.RabbitMQ
 
 /**
  * Configure application. Create dummy users.
@@ -13,9 +11,10 @@ object Global extends GlobalSettings {
 
   override def onStart(app: Application) {
     
-    // casbah joda conversions
-//    import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
+        // casbah joda conversions
+//    import com.mongodb.casbah.commons.conversions.scala._
 //    RegisterJodaTimeConversionHelpers()
+//    RegisterConversionHelpers()
     
     if (User.count(DBObject(), Nil, Nil) == 0) {
       Logger.info("Loading Testdata")
@@ -32,14 +31,9 @@ object Global extends GlobalSettings {
         address = Some(Address("Paris", "75000", "France"))
       ))
     }
-    
-    // test rabbitmq
-    Sender.startSending
   }
 
   override def onStop(app: Application) {
-    Logger.info("Canceling the EventFilter MsgConsumer.")
-//    RabbitMQ.sendingChannel.
   }
   
 }

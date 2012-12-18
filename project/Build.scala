@@ -10,7 +10,9 @@ object ApplicationBuild extends Build {
     val appDependencies = Seq(
       "se.radley" %% "play-plugins-salat" % "1.1",
       "securesocial" % "securesocial_2.9.1" % "2.0.6",
-      "com.rabbitmq" % "amqp-client" % "3.0.0"
+      "com.rabbitmq" % "amqp-client" % "3.0.0",
+      "org.elasticsearch" % "elasticsearch" % "0.20.1",
+      "com.spatial4j" % "spatial4j" % "0.3"
     )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(

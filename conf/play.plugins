@@ -1,3 +1,5 @@
+400:service.ElasticsearchPlugin
+
 500:se.radley.plugin.salat.SalatPlugin
 1500:com.typesafe.plugin.CommonsMailerPlugin
 9997:service.SecureSocialTemplatesPlugin

@@ -18,9 +18,8 @@ import play.api.libs.iteratee.Iteratee
 import play.api.libs.iteratee.Enumerator
 import play.libs.Akka
 import akka.actor.Props
-import service.SendingActor
-import service.RabbitMQ
 import models.SocialUserDAO
+import service.RabbitmqPlugin
 
 /**
  * Manage files.
@@ -52,6 +51,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
       case Some(file) => Ok(views.html.file(file, id))
       case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
+    
   }
   
   /**
@@ -81,7 +81,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
         // store file
         val id = DBRegistry.fileService.save(new FileInputStream(f.ref.file), f.filename)
         // submit file for extraction
-        RabbitMQ.extract(id)
+        import com.typesafe.plugin._
+        current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
         // redirect to file page
         Redirect(routes.Files.file(id))    
       }.getOrElse {
