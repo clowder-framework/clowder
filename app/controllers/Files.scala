@@ -18,7 +18,7 @@ import play.api.libs.iteratee.Enumerator
 import play.libs.Akka
 import akka.actor.Props
 import models.SocialUserDAO
-import service.RabbitmqPlugin
+import services.RabbitmqPlugin
 import repository.Services
 
 /**

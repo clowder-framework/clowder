@@ -1,4 +1,4 @@
-package service
+package services
 
 import play.api.{ Plugin, Logger, Application }
 import com.typesafe.config.ConfigFactory
