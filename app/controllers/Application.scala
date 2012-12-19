@@ -14,7 +14,6 @@ import play.api.libs.iteratee.Enumerator
 import java.io.PipedOutputStream
 import java.io.PipedInputStream
 import play.api.libs.iteratee.Iteratee
-import repository.DBRegistry
 import java.io.FileInputStream
 
 /**

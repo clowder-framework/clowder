@@ -3,12 +3,13 @@ import play.api._
 import models._
 import se.radley.plugin.salat._
 import play.libs.Akka
+import repository.MongoFileDB
 
 /**
  * Configure application. Create dummy users.
  */
 object Global extends GlobalSettings {
-
+  
   override def onStart(app: Application) {
     
         // casbah joda conversions

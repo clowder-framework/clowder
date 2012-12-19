@@ -1,18 +1,18 @@
-@(file: com.mongodb.DBObject, id: String) 
+@(file: models.File, id: String) 
 
 @main("File Uploaded") {
 	<div class="page-header">
-		<h1>@file.get("filename")</h1>
+		<h1>@file.filename	</h1>
 	</div>
 	<div class="row-fluid">
 		<div class="span6">
 			<dl class="dl-horizontal">
 				<dt>Filename:</dt>
-				<dd>@file.get("filename")</dd>
+				<dd>@file.filename</dd>
 				<dt>Type:</dt>
-				<dd>@file.get("contentType")</dd>
+				<dd>@file.contentType</dd>
 				<dt>Uploaded on:</dt>
-				<dd>@file.get("uploadDate")</dd>
+				<dd>@file.uploadDate</dd>
 			</dl>
 		</div>
 		<div class="span6">

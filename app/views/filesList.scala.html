@@ -1,4 +1,4 @@
-@(files: List[com.mongodb.DBObject]) @main("Files") {
+@(files: List[models.File]) @main("Files") {
 <div class="page-header">
   <h1>Files</h1>
 </div>
@@ -15,9 +15,9 @@
 			<tbody>
 				@files.map { file =>
 					<tr>
-						<td><a href="@(routes.Files.file(file.get("_id").asInstanceOf[ObjectId].toString))">@file.get("filename")</a></td>
-						<td>@(if(file.get("contentType") != null) file.get("contentType") else "N/A")</td>
-						<td>@file.get("uploadDate")</td>
+						<td><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></td>
+						<td>@(if(file.contentType != null) file.contentType else "N/A")</td>
+						<td>@file.uploadDate</td>
 					</tr>
 				}
 			</tbody>
