@@ -1,4 +1,4 @@
-@(query:String)
+@(query: String, result: Option[org.elasticsearch.action.search.SearchResponse])
 
 @main("Search Results") {
 	<div class="page-header">
@@ -9,4 +9,11 @@
 			You wish!
 		</div>
 	</div>
+    @for(hit <- result.get.hits().hits()) {
+      <div class="row-fluid">
+		<div class="span12">
+			@hit.explanation
+		</div>
+	  </div>
+	}
 }

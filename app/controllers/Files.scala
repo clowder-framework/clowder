@@ -18,8 +18,10 @@ import play.api.libs.iteratee.Enumerator
 import play.libs.Akka
 import akka.actor.Props
 import models.SocialUserDAO
-import service.RabbitmqPlugin
-import repository.Services
+import services.RabbitmqPlugin
+import services.Services
+import com.typesafe.plugin._
+import services.ElasticsearchPlugin
 
 /**
  * Manage files.
@@ -41,17 +43,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
     * File info.
     */
   def file(id: String) = Action {
-    Logger.info("GET file with id " + id)
-    
-//    val mongoConn = MongoConnection()
-//    val db = mongoConn("test")
-//    val files = JodaGridFS(db, "uploads")
-//    
-//    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
-//      case Some(file) => Ok(views.html.file(file, id))
-//      case None => {Logger.error("Error getting file" + id); InternalServerError}
-//    }
-    
+    Logger.info("GET file with id " + id)    
     Services.files.getFile(id) match {
       case Some(file) => Ok(views.html.file(file, id))
       case None => {Logger.error("Error getting file" + id); InternalServerError}
@@ -63,13 +55,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
    * List files.
    */
   def list() = Action {
-//    val mongoConn = MongoConnection()
-//    val db = mongoConn("test")
-//    val files = JodaGridFS(db, "uploads")
-//    Ok(views.html.filesList(files.find(MongoDBObject()).toList))
     Services.files.listFiles().map(f => Logger.debug(f.toString))
     Ok(views.html.filesList(Services.files.listFiles()))
-//    Ok(views.html.filesList(mongoCollection("uploads.files").find().toList))
   }
    
   /**
@@ -88,8 +75,9 @@ object Files extends Controller with securesocial.core.SecureSocial {
         // store file
         val id = Services.files.save(new FileInputStream(f.ref.file), f.filename)
         // submit file for extraction
-        import com.typesafe.plugin._
         current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
+        // index file
+        current.plugin[ElasticsearchPlugin].foreach{_.index("files","file",id,List(("filename",f.filename)))}
         // redirect to file page
         Redirect(routes.Files.file(id))    
       }.getOrElse {

@@ -1,4 +1,4 @@
-package service
+package services
 
 import securesocial.core.UserServicePlugin
 import securesocial.core.UserId

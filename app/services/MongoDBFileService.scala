@@ -1,7 +1,4 @@
-/**
- *
- */
-package repository
+package services
 
 /**
  * Use mongo for both metadata and blobs.

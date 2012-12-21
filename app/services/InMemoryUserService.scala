@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package service
+package services
 
 import play.api.{Logger, Application}
 import securesocial.core.{UserServicePlugin, UserId, SocialUser}

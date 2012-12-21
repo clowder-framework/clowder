@@ -1,4 +1,4 @@
-package service
+package services
 
 import securesocial.controllers.TemplatesPlugin
 import play.api.mvc.Request

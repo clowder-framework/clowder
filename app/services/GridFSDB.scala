@@ -1,4 +1,5 @@
-package repository
+package services
+
 import java.io.InputStream
 import play.Logger
 import org.bson.types.ObjectId

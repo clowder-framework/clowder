@@ -1,4 +1,4 @@
-package repository
+package services
 
 /**
  * Wire services to specific implementations.
