@@ -19,9 +19,13 @@ import play.libs.Akka
 import akka.actor.Props
 import models.SocialUserDAO
 import services.RabbitmqPlugin
+<<<<<<< HEAD
 import services.Services
 import com.typesafe.plugin._
 import services.ElasticsearchPlugin
+=======
+import repository.Services
+>>>>>>> branch 'master' of https://lmarini@opensource.ncsa.illinois.edu/stash/scm/MED/medici-play.git
 
 /**
  * Manage files.
