@@ -13,6 +13,7 @@ import java.util.Date
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.action.search.SearchResponse
+import org.elasticsearch.index.query.QueryBuilders
 
 /**
  * Elasticsearch plugin.
@@ -46,8 +47,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   def search(index: String, query: String): SearchResponse = {
     val response = client.prepareSearch(index)
       .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-      .setQuery(matchQuery("filename",query))
-      .addField("filename")
+      .setQuery(QueryBuilders.queryString(query))
       .setFrom(0).setSize(60).setExplain(true)
       .execute()
       .actionGet();
