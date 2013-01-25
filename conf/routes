@@ -51,3 +51,12 @@ POST    /reset/:token               securesocial.controllers.Registration.handle
 # Providers entry points
 GET     /authenticate/:provider     securesocial.controllers.ProviderController.authenticate(provider)
 POST    /authenticate/:provider     securesocial.controllers.ProviderController.authenticateByPost(provider)
+
+# Administration pages
+GET     /admin                      controllers.Admin.main
+GET     /admin/test                 controllers.Admin.test
+GET     /admin/secureTest           controllers.Admin.secureTest
+GET     /admin/reindexFiles         controllers.Admin.reindexFiles
+
+# Javascript Endpoints
+GET     /javascriptRoutes           controllers.Application.javascriptRoutes

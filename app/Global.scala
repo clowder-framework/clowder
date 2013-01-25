@@ -12,6 +12,18 @@ object Global extends GlobalSettings {
   
   override def onStart(app: Application) {
     
+    // testing
+//    val ncsa = Company(name = "NCSA")
+//    Company.save(ncsa)
+//    User.save(User(
+//        username = "Luigi",
+//        password = "1234",
+//        friends = Some(List("Gaetano", "Mario")),
+//        company = ncsa.id
+//    ))
+//    
+//    Dataset(files_id = List(new ObjectId))
+    
         // casbah joda conversions
 //    import com.mongodb.casbah.commons.conversions.scala._
 //    RegisterJodaTimeConversionHelpers()

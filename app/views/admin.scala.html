@@ -1,0 +1,50 @@
+
+@main("Administration") {
+	<div class="page-header">
+		<h1>Administration</h1>
+	</div>
+	<div class="row-fluid">
+		<div class="span12">
+			<a href="" class="btn">Re-index Files</a>
+			<a href="" class="btn" id="testButton">Test</a>
+			<a href="" class="btn" id="secureTestButton">Secure Test</a>
+		</div>
+	</div>
+	<div id="controlledPhone"></div>
+	<div id="test1"></div>
+}
+<script language="javascript">
+   $('#testButton').click(function(evt) {
+        $('#errors').hide();
+        $.ajax({
+            type : 'GET',
+            url : "@routes.Admin.test()",
+            dataType : "json",
+            success : function(data) {
+            	console.log('Call succedded');
+                $('#test1').text(data.message);
+            },
+            error : function(xhr, textStatus, errorThrown) {
+                console.log('Make call failed ' +  errorThrown);
+            }
+        });
+        return false;
+    });
+   $('#secureTestButton').click(function(evt) {
+       $('#errors').hide();
+       $.ajax({
+           type : 'GET',
+           url : "@routes.Admin.secureTest()",
+           dataType : "json",
+           success : function(data) {
+           	console.log('Call succedded');
+               $('#test1').text(data.message);
+           },
+           error : function(xhr, textStatus, errorThrown) {
+               console.log('Make call failed' +  errorThrown);
+               $('#test1').text(errorThrown);
+           }
+       });
+       return false;
+   });
+</script>

@@ -6,4 +6,7 @@ package models
  * @author Luigi Marini
  *
  */
-case class Credentials(email: String, password: String)
+case class Credentials (
+    email: String, 
+    password: String
+)

@@ -19,7 +19,13 @@ import java.util.Date
  * @author Luigi Marini
  *
  */
-case class File(id: ObjectId = new ObjectId, path: Option[String] = None, filename: String, uploadDate: Date, contentType: String)
+case class File(
+    id: ObjectId = new ObjectId, 
+    path: Option[String] = None, 
+    filename: String, 
+    uploadDate: Date, 
+    contentType: String
+)
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
   val dao = new SalatDAO[File, ObjectId](collection = mongoCollection("uploads.files")) {}

@@ -9,7 +9,7 @@ import com.mongodb.casbah.Imports._
 import se.radley.plugin.salat._
 import MongoContext._
 
-case class User(
+case class User (
   id: ObjectId = new ObjectId,
   username: String,
   password: String,
@@ -17,7 +17,8 @@ case class User(
   added: Date = new Date(),
   updated: Option[Date] = None,
   deleted: Option[Date] = None,
-  @Key("company_id")company: Option[ObjectId] = None
+  friends: Option[List[String]] = None,
+  @Key("company_id") company: ObjectId = new ObjectId
 )
 
 object User extends ModelCompanion[User, ObjectId] {

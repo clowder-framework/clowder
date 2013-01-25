@@ -40,4 +40,17 @@ object Application extends Controller with securesocial.core.SecureSocial {
     Ok("{test:1}").as(JSON)
   }
   
+    
+  /**
+   *  Javascript routing.
+   */
+  def javascriptRoutes = Action { implicit request =>
+    import routes.javascript._
+    Ok(
+      Routes.javascriptRouter("jsRoutes")(
+        Admin.test, Admin.secureTest, Admin.reindexFiles
+      )
+    ).as(JSON) 
+  }
+  
 }
