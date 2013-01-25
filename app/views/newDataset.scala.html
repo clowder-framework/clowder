@@ -1,0 +1,24 @@
+@(myForm: Form[Dataset])
+
+@import helper._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
+@main("Dataset") {
+  <div class="page-header">
+    <h1>New Dataset</h1>
+  </div>
+  <div class="row">
+	<div class="span12">
+	  @form(action = routes.Datasets.createDataset, 'class -> "form-horizontal") {
+	    <fieldset>
+	      <legend>Select file</legend>
+	      @inputText(myForm("name"))
+	      @inputText(myForm("description"))
+	    </fieldset>
+        <div class="form-actions">
+          <input type="submit" class="btn" value="Upload"/>
+        </div>
+	  }
+    </div>
+  </div>
+}

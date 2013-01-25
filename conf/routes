@@ -18,6 +18,11 @@ GET		/files/:id					      controllers.Files.file(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
 POST    /upload					          controllers.Files.upload
 
+# Datasets
+GET		/datasets					      controllers.Datasets.list
+GET     /datasets/new                     controllers.Datasets.newDataset
+POST    /dataset/createDataset            controllers.Datasets.createDataset
+
 # Authentication
 GET     /loginTest                        controllers.Authentication.login
 POST    /loginTest                        controllers.Authentication.loginSubmit
