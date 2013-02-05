@@ -15,6 +15,6 @@ import MongoContext._
 import securesocial.core.SocialUser
 
 object SocialUserDAO extends ModelCompanion[SocialUser, ObjectId] {
-  val dao = new SalatDAO[SocialUser, ObjectId](collection = mongoCollection("social.users")) {}
+  val dao = new SalatDAO[SocialUser, ObjectId](collection = MongoConnection()("test")("social.users")) {}
   def findOneByUsername(username: String): Option[SocialUser] = dao.findOne(MongoDBObject("username" -> username))
 }

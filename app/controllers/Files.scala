@@ -76,10 +76,13 @@ object Files extends Controller with securesocial.core.SecureSocial {
         val id = Services.files.save(new FileInputStream(f.ref.file), f.filename)
         // submit file for extraction
         current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
-        // index file
-        Services.files.getFile(id).foreach { file =>
-          current.plugin[ElasticsearchPlugin].foreach{_.index("files","file",id,List(("filename",f.filename), 
-              ("contentType", file.contentType)))}
+        // index file 
+        if (current.plugin[RabbitmqPlugin].isDefined) {
+	        Services.files.getFile(id).foreach { file =>
+	          current.plugin[ElasticsearchPlugin].foreach{
+	            _.index("files","file",id,List(("filename",f.filename), 
+	              ("contentType", file.contentType)))}
+	        }
         }
         // redirect to file page
         Redirect(routes.Files.file(id))    

@@ -12,6 +12,13 @@ import com.novus.salat.dao._
 import se.radley.plugin.salat._
 import MongoContext._
 import java.util.Date
+import com.mongodb.casbah.MongoConnection
+
+import com.novus.salat.global._
+import com.novus.salat.annotations._
+import com.mongodb.casbah.Imports._
+import com.novus.salat.dao.{ SalatDAO, ModelCompanion }
+//import org.joda.time.DateTime
 
 /**
  * Uploaded files.
@@ -28,5 +35,7 @@ case class File(
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
-  val dao = new SalatDAO[File, ObjectId](collection = mongoCollection("uploads.files")) {}
+//	val collection = mongoCollection("uploads.files")
+  val collection = MongoConnection()("test")("uploads.files")
+  val dao = new SalatDAO[File, ObjectId](collection = collection) {}
 }
