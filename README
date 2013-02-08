@@ -26,7 +26,7 @@ rabbitmq:
 -- http://localhost:15672/
 
 mongo:
-- start mong
+- start mongo
 -- (cd ${HOME}/mongodb-2.2.2 && bin/mongod --verbose --dbpath db)
 
 medici:
@@ -39,7 +39,10 @@ medici:
 
 Editing code
 
+install scala ide:
+- http://scala-ide.org/
+-- for juno (4.x) you will need a milestone
+
 make medici ready for eclipse
-- in sbt command line
--- eclipsify with-source=true
+-- ./sbt 'eclipsify with-source=true'
 
