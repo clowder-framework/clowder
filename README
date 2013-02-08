@@ -2,3 +2,44 @@ This is your new Play 2.0 application
 =====================================
 
 This file will be packaged with your application, when using `play dist`.
+
+
+Software needed
+===============
+
+rabbitmq
+- erlang
+- rabbitmq
+
+mongo
+- mongo (http://www.mongodb.org/downloads)
+-- unzip
+
+Starting up
+
+rabbitmq:
+- enable management plugin
+-- rabbitmq-plugins enable rabbitmq_management
+- launch rabbitmq
+-- (cd ${HOME}/rabbitmq-3.0.1 && sbin/rabbitmq-server)
+- connect to server
+-- http://localhost:15672/
+
+mongo:
+- start mong
+-- (cd ${HOME}/mongodb-2.2.2 && bin/mongod --verbose --dbpath db)
+
+medici:
+- launch sbt inside medici-play folder
+-- ./sbt
+- start application
+-- run
+- connect to server
+-- http://localhost:9000/
+
+Editing code
+
+make medici ready for eclipse
+- in sbt command line
+-- eclipsify with-source=true
+
