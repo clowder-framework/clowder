@@ -9,7 +9,7 @@ GET     /                                 controllers.Application.index
 GET     /users                            controllers.Users.list
 GET     /users/by-country/:country        controllers.Users.listByCountry(country)
 GET     /users/create/:username           controllers.Users.create(username)
-GET     /users/view/:id                   controllers.Users.view(id: String)
+GET     /users/view/:id                   controllers.Users.view(id)
 
 # Files
 GET		/files					          controllers.Files.list

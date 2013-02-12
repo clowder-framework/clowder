@@ -2,13 +2,12 @@
  *
  */
 package models
+
 import org.bson.types.ObjectId
-import com.novus.salat._
-import com.novus.salat.annotations._
-import com.novus.salat.dao._
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
 import play.api.Play.current
-import MongoContext._
-import com.mongodb.casbah.MongoConnection
+import services.MongoSalatPlugin
 
 /**
  * A dataset is a collection of files, and streams.
@@ -26,6 +25,9 @@ case class Dataset (
 )
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
-  val collection = MongoConnection()("test")("dataset")
-  val dao = new SalatDAO[Dataset, ObjectId](collection) {}
+  // TODO RK handle exception for instance if we switch to other DB
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None    => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) =>  new SalatDAO[Dataset, ObjectId](collection = x.collection("dataset")) {}
+  }
 }
