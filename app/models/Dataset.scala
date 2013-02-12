@@ -6,9 +6,9 @@ import org.bson.types.ObjectId
 import com.novus.salat._
 import com.novus.salat.annotations._
 import com.novus.salat.dao._
-import se.radley.plugin.salat._
 import play.api.Play.current
 import MongoContext._
+import com.mongodb.casbah.MongoConnection
 
 /**
  * A dataset is a collection of files, and streams.
@@ -26,5 +26,6 @@ case class Dataset (
 )
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
-  val dao = new SalatDAO[Dataset, ObjectId](collection = mongoCollection("dataset")) {}
+  val collection = MongoConnection()("test")("dataset")
+  val dao = new SalatDAO[Dataset, ObjectId](collection) {}
 }

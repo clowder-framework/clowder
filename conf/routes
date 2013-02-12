@@ -9,7 +9,7 @@ GET     /                                 controllers.Application.index
 GET     /users                            controllers.Users.list
 GET     /users/by-country/:country        controllers.Users.listByCountry(country)
 GET     /users/create/:username           controllers.Users.create(username)
-GET     /users/view/:id                   controllers.Users.view(id: ObjectId)
+GET     /users/view/:id                   controllers.Users.view(id: String)
 
 # Files
 GET		/files					          controllers.Files.list
@@ -52,10 +52,13 @@ GET     /reset                      securesocial.controllers.Registration.startR
 POST    /reset                      securesocial.controllers.Registration.handleStartResetPassword
 GET     /reset/:token               securesocial.controllers.Registration.resetPassword(token)
 POST    /reset/:token               securesocial.controllers.Registration.handleResetPassword(token)
+GET     /password                   securesocial.controllers.PasswordChange.page
+POST    /password                   securesocial.controllers.PasswordChange.handlePasswordChange
 
 # Providers entry points
 GET     /authenticate/:provider     securesocial.controllers.ProviderController.authenticate(provider)
 POST    /authenticate/:provider     securesocial.controllers.ProviderController.authenticateByPost(provider)
+GET     /not-authorized             securesocial.controllers.ProviderController.notAuthorized
 
 # Administration pages
 GET     /admin                      controllers.Admin.main

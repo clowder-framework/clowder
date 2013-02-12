@@ -11,7 +11,6 @@ import java.io.FileInputStream
 import java.io.PipedOutputStream
 import java.io.PipedInputStream
 import play.api.Play.current
-import se.radley.plugin.salat._
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.iteratee.Enumerator
 import play.libs.Akka
@@ -62,7 +61,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * Upload file page.
    */
-  def uploadFile = SecuredAction() { implicit request =>
+  def uploadFile = SecuredAction { implicit request =>
     Ok(views.html.upload(uploadForm))
   }
    
@@ -94,22 +93,22 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * Stream based uploading of files.
    */
-  def uploadFileStreaming() = Action(parse.multipartFormData(myPartHandler)) {
-      request => Ok("Done")
-  }
-
-  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {
-        parse.Multipart.handleFilePart {
-          case parse.Multipart.FileInfo(partName, filename, contentType) =>
-            Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
-            val files = gridFS("uploads")
-            
-            //Set up the PipedOutputStream here, give the input stream to a worker thread
-            val pos:PipedOutputStream = new PipedOutputStream();
-            val pis:PipedInputStream  = new PipedInputStream(pos);
-            val worker:foo.UploadFileWorker = new foo.UploadFileWorker(pis, files);
-            worker.contentType = contentType.get;
-            worker.start();
+//  def uploadFileStreaming() = Action(parse.multipartFormData(myPartHandler)) {
+//      request => Ok("Done")
+//  }
+//
+//  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {
+//        parse.Multipart.handleFilePart {
+//          case parse.Multipart.FileInfo(partName, filename, contentType) =>
+//            Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
+//            val files = gridFS("uploads")
+//            
+//            //Set up the PipedOutputStream here, give the input stream to a worker thread
+//            val pos:PipedOutputStream = new PipedOutputStream();
+//            val pis:PipedInputStream  = new PipedInputStream(pos);
+//            val worker:foo.UploadFileWorker = new foo.UploadFileWorker(pis, files);
+//            worker.contentType = contentType.get;
+//            worker.start();
 
 //            val mongoFile = files.createFile(f.ref.file)
 //            val filename = f.ref.file.getName()
@@ -119,18 +118,18 @@ object Files extends Controller with securesocial.core.SecureSocial {
 //            mongoFile.save
 //            val id = mongoFile.getAs[ObjectId]("_id").get.toString
 //            Ok(views.html.file(mongoFile.asDBObject, id))
-            
-            
-            //Read content to the POS
-            Iteratee.fold[Array[Byte], PipedOutputStream](pos) { (os, data) =>
-              os.write(data)
-              os
-            }.mapDone { os =>
-              os.close()
-              Ok("upload done")
-            }
-        }
-   }
+//            
+//            
+//            //Read content to the POS
+//            Iteratee.fold[Array[Byte], PipedOutputStream](pos) { (os, data) =>
+//              os.write(data)
+//              os
+//            }.mapDone { os =>
+//              os.close()
+//              Ok("upload done")
+//            }
+//        }
+//   }
   
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding

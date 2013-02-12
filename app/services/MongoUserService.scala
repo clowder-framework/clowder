@@ -11,6 +11,7 @@ import securesocial.core.AuthenticationMethod
 import securesocial.core.providers.UsernamePasswordProvider
 import models.SocialUserDAO
 import models.TokenDAO
+import securesocial.core.Identity
 
 /**
  * SecureSocial implementation using MongoDB.
@@ -24,7 +25,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param id the user id
    * @return an optional user
    */
-  def find(id: UserId):Option[SocialUser] = {
+  def find(id: UserId):Option[Identity] = {
     SocialUserDAO.findOne(MongoDBObject("_id._id"->id.id, "_id.providerId"->id.providerId))
   }
 
@@ -38,7 +39,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param providerId - the provider id
    * @return
    */  
-  def findByEmailAndProvider(email: String, providerId: String): Option[securesocial.core.SocialUser] = {
+  def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
     SocialUserDAO.findOne(MongoDBObject("email"->email, "_id.providerId"->providerId))
   }
 
@@ -47,7 +48,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * This is your chance to save the user information in your backing store.
    * @param user
    */
-  def save(user: SocialUser) {
+  def save(user: Identity) {
     SocialUserDAO.save(user)
   }
 

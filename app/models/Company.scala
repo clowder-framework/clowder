@@ -7,7 +7,6 @@ import com.novus.salat.dao.ModelCompanion
 import com.novus.salat.dao.SalatDAO
 import com.mongodb.casbah.Imports._
 import MongoContext._
-import se.radley.plugin.salat._
 import play.api.Play.current
 
 /**
@@ -22,5 +21,6 @@ case class Company (
 )
 
 object Company extends ModelCompanion[Company, ObjectId] {
-  val dao = new SalatDAO[Company, ObjectId](collection = mongoCollection("company")) {}
+  val collection = MongoConnection()("test")("company")
+  val dao = new SalatDAO[Company, ObjectId](collection) {}
 }

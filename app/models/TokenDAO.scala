@@ -10,10 +10,10 @@ import com.novus.salat._
 import com.novus.salat.annotations._
 import com.novus.salat.dao._
 import com.mongodb.casbah.Imports._
-import se.radley.plugin.salat._
 import MongoContext._
 import securesocial.core.SocialUser
 
 object TokenDAO extends ModelCompanion[Token, ObjectId] {
-  val dao = new SalatDAO[Token, ObjectId](collection = mongoCollection("social.token")) {}
+  val collection = MongoConnection()("test")("social.token")
+  val dao = new SalatDAO[Token, ObjectId](collection = collection) {}
 }

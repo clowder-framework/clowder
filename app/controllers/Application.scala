@@ -9,7 +9,6 @@ import com.mongodb.casbah.Imports._
 import java.io.File
 import com.mongodb.casbah.gridfs.Imports._
 import play.api.Play.current
-import se.radley.plugin.salat._
 import play.api.libs.iteratee.Enumerator
 import java.io.PipedOutputStream
 import java.io.PipedInputStream

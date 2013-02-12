@@ -5,8 +5,10 @@ import play.api.mvc.Request
 import securesocial.controllers.Registration.RegistrationInfo
 import play.api.templates.Html
 import play.api.mvc.RequestHeader
-import securesocial.core.SocialUser
+import securesocial.core.Identity
 import play.api.data.Form
+import securesocial.core.SecuredRequest
+import securesocial.controllers.PasswordChange.ChangeInfo
 
 class SecureSocialTemplatesPlugin(application: play.Application) extends TemplatesPlugin {
  /**
@@ -82,7 +84,7 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current request
    * @return a String with the html code for the email
    */
-  def getAlreadyRegisteredEmail(user: SocialUser)(implicit request: RequestHeader): String = {
+  def getAlreadyRegisteredEmail(user: Identity)(implicit request: RequestHeader): String = {
     views.html.ss.mails.alreadyRegisteredEmail(user).body
   }
 
@@ -93,7 +95,7 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current request
    * @return a String with the html code for the email
    */
-  def getWelcomeEmail(user: SocialUser)(implicit request: RequestHeader): String = {
+  def getWelcomeEmail(user: Identity)(implicit request: RequestHeader): String = {
     views.html.ss.mails.welcomeEmail(user).body
   }
 
@@ -116,7 +118,7 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current http request
    * @return a String with the html code for the email
    */
-  def getSendPasswordResetEmail(user: SocialUser, token: String)(implicit request: RequestHeader): String = {
+  def getSendPasswordResetEmail(user: Identity, token: String)(implicit request: RequestHeader): String = {
     views.html.ss.mails.passwordResetEmail(user, token).body
   }
 
@@ -127,7 +129,15 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current http request
    * @return a String with the html code for the email
    */
-  def getPasswordChangedNoticeEmail(user: SocialUser)(implicit request: RequestHeader): String = {
+  def getPasswordChangedNoticeEmail(user: Identity)(implicit request: RequestHeader): String = {
     views.html.ss.mails.passwordChangedNotice(user).body
+  }
+  
+  def getNotAuthorizedPage[A](implicit request: Request[A]): Html = {
+    securesocial.views.html.notAuthorized()
+  }
+  
+  def getPasswordChangePage[A](implicit request: SecuredRequest[A], form: Form[ChangeInfo]):Html = {
+    securesocial.views.html.passwordChange(form)
   }
 }
