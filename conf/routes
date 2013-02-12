@@ -24,6 +24,7 @@ GET		/datasets					      controllers.Datasets.list
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
 POST    /dataset/createDataset            controllers.Datasets.createDataset
+POST    /dataset/submit                   controllers.Datasets.submit
 
 # Authentication
 GET     /loginTest                        controllers.Authentication.login
