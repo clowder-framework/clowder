@@ -1,0 +1,20 @@
+@(dataset: models.Dataset) 
+
+@main("Dataset") {
+	<div class="page-header">
+		<h1>@dataset.name</h1>
+	</div>
+	<div class="row-fluid">
+		<div class="span6">
+			<dl class="dl-horizontal">
+				<dt>Name:</dt>
+				<dd>@dataset.name</dd>
+				<dt>Description:</dt>
+				<dd>@dataset.description</dd>
+			</dl>
+		</div>
+		<div class="span6">
+			
+		</div>
+	</div>
+}

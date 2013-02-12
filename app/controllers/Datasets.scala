@@ -40,7 +40,7 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
         failure => BadRequest("Oops"),
         {case dataset => {
           Dataset.save(dataset)
-          Ok("Successful")
+          Redirect(routes.Datasets.dataset(dataset.id.toString))   
           }
         }
     )
@@ -52,5 +52,15 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
   def list() = Action {
     Services.files.listFiles().map(f => Logger.debug(f.toString))
     Ok(views.html.datasetList(Services.datasets.listDatasets()))
+  }
+  
+  /**
+   * Dataset.
+   */
+  def dataset(id: String) = Action {
+    Services.datasets.get(id)  match {
+      case Some(dataset) => Ok(views.html.dataset(dataset))
+      case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+    }
   }
 }

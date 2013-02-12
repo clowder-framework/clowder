@@ -14,7 +14,7 @@
 			<tbody>
 				@datasets.map { dataset =>
 					<tr>
-						<td>@dataset.name</td>
+						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
 						<td>@dataset.description</td>
 					</tr>
 				}

@@ -21,6 +21,7 @@ POST    /upload					          controllers.Files.upload
 # Datasets
 GET		/datasets					      controllers.Datasets.list
 GET     /datasets/new                     controllers.Datasets.newDataset
+GET		/datasets/:id					  controllers.Datasets.dataset(id)
 POST    /dataset/createDataset            controllers.Datasets.createDataset
 
 # Authentication
