@@ -11,9 +11,12 @@
 				<dd>@dataset.name</dd>
 				<dt>Description:</dt>
 				<dd>@dataset.description</dd>
+			    <dt>Created:</dt>
+				<dd>@dataset.created</dd>
 			</dl>
 		</div>
 		<div class="span6">
+		  <h5>Files</h5>
 			@dataset.files_id.map { file =>
 			<div><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></div>
 			}

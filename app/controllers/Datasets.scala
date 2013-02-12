@@ -18,6 +18,7 @@ import services.ElasticsearchPlugin
 import java.io.File
 import org.bson.types.ObjectId
 import models.FileDAO
+import java.util.Date
 
 /**
  * A dataset is a collection of files and streams.
@@ -35,7 +36,7 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
       "name" -> nonEmptyText,
       "description" -> nonEmptyText
     )
-    ((name, description) => Dataset(name = name, description = description))
+    ((name, description) => Dataset(name = name, description = description, created = new Date))
     ((dataset: Dataset) => Some((dataset.name, dataset.description)))
    )
    

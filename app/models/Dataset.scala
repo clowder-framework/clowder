@@ -8,6 +8,7 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import services.MongoSalatPlugin
+import java.util.Date
 
 /**
  * A dataset is a collection of files, and streams.
@@ -20,6 +21,7 @@ case class Dataset (
   id: ObjectId = new ObjectId,
   name: String = "N/A",
   description: String = "N/A",
+  created: Date, 
   files_id: List[File] = List.empty,
   streams_id: List[ObjectId] = List.empty
 )
