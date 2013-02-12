@@ -1,5 +1,5 @@
 400:services.ElasticsearchPlugin
-500:se.radley.plugin.salat.SalatPlugin
+700:services.MongoSalatPlugin
 1500:com.typesafe.plugin.CommonsMailerPlugin
 9997:services.SecureSocialTemplatesPlugin
 9998:services.MongoUserService

@@ -1,27 +1,14 @@
 package controllers
 
-import play.api.mvc._
-import play.api.data._
-import play.api.data.Forms._
+import java.io._
 import models.FileMD
 import play.api.Logger
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.gridfs.Imports._
-import java.io.FileInputStream
-import java.io.PipedOutputStream
-import java.io.PipedInputStream
 import play.api.Play.current
-import se.radley.plugin.salat._
-import play.api.libs.iteratee.Iteratee
-import play.api.libs.iteratee.Enumerator
-import play.libs.Akka
-import akka.actor.Props
-import models.SocialUserDAO
-import services.RabbitmqPlugin
-import services.Services
-import com.typesafe.plugin._
-import services.ElasticsearchPlugin
-
+import play.api.data.Form
+import play.api.data.Forms._
+import play.api.libs.iteratee._
+import play.api.mvc._
+import services._
 
 /**
  * Manage files.
@@ -102,7 +89,11 @@ object Files extends Controller with securesocial.core.SecureSocial {
         parse.Multipart.handleFilePart {
           case parse.Multipart.FileInfo(partName, filename, contentType) =>
             Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
-            val files = gridFS("uploads")
+            // TODO RK handle exception for instance if we switch to other DB
+			val files = current.plugin[MongoSalatPlugin] match {
+			  case None    => throw new RuntimeException("No MongoSalatPlugin");
+			  case Some(x) =>  x.gridFS("uploads")
+			}
             
             //Set up the PipedOutputStream here, give the input stream to a worker thread
             val pos:PipedOutputStream = new PipedOutputStream();

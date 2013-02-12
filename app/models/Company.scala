@@ -2,13 +2,12 @@
  *
  */
 package models
+
 import org.bson.types.ObjectId
-import com.novus.salat.dao.ModelCompanion
-import com.novus.salat.dao.SalatDAO
-import com.mongodb.casbah.Imports._
-import MongoContext._
-import se.radley.plugin.salat._
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
 import play.api.Play.current
+import services.MongoSalatPlugin
 
 /**
  * Company.
@@ -22,5 +21,9 @@ case class Company (
 )
 
 object Company extends ModelCompanion[Company, ObjectId] {
-  val dao = new SalatDAO[Company, ObjectId](collection = mongoCollection("company")) {}
+  // TODO RK handle exception for instance if we switch to other DB
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None    => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) =>  new SalatDAO[Company, ObjectId](collection = x.collection("company")) {}
+  }
 }

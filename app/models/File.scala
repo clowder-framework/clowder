@@ -2,23 +2,13 @@
  *
  */
 package models
-import com.novus.salat.dao.ModelCompanion
-import com.novus.salat.dao.SalatDAO
-import org.bson.types.ObjectId
-import play.api.Play.current
-import com.novus.salat._
-import com.novus.salat.annotations._
-import com.novus.salat.dao._
-import se.radley.plugin.salat._
-import MongoContext._
-import java.util.Date
-import com.mongodb.casbah.MongoConnection
 
-import com.novus.salat.global._
-import com.novus.salat.annotations._
-import com.mongodb.casbah.Imports._
-import com.novus.salat.dao.{ SalatDAO, ModelCompanion }
-//import org.joda.time.DateTime
+import java.util.Date
+import org.bson.types.ObjectId
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
+import play.api.Play.current
+import services.MongoSalatPlugin
 
 /**
  * Uploaded files.
@@ -35,7 +25,9 @@ case class File(
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
-//	val collection = mongoCollection("uploads.files")
-  val collection = MongoConnection()("test")("uploads.files")
-  val dao = new SalatDAO[File, ObjectId](collection = collection) {}
+  // TODO RK handle exception for instance if we switch to other DB
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None    => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) =>  new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
+  }
 }

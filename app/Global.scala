@@ -1,9 +1,6 @@
 import com.mongodb.casbah.Imports._
-import play.api._
-import models._
-import se.radley.plugin.salat._
-import play.libs.Akka
-import services.MongoFileDB
+
+import play.api.{GlobalSettings, Application}
 
 /**
  * Configure application. Create dummy users.
