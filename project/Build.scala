@@ -9,19 +9,17 @@ object ApplicationBuild extends Build {
 
     val appDependencies = Seq(
       "com.novus" %% "salat" % "1.9.1",
-      "se.radley" %% "play-plugins-salat" % "1.1",
-      "securesocial" % "securesocial_2.9.1" % "2.0.6",
+      "securesocial" % "securesocial_2.9.1" % "2.0.8",
       "com.rabbitmq" % "amqp-client" % "3.0.0",
       "org.elasticsearch" % "elasticsearch" % "0.20.1",
       "com.spatial4j" % "spatial4j" % "0.3",
-//      "org.mongodb" %% "casbah" % "2.5.0",
+      "org.mongodb" %% "casbah" % "2.5.0",
       "org.scalaj" %% "scalaj-collection" % "1.2"
     )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
-      routesImport += "se.radley.plugin.salat.Binders._",
+      routesImport += "Binders._",
       templatesImport += "org.bson.types.ObjectId",
-      resolvers += "SecureSocial Repository" at "http://securesocial.ws/repository/releases/"
+      resolvers += Resolver.url("SecureSocial Repository", url("http://securesocial.ws/repository/releases/"))(Resolver.ivyStylePatterns)
     )
-
 }

@@ -1,27 +1,19 @@
 package controllers
 
-import play.api.mvc._
-import play.api.data._
-import play.api.data.Forms._
+import java.io._
 import models.FileMD
 import play.api.Logger
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.gridfs.Imports._
-import java.io.FileInputStream
-import java.io.PipedOutputStream
-import java.io.PipedInputStream
 import play.api.Play.current
-import se.radley.plugin.salat._
-import play.api.libs.iteratee.Iteratee
-import play.api.libs.iteratee.Enumerator
-import play.libs.Akka
-import akka.actor.Props
-import models.SocialUserDAO
-import services.RabbitmqPlugin
-import services.Services
-import com.typesafe.plugin._
-import services.ElasticsearchPlugin
-
+import play.api.data.Form
+import play.api.data.Forms._
+import play.api.libs.iteratee._
+import play.api.mvc._
+import services._
+import play.api.libs.concurrent.Promise
+import play.api.libs.iteratee.Input.{El, EOF, Empty}
+import com.mongodb.casbah.gridfs.GridFS
+import akka.dispatch.ExecutionContext
+import scala.actors.Future
 
 /**
  * Manage files.
@@ -62,7 +54,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * Upload file page.
    */
-  def uploadFile = SecuredAction() { implicit request =>
+  def uploadFile = SecuredAction { implicit request =>
     Ok(views.html.upload(uploadForm))
   }
    
@@ -91,6 +83,30 @@ object Files extends Controller with securesocial.core.SecureSocial {
       }
   }
   
+    
+  /**
+   * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+   */
+  def download(id: String) = Action {
+    Services.files.get(id) match {
+      case Some((inputStream, filename)) => {
+    	Ok.stream(Enumerator.fromStream(inputStream))
+    	  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+      }
+      case None => {
+        Logger.error("Error getting file" + id)
+        NotFound
+      }
+    }
+  }
+  
+  
+  ///////////////////////////////////
+  //
+  // EXPERIMENTAL. WORK IN PROGRESS.
+  //
+  ///////////////////////////////////
+  
   /**
    * Stream based uploading of files.
    */
@@ -102,7 +118,11 @@ object Files extends Controller with securesocial.core.SecureSocial {
         parse.Multipart.handleFilePart {
           case parse.Multipart.FileInfo(partName, filename, contentType) =>
             Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
-            val files = gridFS("uploads")
+            // TODO RK handle exception for instance if we switch to other DB
+			val files = current.plugin[MongoSalatPlugin] match {
+			  case None    => throw new RuntimeException("No MongoSalatPlugin");
+			  case Some(x) =>  x.gridFS("uploads")
+			}
             
             //Set up the PipedOutputStream here, give the input stream to a worker thread
             val pos:PipedOutputStream = new PipedOutputStream();
@@ -133,18 +153,94 @@ object Files extends Controller with securesocial.core.SecureSocial {
    }
   
   /**
-   * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+   * Ajax upload. How do we pass in the file name?
    */
-  def download(id: String) = Action {
-    Services.files.get(id) match {
-      case Some((inputStream, filename)) => {
-    	Ok.stream(Enumerator.fromStream(inputStream))
-    	  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
-      }
-      case None => {
-        Logger.error("Error getting file" + id)
-        NotFound
-      }
+  def uploadAjax = Action(parse.temporaryFile) { request =>
+    
+    val filename = "N/A"
+    val file = request.body.file
+    // store file
+    val id = Services.files.save(new FileInputStream(file), filename)
+    // submit file for extraction
+    current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
+    // index file 
+    if (current.plugin[ElasticsearchPlugin].isDefined) {
+        Services.files.getFile(id).foreach { file =>
+          current.plugin[ElasticsearchPlugin].foreach{
+            _.index("files","file",id,List(("filename", filename), 
+              ("contentType", file.contentType)))}
+        }
     }
+    // redirect to file page
+    Redirect(routes.Files.file(id))  
+    Ok("File uploaded")
   }
+  
+  /**
+   * Reactive file upload.
+   */
+  def reactiveUpload = Action(BodyParser(rh => new SomeIteratee)) { request =>
+     Ok("Done")
+   }
+  
+  /**
+   * Iteratee for reactive file upload.
+   * 
+   * TODO Finish implementing. Right now it doesn't write to anything.
+   */
+ case class SomeIteratee(state: Symbol = 'Cont, input: Input[Array[Byte]] = Empty, 
+     received: Int = 0) extends Iteratee[Array[Byte], Either[Result, Int]] {
+   Logger.debug(state + " " + input + " " + received)
+
+//   val files = current.plugin[MongoSalatPlugin] match {
+//			  case None    => throw new RuntimeException("No MongoSalatPlugin");
+//			  case Some(x) =>  x.gridFS("uploads")
+//			}
+//
+//   val pos:PipedOutputStream = new PipedOutputStream();
+//   val pis:PipedInputStream  = new PipedInputStream(pos);
+//   val file = files(pis) { fh =>
+//     fh.filename = "test-file.txt"
+//     fh.contentType = "text/plain"
+//   }
+			
+   
+   def fold[B](
+     done: (Either[Result, Int], Input[Array[Byte]]) => Promise[B],
+     cont: (Input[Array[Byte]] => Iteratee[Array[Byte], Either[Result, Int]]) => Promise[B],
+     error: (String, Input[Array[Byte]]) => Promise[B]
+   ): Promise[B] = state match {
+     case 'Done => { 
+       Logger.debug("Done with upload")
+//       pos.close()
+       done(Right(received), Input.Empty) 
+     }
+     case 'Cont => cont(in => in match {
+       case in: El[Array[Byte]] => {
+         Logger.debug("Getting ready to write " +  in.e.length)
+    	 try {
+//         pos.write(in.e)
+    	 } catch {
+    	   case error => Logger.error("Error writing to gridfs" + error.toString())
+    	 }
+    	 Logger.debug("Calling recursive function")
+         copy(input = in, received = received + in.e.length)
+       }
+       case Empty => {
+         Logger.debug("Empty")
+         copy(input = in)
+       }
+       case EOF => {
+         Logger.debug("EOF")
+         copy(state = 'Done, input = in)
+       }
+       case _ => {
+         Logger.debug("_")
+         copy(state = 'Error, input = in)
+       }
+     })
+     case _ => { Logger.error("Error uploading file"); error("Some error.", input) }
+   }
+ }
+  
 }

@@ -5,15 +5,17 @@
 
 @main("Dataset") {
   <div class="page-header">
-    <h1>New Dataset</h1>
+    <h1>Create New Dataset</h1>
   </div>
   <div class="row">
 	<div class="span12">
-	  @form(action = routes.Datasets.createDataset, 'class -> "form-horizontal") {
+	  @form(action = routes.Datasets.submit, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {	 
 	    <fieldset>
-	      <legend>Select file</legend>
-	      @inputText(myForm("name"))
-	      @inputText(myForm("description"))
+	      @inputText(myForm("name"), '_label -> "Name")
+	      @inputText(myForm("description"), '_label -> "Description")
+	    </fieldset>
+	    <fieldset>
+	      @inputFile(myForm("file"), '_label -> "File")
 	    </fieldset>
         <div class="form-actions">
           <input type="submit" class="btn" value="Upload"/>

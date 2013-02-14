@@ -30,8 +30,8 @@ object Users extends Controller {
   /**
    * View user.
    */
-  def view(id: ObjectId) = Action {
-    User.findOneById(id).map( user =>
+  def view(id: String) = Action {
+    User.findOneById(new ObjectId(id)).map( user =>
       Ok(views.html.user(user))
     ).getOrElse(NotFound)
   }

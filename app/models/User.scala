@@ -1,13 +1,13 @@
 package models
 
-import play.api.Play.current
 import java.util.Date
-import com.novus.salat._
-import com.novus.salat.annotations._
-import com.novus.salat.dao._
-import com.mongodb.casbah.Imports._
-import se.radley.plugin.salat._
-import MongoContext._
+
+import com.mongodb.casbah.Imports.{MongoDBObject, ObjectId}
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import com.novus.salat.annotations.Key
+import MongoContext.context
+import play.api.Play.current
+import services.MongoSalatPlugin
 
 case class User (
   id: ObjectId = new ObjectId,
@@ -22,7 +22,12 @@ case class User (
 )
 
 object User extends ModelCompanion[User, ObjectId] {
-  val dao = new SalatDAO[User, ObjectId](collection = mongoCollection("users")) {}
+
+  // TODO RK handle exception for instance if we switch to other DB
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None    => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) =>  new SalatDAO[User, ObjectId](collection = x.collection("users")) {}
+  }
 
   def findOneByUsername(username: String): Option[User] = dao.findOne(MongoDBObject("username" -> username))
   def findByCountry(country: String) = dao.find(MongoDBObject("address.country" -> country))
