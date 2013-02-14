@@ -6,12 +6,12 @@ if (window.File && window.FileList && window.FileReader) {
 				
 // initialize
 function Init() {
-	var files = $id("query"),
-    filedrag = $id("filedrag");
+	//var files = $id("query"),
+    var filedrag = $id("filedrag");
 	console.log("I am inside Init()");
 												 
 	// file select
-	files.addEventListener("change", handleFileSelect, false);
+	//files.addEventListener("change", handleFileSelect, false);
 	filedrag.addEventListener("dragover", FileDragHover, false);
 	filedrag.addEventListener("dragleave", FileDragHover, false);
 	filedrag.addEventListener("drop", handleFileSelect, false);
@@ -27,51 +27,33 @@ function FileDragHover(e) {
 function handleFileSelect(evt) {
  FileDragHover(evt);
 		  
- var files  = evt.target.files||evt.dataTransfer.files; // FileList object
+ var files  = evt.dataTransfer.files; // FileList object
+ 
  var output = [];	
 			
  var f=files[0];
-//var submitBtn=document.getElementById('submit-button-id');
-//submitBtn.removeAttribute('disabled');
-//ORIGINAL: output.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>Positive Label</th><th>Negative Label</th><th>File</th><th>Type</th><th>Thumbnail</th>');
-//output.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>File</th><th>Type</th><th>Thumbnail</th>');
-output.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>File</th><th>Type</th>');
-/*for (var i = 0, f; f = files[i]; i++) {
-    var thumbnail = '';
-   	var reader    = new FileReader();
-	reader.readAsDataURL(f);
-						
-	if (f.type.match('image*')) {
-				        	
-	   reader.onload = (function(theFile, thmb) {
-	    return function(e) {
-			        	          // Render thumbnail
-							        thmb += '<center><img src="'+e.target.result+'" title="'+escape(theFile.name)+'" width="75" height="75"/></center>';
-									document.getElementById(escape(theFile.name)).innerHTML = thmb;
-			        	    };
-			           })(f,thumbnail);		
-	  }
 
-	//output.push('<tr id=i >',
-	//'<td><input type="radio" name="rowOptionsRadio'+i+'" id="plusOptionsRadios'+i+'" onclick="plusButtonClick(this.id)" value="+" /><i class="icon-plus"></i></td>',
-	//'<td><input type="radio" name="rowOptionsRadio'+i+'" id="minusOptionsRadios'+i+'" onclick="minusButtonClick(this.id);checkRadioButtons()" value="-"/><i class="icon-minus"></i></td>',
-	//'<td id="r"+i+"c3">', escape(f.name), '</td>',
-	//'<td></strong> (', f.type || 'n/a', ') </td>',
-	//'<td id="'+escape(f.name)+'"><center><i class="icon-remove"></center></td>',
-	 //    	'</tr>');
-	 */
+
+output.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>File</th><th>Type</th>');
+
 				      	output.push('<tr id=i >',
 						      	'<td id="r"+i+"c3">', escape(f.name), '</td>',
 						      	'<td></strong> (', f.type || 'n/a', ') </td>',
 						      	//'<td id="'+escape(f.name)+'"><center><i class="icon-remove"></center></td>',
 						      	'</tr>');
 				    	//fd.append(f.name,f);
-	UploadFile(f);
+	//UploadFile(f);
 				    	//console.log("fileSelectHandlefileUploaded[]:",fileUploaded[i]);
 //	}
 	output.push('</table>');
+	
 	//document.getElementById('list').innerHTML = output.join('');
 	tableinsert('list',output);
+	//console.log(evt.dataTransfer.getData('File'));
+	//f=evt.dataTransfer.getData('File');
+	console.log("file object",f,"f.name",f.name);
+	//this.innerHTML += '<p>' + evt.dataTransfer.getData('File') + '</p>';
+	this.innerHTML += '<p>' + f + '</p>';
   	fileNum  = files.length;
   	fileList = files;
   					    
@@ -91,7 +73,7 @@ function UploadFile(file) {
 		//xhr.setRequestHeader("X_FILENAME", file.name);
 		fd=new FormData();
 		fd.append(file.name,file);
-		xhr.open("POST", "http://localhost:9000/uploadquery", true);
+		xhr.open("POST", "http://localhost:9000/upload1", true);
 		xhr.send(fd);
 		//xhr.send(file);
 	}
