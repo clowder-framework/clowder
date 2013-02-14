@@ -82,7 +82,10 @@ object Files extends Controller with securesocial.core.SecureSocial {
          BadRequest("File not attached.")
       }
   }
-  
+  def upload1 = Action(parse.temporaryFile) { request =>
+  request.body.moveTo(new File("/tmp/picture.jpg"),true)
+  Ok("File uploaded")
+}
     
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
@@ -157,10 +160,12 @@ object Files extends Controller with securesocial.core.SecureSocial {
    */
   def uploadAjax = Action(parse.temporaryFile) { request =>
     
-    val filename = "N/A"
+    //val filename = "N/A"
     val file = request.body.file
+    val filename=file.getName()
+    
     // store file
-    val id = Services.files.save(new FileInputStream(file), filename)
+    val id = Services.files.save(new FileInputStream(file.getAbsoluteFile()), filename)
     // submit file for extraction
     current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
     // index file 
