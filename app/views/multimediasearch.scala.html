@@ -1,0 +1,78 @@
+
+@()
+@import helper._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
+@main("Medici 2.0") {
+
+<link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/dragdrop.css")">
+
+<div class="hero-unit">
+  <h1> Multimedia Search Interface </h1>
+  <p>Hello welcome to the digital data playground, where you can share, organize and analyze data.</p>
+  <p> Welcome to first play page</p>  
+</div>
+
+<div class="row-fluid">
+	<div class="span6">
+		<div class="hero-unit" id="params">	
+			@form(action = routes.Search.SearchByText, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+					<legend><h3>Search by Text</h3></legend>
+					<input type="text" placeholder="Type your keywords">
+					<a class="btn btn-primary">Search</a>
+			}
+<br>
+<br>
+ @form(action = routes.Search.uploadquery, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+	    <fieldset>
+	      <legend> <h3>Search by Image</h3></legend>
+	      <label><h4>Upload a query Image</h4></label>
+	      <input type="file" id="query" name="picture">
+	      <br>
+	      <h5 style="text-align: center;">OR </h5>
+	      <br>
+	      <div id="filedrag"> Drop your query image here</div>
+	    
+	    <output id="list"></output>
+	    <br>
+	     <h5 style="text-align: center;">OR</h5>
+	    <br>
+	    
+	    <label><h4>Paste your query image URL</h4></label>
+    	<input type="text" placeholder="Paste your URL here">
+	    <br>
+	    <br>
+	     <label><h4>Filter by</h4></label>	
+	    <select id="tag" onchange="">
+		<option value="invalid">--None--</option>
+		<option value="">People</option>
+		<option value="">Nature</option>
+		<option value=""> Technology</option>
+		<option value="">Healthcare</option>
+		</select>
+		</fieldset>	
+		<br>
+		<br>
+	   <div style="text-align: center;">			
+       <input type="submit" class="btn btn-primary" value="Search"/>
+       </div>
+       <br>
+       <br>
+       <div style="text-align: center;">
+       <a class="btn btn-primary" href="@routes.Search.advanced">Advanced Search</a>
+  	   </div>
+       
+	  }
+	  	 
+	</div>	
+	</div>
+   
+        <div class="span6">
+			<div class="hero-unit" id="params">	
+			  <h3>Sketch your Image<h3>
+			</div>
+		</div>
+	</div>		
+    <script src="@routes.Assets.at("javascripts/file-browser/views/dragdrop.js")" type="text/javascript"></script>
+  
+ }

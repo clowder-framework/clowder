@@ -32,4 +32,44 @@ object Search extends Controller{
     Ok(views.html.searchResults(query, files))
   }
   
+  def multimediasearch()=Action{
+    Logger.debug("Starting multimedia serach interface")
+    Ok(views.html.multimediasearch())
+    //Ok("Sucessful")
+  }
+  
+  def advanced()=Action{
+    Logger.debug("Starting Advanced Search interface");
+    Ok(views.html.advancedsearch())
+  }
+  
+ def SearchByText()=TODO 
+ //def uploadquery()=TODO
+ 
+ def uploadquery() = Action(parse.multipartFormData) { request =>
+  request.body.file("picture").map { picture =>
+    import java.io.File
+    val filename = picture.filename 
+    val contentType = picture.contentType
+    picture.ref.moveTo(new File("/tmp/picture"))
+    Ok("File uploaded")
+  }.getOrElse {
+    Redirect(routes.Application.index).flashing(
+      "error" -> "Missing file"
+    )
+  }
+}
+   /*Action(parse.multipartFormData) { request =>
+  request.body.file("picture").map { picture =>
+    import java.io.File
+    val filename = picture.filename 
+    val contentType = picture.contentType
+    picture.ref.moveTo(new File("/tmp/picture"))
+    Ok("File uploaded")
+  }.getOrElse {
+    Redirect(routes.Application.index).flashing(
+      "error" -> "Missing file"
+    )
+  }
+}*/
 }
