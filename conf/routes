@@ -5,6 +5,7 @@
 # Home page
 GET     /                                 controllers.Application.index
 
+
 # Users
 GET     /users                            controllers.Users.list
 GET     /users/by-country/:country        controllers.Users.listByCountry(country)
@@ -17,6 +18,7 @@ GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
 POST    /upload					          controllers.Files.upload
+POST   /uploadAjax								controllers.Files.uploadAjax
 POST    /reactiveUpload					  controllers.Files.reactiveUpload
 
 # Datasets
@@ -32,6 +34,12 @@ POST    /loginTest                        controllers.Authentication.loginSubmit
 
 # Search
 GET    /search                            controllers.Search.search(query: String ?= "")
+GET    /multimediasearch                  controllers.Search.multimediasearch
+GET    /advanced						  controllers.Search.advanced
+GET   /SearchByText						  controllers.Search.SearchByText
+POST /uploadquery						  controllers.Search.uploadquery	
+
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                     controllers.Assets.at(path="/public", file)
