@@ -3,10 +3,10 @@ package services
 import java.io.InputStream
 import play.Logger
 import org.bson.types.ObjectId
-import com.mongodb.casbah.gridfs.JodaGridFS
 import models.SocialUserDAO
 import models.FileDAO
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.gridfs.GridFS
 
 /**
  * Use GridFS to store blobs.
@@ -20,7 +20,7 @@ trait GridFSDB {
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String): String = {
-    val files = JodaGridFS(FileDAO.dao.collection.db, "uploads")
+    val files = GridFS(FileDAO.dao.collection.db, "uploads")
     val mongoFile = files.createFile(inputStream)
     Logger.info("Uploading file " + filename)
     mongoFile.filename = filename
@@ -33,7 +33,7 @@ trait GridFSDB {
    * Get blob.
    */
   def get(id: String): Option[(InputStream, String)] = {
-    val files = JodaGridFS(SocialUserDAO.dao.collection.db, "uploads")
+    val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
       case Some(file) => Some(file.inputStream, file.getAs[String]("filename").getOrElse("unknown-name"))
       case None => None
