@@ -79,3 +79,7 @@ GET     /admin/reindexFiles         controllers.Admin.reindexFiles
 
 # Javascript Endpoints
 GET     /javascriptRoutes           controllers.Application.javascriptRoutes
+
+# Rest API
+GET     /api/files                  api.Files.list
+GET     /api/files/:id              api.Files.get(id)

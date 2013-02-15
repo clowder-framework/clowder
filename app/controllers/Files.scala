@@ -40,7 +40,6 @@ object Files extends Controller with securesocial.core.SecureSocial {
       case Some(file) => Ok(views.html.file(file, id))
       case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
-    
   }
   
   /**
