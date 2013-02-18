@@ -18,17 +18,21 @@ import play.api.libs.json.JsValue
  */
 object Files extends Controller {
   
-  def get(id: String) = Action {
-    Logger.info("GET file with id " + id)    
-    Services.files.getFile(id) match {
-      case Some(file) => Ok(jsonFile(file))
-      case None => {Logger.error("Error getting file" + id); InternalServerError}
+  def get(id: String) = Authenticated { 
+    Action { implicit request =>
+	    Logger.info("GET file with id " + id)    
+	    Services.files.getFile(id) match {
+	      case Some(file) => Ok(jsonFile(file))
+	      case None => {Logger.error("Error getting file" + id); InternalServerError}
+	    }
     }
   }
   
-  def list = Action {
-    val list = for (f <- Services.files.listFiles()) yield jsonFile(f)
-    Ok(toJson(list))
+  def list = Authenticated {
+    Action {
+      val list = for (f <- Services.files.listFiles()) yield jsonFile(f)
+      Ok(toJson(list))
+    }
   }
   
   def jsonFile(file: File): JsValue = {
