@@ -37,7 +37,10 @@ GET    /search                            controllers.Search.search(query: Strin
 GET    /multimediasearch                  controllers.Search.multimediasearch
 GET    /advanced						  controllers.Search.advanced
 GET   /SearchByText						  controllers.Search.SearchByText
-POST /uploadquery						  controllers.Search.uploadquery	
+POST /uploadquery						  controllers.Search.uploadquery
+
+# Previewers
+GET    /previewers/list                   controllers.Previewers.list	
 
 
 
