@@ -64,16 +64,16 @@ object Files extends Controller with securesocial.core.SecureSocial {
       request.body.file("File").map { f =>        
         Logger.info("Uploading file " + f.filename)
         // store file
-        val id = Services.files.save(new FileInputStream(f.ref.file), f.filename)
-        // submit file for extraction
-        current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
-        // index file 
-        if (current.plugin[ElasticsearchPlugin].isDefined) {
-	        Services.files.getFile(id).foreach { file =>
-	          current.plugin[ElasticsearchPlugin].foreach{
-	            _.index("files","file",id,List(("filename",f.filename), 
-	              ("contentType", file.contentType)))}
-	        }
+        val id = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val file = Services.files.getFile(id)
+        file match {
+          case Some(x) => {
+            val key = "unknown." + x.contentType.replace("/", ".")
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, request.uri, key))}
+            current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",x.filename), ("contentType", x.contentType)))}
+          }
+          
+          case None => Logger.error("Could not retrieve file that was just saved.")
         }
         // redirect to file page
         Redirect(routes.Files.file(id))    
@@ -160,21 +160,22 @@ object Files extends Controller with securesocial.core.SecureSocial {
   def uploadAjax = Action(parse.temporaryFile) { request =>
     
     //val filename = "N/A"
-    val file = request.body.file
-    val filename=file.getName()
+    val f = request.body.file
+    val filename=f.getName()
     
     // store file
-    val id = Services.files.save(new FileInputStream(file.getAbsoluteFile()), filename)
-    // submit file for extraction
-    current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
-    // index file 
-    if (current.plugin[ElasticsearchPlugin].isDefined) {
-        Services.files.getFile(id).foreach { file =>
-          current.plugin[ElasticsearchPlugin].foreach{
-            _.index("files","file",id,List(("filename", filename), 
-              ("contentType", file.contentType)))}
-        }
+    val id = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None)
+    val file = Services.files.getFile(id)
+    file match {
+      case Some(x) => {
+        val key = "unknown." + x.contentType.replace("/", ".")
+        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, request.host, key))}
+        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",x.filename), ("contentType", x.contentType)))}
+      }
+      
+      case None => Logger.error("Could not retrieve file that was just saved.")
     }
+
     // redirect to file page
     Redirect(routes.Files.file(id))  
     Ok("File uploaded")
