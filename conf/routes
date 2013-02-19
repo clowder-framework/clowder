@@ -19,7 +19,7 @@ GET		/files/:id					      controllers.Files.file(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
 POST    /upload					          controllers.Files.upload
 POST   /uploadAjax								controllers.Files.uploadAjax
-POST    /reactiveUpload					  controllers.Files.reactiveUpload
+#POST    /reactiveUpload					  controllers.Files.reactiveUpload
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list

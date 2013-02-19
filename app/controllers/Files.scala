@@ -184,68 +184,68 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * Reactive file upload.
    */
-  def reactiveUpload = Action(BodyParser(rh => new SomeIteratee)) { request =>
-     Ok("Done")
-   }
+//  def reactiveUpload = Action(BodyParser(rh => new SomeIteratee)) { request =>
+//     Ok("Done")
+//   }
   
   /**
    * Iteratee for reactive file upload.
    * 
    * TODO Finish implementing. Right now it doesn't write to anything.
    */
- case class SomeIteratee(state: Symbol = 'Cont, input: Input[Array[Byte]] = Empty, 
-     received: Int = 0) extends Iteratee[Array[Byte], Either[Result, Int]] {
-   Logger.debug(state + " " + input + " " + received)
-
-//   val files = current.plugin[MongoSalatPlugin] match {
-//			  case None    => throw new RuntimeException("No MongoSalatPlugin");
-//			  case Some(x) =>  x.gridFS("uploads")
-//			}
+// case class SomeIteratee(state: Symbol = 'Cont, input: Input[Array[Byte]] = Empty, 
+//     received: Int = 0) extends Iteratee[Array[Byte], Either[Result, Int]] {
+//   Logger.debug(state + " " + input + " " + received)
 //
-//   val pos:PipedOutputStream = new PipedOutputStream();
-//   val pis:PipedInputStream  = new PipedInputStream(pos);
-//   val file = files(pis) { fh =>
-//     fh.filename = "test-file.txt"
-//     fh.contentType = "text/plain"
+////   val files = current.plugin[MongoSalatPlugin] match {
+////			  case None    => throw new RuntimeException("No MongoSalatPlugin");
+////			  case Some(x) =>  x.gridFS("uploads")
+////			}
+////
+////   val pos:PipedOutputStream = new PipedOutputStream();
+////   val pis:PipedInputStream  = new PipedInputStream(pos);
+////   val file = files(pis) { fh =>
+////     fh.filename = "test-file.txt"
+////     fh.contentType = "text/plain"
+////   }
+//			
+//   
+//   def fold[B](
+//     done: (Either[Result, Int], Input[Array[Byte]]) => Promise[B],
+//     cont: (Input[Array[Byte]] => Iteratee[Array[Byte], Either[Result, Int]]) => Promise[B],
+//     error: (String, Input[Array[Byte]]) => Promise[B]
+//   ): Promise[B] = state match {
+//     case 'Done => { 
+//       Logger.debug("Done with upload")
+////       pos.close()
+//       done(Right(received), Input.Empty) 
+//     }
+//     case 'Cont => cont(in => in match {
+//       case in: El[Array[Byte]] => {
+//         Logger.debug("Getting ready to write " +  in.e.length)
+//    	 try {
+////         pos.write(in.e)
+//    	 } catch {
+//    	   case error => Logger.error("Error writing to gridfs" + error.toString())
+//    	 }
+//    	 Logger.debug("Calling recursive function")
+//         copy(input = in, received = received + in.e.length)
+//       }
+//       case Empty => {
+//         Logger.debug("Empty")
+//         copy(input = in)
+//       }
+//       case EOF => {
+//         Logger.debug("EOF")
+//         copy(state = 'Done, input = in)
+//       }
+//       case _ => {
+//         Logger.debug("_")
+//         copy(state = 'Error, input = in)
+//       }
+//     })
+//     case _ => { Logger.error("Error uploading file"); error("Some error.", input) }
 //   }
-			
-   
-   def fold[B](
-     done: (Either[Result, Int], Input[Array[Byte]]) => Promise[B],
-     cont: (Input[Array[Byte]] => Iteratee[Array[Byte], Either[Result, Int]]) => Promise[B],
-     error: (String, Input[Array[Byte]]) => Promise[B]
-   ): Promise[B] = state match {
-     case 'Done => { 
-       Logger.debug("Done with upload")
-//       pos.close()
-       done(Right(received), Input.Empty) 
-     }
-     case 'Cont => cont(in => in match {
-       case in: El[Array[Byte]] => {
-         Logger.debug("Getting ready to write " +  in.e.length)
-    	 try {
-//         pos.write(in.e)
-    	 } catch {
-    	   case error => Logger.error("Error writing to gridfs" + error.toString())
-    	 }
-    	 Logger.debug("Calling recursive function")
-         copy(input = in, received = received + in.e.length)
-       }
-       case Empty => {
-         Logger.debug("Empty")
-         copy(input = in)
-       }
-       case EOF => {
-         Logger.debug("EOF")
-         copy(state = 'Done, input = in)
-       }
-       case _ => {
-         Logger.debug("_")
-         copy(state = 'Error, input = in)
-       }
-     })
-     case _ => { Logger.error("Error uploading file"); error("Some error.", input) }
-   }
- }
+// }
   
 }
