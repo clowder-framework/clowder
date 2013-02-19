@@ -8,7 +8,7 @@ import services.MongoSalatPlugin
 import java.util.Date
 
 case class Token(
-    id: String, 
+    id: ObjectId, 
     email: String, 
     creationTime: Date, 
     expirationTime: Date, 
