@@ -16,6 +16,7 @@ import securesocial.core.Identity
 import com.mongodb.casbah.commons.conversions.scala.{RegisterJodaTimeConversionHelpers, DeregisterJodaTimeConversionHelpers}
 import com.mongodb.casbah.commons.conversions.scala.RegisterConversionHelpers
 import org.joda.time.DateTime
+import java.util.UUID
 
 /**
  * SecureSocial implementation using MongoDB.
@@ -67,7 +68,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return A string with a uuid that will be embedded in the welcome email.
    */
   def save(token: Token) = {
-    TokenDAO.save(MongoToken(new ObjectId(token.uuid), token.email, token.creationTime.toDate, token.expirationTime.toDate, token.isSignUp))
+    TokenDAO.save(MongoToken(new ObjectId, token.uuid, token.email, token.creationTime.toDate, token.expirationTime.toDate, token.isSignUp))
   }
 
 
@@ -81,7 +82,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return
    */
   def findToken(token: String): Option[Token] = {
-    TokenDAO.findOneById(new ObjectId(token)) match {
+    TokenDAO.findByUUID(token) match {
       case Some(t) => Some(Token(t.id.toString, t.email, new DateTime(t.creationTime), new DateTime(t.expirationTime), t.isSignUp))
       case None => None
     }

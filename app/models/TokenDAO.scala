@@ -6,9 +6,11 @@ import MongoContext.context
 import play.api.Play.current
 import services.MongoSalatPlugin
 import java.util.Date
+import com.mongodb.casbah.Imports.MongoDBObject
 
 case class Token(
-    id: ObjectId, 
+    id: Object,
+    uuid: String,
     email: String, 
     creationTime: Date, 
     expirationTime: Date, 
@@ -23,4 +25,6 @@ object TokenDAO extends ModelCompanion[Token, ObjectId] {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Token, ObjectId](collection = x.collection("social.token")) {}
   }
+  
+  def findByUUID(uuid: String): Option[Token] = {dao.findOne(MongoDBObject("uuid"->uuid))}
 }
