@@ -18,7 +18,7 @@ abstract class FileService {
   /**
    * Save a file from an input stream.
    */
-  def save(inputStream: InputStream, filename: String): String
+  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String
   
   /**
    * Get the input stream of a file given a file id.
@@ -38,5 +38,5 @@ abstract class FileService {
   /**
    * Store file metadata.
    */
-  def storeFileMD(id: String, filename: String): String
+  def storeFileMD(id: String, filename: String, contentType: Option[String]): String
 }
