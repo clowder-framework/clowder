@@ -19,7 +19,7 @@ GET		/files/:id					      controllers.Files.file(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
 POST    /upload					          controllers.Files.upload
 POST   /uploadAjax								controllers.Files.uploadAjax
-POST    /reactiveUpload					  controllers.Files.reactiveUpload
+#POST    /reactiveUpload					  controllers.Files.reactiveUpload
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list
@@ -37,7 +37,10 @@ GET    /search                            controllers.Search.search(query: Strin
 GET    /multimediasearch                  controllers.Search.multimediasearch
 GET    /advanced						  controllers.Search.advanced
 GET   /SearchByText						  controllers.Search.SearchByText
-POST /uploadquery						  controllers.Search.uploadquery	
+POST /uploadquery						  controllers.Search.uploadquery
+
+# Previewers
+GET    /previewers/list                   controllers.Previewers.list	
 
 
 
@@ -83,3 +86,4 @@ GET     /javascriptRoutes           controllers.Application.javascriptRoutes
 # Rest API
 GET     /api/files                  api.Files.list
 GET     /api/files/:id              api.Files.get(id)
+GET     /api/files/:id/blob         api.Files.download(id)
