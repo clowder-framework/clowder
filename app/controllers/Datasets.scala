@@ -99,7 +99,9 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
 		    file match {
 		      case Some(x) => {
 		        val key = "unknown." + x.contentType.replace("/", ".")
-		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, request.host, key))}
+                // TODO RK : need figure out if we can use https
+                val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
 		        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",x.filename), ("contentType", x.contentType)))}
 
 	            // add file to dataset
