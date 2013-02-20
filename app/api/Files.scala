@@ -9,6 +9,7 @@ import services.Services
 import play.api.Logger
 import models.File
 import play.api.libs.json.JsValue
+import play.api.libs.iteratee.Enumerator
 
 /**
  * Json API for files.
@@ -32,6 +33,24 @@ object Files extends Controller {
     Action {
       val list = for (f <- Services.files.listFiles()) yield jsonFile(f)
       Ok(toJson(list))
+    }
+  }
+  
+    /**
+   * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+   */
+  def download(id: String) = Authenticated {
+    Action {
+	    Services.files.get(id) match {
+	      case Some((inputStream, filename)) => {
+	    	Ok.stream(Enumerator.fromStream(inputStream))
+	    	  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+	      }
+	      case None => {
+	        Logger.error("Error getting file" + id)
+	        NotFound
+	      }
+	    }
     }
   }
   
