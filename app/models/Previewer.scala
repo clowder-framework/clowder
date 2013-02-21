@@ -13,5 +13,6 @@ import java.util.Date
  */
 case class Previewer(
     id: String, 
-    url: String
+    path: String,
+    main: String
 )
