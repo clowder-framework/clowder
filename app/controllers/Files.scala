@@ -83,10 +83,6 @@ object Files extends Controller with securesocial.core.SecureSocial {
          BadRequest("File not attached.")
       }
   }
-  def upload1 = Action(parse.temporaryFile) { request =>
-  request.body.moveTo(new File("/tmp/picture.jpg"),true)
-  Ok("File uploaded")
-}
     
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding

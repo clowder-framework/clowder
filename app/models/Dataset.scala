@@ -22,7 +22,7 @@ case class Dataset (
   name: String = "N/A",
   description: String = "N/A",
   created: Date, 
-  files_id: List[File] = List.empty,
+  files: List[File] = List.empty,
   streams_id: List[ObjectId] = List.empty
 )
 

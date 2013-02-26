@@ -68,8 +68,9 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
    * Dataset.
    */
   def dataset(id: String) = Action {
+    Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
-      case Some(dataset) => Ok(views.html.dataset(dataset))
+      case Some(dataset) => Ok(views.html.dataset(dataset, Previewers.searchFileSystem))
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }
   }
@@ -96,6 +97,7 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
 	        // store file
 		    val id = Services.files.save(new FileInputStream(f.ref.file), f.filename, None)
 		    val file = Services.files.getFile(id)
+		    Logger.debug("Uploaded file id is " + id)
 		    file match {
 		      case Some(x) => {
 		        val key = "unknown." + x.contentType.replace("/", ".")
@@ -105,7 +107,8 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
 		        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",x.filename), ("contentType", x.contentType)))}
 
 	            // add file to dataset
-		        val dt = dataset.copy(files_id = List(x))
+		        val dt = dataset.copy(files = List(x))
+		        // TODO create a service instead of calling salat directly
 	            Dataset.save(dt)
 	            // redirect to file page
 	            Redirect(routes.Datasets.dataset(dt.id.toString))
@@ -113,6 +116,7 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
 		      
 		      case None => {
 		        Logger.error("Could not retrieve file that was just saved.")
+		        // TODO create a service instead of calling salat directly
 	            Dataset.save(dataset)
 	            // redirect to file page
 	            Redirect(routes.Datasets.dataset(dataset.id.toString))

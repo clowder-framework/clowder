@@ -1,3 +1,3 @@
-(function ($) {
-  alert("Some library is running!")
-}(jQuery));
+(function ($, Configuration) {
+  alert("Some library is running on " + Configuration.id);
+}(jQuery, Configuration));
