@@ -100,7 +100,8 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
 		    Logger.debug("Uploaded file id is " + id)
 		    file match {
 		      case Some(x) => {
-		        val key = "unknown." + x.contentType.replace("/", ".")
+		    	// TODO RK need to replace unknown with the server name
+		    	val key = "unknown." + "file."+ x.contentType.replace("/", ".")
                 // TODO RK : need figure out if we can use https
                 val host = "http://" + request.host + request.path.replaceAll("upload$", "")
 		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
@@ -110,6 +111,9 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
 		        val dt = dataset.copy(files = List(x))
 		        // TODO create a service instead of calling salat directly
 	            Dataset.save(dt)
+		    	// TODO RK need to replace unknown with the server name and dataset type
+		    	val dtkey = "unknown." + "dataset."+ "unknown"
+		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey))}
 	            // redirect to file page
 	            Redirect(routes.Datasets.dataset(dt.id.toString))
 		      }
