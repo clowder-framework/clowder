@@ -95,7 +95,7 @@ object Datasets extends Controller with SecureSocial {
         dataset.map { dataset =>
 	        Logger.info("Uploading file " + f.filename)
 	        // store file
-		    val id = Services.files.save(new FileInputStream(f.ref.file), f.filename, None)
+		    val id = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
 		    val file = Services.files.getFile(id)
 		    Logger.debug("Uploaded file id is " + id)
 		    file match {
