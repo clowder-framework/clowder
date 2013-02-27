@@ -18,8 +18,8 @@ GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
 POST    /upload					          controllers.Files.upload
-POST   /uploadAjax								controllers.Files.uploadAjax
-#POST    /reactiveUpload					  controllers.Files.reactiveUpload
+POST    /uploadAjax						  controllers.Files.uploadAjax
+#POST   /reactiveUpload					  controllers.Files.reactiveUpload
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list
@@ -27,6 +27,9 @@ GET     /datasets/new                     controllers.Datasets.newDataset
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
 POST    /dataset/createDataset            controllers.Datasets.createDataset
 POST    /dataset/submit                   controllers.Datasets.submit
+
+# Tags
+POST    /tags		                      controllers.Tags.tag
 
 # Authentication
 GET     /loginTest                        controllers.Authentication.login
@@ -36,20 +39,17 @@ POST    /loginTest                        controllers.Authentication.loginSubmit
 GET    /search                            controllers.Search.search(query: String ?= "")
 GET    /multimediasearch                  controllers.Search.multimediasearch
 GET    /advanced						  controllers.Search.advanced
-GET   /SearchByText						  controllers.Search.SearchByText
-POST /uploadquery						  controllers.Search.uploadquery
+GET    /SearchByText					  controllers.Search.SearchByText
+POST   /uploadquery						  controllers.Search.uploadquery
 
 # Previewers
 GET    /previewers/list                   controllers.Previewers.list	
-
-
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                     controllers.Assets.at(path="/public", file)
 
 # test json
 GET		/test						      controllers.Application.testJson
-
 
 ## SecureSocial ##
 
@@ -93,6 +93,6 @@ POST    /api/files/:id/previews/:p_id          api.Files.attachPreview(id, p_id)
 GET     /api/previews/:id               api.Previews.download(id)
 POST    /api/previews                   api.Previews.upload
 
-
+POST    /api/indexes                api.Indexes.index
 
 
