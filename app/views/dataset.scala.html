@@ -37,6 +37,7 @@
 			    <dt>Created:</dt>
 				<dd>@dataset.created</dd>
 			</dl>
+			
 		</div>
 		<div class="span6">
 		  <h5>Files</h5>
@@ -44,6 +45,47 @@
 			<div><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></div>
 			}
 		</div>
+	</div>
+	<div class="row-fluid">
+		<div class="span6">
+		</div>
+		<div class="span6">
+		    <h5>Tags</h5>
+			<ul id="tagList">
+				@dataset.tags.map { tag =>
+				  <li>@tag</li>
+				}
+			</ul>
+			<input type="text" placeholder="Text input" id="tagField">
+			<button class="btn" id="tagB">Tag</button>
+		</div>
+		<script language="javascript">
+		$(function() {
+		   $('#tagB').click(function() {
+		     var tag = $('#tagField').val();
+		     console.log("submitting tag " + tag);
+		     console.log("@routes.Tags.tag");
+		     
+		     var request = jsRoutes.controllers.Tags.tag().ajax({
+		       data: JSON.stringify({"id":"@dataset.id","tag":tag}),
+		       type: 'POST',
+		       contentType: "application/json",
+		     });
+		     
+		     request.done(function (response, textStatus, jqXHR){
+		        console.log("Response " + response);
+		        $('#tagList').append('<li>' + tag + '</li>');
+		     });
+    
+		     request.fail(function (jqXHR, textStatus, errorThrown){
+		        console.error(
+		            "The following error occured: "+
+		            textStatus, errorThrown
+		        );
+		     });
+		  });
+		 });
+	     </script>
 	</div>
 	<script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
 	@previewers.map { p =>

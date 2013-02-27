@@ -23,7 +23,8 @@ case class Dataset (
   description: String = "N/A",
   created: Date, 
   files: List[File] = List.empty,
-  streams_id: List[ObjectId] = List.empty
+  streams_id: List[ObjectId] = List.empty,
+  tags: List[String] = List.empty
 )
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {

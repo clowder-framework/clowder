@@ -121,11 +121,10 @@ object Files extends Controller {
       request.body match {
         case JsObject(fields) => {
           // TODO create a service instead of calling salat directly
-        FileDAO.findOneById(new ObjectId(file_id)) match { 
-          case Some(file) => {
+          FileDAO.findOneById(new ObjectId(file_id)) match { 
+            case Some(file) => {
 	              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
 	                case Some(preview) =>
-//	                    PreviewDAO.update(MongoDBObject("_id" -> preview_id), toDBObject(fields), false, false)
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	                    val result = PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), $set("metadata" -> metadata), false, false, WriteConcern.SAFE)
 	                    Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
@@ -133,11 +132,11 @@ object Files extends Controller {
 	                    Logger.debug("Updated object is " + update.previews)
 	                    FileDAO.save(update)
 	                    Ok(toJson(Map("status"->"success")))
-	                case None => BadRequest(toJson("Preview not"))
+	                case None => BadRequest(toJson("Preview not found"))
 	              }
-          }
-	      case None => BadRequest(toJson("File not found " + file_id))
-	    }
+            }
+	        case None => BadRequest(toJson("File not found " + file_id))
+	      }
         }
         case _ => Ok("received something else: " + request.body + '\n')
     }

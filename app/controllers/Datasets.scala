@@ -20,6 +20,7 @@ import org.bson.types.ObjectId
 import models.FileDAO
 import java.util.Date
 import services.ExtractorMessage
+import securesocial.core.SecureSocial
 
 /**
  * A dataset is a collection of files and streams.
@@ -27,7 +28,7 @@ import services.ExtractorMessage
  * @author Luigi Marini
  *
  */
-object Datasets extends Controller with securesocial.core.SecureSocial {
+object Datasets extends Controller with SecureSocial {
    
   /**
    * New dataset form.
@@ -74,7 +75,6 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }
   }
-  
   
   def upload = Action(parse.temporaryFile) { request =>
     request.body.moveTo(new File("/tmp/picture"))

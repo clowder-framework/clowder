@@ -3,7 +3,7 @@
 	Preview = root.Preview = {};
 	var Lifecycle = Preview.Lifecycle = {
 			onStart: function(callback) {
-				alert("Started plugin");
+				console.log("Started plugin");
 				callback;
 			}
 	}
