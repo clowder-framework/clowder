@@ -14,6 +14,7 @@ import play.api.libs.iteratee.Input.{El, EOF, Empty}
 import com.mongodb.casbah.gridfs.GridFS
 import akka.dispatch.ExecutionContext
 import scala.actors.Future
+import models.PreviewDAO
 
 /**
  * Manage files.
@@ -37,7 +38,10 @@ object Files extends Controller with securesocial.core.SecureSocial {
   def file(id: String) = Action {
     Logger.info("GET file with id " + id)    
     Services.files.getFile(id) match {
-      case Some(file) => Ok(views.html.file(file, id))
+      case Some(file) => {
+        val previews = PreviewDAO.findByFileId(file.id)
+        Ok(views.html.file(file, id, previews))
+      }
       case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
   }

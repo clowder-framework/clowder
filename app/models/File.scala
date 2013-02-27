@@ -21,8 +21,7 @@ case class File(
     path: Option[String] = None, 
     filename: String, 
     uploadDate: Date, 
-    contentType: String,
-    previews: List[Preview] = List.empty
+    contentType: String
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

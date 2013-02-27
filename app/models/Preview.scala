@@ -21,6 +21,7 @@ import com.mongodb.casbah.commons.MongoDBObject
  */
 case class Preview (
 	id: ObjectId = new ObjectId,
+	file_id: Option[String] = None,
 	filename: Option[String] = None,
 	contentType: Option[String] = None
 )
@@ -29,6 +30,10 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Preview, ObjectId](collection = x.collection("previews.files")) {}
+  }
+  
+  def findByFileId(id: ObjectId): List[Preview] = {
+    dao.find(MongoDBObject("file_id"->id)).toList
   }
   
     /**

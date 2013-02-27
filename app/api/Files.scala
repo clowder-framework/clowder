@@ -23,7 +23,6 @@ import services.RabbitmqPlugin
 import services.ExtractorMessage
 import services.ElasticsearchPlugin
 import play.api.libs.json.JsObject
-import com.mongodb.DBObject
 import play.api.libs.json.JsArray
 
 /**
@@ -126,11 +125,9 @@ object Files extends Controller {
 	              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
 	                case Some(preview) =>
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-	                    val result = PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), $set("metadata" -> metadata), false, false, WriteConcern.SAFE)
+	                    val result = PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), 
+	                        $set("metadata" -> metadata, "file_id"->new ObjectId(file_id)), false, false, WriteConcern.SAFE)
 	                    Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
-	                    val update = file.copy(previews = preview :: file.previews)
-	                    Logger.debug("Updated object is " + update.previews)
-	                    FileDAO.save(update)
 	                    Ok(toJson(Map("status"->"success")))
 	                case None => BadRequest(toJson("Preview not found"))
 	              }

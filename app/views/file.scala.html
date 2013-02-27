@@ -1,4 +1,4 @@
-@(file: models.File, id: String) 
+@(file: models.File, id: String, previews: List[models.Preview]) 
 
 @main("File") {
 	<div class="page-header">
@@ -30,7 +30,7 @@
 					<div class="accordion-inner">@file</div>
 					<div class="accordion-inner">Previews:
 					<ul>
-					@file.previews.map { p =>
+					@previews.map { p =>
 						<li><a href="@api.routes.Previews.download(p.id.toString)?key=letmein">@p.filename</a></li>
 					}
 					</ul>
