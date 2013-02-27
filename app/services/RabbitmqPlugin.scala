@@ -36,6 +36,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       factory.setHost(host);
       val connection: Connection = factory.newConnection()
       val sendingChannel = connection.createChannel()
+      sendingChannel.exchangeDeclare(exchange, "topic", true)
       messageQueue =  Some(Akka.system.actorOf(Props(new SendingActor(channel = sendingChannel, exchange = exchange))))
     } catch {
       case ioe: java.io.IOException => Logger.error("Error connecting to rabbitmq broker")
