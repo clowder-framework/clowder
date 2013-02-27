@@ -103,7 +103,7 @@ object Datasets extends Controller with SecureSocial {
 		    	// TODO RK need to replace unknown with the server name
 		    	val key = "unknown." + "file."+ x.contentType.replace("/", ".")
                 // TODO RK : need figure out if we can use https
-                val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
 		        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",x.filename), ("contentType", x.contentType)))}
 
