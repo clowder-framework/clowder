@@ -8,6 +8,8 @@ import models.SocialUserDAO
 import models.FileDAO
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFS
+import models.File
+import com.mongodb.casbah.WriteConcern
 
 /**
  * Use GridFS to store blobs.
@@ -20,11 +22,13 @@ trait GridFSDB {
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[File] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploads")
     }
+    
+    
     val mongoFile = files.createFile(inputStream)
     Logger.info("Uploading file " + filename)
     mongoFile.filename = filename
@@ -34,7 +38,17 @@ trait GridFSDB {
     }
     mongoFile.contentType = ct
     mongoFile.save
-    mongoFile.getAs[ObjectId]("_id").get.toString
+    val oid = mongoFile.getAs[ObjectId]("_id").get
+    
+    // FIXME Figure out why SalatDAO has a race condition with gridfs
+//    Logger.debug("FILE ID " + oid)
+//    val file = FileDAO.findOne(MongoDBObject("_id" -> oid))
+//    file match {
+//      case Some(id) => Logger.debug("FILE FOUND")
+//      case None => Logger.error("NO FILE!!!!!!")
+//    }
+    
+    Some(File(oid, None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get))
   }
 
   /**

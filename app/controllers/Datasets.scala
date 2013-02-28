@@ -95,20 +95,20 @@ object Datasets extends Controller with SecureSocial {
         dataset.map { dataset =>
 	        Logger.info("Uploading file " + f.filename)
 	        // store file
-		    val id = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-		    val file = Services.files.getFile(id)
-		    Logger.debug("Uploaded file id is " + id)
+		    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+		    Logger.debug("Uploaded file id is " + file.get.id)
 		    file match {
-		      case Some(x) => {
+		      case Some(f) => {
 		    	// TODO RK need to replace unknown with the server name
-		    	val key = "unknown." + "file."+ x.contentType.replace("/", ".")
+		    	val key = "unknown." + "file."+ f.contentType.replace("/", ".")
                 // TODO RK : need figure out if we can use https
                 val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
+                val id = f.id.toString
 		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
-		        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",x.filename), ("contentType", x.contentType)))}
+		        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 
 	            // add file to dataset
-		        val dt = dataset.copy(files = List(x))
+		        val dt = dataset.copy(files = List(f))
 		        // TODO create a service instead of calling salat directly
 	            Dataset.save(dt)
 		    	// TODO RK need to replace unknown with the server name and dataset type

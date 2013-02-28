@@ -25,7 +25,7 @@ trait FileSystemDB {
   /**
    * Save a file to the file system and store metadata about it in Mongo.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[models.File] = {
     Play.current.configuration.getString("files.path") match {
       case Some(path) => {
         val id = UUID.randomUUID().toString()
@@ -43,7 +43,7 @@ trait FileSystemDB {
       }
       case None => {
         Logger.error("Could not store file on disk")
-        "ERROR"
+        None
       }
     }
   }

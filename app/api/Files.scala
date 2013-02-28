@@ -78,21 +78,24 @@ object Files extends Controller {
       request.body.file("File").map { f =>        
         Logger.info("Uploading file " + f.filename)
         // store file
-        val id = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-        val file = Services.files.getFile(id)
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         file match {
-          case Some(x) => {
-            val key = "unknown." + x.contentType.replace("/", ".")
+          case Some(f) => {
+            val key = "unknown." + f.contentType.replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-//            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
-//            current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",x.filename), ("contentType", x.contentType)))}
+            val id = f.id.toString
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+            }
+            Ok(toJson(Map("id"->id)))   
           }
-          
-          case None => Logger.error("Could not retrieve file that was just saved.")
+          case None => {
+            Logger.error("Could not retrieve file that was just saved.")
+            InternalServerError("Error uploading file")
+          }
         }
-        // redirect to file page
-        Ok(toJson(Map("id"->id)))   
       }.getOrElse {
          BadRequest(toJson("File not attached."))
       }

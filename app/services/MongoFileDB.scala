@@ -38,7 +38,7 @@ trait MongoFileDB {
   /**
    * Store file metadata.
    */
-  def storeFileMD(id: String, filename: String, contentType: Option[String]): String = {
+  def storeFileMD(id: String, filename: String, contentType: Option[String]): Option[File] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploads")
@@ -52,6 +52,16 @@ trait MongoFileDB {
     mongoFile.contentType = ct
     mongoFile.put("path", id)
     mongoFile.save
-    mongoFile.getAs[ObjectId]("_id").get.toString
+    val oid = mongoFile.getAs[ObjectId]("_id").get
+    
+    // FIXME Figure out why SalatDAO has a race condition with gridfs
+//    Logger.debug("FILE ID " + oid)
+//    val file = FileDAO.findOne(MongoDBObject("_id" -> oid))
+//    file match {
+//      case Some(id) => Logger.debug("FILE FOUND")
+//      case None => Logger.error("NO FILE!!!!!!")
+//    }
+    
+    Some(File(oid, None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get))
   }
 }
