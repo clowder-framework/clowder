@@ -1,22 +1,48 @@
 @(dataset: models.Dataset, previewers: Array[Previewer]) 
 
 @main("Dataset") {
+
+    <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
+    
 	<div class="page-header">
 		<h1>@dataset.name</h1>
 	</div>
 	<div class="row-fluid">
-		<div class="span12">
+		
+		<div class="span8">
 			<div class="tabbable">
 				<ul class="nav nav-pills" id="myTab">
-				@previewers.map { p =>
-			  		<li class=""><a href="#previewer_@p.id" data-toggle="tab">@p.id</a></li>
-			    }
+				@dataset.files.map { f =>
+					@if(f.contentType.equals("image/jpeg")){
+					<li class=""><a href="#previewer_Thumbnail" data-toggle="tab">Thumbnail</a></li>
+					}
+				}
+				@dataset.files.map { f =>
+					@previewers.map { p =>
+						@if(p.contentType.contains(f.contentType)) {
+				  		<li class=""><a href="#previewer_@p.id" data-toggle="tab">@p.id</a></li>
+				  		}
+				    }
+				}
 				</ul>
 				<div class="tab-content">
-				@previewers.map { p =>
-    				<div class="tab-pane" id="previewer_@p.id">
-      				<p>@p.id</p>
-    				</div>
+				@dataset.files.map { f =>
+					@if(f.contentType.equals("image/jpeg")){
+					<img src="@routes.Files.file(f.id.toString)/blob" class="img-polaroid" width="500px"></img>
+					}
+				}
+				@dataset.files.map { f =>
+					@previewers.map { p =>
+						@if(p.contentType.contains(f.contentType)) {
+    					<div class="tab-pane" id="previewer_@p.id"></div>
+    					<script>
+							var Configuration = {};
+							Configuration.id = "@dataset.id";
+							Configuration.url = "@routes.Files.file(dataset.files(0).id.toString)" + "/blob";
+						</script>
+						<script type="text/javascript" src="@(routes.Assets.at(p.path) + "/" + p.main)"></script>
+				  		}
+				  	}
     			}
 	  			</div>
 			</div>
@@ -26,74 +52,64 @@
  				 })
 			</script>
 		</div>
-	</div>
-	<div class="row-fluid">
-		<div class="span6">
-			<dl class="dl-horizontal">
-				<dt>Name:</dt>
-				<dd>@dataset.name</dd>
-				<dt>Description:</dt>
-				<dd>@dataset.description</dd>
-			    <dt>Created:</dt>
-				<dd>@dataset.created</dd>
-			</dl>
+		
+		<div class="span4">
+		    <div class="row">
+				<dl>
+					<dt>Name:</dt>
+					<dd>@dataset.name</dd>
+					<dt>Description:</dt>
+					<dd>@dataset.description</dd>
+				    <dt>Created:</dt>
+					<dd>@dataset.created</dd>
+				</dl>
+			</div>
 			
-		</div>
-		<div class="span6">
-		  <h5>Files</h5>
-			@dataset.files.map { file =>
-			<div><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></div>
-			}
-		</div>
-	</div>
-	<div class="row-fluid">
-		<div class="span6">
-		</div>
-		<div class="span6">
-		    <h5>Tags</h5>
-			<ul id="tagList">
-				@dataset.tags.map { tag =>
-				  <li>@tag</li>
+			<div class="row">
+				<h5>Files</h5>
+				@dataset.files.map { file =>
+				<div><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a></div>
 				}
-			</ul>
-			<input type="text" placeholder="Text input" id="tagField">
-			<button class="btn" id="tagB">Tag</button>
+			</div>
+			
+			<div class="row">
+				<h5>Tags</h5>
+				<ul id="tagList">
+					@dataset.tags.map { tag =>
+					  <li>@tag</li>
+					}
+				</ul>
+				<input type="text" placeholder="Text input" id="tagField">
+				<button class="btn" id="tagB">Tag</button>
+				<script language="javascript">
+				$(function() {
+				   $('#tagB').click(function() {
+				     var tag = $('#tagField').val();
+				     console.log("submitting tag " + tag);
+				     console.log("@routes.Tags.tag");
+				     
+				     var request = jsRoutes.controllers.Tags.tag().ajax({
+				       data: JSON.stringify({"id":"@dataset.id","tag":tag}),
+				       type: 'POST',
+				       contentType: "application/json",
+				     });
+				     
+				     request.done(function (response, textStatus, jqXHR){
+				        console.log("Response " + response);
+				        $('#tagList').append('<li>' + tag + '</li>');
+				     });
+		    
+				     request.fail(function (jqXHR, textStatus, errorThrown){
+				        console.error(
+				            "The following error occured: "+
+				            textStatus, errorThrown
+				        );
+				     });
+				  });
+				 });
+			     </script>
+			</div>
 		</div>
-		<script language="javascript">
-		$(function() {
-		   $('#tagB').click(function() {
-		     var tag = $('#tagField').val();
-		     console.log("submitting tag " + tag);
-		     console.log("@routes.Tags.tag");
-		     
-		     var request = jsRoutes.controllers.Tags.tag().ajax({
-		       data: JSON.stringify({"id":"@dataset.id","tag":tag}),
-		       type: 'POST',
-		       contentType: "application/json",
-		     });
-		     
-		     request.done(function (response, textStatus, jqXHR){
-		        console.log("Response " + response);
-		        $('#tagList').append('<li>' + tag + '</li>');
-		     });
-    
-		     request.fail(function (jqXHR, textStatus, errorThrown){
-		        console.error(
-		            "The following error occured: "+
-		            textStatus, errorThrown
-		        );
-		     });
-		  });
-		 });
-	     </script>
+		
 	</div>
-	<script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
-	@previewers.map { p =>
-		<script>
-			var Configuration = {};
-			Configuration.id = "@dataset.id";
-			Configuration.bytes = "@routes.Files.file(dataset.id.toString)"
-		</script>
-		<script type="text/javascript" src="@(routes.Assets.at(p.path) + "/" + p.main)"></script>
-	}
 }

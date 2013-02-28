@@ -14,5 +14,6 @@ import java.util.Date
 case class Previewer(
     id: String, 
     path: String,
-    main: String
+    main: String,
+    contentType: List[String]
 )

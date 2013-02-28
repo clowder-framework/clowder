@@ -34,7 +34,11 @@ object Previewers extends Controller with SecureSocial {
 	      if file.getName() == "package.json"
 	  ) yield {
 	      val json = Json.parse(Source.fromFile(file).mkString)
-	       Previewer((json \ "name").as[String], prefix + dir.getName(), (json \ "main").as[String])
+	      Previewer((json \ "name").as[String], 
+	          prefix + dir.getName(), 
+	          (json \ "main").as[String],
+	          (json \ "contentType").as[List[String]]
+	      )
 	  }
   }
 }
