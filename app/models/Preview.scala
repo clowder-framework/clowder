@@ -22,6 +22,8 @@ import com.mongodb.casbah.commons.MongoDBObject
 case class Preview (
 	id: ObjectId = new ObjectId,
 	file_id: Option[String] = None,
+	section_id: Option[String] = None,
+	dataset_id: Option[String] = None,
 	filename: Option[String] = None,
 	contentType: Option[String] = None
 )

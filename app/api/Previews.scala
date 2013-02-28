@@ -38,7 +38,7 @@ object Previews extends Controller {
   }
   
   /**
-   * Upload a preview preview and attach it to a file.
+   * Upload a preview.
    */  
   def upload() = Authenticated {
     Action(parse.multipartFormData) { implicit request =>

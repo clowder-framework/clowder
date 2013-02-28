@@ -42,7 +42,7 @@ object Indexes extends Controller {
                 listBuilder += featureBuilder.result
             }
             builder += "features" -> listBuilder.result
-            Logger.debug("Features doc " + mFeatures.id + " updated: " + builder.result)
+            Logger.debug("Features doc " + mFeatures.id + " updated")
             MultimediaFeaturesDAO.update(MongoDBObject("_id" -> mFeatures.id), builder.result, false, false, WriteConcern.Safe)
             Ok(toJson(Map("id"->mFeatures.id.toString)))
           }

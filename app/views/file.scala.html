@@ -1,4 +1,4 @@
-@(file: models.File, id: String, previews: List[models.Preview]) 
+@(file: models.File, id: String, previews: List[models.Preview], sections: List[models.Section]) 
 
 @main("File") {
 	<div class="page-header">
@@ -29,11 +29,18 @@
 				<div id="collapseOne" class="accordion-body collapse">
 					<div class="accordion-inner">@file</div>
 					<div class="accordion-inner">Previews:
-					<ul>
-					@previews.map { p =>
-						<li><a href="@api.routes.Previews.download(p.id.toString)?key=letmein">@p.filename</a></li>
-					}
-					</ul>
+						<ul>
+						@previews.map { p =>
+							<li>@p <a href="@api.routes.Previews.download(p.id.toString)?key=letmein">@p.filename</a></li>
+						}
+						</ul>
+					</div>
+					<div class="accordion-inner">Sections:
+						<ul>
+						@sections.map { s =>
+							<li>@s</li>
+						}
+						</ul>
 					</div>
 				</div>
 			</div>

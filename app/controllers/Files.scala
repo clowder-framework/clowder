@@ -15,6 +15,7 @@ import com.mongodb.casbah.gridfs.GridFS
 import akka.dispatch.ExecutionContext
 import scala.actors.Future
 import models.PreviewDAO
+import models.SectionDAO
 
 /**
  * Manage files.
@@ -40,7 +41,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
     Services.files.getFile(id) match {
       case Some(file) => {
         val previews = PreviewDAO.findByFileId(file.id)
-        Ok(views.html.file(file, id, previews))
+        val sections = SectionDAO.findByFileId(file.id)
+        Ok(views.html.file(file, id, previews, sections))
       }
       case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
