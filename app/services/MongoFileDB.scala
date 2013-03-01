@@ -2,8 +2,7 @@ package services
 
 import java.io.InputStream
 import models.File
-import com.mongodb.casbah.MongoConnection
-import com.mongodb.casbah.gridfs.JodaGridFS
+import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import org.bson.types.ObjectId
 import com.mongodb.DBObject
@@ -12,6 +11,7 @@ import play.Logger
 import play.api.Play.current
 import com.mongodb.casbah.gridfs.JodaGridFSDBFile
 import models.FileDAO
+import java.text.SimpleDateFormat
 
 /**
  * Access file metedata from MongoDB.
@@ -26,6 +26,34 @@ trait MongoFileDB {
    */
   def listFiles(): List[File] = {
     (for (file <- FileDAO.find(MongoDBObject())) yield file).toList
+  }
+  
+  /**
+   * List files after a specified date.
+   */
+  def listFilesAfter(date: String, limit: Int): List[File] = {
+    val order = MongoDBObject("uploadDate"-> -1)
+    if (date == "") {
+      FileDAO.findAll.sort(order).limit(limit).toList
+    } else {
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
+      Logger.info("After " + sinceDate)
+      FileDAO.find("uploadDate" $lt sinceDate).sort(order).limit(limit).toList
+    }
+  }
+  
+    /**
+   * List files before a specified date.
+   */
+  def listFilesBefore(date: String, limit: Int): List[File] = {
+    val order = MongoDBObject("uploadDate"-> -1)
+    if (date == "") {
+      FileDAO.findAll.sort(order).limit(limit).toList
+    } else {
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
+      Logger.info("Before " + sinceDate)
+      FileDAO.find("uploadDate" $gt sinceDate).sort(order).limit(limit).toList
+    }
   }
 
   /**

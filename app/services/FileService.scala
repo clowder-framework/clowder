@@ -31,6 +31,16 @@ abstract class FileService {
   def listFiles(): List[File]
   
   /**
+   * List files after a specified date.
+   */
+  def listFilesAfter(date: String, limit: Int): List[File]
+  
+    /**
+   * List files before a specified date.
+   */
+  def listFilesBefore(date: String, limit: Int): List[File]
+  
+  /**
    * Get file metadata.
    */
   def getFile(id: String): Option[File]

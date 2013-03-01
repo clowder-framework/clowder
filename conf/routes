@@ -13,7 +13,7 @@ GET     /users/create/:username           controllers.Users.create(username)
 GET     /users/view/:id                   controllers.Users.view(id)
 
 # Files
-GET		/files					          controllers.Files.list
+GET		/files					          controllers.Files.list(when: String ?= "b", date: String ?= "", size: Int ?= 11)
 GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 GET		/files/:id/blob			          controllers.Files.download(id)

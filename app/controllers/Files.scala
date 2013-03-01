@@ -16,6 +16,8 @@ import akka.dispatch.ExecutionContext
 import scala.actors.Future
 import models.PreviewDAO
 import models.SectionDAO
+import java.text.SimpleDateFormat
+import views.html.defaultpages.badRequest
 
 /**
  * Manage files.
@@ -49,11 +51,28 @@ object Files extends Controller with securesocial.core.SecureSocial {
   }
   
   /**
-   * List files.
+   * List a specific number of files before or after a certain date.
    */
-  def list() = Action {
-    Services.files.listFiles().map(f => Logger.debug(f.toString))
-    Ok(views.html.filesList(Services.files.listFiles()))
+  def list(when: String, date: String, limit: Int) = Action {
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+    var prev, next = ""
+    var files = List.empty[models.File]
+    if (when == "b") {
+	    files = Services.files.listFilesBefore(date, limit)
+    } else if (when == "a") {
+    	files = Services.files.listFilesAfter(date, limit)
+    } else {
+      badRequest
+    }
+    if (files.size > 0) {
+      if (date != "") { // show prev button
+    	prev = formatter.format(files.head.uploadDate)
+      }
+      if (files.size == limit) { // show next button
+    	next = formatter.format(files.last.uploadDate)
+      }
+    }
+    Ok(views.html.filesList(files, prev, next, limit))
   }
    
   /**
