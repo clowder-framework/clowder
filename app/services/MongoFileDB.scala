@@ -71,6 +71,10 @@ trait MongoFileDB {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploads")
     }
+    
+    // required to avoid race condition on save
+    files.db.setWriteConcern(WriteConcern.Safe)
+    
     val mongoFile = files.createFile(Array[Byte]())
     mongoFile.filename = filename
     var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)

@@ -28,6 +28,8 @@ trait GridFSDB {
       case Some(x) =>  x.gridFS("uploads")
     }
     
+    // required to avoid race condition on save
+    files.db.setWriteConcern(WriteConcern.Safe)
     
     val mongoFile = files.createFile(inputStream)
     Logger.info("Uploading file " + filename)
