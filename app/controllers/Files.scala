@@ -126,12 +126,11 @@ object Files extends Controller with securesocial.core.SecureSocial {
            InternalServerError("Error uploading file")
          }
         }
-             }.getOrElse {
+      }.getOrElse {
          BadRequest("File not attached.")
       }
   }
-  
-      
+
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
@@ -246,32 +245,31 @@ object Files extends Controller with securesocial.core.SecureSocial {
   
   
   def uploadAjax = Action(parse.temporaryFile) { request =>
-    
-   // val filename = "N/A"
+
     val f = request.body.file
     val filename=f.getName()
     
     // store file
-    		val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None)
-    	    file match {
-    	      case Some(f) => {
-    	        // TODO RK need to replace unknown with the server name
-    	        val key = "unknown." + "file."+ f.contentType.replace("/", ".")
-    	        // TODO RK : need figure out if we can use https
-    	        val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-    	        val id = f.id.toString
-    	        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
-    	        current.plugin[ElasticsearchPlugin].foreach{
-    	          _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
-    	        }
-    	        // redirect to file page
-    	        Redirect(routes.Files.file(f.id.toString))  
-    	      }
-    	      case None => {
-    	        Logger.error("Could not retrieve file that was just saved.")
-    	        InternalServerError("Error uploading file")
-    	      }
-    	    }
+    val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None)
+    file match {
+      case Some(f) => {
+        // TODO RK need to replace unknown with the server name
+        val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+        // TODO RK : need figure out if we can use https
+        val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+        val id = f.id.toString
+        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+        current.plugin[ElasticsearchPlugin].foreach{
+          _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+        }
+        // redirect to file page
+        Redirect(routes.Files.file(f.id.toString))  
+      }
+      case None => {
+        Logger.error("Could not retrieve file that was just saved.")
+        InternalServerError("Error uploading file")
+      }
+    }
   }
   
   /**

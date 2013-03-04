@@ -10,7 +10,6 @@ import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
 import models.MultimediaFeaturesDAO
 import play.api.Logger
-//import api.Authenticated
 import play.api.libs.json.Json
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsNumber

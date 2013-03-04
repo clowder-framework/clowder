@@ -10,16 +10,14 @@
 					<th>Name</th>
 					<th>Type</th>
 					<th>Uploaded</th>
-					<th> Find Similar</th>
 				</tr>
 			</thead>
 			<tbody>
 				@files.map { file =>
 					<tr>
-						<td><a href="@(routes.Files.file(file.id.toString))">@file.filename</a>	</td>
+						<td><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></td>
 						<td>@(if(file.contentType != null) file.contentType else "N/A")</td>
 						<td>@file.uploadDate</td>
-						<td><a href="@(routes.Files.findSimilar(file.id.toString))" >Find Similar</a></td>
 					</tr>
 				}
 			</tbody>

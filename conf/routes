@@ -33,6 +33,9 @@ POST    /dataset/submit                   controllers.Datasets.submit
 # Tags
 POST    /tags		                      controllers.Tags.tag
 
+# Tags
+POST    /tags		                      controllers.Tags.tag
+
 # Authentication
 GET     /loginTest                        controllers.Authentication.login
 POST    /loginTest                        controllers.Authentication.loginSubmit
@@ -41,12 +44,12 @@ POST    /loginTest                        controllers.Authentication.loginSubmit
 GET   	 /search                            controllers.Search.search(query: String ?= "")
 GET    	 /multimediasearch                  controllers.Search.multimediasearch
 #GET     /multimediaserach1                 controllers.Search.multimediasearch1(f,id)
-GET      /advanced						  controllers.Search.advanced
-GET      /SearchByText						  controllers.Search.SearchByText(query: String ?= "")
-POST  	 /uploadquery						  controllers.Search.uploadquery	
-GET   /searchbyURL                        controllers.Search.searchbyURL(query:String?="")
-GET   /Filterby                           controllers.Search.Filterby(id)
-
+GET      /advanced						    controllers.Search.advanced
+GET      /SearchByText						controllers.Search.SearchByText(query: String ?= "")
+POST  	 /uploadquery						controllers.Search.uploadquery	
+GET      /searchbyURL                       controllers.Search.searchbyURL(query:String?="")
+GET      /Filterby                          controllers.Search.Filterby(id)
+ 
 # Previewers
 GET    /previewers/list                   controllers.Previewers.list	
 
