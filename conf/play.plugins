@@ -1,4 +1,3 @@
-
 9996:services.RabbitmqPlugin
 700:services.MongoSalatPlugin
 1500:com.typesafe.plugin.CommonsMailerPlugin

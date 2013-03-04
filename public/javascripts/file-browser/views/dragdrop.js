@@ -42,7 +42,7 @@ output.push('<table id="inputTable" class="table table-bordered table-striped" s
 						      	//'<td id="'+escape(f.name)+'"><center><i class="icon-remove"></center></td>',
 						      	'</tr>');
 				    	//fd.append(f.name,f);
-	//UploadFile(f);
+	UploadFile(f);
 				    	//console.log("fileSelectHandlefileUploaded[]:",fileUploaded[i]);
 //	}
 	output.push('</table>');
@@ -51,10 +51,16 @@ output.push('<table id="inputTable" class="table table-bordered table-striped" s
 	tableinsert('list',output);
 	//console.log(evt.dataTransfer.getData('File'));
 	//f=evt.dataTransfer.getData('File');
-	console.log("file object",f,"f.name",f.name);
+	//console.log("file object",f,"f.name",f.name);
 	//this.innerHTML += '<p>' + evt.dataTransfer.getData('File') + '</p>';
-	this.innerHTML += '<p>' + f + '</p>';
-  	fileNum  = files.length;
+	//this.innerHTML += '<p>' + f.name + '</p>';
+	//UploadFile(f);
+	
+	
+	//this.innerHTML+='<input type="file" name="picture1" "hidden">';
+	
+  	
+	fileNum  = files.length;
   	fileList = files;
   					    
  }
@@ -69,11 +75,15 @@ function UploadFile(file) {
 			xhr.addEventListener('readystatechange', function completionhandler(evt) {
 			onreadystatechangeHandler(file,evt)
 			console.log("File xhr Upload: " + file.name);
+			
 			},false);
 		//xhr.setRequestHeader("X_FILENAME", file.name);
 		fd=new FormData();
-		fd.append(file.name,file);
-		xhr.open("POST", "http://localhost:9000/upload1", true);
+		//var File=file;
+		fd.append("File",file);
+		xhr.open("POST", "http://localhost:9000/uploaddnd", true);
+		//xhr.setRequestHeader("Content-type","multipart/form-data");
+		console.log("File ready to send ...");
 		xhr.send(fd);
 		//xhr.send(file);
 	}
@@ -85,7 +95,7 @@ function UploadFile(file) {
 function onreadystatechangeHandler(file,evt){
  var status = 0;
  var readyState=0;
- //console.log("File name: " + evt.name);
+ //console.log("File name: " + file.name);
  try {
    status = evt.target.status;
    readyState=evt.target.readyState;
@@ -96,30 +106,64 @@ function onreadystatechangeHandler(file,evt){
  
  if (readyState==4){
 	  if(status == 200) {
-	  console.log(evt.target.responseText);
+	  	  
+	 // console.log(evt.target.responseText.id);
 	  //fileUploaded.push(evt.target.responseText);
 	  //Output(evt.target.responseText,"result");
 	  console.log("File: " + file.name);
-	  /*var obj=new Object();
-	  obj.name=file.name;
-	  obj.url="http://localhost:9000/uploadquery"+evt.target.responseText;
-	  xMap.push(obj);
-	  console.log("fileUploaded response",fileUploaded[fileUploaded.length-1]);
-	  console.log("fileUploaded responseLength:",fileUploaded.length);
- //  var result = document.getElementById('result');
-  // result.innerHTML = '<p>The server saw it as:</p><pre>' + evt.target.responseText + '</pre>';
-  
-	    if ((fileNum+dfileNum)==fileUploaded.length){
-	    	for(var i=0;i<fileUploaded.length;i++)
-	    		{
-	    		console.log("Object map: X[].name",xMap[i].name,"X[].url=",xMap[i].url);
-	    		//Init1();
-	    		}
-			 
-			}*/
-       }
+	  var id=evt.target.responseText;
+	  window.location.href=	"http://localhost:9000/files/"+id;
+	
+	  
+	  // var xhr1 = new XMLHttpRequest();
+	//  xhr1.addEventListener('readystatechange', function completionhandler1(evt,id) {
+	//		redirect(evt,id)
+			//console.log("File xhr Upload: " + file.name);
+			//	},false);
+	  
+	   // xhr1.open("GET", "http://localhost:9000/files/"+id, true);
+	  //  xhr1.send();
+	  
+	  
+	  
+	//this.innerHTML+evt.target.responseText;
+	  //newwindow=window.open('writeToThisPage.html');
+
+	    // newwindow.document.write(evt.target.responseText);
+	     //this.document.write(evt.target.responseText);
+	     
+	    // newwindow.document.close();
+
+	   //  window.open('writeToThisPage.html');
+	  // result.innerHTML = '<p>The server saw it as:</p><pre>' + evt.target.responseText + '</pre>';
+       
+	   }
 
    }
+ 
+ /*function redirect(evt,id){
+	 var status = 0;
+	 var readyState=0;
+	 //console.log("File name: " + file.name);
+	 try {
+	   status = evt.target.status;
+	   readyState=evt.target.readyState;
+	 }
+	 catch(e) {
+	   return;
+	 }
+	 
+	 if (readyState==4){
+		  if(status == 200) {
+			  console.log(window.location.pathname);
+			 // window.location.pathname="/files/"+id; 
+				//  console.log(window.location.pathname);
+			  window.location.href=	"http://localhost:9000/files/"+id;
+			  //this.document.write(evt.target.responseText);
+		  }
+		  }
+	 }*/
+ 
 }
 
 

@@ -12,14 +12,15 @@
 <div class="row-fluid">
 	<div class="span12">
 		
-			@form(action = routes.Search.SearchByText, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+	<!-- 		@form(action = routes.Search.SearchByText(""), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 					<legend>Search by Text</legend>
-					<input type="text" placeholder="Type your keywords">
+					<input type="text" placeholder="Type your keywords" name="query">
 					<div class="form-actions">
           <input type="submit" class="btn btn-primary" value="Search"/>
+          </form>
         </div>
 					
-			}
+			}-->
 <br>
 <br>
  @form(action = routes.Files.upload, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
@@ -31,20 +32,23 @@
           <input type="submit" class="btn btn-primary" value="Search"/>
         </div>
 	  }
-	  @form(action = routes.Files.uploadAjax, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 	  
-	  <fieldset>
+	   
+	  
+	  <!-- @form(action = routes.Files.uploadAjax, 'class -> "form-horizontal") {
+	  
+	  <fieldset>-->
 	      <legend> Drop an Image and Search </legend>
 	      <br>
 	      <div id="filedrag"> Drop Box</div>
 	      <output id="list"></output>
-	    </fieldset>
+	 <!--  </fieldset>-->
 	  <div class="form-actions">
           <input type="submit" class="btn btn-primary" value="Search"/>
         </div>
-	  }
+	 <!--  }-->
 	  
-   @form(action = routes.Files.upload, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+   @form(action = routes.Search.searchbyURL(""), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 	    <fieldset>
 	      <!-- <legend> <h3>Search by Image</h3></legend>
 	      <label><h4>Upload a query Image</h4></label>
@@ -59,22 +63,22 @@
 	     <h5 style="text-align: center;">OR</h5>-->
 	    <br>
 	 	    <label><h4>Paste your query image URL</h4></label>
-    	<input type="text" placeholder="Paste your URL here">
+    	<input type="text" placeholder="Paste your URL here" name="query">
 	    <br>
 	    <br>
-	     <label><h4>Filter by</h4></label>	
+	   <!--   <label><h4>Filter by</h4></label>	
 	    <select id="tag" onchange="">
 		<option value="invalid">--None--</option>
 		<option value="">People</option>
 		<option value="">Nature</option>
 		<option value=""> Technology</option>
 		<option value="">Healthcare</option>
-		</select>
+		</select>-->
 		</fieldset>	
 		<br>
 		<br>
 	   <div style="text-align: center;">			
-       <input type="submit" class="btn btn-primary" value="Search"/>
+       <input type="submit" class="btn btn-primary" value="Search" />
        </div>
        <br>
        <br>
@@ -90,5 +94,6 @@
         
 	</div>		
     <script src="@routes.Assets.at("javascripts/file-browser/views/dragdrop.js")" type="text/javascript"></script>
+    
   }
  

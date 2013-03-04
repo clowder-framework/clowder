@@ -130,7 +130,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
          BadRequest("File not attached.")
       }
   }
-    
+
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
@@ -148,6 +148,46 @@ object Files extends Controller with securesocial.core.SecureSocial {
     }
   }
   
+  def uploaddnd() = Action(parse.multipartFormData) { implicit request =>
+      request.body.file("File").map { f =>        
+        Logger.info("Uploading file " + f.filename)
+        // store file
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
+        // submit file for extraction
+        
+        file match {
+          case Some(f) => {
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val id = f.id.toString
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+            }
+            // redirect to file page]
+            Logger.info("Uploading Completed")
+           // Logger.info("File id"+file)
+            Ok(id)
+            //Redirect(routes.Files.file(f.id.toString))  
+         }
+         case None => {
+           Logger.error("Could not retrieve file that was just saved.")
+           InternalServerError("Error uploading file")
+         }
+        }
+              
+       //Ok(views.html.multimediasearch())
+      }.getOrElse {
+         BadRequest("File not attached.")
+      }
+  }
+
+  
+  
+  /* Find Similar files*/
+  def findSimilar(id:String)=TODO
   
   ///////////////////////////////////
   //
@@ -201,11 +241,12 @@ object Files extends Controller with securesocial.core.SecureSocial {
    }
   
   /**
-   * Ajax upload. How do we pass in the file name?
+   * Ajax upload. How do we pass in the file name?(parse.temporaryFile)
    */
+  
+  
   def uploadAjax = Action(parse.temporaryFile) { request =>
-    
-    //val filename = "N/A"
+
     val f = request.body.file
     val filename=f.getName()
     

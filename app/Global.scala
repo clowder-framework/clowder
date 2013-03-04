@@ -27,9 +27,9 @@ object Global extends GlobalSettings {
 //    RegisterConversionHelpers()
     
     
-//    import com.mongodb.casbah.commons.conversions.scala.{RegisterConversionHelpers, RegisterJodaTimeConversionHelpers}
-//    RegisterConversionHelpers()
-//    RegisterJodaTimeConversionHelpers()
+ //   import com.mongodb.casbah.commons.conversions.scala.{RegisterConversionHelpers, RegisterJodaTimeConversionHelpers}
+  //  RegisterConversionHelpers()
+  //  RegisterJodaTimeConversionHelpers()
     
     
 //    if (User.count(DBObject(), Nil, Nil) == 0) {
