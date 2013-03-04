@@ -21,7 +21,7 @@ GET     /files/:id/similar                controllers.Files.findSimilar(id)
 POST    /upload					          controllers.Files.upload
 POST   /uploadAjax						  controllers.Files.uploadAjax
 POST    /reactiveUpload					  controllers.Files.reactiveUpload
-POST  /uploaddnd                          controllers.UploadDnD.upload
+#POST  /uploaddnd                          controllers.UploadDnD.upload
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list
