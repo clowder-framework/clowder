@@ -14,6 +14,12 @@ import play.api.libs.iteratee.Input.{El, EOF, Empty}
 import com.mongodb.casbah.gridfs.GridFS
 import akka.dispatch.ExecutionContext
 import scala.actors.Future
+import models.PreviewDAO
+import models.SectionDAO
+import java.text.SimpleDateFormat
+import views.html.defaultpages.badRequest
+import com.mongodb.casbah.commons.MongoDBObject
+import models.FileDAO
 
 /**
  * Manage files.
@@ -35,20 +41,54 @@ object Files extends Controller with securesocial.core.SecureSocial {
     * File info.
     */
   def file(id: String) = Action {
-    Logger.info("GET file with id " + id)    
+    Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
-      case Some(file) => Ok(views.html.file(file, id))
-      case None => {Logger.error("Error getting file" + id); InternalServerError}
+      case Some(file) => {
+        val previews = PreviewDAO.findByFileId(file.id)
+        val sections = SectionDAO.findByFileId(file.id)
+        val sectionsWithPreviews = sections.map { s =>
+          val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
+          s.copy(preview = p)
+        }
+        Ok(views.html.file(file, id, previews, sectionsWithPreviews))
+      }
+      case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
-    
   }
   
   /**
-   * List files.
+   * List a specific number of files before or after a certain date.
    */
-  def list() = Action {
-    Services.files.listFiles().map(f => Logger.debug(f.toString))
-    Ok(views.html.filesList(Services.files.listFiles()))
+  def list(when: String, date: String, limit: Int) = Action {
+    var direction = "b"
+    if (when != "") direction = when
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+    var prev, next = ""
+    var files = List.empty[models.File]
+    if (direction == "b") {
+	    files = Services.files.listFilesBefore(date, limit)
+    } else if (direction == "a") {
+    	files = Services.files.listFilesAfter(date, limit)
+    } else {
+      badRequest
+    }
+    // latest object
+    val latest = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
+    var firstPage = false
+    if (latest.size == 1) {
+    	firstPage = files.exists(_.id == latest(0).id)
+    	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
+    }
+    
+    if (files.size > 0) {
+      if (date != "" && !firstPage) { // show prev button
+    	prev = formatter.format(files.head.uploadDate)
+      }
+      if (files.size == limit) { // show next button
+    	next = formatter.format(files.last.uploadDate)
+      }
+    }
+    Ok(views.html.filesList(files, prev, next, limit))
   }
    
   /**
@@ -65,37 +105,33 @@ object Files extends Controller with securesocial.core.SecureSocial {
       request.body.file("File").map { f =>        
         Logger.info("Uploading file " + f.filename)
         // store file
-        val id = Services.files.save(new FileInputStream(f.ref.file), f.filename)
-        // submit file for extraction
-        current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
-        // index file 
-        if (current.plugin[ElasticsearchPlugin].isDefined) {
-	        Services.files.getFile(id).foreach { file =>
-	          current.plugin[ElasticsearchPlugin].foreach{
-	            _.index("files","file",id,List(("filename",f.filename), 
-	              ("contentType", file.contentType)))}
-	        }
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+//        Thread.sleep(1000)
+        file match {
+          case Some(f) => {
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val id = f.id.toString
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+            }
+            // redirect to file page]
+            Redirect(routes.Files.file(f.id.toString))  
+         }
+         case None => {
+           Logger.error("Could not retrieve file that was just saved.")
+           InternalServerError("Error uploading file")
+         }
         }
-        // redirect to file page
-        Logger.info("Uploading Completed")
-        Logger.info("File id"+id)
-        
-        Redirect(routes.Files.file(id)) 
-       // Redirect("http://localhost:9000/files/"+id)
-       // Ok(id)
-       //Ok(views.html.multimediasearch())
-      }.getOrElse {
+             }.getOrElse {
          BadRequest("File not attached.")
       }
   }
   
-  /*def upload1 = Action(parse.temporaryFile) { request =>
-  request.body.moveTo(new File("/tmp/picture.jpg"),true)
-  Ok("File uploaded")
-}*/
-  
-  
-    
+      
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
@@ -112,28 +148,36 @@ object Files extends Controller with securesocial.core.SecureSocial {
     }
   }
   
-  def uploadAjax() = Action(parse.multipartFormData) { implicit request =>
+  def uploaddnd() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.info("Uploading file " + f.filename)
         // store file
-        val id = Services.files.save(new FileInputStream(f.ref.file), f.filename)
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
         // submit file for extraction
-        current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
-        // index file 
-        if (current.plugin[ElasticsearchPlugin].isDefined) {
-	        Services.files.getFile(id).foreach { file =>
-	          current.plugin[ElasticsearchPlugin].foreach{
-	            _.index("files","file",id,List(("filename",f.filename), 
-	              ("contentType", file.contentType)))}
-	        }
-        }
-        // redirect to file page
-        Logger.info("Uploading Completed")
-        Logger.info("File id"+id)
         
-        //Redirect(routes.Files.file(id)) 
-       // Redirect("http://localhost:9000/files/"+id)
-       Ok(id)
+        file match {
+          case Some(f) => {
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val id = f.id.toString
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+            }
+            // redirect to file page]
+            Logger.info("Uploading Completed")
+           // Logger.info("File id"+file)
+            Ok(id)
+            //Redirect(routes.Files.file(f.id.toString))  
+         }
+         case None => {
+           Logger.error("Could not retrieve file that was just saved.")
+           InternalServerError("Error uploading file")
+         }
+        }
+              
        //Ok(views.html.multimediasearch())
       }.getOrElse {
          BadRequest("File not attached.")
@@ -201,96 +245,100 @@ object Files extends Controller with securesocial.core.SecureSocial {
    */
   
   
-  /*def uploadAjax = Action(parse.temporaryFile) { request =>
+  def uploadAjax = Action(parse.temporaryFile) { request =>
     
-    Logger.info(request.body.toString)
-    val filename = "N/A"
-    val file = request.body.file
-   // val filename=file.getName()
+   // val filename = "N/A"
+    val f = request.body.file
+    val filename=f.getName()
     
     // store file
-    val id = Services.files.save(new FileInputStream(file), filename)
-    Logger.info("File id :"+id)
-    // submit file for extraction
-    current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
-    // index file 
-    if (current.plugin[ElasticsearchPlugin].isDefined) {
-        Services.files.getFile(id).foreach { file =>
-          current.plugin[ElasticsearchPlugin].foreach{
-            _.index("files","file",id,List(("filename", filename), 
-              ("contentType", file.contentType)))}
-        }
-    }
-    // redirect to file page
-    Redirect(routes.Files.file(id))  
-    //Ok("File uploaded")
-  }*/
+    		val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None)
+    	    file match {
+    	      case Some(f) => {
+    	        // TODO RK need to replace unknown with the server name
+    	        val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+    	        // TODO RK : need figure out if we can use https
+    	        val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+    	        val id = f.id.toString
+    	        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+    	        current.plugin[ElasticsearchPlugin].foreach{
+    	          _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+    	        }
+    	        // redirect to file page
+    	        Redirect(routes.Files.file(f.id.toString))  
+    	      }
+    	      case None => {
+    	        Logger.error("Could not retrieve file that was just saved.")
+    	        InternalServerError("Error uploading file")
+    	      }
+    	    }
+  }
   
   /**
    * Reactive file upload.
    */
-  def reactiveUpload = Action(BodyParser(rh => new SomeIteratee)) { request =>
-     Ok("Done")
-   }
+//  def reactiveUpload = Action(BodyParser(rh => new SomeIteratee)) { request =>
+//     Ok("Done")
+//   }
   
   /**
    * Iteratee for reactive file upload.
    * 
    * TODO Finish implementing. Right now it doesn't write to anything.
    */
- case class SomeIteratee(state: Symbol = 'Cont, input: Input[Array[Byte]] = Empty, 
-     received: Int = 0) extends Iteratee[Array[Byte], Either[Result, Int]] {
-   Logger.debug(state + " " + input + " " + received)
-
-//   val files = current.plugin[MongoSalatPlugin] match {
-//			  case None    => throw new RuntimeException("No MongoSalatPlugin");
-//			  case Some(x) =>  x.gridFS("uploads")
-//			}
+// case class SomeIteratee(state: Symbol = 'Cont, input: Input[Array[Byte]] = Empty, 
+//     received: Int = 0) extends Iteratee[Array[Byte], Either[Result, Int]] {
+//   Logger.debug(state + " " + input + " " + received)
 //
-//   val pos:PipedOutputStream = new PipedOutputStream();
-//   val pis:PipedInputStream  = new PipedInputStream(pos);
-//   val file = files(pis) { fh =>
-//     fh.filename = "test-file.txt"
-//     fh.contentType = "text/plain"
+////   val files = current.plugin[MongoSalatPlugin] match {
+////			  case None    => throw new RuntimeException("No MongoSalatPlugin");
+////			  case Some(x) =>  x.gridFS("uploads")
+////			}
+////
+////   val pos:PipedOutputStream = new PipedOutputStream();
+////   val pis:PipedInputStream  = new PipedInputStream(pos);
+////   val file = files(pis) { fh =>
+////     fh.filename = "test-file.txt"
+////     fh.contentType = "text/plain"
+////   }
+//			
+//   
+//   def fold[B](
+//     done: (Either[Result, Int], Input[Array[Byte]]) => Promise[B],
+//     cont: (Input[Array[Byte]] => Iteratee[Array[Byte], Either[Result, Int]]) => Promise[B],
+//     error: (String, Input[Array[Byte]]) => Promise[B]
+//   ): Promise[B] = state match {
+//     case 'Done => { 
+//       Logger.debug("Done with upload")
+////       pos.close()
+//       done(Right(received), Input.Empty) 
+//     }
+//     case 'Cont => cont(in => in match {
+//       case in: El[Array[Byte]] => {
+//         Logger.debug("Getting ready to write " +  in.e.length)
+//    	 try {
+////         pos.write(in.e)
+//    	 } catch {
+//    	   case error => Logger.error("Error writing to gridfs" + error.toString())
+//    	 }
+//    	 Logger.debug("Calling recursive function")
+//         copy(input = in, received = received + in.e.length)
+//       }
+//       case Empty => {
+//         Logger.debug("Empty")
+//         copy(input = in)
+//       }
+//       case EOF => {
+//         Logger.debug("EOF")
+//         copy(state = 'Done, input = in)
+//       }
+//       case _ => {
+//         Logger.debug("_")
+//         copy(state = 'Error, input = in)
+//       }
+//     })
+//     case _ => { Logger.error("Error uploading file"); error("Some error.", input) }
 //   }
-			
-   
-   def fold[B](
-     done: (Either[Result, Int], Input[Array[Byte]]) => Promise[B],
-     cont: (Input[Array[Byte]] => Iteratee[Array[Byte], Either[Result, Int]]) => Promise[B],
-     error: (String, Input[Array[Byte]]) => Promise[B]
-   ): Promise[B] = state match {
-     case 'Done => { 
-       Logger.debug("Done with upload")
-//       pos.close()
-       done(Right(received), Input.Empty) 
-     }
-     case 'Cont => cont(in => in match {
-       case in: El[Array[Byte]] => {
-         Logger.debug("Getting ready to write " +  in.e.length)
-    	 try {
-//         pos.write(in.e)
-    	 } catch {
-    	   case error => Logger.error("Error writing to gridfs" + error.toString())
-    	 }
-    	 Logger.debug("Calling recursive function")
-         copy(input = in, received = received + in.e.length)
-       }
-       case Empty => {
-         Logger.debug("Empty")
-         copy(input = in)
-       }
-       case EOF => {
-         Logger.debug("EOF")
-         copy(state = 'Done, input = in)
-       }
-       case _ => {
-         Logger.debug("_")
-         copy(state = 'Error, input = in)
-       }
-     })
-     case _ => { Logger.error("Error uploading file"); error("Some error.", input) }
-   }
- }
+// }
   
 }
