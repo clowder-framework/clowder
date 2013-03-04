@@ -60,18 +60,28 @@ object Files extends Controller with securesocial.core.SecureSocial {
    * List a specific number of files before or after a certain date.
    */
   def list(when: String, date: String, limit: Int) = Action {
+    var direction = "b"
+    if (when != "") direction = when
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
     var prev, next = ""
     var files = List.empty[models.File]
-    if (when == "b") {
+    if (direction == "b") {
 	    files = Services.files.listFilesBefore(date, limit)
-    } else if (when == "a") {
+    } else if (direction == "a") {
     	files = Services.files.listFilesAfter(date, limit)
     } else {
       badRequest
     }
+    // latest object
+    val latest = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
+    var firstPage = false
+    if (latest.size == 1) {
+    	firstPage = files.exists(_.id == latest(0).id)
+    	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
+    }
+    
     if (files.size > 0) {
-      if (date != "") { // show prev button
+      if (date != "" && !firstPage) { // show prev button
     	prev = formatter.format(files.head.uploadDate)
       }
       if (files.size == limit) { // show next button
