@@ -22,8 +22,9 @@ abstract class FileService {
   
   /**
    * Get the input stream of a file given a file id.
+   * Returns input stream, file name and content type.
    */
-  def get(id: String): Option[(InputStream, String)]
+  def get(id: String): Option[(InputStream, String, String)]
   
   /**
    * List all files in the system.

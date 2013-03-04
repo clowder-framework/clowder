@@ -59,8 +59,9 @@ object Files extends Controller {
   def download(id: String) = Authenticated {
     Action {
 	    Services.files.get(id) match {
-	      case Some((inputStream, filename)) => {
+	      case Some((inputStream, filename, contentType)) => {
 	    	Ok.stream(Enumerator.fromStream(inputStream))
+	    	  .withHeaders(CONTENT_TYPE -> contentType)
 	    	  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 	      }
 	      case None => {

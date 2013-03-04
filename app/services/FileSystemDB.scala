@@ -51,7 +51,7 @@ trait FileSystemDB {
   /**
    * Get the bytes of a file from Mongo and the file name.
    */
-  def get(id: String): Option[(InputStream, String)] = {
+  def get(id: String): Option[(InputStream, String, String)] = {
     Play.current.configuration.getString("files.path") match {
       case Some(path) => {
         val files = JodaGridFS(FileDAO.dao.collection.db, "uploads")
@@ -61,7 +61,9 @@ trait FileSystemDB {
               case Some(relativePath) => {
                 val filePath = if (path.last != '/') path + "/" + relativePath else path + relativePath
                 Logger.info("Serving file " + filePath)
-                Some(new FileInputStream(filePath), file.getAs[String]("filename").getOrElse("unknown-name"))
+                Some(new FileInputStream(filePath), 
+                    file.getAs[String]("filename").getOrElse("unknown-name"),
+                    file.getAs[String]("contentType").getOrElse("unknown"))
               }
               case None => None
             }

@@ -56,10 +56,12 @@ trait GridFSDB {
   /**
    * Get blob.
    */
-  def get(id: String): Option[(InputStream, String)] = {
+  def get(id: String): Option[(InputStream, String, String)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
-      case Some(file) => Some(file.inputStream, file.getAs[String]("filename").getOrElse("unknown-name"))
+      case Some(file) => Some(file.inputStream, 
+          file.getAs[String]("filename").getOrElse("unknown-name"), 
+          file.getAs[String]("contentType").getOrElse("unknown"))
       case None => None
     }
   }

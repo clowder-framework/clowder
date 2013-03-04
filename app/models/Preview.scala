@@ -61,10 +61,12 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
   /**
    * Get blob.
    */
-  def getBlob(id: String): Option[(InputStream, String)] = {
+  def getBlob(id: String): Option[(InputStream, String, String)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
-      case Some(file) => Some(file.inputStream, file.getAs[String]("filename").getOrElse("unknown-name"))
+      case Some(file) => Some(file.inputStream, 
+          file.getAs[String]("filename").getOrElse("unknown-name"),
+          file.getAs[String]("contentType").getOrElse("unknown"))
       case None => None
     }
   }

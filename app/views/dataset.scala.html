@@ -46,7 +46,8 @@
 				  	<div id="galleria" style="float:left;clear:none;width:300px;height:300px;">
 				  	@f.sections.map { s =>
 				  		<div>@s.order @s.startTime</div>
-				  		<img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" class="img-polaroid" height="100px"></img>
+				  		<img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" 
+				  		class="img-polaroid" height="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
 				  	}
 				  	</div>
     			}
@@ -129,7 +130,15 @@
 		    
 		    var gallery = $('#galleria').data('galleria');
 		    
-
+			Galleria.ready(function(options) {
+			
+			    // 'this' is the gallery instance
+			    // 'options' is the gallery options
+			
+			    this.bind('image', function(e) {
+			        Galleria.log('Now viewing ' + e.imageTarget.src);
+			    });
+			});
 	      	
 	      	
 	    });
