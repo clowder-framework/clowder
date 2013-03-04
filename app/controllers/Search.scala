@@ -95,7 +95,7 @@ object Search extends Controller{
 		val id=Services.files.save(new FileInputStream("/tmp/"+query.substring(slashindex+1)),query.substring(slashindex+1))
 		println(id)
     
-		Ok(views.html.searchTextResults(query))
+		Ok(views.html.searchTextResults(query.substring(slashindex+1)))
    
  }
  
