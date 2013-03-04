@@ -77,15 +77,24 @@ object Files extends Controller with securesocial.core.SecureSocial {
 	        }
         }
         // redirect to file page
-        Redirect(routes.Files.file(id))    
+        Logger.info("Uploading Completed")
+        Logger.info("File id"+id)
+        
+        Redirect(routes.Files.file(id)) 
+       // Redirect("http://localhost:9000/files/"+id)
+       // Ok(id)
+       //Ok(views.html.multimediasearch())
       }.getOrElse {
          BadRequest("File not attached.")
       }
   }
-  def upload1 = Action(parse.temporaryFile) { request =>
+  
+  /*def upload1 = Action(parse.temporaryFile) { request =>
   request.body.moveTo(new File("/tmp/picture.jpg"),true)
   Ok("File uploaded")
-}
+}*/
+  
+  
     
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
@@ -103,6 +112,38 @@ object Files extends Controller with securesocial.core.SecureSocial {
     }
   }
   
+  def uploadAjax() = Action(parse.multipartFormData) { implicit request =>
+      request.body.file("File").map { f =>        
+        Logger.info("Uploading file " + f.filename)
+        // store file
+        val id = Services.files.save(new FileInputStream(f.ref.file), f.filename)
+        // submit file for extraction
+        current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
+        // index file 
+        if (current.plugin[ElasticsearchPlugin].isDefined) {
+	        Services.files.getFile(id).foreach { file =>
+	          current.plugin[ElasticsearchPlugin].foreach{
+	            _.index("files","file",id,List(("filename",f.filename), 
+	              ("contentType", file.contentType)))}
+	        }
+        }
+        // redirect to file page
+        Logger.info("Uploading Completed")
+        Logger.info("File id"+id)
+        
+        //Redirect(routes.Files.file(id)) 
+       // Redirect("http://localhost:9000/files/"+id)
+       Ok(id)
+       //Ok(views.html.multimediasearch())
+      }.getOrElse {
+         BadRequest("File not attached.")
+      }
+  }
+
+  
+  
+  /* Find Similar files*/
+  def findSimilar(id:String)=TODO
   
   ///////////////////////////////////
   //
@@ -156,16 +197,20 @@ object Files extends Controller with securesocial.core.SecureSocial {
    }
   
   /**
-   * Ajax upload. How do we pass in the file name?
+   * Ajax upload. How do we pass in the file name?(parse.temporaryFile)
    */
-  def uploadAjax = Action(parse.temporaryFile) { request =>
+  
+  
+  /*def uploadAjax = Action(parse.temporaryFile) { request =>
     
-    //val filename = "N/A"
+    Logger.info(request.body.toString)
+    val filename = "N/A"
     val file = request.body.file
-    val filename=file.getName()
+   // val filename=file.getName()
     
     // store file
-    val id = Services.files.save(new FileInputStream(file.getAbsoluteFile()), filename)
+    val id = Services.files.save(new FileInputStream(file), filename)
+    Logger.info("File id :"+id)
     // submit file for extraction
     current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
     // index file 
@@ -178,8 +223,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
     }
     // redirect to file page
     Redirect(routes.Files.file(id))  
-    Ok("File uploaded")
-  }
+    //Ok("File uploaded")
+  }*/
   
   /**
    * Reactive file upload.
