@@ -17,7 +17,8 @@ import services.MongoSalatPlugin
  */
 case class MultimediaFeatures (
     id: ObjectId = new ObjectId,
-    file_id: ObjectId = new ObjectId,
+    file_id: Option[ObjectId] = None,
+    section_id: Option[ObjectId] = None,
     features: List[Feature]
 )
 

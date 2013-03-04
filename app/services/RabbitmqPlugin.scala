@@ -14,7 +14,8 @@ import play.api.libs.json.Json
 case class ExtractorMessage (
     id: String,
     host: String,
-    key: String
+    key: String,
+    metadata: Map[String, String]
 )
 
 /**
@@ -53,7 +54,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   def extract(message: ExtractorMessage) = {
-    Logger.info("Sending. message " + message.id)
+    Logger.info("Sending message " + message)
     messageQueue match {
       case Some(x) => x ! message
       case None => Logger.warn("Could not send message over RabbitMQ")
@@ -64,11 +65,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 class SendingActor(channel: Channel, exchange: String) extends Actor {
  
   def receive = {
-      case ExtractorMessage(id, host, key) => {
-        val msg = Json.toJson(Map(
+      case ExtractorMessage(id, host, key, metadata) => {
+        val msgMap = scala.collection.mutable.Map(
             "id" -> Json.toJson(id),
             "host" -> Json.toJson(host)
-            ))
+            )
+        metadata.foreach(kv => msgMap.put(kv._1,Json.toJson(kv._2)))
+        val msg = Json.toJson(msgMap.toMap)
         Logger.info(msg.toString())
         channel.basicPublish(exchange, key, true, null, msg.toString().getBytes())
       }

@@ -97,6 +97,7 @@ POST    /api/previews                     api.Previews.upload
 
 
 POST    /api/indexes                      api.Indexes.index
+POST    /api/indexes/features             api.Indexes.features
 
 POST    /api/sections                     api.Sections.add
 GET     /api/sections/:id                 api.Sections.get(id)

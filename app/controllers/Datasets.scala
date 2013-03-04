@@ -145,7 +145,7 @@ object Datasets extends Controller with SecureSocial {
                 // TODO RK : need figure out if we can use https
                 val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
                 val id = f.id.toString
-		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
 		        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 
 	            // add file to dataset
@@ -154,7 +154,7 @@ object Datasets extends Controller with SecureSocial {
 	            Dataset.save(dt)
 		    	// TODO RK need to replace unknown with the server name and dataset type
 		    	val dtkey = "unknown." + "dataset."+ "unknown"
-		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey))}
+		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey, Map.empty))}
 	            // redirect to file page
 	            Redirect(routes.Datasets.dataset(dt.id.toString))
 		      }
