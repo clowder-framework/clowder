@@ -71,7 +71,13 @@ object Datasets extends Controller with SecureSocial {
   def dataset(id: String) = Action {
     Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
-      case Some(dataset) => Ok(views.html.dataset(dataset, Previewers.searchFileSystem))
+      case Some(dataset) => {
+        val files = dataset.files map { f =>
+          FileDAO.get(f.id.toString).get
+        }
+        val datasetWithFiles = dataset.copy(files = files)
+        Ok(views.html.dataset(datasetWithFiles, Previewers.searchFileSystem))
+      }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }
   }

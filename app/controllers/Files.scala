@@ -18,6 +18,8 @@ import models.PreviewDAO
 import models.SectionDAO
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
+import com.mongodb.casbah.commons.MongoDBObject
+import models.FileDAO
 
 /**
  * Manage files.
@@ -39,14 +41,18 @@ object Files extends Controller with securesocial.core.SecureSocial {
     * File info.
     */
   def file(id: String) = Action {
-    Logger.info("GET file with id " + id)    
+    Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
         val previews = PreviewDAO.findByFileId(file.id)
         val sections = SectionDAO.findByFileId(file.id)
-        Ok(views.html.file(file, id, previews, sections))
+        val sectionsWithPreviews = sections.map { s =>
+          val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
+          s.copy(preview = p)
+        }
+        Ok(views.html.file(file, id, previews, sectionsWithPreviews))
       }
-      case None => {Logger.error("Error getting file" + id); InternalServerError}
+      case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
   }
   
@@ -90,6 +96,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
         Logger.info("Uploading file " + f.filename)
         // store file
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+//        Thread.sleep(1000)
         file match {
           case Some(f) => {
             // TODO RK need to replace unknown with the server name
@@ -101,7 +108,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
             current.plugin[ElasticsearchPlugin].foreach{
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
-            // redirect to file page
+            // redirect to file page]
             Redirect(routes.Files.file(f.id.toString))  
          }
          case None => {

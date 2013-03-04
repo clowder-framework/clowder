@@ -24,9 +24,19 @@ object Sections extends Controller {
     Action(parse.json) { request =>
       val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
       doc.getAs[String]("file_id").map(id => doc.put("file_id", new ObjectId(id)))
+      doc.put("_id", new ObjectId)
       Logger.debug("Section " + doc)
       SectionDAO.dao.collection.save(doc)
-      Ok(toJson("success"))
+      Ok(toJson(Map("id"->doc.getAs[ObjectId]("_id").get.toString)))
+    }
+  }
+  
+  def get(id: String) = Authenticated {
+    Action { request =>
+      SectionDAO.findOneByID(new ObjectId(id)) match {
+        case Some(section) => Ok(toJson(Map("id"->section.id.toString, "startTime"->section.startTime.getOrElse(-1).toString)))
+        case None => Logger.error("Section not found " + id); InternalServerError
+      }
     }
   }
 

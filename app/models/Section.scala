@@ -22,7 +22,8 @@ case class Section (
     file_id: ObjectId = new ObjectId,
     order: Int,
     startTime: Option[Int], // in seconds
-    endTime: Option[Int] // in seconds
+    endTime: Option[Int], // in seconds
+    preview: Option[Preview]
 )
 
 object SectionDAO extends ModelCompanion[Section, ObjectId] {
