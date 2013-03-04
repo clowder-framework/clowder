@@ -10,6 +10,7 @@ import java.net.URL
 import java.io.File
 import scala.io.Source
 import java.io._
+import play.api.libs.ws.WS
 /**
  * Text search.
  * 
@@ -56,6 +57,11 @@ object Search extends Controller{
  //GET the query image from the URL and compare within the database and show the result
  def searchbyURL(query:String)=Action{
    Logger.debug("Searching for"+query)
+   
+  // val result = WS.url(query).get() .map { response =>
+  //   response.
+  // }
+   
   // var pic = scala.io.Source.fromURL(new URL(query))
   //#> new File("/tmp/pict")
   //new URL(query)  
@@ -70,12 +76,14 @@ object Search extends Controller{
     // write the inputStream to a FileOutputStream
 	//var out=new FileOutputStream(new File("/tmp/about.jpg"))
      //val id =Services.files.save(new FileInputStream((new URL(query)).openConnection()),query.substring(slashindex+1))
-   var out=new FileOutputStream(new File("/tmp/"+query.substring(slashindex+1)))
+   var file=new File("/tmp/"+query.substring(slashindex+1))
+   
+   var out=new FileOutputStream(file)
  
 	var read1:Int = 0
 	var bytes= new Array[Byte](1024*120)
 	println(input.available())
-	//var bytes = IOUtils.toByteArray(input)
+	
 	//while ((read1=input.read(bytes)) != -1) {
 	  while (read1 != -1) {
 		  read1 = input.read(bytes)
@@ -92,8 +100,9 @@ object Search extends Controller{
 		out.close()
  
 		println("New file created!")
-		val id=Services.files.save(new FileInputStream("/tmp/"+query.substring(slashindex+1)),query.substring(slashindex+1))
-		println(id)
+		 
+		//var file1=Services.files.save(new FileInputStream("/tmp/"+query.substring(slashindex+1)),query.substring(slashindex+1),)
+		//println(id)
     
 		Ok(views.html.searchTextResults(query.substring(slashindex+1)))
    
