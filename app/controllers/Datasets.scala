@@ -18,6 +18,9 @@ import services.ElasticsearchPlugin
 import java.io.File
 import org.bson.types.ObjectId
 import models.FileDAO
+import java.util.Date
+import services.ExtractorMessage
+import securesocial.core.SecureSocial
 
 /**
  * A dataset is a collection of files and streams.
@@ -25,7 +28,7 @@ import models.FileDAO
  * @author Luigi Marini
  *
  */
-object Datasets extends Controller with securesocial.core.SecureSocial {
+object Datasets extends Controller with SecureSocial {
    
   /**
    * New dataset form.
@@ -35,7 +38,7 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
       "name" -> nonEmptyText,
       "description" -> nonEmptyText
     )
-    ((name, description) => Dataset(name = name, description = description))
+    ((name, description) => Dataset(name = name, description = description, created = new Date))
     ((dataset: Dataset) => Some((dataset.name, dataset.description)))
    )
    
@@ -66,12 +69,18 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
    * Dataset.
    */
   def dataset(id: String) = Action {
+    Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
-      case Some(dataset) => Ok(views.html.dataset(dataset))
+      case Some(dataset) => {
+        val files = dataset.files map { f =>
+          FileDAO.get(f.id.toString).get
+        }
+        val datasetWithFiles = dataset.copy(files = files)
+        Ok(views.html.dataset(datasetWithFiles, Previewers.searchFileSystem))
+      }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }
   }
-  
   
   def upload = Action(parse.temporaryFile) { request =>
     request.body.moveTo(new File("/tmp/picture"))
@@ -92,34 +101,37 @@ object Datasets extends Controller with securesocial.core.SecureSocial {
         dataset.map { dataset =>
 	        Logger.info("Uploading file " + f.filename)
 	        // store file
-	        val id = Services.files.save(new FileInputStream(f.ref.file), f.filename)
-	        // submit file for extraction
-	        current.plugin[RabbitmqPlugin].foreach{_.extract(id)}
-	        // index file 
-	        if (current.plugin[ElasticsearchPlugin].isDefined) {
-		        Services.files.getFile(id).foreach { file =>
-		          current.plugin[ElasticsearchPlugin].foreach{
-		            _.index("files","file",id,List(("filename",f.filename), 
-		              ("contentType", file.contentType)))}
-		        }
-	        }
-	        // add file id to dataset
-	        // TODO There has to be a better way
-	        FileDAO.findOneById(new ObjectId(id)) match {
-	          case Some(file) => {
-	            val dt = dataset.copy(files_id = List(file))
-	            // store dataset
+		    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+		    Logger.debug("Uploaded file id is " + file.get.id)
+		    file match {
+		      case Some(f) => {
+		    	// TODO RK need to replace unknown with the server name
+		    	val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+                // TODO RK : need figure out if we can use https
+                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
+                val id = f.id.toString
+		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+		        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
+
+	            // add file to dataset
+		        val dt = dataset.copy(files = List(f))
+		        // TODO create a service instead of calling salat directly
 	            Dataset.save(dt)
+		    	// TODO RK need to replace unknown with the server name and dataset type
+		    	val dtkey = "unknown." + "dataset."+ "unknown"
+		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey))}
 	            // redirect to file page
 	            Redirect(routes.Datasets.dataset(dt.id.toString))
-	          }
-	          case None => {
-	            // store dataset
+		      }
+		      
+		      case None => {
+		        Logger.error("Could not retrieve file that was just saved.")
+		        // TODO create a service instead of calling salat directly
 	            Dataset.save(dataset)
 	            // redirect to file page
 	            Redirect(routes.Datasets.dataset(dataset.id.toString))
-	          }
-	        }
+		      }
+		    }
 	        
         }.getOrElse{
           BadRequest("Form binding error")

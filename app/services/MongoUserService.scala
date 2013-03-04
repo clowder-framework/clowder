@@ -11,7 +11,12 @@ import securesocial.core.AuthenticationMethod
 import securesocial.core.providers.UsernamePasswordProvider
 import models.SocialUserDAO
 import models.TokenDAO
+import models.{Token => MongoToken}
 import securesocial.core.Identity
+import com.mongodb.casbah.commons.conversions.scala.{RegisterJodaTimeConversionHelpers, DeregisterJodaTimeConversionHelpers}
+import com.mongodb.casbah.commons.conversions.scala.RegisterConversionHelpers
+import org.joda.time.DateTime
+import java.util.UUID
 
 /**
  * SecureSocial implementation using MongoDB.
@@ -63,7 +68,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return A string with a uuid that will be embedded in the welcome email.
    */
   def save(token: Token) = {
-    TokenDAO.save(token)
+    TokenDAO.save(MongoToken(new ObjectId, token.uuid, token.email, token.creationTime.toDate, token.expirationTime.toDate, token.isSignUp))
   }
 
 
@@ -77,7 +82,10 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return
    */
   def findToken(token: String): Option[Token] = {
-    TokenDAO.findOne(MongoDBObject("uuid"->token))
+    TokenDAO.findByUUID(token) match {
+      case Some(t) => Some(Token(t.id.toString, t.email, new DateTime(t.creationTime), new DateTime(t.expirationTime), t.isSignUp))
+      case None => None
+    }
   }
 
   /**
@@ -89,7 +97,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param uuid the token id
    */
   def deleteToken(uuid: String) {
-    TokenDAO.remove(MongoDBObject("uuid"->uuid))
+    TokenDAO.removeById(new ObjectId(uuid), WriteConcern.Normal)
   }
 
   /**

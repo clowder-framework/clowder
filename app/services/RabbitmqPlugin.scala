@@ -8,6 +8,14 @@ import com.rabbitmq.client.Channel
 import play.libs.Akka
 import akka.actor.Props
 import akka.actor.Actor
+import akka.actor.ActorRef
+import play.api.libs.json.Json
+   
+case class ExtractorMessage (
+    id: String,
+    host: String,
+    key: String
+)
 
 /**
  * Rabbitmq service.
@@ -18,20 +26,21 @@ import akka.actor.Actor
 class RabbitmqPlugin(application: Application) extends Plugin {
 
   val host = ConfigFactory.load().getString("rabbitmq.host");
-  val queue = ConfigFactory.load().getString("rabbitmq.queue");
   val exchange = ConfigFactory.load().getString("rabbitmq.exchange");
-  var sendingChannel: Channel = null
-
+  var messageQueue: Option[ActorRef] = None
+  
   override def onStart() {
     Logger.debug("Starting up Rabbitmq plugin.")
     try {
       val factory = new ConnectionFactory();
       factory.setHost(host);
       val connection: Connection = factory.newConnection()
-      sendingChannel = connection.createChannel()
+      val sendingChannel = connection.createChannel()
+      sendingChannel.exchangeDeclare(exchange, "topic", true)
+      messageQueue =  Some(Akka.system.actorOf(Props(new SendingActor(channel = sendingChannel, exchange = exchange))))
     } catch {
       case ioe: java.io.IOException => Logger.error("Error connecting to rabbitmq broker")
-      case _ => Logger.error("Unknown error connecting to rabbitmq broker")
+      case _:Throwable => Logger.error("Unknown error connecting to rabbitmq broker")
     }
   }
 
@@ -43,20 +52,29 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
   }
 
-  def extract(msg: String) = {
-    sendingChannel.queueDeclare(queue, false, false, false, null)
-    var extract = Akka.system.actorOf(Props(new SendingActor(channel = sendingChannel, queue = queue))) ! msg
+  def extract(message: ExtractorMessage) = {
+    Logger.info("Sending. message " + message.id)
+    messageQueue match {
+      case Some(x) => x ! message
+      case None => Logger.warn("Could not send message over RabbitMQ")
+    }
   }
 }
 
-class SendingActor(channel: Channel, queue: String) extends Actor {
+class SendingActor(channel: Channel, exchange: String) extends Actor {
  
   def receive = {
-    case some: String => {
-      val msg = (some + " : " + System.currentTimeMillis());
-      channel.basicPublish("", queue, null, msg.getBytes());
-      Logger.info(msg);
-    }
-    case _ => {}
+      case ExtractorMessage(id, host, key) => {
+        val msg = Json.toJson(Map(
+            "id" -> Json.toJson(id),
+            "host" -> Json.toJson(host)
+            ))
+        Logger.info(msg.toString())
+        channel.basicPublish(exchange, key, true, null, msg.toString().getBytes())
+      }
+      
+      case _ => {
+        Logger.error("Unknown message type submitted.")
+      }
   }
 }

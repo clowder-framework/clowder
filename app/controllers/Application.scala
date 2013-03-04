@@ -36,7 +36,7 @@ object Application extends Controller with securesocial.core.SecureSocial {
     import routes.javascript._
     Ok(
       Routes.javascriptRouter("jsRoutes")(
-        Admin.test, Admin.secureTest, Admin.reindexFiles
+        Admin.test, Admin.secureTest, Admin.reindexFiles, Tags.tag
       )
     ).as(JSON) 
   }
