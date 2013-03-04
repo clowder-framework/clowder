@@ -64,11 +64,11 @@ object Indexes extends Controller {
   def features() = Authenticated {
     Action(parse.json) { request =>
       Logger.debug("Add feature to multimedia index " + request.body)
-      (request.body \ "file_id").asOpt[String].map { file_id =>
-        MultimediaFeaturesDAO.findOne(MongoDBObject("file_id"->new ObjectId(file_id))) match {
+      (request.body \ "section_id").asOpt[String].map { section_id =>
+        MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"->new ObjectId(section_id))) match {
           case Some(mFeatures) => {
             val builder = MongoDBObject.newBuilder
-            builder += "file_id" -> new ObjectId(file_id)
+            builder += "section_id" -> new ObjectId(section_id)
             val features = (request.body \ "features").as[List[JsObject]]
             val listBuilder = MongoDBList.newBuilder
             features.map {f =>
@@ -87,14 +87,14 @@ object Indexes extends Controller {
             val features = jsFeatures.map {f =>
             	Feature((f \ "representation").as[String], (f \ "descriptor").as[List[Double]])
             }
-            val doc = MultimediaFeatures(file_id = Some(new ObjectId(file_id)), features = features)
+            val doc = MultimediaFeatures(section_id = Some(new ObjectId(section_id)), features = features)
             MultimediaFeaturesDAO.save(doc)
             Logger.debug("Features created: " + doc)
             Ok(toJson(Map("id"->doc.id.toString)))
           }
         }
       }.getOrElse {
-        BadRequest(toJson("Missing parameter [file_id]"))
+        BadRequest(toJson("Missing parameter [section_id]"))
       }
     }
   }
