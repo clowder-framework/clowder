@@ -22,7 +22,7 @@ POST    /uploadAjax						  controllers.Files.uploadAjax
 #POST   /reactiveUpload					  controllers.Files.reactiveUpload
 
 # Datasets
-GET		/datasets					      controllers.Datasets.list
+GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
 POST    /dataset/createDataset            controllers.Datasets.createDataset

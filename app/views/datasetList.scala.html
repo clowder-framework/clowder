@@ -1,4 +1,6 @@
-@(datasets: List[models.Dataset]) @main("Datasets") {
+@(datasets: List[models.Dataset], prev: String, next: String, limit: Int) 
+
+@main("Datasets") {
 <div class="page-header">
   <h1>Datasets</h1>
 </div>
@@ -8,6 +10,7 @@
 			<thead>
 				<tr>
 					<th>Name</th>
+					<th>Created</th>
 					<th>Description</th>
 				</tr>
 			</thead>
@@ -15,11 +18,20 @@
 				@datasets.map { dataset =>
 					<tr>
 						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
+						<td>@dataset.created</td>
 						<td>@dataset.description</td>
 					</tr>
 				}
 			</tbody>
 		</table>
+		<ul class="pager">
+			@if(prev != "") {
+  			<li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
+  			}
+  			@if(next != "") {
+  			<li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
+  			}
+		</ul>
 	</div>
 </div>
 }

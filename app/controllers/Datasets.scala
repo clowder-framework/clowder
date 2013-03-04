@@ -21,6 +21,9 @@ import models.FileDAO
 import java.util.Date
 import services.ExtractorMessage
 import securesocial.core.SecureSocial
+import java.text.SimpleDateFormat
+import views.html.defaultpages.badRequest
+import com.mongodb.casbah.commons.MongoDBObject
 
 /**
  * A dataset is a collection of files and streams.
@@ -60,9 +63,41 @@ object Datasets extends Controller with SecureSocial {
   /**
    * List datasets.
    */
-  def list() = Action {
-    Services.files.listFiles().map(f => Logger.debug(f.toString))
-    Ok(views.html.datasetList(Services.datasets.listDatasets()))
+//  def list() = Action {
+//    Ok(views.html.datasetList(Services.datasets.listDatasets()))
+//  }
+  
+  
+  def list(when: String, date: String, limit: Int) = Action {
+    var direction = "b"
+    if (when != "") direction = when
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+    var prev, next = ""
+    var datasets = List.empty[models.Dataset]
+    if (direction == "b") {
+	    datasets = Services.datasets.listDatasetsBefore(date, limit)
+    } else if (direction == "a") {
+    	datasets = Services.datasets.listDatasetsAfter(date, limit)
+    } else {
+      badRequest
+    }
+    // latest object
+    val latest = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+    var firstPage = false
+    if (latest.size == 1) {
+    	firstPage = datasets.exists(_.id == latest(0).id)
+    	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
+    }
+    
+    if (datasets.size > 0) {
+      if (date != "" && !firstPage) { // show prev button
+    	prev = formatter.format(datasets.head.created)
+      }
+      if (datasets.size == limit) { // show next button
+    	next = formatter.format(datasets.last.created)
+      }
+    }
+    Ok(views.html.datasetList(datasets, prev, next, limit))
   }
   
   /**
