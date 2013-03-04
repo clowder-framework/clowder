@@ -1,0 +1,29 @@
+@(previewers: Array[models.Previewer])
+
+@main("Previewers") {
+	<div class="page-header">
+		<h1>Available Previewers</h1>
+	</div>
+	<div class="row-fluid">
+		<div class="span12">
+			<table class="table table-bordered table-hover">
+				<thead>
+					<tr>
+						<th>id</th>
+						<th>path</th>
+						<th>main</th>
+					</tr>
+				</thead>
+				<tbody>
+					@previewers.map { previewer =>
+						<tr>
+							<td><a href="@(routes.Assets.at(previewer.path + "/package.json"))">@previewer.id</a></td>
+							<td>@previewer.path</td>
+							<td>@previewer.main</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}
