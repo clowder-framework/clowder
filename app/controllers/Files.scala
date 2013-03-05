@@ -162,7 +162,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key))}
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
             current.plugin[ElasticsearchPlugin].foreach{
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
