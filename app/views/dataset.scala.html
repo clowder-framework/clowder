@@ -7,59 +7,96 @@
 	<div class="page-header">
 		<h1>@dataset.name</h1>
 	</div>
-	<div class="row-fluid">
-		
+	
+	<div class="row">	
+	
+		<!-- left column -->
 		<div class="span8">
-			<div class="tabbable">
-				<ul class="nav nav-pills" id="myTab">
-				@dataset.files.map { f =>
-					@if(f.contentType.equals("image/jpeg")){
-					<li class=""><a href="#previewer_Thumbnail" data-toggle="tab">Thumbnail</a></li>
-					}
-				}
-				@dataset.files.map { f =>
-					@previewers.map { p =>
-						@if(p.contentType.contains(f.contentType)) {
-				  		<li class=""><a href="#previewer_@p.id" data-toggle="tab">@p.id</a></li>
-				  		}
-				    }
-				}
-				</ul>
-				<div class="tab-content">
-				@dataset.files.map { f =>
-					@if(f.contentType.equals("image/jpeg")){
-					<img src="@routes.Files.file(f.id.toString)/blob" class="img-polaroid" width="500px"></img>
-					}
-				}
-				@dataset.files.map { f =>
-					@previewers.map { p =>
-						@if(p.contentType.contains(f.contentType)) {
-    					<div class="tab-pane" id="previewer_@p.id"></div>
-    					<script>
-							var Configuration = {};
-							Configuration.id = "@dataset.id";
-							Configuration.url = "@routes.Files.file(dataset.files(0).id.toString)" + "/blob";
-						</script>
-						<script type="text/javascript" src="@(routes.Assets.at(p.path) + "/" + p.main)"></script>
-				  		}
-				  	}
-				  	<div id="galleria" style="float:left;clear:none;width:300px;height:300px;">
-				  	@f.sections.map { s =>
-				  		<div>@s.order @s.startTime</div>
-				  		<img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" 
-				  		class="img-polaroid" height="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
-				  	}
-				  	</div>
-    			}
-	  			</div>
+		
+		@dataset.files.map { f =>
+			<div class="row">
+		    	<div class="span12">
+			  		<div class="tabbable">
+						<ul class="nav nav-pills" id="myTab">
+						    @previewers.map { p =>
+								@if(p.contentType.contains(f.contentType)) {
+						  			<li class=""><a href="#previewer_@p.id" data-toggle="tab">@p.id</a></li>
+						  		}
+						    }	
+						</ul>
+						<div class="tab-content">
+					  		@previewers.map { p =>
+								@if(p.contentType.contains(f.contentType)) {
+							  		<div class="tab-pane" id="previewer_@p.id"></div>
+			    					<script>
+										var Configuration = {};
+										Configuration.id = "@dataset.id";
+										Configuration.url = "@routes.Files.file(f.id.toString)" + "/blob";
+									</script>
+									<script type="text/javascript" src="@(routes.Assets.at(p.path) + "/" + p.main)"></script>
+							  	}
+					  		}
+				  			<script type="text/javascript">
+								$(function () {
+				    				$('#myTab a:first').tab('show');
+				 				 })
+							</script>
+						</div>
+					</div>
+		  		</div>
 			</div>
-  			<script type="text/javascript">
-				$(function () {
-    				$('#myTab a:first').tab('show');
- 				 })
-			</script>
+			@if(f.sections.size > 0) {	
+			  	<div class="row">
+			  	  <div class="span6">
+				  	<div id="galleria" style="float:left;clear:none;width:300px;height:300px;">
+					  	@f.sections.map { s =>
+					  		<img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" 
+					  		class="img-polaroid" height="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
+					  	}
+				  	</div>
+				  </div>
+				  <div class="span6">
+				  	<div>
+				  		<h5>Shots</h5>
+				  		<ul>
+					  		@f.sections.map { s =>
+					  			<li>(@s.order) Start time: @s.startTime <a>Find Similar</a></li>
+					  		}
+				  		</ul>
+				  	</div>
+				  </div>
+			  	</div>
+			  			
+				<script src="http://popcornjs.org/code/dist/popcorn-complete.min.js" type="text/javascript"></script>	
+			    <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
+			    <script>
+			    	$(function() {
+					    // Load the classic theme
+					    Galleria.loadTheme('@routes.Assets.at("javascripts/galleria-classic/galleria.classic.min.js")');
+					
+					    // Initialize Galleria
+					    Galleria.run('#galleria');
+					    
+					    var gallery = $('#galleria').data('galleria');
+					    
+						Galleria.ready(function(options) {
+						
+						    // 'this' is the gallery instance
+						    // 'options' is the gallery options
+						
+						    this.bind('image', function(e) {
+						        Galleria.log('Now viewing ' + e.imageTarget.src);
+						    });
+						});
+				      	
+				      	
+				    });
+			    </script>
+    			}
+    		}
 		</div>
 		
+		<!-- right column -->
 		<div class="span4">
 		    <div class="row">
 				<dl>
@@ -117,32 +154,5 @@
 			     </script>
 			</div>
 		</div>
-		
-	<script src="http://popcornjs.org/code/dist/popcorn-complete.min.js" type="text/javascript"></script>	
-    <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
-    <script>
-    	$(function() {
-		    // Load the classic theme
-		    Galleria.loadTheme('@routes.Assets.at("javascripts/galleria-classic/galleria.classic.min.js")');
-		
-		    // Initialize Galleria
-		    Galleria.run('#galleria');
-		    
-		    var gallery = $('#galleria').data('galleria');
-		    
-			Galleria.ready(function(options) {
-			
-			    // 'this' is the gallery instance
-			    // 'options' is the gallery options
-			
-			    this.bind('image', function(e) {
-			        Galleria.log('Now viewing ' + e.imageTarget.src);
-			    });
-			});
-	      	
-	      	
-	    });
-    </script>
-		
 	</div>
 }

@@ -25,7 +25,7 @@ case class Preview (
 	section_id: Option[String] = None,
 	dataset_id: Option[String] = None,
 	filename: Option[String] = None,
-	contentType: Option[String] = None
+	contentType: String
 )
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {

@@ -7,7 +7,7 @@
 	<div class="row-fluid">
 		<div class="span2">
 		@previews.map { p =>
-			@if(p.contentType.getOrElse("").equals("image/jpeg")){
+			@if(p.contentType.equals("image/jpeg")){
 			<img src="@api.routes.Previews.download(p.id.toString)?key=letmein" class="img-polaroid" height="100px"></img>
 			}
 		}
