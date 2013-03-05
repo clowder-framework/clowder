@@ -8,7 +8,7 @@
 		<h1>@dataset.name</h1>
 	</div>
 	
-	<div class="row">	
+	<div class="row-fluid">	
 	
 		<!-- left column -->
 		<div class="span8">
@@ -46,7 +46,7 @@
 		  		</div>
 			</div>
 			@if(f.sections.size > 0) {	
-			  	<div class="row">
+			  	<div class="row-fluid" style="padding: 10px">
 			  	  <div class="span6">
 				  	<div id="galleria" style="float:left;clear:none;width:300px;height:300px;">
 					  	@f.sections.map { s =>
@@ -55,12 +55,12 @@
 					  	}
 				  	</div>
 				  </div>
-				  <div class="span6">
+				  <div class="span6" style="padding: 10px">
 				  	<div>
 				  		<h5>Shots</h5>
 				  		<ul>
 					  		@f.sections.map { s =>
-					  			<li>(@s.order) Start time: @s.startTime <a>Find Similar</a></li>
+					  			<li>@s.order / Start time: @s.startTime s / <a>Find Similar</a></li>
 					  		}
 				  		</ul>
 				  	</div>
