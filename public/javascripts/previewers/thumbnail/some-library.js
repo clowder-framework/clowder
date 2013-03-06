@@ -1,8 +1,10 @@
 (function ($, Configuration) {
-  console.log("Some library is running on " + Configuration.id);
+  console.log("image previewer for " + Configuration.id);
   
-  $("#previewer_Thumbnail").append(
+  console.log("Updating tab " + Configuration.tab);
+  $(Configuration.tab).append(
      "<img src='" + Configuration.url + "' width='400px'></img>"
   );
+  console.log($(Configuration.tab))
   
 }(jQuery, Configuration));
