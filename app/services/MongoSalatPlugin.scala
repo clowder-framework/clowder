@@ -23,10 +23,10 @@ import com.mongodb.casbah.gridfs.GridFS
  *
  */
 class MongoSalatPlugin(app: Application) extends Plugin {
-  case class MongoSource(
-    uri: MongoURI
-  ) {
-    def db: MongoDB = uri.connectDB.fold(l => throw(l), r => r)
+  case class MongoSource(uri: MongoURI) {
+    lazy val conn = uri.connectDB
+    
+    def db: MongoDB = conn.fold(l => throw(l), r => r)
 
     def collection(name: String): MongoCollection = db(name)
   }
