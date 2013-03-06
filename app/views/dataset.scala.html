@@ -50,19 +50,33 @@
 			  	  <div class="span6">
 				  	<div id="galleria" style="float:left;clear:none;width:300px;height:300px;">
 					  	@f.sections.map { s =>
+					  		@if(s.preview.isDefined) {
 					  		<img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" 
 					  		class="img-polaroid" height="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
+					  		}
 					  	}
 				  	</div>
 				  </div>
 				  <div class="span6" style="padding: 10px">
 				  	<div>
 				  		<h5>Shots</h5>
-				  		<ul>
+						<table class="table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Start Time</th>
+									<th>Find</th>
+								</tr>
+							</thead>
+							<tbody>
 					  		@f.sections.map { s =>
-					  			<li>@s.order / Start time: @s.startTime s / <a>Find Similar</a></li>
+					  			<tr>
+						  			<td>@s.order</td>
+						  			 <td>@s.startTime</td>
+						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id.toString)">Similar</a></td>
+					  			 </tr>
 					  		}
-				  		</ul>
+				  		</table>
 				  	</div>
 				  </div>
 			  	</div>

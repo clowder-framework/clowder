@@ -11,6 +11,9 @@ import java.io.File
 import scala.io.Source
 import java.io._
 import play.api.libs.ws.WS
+import models.SectionDAO
+import org.bson.types.ObjectId
+import models.PreviewDAO
 /**
  * Text search.
  * 
@@ -41,6 +44,16 @@ object Search extends Controller{
     Logger.debug("Starting multimedia serach interface")
     Ok(views.html.multimediasearch())
     //Ok("Sucessful")
+  }
+  
+  /**
+   * Search MultimediaFeatures.
+   */
+  def searchMultimediaIndex(section_id: String) = Action {
+    Logger.debug("Searching multimedia index")
+    // TODO handle multiple previews found
+    val preview = PreviewDAO.findBySectionId(new ObjectId(section_id))(0)
+    Ok(views.html.searchMultimediaIndex(preview))
   }
   
   def advanced()=Action{

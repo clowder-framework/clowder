@@ -49,7 +49,9 @@ GET      /SearchByText						controllers.Search.SearchByText(query: String ?= "")
 POST  	 /uploadquery						controllers.Search.uploadquery	
 GET      /searchbyURL                       controllers.Search.searchbyURL(query:String?="")
 GET      /Filterby                          controllers.Search.Filterby(id)
- 
+GET      /searchbyfeature					controllers.Search.searchMultimediaIndex(section_id)
+
+
 # Previewers
 GET    /previewers/list                   controllers.Previewers.list	
 
