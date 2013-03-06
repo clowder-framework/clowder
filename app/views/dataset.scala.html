@@ -17,31 +17,42 @@
 			<div class="row">
 		    	<div class="span12">
 			  		<div class="tabbable">
-						<ul class="nav nav-pills" id="myTab">
-						    @previewers.map { p =>
-								@if(p.contentType.contains(f.contentType)) {
-						  			<li class=""><a href="#previewer_@p.id" data-toggle="tab">@p.id</a></li>
-						  		}
-						    }	
-						</ul>
-						<div class="tab-content">
-					  		@previewers.map { p =>
-								@if(p.contentType.contains(f.contentType)) {
-							  		<div class="tab-pane" id="previewer_@p.id"></div>
-			    					<script>
-										var Configuration = {};
-										Configuration.id = "@dataset.id";
-										Configuration.url = "@routes.Files.file(f.id.toString)" + "/blob";
+						    @defining(for(p <- previewers ; pv <- f.previews) yield {
+						    	if (p.contentType.contains(pv.contentType)) {
+							    	(pv.id, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString) + "?key=letmein")
+						    	} else if (p.contentType.contains(f.contentType)) {
+					    			(f.id, p.id, p.path, p.main, routes.Files.file(f.id.toString) + "/blob")
+						    	} else {
+						    		("", "", "", "", "")
+						    	}
+						    }) { tabs =>
+								<ul class="nav nav-pills" id="myTab">
+					    		@for(tab <- tabs) {
+					    			@if(tab._1 != "") {
+							    		<li class=""><a href="#previewer_@tab._1" data-toggle="tab">@tab._2</a></li>
+					    			}
+						    	}
+								</ul>
+								<div class="tab-content">
+						    		@for(tab <- tabs) {
+						    			@if(tab._1 != "") {
+									  		<div class="tab-pane" id="previewer_@tab._1"></div>
+					    					<script>
+												var Configuration = {};
+												Configuration.tab = "#previewer_@tab._1"
+												Configuration.id  = "@dataset.id";
+												Configuration.url = "@tab._5";
+											</script>
+											<script type="text/javascript" src="@(routes.Assets.at(tab._3) + "/" + tab._4)"></script>
+										}
+   								    }
+						  			<script type="text/javascript">
+										$(function () {
+						    				$('#myTab a:first').tab('show');
+						 				 })
 									</script>
-									<script type="text/javascript" src="@(routes.Assets.at(p.path) + "/" + p.main)"></script>
-							  	}
-					  		}
-				  			<script type="text/javascript">
-								$(function () {
-				    				$('#myTab a:first').tab('show');
-				 				 })
-							</script>
-						</div>
+								</div>
+						    }
 					</div>
 		  		</div>
 			</div>
