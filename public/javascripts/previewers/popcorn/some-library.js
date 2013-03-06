@@ -8,7 +8,7 @@
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);  
   $(Configuration.tab).append(
-     "<video height='400' width='600' id='ourvideo' controls><source src='" + Configuration.url + "'></source></video>"
+     "<video height='360px' id='ourvideo' controls><source src='" + Configuration.url + "'></source></video>"
   );
   
 }(jQuery, Configuration));
