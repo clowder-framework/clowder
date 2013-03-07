@@ -10,6 +10,7 @@ import akka.actor.Props
 import akka.actor.Actor
 import akka.actor.ActorRef
 import play.api.libs.json.Json
+import play.api.Play.current
    
 case class ExtractorMessage (
     id: String,
@@ -26,28 +27,31 @@ case class ExtractorMessage (
  */
 class RabbitmqPlugin(application: Application) extends Plugin {
 
-  val host = ConfigFactory.load().getString("rabbitmq.host");
-//  val port = ConfigFactory.load().getString("rabbitmq.port");
-  val exchange = ConfigFactory.load().getString("rabbitmq.exchange");
-//  val user = ConfigFactory.load().getString("rabbitmq.user");
-//  val password = ConfigFactory.load().getString("rabbitmq.password");
   var messageQueue: Option[ActorRef] = None
   
   override def onStart() {
     Logger.debug("Starting up Rabbitmq plugin.")
+    
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("rabbitmq.host").getOrElse("")
+    val port = configuration.getString("rabbitmq.port").getOrElse("")
+    val exchange = configuration.getString("rabbitmq.exchange").getOrElse("")
+    val user = configuration.getString("rabbitmq.user").getOrElse("")
+    val password = configuration.getString("rabbitmq.password").getOrElse("")
+    
     try {
       val factory = new ConnectionFactory();
-//      if (user != null) factory.setUsername(user);
-//      if (password != null) factory.setPassword(password);
-      factory.setHost(host);
-//      if (port != null) factory.setPort(port.toInt);
+      if (!host.equals("")) factory.setHost(host);
+      if (!port.equals("")) factory.setPort(port.toInt);
+      if (!user.equals("")) factory.setUsername(user);
+      if (!password.equals("")) factory.setPassword(password);
       val connection: Connection = factory.newConnection()
       val sendingChannel = connection.createChannel()
       sendingChannel.exchangeDeclare(exchange, "topic", true)
       messageQueue =  Some(Akka.system.actorOf(Props(new SendingActor(channel = sendingChannel, exchange = exchange))))
     } catch {
-      case ioe: java.io.IOException => Logger.error("Error connecting to rabbitmq broker")
-      case _:Throwable => Logger.error("Unknown error connecting to rabbitmq broker")
+      case ioe: java.io.IOException => Logger.error("Error connecting to rabbitmq broker " + ioe.toString)
+      case _:Throwable => Logger.error("Unknown error connecting to rabbitmq broker ")
     }
   }
 
