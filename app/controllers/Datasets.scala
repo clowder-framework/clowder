@@ -97,7 +97,22 @@ object Datasets extends Controller with SecureSocial {
           FileDAO.get(f.id.toString).get
         }
         val datasetWithFiles = dataset.copy(files = files)
-        Ok(views.html.dataset(datasetWithFiles, Previewers.searchFileSystem))
+        val previewers = Previewers.searchFileSystem
+        val previewslist = for(f <- datasetWithFiles.files) yield {
+          val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString) + "?key=letmein")
+          }
+          if (pvf.length > 0) {
+            (f -> pvf)
+          } else {
+  	        val ff = for(p <- previewers ; if (p.contentType.contains(f.contentType))) yield {
+  	          (f.id.toString, p.id, p.path, p.main, routes.Files.file(f.id.toString) + "/blob")
+  	        }
+  	        (f -> ff)
+          }
+        }
+        val previews = Map(previewslist:_*)
+        Ok(views.html.dataset(datasetWithFiles, previews))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }

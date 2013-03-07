@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, previewers: Array[Previewer]) 
+@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String)]]) 
 
 @main("Dataset") {
 
@@ -13,47 +13,44 @@
 		<!-- left column -->
 		<div class="span8">
 		
-		@dataset.files.map { f =>
+		@for((f, pvs) <- previews) {
 			<div class="row-fluid">
 		    	<div class="span12">
-			  		<div class="tabbable">
-						    @defining(for(p <- previewers ; pv <- f.previews) yield {
-						    	if (p.contentType.contains(pv.contentType)) {
-							    	(pv.id, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString) + "?key=letmein")
-						    	} else if (p.contentType.contains(f.contentType)) {
-					    			(f.id, p.id, p.path, p.main, routes.Files.file(f.id.toString) + "/blob")
-						    	} else {
-						    		("", "", "", "", "")
-						    	}
-						    }) { tabs =>
-								<ul class="nav nav-pills" id="myTab">
-					    		@for(tab <- tabs) {
-					    			@if(tab._1 != "") {
-							    		<li class=""><a href="#previewer_@tab._1" data-toggle="tab">@tab._2</a></li>
-					    			}
-						    	}
-								</ul>
-								<div class="tab-content">
-						    		@for(tab <- tabs) {
-						    			@if(tab._1 != "") {
-									  		<div class="tab-pane" id="previewer_@tab._1"></div>
-					    					<script>
-												var Configuration = {};
-												Configuration.tab = "#previewer_@tab._1"
-												Configuration.id  = "@dataset.id";
-												Configuration.url = "@tab._5";
-											</script>
-											<script type="text/javascript" src="@(routes.Assets.at(tab._3) + "/" + tab._4)"></script>
-										}
-   								    }
-						  			<script type="text/javascript">
-										$(function () {
-						    				$('#myTab a:first').tab('show');
-						 				 })
+		  			@if(pvs.length == 1) {
+				  		<div id="previewer_@pvs.head._1"></div>
+    					<script>
+							var Configuration = {};
+							Configuration.tab = "#previewer_@pvs.head._1"
+							Configuration.id  = "@dataset.id";
+							Configuration.url = "@pvs.head._5";
+						</script>
+						<script type="text/javascript" src="@(routes.Assets.at(pvs.head._3) + "/" + pvs.head._4)"></script>
+		  			} else {
+				  		<div class="tabbable">
+							<ul class="nav nav-pills" id="myTab">
+				  				@for(p <- pvs) {
+						    		<li class=""><a href="#previewer_@p._1" data-toggle="tab">@p._2</a></li>
+				  				}
+							</ul>
+							<div class="tab-content">
+				  				@for(p <- pvs) {
+							  		<div class="tab-pane" id="previewer_@p._1"></div>
+			    					<script>
+										var Configuration = {};
+										Configuration.tab = "#previewer_@p._1"
+										Configuration.id  = "@dataset.id";
+										Configuration.url = "@p._5";
 									</script>
-								</div>
-						    }
-					</div>
+									<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
+								}
+					  			<script type="text/javascript">
+									$(function () {
+					    				$('#myTab a:first').tab('show');
+					 				 })
+								</script>
+							</div>
+						</div>
+					}
 		  		</div>
 			</div>
 			@if(f.sections.size > 0) {	
