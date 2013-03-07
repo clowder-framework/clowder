@@ -38,4 +38,8 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   def findOneByFileId(file_id: ObjectId): Option[Dataset] = {
     dao.findOne(MongoDBObject("files._id" -> file_id))
   }
+  
+  def findByTag(tag: String): List[Dataset] = {
+    dao.find(MongoDBObject("tags" -> tag)).toList
+  }
 }

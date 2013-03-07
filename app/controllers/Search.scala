@@ -81,13 +81,13 @@ object Search extends Controller{
 	          mf.features.find(_.representation == f.representation) match {
 	            case Some(fd) => {
 	              val distance = ImageMeasures.getDistance(FeatureType.valueOf(fd.representation), f.descriptor.toArray, fd.descriptor.toArray)
-//	              if (!distance.isNaN()) {
+	              if (!distance.isNaN()) {
 		              Logger.debug(f.representation + "/" + fd.representation + " Distance between " + feature.section_id + " and " + mf.id + " is " + distance)
 		              queues.get(f.representation).map{ q => 
 		                val popped = q.insertWithOverflow(SearchResult(mf.section_id.get.toString, distance, None))
 		                if (popped != null) Logger.debug("Popped distance off the queue " + popped)
 		              }
-//		            }
+		            }
 	            }
 	            case None => 
 	              Logger.error("Matching descriptor not found")

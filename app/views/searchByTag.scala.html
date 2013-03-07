@@ -1,0 +1,32 @@
+@(tag: String, datasets: List[models.Dataset])
+
+@main("Tagged Datasets") {
+	<div class="page-header">
+		<h3>Tag: @tag</h3>
+	</div>
+	@if(datasets.size == 0) {
+	<div class="row-fluid">
+		<div class="span12">
+			No results found. Sorry!
+		</div>
+	</div>
+	}
+	<table class="table table-bordered table-hover">
+	<thead>
+		<tr>
+			<th>Title</th>
+			<th>Created</th>
+			<th>Description</th>
+		</tr>
+	</thead>
+	<tbody>
+    @for(dataset <- datasets) {
+		<tr>
+			<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
+			<td>@dataset.created</td>
+			<td>@dataset.description</td>
+		</tr>
+	}
+	</tbody>
+	</table>
+}

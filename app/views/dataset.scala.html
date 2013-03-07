@@ -143,36 +143,53 @@
 				<h5>Tags</h5>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
-					  <li>@tag</li>
+					  <li><a href="@routes.Tags.search(tag)">@tag</a></li>
 					}
 				</ul>
-				<input type="text" placeholder="Text input" id="tagField">
-				<button class="btn" id="tagB">Tag</button>
+				<form class="form-inline">
+					<input type="text" placeholder="Text input" id="tagField">
+					<button class="btn" id="tagB">Tag</button>
+				</form>
 				<script language="javascript">
 				$(function() {
+					
 				   $('#tagB').click(function() {
 				     var tag = $('#tagField').val();
-				     console.log("submitting tag " + tag);
-				     console.log("@routes.Tags.tag");
-				     
-				     var request = jsRoutes.controllers.Tags.tag().ajax({
-				       data: JSON.stringify({"id":"@dataset.id","tag":tag}),
-				       type: 'POST',
-				       contentType: "application/json",
-				     });
-				     
-				     request.done(function (response, textStatus, jqXHR){
-				        console.log("Response " + response);
-				        $('#tagList').append('<li>' + tag + '</li>');
-				     });
-		    
-				     request.fail(function (jqXHR, textStatus, errorThrown){
-				        console.error(
-				            "The following error occured: "+
-				            textStatus, errorThrown
-				        );
-				     });
+
+				     if (tag !== "") {
+				     	 console.log("submitting tag " + tag);
+					     var request = jsRoutes.controllers.Tags.tag().ajax({
+					       data: JSON.stringify({"id":"@dataset.id","tag":tag}),
+					       type: 'POST',
+					       contentType: "application/json",
+					     });
+					     
+					     request.done(function (response, textStatus, jqXHR){
+					        console.log("Response " + response);
+					        var url = "../tags/search/" + tag;
+					        $('#tagList').append("<li><a href='" + url + "'>" + tag + "</a></li>");
+					        $('#tagField').val("");
+					     });
+			    
+					     request.fail(function (jqXHR, textStatus, errorThrown){
+					        console.error(
+					            "The following error occured: "+
+					            textStatus, errorThrown
+					            
+					        );
+					        window.location = "../login"; // FIXME hardcoded
+					     });
+				     }
 				  });
+				  
+				  	$('#tagField').keypress(function (e) {
+					  if (e.which == 13) {
+					    console.log("enter");
+					    $('#tagB').click();
+					    
+					  }
+					});
+				  
 				 });
 			     </script>
 			</div>

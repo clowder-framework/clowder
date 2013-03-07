@@ -8,6 +8,7 @@ import models.Dataset
 import com.mongodb.casbah.commons.MongoDBObject
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
+import play.api.mvc.Action
 /**
  * Tagging.
  * 
@@ -31,5 +32,11 @@ object Tags extends Controller with SecureSocial {
     }.getOrElse {
       BadRequest(toJson("error"))
     }
+  }
+  
+  def search(tag: String) = Action {
+    val datasets = Dataset.findByTag(tag)
+//    Logger.debug("Search by tag " + tag + " returned " + datasets.length)
+    Ok(views.html.searchByTag(tag, datasets))
   }
 }

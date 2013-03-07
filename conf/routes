@@ -35,6 +35,7 @@ POST    /tags		                      controllers.Tags.tag
 
 # Tags
 POST    /tags		                      controllers.Tags.tag
+GET     /tags/search/:tag		          controllers.Tags.search(tag)
 
 # Authentication
 GET     /loginTest                        controllers.Authentication.login
