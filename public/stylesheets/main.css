@@ -151,3 +151,14 @@ html,
       code {
         font-size: 80%;
       }
+      
+      
+      #nwthumbs {
+  text-align:center;
+}
+
+#nwthumbs > li {
+    display: inline-block;
+    *display:inline; /* ie7 fix */
+    float: none; /* this is the part that makes it work */
+}

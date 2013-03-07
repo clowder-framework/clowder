@@ -25,7 +25,6 @@ import securesocial.core.providers.UsernamePasswordProvider
 case class Authenticated[A](action: Action[A]) extends Action[A] {
   
   def apply(request: Request[A]): Result = {
-    Logger.info("Checking authentication on API call")
     val keyFromHeader = request.headers.get("")
     request.headers.get("Authorization") match { // basic authentication
       case Some(authHeader) => {
@@ -50,7 +49,6 @@ case class Authenticated[A](action: Action[A]) extends Action[A] {
         request.queryString.get("key") match { // token in url
           case Some(key) => {
             if (key.length > 0) {
-              Logger.info("Found key " + key(0))
               // TODO Check for key in database
               if (key(0).equals("letmein")) {
     	        action(request)

@@ -9,6 +9,7 @@ import MongoContext.context
 import play.api.Play.current
 import services.MongoSalatPlugin
 import java.util.Date
+import com.mongodb.casbah.commons.MongoDBObject
 
 /**
  * A dataset is a collection of files, and streams.
@@ -32,5 +33,9 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
+  }
+  
+  def findOneByFileId(file_id: ObjectId): Option[Dataset] = {
+    dao.findOne(MongoDBObject("files._id" -> file_id))
   }
 }

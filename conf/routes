@@ -27,7 +27,7 @@ POST   	/uploaddnd					 	  controllers.Files.uploaddnd
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
-POST    /dataset/createDataset            controllers.Datasets.createDataset
+GET     /datasets_by_section/:id          controllers.Datasets.datasetBySection(id)
 POST    /dataset/submit                   controllers.Datasets.submit
 
 # Tags
@@ -49,7 +49,9 @@ GET      /SearchByText						controllers.Search.SearchByText(query: String ?= "")
 POST  	 /uploadquery						controllers.Search.uploadquery	
 GET      /searchbyURL                       controllers.Search.searchbyURL(query:String?="")
 GET      /Filterby                          controllers.Search.Filterby(id)
- 
+GET      /searchbyfeature					controllers.Search.searchMultimediaIndex(section_id)
+
+
 # Previewers
 GET    /previewers/list                   controllers.Previewers.list	
 
