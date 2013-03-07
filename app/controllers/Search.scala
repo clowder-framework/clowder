@@ -77,16 +77,18 @@ object Search extends Controller{
         feature.features.map { f =>
           	Logger.debug("Computing " + f.representation)
 	        MultimediaFeaturesDAO.find(MongoDBObject()).toList.map { mf =>
-	          Logger.debug("Found multimedia features " + mf.id + " for section " + section_id)
+	          Logger.trace("Found multimedia features " + mf.id + " for section " + section_id)
 	          mf.features.find(_.representation == f.representation) match {
 	            case Some(fd) => {
 	              val distance = ImageMeasures.getDistance(FeatureType.valueOf(fd.representation), f.descriptor.toArray, fd.descriptor.toArray)
 	              if (!distance.isNaN()) {
-		              Logger.debug(f.representation + "/" + fd.representation + " Distance between " + feature.section_id + " and " + mf.id + " is " + distance)
+		              Logger.trace(f.representation + "/" + fd.representation + " Distance between " + feature.section_id + " and " + mf.id + " is " + distance)
 		              queues.get(f.representation).map{ q => 
 		                val popped = q.insertWithOverflow(SearchResult(mf.section_id.get.toString, distance, None))
-		                if (popped != null) Logger.debug("Popped distance off the queue " + popped)
+		                if (popped != null) Logger.trace("Popped distance off the queue " + popped)
 		              }
+		            } else {
+		              Logger.debug("Distance NaN " + f.descriptor + " and " + fd.descriptor + " is " + distance)
 		            }
 	            }
 	            case None => 
@@ -129,7 +131,7 @@ object Search extends Controller{
             val element = queue.pop()
             val previews = PreviewDAO.findBySectionId(new ObjectId(element.section_id))
             if (previews.size == 1) {
-              Logger.debug("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previews(0).id.toString)
+              Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previews(0).id.toString)
               list.prepend(SearchResult(element.section_id, element.distance, Some(previews(0).id.toString)))
             } else {
               Logger.error("Found more/less than one preview " + preview)
