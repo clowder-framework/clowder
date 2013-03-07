@@ -33,7 +33,7 @@ object Indexes extends Controller {
    */
   def index() = Authenticated {
     Action(parse.json) { request =>
-      Logger.debug("Add feature to multimedia index " + request.body)
+//      Logger.debug("Add feature to multimedia index " + request.body)
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
       	    PreviewDAO.findOneById(new ObjectId(preview_id)) match {
@@ -63,7 +63,6 @@ object Indexes extends Controller {
    */
   def features() = Authenticated {
     Action(parse.json) { request =>
-      Logger.debug("Add feature to multimedia index " + request.body)
       (request.body \ "section_id").asOpt[String].map { section_id =>
         MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"->new ObjectId(section_id))) match {
           case Some(mFeatures) => {
@@ -89,7 +88,7 @@ object Indexes extends Controller {
             }
             val doc = MultimediaFeatures(section_id = Some(new ObjectId(section_id)), features = features)
             MultimediaFeaturesDAO.save(doc)
-            Logger.debug("Features created: " + doc)
+//            Logger.debug("Features created: " + doc)
             Ok(toJson(Map("id"->doc.id.toString)))
           }
         }

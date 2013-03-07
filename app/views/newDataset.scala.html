@@ -1,4 +1,4 @@
-@(myForm: Form[Dataset])
+@(myForm: Form[Dataset])(implicit flash: play.api.mvc.Flash)
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -9,10 +9,21 @@
   </div>
   <div class="row">
 	<div class="span12">
+	@if(myForm.hasErrors) {
+		<div class="alert alert-error">
+            <p>Please fix all errors</p>
+        </div>
+    }
+    @flash.get("error").map { message =>
+    	<div class="alert alert-error">
+            <p>@message</p>
+        </div>
+    }
+    
 	  @form(action = routes.Datasets.submit, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {	 
 	    <fieldset>
 	      @inputText(myForm("name"), '_label -> "Name")
-	      @inputText(myForm("description"), '_label -> "Description")
+	      @textarea(myForm("description"), '_label -> "Description")
 	    </fieldset>
 	    <fieldset>
 	      @inputFile(myForm("file"), '_label -> "File")

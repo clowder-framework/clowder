@@ -25,6 +25,7 @@ import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
 import models.SectionDAO
+import play.api.mvc.Flash
 
 /**
  * A dataset is a collection of files and streams.
@@ -46,29 +47,13 @@ object Datasets extends Controller with SecureSocial {
     ((dataset: Dataset) => Some((dataset.name, dataset.description)))
    )
    
-  def newDataset() = Action {
-    Ok(views.html.newDataset(datasetForm))
-  }
-  
-  def createDataset() = Action { implicit request =>
-    datasetForm.bindFromRequest.fold(
-        failure => BadRequest("Oops"),
-        {case dataset => {
-          Dataset.save(dataset)
-          Redirect(routes.Datasets.dataset(dataset.id.toString))   
-          }
-        }
-    )
+  def newDataset() = Action { implicit request =>
+    Ok(views.html.newDataset(datasetForm)).flashing("error"->"Please select a file")
   }
    
   /**
    * List datasets.
    */
-//  def list() = Action {
-//    Ok(views.html.datasetList(Services.datasets.listDatasets()))
-//  }
-  
-  
   def list(when: String, date: String, limit: Int) = Action {
     var direction = "b"
     if (when != "") direction = when
@@ -142,52 +127,50 @@ object Datasets extends Controller with SecureSocial {
    */
   def submit() = Action(parse.multipartFormData) { implicit request =>
     
-    val dataset : Option[Dataset] = datasetForm.bindFromRequest.fold(
-        failure => None,
-        dataset => Some(dataset)
-    )
-    
-      request.body.file("file").map { f =>
-        dataset.map { dataset =>
-	        Logger.info("Uploading file " + f.filename)
-	        // store file
-		    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-		    Logger.debug("Uploaded file id is " + file.get.id)
-		    file match {
-		      case Some(f) => {
-		    	// TODO RK need to replace unknown with the server name
-		    	val key = "unknown." + "file."+ f.contentType.replace("/", ".")
-                // TODO RK : need figure out if we can use https
-                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
-                val id = f.id.toString
-		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
-		        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
-
-	            // add file to dataset
-		        val dt = dataset.copy(files = List(f))
-		        // TODO create a service instead of calling salat directly
-	            Dataset.save(dt)
-		    	// TODO RK need to replace unknown with the server name and dataset type
-		    	val dtkey = "unknown." + "dataset."+ "unknown"
-		        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey, Map.empty))}
-	            // redirect to file page
-	            Redirect(routes.Datasets.dataset(dt.id.toString))
-		      }
-		      
-		      case None => {
-		        Logger.error("Could not retrieve file that was just saved.")
-		        // TODO create a service instead of calling salat directly
-	            Dataset.save(dataset)
-	            // redirect to file page
-	            Redirect(routes.Datasets.dataset(dataset.id.toString))
-		      }
-		    }
-	        
+     
+        datasetForm.bindFromRequest.fold(
+          errors => BadRequest(views.html.newDataset(errors)),
+	      dataset => {
+	           request.body.file("file").map { f =>
+		        Logger.info("Uploading file " + f.filename)
+		        // store file
+			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+			    Logger.debug("Uploaded file id is " + file.get.id)
+			    file match {
+			      case Some(f) => {
+			    	// TODO RK need to replace unknown with the server name
+			    	val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+	                // TODO RK : need figure out if we can use https
+	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
+	                val id = f.id.toString
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
+			        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
+	
+		            // add file to dataset
+			        val dt = dataset.copy(files = List(f))
+			        // TODO create a service instead of calling salat directly
+		            Dataset.save(dt)
+			    	// TODO RK need to replace unknown with the server name and dataset type
+			    	val dtkey = "unknown." + "dataset."+ "unknown"
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey, Map.empty))}
+		            // redirect to file page
+		            Redirect(routes.Datasets.dataset(dt.id.toString))
+//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
+			      }
+			      
+			      case None => {
+			        Logger.error("Could not retrieve file that was just saved.")
+			        // TODO create a service instead of calling salat directly
+		            Dataset.save(dataset)
+		            // redirect to file page
+		            Redirect(routes.Datasets.dataset(dataset.id.toString))
+//		            Ok(views.html.dataset(dataset, Previewers.searchFileSystem))
+			      }
+			    }   
         }.getOrElse{
-          BadRequest("Form binding error")
+          Redirect(routes.Datasets.newDataset()).flashing("error"->"Please select a file")
         }
-      }.getOrElse {
-         BadRequest("File not attached")
-      }
+	    }
+	)
   }
 }
