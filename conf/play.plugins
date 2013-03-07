@@ -1,8 +1,8 @@
 9996:services.RabbitmqPlugin
-700:services.MongoSalatPlugin
 1500:com.typesafe.plugin.CommonsMailerPlugin
 9997:services.SecureSocialTemplatesPlugin
 9998:services.MongoUserService
 9996:securesocial.core.providers.utils.DefaultPasswordValidator
 9999:securesocial.core.providers.utils.BCryptPasswordHasher
 10004:securesocial.core.providers.UsernamePasswordProvider
+99999:services.MongoSalatPlugin

@@ -24,11 +24,24 @@ import com.mongodb.casbah.gridfs.GridFS
  */
 class MongoSalatPlugin(app: Application) extends Plugin {
   case class MongoSource(uri: MongoURI) {
-    lazy val conn = uri.connectDB
+    var conn : MongoConnection = null;
+    lazy val db = open.getDB(uri.database.getOrElse("medici"))
     
-    def db: MongoDB = conn.fold(l => throw(l), r => r)
-
     def collection(name: String): MongoCollection = db(name)
+    
+    def open = {
+      if (conn == null) {
+        conn = uri.connect.fold(l => throw(l), r => r)
+      }
+      conn
+    }
+
+     def close = {
+       if (conn != null) {
+         conn.close
+         conn = null
+       }  
+     }
   }
 
   object MongoSource {
@@ -46,8 +59,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }.toMap
 
   override def onStart() {
-    Logger.debug("Starting up MongoSalat plugin.")
-
+    if (sources.isEmpty) {
+      Logger.error("no connections specificed in conf file.")
+    }
     app.mode match {
       case Mode.Test =>
       case _ => {
@@ -57,7 +71,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           } catch {
             case e: MongoException => throw configuration.reportError("mongodb." + source._1, "couldn't connect to [" + source._2.uri + "]", Some(e))
           } finally {
-            Logger("play").info("mongodb [" + source._1 + "] connected at " + source._2)
+            Logger.info("[mongoplugin]  connected '" + source._1 + "' to " + source._2.uri)
           }
         }
       }
@@ -65,7 +79,15 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   override def onStop() {
-    Logger.debug("Shutting down MongoSalat plugin.")
+    sources.map { source =>
+	  try {
+	    source._2.close
+	  } catch {
+	    case e: MongoException => throw configuration.reportError("mongodb." + source._1, "couldn't close [" + source._2.uri + "]", Some(e))
+	  } finally {
+	    Logger.info("[mongoplugin] closed '" + source._1 + "' to " + source._2.uri)
+	  }
+    }
   }
 
   override def enabled = !configuration.subKeys.isEmpty
