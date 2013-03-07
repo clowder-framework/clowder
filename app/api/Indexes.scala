@@ -76,6 +76,12 @@ object Indexes extends Controller {
                 featureBuilder += "descriptor" -> (f \ "descriptor").as[List[Double]]
                 listBuilder += featureBuilder.result
             }
+            mFeatures.features.map {f =>
+            	val featureBuilder = MongoDBObject.newBuilder
+                featureBuilder += "representation" -> f.representation
+                featureBuilder += "descriptor" -> f.descriptor
+                listBuilder += featureBuilder.result
+            }
             builder += "features" -> listBuilder.result
             Logger.debug("Features doc " + mFeatures.id + " updated")
             MultimediaFeaturesDAO.update(MongoDBObject("_id" -> mFeatures.id), builder.result, false, false, WriteConcern.Safe)
