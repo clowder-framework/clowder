@@ -27,14 +27,20 @@ case class ExtractorMessage (
 class RabbitmqPlugin(application: Application) extends Plugin {
 
   val host = ConfigFactory.load().getString("rabbitmq.host");
+//  val port = ConfigFactory.load().getString("rabbitmq.port");
   val exchange = ConfigFactory.load().getString("rabbitmq.exchange");
+//  val user = ConfigFactory.load().getString("rabbitmq.user");
+//  val password = ConfigFactory.load().getString("rabbitmq.password");
   var messageQueue: Option[ActorRef] = None
   
   override def onStart() {
     Logger.debug("Starting up Rabbitmq plugin.")
     try {
       val factory = new ConnectionFactory();
+//      if (user != null) factory.setUsername(user);
+//      if (password != null) factory.setPassword(password);
       factory.setHost(host);
+//      if (port != null) factory.setPort(port.toInt);
       val connection: Connection = factory.newConnection()
       val sendingChannel = connection.createChannel()
       sendingChannel.exchangeDeclare(exchange, "topic", true)

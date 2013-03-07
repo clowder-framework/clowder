@@ -14,7 +14,7 @@
 		<div class="span8">
 		
 		@dataset.files.map { f =>
-			<div class="row">
+			<div class="row-fluid">
 		    	<div class="span12">
 			  		<div class="tabbable">
 						    @defining(for(p <- previewers ; pv <- f.previews) yield {
@@ -68,14 +68,14 @@
 					  	}
 				  	</div>
 				  </div>
-				  <div class="span6" style="padding: 10px">
+				  <div class="span6" style="padding: 5px">
 				  	<div>
 				  		<h5>Shots</h5>
 						<table class="table">
 							<thead>
 								<tr>
 									<th>#</th>
-									<th>Start Time</th>
+									<th>Start Time (sec)</th>
 									<th>Find</th>
 								</tr>
 							</thead>
@@ -125,8 +125,6 @@
 		<div class="span4">
 		    <div class="row">
 				<dl>
-					<dt>Name:</dt>
-					<dd>@dataset.name</dd>
 					<dt>Description:</dt>
 					<dd>@dataset.description</dd>
 				    <dt>Created:</dt>

@@ -24,6 +24,7 @@ import securesocial.core.SecureSocial
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
+import models.SectionDAO
 
 /**
  * A dataset is a collection of files and streams.
@@ -114,6 +115,20 @@ object Datasets extends Controller with SecureSocial {
         Ok(views.html.dataset(datasetWithFiles, Previewers.searchFileSystem))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+    }
+  }
+  
+  /**
+   * Dataset by section.
+   */
+  def datasetBySection(section_id: String) = Action {
+    SectionDAO.findOneById(new ObjectId(section_id)) match {
+      case Some(section) => {
+        Dataset.findOneByFileId(section.file_id) match {
+          case Some(dataset) => Redirect(routes.Datasets.dataset(dataset.id.toString))
+          case None => InternalServerError("Dataset not found")
+        }   
+      }
     }
   }
   

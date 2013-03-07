@@ -27,6 +27,7 @@ POST   	/uploaddnd					 	  controllers.Files.uploaddnd
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
+GET     /datasets_by_section/:id          controllers.Datasets.datasetBySection(id)
 POST    /dataset/createDataset            controllers.Datasets.createDataset
 POST    /dataset/submit                   controllers.Datasets.submit
 
