@@ -19,7 +19,7 @@ Starting up
 
 rabbitmq:
 - enable management plugin
--- rabbitmq-plugins enable rabbitmq_management
+-- sbin/rabbitmq-plugins enable rabbitmq_management
 - launch rabbitmq
 -- (cd ${HOME}/rabbitmq-3.0.1 && sbin/rabbitmq-server)
 - connect to server
