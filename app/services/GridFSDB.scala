@@ -50,7 +50,7 @@ trait GridFSDB {
 //      case None => Logger.error("NO FILE!!!!!!")
 //    }
     
-    Some(File(oid, None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get))
+    Some(File(oid, None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
   }
 
   /**

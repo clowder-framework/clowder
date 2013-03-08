@@ -100,13 +100,13 @@ object Datasets extends Controller with SecureSocial {
         val previewers = Previewers.searchFileSystem
         val previewslist = for(f <- datasetWithFiles.files) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
-            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString) + "?key=letmein")
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString) + "?key=letmein", pv.contentType, pv.length)
           }
           if (pvf.length > 0) {
             (f -> pvf)
           } else {
   	        val ff = for(p <- previewers ; if (p.contentType.contains(f.contentType))) yield {
-  	          (f.id.toString, p.id, p.path, p.main, routes.Files.file(f.id.toString) + "/blob")
+  	          (f.id.toString, p.id, p.path, p.main, routes.Files.file(f.id.toString) + "/blob", f.contentType, f.length)
   	        }
   	        (f -> ff)
           }
