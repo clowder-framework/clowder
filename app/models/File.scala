@@ -23,6 +23,7 @@ case class File(
     filename: String, 
     uploadDate: Date, 
     contentType: String,
+    length: Long,
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty
 )
