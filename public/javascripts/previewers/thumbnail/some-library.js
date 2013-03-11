@@ -48,7 +48,7 @@
 		  
 		  $.ajax({
 		      url: "http://api.zoom.it/v1/content/?url=" +
-		      encodeURIComponent("http://"+Configuration.hostIp+":"+window.location.port+Configuration.url),
+		      encodeURIComponent("http://"+Configuration.hostIp+":"+window.location.port+Configuration.url),			  
 		      dataType: "jsonp",
 		      success: onZoomitResponse
 		  });

@@ -28,7 +28,10 @@
 								Configuration.fileSize = @pvs.head._7;
 								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 							}
-							
+							else if("@pvs.head._2" === "PTM"){
+								Configuration.appletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
+								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+							}							
 						</script>
 						<script type="text/javascript" src="@(routes.Assets.at(pvs.head._3) + "/" + pvs.head._4)"></script>
 		  			} else {
@@ -51,6 +54,10 @@
 											Configuration.fileSize = @p._7;
 											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 										}
+										else if("@p._2" === "PTM"){
+											Configuration.appletPath = "@(routes.Assets.at("plugins/envlib.jar"))";
+											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+				  						}
 									</script>
 									<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 								}
