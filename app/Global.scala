@@ -8,6 +8,7 @@ import play.api.{GlobalSettings, Application}
 object Global extends GlobalSettings {
   
   override def onStart(app: Application) {
+
     
     // testing
 //    val ncsa = Company(name = "NCSA")

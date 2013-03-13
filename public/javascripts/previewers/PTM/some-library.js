@@ -6,9 +6,6 @@
   var height = 400;
   var width = 700;
   
-alert(Configuration.url);
-
-
   $(Configuration.tab).append(
 		  "<object name='ptmApplet' type='application/x-java-applet' height='"+ height +"' width='"+ width +"'>"+
 		  "<param name='code' value='jpview.gui.Standalone' />"+
