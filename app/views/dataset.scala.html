@@ -17,7 +17,8 @@
 			<div class="row-fluid">
 		    	<div class="span12">
 		  			@if(pvs.length == 1) {
-				  		<div id="previewer_@pvs.head._1"></div>
+				  		<div id="previewer_@pvs.head._1" ></div>
+				  		
     					<script>
 							var Configuration = {};
 							Configuration.tab = "#previewer_@pvs.head._1"
@@ -31,7 +32,12 @@
 							else if("@pvs.head._2" === "PTM"){
 								Configuration.appletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
 								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-							}							
+							}
+							else if("@pvs.head._2" === "3DWebGL"){
+								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+								Configuration.imagesPath = "@(routes.Assets.at("images"))";
+							}
 						</script>
 						<script type="text/javascript" src="@(routes.Assets.at(pvs.head._3) + "/" + pvs.head._4)"></script>
 		  			} else {
@@ -55,9 +61,14 @@
 											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 										}
 										else if("@p._2" === "PTM"){
-											Configuration.appletPath = "@(routes.Assets.at("plugins/envlib.jar"))";
+											Configuration.appletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
 											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 				  						}
+										else if("@p._2" === "3DWebGL"){
+											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+											Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+											Configuration.imagesPath = "@(routes.Assets.at("images"))";
+										}
 									</script>
 									<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 								}

@@ -1,0 +1,4 @@
+{ "name" : "3DWebGL",
+  "main" : "some-library.js",
+  "contentType" : ["image/obj","application/octet-stream"]
+  }
