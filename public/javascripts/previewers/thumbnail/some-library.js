@@ -3,7 +3,8 @@
 	
 	console.log("Updating tab " + Configuration.tab);
 	  
-	  if(Configuration.fileSize < 3000000){
+//	zoom.it disabled for now
+	  if(true){
 		  if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png"){
 			  $(Configuration.tab).append(
 					     "<img src='" + Configuration.url + "' width='400px'></img>"
@@ -48,7 +49,7 @@
 		  
 		  $.ajax({
 		      url: "http://api.zoom.it/v1/content/?url=" +
-		      encodeURIComponent("http://"+Configuration.hostIp+":"+window.location.port+Configuration.url),
+		      encodeURIComponent("http://"+Configuration.hostIp+":"+window.location.port+Configuration.url),			  
 		      dataType: "jsonp",
 		      success: onZoomitResponse
 		  });

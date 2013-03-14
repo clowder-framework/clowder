@@ -151,10 +151,12 @@ object Datasets extends Controller with SecureSocial {
 		        // store file
 			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
 			    Logger.debug("Uploaded file id is " + file.get.id)
+			    Logger.debug("Uploaded file type is " + f.contentType)
 			    file match {
 			      case Some(f) => {
 			    	// TODO RK need to replace unknown with the server name
 			    	val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+//			        val key = "unknown." + "file."+ "application.x-ptm"
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
