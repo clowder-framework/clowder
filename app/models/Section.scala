@@ -33,6 +33,6 @@ object SectionDAO extends ModelCompanion[Section, ObjectId] {
   }
   
   def findByFileId(id: ObjectId): List[Section] = {
-    dao.find(MongoDBObject("file_id"->id)).toList
+    dao.find(MongoDBObject("file_id"->id)).sort(MongoDBObject("order"->1)).toList
   }
 }
