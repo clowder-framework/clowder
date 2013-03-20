@@ -104,8 +104,25 @@ object Files extends Controller with securesocial.core.SecureSocial {
   def upload() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.info("Uploading file " + f.filename)
-        // store file
-        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        
+        // store file (using hack to get the correct content type for PTMs and .obj)
+        // FIXME use application.conf instead
+        var fileType = f.contentType
+        val filenameStr = f.filename.split('.')
+        if (filenameStr.length > 1) 
+        {
+        	val fileExtension = filenameStr.takeRight(1)(0)
+        			if (f.contentType.equals(Some("application/octet-stream"))){
+        				if (fileExtension.toLowerCase().equals("ptm")){
+        					fileType = Some("application/x-ptm")
+        				}
+        				else if (fileExtension.toLowerCase().equals("obj")){
+        					fileType = Some("image/obj")
+        				}
+        			} 
+        }
+        
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, fileType)
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {

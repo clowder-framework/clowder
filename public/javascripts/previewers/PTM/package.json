@@ -1,4 +1,4 @@
 { "name" : "PTM",
   "main" : "some-library.js",
-  "contentType" : ["application/x-ptm","application/octet-stream"]
+  "contentType" : ["application/x-ptm"]
   }
