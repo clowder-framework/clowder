@@ -65,6 +65,7 @@ object Previews extends Controller {
 	          }
 	        }
 	      }
+	      case None => Logger.error("No preview find " + id); InternalServerError("No preview found")
 	    }
     }
   }

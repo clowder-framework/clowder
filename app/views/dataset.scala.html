@@ -105,7 +105,7 @@
 								<tr>
 									<th>#</th>
 									<th>Thumbail</th>
-									<th>Start Time (sec)</th>
+									<th>Start Time</th>
 									<th>Find</th>
 								</tr>
 							</thead>
@@ -113,10 +113,13 @@
 					  		@f.sections.map { s =>
 					  			<tr>
 						  			<td>@s.order</td>
-						  			<td><img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" 
+						  			<td>
+						  			@if(s.preview.isDefined) {
+						  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" 
 					  		class="img-polaroid" width="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
+					  		}
 					  				</td>
-						  			 <td>@s.startTime</td>
+						  			 <td>@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60)) </td>
 						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id.toString)">Similar</a></td>
 					  			 </tr>
 					  		}
@@ -129,20 +132,20 @@
 				<script>
 				    document.addEventListener("DOMContentLoaded", function () {
 				    
-			       var pop = Popcorn("#ourvideo");
+			        var pop = Popcorn("#ourvideo");
 			       
 					@f.sections.map { s =>
-			   		pop.code({
-				        start: @s.startTime,
-				        onStart: function() {
-				          var frame = @s.order - 1;
-				          console.log("Jumping to " + frame + " " + @s.startTime); 
-				          $('#galleria').data('galleria').show(frame);
-				        },
-				        onEnd: function() {
-				          //console.log("end");   
-				       }
-				    });
+				   		pop.code({
+					        start: @s.startTime,
+					        onStart: function() {
+					          var frame = @s.order - 1;
+					          console.log("Jumping to " + frame + " " + @s.startTime); 
+					          $('#galleria').data('galleria').show(frame);
+					        },
+					        onEnd: function() {
+					          //console.log("end");   
+					       }
+					    });
 				    }
 				    
 				    });
@@ -184,7 +187,7 @@
 					<dt>Description:</dt>
 					<dd>@dataset.description</dd>
 				    <dt>Created:</dt>
-					<dd>@dataset.created</dd>
+					<dd>@dataset.created.format("MMM dd, yyyy")</dd>
 				</dl>
 			</div>
 			
@@ -203,7 +206,7 @@
 					}
 				</ul>
 				<form class="form-inline">
-					<input type="text" placeholder="Text input" id="tagField">
+					<input type="text" id="tagField">
 					<button class="btn" id="tagB">Tag</button>
 				</form>
 				<script language="javascript">
@@ -235,14 +238,16 @@
 					        );
 					        window.location = "../login"; // FIXME hardcoded
 					     });
+					     return false;
 				     }
+				     
 				  });
 				  
 				  	$('#tagField').keypress(function (e) {
 					  if (e.which == 13) {
 					    console.log("enter");
 					    $('#tagB').click();
-					    
+					    return false;
 					  }
 					});
 				  
