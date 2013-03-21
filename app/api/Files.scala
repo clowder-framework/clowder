@@ -22,8 +22,8 @@ import play.api.Play.current
 import services.RabbitmqPlugin
 import services.ExtractorMessage
 import services.ElasticsearchPlugin
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsArray
+import play.api.libs.json.Json._
+import play.api.libs.json._
 
 /**
  * Json API for files.
@@ -101,6 +101,22 @@ object Files extends Controller {
 	    }
     }
   }
+  
+  /**
+   * Add metadata to file.
+   */
+  def addMetadata(id: String) = 
+    
+    Action(parse.json) { request =>
+      Logger.debug("Adding metadata to file " + id)
+     val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
+     val result = FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), 
+	              $set("metadata" -> doc), false, false, WriteConcern.SAFE)
+	 Logger.debug("Updating previews.files " + id + " with " + doc)
+	 Ok(toJson("success"))
+    }
+  
+  
   
   /**
    * Upload file using multipart form enconding.
