@@ -142,16 +142,31 @@ object Datasets extends Controller with SecureSocial {
    */
   def submit() = Action(parse.multipartFormData) { implicit request =>
     
-     
         datasetForm.bindFromRequest.fold(
           errors => BadRequest(views.html.newDataset(errors)),
 	      dataset => {
 	           request.body.file("file").map { f =>
 		        Logger.info("Uploading file " + f.filename)
-		        // store file
-			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+		        // store file (using hack to get the correct content type for PTMs and .obj)
+		         // FIXME use application.conf instead
+		        var fileType = f.contentType
+		        val filenameStr = f.filename.split('.')
+		        if (filenameStr.length > 1) 
+		        {
+		           val fileExtension = filenameStr.takeRight(1)(0)
+		           if (f.contentType.equals(Some("application/octet-stream"))){
+			           if (fileExtension.toLowerCase().equals("ptm")){
+			             fileType = Some("application/x-ptm")
+			           }
+			           else if (fileExtension.toLowerCase().equals("obj")){
+			             fileType = Some("image/obj")
+			           }
+		           } 
+		        }
+		        
+			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, fileType)
 			    Logger.debug("Uploaded file id is " + file.get.id)
-			    Logger.debug("Uploaded file type is " + f.contentType)
+			    Logger.debug("Uploaded file type is " + fileType)
 			    file match {
 			      case Some(f) => {
 			    	// TODO RK need to replace unknown with the server name
@@ -168,7 +183,8 @@ object Datasets extends Controller with SecureSocial {
 			        // TODO create a service instead of calling salat directly
 		            Dataset.save(dt)
 			    	// TODO RK need to replace unknown with the server name and dataset type
-			    	val dtkey = "unknown." + "dataset."+ "unknown"
+//			    	val dtkey = "unknown." + "dataset."+ "unknown"
+		            val dtkey = "unknown." + "dataset."+ "ARC3D"
 			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey, Map.empty))}
 		            // redirect to file page
 		            Redirect(routes.Datasets.dataset(dt.id.toString))
