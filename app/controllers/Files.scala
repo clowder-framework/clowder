@@ -261,7 +261,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
             //Set up the PipedOutputStream here, give the input stream to a worker thread
             val pos:PipedOutputStream = new PipedOutputStream();
             val pis:PipedInputStream  = new PipedInputStream(pos);
-            val worker:foo.UploadFileWorker = new foo.UploadFileWorker(pis, files);
+            val worker = new util.UploadFileWorker(pis, files);
             worker.contentType = contentType.get;
             worker.start();
 

@@ -5,7 +5,9 @@ import play.api.Play.current
 import services.MongoSalatPlugin
 
 /**
- * Configure application. Create dummy users.
+ * Configure application. Ensure mongo indexes if mongo plugin is enabled.
+ * 
+ * @author Luigi Marini
  */
 object Global extends GlobalSettings {
   
