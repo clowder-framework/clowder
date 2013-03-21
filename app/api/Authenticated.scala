@@ -15,17 +15,29 @@ import org.mindrot.jbcrypt.BCrypt
 import securesocial.core.UserService
 import com.jolbox.bonecp.UsernamePassword
 import securesocial.core.providers.UsernamePasswordProvider
+import play.api.mvc.Session
+import org.joda.time.DateTime
+import securesocial.core.SecureSocial
+import securesocial.core.UserId
+import securesocial.core.Identity
 
 /**
- * Secure API.
+ * Secure API. 
+ * 
+ * Check in this order: basic authentication, token in url, cookie from browser session.
  * 
  * @author Luigi Marini
  *
  */
 case class Authenticated[A](action: Action[A]) extends Action[A] {
   
+  def lastAccessFromSession(session: Session): Option[DateTime] = {
+    session.data.get(SecureSocial.LastAccessKey).map {
+      DateTime.parse(_)
+    }
+  }
+  
   def apply(request: Request[A]): Result = {
-    val keyFromHeader = request.headers.get("")
     request.headers.get("Authorization") match { // basic authentication
       case Some(authHeader) => {
         val header = new String(Base64.decodeBase64(authHeader.slice(6,authHeader.length).getBytes))
@@ -58,11 +70,16 @@ case class Authenticated[A](action: Action[A]) extends Action[A] {
               }
             } else Unauthorized(views.html.defaultpages.unauthorized())
           }
-          case None => Unauthorized(views.html.defaultpages.unauthorized())
+          case None => {
+            
+            SecureSocial.currentUser(request) match { // calls from browser
+		      case Some(identity) => action(request)
+		      case None => Unauthorized(views.html.defaultpages.unauthorized())
+		    }
+          }
         }
       }
     }
-    
   }
   
   lazy val parser = action.parser
