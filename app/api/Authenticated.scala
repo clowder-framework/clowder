@@ -13,7 +13,6 @@ import models.SocialUserDAO
 import securesocial.core.providers.utils.BCryptPasswordHasher
 import org.mindrot.jbcrypt.BCrypt
 import securesocial.core.UserService
-import com.jolbox.bonecp.UsernamePassword
 import securesocial.core.providers.UsernamePasswordProvider
 import play.api.mvc.Session
 import org.joda.time.DateTime
@@ -30,12 +29,6 @@ import securesocial.core.Identity
  *
  */
 case class Authenticated[A](action: Action[A]) extends Action[A] {
-  
-  def lastAccessFromSession(session: Session): Option[DateTime] = {
-    session.data.get(SecureSocial.LastAccessKey).map {
-      DateTime.parse(_)
-    }
-  }
   
   def apply(request: Request[A]): Result = {
     request.headers.get("Authorization") match { // basic authentication

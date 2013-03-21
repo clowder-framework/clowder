@@ -36,7 +36,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   }
   
   def get(id: String): Option[File] = {
-    dao.findOneByID(new ObjectId(id)) match {
+    dao.findOneById(new ObjectId(id)) match {
       case Some(file) => {
         val previews = PreviewDAO.findByFileId(file.id)
         val sections = SectionDAO.findByFileId(file.id)

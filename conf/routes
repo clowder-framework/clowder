@@ -32,9 +32,6 @@ POST    /dataset/submit                   controllers.Datasets.submit
 
 # Tags
 POST    /tags		                      controllers.Tags.tag
-
-# Tags
-POST    /tags		                      controllers.Tags.tag
 GET     /tags/search/:tag		          controllers.Tags.search(tag)
 
 # Authentication

@@ -12,8 +12,6 @@ import services._
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Input.{El, EOF, Empty}
 import com.mongodb.casbah.gridfs.GridFS
-import akka.dispatch.ExecutionContext
-import scala.actors.Future
 import models.PreviewDAO
 import models.SectionDAO
 import java.text.SimpleDateFormat

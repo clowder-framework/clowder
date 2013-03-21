@@ -53,8 +53,9 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * This is your chance to save the user information in your backing store.
    * @param user
    */
-  def save(user: Identity) {
+  def save(user: Identity): Identity = {
     SocialUserDAO.save(user)
+    user
   }
 
   /**
@@ -67,7 +68,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param token The token to save
    * @return A string with a uuid that will be embedded in the welcome email.
    */
-  def save(token: Token) = {
+  def save(token: Token) {
     TokenDAO.save(MongoToken(new ObjectId, token.uuid, token.email, token.creationTime.toDate, token.expirationTime.toDate, token.isSignUp))
   }
 

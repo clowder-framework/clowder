@@ -129,6 +129,7 @@ object Datasets extends Controller with SecureSocial {
           case None => InternalServerError("Dataset not found")
         }   
       }
+      case None =>  InternalServerError("Section not found")
     }
   }
   

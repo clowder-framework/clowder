@@ -111,7 +111,7 @@ object Files extends Controller {
       Logger.debug("Adding metadata to file " + id)
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      val result = FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), 
-	              $set("metadata" -> doc), false, false, WriteConcern.SAFE)
+	              $set(Seq("metadata" -> doc)), false, false, WriteConcern.SAFE)
 	 Logger.debug("Updating previews.files " + id + " with " + doc)
 	 Ok(toJson("success"))
     }
@@ -175,8 +175,8 @@ object Files extends Controller {
 	              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
 	                case Some(preview) =>
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-	                    val result = PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), 
-	                        $set("metadata" -> metadata, "file_id"->new ObjectId(file_id)), false, false, WriteConcern.SAFE)
+	                    PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), 
+	                        $set(Seq("metadata"-> metadata, "file_id" -> new ObjectId(file_id))), false, false, WriteConcern.SAFE)
 	                    Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
 	                    Ok(toJson(Map("status"->"success")))
 	                case None => BadRequest(toJson("Preview not found"))
