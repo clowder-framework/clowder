@@ -27,7 +27,7 @@ object Previews extends Controller {
   /**
    * Download preview bytes.
    */
-  def download(id:String) = Authenticated {
+  def download(id:String) =
     Action { request =>
 	    PreviewDAO.getBlob(id) match {
 	   
@@ -68,7 +68,7 @@ object Previews extends Controller {
 	      case None => Logger.error("No preview find " + id); InternalServerError("No preview found")
 	    }
     }
-  }
+
   
   /**
    * Upload a preview.
@@ -113,13 +113,13 @@ object Previews extends Controller {
    * Get preview metadata.
    * 
    */
-  def getMetadata(id: String) = Authenticated {
+  def getMetadata(id: String) =
     Action { request =>
       PreviewDAO.findOneByID(new ObjectId(id)) match {
         case Some(preview) => Ok(toJson(Map("id"->preview.id.toString)))
         case None => Logger.error("Preview metadata not found " + id); InternalServerError
       }
     }
-  }
+
   
 }

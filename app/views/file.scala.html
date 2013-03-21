@@ -8,7 +8,7 @@
 		<div class="span2">
 		@previews.map { p =>
 			@if(p.contentType.equals("image/jpeg")){
-			<img src="@api.routes.Previews.download(p.id.toString)?key=letmein" class="img-polaroid" height="100px"></img>
+			<img src="@api.routes.Previews.download(p.id.toString)" class="img-polaroid" height="100px"></img>
 			}
 		}
 		</div>
@@ -38,7 +38,7 @@
 					<div class="accordion-inner">Previews:
 						<ul>
 						@previews.map { p =>
-							<li>@p <a href="@api.routes.Previews.download(p.id.toString)?key=letmein">@p.filename</a></li>
+							<li>@p <a href="@api.routes.Previews.download(p.id.toString)">@p.filename</a></li>
 						}
 						</ul>
 					</div>

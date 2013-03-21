@@ -13,7 +13,7 @@
 		</div>
 <div class="row-fluid">
   <div class="span8">
-		<img src="@api.routes.Previews.download(preview.id.toString)?key=letmein" 
+		<img src="@api.routes.Previews.download(preview.id.toString)" 
 					  		class="img-polaroid"></img>
   </div>
 </div>
@@ -27,7 +27,7 @@
 			<div class="row">
 				<div class="span12">
 					<a href="@routes.Datasets.datasetBySection(id)">
-				  	<img src="@api.routes.Previews.download(preview_id)?key=letmein" 
+				  	<img src="@api.routes.Previews.download(preview_id)" 
 						  		class="img-polaroid"></img>
 				    </a>
 				  <p>Distance: @distance</p>

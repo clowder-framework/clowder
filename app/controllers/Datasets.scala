@@ -100,7 +100,7 @@ object Datasets extends Controller with SecureSocial {
         val previewers = Previewers.searchFileSystem
         val previewslist = for(f <- datasetWithFiles.files) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
-            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString) + "?key=letmein", pv.contentType, pv.length)
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }
           if (pvf.length > 0) {
             (f -> pvf)
