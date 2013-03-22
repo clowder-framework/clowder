@@ -1,4 +1,4 @@
-package foo;
+package util;
 
 import java.io.PipedInputStream;
 

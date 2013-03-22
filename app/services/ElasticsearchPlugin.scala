@@ -40,7 +40,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       Logger.info("ElasticsearchPlugin has started")
     } catch {
       case nn: NoNodeAvailableException => Logger.error("Error connecting to elasticsearch: " + nn)
-      case _ => Logger.error("Unknown exception connecting to elasticsearch")
+      case _ : Throwable => Logger.error("Unknown exception connecting to elasticsearch")
     }
   }
 

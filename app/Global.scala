@@ -1,53 +1,29 @@
 import com.mongodb.casbah.Imports._
-
 import play.api.{GlobalSettings, Application}
+import play.api.Logger
+import play.api.Play.current
+import services.MongoSalatPlugin
 
 /**
- * Configure application. Create dummy users.
+ * Configure application. Ensure mongo indexes if mongo plugin is enabled.
+ * 
+ * @author Luigi Marini
  */
 object Global extends GlobalSettings {
   
   override def onStart(app: Application) {
-
-    
-    // testing
-//    val ncsa = Company(name = "NCSA")
-//    Company.save(ncsa)
-//    User.save(User(
-//        username = "Luigi",
-//        password = "1234",
-//        friends = Some(List("Gaetano", "Mario")),
-//        company = ncsa.id
-//    ))
-//    
-//    Dataset(files_id = List(new ObjectId))
-    
-        // casbah joda conversions
-//    import com.mongodb.casbah.commons.conversions.scala._
-//    RegisterJodaTimeConversionHelpers()
-//    RegisterConversionHelpers()
-    
-    
- //   import com.mongodb.casbah.commons.conversions.scala.{RegisterConversionHelpers, RegisterJodaTimeConversionHelpers}
-  //  RegisterConversionHelpers()
-  //  RegisterJodaTimeConversionHelpers()
-    
-    
-//    if (User.count(DBObject(), Nil, Nil) == 0) {
-//      Logger.info("Loading Testdata")
-//
-//      User.save(User(
-//        username = "leon",
-//        password = "1234",
-//        address = Some(Address("Orebro", "123 45", "Sweden"))
-//      ))
-//
-//      User.save(User(
-//        username = "guillaume",
-//        password = "1234",
-//        address = Some(Address("Paris", "75000", "France"))
-//      ))
-//    }
+    // create mongo indexes if plugin is loaded
+    current.plugin[MongoSalatPlugin].map { mongo =>
+      mongo.sources.values.map { source =>
+        Logger.debug("Ensuring indexes on " + source.uri)
+        source.collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
+        source.collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
+        source.collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
+        source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+        source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+        source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+      }
+    }
   }
 
   override def onStop(app: Application) {

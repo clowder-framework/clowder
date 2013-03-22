@@ -33,7 +33,7 @@ object Sections extends Controller {
   
   def get(id: String) = Authenticated {
     Action { request =>
-      SectionDAO.findOneByID(new ObjectId(id)) match {
+      SectionDAO.findOneById(new ObjectId(id)) match {
         case Some(section) => Ok(toJson(Map("id"->section.id.toString, "startTime"->section.startTime.getOrElse(-1).toString)))
         case None => Logger.error("Section not found " + id); InternalServerError
       }

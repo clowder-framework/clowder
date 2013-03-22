@@ -1,5 +1,8 @@
 @(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]]) 
 
+@import helper._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
 @main("Dataset") {
 
     <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
@@ -88,7 +91,7 @@
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@f.sections.map { s =>
 					  		@if(s.preview.isDefined) {
-					  		<img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" 
+					  		<img src="@api.routes.Previews.download(s.preview.get.id.toString)" 
 					  		class="img-polaroid" height="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
 					  		}
 					  	}
@@ -115,7 +118,7 @@
 						  			<td>@s.order</td>
 						  			<td>
 						  			@if(s.preview.isDefined) {
-						  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)?key=letmein" 
+						  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)" 
 					  		class="img-polaroid" width="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
 					  		}
 					  				</td>
@@ -194,8 +197,35 @@
 			<div class="row">
 				<h5>Files</h5>
 				@dataset.files.map { file =>
-				<div><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a></div>
+				<div>
+					<a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>
+				</div>
 				}
+				<!-- Button to trigger modal -->
+				<a href="#myModal" role="button" class="btn" data-toggle="modal">Upload</a>
+				 
+				<!-- Modal -->
+				<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+				  <div class="modal-header">
+				    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				    <h3 id="myModalLabel">Upload File</h3>
+				  </div>
+				  <div class="modal-body">
+				    <p>Add a new file to dataset.</p>
+				    @form(action = routes.Files.upload, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+					    <fieldset>
+					      <legend>Select file</legend>
+					      
+					    </fieldset>
+
+				          <input type="submit" class="btn" value="Upload"/>
+
+					  }
+				  </div>
+				  <div class="modal-footer">
+				    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				  </div>
+				</div>
 			</div>
 			
 			<div class="row">

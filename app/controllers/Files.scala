@@ -12,8 +12,6 @@ import services._
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Input.{El, EOF, Empty}
 import com.mongodb.casbah.gridfs.GridFS
-import akka.dispatch.ExecutionContext
-import scala.actors.Future
 import models.PreviewDAO
 import models.SectionDAO
 import java.text.SimpleDateFormat
@@ -264,7 +262,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
             //Set up the PipedOutputStream here, give the input stream to a worker thread
             val pos:PipedOutputStream = new PipedOutputStream();
             val pis:PipedInputStream  = new PipedInputStream(pos);
-            val worker:foo.UploadFileWorker = new foo.UploadFileWorker(pis, files);
+            val worker = new util.UploadFileWorker(pis, files);
             worker.contentType = contentType.get;
             worker.start();
 
