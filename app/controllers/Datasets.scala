@@ -154,12 +154,15 @@ object Datasets extends Controller with SecureSocial {
 		        if (filenameStr.length > 1) 
 		        {
 		           val fileExtension = filenameStr.takeRight(1)(0)
-		           if (f.contentType.equals(Some("application/octet-stream"))){
+		           if (f.contentType.equals(Some("application/octet-stream")) || f.contentType.equals(Some("application/download"))){
 			           if (fileExtension.toLowerCase().equals("ptm")){
 			             fileType = Some("application/x-ptm")
 			           }
 			           else if (fileExtension.toLowerCase().equals("obj")){
 			             fileType = Some("image/obj")
+			           }
+			            else if (fileExtension.toLowerCase().equals("tiff") || fileExtension.toLowerCase().equals("tif")){
+			             fileType = Some("image/tiff")
 			           }
 		           } 
 		        }

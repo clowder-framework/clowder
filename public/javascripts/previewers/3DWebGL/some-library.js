@@ -5,8 +5,8 @@ var fileUrl = "http://" + Configuration.hostIp + ":" + window.location.port + Co
 var pathJs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.jsPath + "/";
 var pathImgs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.imagesPath + "/";
 
-var width = 700;
-var height = 400;
+var width = 750;
+var height = 550;
 
 var s = document.createElement("script");
 s.type = "text/javascript";
