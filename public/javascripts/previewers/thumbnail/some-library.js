@@ -7,14 +7,14 @@
 	  if(true){
 		  if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png"){
 			  $(Configuration.tab).append(
-					     "<img src='" + Configuration.url + "' width='400px'></img>"
+					     "<img src='" + Configuration.url + "' width='750px'></img>"
 					  );
 		  }
 		  else if (Configuration.fileType === "image/tiff"){
 			  $(Configuration.tab).append(
-					  "<embed width=400 height=300 "+
+					  "<embed width=750 height=550  "+
 					    "src='" + Configuration.url + "' type='image/tiff'"+
-					    " negative=yes>"
+					    " negative=no>"
 					  );
 		  }
 		  else{
@@ -44,7 +44,7 @@
 		      		})();	       
 		      
 		      $(Configuration.tab).append(content.embedHtml.replace(/width=(auto|[0-9]+px)?/,"width=700px")
-		    		  .replace(/height=(auto|[0-9]+px)?/,"height=400px"));		  
+		    		  .replace(/height=(auto|[0-9]+px)?/,"height=550px"));		  
 		  }
 		  
 		  $.ajax({

@@ -3,8 +3,8 @@
   
   console.log("Updating tab " + Configuration.tab);
   
-  var height = 400;
-  var width = 700;
+  var height = 550;
+  var width = 750;
   
   $(Configuration.tab).append(
 		  "<object name='ptmApplet' type='application/x-java-applet' height='"+ height +"' width='"+ width +"'>"+
