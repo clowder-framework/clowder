@@ -111,4 +111,8 @@ POST    /api/indexes/features             api.Indexes.features
 POST    /api/sections                     api.Sections.add
 GET     /api/sections/:id                 api.Sections.get(id)
 
+POST    /api/geostreams					  api.Geostreams.createStream()
+POST    /api/geostreams/:id               api.Geostreams.addDatapoint(id)
+GET     /api/geostreams/search            api.Geostreams.search()
+
 

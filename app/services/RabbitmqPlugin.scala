@@ -30,7 +30,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var messageQueue: Option[ActorRef] = None
   
   override def onStart() {
-    Logger.debug("Starting up Rabbitmq plugin.")
+    Logger.debug("Starting Rabbitmq Plugin")
     
     val configuration = play.api.Play.configuration
     val host = configuration.getString("rabbitmq.host").getOrElse("")
@@ -40,11 +40,11 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val password = configuration.getString("rabbitmq.password").getOrElse("")
     
     try {
-      val factory = new ConnectionFactory();
-      if (!host.equals("")) factory.setHost(host);
-      if (!port.equals("")) factory.setPort(port.toInt);
-      if (!user.equals("")) factory.setUsername(user);
-      if (!password.equals("")) factory.setPassword(password);
+      val factory = new ConnectionFactory()
+      if (!host.equals("")) factory.setHost(host)
+      if (!port.equals("")) factory.setPort(port.toInt)
+      if (!user.equals("")) factory.setUsername(user)
+      if (!password.equals("")) factory.setPassword(password)
       val connection: Connection = factory.newConnection()
       val sendingChannel = connection.createChannel()
       sendingChannel.exchangeDeclare(exchange, "topic", true)
@@ -56,7 +56,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   override def onStop() {
-    Logger.debug("Shutting down Rabbitmq plugin.")
+    Logger.debug("Shutting down Rabbitmq Plugin")
   }
 
   override lazy val enabled = {
