@@ -113,6 +113,6 @@ GET     /api/sections/:id                 api.Sections.get(id)
 
 POST    /api/geostreams					  api.Geostreams.createStream()
 POST    /api/geostreams/:id               api.Geostreams.addDatapoint(id)
-GET     /api/geostreams/search            api.Geostreams.search()
+GET     /api/geostreams/search            api.Geostreams.search(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None)
 
 

@@ -12,6 +12,7 @@ import java.util.Date
 import play.api.Play.current
 import services.PostgresPlugin
 import java.text.SimpleDateFormat
+import play.api.Logger
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced 
@@ -51,12 +52,13 @@ object Geostreams extends Controller {
     }
   }
   
-  def search() = Authenticated {
+  def search(since: Option[String], until: Option[String], geocode: Option[String]) =
     Action { request =>
+      Logger.debug("Search " + since + " " + until + " " + geocode)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => Ok(plugin.search)
+        case Some(plugin) => Ok(plugin.search(since, until, geocode))
         case None => InternalServerError(toJson("Geostreaming not enabled"))
       }
     }
-  }
+  
 }
