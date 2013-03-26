@@ -64,7 +64,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   def extract(message: ExtractorMessage) = {
-    Logger.info("Sending message " + message)
+    Logger.debug("Sending message " + message)
     messageQueue match {
       case Some(x) => x ! message
       case None => Logger.warn("Could not send message over RabbitMQ")

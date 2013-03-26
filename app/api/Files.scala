@@ -123,7 +123,7 @@ object Files extends Controller {
    */
     def upload() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
-        Logger.info("Uploading file " + f.filename)
+        Logger.debug("Uploading file " + f.filename)
         // store file
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         file match {
@@ -153,7 +153,7 @@ object Files extends Controller {
    */  
   def uploadPreview(file_id: String) = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
-        Logger.info("Uploading file " + f.filename)
+        Logger.debug("Uploading file " + f.filename)
         // store file
         val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         Ok(toJson(Map("id"->id)))   

@@ -147,7 +147,7 @@ object Datasets extends Controller with SecureSocial {
           errors => BadRequest(views.html.newDataset(errors)),
 	      dataset => {
 	           request.body.file("file").map { f =>
-		        Logger.info("Uploading file " + f.filename)
+		        Logger.debug("Uploading file " + f.filename)
 		        
 		        // store file		        
 			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)

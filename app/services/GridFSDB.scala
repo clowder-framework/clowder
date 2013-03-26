@@ -32,7 +32,7 @@ trait GridFSDB {
     files.db.setWriteConcern(WriteConcern.Safe)
     
     val mongoFile = files.createFile(inputStream)
-    Logger.info("Uploading file " + filename)
+    Logger.debug("Uploading file " + filename)
     mongoFile.filename = filename
     var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
     if (ct == play.api.http.ContentTypes.BINARY) {

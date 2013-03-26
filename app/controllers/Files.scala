@@ -101,7 +101,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
    */
   def upload() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
-        Logger.info("Uploading file " + f.filename)
+        Logger.debug("Uploading file " + f.filename)
         
         // store file       
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
@@ -178,7 +178,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   
   def uploaddnd() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
-        Logger.info("Uploading file " + f.filename)
+        Logger.debug("Uploading file " + f.filename)
         // store file
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
         // submit file for extraction
@@ -249,7 +249,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
 
 //            val mongoFile = files.createFile(f.ref.file)
 //            val filename = f.ref.file.getName()
-//            Logger.info("Uploading file " + filename)
+//            Logger.debug("Uploading file " + filename)
 //            mongoFile.filename = filename
 //            mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
 //            mongoFile.save

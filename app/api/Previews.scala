@@ -76,7 +76,7 @@ object Previews extends Controller {
   def upload() = Authenticated {
     Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
-        Logger.info("Uploading file " + f.filename)
+        Logger.debug("Uploading file " + f.filename)
         // store file
         val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         Ok(toJson(Map("id"->id)))   
