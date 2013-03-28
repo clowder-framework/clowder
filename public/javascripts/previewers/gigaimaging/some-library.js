@@ -7,7 +7,7 @@
 	
 	var width = 750;
 	var height = 550;
-	
+		
 	var s = document.createElement("script");
 	s.type = "text/javascript";
 	s.src = pathJs + "zoomit.js";
@@ -20,6 +20,5 @@
 
 	 viewer = new Seadragon.Viewer("seadragon")
 	 viewer.openDzi(Configuration.url);
-		
-	console.log($(Configuration.tab))
+			
 }(jQuery, Configuration));

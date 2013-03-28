@@ -47,8 +47,8 @@ object Datasets extends Controller with SecureSocial {
     ((dataset: Dataset) => Some((dataset.name, dataset.description)))
    )
    
-   
-  def newDataset() = SecuredAction { implicit request =>
+   //Secured
+  def newDataset() = Action { implicit request =>
   	Ok(views.html.newDataset(datasetForm)).flashing("error"->"Please select a file")
   }
    
@@ -102,7 +102,7 @@ object Datasets extends Controller with SecureSocial {
         val previewslist = for(f <- datasetWithFiles.files) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-          }
+          }        
           if (pvf.length > 0) {
             (f -> pvf)
           } else {

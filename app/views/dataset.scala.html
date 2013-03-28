@@ -21,7 +21,6 @@
 		    	<div class="span12">
 		  			@if(pvs.length == 1) {
 				  		<div id="previewer_@pvs.head._1" ></div>
-				  		
     					<script>
 							var Configuration = {};
 							Configuration.tab = "#previewer_@pvs.head._1"
@@ -41,8 +40,9 @@
 								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 								Configuration.imagesPath = "@(routes.Assets.at("images"))";
 							}
-							else if("@pvs.head._2" === "Gigaimaging"){
+							else if("@pvs.head._2" === "Gigaimaging"){							
 								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 							}
 						</script>
 						<script type="text/javascript" src="@(routes.Assets.at(pvs.head._3) + "/" + pvs.head._4)"></script>
@@ -77,6 +77,7 @@
 										}
 										else if("@p._2" === "Gigaimaging"){
 											Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 										}
 									</script>
 									<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
