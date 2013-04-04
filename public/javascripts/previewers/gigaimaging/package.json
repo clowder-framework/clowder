@@ -1,0 +1,4 @@
+{ "name" : "Gigaimaging",
+  "main" : "some-library.js",
+  "contentType" : ["application/xml"]
+  }
