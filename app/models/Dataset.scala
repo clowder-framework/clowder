@@ -4,12 +4,14 @@
 package models
 
 import org.bson.types.ObjectId
+import com.mongodb.casbah.Imports._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import services.MongoSalatPlugin
 import java.util.Date
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.WriteConcern
 
 /**
  * A dataset is a collection of files, and streams.
@@ -41,5 +43,11 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   
   def findByTag(tag: String): List[Dataset] = {
     dao.find(MongoDBObject("tags" -> tag)).toList
+  }
+  
+  def tag(id: String, tag: String) { 
+    dao.collection.update(
+          MongoDBObject("_id" -> new ObjectId(id)), 
+          	$addToSet("tags" -> tag), false, false, WriteConcern.Safe)
   }
 }
