@@ -170,8 +170,8 @@ object Datasets extends Controller with SecureSocial {
 			        // TODO create a service instead of calling salat directly
 		            Dataset.save(dt)
 			    	// TODO RK need to replace unknown with the server name and dataset type
-//			    	val dtkey = "unknown." + "dataset."+ "unknown"
-		            val dtkey = "unknown." + "dataset."+ "ARC3D"
+			    	val dtkey = "unknown." + "dataset."+ "unknown"
+//		            val dtkey = "unknown." + "dataset."+ "ARC3D"
 			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey, Map.empty))}
 		            // redirect to file page
 		            Redirect(routes.Datasets.dataset(dt.id.toString))
