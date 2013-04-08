@@ -17,8 +17,16 @@ object ApplicationBuild extends Build {
       "postgresql" % "postgresql" % "9.1-901.jdbc4"
 //      "org.scalaj" %% "scalaj-collection" % "1.2"
     )
+    
+    // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
+	def customLessEntryPoints(base: File): PathFinder = ( 
+	    (base / "app" / "assets" / "stylesheets" / "bootstrap" * "bootstrap.less") +++
+	    (base / "app" / "assets" / "stylesheets" / "bootstrap" * "responsive.less") +++ 
+	    (base / "app" / "assets" / "stylesheets" * "*.less")
+	)
 
     val main = play.Project(appName, appVersion, appDependencies).settings(
+      lessEntryPoints <<= baseDirectory(customLessEntryPoints),
       routesImport += "Binders._",
       templatesImport += "org.bson.types.ObjectId",
       resolvers += Resolver.url("sbt-plugin-releases", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
