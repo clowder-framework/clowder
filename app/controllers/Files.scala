@@ -16,8 +16,14 @@ import models.PreviewDAO
 import models.SectionDAO
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
-import com.mongodb.casbah.commons.MongoDBObject
 import models.FileDAO
+import models.Comment
+import java.util.Date
+import models.File
+import com.mongodb.casbah.commons.MongoDBObject
+import org.bson.types.ObjectId
+import com.mongodb.casbah.Imports._
+import play.api.libs.json.Json._
 
 /**
  * Manage files.
@@ -38,7 +44,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
     * File info.
     */
-  def file(id: String) = Action {
+  def file(id: String) = UserAwareAction { implicit request =>
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
@@ -48,7 +54,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
         }
-        Ok(views.html.file(file, id, previews, sectionsWithPreviews))
+        Ok(views.html.file(file, id, previews, sectionsWithPreviews, request.user))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
@@ -368,4 +374,24 @@ object Files extends Controller with securesocial.core.SecureSocial {
 //   }
 // }
   
+  /*
+   * Add comment to a file
+   */
+  def comment(id: String) = SecuredAction(ajaxCall = true) { implicit request =>
+    Logger.debug("Commenting " + request.body)
+    Logger.debug("Hello " + request.user)
+    
+    request.body.asText match {
+      case Some(text) => {
+    	Logger.debug("Commenting " + id + " with " + text)
+    	val comment = Comment(request.user.id.id, new Date(), text)
+      	FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)),
+      	    $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+        Ok(toJson(""))
+      }
+      case None => {
+    	  BadRequest(toJson("error"))
+      } 
+    }
+  }
 }

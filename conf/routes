@@ -16,6 +16,7 @@ GET     /users/view/:id                   controllers.Users.view(id)
 GET		/files					          controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
 GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
+POST    /files/:id/comment                controllers.Files.comment(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
 GET     /files/:id/similar                controllers.Files.findSimilar(id)
 POST    /upload					          controllers.Files.upload
@@ -27,6 +28,7 @@ POST   	/uploaddnd					 	  controllers.Files.uploaddnd
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
+#POST	/datasets/:id/comment             controllers.Datasets.comment(id)
 GET     /datasets_by_section/:id          controllers.Datasets.datasetBySection(id)
 POST    /dataset/submit                   controllers.Datasets.submit
 
