@@ -17,8 +17,9 @@ GET		/files					          controllers.Files.list(when: String ?= "", date: Strin
 GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
-GET     /files/:id/similar                controllers.Files.findSimilar(id)
+#GET     /files/:id/similar                controllers.Files.findSimilar(id)
 POST    /upload					          controllers.Files.upload
+POST   /uploadSelect                      controllers.Files.uploadSelect
 POST   	/uploadAjax						  controllers.Files.uploadAjax
 POST   	/uploaddnd					 	  controllers.Files.uploaddnd
 #POST  	/reactiveUpload					  controllers.Files.reactiveUpload
@@ -48,6 +49,7 @@ POST  	 /uploadquery						controllers.Search.uploadquery
 GET      /searchbyURL                       controllers.Search.searchbyURL(query:String?="")
 GET      /Filterby                          controllers.Search.Filterby(id)
 GET      /searchbyfeature					controllers.Search.searchMultimediaIndex(section_id)
+GET     /files/:id/similar                  controllers.Search.findSimilar(id)
 
 
 # Previewers
