@@ -27,6 +27,17 @@ import util.DistancePriorityQueue
 import org.elasticsearch.action.search.SearchRequest
 import util.SearchResult
 import util.DistancePriorityQueue
+import play.api.libs.ws.WS
+import scala.concurrent.Future
+import play.api.libs.concurrent.Execution.Implicits._
+import java.io.FileInputStream
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import scala.collection.mutable.ArrayBuffer
+import models.Result
+import models.SimilarityResult
+import play.api.libs.json.Reads
+import play.api.libs.json.JsArray
 /**
  * Text search.
  * 
@@ -37,6 +48,8 @@ object Search extends Controller{
   /**
    * Search results.
    */
+  
+  
   def search(query: String) = Action {
     Logger.debug("Searching for: " + query)
     import play.api.Play.current
@@ -54,7 +67,7 @@ object Search extends Controller{
   }
   
   def multimediasearch()=Action{
-    Logger.debug("Starting multimedia serach interface")
+    Logger.debug("Starting multimedia search interface")
     Ok(views.html.multimediasearch())
     //Ok("Sucessful")
   }
@@ -154,62 +167,79 @@ object Search extends Controller{
  def SearchByText(query:String)=Action{
    Logger.debug("Searching for"+query)
    
-   Ok(views.html.searchTextResults(query))
+   //Ok(views.html.searchTextResults(query))
+   Ok("")
  }
+ 
+ 
+ /*implicit val jsonReads = new Reads[SimilarityResult] {
+  def reads(js: JsValue): SimilarityResult = {
+   SimilarityResult (
+      Option((js \ "docID").as[(String)]),
+      Option((js \ "proximity").as[Double])
+    )
+  }
+}*/
+
+ 
  
  //GET the query image from the URL and compare within the database and show the result
  def searchbyURL(query:String)=Action{
    Logger.debug("Searching for"+query)
+   var c:String=null
+   val rs=2
+  // val indexId="69c6a099-d8ae-4a60-bf2c-3cac193c72ec"
+   val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
+  
+       var slashindex=query.lastIndexOf('/')
+       
+      Async{
+       WS.url("http://localhost:8080/api/v1/index/"+indexId+"/query").post(Map("infile" -> Seq(query))).map{
+          res=> 
+           
+            Logger.debug("res.json.toString="+res.json.toString+" res.body="+res.body)
+             
+           val sim= Array[models.SimilarityResult]()
+           
+             val json: JsValue=Json.parse(res.body)
+             val simvalue=json.as[Seq[Result.Result]]
+                                   
+            Ok(views.html.searchTextResults(query.substring(slashindex+1),simvalue))
+          
+        }
+   }
+       
+
+ } 
    
-  // val result = WS.url(query).get() .map { response =>
-  //   response.
-  // }
-   
-  // var pic = scala.io.Source.fromURL(new URL(query))
-  //#> new File("/tmp/pict")
-  //new URL(query)  
-   var slashindex=query.lastIndexOf('/')
-   println(query.substring(slashindex+1))
-   var qlength=query.length()
-   var connect = (new URL(query)).openConnection()
-   var input = connect.getInputStream
-   //input.read()
-   //input.close()
-   //InputStream inputStream = new FileInputStream("c:\\file.xml");
-    // write the inputStream to a FileOutputStream
-	//var out=new FileOutputStream(new File("/tmp/about.jpg"))
-     //val id =Services.files.save(new FileInputStream((new URL(query)).openConnection()),query.substring(slashindex+1))
-   var file=new File("/tmp/"+query.substring(slashindex+1))
-   
-   var out=new FileOutputStream(file)
- 
-	var read1:Int = 0
-	var bytes= new Array[Byte](1024*120)
-	println(input.available())
-	
-	//while ((read1=input.read(bytes)) != -1) {
-	  while (read1 != -1) {
-		  read1 = input.read(bytes)
-		  println(read1)
-	  if(read1 != -1)
-	  	 out.write(bytes, 0, read1)
-	  else
-	    read1= -1
-	  	
-	}
- 
-		//inputStream.close();
-		out.flush()
-		out.close()
- 
-		println("New file created!")
-		 
-		//var file1=Services.files.save(new FileInputStream("/tmp/"+query.substring(slashindex+1)),query.substring(slashindex+1),)
-		//println(id)
     
-		Ok(views.html.searchTextResults(query.substring(slashindex+1)))
-   
- }
+   /* Find Similar files*/
+  def findSimilar(id:String)=Action{
+     
+          val query="http://localhost:9000/files/"+id+"/blob"  
+          var slashindex=query.lastIndexOf('/')
+          // val indexId="69c6a099-d8ae-4a60-bf2c-3cac193c72ec"
+          val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
+      Async{
+       WS.url("http://localhost:8080/api/v1/index/"+indexId+"/query").post(Map("infile" -> Seq(query))).map{
+          res=> 
+            
+            //Logger.debug("res.json.toString="+res.json.toString+" res.body="+res.body)
+             
+           
+            val json: JsValue=Json.parse(res.body)
+         
+            val simvalue=json.as[Seq[models.Result.Result]]
+             
+            Services.files.getFile(id)match{
+              case Some(file)=>   
+           // Ok(views.html.searchTextResults(id,simvalue))
+            Ok(views.html.searchImgResults(file,id,simvalue))
+            }
+         // Ok(res.json.toString)  
+        }
+   }
+  }
  
  def Filterby(id:String)=TODO
  

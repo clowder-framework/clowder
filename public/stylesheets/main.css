@@ -162,3 +162,55 @@ html,
     *display:inline; /* ie7 fix */
     float: none; /* this is the part that makes it work */
 }
+
+/*
+ * ----------------------------------------------------------------------
+ * Comments
+ * ----------------------------------------------------------------------
+ */
+ol.comment-threads {
+}
+
+.comment-thread {
+	margin: 0px 0px 0px 0px;
+}
+
+.comment {
+	border-top: 1px solid gray;
+	padding: 10px 0 10px 0;
+}
+
+.comment-image {
+	width: 32px;
+	height: 0px;
+	float: left;
+}
+
+.comment-author {
+	float: left;
+}
+
+.comment-date {
+	padding-right: 10px;
+	float: right;
+}
+
+.comment-header {
+	padding-left: 40px;
+	font-size: 85%;
+	color: gray;
+}
+
+.comment-body {
+	padding-left: 40px
+}
+
+.comment-footer {
+	padding-left: 40px;
+	font-size: 85%;
+	color: gray;
+}
+
+.comment-input-box {
+	width: 80%;
+}

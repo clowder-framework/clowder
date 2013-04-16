@@ -9,6 +9,7 @@ import play.api.data.Forms._
 import play.api.libs.iteratee._
 import play.api.mvc._
 import services._
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Input.{El, EOF, Empty}
 import com.mongodb.casbah.gridfs.GridFS
@@ -18,7 +19,19 @@ import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
 import models.FileDAO
+//import play.api.libs.ws.WS
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 
+import models.Comment
+import java.util.Date
+import models.File
+
+import org.bson.types.ObjectId
+import com.mongodb.casbah.Imports._
+import play.api.libs.json.Json._
+
+//>>>>>>> refs/remotes/origin/master
 /**
  * Manage files.
  * 
@@ -38,7 +51,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
     * File info.
     */
-  def file(id: String) = Action {
+  def file(id: String) = UserAwareAction { implicit request =>
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
@@ -48,7 +61,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
         }
-        Ok(views.html.file(file, id, previews, sectionsWithPreviews))
+        Ok(views.html.file(file, id, previews, sectionsWithPreviews, request.user))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
@@ -176,6 +189,40 @@ object Files extends Controller with securesocial.core.SecureSocial {
     }
   }
   
+  
+  def uploadSelect() = Action(parse.multipartFormData) { implicit request =>
+      request.body.file("File").map { f =>        
+        Logger.debug("Uploading file " + f.filename)
+        
+        // store file       
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+//        Thread.sleep(1000)
+        file match {
+          case Some(f) => {
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val id = f.id.toString
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+            }
+            // redirect to file page]
+             val query="http://localhost:9000/files/"+id+"/blob"  
+             var slashindex=query.lastIndexOf('/')
+             Redirect(routes.Search.findSimilar(f.id.toString))  
+         }
+         case None => {
+           Logger.error("Could not retrieve file that was just saved.")
+           InternalServerError("Error uploading file")
+         }
+        }
+      }.getOrElse {
+         BadRequest("File not attached.")
+      }
+  }
+  
   def uploaddnd() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
@@ -214,8 +261,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
 
   
   
-  /* Find Similar files*/
-  def findSimilar(id:String)=TODO
+  
   
   ///////////////////////////////////
   //
@@ -368,4 +414,24 @@ object Files extends Controller with securesocial.core.SecureSocial {
 //   }
 // }
   
+  /*
+   * Add comment to a file
+   */
+  def comment(id: String) = SecuredAction(ajaxCall = true) { implicit request =>
+    Logger.debug("Commenting " + request.body)
+    Logger.debug("Hello " + request.user)
+    
+    request.body.asText match {
+      case Some(text) => {
+    	Logger.debug("Commenting " + id + " with " + text)
+    	val comment = Comment(request.user.id.id, new Date(), text)
+      	FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)),
+      	    $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+        Ok(toJson(""))
+      }
+      case None => {
+    	  BadRequest(toJson("error"))
+      } 
+    }
+  }
 }

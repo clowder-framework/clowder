@@ -44,5 +44,5 @@ install scala ide:
 -- for juno (4.x) you will need a milestone
 
 make medici ready for eclipse
--- ./sbt 'eclipsify with-source=true'
+-- ./sbt 'eclipse with-source=true execution-environment=JavaSE-1.6'
 

@@ -1,6 +1,6 @@
-@(file: models.File, id: String, previews: List[models.Preview], sections: List[models.Section]) 
+@(file: models.File, id: String, previews: List[models.Preview], sections: List[models.Section], user : Option[securesocial.core.Identity]) 
 
-@main("File") {
+@main("File", user) {
 	<div class="page-header">
 		<h1>@file.filename	</h1>
 	</div>
@@ -27,13 +27,65 @@
 		</div>
 	</div>
 	<div class="row-fluid" style="margin-top:50px">
+		<div class="accordion" id="accordion1">
+			<div class="accordion-group">
+				<div class="accordian-heading">
+					<a class="accordion-toggle" data-toggle="collapse"
+						data-parent="#accordion1" href="#collapseOne">Comments</a>
+				</div>
+				<div id="collapseOne" class="accordion-body in collapse">
+					@comment(file.comments)
+					@if(user.isDefined) {
+						<form class="form-inline">
+							<textarea type="text" id="commentField" class="comment-input-box"></textarea><br/>
+							<button class="btn" id="commentBtn">Comment</button>
+						</form>
+						<script language="javascript">
+							$(function() {
+								
+							   $('#commentBtn').click(function() {
+							     var comment = $('#commentField').val();
+			
+							     if (comment !== "") {
+							     	 console.log("submitting comment " + comment);
+			
+								     var request = jsRoutes.controllers.Files.comment("@file.id").ajax({
+								       data: comment,
+								       type: 'POST',
+								       contentType: "text/plain",
+								     });
+								     
+								     request.done(function (response, textStatus, jqXHR){ 
+								        console.log("Response " + response);
+								        $('#commentList').append("<li>" + comment + "</li>");
+								        $('#commentField').val("");
+								     });
+						    
+								     request.fail(function (jqXHR, textStatus, errorThrown){
+								        console.error(
+								            "The following error occured: "+
+								            textStatus, errorThrown
+								            
+								        );
+								        //window.location = "../login"; // FIXME hardcoded
+								     });
+						     	 }
+						     	return false;
+							  });
+							 });
+				    	 </script>
+					}
+				</div>
+			</div>
+		</div>
+		
 		<div class="accordion" id="accordion2">
 			<div class="accordion-group">
-				<div class="accordion-heading">
+				<div class="accordian-heading">
 					<a class="accordion-toggle" data-toggle="collapse"
-						data-parent="#accordion2" href="#collapseOne">Debug</a>
+						data-parent="#accordion2" href="#collapseTwo">Debug</a>
 				</div>
-				<div id="collapseOne" class="accordion-body collapse">
+				<div id="collapseTwo" class="accordion-body collapse">
 					<div class="accordion-inner">@file</div>
 					<div class="accordion-inner">Previews:
 						<ul>
