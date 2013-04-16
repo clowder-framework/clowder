@@ -44,6 +44,10 @@
 								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 							}
+							else if("@pvs.head._2" === "X3d"){							
+								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+							}
 						</script>
 						<script type="text/javascript" src="@(routes.Assets.at(pvs.head._3) + "/" + pvs.head._4)"></script>
 		  			} else {
@@ -76,6 +80,10 @@
 											Configuration.imagesPath = "@(routes.Assets.at("images"))";
 										}
 										else if("@p._2" === "Gigaimaging"){
+											Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+										}
+										else if("@p._2" === "X3d"){
 											Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 										}

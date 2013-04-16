@@ -16,9 +16,9 @@ object ZoomIt extends Controller {
     Authenticated {
     Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
-//        Logger.debug("Uploading pyramid tile " + f.filename)
+        Logger.info("Uploading pyramid tile " + f.filename.substring(0, f.filename.lastIndexOf("_")) + f.filename.substring(f.filename.lastIndexOf(".")))
         // store file
-        val id = TileDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val id = TileDAO.save(new FileInputStream(f.ref.file), f.filename.substring(0, f.filename.lastIndexOf("_")) + f.filename.substring(f.filename.lastIndexOf(".")), f.contentType)
         Ok(toJson(Map("id"->id)))   
       }.getOrElse {
          BadRequest(toJson("File not attached."))
