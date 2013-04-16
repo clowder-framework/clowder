@@ -78,11 +78,13 @@ class SendingActor(channel: Channel, exchange: String) extends Actor {
       case ExtractorMessage(id, host, key, metadata) => {
         val msgMap = scala.collection.mutable.Map(
             "id" -> Json.toJson(id),
+            "intermediateId" -> Json.toJson(id),
             "host" -> Json.toJson(host)
             )
         metadata.foreach(kv => msgMap.put(kv._1,Json.toJson(kv._2)))
         val msg = Json.toJson(msgMap.toMap)
         Logger.info(msg.toString())
+
         channel.basicPublish(exchange, key, true, null, msg.toString().getBytes())
       }
       
