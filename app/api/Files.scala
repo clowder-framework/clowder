@@ -128,7 +128,7 @@ object Files extends Controller {
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         file match {
           case Some(f) => {
-            val key = "unknown." + f.contentType.replace("/", ".")
+            val key = "unknown." + f.contentType.replace(".", "_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
