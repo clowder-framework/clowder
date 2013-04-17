@@ -39,7 +39,7 @@ object Indexes extends Controller {
       	    PreviewDAO.findOneById(new ObjectId(preview_id)) match {
       	      case Some(p) =>
 	      	    // TODO RK need to replace unknown with the server name
-	            val key = "unknown." + "index."+ p.contentType.replace("/", ".")
+	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/indexes$", "")
 	            val id = p.id.toString

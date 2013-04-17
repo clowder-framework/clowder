@@ -123,7 +123,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
         file match {
           case Some(f) => {
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
@@ -224,6 +224,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
       }
   }
   
+
   def uploaddnd(dataset_id: String) = Action(parse.multipartFormData) { implicit request =>
 	  Services.datasets.get(dataset_id)  match {
 		  case Some(dataset) => {
@@ -236,7 +237,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
 				  file match {
 				  	case Some(f) => {
 					  // TODO RK need to replace unknown with the server name
-					  val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+					  val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
 							  // TODO RK : need figure out if we can use https
 							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id.toString
@@ -273,7 +274,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
 		  }
 		  case None => {Logger.error("Error getting dataset" + dataset_id); InternalServerError}
 	  }
-  }
+
 
   
   
@@ -345,7 +346,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
     file match {
       case Some(f) => {
         // TODO RK need to replace unknown with the server name
-        val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+        val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
         // TODO RK : need figure out if we can use https
         val host = "http://" + request.host + request.path.replaceAll("upload$", "")
         val id = f.id.toString

@@ -157,7 +157,9 @@ object Datasets extends Controller with SecureSocial {
 			    file match {
 			      case Some(f) => {
 			    	// TODO RK need to replace unknown with the server name
-			    	val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+			    	val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
+//			        val key = "unknown." + "file."+ "application.x-ptm"
+
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
