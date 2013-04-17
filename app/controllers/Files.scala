@@ -274,6 +274,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
 		  }
 		  case None => {Logger.error("Error getting dataset" + dataset_id); InternalServerError}
 	  }
+  }
 
 
   
