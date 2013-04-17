@@ -15,10 +15,10 @@
 	$(Configuration.tab).append(s);
 
 	 $(Configuration.tab).append(
-		     "<div style='width: " + width + "px; height: " + height + "px' id='seadragon'>Insert image here</div>"
+		     "<div style='width: " + width + "px; height: " + height + "px' id='seadragon" + Configuration.tab.replace("#previewer","") + "'>Insert image here</div>"
 		  );
 
-	 viewer = new Seadragon.Viewer("seadragon")
+	 viewer = new Seadragon.Viewer("seadragon" + Configuration.tab.replace("#previewer",""))
 	 viewer.openDzi(Configuration.url);
 			
 }(jQuery, Configuration));

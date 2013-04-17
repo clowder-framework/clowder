@@ -26,6 +26,7 @@ import play.api.libs.json.Json
 import models.Comment
 import java.util.Date
 import models.File
+import models.Dataset
 
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
@@ -223,40 +224,55 @@ object Files extends Controller with securesocial.core.SecureSocial {
       }
   }
   
-  def uploaddnd() = Action(parse.multipartFormData) { implicit request =>
-      request.body.file("File").map { f =>        
-        Logger.debug("Uploading file " + f.filename)
-        // store file
-        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
-        // submit file for extraction
-        
-        file match {
-          case Some(f) => {
-            // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-            val id = f.id.toString
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
-            current.plugin[ElasticsearchPlugin].foreach{
-              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
-            }
-            // redirect to file page]
-            Logger.info("Uploading Completed")
-           // Logger.info("File id"+file)
-            Ok(id)
-            //Redirect(routes.Files.file(f.id.toString))  
-         }
-         case None => {
-           Logger.error("Could not retrieve file that was just saved.")
-           InternalServerError("Error uploading file")
-         }
-        }
-              
-       //Ok(views.html.multimediasearch())
-      }.getOrElse {
-         BadRequest("File not attached.")
-      }
+  def uploaddnd(dataset_id: String) = Action(parse.multipartFormData) { implicit request =>
+	  Services.datasets.get(dataset_id)  match {
+		  case Some(dataset) => {
+			  request.body.file("File").map { f =>        
+				  Logger.debug("Uploading file " + f.filename)
+				  // store file
+				  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
+				  // submit file for extraction
+			
+				  file match {
+				  	case Some(f) => {
+					  // TODO RK need to replace unknown with the server name
+					  val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+							  // TODO RK : need figure out if we can use https
+							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+							  val id = f.id.toString
+							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
+					  current.plugin[ElasticsearchPlugin].foreach{
+						  _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+					  }
+					  
+					  // add file to dataset
+					  val dt = dataset.copy(files = dataset.files ++ List(f))
+					  // TODO create a service instead of calling salat directly
+					  Dataset.save(dt)
+					  
+					  // TODO RK need to replace unknown with the server name and dataset type
+			    	val dtkey = "unknown." + "dataset."+ "unknown"
+//		            val dtkey = "unknown." + "dataset."+ "ARC3D"
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dataset_id, host, dtkey, Map.empty))}
+		
+					  // redirect to dataset page
+					  Logger.info("Uploading Completed")
+					  
+					  Redirect(routes.Datasets.dataset(dataset_id)) 
+				  	}
+				  	case None => {
+					  Logger.error("Could not retrieve file that was just saved.")
+					  InternalServerError("Error uploading file")
+				  	}
+				  }
+			
+				  //Ok(views.html.multimediasearch())
+			  }.getOrElse {
+				  BadRequest("File not attached.")
+			  }
+		  }
+		  case None => {Logger.error("Error getting dataset" + dataset_id); InternalServerError}
+	  }
   }
 
   

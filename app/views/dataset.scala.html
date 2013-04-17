@@ -227,13 +227,13 @@
 				  </div>
 				  <div class="modal-body">
 				    <p>Add a new file to dataset.</p>
-				 	@form(action = routes.Files.uploaddnd, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+				 	@form(action = routes.Files.uploaddnd(dataset.id.toString), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 					    <fieldset>
-					      <legend>Select an Image and Search</legend>
+					      <legend>Select an Image and Upload</legend>
 					     <input type="file" id="query" name="File">
 					    </fieldset>
 				        <div class="form-actions">
-				          <input type="submit" class="btn btn-primary" value="Search"/>
+				          <input type="submit" class="btn btn-primary" value="Upload"/>
 				        </div>
 					  }
 				  </div>

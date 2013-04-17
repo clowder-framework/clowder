@@ -7,7 +7,7 @@
   var width = 750;
   var height = 550;
   
-  var inner = "<x3d id='x3dElement' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' style='width:" + width + ";height:" + height + ";'>";  
+  var inner = "<x3d id='x3dElement" + Configuration.tab.replace("#previewer","") + "' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' style='width:" + width + ";height:" + height + ";'>";  
   $.ajax({
 	    url: fileUrl,
 	    async:false,

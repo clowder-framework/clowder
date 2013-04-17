@@ -158,7 +158,6 @@ object Datasets extends Controller with SecureSocial {
 			      case Some(f) => {
 			    	// TODO RK need to replace unknown with the server name
 			    	val key = "unknown." + "file."+ f.contentType.replace("/", ".")
-//			        val key = "unknown." + "file."+ "application.x-ptm"
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
@@ -172,7 +171,7 @@ object Datasets extends Controller with SecureSocial {
 			    	// TODO RK need to replace unknown with the server name and dataset type
 			    	val dtkey = "unknown." + "dataset."+ "unknown"
 //		            val dtkey = "unknown." + "dataset."+ "ARC3D"
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey, Map.empty))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, host, dtkey, Map.empty))}
 		            // redirect to file page
 		            Redirect(routes.Datasets.dataset(dt.id.toString))
 //		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
