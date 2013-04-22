@@ -7,7 +7,7 @@
   var width = 750;
   var height = 550;
   
-  $(Configuration.tab).append("<p>Move mouse while pressing CTRL to pan model.</p>");
+  $(Configuration.tab).append("<p>Move mouse while left-clicking and pressing CTRL to pan model. Move mouse wheel or move mouse up and down </br> while left-clicking and pressing SHIFT to change distance. Move mouse while left-clicking and not pressing CTRL or SHIFT to rotate.</p>");
   
   var s = document.createElement("script");
   s.type = "text/javascript";
@@ -93,6 +93,7 @@
 		var loader = new THREE.JSONLoader(),
 			callbackModel   = function( geometry ) { createScene( geometry) };
 		loader.load( { model: fileUrl, callback: callbackModel } );
+				
 	}
 
 	function createScene( geometry) {
@@ -101,6 +102,7 @@
 		zmesh.position.set( 0, -20, 0 );
 		zmesh.scale.set( 1, 1, 1 );
 		scene.add( zmesh );
+		
 	}
 	
 
@@ -108,13 +110,16 @@
 		
 		if (mouseDown == true){
 			//Rotates when CTRL key not pressed, pans when pressed.
-			if(event.ctrlKey == false){
-				zmesh.rotation.x += (event.clientY - mouseY)/80;
-				zmesh.rotation.y += (event.clientX - mouseX)/80;
-			}
-			else{
+			if(event.ctrlKey == true){
 				camera.position.x -= (event.clientX - mouseX)/5;
 				camera.position.y += (event.clientY - mouseY)/5;
+			}
+			else if(event.shiftKey == true){
+				camera.position.z += (event.clientY - mouseY)/5;
+			}
+			else{								
+				zmesh.rotation.x += (event.clientY - mouseY)/80;
+				zmesh.rotation.y += (event.clientX - mouseX)/80;
 			}
 		}	
 		mouseX = event.clientX;
@@ -136,6 +141,7 @@
 
 	function render() {
 		webglRenderer.render( scene, camera );
+				
 	}
 
   
