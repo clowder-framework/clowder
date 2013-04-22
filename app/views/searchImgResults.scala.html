@@ -1,7 +1,7 @@
-@(query: String,results: Seq[models.Result.Result])
+@(file: models.File, id: String,results: Seq[models.Result.Result] )
 @main("Search Results") {
 	<div class="page-header">
-		<h1>Search Results For <small>@query</small></h1>
+		<h1>Search Results For <medium>@file.filename</medium></h1>
 	</div>
 	@if(results.size == 0) {
 	<div class="row-fluid">
@@ -33,15 +33,21 @@
 			</tbody>
 		</table>
 		
+		
+		
+		
+		
+		
+		
 		<!-- <p> File ID : Proximity></p>
 	         @results.map{   re=>
 	         
 	         <ul>
 			      <li> @re.docID : @re.proximity</li>
 			</ul>
-			}
+			}-->
 			</div>
-	  </div>-->
+	  </div>
 			
     <!-- @for(result <- results) {
       <div class="row-fluid">

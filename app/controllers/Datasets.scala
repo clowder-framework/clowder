@@ -163,8 +163,9 @@ object Datasets extends Controller with SecureSocial {
 			    file match {
 			      case Some(f) => {
 			    	// TODO RK need to replace unknown with the server name
-			    	val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+			    	val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
 //			        val key = "unknown." + "file."+ "application.x-ptm"
+
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
@@ -176,9 +177,12 @@ object Datasets extends Controller with SecureSocial {
 			        // TODO create a service instead of calling salat directly
 		            Dataset.save(dt)
 			    	// TODO RK need to replace unknown with the server name and dataset type
-//			    	val dtkey = "unknown." + "dataset."+ "unknown"
-		            val dtkey = "unknown." + "dataset."+ "ARC3D"
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, dtkey, Map.empty))}
+		            
+		            // Dataset type temporarily set to obj to test .obj extractor and previewer functionality.
+		            // Must not be changed until we can get dataset type automatically-else .obj extractor and previewer will not work.
+ //			    	val dtkey = "unknown." + "dataset."+ "unknown"
+		            val dtkey = "unknown." + "dataset."+ "obj"
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, host, dtkey, Map.empty))}
 		            // redirect to file page
 		            Redirect(routes.Datasets.dataset(dt.id.toString))
 //		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))

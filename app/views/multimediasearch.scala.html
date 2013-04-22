@@ -23,7 +23,7 @@
 			}-->
 <br>
 <br>
- @form(action = routes.Files.upload, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+ @form(action = routes.Files.uploadSelect, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 	    <fieldset>
 	      <legend>Select an Image and Search</legend>
 	     <input type="file" id="query" name="File">
@@ -44,7 +44,8 @@
 	      <output id="list"></output>
 	 <!--  </fieldset>-->
 	  <div class="form-actions">
-          <input type="submit" class="btn btn-primary" value="Search"/>
+          <input type="submit" class="btn btn-primary" id="submit-button-id" value="Search"/>
+           
         </div>
 	 <!--  }-->
 	  
@@ -82,9 +83,9 @@
        </div>
        <br>
        <br>
-       <div style="text-align: center;">
+      <!--  <div style="text-align: center;">
        <a class="btn btn-primary" href="@routes.Search.advanced">Advanced Search</a>
-  	   </div>
+  	   </div>-->
        
 	  }
 	  	 

@@ -53,10 +53,24 @@ object Files extends Controller {
     }
   }
   
+  def downloadByDatasetAndFilename(dataset_id: String, filename: String, preview_id: String) = 
+    Action{ request =>
+      Datasets.datasetFilesGetIdByDatasetAndFilename(dataset_id, filename) match{
+        case Some(id) => { 
+          Redirect(routes.Files.download(id)) 
+        }
+        case None => {
+          InternalServerError
+        }
+      }
+  
+    }
+  
+  
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: String) = Authenticated {
+  def download(id: String) = 
     Action { request =>
 	    Services.files.get(id) match {
 	      case Some((inputStream, filename, contentType, contentLength)) => {
@@ -100,7 +114,7 @@ object Files extends Controller {
 	      }
 	    }
     }
-  }
+  
   
   /**
    * Add metadata to file.
@@ -118,6 +132,8 @@ object Files extends Controller {
   
   
   
+  
+  
   /**
    * Upload file using multipart form enconding.
    */
@@ -128,7 +144,7 @@ object Files extends Controller {
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         file match {
           case Some(f) => {
-            val key = "unknown." + f.contentType.replace("/", ".")
+            val key = "unknown." + f.contentType.replace(".", "_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
@@ -204,4 +220,28 @@ object Files extends Controller {
         }
       ).reduce((left:DBObject, right:DBObject) => left ++ right)
     }
+  
+  def filePreviewsList(id: String) = Authenticated {
+		Action {
+			FileDAO.findOneById(new ObjectId(id)) match {
+			case Some(file) => {
+                val filePreviews = PreviewDAO.findByFileId(file.id);
+				val list = for (prv <- filePreviews) yield jsonPreview(prv)
+				Ok(toJson(list))       
+			}
+			case None => {Logger.error("Error getting file" + id); InternalServerError}
+			}
+		}
+	}
+  
+  def jsonPreview(preview: Preview): JsValue = {
+    toJson(Map("id"->preview.id.toString, "filename"->getFilenameOrEmpty(preview), "contentType"->preview.contentType)) 
+  }
+  
+   def getFilenameOrEmpty(preview : Preview): String = {    
+    preview.filename match {
+      case Some(strng) => strng
+      case None => ""
+    }   
+  }
 }

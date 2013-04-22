@@ -5149,8 +5149,14 @@ Magi.Node = Klass({
 		        var dx = ev.clientX - s.sx, dy = ev.clientY - s.sy;
 		        s.sx = ev.clientX, s.sy = ev.clientY;
 		        if (s.mouse.left) {
-		          xRot.rotation.angle += dx / 200;
-		          yRot.rotation.angle += dy / 200;
+		        	if(ev.ctrlKey == true){
+		        		yRot.position[0] += dx * 0.01 * (s.camera.fov / 45);
+				        yRot.position[1] -= dy * 0.01 * (s.camera.fov / 45);
+		        	}
+		        	else{
+			          xRot.rotation.angle += dx / 200;
+			          yRot.rotation.angle += dy / 200;
+			          }
 		        } else if (s.mouse.middle) {
 		          yRot.position[0] += dx * 0.01 * (s.camera.fov / 45);
 		          yRot.position[1] -= dy * 0.01 * (s.camera.fov / 45);

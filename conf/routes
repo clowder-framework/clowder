@@ -16,17 +16,20 @@ GET     /users/view/:id                   controllers.Users.view(id)
 GET		/files					          controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
 GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
+POST    /files/:id/comment                controllers.Files.comment(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
-GET     /files/:id/similar                controllers.Files.findSimilar(id)
+#GET     /files/:id/similar                controllers.Files.findSimilar(id)
 POST    /upload					          controllers.Files.upload
+POST   /uploadSelect                      controllers.Files.uploadSelect
 POST   	/uploadAjax						  controllers.Files.uploadAjax
-POST   	/uploaddnd					 	  controllers.Files.uploaddnd
+POST   	/uploaddnd/:id					  controllers.Files.uploaddnd(id)
 #POST  	/reactiveUpload					  controllers.Files.reactiveUpload
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
+#POST	/datasets/:id/comment             controllers.Datasets.comment(id)
 GET     /datasets_by_section/:id          controllers.Datasets.datasetBySection(id)
 POST    /dataset/submit                   controllers.Datasets.submit
 
@@ -48,6 +51,7 @@ POST  	 /uploadquery						controllers.Search.uploadquery
 GET      /searchbyURL                       controllers.Search.searchbyURL(query:String?="")
 GET      /Filterby                          controllers.Search.Filterby(id)
 GET      /searchbyfeature					controllers.Search.searchMultimediaIndex(section_id)
+GET     /files/:id/similar                  controllers.Search.findSimilar(id)
 
 
 # Previewers
@@ -99,17 +103,20 @@ POST    /api/files                        api.Files.upload
 GET     /api/files/:id/metadata           api.Files.get(id)
 POST    /api/files/:id/metadata           api.Files.addMetadata(id)
 POST    /api/files/:id/previews/:p_id     api.Files.attachPreview(id, p_id)
+GET		/api/files/:id/listpreviews		  api.Files.filePreviewsList(id)
 GET     /api/files/:id                    api.Files.download(id)
 
 POST    /api/datasets/:id/metadata		  api.Datasets.addMetadata(id)
+GET 	/api/datasets/:id/listFiles		  api.Datasets.datasetFilesList(id)
 
-GET		/api/previews/:dzi_id_dir/:level/:filename		api.Previews.getTile(dzi_id_dir, level, filename)
-POST    /api/previews/:dzi_id/tiles/:tile_id/:level     api.Previews.attachTile(dzi_id, tile_id, level)
-POST    /api/previews/:id/metadata        				api.Previews.uploadMetadata(id)
-GET     /api/previews/:id/metadata        				api.Previews.getMetadata(id)
-GET     /api/previews/:id                 				api.Previews.download(id)
-POST    /api/previews                     				api.Previews.upload
-
+GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					api.Previews.downloadPreview(preview_id, datasetid)
+GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			api.Files.downloadByDatasetAndFilename(dataset_id, filename, preview_id)
+GET		/api/previews/:dzi_id_dir/:level/:filename									api.Previews.getTile(dzi_id_dir, level, filename)
+POST    /api/previews/:dzi_id/tiles/:tile_id/:level     							api.Previews.attachTile(dzi_id, tile_id, level)
+POST    /api/previews/:id/metadata        											api.Previews.uploadMetadata(id)
+GET     /api/previews/:id/metadata        											api.Previews.getMetadata(id)
+GET     /api/previews/:id                 											api.Previews.download(id)
+POST    /api/previews                     											api.Previews.upload
 
 POST    /api/indexes                      api.Indexes.index
 POST    /api/indexes/features             api.Indexes.features

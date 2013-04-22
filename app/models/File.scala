@@ -23,9 +23,10 @@ case class File(
     filename: String, 
     uploadDate: Date, 
     contentType: String,
-    length: Long,
+    length: Long = 0,
     sections: List[Section] = List.empty,
-    previews: List[Preview] = List.empty
+    previews: List[Preview] = List.empty,
+    comments: List[Comment] = List.empty
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

@@ -26,6 +26,11 @@ import com.mongodb.WriteConcern
  */
 object Previews extends Controller {
 
+  def downloadPreview(id:String, datasetid:String) =
+    Action{ request =>
+      Redirect(routes.Previews.download(id))    
+  }
+  
   /**
    * Download preview bytes.
    */

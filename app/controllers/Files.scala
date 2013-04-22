@@ -9,6 +9,7 @@ import play.api.data.Forms._
 import play.api.libs.iteratee._
 import play.api.mvc._
 import services._
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Input.{El, EOF, Empty}
 import com.mongodb.casbah.gridfs.GridFS
@@ -18,7 +19,20 @@ import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
 import models.FileDAO
+//import play.api.libs.ws.WS
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 
+import models.Comment
+import java.util.Date
+import models.File
+import models.Dataset
+
+import org.bson.types.ObjectId
+import com.mongodb.casbah.Imports._
+import play.api.libs.json.Json._
+
+//>>>>>>> refs/remotes/origin/master
 /**
  * Manage files.
  * 
@@ -38,7 +52,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
     * File info.
     */
-  def file(id: String) = Action {
+  def file(id: String) = UserAwareAction { implicit request =>
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
@@ -48,7 +62,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
         }
-        Ok(views.html.file(file, id, previews, sectionsWithPreviews))
+        Ok(views.html.file(file, id, previews, sectionsWithPreviews, request.user))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
@@ -109,7 +123,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
         file match {
           case Some(f) => {
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
@@ -176,13 +190,14 @@ object Files extends Controller with securesocial.core.SecureSocial {
     }
   }
   
-  def uploaddnd() = Action(parse.multipartFormData) { implicit request =>
+  
+  def uploadSelect() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
-        // store file
-        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
-        // submit file for extraction
         
+        // store file       
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+//        Thread.sleep(1000)
         file match {
           case Some(f) => {
             // TODO RK need to replace unknown with the server name
@@ -195,27 +210,80 @@ object Files extends Controller with securesocial.core.SecureSocial {
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
             // redirect to file page]
-            Logger.info("Uploading Completed")
-           // Logger.info("File id"+file)
-            Ok(id)
-            //Redirect(routes.Files.file(f.id.toString))  
+             val query="http://localhost:9000/files/"+id+"/blob"  
+             var slashindex=query.lastIndexOf('/')
+             Redirect(routes.Search.findSimilar(f.id.toString))  
          }
          case None => {
            Logger.error("Could not retrieve file that was just saved.")
            InternalServerError("Error uploading file")
          }
         }
-              
-       //Ok(views.html.multimediasearch())
       }.getOrElse {
          BadRequest("File not attached.")
       }
   }
+  
+
+  def uploaddnd(dataset_id: String) = Action(parse.multipartFormData) { implicit request =>
+	  Services.datasets.get(dataset_id)  match {
+		  case Some(dataset) => {
+			  request.body.file("File").map { f =>        
+				  Logger.debug("Uploading file " + f.filename)
+				  // store file
+				  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
+				  // submit file for extraction
+			
+				  file match {
+				  	case Some(f) => {
+					  // TODO RK need to replace unknown with the server name
+					  val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
+							  // TODO RK : need figure out if we can use https
+							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+							  val id = f.id.toString
+							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
+					  current.plugin[ElasticsearchPlugin].foreach{
+						  _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+					  }
+					  
+					  // add file to dataset
+					  val dt = dataset.copy(files = dataset.files ++ List(f))
+					  // TODO create a service instead of calling salat directly
+					  Dataset.save(dt)
+					  
+					  // TODO RK need to replace unknown with the server name and dataset type
+
+					// Dataset type temporarily set to obj to test .obj extractor and previewer functionality.
+		            // Must not be changed until we can get dataset type automatically-else .obj extractor and previewer will not work.
+ //			    	val dtkey = "unknown." + "dataset."+ "unknown"
+		            val dtkey = "unknown." + "dataset."+ "obj"
+			    	
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dataset_id, host, dtkey, Map.empty))}
+		
+					  // redirect to dataset page
+					  Logger.info("Uploading Completed")
+					  
+					  Redirect(routes.Datasets.dataset(dataset_id)) 
+				  	}
+				  	case None => {
+					  Logger.error("Could not retrieve file that was just saved.")
+					  InternalServerError("Error uploading file")
+				  	}
+				  }
+			
+				  //Ok(views.html.multimediasearch())
+			  }.getOrElse {
+				  BadRequest("File not attached.")
+			  }
+		  }
+		  case None => {Logger.error("Error getting dataset" + dataset_id); InternalServerError}
+	  }
+  }
+
 
   
   
-  /* Find Similar files*/
-  def findSimilar(id:String)=TODO
+  
   
   ///////////////////////////////////
   //
@@ -283,7 +351,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
     file match {
       case Some(f) => {
         // TODO RK need to replace unknown with the server name
-        val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+        val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
         // TODO RK : need figure out if we can use https
         val host = "http://" + request.host + request.path.replaceAll("upload$", "")
         val id = f.id.toString
@@ -368,4 +436,24 @@ object Files extends Controller with securesocial.core.SecureSocial {
 //   }
 // }
   
+  /*
+   * Add comment to a file
+   */
+  def comment(id: String) = SecuredAction(ajaxCall = true) { implicit request =>
+    Logger.debug("Commenting " + request.body)
+    Logger.debug("Hello " + request.user)
+    
+    request.body.asText match {
+      case Some(text) => {
+    	Logger.debug("Commenting " + id + " with " + text)
+    	val comment = Comment(request.user.id.id, new Date(), text)
+      	FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)),
+      	    $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+        Ok(toJson(""))
+      }
+      case None => {
+    	  BadRequest(toJson("error"))
+      } 
+    }
+  }
 }

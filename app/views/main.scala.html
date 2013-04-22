@@ -1,4 +1,4 @@
-@(title: String)(content: Html)
+@(title: String, user: Option[securesocial.core.Identity] = None)(content: Html)
 
 <!DOCTYPE html>
 
@@ -50,9 +50,18 @@ body {
 					<form class="navbar-search pull-left" action="@routes.Search.search("")" method="get">
   						<input type="text" class="search-query" placeholder="Search" name="query">
 					</form>
-					<ul class="nav pull-right">
-						<li><a class="" href="@securesocial.controllers.routes.LoginPage.login">Login</a></li>
-					</ul>
+					@user match {
+    					case Some(x) => {
+							<ul class="nav pull-right">
+								<li><a class="" href="@securesocial.controllers.routes.LoginPage.logout">Logout (@x.fullName)</a></li>
+							</ul>
+						}
+    					case None => {
+							<ul class="nav pull-right">
+								<li><a class="" href="@securesocial.controllers.routes.LoginPage.login">Login</a></li>
+							</ul>
+						}
+					}
 				</div>
 				<!--/.nav-collapse -->
 			</div>

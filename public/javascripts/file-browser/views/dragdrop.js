@@ -1,3 +1,5 @@
+var fileId;
+
 if (window.File && window.FileList && window.FileReader) {
 	console.log("I am inside initialization code");
 						
@@ -106,37 +108,12 @@ function onreadystatechangeHandler(file,evt){
  
  if (readyState==4){
 	  if(status == 200) {
-	  	  
-	 // console.log(evt.target.responseText.id);
-	  //fileUploaded.push(evt.target.responseText);
-	  //Output(evt.target.responseText,"result");
-	  console.log("File: " + file.name);
-	  var id=evt.target.responseText;
-	  window.location.href=	"http://localhost:9000/files/"+id;
-	
-	  
-	  // var xhr1 = new XMLHttpRequest();
-	//  xhr1.addEventListener('readystatechange', function completionhandler1(evt,id) {
-	//		redirect(evt,id)
-			//console.log("File xhr Upload: " + file.name);
-			//	},false);
-	  
-	   // xhr1.open("GET", "http://localhost:9000/files/"+id, true);
-	  //  xhr1.send();
-	  
-	  
-	  
-	//this.innerHTML+evt.target.responseText;
-	  //newwindow=window.open('writeToThisPage.html');
-
-	    // newwindow.document.write(evt.target.responseText);
-	     //this.document.write(evt.target.responseText);
-	     
-	    // newwindow.document.close();
-
-	   //  window.open('writeToThisPage.html');
-	  // result.innerHTML = '<p>The server saw it as:</p><pre>' + evt.target.responseText + '</pre>';
-       
+	   console.log("File: " + file.name);
+	   var id=evt.target.responseText;
+	  fileId=id;
+	 // window.location.href=	"http://localhost:9000/files/"+id;
+	  // window.location.href="http://localhost:9000/files/"+id+"/similar";
+	            
 	   }
 
    }
@@ -175,6 +152,10 @@ function Output(msg,mgid) {
 	var m=$id(mgid);
 		m.innerHTML = msg + m.innerHTML;
 }
-
+var submitBtn=document.getElementById('submit-button-id');
+submitBtn.onclick=function(evt){
+	window.location.href="http://localhost:9000/files/"+fileId+"/similar";
+	
+}
 
 

@@ -2,6 +2,7 @@ package services
 
 import play.api.{ Plugin, Logger, Application }
 import com.typesafe.config.ConfigFactory
+import com.rabbitmq.client.AMQP.BasicProperties
 import com.rabbitmq.client.ConnectionFactory
 import com.rabbitmq.client.Connection
 import com.rabbitmq.client.Channel
@@ -78,12 +79,15 @@ class SendingActor(channel: Channel, exchange: String) extends Actor {
       case ExtractorMessage(id, host, key, metadata) => {
         val msgMap = scala.collection.mutable.Map(
             "id" -> Json.toJson(id),
+            "intermediateId" -> Json.toJson(id),
             "host" -> Json.toJson(host)
             )
         metadata.foreach(kv => msgMap.put(kv._1,Json.toJson(kv._2)))
         val msg = Json.toJson(msgMap.toMap)
         Logger.info(msg.toString())
-        channel.basicPublish(exchange, key, true, null, msg.toString().getBytes())
+        val basicProperties = new BasicProperties()
+        basicProperties.setContentType("application\\json")
+        channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
       }
       
       case _ => {
