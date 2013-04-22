@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]]) 
+@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: List[Map[String,Any]]) 
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -92,6 +92,8 @@
 					}
 		  		</div>
 			</div>
+			
+			<!-- sections -->
 			@if(f.sections.size > 0) {	
 			  	<div class="row-fluid" style="padding-top: 10px">
 			  	  <div class="span6">
@@ -188,6 +190,25 @@
     			}
 <!--     			/////////////////////////// -->
     		}
+    		
+    		
+    	<div class="tabbable"> <!-- Only required for left/right tabs -->
+		  <ul class="nav nav-tabs">
+		    <li class="active"><a href="#tab1" data-toggle="tab">Comments</a></li>
+		    <li><a href="#tab2" data-toggle="tab">Metadata</a></li>
+		  </ul>
+		  <div class="tab-content">
+		    <div class="tab-pane active" id="tab1">
+		      <p>No comments.</p>
+		    </div>
+		    <div class="tab-pane" id="tab2">
+		      @metadata(dataset.id.toString, md)
+		    </div>
+		  </div>
+		</div>	
+    		
+    		
+    		
 		</div>
 		
 		<!-- right column -->
