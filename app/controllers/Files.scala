@@ -252,8 +252,12 @@ object Files extends Controller with securesocial.core.SecureSocial {
 					  Dataset.save(dt)
 					  
 					  // TODO RK need to replace unknown with the server name and dataset type
-			    	val dtkey = "unknown." + "dataset."+ "unknown"
-//		            val dtkey = "unknown." + "dataset."+ "ARC3D"
+
+					// Dataset type temporarily set to obj to test .obj extractor and previewer functionality.
+		            // Must not be changed until we can get dataset type automatically-else .obj extractor and previewer will not work.
+ //			    	val dtkey = "unknown." + "dataset."+ "unknown"
+		            val dtkey = "unknown." + "dataset."+ "obj"
+			    	
 			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dataset_id, host, dtkey, Map.empty))}
 		
 					  // redirect to dataset page

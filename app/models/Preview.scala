@@ -27,6 +27,7 @@ case class Preview (
 	filename: Option[String] = None,
 	contentType: String,
 	length: Long
+		
 )
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
@@ -76,5 +77,7 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
       case None => None
     }
   }
+  
+ 
   
 }

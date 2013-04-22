@@ -1,0 +1,4 @@
+{ "name" : "3DObj",
+  "main" : "some-library.js",
+  "contentType" : ["application/javascript"]
+  }
