@@ -1,0 +1,80 @@
+@(dataset_id: String, metadata: List[Map[String,Any]])
+
+@printLevel(metadata: Map[String,Any]) = {
+	<ul>
+	@for((key,value) <- metadata) {
+		<li><b>@(key):</b>
+		@if(value.isInstanceOf[String]) {
+			@value</li>
+		} else {
+
+				@printLevel(value.asInstanceOf[Map[String, Any]])
+
+		}
+	}
+	</ul>
+}
+
+@if(metadata.isEmpty) {
+	<div>No metadata.</div>
+} else {
+	@for(md <- metadata) {
+		<div>@md.toString</div>
+	}
+}
+
+<form class="form-inline">
+	<input type="text" id="key">
+	<input type="text" id="value">
+	<button class="btn" id="addMetadata">Add</button>
+</form>
+
+<script language="javascript">
+	$(function() {
+		
+	   $('#addMetadata').click(function() {
+	     var key = $('#key').val();
+	     var value = $('#value').val();
+	
+	     if (key !== "" && value !== "") {
+	     	 console.log("submitting metadata " + key + " " + value);
+	     	 var data = {};
+	     	 data[key] = value;
+	     	 
+		     var request = $.ajax({
+		       type: 'POST',
+		       url: '@api.routes.Datasets.addMetadata(dataset_id)',
+		       data: JSON.stringify(data),
+		       contentType: "application/json",
+		     });
+		     
+		     request.done(function (response, textStatus, jqXHR){
+		        console.log("Response " + response);
+		        $('#key').val('');
+		        $('#value').val('');
+		     });
+	   
+		     request.fail(function (jqXHR, textStatus, errorThrown){
+		        console.error(
+		            "The following error occured: "+
+		            textStatus, errorThrown
+		            
+		        );
+		        window.location = "../login"; // FIXME hardcoded
+		     });
+		     
+		     return false;
+	     }
+	     
+	  });
+	  
+	  	$('#value').keypress(function (e) {
+		  if (e.which == 13) {
+		    console.log("enter");
+		    $('#addMetadata').click();
+		    return false;
+		  }
+		});
+	  
+	 });
+</script>
