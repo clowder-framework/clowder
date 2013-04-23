@@ -9881,6 +9881,7 @@ THREE.JSONLoader.prototype.load = function (b) {
     b.postMessage((new Date).getTime())
 };
 THREE.JSONLoader.prototype.createModel = function (b, c, e) {
+	
     var f = new THREE.Geometry,
         h = b.scale !== void 0 ? 1 / b.scale : 1;
     this.init_materials(f, b.materials, e);

@@ -15,6 +15,7 @@ import play.api.Play.current
    
 case class ExtractorMessage (
     id: String,
+    intermediateId: String,
     host: String,
     key: String,
     metadata: Map[String, String]
@@ -76,10 +77,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 class SendingActor(channel: Channel, exchange: String) extends Actor {
  
   def receive = {
-      case ExtractorMessage(id, host, key, metadata) => {
+      case ExtractorMessage(id, intermediateId, host, key, metadata) => {
         val msgMap = scala.collection.mutable.Map(
             "id" -> Json.toJson(id),
-            "intermediateId" -> Json.toJson(id),
+            "intermediateId" -> Json.toJson(intermediateId),
             "host" -> Json.toJson(host)
             )
         metadata.foreach(kv => msgMap.put(kv._1,Json.toJson(kv._2)))

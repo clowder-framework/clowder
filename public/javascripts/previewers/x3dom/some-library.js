@@ -7,6 +7,8 @@
   var width = 750;
   var height = 550;
   
+  $(Configuration.tab).append("<p>Move mouse while left-clicking and pressing CTRL to pan model.</p>");
+  
   var inner = "<x3d id='x3dElement" + Configuration.tab.replace("#previewer","") + "' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' style='width:" + width + ";height:" + height + ";'>";  
   $.ajax({
 	    url: fileUrl,

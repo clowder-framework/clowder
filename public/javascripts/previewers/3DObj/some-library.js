@@ -26,8 +26,7 @@
   s.src = pathJs + "RequestAnimationFrame.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);
-  
-  
+    
   if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 	var SCREEN_WIDTH = width;

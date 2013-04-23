@@ -120,7 +120,7 @@ object Files extends Controller {
    * Add metadata to file.
    */
   def addMetadata(id: String) = 
-    
+   Authenticated { 
     Action(parse.json) { request =>
       Logger.debug("Adding metadata to file " + id)
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
@@ -129,7 +129,7 @@ object Files extends Controller {
 	 Logger.debug("Updating previews.files " + id + " with " + doc)
 	 Ok(toJson("success"))
     }
-  
+  }
   
   
   
@@ -137,45 +137,79 @@ object Files extends Controller {
   /**
    * Upload file using multipart form enconding.
    */
-    def upload() = Action(parse.multipartFormData) { implicit request =>
-      request.body.file("File").map { f =>        
-        Logger.debug("Uploading file " + f.filename)
-        // store file
-        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-        file match {
-          case Some(f) => {
-            val key = "unknown." + f.contentType.replace(".", "_").replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-            val id = f.id.toString
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
-            current.plugin[ElasticsearchPlugin].foreach{
-              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
-            }
-            Ok(toJson(Map("id"->id)))   
-          }
-          case None => {
-            Logger.error("Could not retrieve file that was just saved.")
-            InternalServerError("Error uploading file")
-          }
-        }
-      }.getOrElse {
-         BadRequest(toJson("File not attached."))
-      }
-  }
+    def upload() = Authenticated { Action(parse.multipartFormData) { implicit request =>
+	      request.body.file("File").map { f =>        
+	        Logger.debug("Uploading file " + f.filename)
+	        // store file
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        file match {
+	          case Some(f) => {
+	            val key = "unknown." + f.contentType.replace(".", "_").replace("/", ".")
+	            // TODO RK : need figure out if we can use https
+	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
+	            val id = f.id.toString
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty))}
+	            current.plugin[ElasticsearchPlugin].foreach{
+	              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+	            }
+	            Ok(toJson(Map("id"->id)))   
+	          }
+	          case None => {
+	            Logger.error("Could not retrieve file that was just saved.")
+	            InternalServerError("Error uploading file")
+	          }
+	        }
+	      }.getOrElse {
+	         BadRequest(toJson("File not attached."))
+	      }
+	  }
+    }
+    
+   /**
+   * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
+   */
+    def uploadIntermediate(originalId: String) = Authenticated{ Action(parse.multipartFormData) { implicit request =>
+	      request.body.file("File").map { f =>        
+	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
+	        // store file
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        file match {
+	          case Some(f) => {
+	            val key = "unknown." + f.contentType.replace(".", "_").replace("/", ".")
+	            // TODO RK : need figure out if we can use https
+	            val host = "http://" + request.host + request.path.replaceAll("api/files/uploadintermediate/[A-Za-z0-9_]*$", "")
+	            val id = f.id.toString
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(originalId, id, host, key, Map.empty))}
+	            current.plugin[ElasticsearchPlugin].foreach{
+	              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+	            }
+	            Ok(toJson(Map("id"->id)))   
+	          }
+	          case None => {
+	            Logger.error("Could not retrieve file that was just saved.")
+	            InternalServerError("Error uploading file")
+	          }
+	        }
+	      }.getOrElse {
+	         BadRequest(toJson("File not attached."))
+	      }
+	  }
+    }
+    
     
   /**
    * Upload metadata for preview and attach it to a file.
    */  
-  def uploadPreview(file_id: String) = Action(parse.multipartFormData) { implicit request =>
-      request.body.file("File").map { f =>        
-        Logger.debug("Uploading file " + f.filename)
-        // store file
-        val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-        Ok(toJson(Map("id"->id)))   
-      }.getOrElse {
-         BadRequest(toJson("File not attached."))
-      }
+  def uploadPreview(file_id: String) = Authenticated { Action(parse.multipartFormData) { implicit request =>
+	      request.body.file("File").map { f =>        
+	        Logger.debug("Uploading file " + f.filename)
+	        // store file
+	        val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        Ok(toJson(Map("id"->id)))   
+	      }.getOrElse {
+	         BadRequest(toJson("File not attached."))
+	      }
+	  }
   }
   
   /**
