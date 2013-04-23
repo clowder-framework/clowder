@@ -5,10 +5,8 @@ import securesocial.core.SecureSocial
 import play.api.Logger
 import play.api.libs.json.Json._
 import models.Dataset
-import com.mongodb.casbah.commons.MongoDBObject
-import org.bson.types.ObjectId
-import com.mongodb.casbah.Imports._
 import play.api.mvc.Action
+
 /**
  * Tagging.
  * 
@@ -23,9 +21,7 @@ object Tags extends Controller with SecureSocial {
       (json \ "id").asOpt[String].map { id =>
         (json \ "tag").asOpt[String].map { tag =>
           Logger.debug("Tagging " + id + " with " + tag)
-          val result = Dataset.dao.collection.update(
-          MongoDBObject("_id" -> new ObjectId(id)), 
-          	$addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+          Dataset.tag(id, tag)
         }
       }
       Ok(toJson(""))

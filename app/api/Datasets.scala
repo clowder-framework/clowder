@@ -1,3 +1,6 @@
+/**
+ *
+ */
 package api
 
 import play.api.mvc.Controller
@@ -9,9 +12,24 @@ import play.api.libs.json.JsValue
 import play.api.Logger
 import models.FileDAO
 import play.api.libs.json.Json._
+import play.api.libs.json.Json
 
+/**
+ * Dataset API.
+ * 
+ * @author Luigi Marini
+ *
+ */
 object Datasets extends Controller {
-  
+
+  def addMetadata(id: String) = Authenticated {
+	  Logger.debug("Adding metadata to dataset " + id)
+	    Action(parse.json) { request =>
+	          Dataset.addMetadata(id, Json.stringify(request.body))
+	          Ok(toJson(Map("status"->"success")))
+	    }
+	}
+	
   def datasetFilesGetIdByDatasetAndFilename(datasetId: String, filename: String): Option[String] = 
 		{
 			Services.datasets.get(datasetId)  match {
@@ -49,5 +67,4 @@ object Datasets extends Controller {
     def jsonFile(file: File): JsValue = {
     toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType))
   }
-  
 }

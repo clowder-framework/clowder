@@ -86,17 +86,31 @@ class PostgresPlugin(application: Application) extends Plugin {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
     		"(SELECT gid, title, timestamp, data, ST_AsGeoJson(1, geog, 15, 0)::json As geog FROM geoindex"
-    if (!since.isEmpty && !until.isEmpty) query+= " WHERE timestamp >= ? AND timestamp <= ?) As t;"
-    else if (!since.isEmpty) query += "timestamp >= ?) As t;"
-    else if (!until.isEmpty) query += "timestamp <= ?) As t;"
+    if (since.isDefined || until.isDefined || geocode.isDefined) query+= " WHERE "
+    if (since.isDefined) query += "timestamp >= ? "
+    if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
+    if (until.isDefined) query += "timestamp <= ? "
+    if ((since.isDefined || until.isDefined) && geocode.isDefined) query += " AND "
+    if (geocode.isDefined) query += "ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+    query += ") As t;"
     val st = conn.prepareStatement(query)
-    if (!since.isEmpty && !until.isEmpty) {
-      st.setTimestamp(1, new Timestamp(formatter.parse(since.get).getTime))
-      st.setTimestamp(2, new Timestamp(formatter.parse(until.get).getTime))
-    } else if (!since.isEmpty) st.setTimestamp(1, new Timestamp(formatter.parse(since.get).getTime))
-      else if (!until.isEmpty) st.setTimestamp(1, new Timestamp(formatter.parse(until.get).getTime))
+    var i = 0
+    if (since.isDefined) {
+      i=i+1 
+      st.setTimestamp(i, new Timestamp(formatter.parse(since.get).getTime))
+    }
+    if (until.isDefined) {
+      i=i+1
+      st.setTimestamp(i, new Timestamp(formatter.parse(until.get).getTime))
+    }
+    if (geocode.isDefined) {
+      val parts = geocode.get.split(",")
+      st.setDouble(i+1,parts(1).toDouble)
+      st.setDouble(i+2,parts(0).toDouble)
+      st.setDouble(i+3,parts(2).toDouble*1000)
+    }
     st.setFetchSize(50)
-    Logger.trace("Geostream search: " + st)
+    Logger.debug("Geostream search: " + st)
     val rs = st.executeQuery()
     while (rs.next()) {
       data += rs.getString(1)

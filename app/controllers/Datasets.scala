@@ -26,6 +26,7 @@ import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
 import models.SectionDAO
 import play.api.mvc.Flash
+import scala.collection.immutable.Nil
 
 /**
  * A dataset is a collection of files and streams.
@@ -90,7 +91,7 @@ object Datasets extends Controller with SecureSocial {
   /**
    * Dataset.
    */
-  def dataset(id: String) = Action {
+  def dataset(id: String) = Action {    
     Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
       case Some(dataset) => {
@@ -113,7 +114,12 @@ object Datasets extends Controller with SecureSocial {
           }
         }
         val previews = Map(previewslist:_*)
-        Ok(views.html.dataset(datasetWithFiles, previews))
+        val metadata = Dataset.getMetadata(id)
+        Logger.debug("Metadata: " + metadata)
+        for (md <- metadata) {
+          Logger.debug(md.toString)
+        }
+        Ok(views.html.dataset(datasetWithFiles, previews, metadata))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }
