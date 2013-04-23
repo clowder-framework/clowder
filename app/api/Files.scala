@@ -175,9 +175,9 @@ object Files extends Controller {
 	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
 	        file match {
 	          case Some(f) => {
-	            val key = "unknown." + f.contentType.replace(".", "_").replace("/", ".")
+	            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
-	            val host = "http://" + request.host + request.path.replaceAll("api/files/uploadintermediate/[A-Za-z0-9_]*$", "")
+	            val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_]*$", "")
 	            val id = f.id.toString
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(originalId, id, host, key, Map.empty))}
 	            current.plugin[ElasticsearchPlugin].foreach{
