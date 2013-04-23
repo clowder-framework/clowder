@@ -5,12 +5,12 @@
 	@for((key,value) <- metadata) {
 		<li><b>@(key):</b>
 		@if(value.isInstanceOf[String]) {
-			@value</li>
+			@value
 		} else {
 
 				@printLevel(value.asInstanceOf[Map[String, Any]])
 
-		}
+		}</li>
 	}
 	</ul>
 }
@@ -19,7 +19,8 @@
 	<div>No metadata.</div>
 } else {
 	@for(md <- metadata) {
-		<div>@md.toString</div>
+<!-- 		<div>@md.toString</div> -->
+			<div>@printLevel(md)</div>
 	}
 }
 
@@ -60,7 +61,7 @@
 		            textStatus, errorThrown
 		            
 		        );
-		        window.location = "../login"; // FIXME hardcoded
+		        alert("ERROR: " + errorThrown +". Metadata not added." );
 		     });
 		     
 		     return false;

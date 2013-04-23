@@ -22,13 +22,13 @@ import play.api.libs.json.Json
  */
 object Datasets extends Controller {
 
-  def addMetadata(id: String) = Authenticated {
-	  Logger.debug("Adding metadata to dataset " + id)
+  def addMetadata(id: String) = Authenticated{ 
 	    Action(parse.json) { request =>
+	      	  Logger.debug("Adding metadata to dataset " + id)
 	          Dataset.addMetadata(id, Json.stringify(request.body))
 	          Ok(toJson(Map("status"->"success")))
 	    }
-	}
+  }
 	
   def datasetFilesGetIdByDatasetAndFilename(datasetId: String, filename: String): Option[String] = 
 		{
