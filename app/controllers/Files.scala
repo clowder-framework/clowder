@@ -435,7 +435,6 @@ object Files extends Controller with securesocial.core.SecureSocial {
    */
   def comment(id: String) = SecuredAction(ajaxCall = true) { implicit request =>
     Logger.debug("Commenting " + request.body)
-    Logger.debug("Hello " + request.user)
     
     request.body.asText match {
       case Some(text) => {
