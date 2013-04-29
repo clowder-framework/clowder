@@ -19,20 +19,16 @@ import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
 import models.FileDAO
-//import play.api.libs.ws.WS
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-
 import models.Comment
 import java.util.Date
 import models.File
 import models.Dataset
-
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
 
-//>>>>>>> refs/remotes/origin/master
 /**
  * Manage files.
  * 
@@ -53,6 +49,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
     * File info.
     */
   def file(id: String) = UserAwareAction { implicit request =>
+    implicit val user = request.user
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
@@ -62,7 +59,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
         }
-        Ok(views.html.file(file, id, previews, sectionsWithPreviews, request.user))
+        Ok(views.html.file(file, id, previews, sectionsWithPreviews))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
@@ -71,7 +68,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int) = Action {
+  def list(when: String, date: String, limit: Int) = UserAwareAction { implicit request =>
+    implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")

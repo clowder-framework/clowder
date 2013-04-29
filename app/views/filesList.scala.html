@@ -1,4 +1,4 @@
-@(files: List[models.File], prev: String, next: String, limit: Int) 
+@(files: List[models.File], prev: String, next: String, limit: Int)(implicit user: Option[securesocial.core.Identity])
 
 @main("Files") {
 <div class="page-header">

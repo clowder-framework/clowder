@@ -1,6 +1,6 @@
-@(file: models.File, id: String, previews: List[models.Preview], sections: List[models.Section], user : Option[securesocial.core.Identity]) 
+@(file: models.File, id: String, previews: List[models.Preview], sections: List[models.Section])(implicit user: Option[securesocial.core.Identity])
 
-@main("File", user) {
+@main("File") {
 	<div class="page-header">
 		<h1>@file.filename	</h1>
 	</div>
