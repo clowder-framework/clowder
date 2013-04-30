@@ -23,7 +23,7 @@ import collection.JavaConverters._
  * 
  * @author Luigi Marini
  *
- */
+ */ 
 case class Dataset (
   id: ObjectId = new ObjectId,
   name: String = "N/A",

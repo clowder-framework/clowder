@@ -29,7 +29,7 @@
 						
 					$(this).parent().get(0).insertBefore(textSpan, $(this).parent().children("input").get(0));
 					$(this).parent().get(0).removeChild($(this).parent().children("input").get(0));
-						
+						 
 					$(this).html("Modify");			
 				  }			  
 				  else if($(this).html() == "Delete"){

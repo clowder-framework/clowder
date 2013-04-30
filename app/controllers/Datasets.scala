@@ -49,14 +49,16 @@ object Datasets extends Controller with SecureSocial {
    )
    
    //Secured
-  def newDataset() = Action { implicit request =>
+  def newDataset()  = UserAwareAction { implicit request =>
+    implicit val user = request.user
   	Ok(views.html.newDataset(datasetForm)).flashing("error"->"Please select a file") 
   }
    
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int) = Action {
+  def list(when: String, date: String, limit: Int) = UserAwareAction { implicit request =>
+    implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
@@ -91,7 +93,8 @@ object Datasets extends Controller with SecureSocial {
   /**
    * Dataset.
    */
-  def dataset(id: String) = Action {    
+  def dataset(id: String) = UserAwareAction { implicit request =>
+    implicit val user = request.user    
     Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
       case Some(dataset) => {
@@ -151,7 +154,8 @@ object Datasets extends Controller with SecureSocial {
   /**
    * Upload file.
    */
-  def submit() = Action(parse.multipartFormData) { implicit request =>
+  def submit() = UserAwareAction(parse.multipartFormData) { implicit request =>
+    implicit val user = request.user
     
         datasetForm.bindFromRequest.fold(
           errors => BadRequest(views.html.newDataset(errors)),

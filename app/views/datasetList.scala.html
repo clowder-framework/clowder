@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], prev: String, next: String, limit: Int) 
+@(datasets: List[models.Dataset], prev: String, next: String, limit: Int)(implicit user: Option[securesocial.core.Identity])
 
 @main("Datasets") {
 <div class="page-header">

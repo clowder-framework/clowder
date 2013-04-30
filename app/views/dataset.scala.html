@@ -1,4 +1,5 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: List[Map[String,Any]], usrmd: scala.collection.mutable.Map[String,Any]) 
+@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: List[Map[String,Any]], usrmd: scala.collection.mutable.Map[String,Any])(implicit user: Option[securesocial.core.Identity]) 
+
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -191,12 +192,11 @@
 						        Galleria.log('Now viewing ' + e.imageTarget.src);
 						    });
 						});
-				      	
+				      	 
 				      	
 				    });
 			    </script>
     			}
-<!--     			/////////////////////////// -->
     		}
     		
     		
@@ -243,7 +243,7 @@
 				<!-- Modal -->
 				<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 				  <div class="modal-header">
-				    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">��</button>
 				    <h3 id="myModalLabel">Upload File</h3>
 				  </div>
 				  <div class="modal-body">

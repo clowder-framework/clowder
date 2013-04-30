@@ -34,7 +34,7 @@ object Datasets extends Controller {
 	      	  Logger.debug("Adding user metadata to dataset " + id)
 	          Dataset.addUserMetadata(id, Json.stringify(request.body))
 	          Ok(toJson(Map("status"->"success")))
-	    }
+	    } 
   
 	
   def datasetFilesGetIdByDatasetAndFilename(datasetId: String, filename: String): Option[String] = 
