@@ -2,9 +2,11 @@
 	var allowedNodes = [["Node 1", "Node"],["Node2", "Node"],["Node3", "Node"],["Node4", "Node"],
 						["String1", "Leaf"],["String2", "Leaf"]];
 	
+	//Format: Node,Child, Minimum child count, Maximum child count.
 	var allowedChildren = [["!root!","Node 1","1","1"],["Node 1","String1", "1", "*"],["Node 1","Node2", "0", "*"],["Node2","String1", "1", "1"],["Node2","Node3", "0", "1"],
 						["Node3","String2", "0", "*"]];
-
+	
+	//Counter for DOM node uniqueness.
 	var elementCounter = 1;
 
 	$(function() {
@@ -50,7 +52,7 @@
 					else{
 						parentNodeTypeText = $(this).parent().children('b').get(0).textContent;
 						parentNodeType = parentNodeTypeText.substring(0, parentNodeTypeText.length - 1);
-					}
+					}					
 					var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
 					if(allowedChildrenForNode.length == 0){
 						alert("The metadata model states that this property cannot have subproperties of any kind.");
@@ -131,6 +133,12 @@
 					}				
 				  }
 				  else if($(this).html() == "Submit"){
+				  	var restrictionViolations = validateCardinalitiesToModel(document.getElementById('datasetUserMetadata').children[1]);
+					if(restrictionViolations != ''){
+						alert('Institution metadata model violation(s): ' + restrictionViolations + ' Metadata not added.');
+						return false;
+					}
+					
 					var data = DOMtoJSON(document.getElementById('datasetUserMetadata').children[1]);
 					
 					var request = $.ajax({
@@ -142,6 +150,7 @@
 					 
 					  request.done(function (response, textStatus, jqXHR){
 					        console.log("Response " + response);
+							alert("Metadata added successfully.");
 		     			});
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
@@ -183,6 +192,58 @@
 					}
 				}
 				return branchData;
+	   }
+	   
+	   function validateCardinalitiesToModel(branchRootNode){
+	   		var restrictionViolations = "";
+		
+	   		var childrenProperties = branchRootNode.children;
+			
+			var branchRootNodeType = "";
+			if(branchRootNode.parentElement.tagName.toLowerCase() == 'div'){
+				branchRootNodeType = "!root!";
+			}
+			else{
+				branchRootNodeTypeText = branchRootNode.parentElement.children[0].innerHTML;
+				branchRootNodeType = branchRootNodeTypeText.substring(0, branchRootNodeTypeText.length - 1);
+			}
+			var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == branchRootNodeType;});
+			
+			for (var i = 0; i < allowedChildrenForNode.length; i++){
+				var propertyInstancesCount = 0;
+				for(var j = 0; j < childrenProperties.length; j++){
+					var key = childrenProperties[j].children[0].innerHTML;
+					key = key.substring(0, key.length - 1);					
+					if(key == allowedChildrenForNode[i][1])
+						propertyInstancesCount++;						
+				}
+				if(propertyInstancesCount < allowedChildrenForNode[i][2]){
+					if(branchRootNodeType == "!root!")
+						restrictionViolations+= "Must have at least " + allowedChildrenForNode[i][2] + " " + allowedChildrenForNode[i][1] + "(s).";
+					else
+						restrictionViolations+= "Must have at least " + allowedChildrenForNode[i][2] + " " + allowedChildrenForNode[i][1] + "(s) for each " + allowedChildrenForNode[i][0] + ".";	 
+				}
+				if(allowedChildrenForNode[i][3] != '*' && propertyInstancesCount > allowedChildrenForNode[i][3]){
+					if(branchRootNodeType == "!root!")
+						restrictionViolations+= "Must have no more than " + allowedChildrenForNode[i][3] + " " + allowedChildrenForNode[i][1] + "(s).";
+					else
+						restrictionViolations+= "Must have no more than " + allowedChildrenForNode[i][3] + " " + allowedChildrenForNode[i][1] + "(s) for each " + allowedChildrenForNode[i][0] + ".";	 
+				}				
+			}
+			
+			if(restrictionViolations != '')
+				return restrictionViolations;
+			
+			for (i = 0; i < childrenProperties.length; i++){
+				if(childrenProperties[i].children[1].tagName.toLowerCase() != 'span'){
+					restrictionViolations+= validateCardinalitiesToModel(childrenProperties[i].children[3]);
+					
+					if(restrictionViolations != '')
+						return restrictionViolations;
+				}
+			}
+			
+			return '';
 	   }
 	   	   	  
 	 });
