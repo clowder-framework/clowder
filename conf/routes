@@ -108,6 +108,7 @@ GET		/api/files/:id/listpreviews		  	api.Files.filePreviewsList(id)
 GET     /api/files/:id                    	api.Files.download(id)
 
 POST    /api/datasets/:id/metadata		  api.Datasets.addMetadata(id)
+POST    /api/datasets/:id/usermetadata	  api.Datasets.addUserMetadata(id)
 GET 	/api/datasets/:id/listFiles		  api.Datasets.datasetFilesList(id)
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					api.Previews.downloadPreview(preview_id, datasetid)

@@ -118,8 +118,11 @@ object Datasets extends Controller with SecureSocial {
         Logger.debug("Metadata: " + metadata)
         for (md <- metadata) {
           Logger.debug(md.toString)
-        }
-        Ok(views.html.dataset(datasetWithFiles, previews, metadata))
+        }       
+        val userMetadata = Dataset.getUserMetadata(id)
+        Logger.debug("User metadata: " + userMetadata.toString)
+        
+        Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }

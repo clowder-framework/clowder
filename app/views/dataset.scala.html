@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: List[Map[String,Any]]) 
+@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: List[Map[String,Any]], usrmd: scala.collection.mutable.Map[String,Any]) 
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -210,7 +210,7 @@
 		      <p>No comments.</p>
 		    </div>
 		    <div class="tab-pane" id="tab2">
-		      @metadata(dataset.id.toString, md)
+		      @metadata(dataset.id.toString, md, usrmd)
 		    </div>
 		  </div>
 		</div>	
