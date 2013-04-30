@@ -1,11 +1,39 @@
-	//TODO: Load from XML file stored in Medici describing institution model.
-	var allowedNodes = [["Node 1", "Node"],["Node2", "Node"],["Node3", "Node"],["Node4", "Node"],
-						["String1", "Leaf"],["String2", "Leaf"]];
+/*	var allowedNodes = [["Node 1", "Node"],["Node2", "Node"],["Node3", "Node"],["Node4", "Node"],
+						["String1", "String"],["String2", "String"]];
+							
 	
-	//Format: Node,Child, Minimum child count, Maximum child count.
 	var allowedChildren = [["!root!","Node 1","1","1"],["Node 1","String1", "1", "*"],["Node 1","Node2", "0", "*"],["Node2","String1", "1", "1"],["Node2","Node3", "0", "1"],
-						["Node3","String2", "0", "*"]];
+						["Node3","String2", "0", "*"]];*/
+					
+	//CSV file format: Node and whether intermediate node or leaf.
+	var allowedNodes = new Array();	
+	$.ajax({
+	       url: modelIp + '/user_metadata_model_allowedNodes.txt',
+	       async:false,
+		   success: function (data){
+		   		var allowedNodesLines = data.split(/\r\n|\n/);
+				for(var i = 0; i < allowedNodesLines.length; i++){
+					allowedNodes[i] = allowedNodesLines[i].split(',');
+				}
+		   },
+	       dataType: "text"
+	     });
+		 
+	//CSV file format: Node,Child, Minimum child count, Maximum child count.	
+	var allowedChildren = new Array();	
+	$.ajax({
+	       url: modelIp + '/user_metadata_model_allowedRelationships.txt',
+	       async:false,
+		   success: function (data){
+		   		var allowedChildrenLines = data.split(/\r\n|\n/);
+				for(var i = 0; i < allowedChildrenLines.length; i++){
+					allowedChildren[i] = allowedChildrenLines[i].split(',');
+				}
+		   },
+	       dataType: "text"
+	     });
 	
+				
 	//Counter for DOM node uniqueness.
 	var elementCounter = 1;
 
@@ -100,7 +128,7 @@
 					newPropertyKey.classList.add('usr_md_');
 					newPropertyKey.innerHTML = selectedProperty + ":";
 					$(this).parent().get(0).insertBefore(newPropertyKey, $(this).get(0));						
-					if(selectedPropertyType == "Leaf"){										
+					if(selectedPropertyType == "String"){										
 						var textBox = document.createElement('input');
 						textBox.classList.add('usr_md_');
 									   

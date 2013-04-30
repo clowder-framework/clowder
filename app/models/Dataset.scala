@@ -59,6 +59,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 //        metadata map { m => m.asInstanceOf[DBObject].asInstanceOf[Map[String,Any]]}
 //        x.asInstanceOf[List[Map[String,Any]]]
         returnedMetadata
+//    	  List.empty[Map[String,Any]]
       }
     }
   }
