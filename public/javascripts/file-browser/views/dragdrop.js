@@ -83,7 +83,7 @@ function UploadFile(file) {
 		fd=new FormData();
 		//var File=file;
 		fd.append("File",file);
-		xhr.open("POST", "http://localhost:9000/uploaddnd", true);
+		xhr.open("POST", "http://localhost:9000/uploadDragDrop", true);
 		//xhr.setRequestHeader("Content-type","multipart/form-data");
 		console.log("File ready to send ...");
 		xhr.send(fd);

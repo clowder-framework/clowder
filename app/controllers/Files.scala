@@ -221,6 +221,44 @@ object Files extends Controller with securesocial.core.SecureSocial {
          BadRequest("File not attached.")
       }
   }
+ 
+  /* Drag and drop */
+   def uploadDragDrop() = Action(parse.multipartFormData) { implicit request =>
+      request.body.file("File").map { f =>        
+        Logger.debug("Uploading file " + f.filename)
+        
+        // store file       
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+//        Thread.sleep(1000)
+        file match {
+          case Some(f) => {
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val id = f.id.toString
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+           }
+            
+           Ok(f.id.toString)
+            
+            // redirect to file page]
+           // Redirect(routes.Files.file(f.id.toString))  
+         }
+         case None => {
+           Logger.error("Could not retrieve file that was just saved.")
+           InternalServerError("Error uploading file")
+         }
+        }
+      }.getOrElse {
+         BadRequest("File not attached.")
+      }
+  }
+
+
+  
   
 
   def uploaddnd(dataset_id: String) = Action(parse.multipartFormData) { implicit request =>

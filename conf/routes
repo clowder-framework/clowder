@@ -24,6 +24,7 @@ POST   /uploadSelect                      controllers.Files.uploadSelect
 POST   	/uploadAjax						  controllers.Files.uploadAjax
 POST   	/uploaddnd/:id					  controllers.Files.uploaddnd(id)
 #POST  	/reactiveUpload					  controllers.Files.reactiveUpload
+POST    /uploadDragDrop					  controllers.Files.uploadDragDrop
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
