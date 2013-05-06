@@ -19,6 +19,7 @@ object Global extends GlobalSettings {
         source.collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
         source.collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
         source.collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
+        source.collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate"-> -1))
         source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
         source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
         source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
