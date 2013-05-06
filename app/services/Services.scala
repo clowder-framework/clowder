@@ -12,4 +12,5 @@ object Services {
   // wire application
   val files: FileService = MongoDBFileService
   val datasets: DatasetService = MongoDBDatasetService
+  val queries: QueryService=QueryServiceFileSystemDB
 }
