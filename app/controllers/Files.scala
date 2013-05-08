@@ -129,6 +129,25 @@ object Files extends Controller with securesocial.core.SecureSocial {
             current.plugin[ElasticsearchPlugin].foreach{
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
+           
+            /* 
+             * val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
+             val urlf="http://localhost:9000/files/"+f.id.toString+"/blob"
+              
+              
+               Async{
+            		WS.url("http://localhost:8080/api/v1/index/"+indexId+"/add").post(Map("infile" -> Seq(urlf))).map{
+            		res=> 
+            		Logger.debug("res.body"+res.body);
+            		
+            		/*WS.url("http://localhost:8080/api/v1/index/"+indexId+"/build").get().map{
+            		  r=>Logger.debug("r.body"+r.body);
+            		}*/
+            		Redirect(routes.Files.file(f.id.toString))
+            		}
+            }*/
+            
+            
             // redirect to file page]
             Redirect(routes.Files.file(f.id.toString))  
          }
@@ -188,6 +207,51 @@ object Files extends Controller with securesocial.core.SecureSocial {
     }
   }
   
+  /******Download query used by Versus**********/
+  def downloadquery(id: String) = Action { request =>
+    Services.queries.get(id) match {
+      case Some((inputStream, filename, contentType, contentLength)) => {
+    	  request.headers.get(RANGE) match {
+	          case Some(value) => {
+	            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
+	              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+	              case x => (x(0).toLong,x(1).toLong)
+	            }
+	            range match { case (start,end) =>
+	             
+	              inputStream.skip(start)
+	              import play.api.mvc.{SimpleResult, ResponseHeader}
+	              SimpleResult(
+	                header = ResponseHeader(PARTIAL_CONTENT,
+	                  Map(
+	                    CONNECTION -> "keep-alive",
+	                    ACCEPT_RANGES -> "bytes",
+	                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
+	                    CONTENT_LENGTH -> (end - start + 1).toString,
+	                    CONTENT_TYPE -> contentType
+	                  )
+	                ),
+	                body = Enumerator.fromStream(inputStream)
+	              )
+	            }
+	          }
+	          case None => {
+	            Ok.stream(Enumerator.fromStream(inputStream))
+	            	.withHeaders(CONTENT_TYPE -> contentType)
+	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
+	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+      
+	          }
+	        }
+      }
+      case None => {
+        Logger.error("Error getting file" + id)
+        NotFound
+      }
+    }
+  }
+  
+  
   
   def uploadSelect() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
@@ -208,8 +272,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
             // redirect to file page]
-             val query="http://localhost:9000/files/"+id+"/blob"  
-             var slashindex=query.lastIndexOf('/')
+            // val query="http://localhost:9000/files/"+id+"/blob"  
+           //  var slashindex=query.lastIndexOf('/')
              Redirect(routes.Search.findSimilar(f.id.toString))  
          }
          case None => {
@@ -221,6 +285,86 @@ object Files extends Controller with securesocial.core.SecureSocial {
          BadRequest("File not attached.")
       }
   }
+  
+  
+  /*Upload query to temporary folder*/
+  
+  def uploadSelectQuery() = Action(parse.multipartFormData) { implicit request =>
+      request.body.file("File").map { f =>        
+        Logger.debug("Uploading file " + f.filename)
+        
+        // store file       
+         val file = Services.queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+//        Thread.sleep(1000)
+        
+        file match {
+          case Some(f) => {
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            
+            val id = f.id.toString
+            val path=f.path
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+            }
+            // redirect to file page]
+            Logger.debug("Query file id= "+id+ " path= "+path);
+             Redirect(routes.Search.findSimilar(f.id.toString))  
+             //Redirect(routes.Search.findSimilar(path.toString())) 
+         }
+         case None => {
+           Logger.error("Could not retrieve file that was just saved.")
+           InternalServerError("Error uploading file")
+         }
+        }
+      }.getOrElse {
+         BadRequest("File not attached.")
+      }
+  }
+
+  
+  
+ 
+  /* Drag and drop */
+   def uploadDragDrop() = Action(parse.multipartFormData) { implicit request =>
+      request.body.file("File").map { f =>        
+        Logger.debug("Uploading file " + f.filename)
+        
+        // store file       
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+//        Thread.sleep(1000)
+        file match {
+          case Some(f) => {
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val id = f.id.toString
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+           }
+            
+           Ok(f.id.toString)
+            
+            // redirect to file page]
+           // Redirect(routes.Files.file(f.id.toString))  
+         }
+         case None => {
+           Logger.error("Could not retrieve file that was just saved.")
+           InternalServerError("Error uploading file")
+         }
+        }
+      }.getOrElse {
+         BadRequest("File not attached.")
+      }
+  }
+
+
+  
   
 
   def uploaddnd(dataset_id: String) = Action(parse.multipartFormData) { implicit request =>

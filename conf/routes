@@ -18,12 +18,15 @@ GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 POST    /files/:id/comment                controllers.Files.comment(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
+GET     /queries/:id/blob				  controllers.Files.downloadquery(id)	
 #GET     /files/:id/similar                controllers.Files.findSimilar(id)
 POST    /upload					          controllers.Files.upload
 POST   /uploadSelect                      controllers.Files.uploadSelect
+POST   /uploadSelectQuery                 controllers.Files.uploadSelectQuery   
 POST   	/uploadAjax						  controllers.Files.uploadAjax
 POST   	/uploaddnd/:id					  controllers.Files.uploaddnd(id)
 #POST  	/reactiveUpload					  controllers.Files.reactiveUpload
+POST    /uploadDragDrop					  controllers.Files.uploadDragDrop
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
@@ -51,8 +54,8 @@ POST  	 /uploadquery						controllers.Search.uploadquery
 GET      /searchbyURL                       controllers.Search.searchbyURL(query:String?="")
 GET      /Filterby                          controllers.Search.Filterby(id)
 GET      /searchbyfeature					controllers.Search.searchMultimediaIndex(section_id)
-GET     /files/:id/similar                  controllers.Search.findSimilar(id)
-
+#GET     /files/:id/similar                  controllers.Search.findSimilar(id)
+GET    /queries/:id/similar					controllers.Search.findSimilar(id)
 
 # Previewers
 GET    /previewers/list                   controllers.Previewers.list	
