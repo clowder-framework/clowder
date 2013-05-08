@@ -45,7 +45,7 @@
 					var textBox = document.createElement('input');
 					textBox.classList.add('usr_md_');		   
 					textBox.setAttribute('type', 'text');
-					textBox.value = $(this).parent().children("span").get(0).innerHTML;
+					textBox.value = $(this).parent().children("span").get(0).innerHTML;  ////////
 					   
 					$(this).parent().get(0).insertBefore(textBox, $(this).parent().children("span").get(0));					
 					$(this).parent().children('span').remove();
@@ -55,7 +55,7 @@
 				  else if($(this).html() == "Ok"){
 				  	var textSpan = document.createElement('span');
 					textSpan.classList.add('usr_md_');
-					textSpan.innerHTML = $(this).parent().children("input").get(0).value;
+					textSpan.innerHTML = $(this).parent().children("input").get(0).value;  ////////
 						
 					$(this).parent().get(0).insertBefore(textSpan, $(this).parent().children("input").get(0));
 					$(this).parent().get(0).removeChild($(this).parent().children("input").get(0));
@@ -214,7 +214,7 @@
 					key = key.substring(0, key.length - 1) + "__" + elementCounter;
 					elementCounter++;
 					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
-						branchData[key] = childrenProperties[i].children[1].innerHTML;
+						branchData[key] = childrenProperties[i].children[1].innerHTML;   ////////
 					}else{
 						branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
 					}
