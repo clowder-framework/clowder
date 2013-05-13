@@ -14,6 +14,8 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import play.api.libs.json.Json
 import play.api.Logger
+import scala.Mutable
+import collection.JavaConverters._
 
 /**
  * A dataset is a collection of files, and streams.
@@ -21,7 +23,7 @@ import play.api.Logger
  * 
  * @author Luigi Marini
  *
- */
+ */ 
 case class Dataset (
   id: ObjectId = new ObjectId,
   name: String = "N/A",
@@ -30,7 +32,8 @@ case class Dataset (
   files: List[File] = List.empty,
   streams_id: List[ObjectId] = List.empty,
   tags: List[String] = List.empty,
-  metadata: Map[String, Any] = Map.empty
+  metadata: List[Map[String, Any]] = List.empty,
+  userMetadata: Map[String, Any] = Map.empty
 )
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
@@ -52,11 +55,20 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("metadata"->1)) match {
       case None => List.empty
       case Some(x) => {
-//        val metadata = x.getAs[MongoDBList]("metadata").get.toList map {m => m.asInstanceOf[Map[String,Any]]}
+        val returnedMetadata = x.getAs[MongoDBList]("metadata").get.toList map {m => m.asInstanceOf[Map[String,Any]]}
 //        metadata map { m => m.asInstanceOf[DBObject].asInstanceOf[Map[String,Any]]}
 //        x.asInstanceOf[List[Map[String,Any]]]
-//        metadata
-        List.empty[Map[String,Any]]
+        returnedMetadata
+//    	  List.empty[Map[String,Any]]
+      }
+    }
+  }
+  def getUserMetadata(id: String): scala.collection.mutable.Map[String,Any] = {
+    dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("userMetadata"->1)) match {
+      case None => new scala.collection.mutable.HashMap[String,Any]
+      case Some(x) => {
+    	val returnedMetadata = x.getAs[DBObject]("userMetadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
+		returnedMetadata
       }
     }
   }
@@ -66,6 +78,13 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> md), false, false, WriteConcern.Safe)
   }
+  def addUserMetadata(id: String, json: String) {
+    Logger.debug("Adding/modifying user metadata to dataset " + id + " : " + json)
+    val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set(Seq("userMetadata" -> md)), false, false, WriteConcern.Safe)
+  }
+
+  
   
   def tag(id: String, tag: String) { 
     dao.collection.update(

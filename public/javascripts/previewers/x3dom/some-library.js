@@ -7,6 +7,10 @@
   var width = 750;
   var height = 550;
   
+  $(Configuration.tab).append("<table><tr><td>Left Button / Left Button + Shift</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>"
+		  					+ "<tr><td>Mid Button / Left Button + Ctl</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
+		  					+ "<tr><td>Right Button / Wheel / Left Button + Alt</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Zoom</td></tr></table>"); 
+  
   var inner = "<x3d id='x3dElement" + Configuration.tab.replace("#previewer","") + "' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' style='width:" + width + ";height:" + height + ";'>";  
   $.ajax({
 	    url: fileUrl,

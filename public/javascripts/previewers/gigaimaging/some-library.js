@@ -18,7 +18,7 @@
 		     "<div style='width: " + width + "px; height: " + height + "px' id='seadragon" + Configuration.tab.replace("#previewer","") + "'>Insert image here</div>"
 		  );
 
-	 viewer = new Seadragon.Viewer("seadragon" + Configuration.tab.replace("#previewer",""))
+	 viewer = new Seadragon.Viewer("seadragon" + Configuration.tab.replace("#previewer",""));
 	 viewer.openDzi(Configuration.url);
 			
 }(jQuery, Configuration));

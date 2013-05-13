@@ -9,6 +9,8 @@
   
   $(Configuration.tab).append("<p>Move mouse while left-clicking and pressing CTRL to pan model. Move mouse wheel or move mouse up and down </br> while left-clicking and pressing SHIFT to change distance. Move mouse while left-clicking and not pressing CTRL or SHIFT to rotate.</p>");
   
+
+  
   var s = document.createElement("script");
   s.type = "text/javascript";
   s.src = pathJs + "Detector.js";
@@ -26,8 +28,7 @@
   s.src = pathJs + "RequestAnimationFrame.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);
-  
-  
+    
   if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 	var SCREEN_WIDTH = width;

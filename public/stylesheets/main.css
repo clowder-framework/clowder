@@ -213,4 +213,26 @@ ol.comment-threads {
 
 .comment-input-box {
 	width: 80%;
+} 
+
+
+
+
+button.usr_md_ {
+    background:none!important;
+     border:none; 
+     padding:0!important;
+     
+     color:rgb(0, 136, 204);
 }
+
+.usr_md_{
+	margin-right:10px;
+	margin-bottom:5px;
+}
+
+
+
+
+
+

@@ -49,14 +49,16 @@ object Datasets extends Controller with SecureSocial {
    )
    
    //Secured
-  def newDataset() = Action { implicit request =>
+  def newDataset()  = UserAwareAction { implicit request =>
+    implicit val user = request.user
   	Ok(views.html.newDataset(datasetForm)).flashing("error"->"Please select a file") 
   }
    
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int) = Action {
+  def list(when: String, date: String, limit: Int) = UserAwareAction { implicit request =>
+    implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
@@ -91,7 +93,8 @@ object Datasets extends Controller with SecureSocial {
   /**
    * Dataset.
    */
-  def dataset(id: String) = Action {    
+  def dataset(id: String) = UserAwareAction { implicit request =>
+    implicit val user = request.user    
     Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
       case Some(dataset) => {
@@ -118,8 +121,11 @@ object Datasets extends Controller with SecureSocial {
         Logger.debug("Metadata: " + metadata)
         for (md <- metadata) {
           Logger.debug(md.toString)
-        }
-        Ok(views.html.dataset(datasetWithFiles, previews, metadata))
+        }       
+        val userMetadata = Dataset.getUserMetadata(id)
+        Logger.debug("User metadata: " + userMetadata.toString)
+        
+        Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }
@@ -148,7 +154,8 @@ object Datasets extends Controller with SecureSocial {
   /**
    * Upload file.
    */
-  def submit() = Action(parse.multipartFormData) { implicit request =>
+  def submit() = UserAwareAction(parse.multipartFormData) { implicit request =>
+    implicit val user = request.user
     
         datasetForm.bindFromRequest.fold(
           errors => BadRequest(views.html.newDataset(errors)),
@@ -169,20 +176,17 @@ object Datasets extends Controller with SecureSocial {
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, host, key, Map.empty))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty))}
 			        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 	
 		            // add file to dataset
 			        val dt = dataset.copy(files = List(f))
 			        // TODO create a service instead of calling salat directly
 		            Dataset.save(dt)
-			    	// TODO RK need to replace unknown with the server name and dataset type
 		            
-		            // Dataset type temporarily set to obj to test .obj extractor and previewer functionality.
-		            // Must not be changed until we can get dataset type automatically-else .obj extractor and previewer will not work.
- //			    	val dtkey = "unknown." + "dataset."+ "unknown"
-		            val dtkey = "unknown." + "dataset."+ "obj"
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, host, dtkey, Map.empty))}
+			    	// TODO RK need to replace unknown with the server name and dataset type		            
+ 			    	val dtkey = "unknown." + "dataset."+ "unknown"
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty))}
 		            // redirect to file page
 		            Redirect(routes.Datasets.dataset(dt.id.toString))
 //		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))

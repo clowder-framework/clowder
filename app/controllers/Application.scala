@@ -18,6 +18,7 @@ object Application extends Controller with securesocial.core.SecureSocial {
 //    Ok(views.html.index())
 //  }
   def index = UserAwareAction { implicit request =>
+  	implicit val user = request.user
     Ok(views.html.index())
   }
   
