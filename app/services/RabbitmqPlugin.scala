@@ -18,7 +18,8 @@ case class ExtractorMessage (
     intermediateId: String,
     host: String,
     key: String,
-    metadata: Map[String, String]
+    metadata: Map[String, String],
+    fileSize: String
 )
 
 /**
@@ -77,10 +78,11 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 class SendingActor(channel: Channel, exchange: String) extends Actor {
  
   def receive = {
-      case ExtractorMessage(id, intermediateId, host, key, metadata) => {
+      case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize) => {
         val msgMap = scala.collection.mutable.Map(
             "id" -> Json.toJson(id),
             "intermediateId" -> Json.toJson(intermediateId),
+            "fileSize" -> Json.toJson(fileSize),
             "host" -> Json.toJson(host)
             )
         metadata.foreach(kv => msgMap.put(kv._1,Json.toJson(kv._2)))

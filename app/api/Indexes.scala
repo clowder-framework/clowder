@@ -44,7 +44,7 @@ object Indexes extends Controller {
 	            val host = "http://" + request.host + request.path.replaceAll("api/indexes$", "")
 	            val id = p.id.toString
 	            current.plugin[RabbitmqPlugin].foreach{
-	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id)))}
+	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString))}
 	            Ok(toJson("success"))
       	      case None => BadRequest(toJson("Missing parameter [preview_id]"))
             }
