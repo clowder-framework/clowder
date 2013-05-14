@@ -13,6 +13,8 @@ import play.api.Logger
 import models.FileDAO
 import play.api.libs.json.Json._
 import play.api.libs.json.Json
+import com.wordnik.swagger.annotations.Api
+import com.wordnik.swagger.annotations.ApiOperation
 
 /**
  * Dataset API.
@@ -20,15 +22,19 @@ import play.api.libs.json.Json
  * @author Luigi Marini
  *
  */
+@Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
 object Datasets extends Controller {
-   
-  def addMetadata(id: String) = Authenticated{ 
+
+  @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
+  def addMetadata(id: String) = Authenticated {
+	  Logger.debug("Adding metadata to dataset " + id)
 	    Action(parse.json) { request =>
 	      	  Logger.debug("Adding metadata to dataset " + id)
 	          Dataset.addMetadata(id, Json.stringify(request.body))
 	          Ok(toJson(Map("status"->"success")))
 	    }
   }
+
   def addUserMetadata(id: String) =  
 	    Action(parse.json) { request => 
 	      	  Logger.debug("Adding user metadata to dataset " + id)
