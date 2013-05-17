@@ -228,7 +228,7 @@ object Datasets extends Controller with SecureSocial {
       if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
         FileDAO.comment(fileid, comment)
       } else {
-        val section = new Section(area=Some(new Rectangle(x, y, w, h)), comments=List(comment));
+        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), comments=List(comment));
         SectionDAO.save(section)
       }    
     }.getOrElse {
