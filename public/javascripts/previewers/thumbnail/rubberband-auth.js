@@ -163,9 +163,7 @@ $("#rubberbandFormSubmit").on("click", function(e) {
 		console.log(request);
 
 		request.done(function (response, textStatus, jqXHR){ 
-	        var url = "../tags/search/" + text;
-	        $('#tagList').append("<li><a href='" + url + "'>" + text + "</a></li>");
-	        $('#tagField').val("");
+			console.log("Response " + response);
 		});
 
 		request.fail(function (jqXHR, textStatus, errorThrown){
