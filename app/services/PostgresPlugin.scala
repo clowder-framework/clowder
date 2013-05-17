@@ -62,34 +62,38 @@ class PostgresPlugin(application: Application) extends Plugin {
   def setup() {
     Logger.debug("Setting up postgres tables")
     try {
-      val createTable = "CREATE TABLE IF NOT EXISTS geoindex(gid serial PRIMARY KEY, title text, geog geography(Point, 4326), timestamp timestamp, data json, stream_id varchar(255));"
+      val createTable = "CREATE TABLE IF NOT EXISTS geoindex(gid serial PRIMARY KEY, geog geography(Pointz, 4326), start_time timestamp, end_time timestamp, data json, stream_id varchar(255));"  
       val stmt = conn.createStatement()
       stmt.execute(createTable)
+      val createIndex = "CREATE INDEX IF NOT EXISTS geoindex_gix ON geoindex USING GIST (geog);"
+      stmt.execute(createIndex)
       stmt.close()
     } catch {
       case unknown: Throwable => Logger.error("Error creating table in postgres: " + unknown)
     }
   }
 
-  def add(title: String, timestamp: java.util.Date, data: String, lat: Double, lon: Double) {
-    val ps = conn.prepareStatement("INSERT INTO geoindex(title, timestamp, data, geog) VALUES(?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?), 4326));")
-    ps.setString(1, title)
-    ps.setDate(2, new java.sql.Date(timestamp.getTime()))
-    ps.setString(3, data)
-    ps.setDouble(4, lon)
-    ps.setDouble(5, lat)
-    ps.executeUpdate()
-    ps.close()
+  def add(start: java.util.Date, end: Option[java.util.Date], data: String, lat: Double, lon: Double, alt: Double) {
+	val ps = conn.prepareStatement("INSERT INTO geoindex(start_time, end_time, data, geog) VALUES(?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326));")
+	ps.setTimestamp(1, new Timestamp(start.getTime()))
+	if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime()))
+	else ps.setDate(2, null)
+	ps.setString(3, data)
+	ps.setDouble(4, lon)
+	ps.setDouble(5, lat)
+	ps.setDouble(6, alt)
+	ps.executeUpdate()
+	ps.close()
   }
 
   def search(since: Option[String], until: Option[String], geocode: Option[String]): String = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-    		"(SELECT gid, title, timestamp, data, ST_AsGeoJson(1, geog, 15, 0)::json As geog FROM geoindex"
+    		"(SELECT gid, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geog FROM geoindex"
     if (since.isDefined || until.isDefined || geocode.isDefined) query+= " WHERE "
-    if (since.isDefined) query += "timestamp >= ? "
+    if (since.isDefined) query += "start_time >= ? "
     if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
-    if (until.isDefined) query += "timestamp <= ? "
+    if (until.isDefined) query += "start_time <= ? "
     if ((since.isDefined || until.isDefined) && geocode.isDefined) query += " AND "
     if (geocode.isDefined) query += "ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     query += ") As t;"
@@ -122,7 +126,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
   
   def test() {
-    add("Urbana", new java.util.Date(), """{"value":"test"}""", 40.110588, -88.207270)
+    add(new java.util.Date(), None, """{"value":"test"}""", 40.110588, -88.207270, 0.0)
     Logger.info("Searching postgis: " + search(None, None, None))
   }
 
