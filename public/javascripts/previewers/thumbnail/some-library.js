@@ -1,14 +1,17 @@
 (function ($, Configuration) {
-	console.log("image previewer for " + Configuration.id);
-	
-	console.log("Updating tab " + Configuration.tab);
+	console.log(Configuration);
 	  
 //	zoom.it disabled for now
 	  if(true){
 		  if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png"){
-			  $(Configuration.tab).append(
-					     "<img src='" + Configuration.url + "' width='750px'></img>"
-					  );
+	  		var s = document.createElement("script");
+			s.type = "text/javascript";
+		  	if (Configuration.authenticated) {
+				s.src = Configuration.previewer + "/rubberband-auth.js";
+			} else {
+				s.src = Configuration.previewer + "/rubberband-noauth.js";
+			}
+			$(Configuration.tab).append(s);
 		  }
 		  else if (Configuration.fileType === "image/tiff"){
 			  $(Configuration.tab).append(
@@ -55,5 +58,4 @@
 		  });
 	  }
 	  
-	  console.log($(Configuration.tab))
 	}(jQuery, Configuration));

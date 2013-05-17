@@ -33,7 +33,8 @@ case class Dataset (
   streams_id: List[ObjectId] = List.empty,
   tags: List[String] = List.empty,
   metadata: List[Map[String, Any]] = List.empty,
-  userMetadata: Map[String, Any] = Map.empty
+  userMetadata: Map[String, Any] = Map.empty,
+  comments: List[Comment] = List.empty
 )
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
@@ -78,17 +79,18 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> md), false, false, WriteConcern.Safe)
   }
+
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to dataset " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set(Seq("userMetadata" -> md)), false, false, WriteConcern.Safe)
   }
 
-  
-  
   def tag(id: String, tag: String) { 
-    dao.collection.update(
-          MongoDBObject("_id" -> new ObjectId(id)), 
-          	$addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  }
+
+  def comment(id: String, comment: Comment) {
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
 }

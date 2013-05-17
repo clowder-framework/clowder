@@ -11,6 +11,9 @@ import MongoContext.context
 import play.api.Play.current
 import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.Imports._
+
 /**
  * A portion of a file.
  * 
@@ -20,12 +23,22 @@ import com.mongodb.casbah.commons.MongoDBObject
 case class Section (
     id: ObjectId = new ObjectId,
     file_id: ObjectId = new ObjectId,
-    order: Int,
-    startTime: Option[Int], // in seconds
-    endTime: Option[Int], // in seconds
-    preview: Option[Preview]
+    order: Int = -1,
+    startTime: Option[Int] = None, // in seconds
+    endTime: Option[Int] = None, // in seconds
+    area: Option[Rectangle] = None,
+    preview: Option[Preview] = None,
+    comments: List[Comment] = List.empty,
+    tags: List[String] = List.empty
 )
 
+case class Rectangle (
+    x: Int,
+    y: Int,
+    w: Int,
+    h: Int
+)
+    
 object SectionDAO extends ModelCompanion[Section, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
@@ -34,5 +47,13 @@ object SectionDAO extends ModelCompanion[Section, ObjectId] {
   
   def findByFileId(id: ObjectId): List[Section] = {
     dao.find(MongoDBObject("file_id"->id)).sort(MongoDBObject("startTime"->1)).toList
+  }
+
+  def tag(id: String, tag: String) { 
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  }
+
+  def comment(id: String, comment: Comment) {
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
 }

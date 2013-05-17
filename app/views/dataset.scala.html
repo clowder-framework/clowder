@@ -24,9 +24,12 @@
 				  		<div id="previewer_@pvs.head._1" ></div>
     					<script>
 							var Configuration = {};
-							Configuration.tab = "#previewer_@pvs.head._1"
+							Configuration.tab = "#previewer_@pvs.head._1";
 							Configuration.id  = "@dataset.id";
 							Configuration.url = "@pvs.head._5";
+							Configuration.fileid = "@pvs.head._1";
+							Configuration.authenticated = @user.isDefined;
+							Configuration.previewer = "@routes.Assets.at(pvs.head._3)";
 							if("@pvs.head._2" === "Thumbnail"){
 								Configuration.fileType = "@pvs.head._6";
 								Configuration.fileSize = @pvs.head._7;

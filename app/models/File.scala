@@ -10,6 +10,8 @@ import MongoContext.context
 import play.api.Play.current
 import services.MongoSalatPlugin
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.Imports._
 
 /**
  * Uploaded files.
@@ -26,7 +28,8 @@ case class File(
     length: Long = 0,
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
-    comments: List[Comment] = List.empty
+    comments: List[Comment] = List.empty,
+    tags: List[String] = List.empty
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -49,5 +52,13 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       }
       case None => None
     }
+  }
+
+  def tag(id: String, tag: String) { 
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  }
+
+  def comment(id: String, comment: Comment) {
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
 }
