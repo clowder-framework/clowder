@@ -38,7 +38,7 @@ object Application extends Controller with securesocial.core.SecureSocial {
     Ok(
       Routes.javascriptRouter("jsRoutes")(
         Admin.test, Admin.secureTest, Admin.reindexFiles,
-        Tags.tag,
+        Tags.tag, Tags.search,
         Files.comment,
         Datasets.comment, Datasets.tag
       )
