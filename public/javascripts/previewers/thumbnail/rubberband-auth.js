@@ -13,6 +13,8 @@ $(Configuration.tab).append(
 	"</form></div>"
 	);
 
+console.log(window.jsRoutes.controllers.Tags.search("hi").url);
+
 var mousedown = {},
 	rubberbandRectangle = {},
 	dragging = false;
@@ -164,6 +166,9 @@ $("#rubberbandFormSubmit").on("click", function(e) {
 
 		request.done(function (response, textStatus, jqXHR){ 
 			console.log("Response " + response);
+			var url = window.jsRoutes.controllers.Tags.search(text).url;
+			$('#tagList').append("<li><a href='" + url + "'>" + text + "</a></li>");
+			$('#tagField').val("");
 		});
 
 		request.fail(function (jqXHR, textStatus, errorThrown){

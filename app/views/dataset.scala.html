@@ -281,8 +281,18 @@
 				<h5>Tags</h5>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
-					  <li><a href="@routes.Tags.search(tag)">@tag</a></li>
+					  <li><a href="@routes.Tags.search(tag)">@tag [Dataset]</a></li>
 					}
+  				    @dataset.files.map { file =>
+						@file.tags.map { tag =>
+						  <li><a href="@routes.Tags.search(tag)">@tag [File]</a></li>
+						}
+				    	@file.sections.map { section =>
+							@section.tags.map { tag =>
+							  <li><a href="@routes.Tags.search(tag)">@tag [Section]</a></li>
+							}
+						}
+				   }
 				</ul>
 				<form class="form-inline">
 					<input type="text" id="tagField">

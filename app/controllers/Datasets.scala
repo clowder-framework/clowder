@@ -250,7 +250,7 @@ object Datasets extends Controller with SecureSocial {
       if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
         FileDAO.tag(fileid, text)
       } else {
-        val section = new Section(area=Some(new Rectangle(x, y, w, h)), tags=List(text));
+        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), tags=List(text));
         SectionDAO.save(section)
       }    
     }.getOrElse {
