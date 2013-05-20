@@ -1,6 +1,6 @@
 $(Configuration.tab).append(
-	"<canvas id='rubberbandCanvas' width='750px' height='auto' style='cursor: crosshair;'>" +
-	"<img src='" + Configuration.url + "' width='750px' id='rubberbandimage'></img>" +
+	"<canvas id='rubberbandCanvas' style='cursor: crosshair;'>" +
+	"<img src='" + Configuration.url + "' id='rubberbandimage'></img>" +
 	"</canvas>" +
 	"<div id='rubberbandDiv'></div>" +
 	"<div id='rubberbandFormDiv'><form id='rubberbandForm' action='#' onsubmit='return false;'>" +
@@ -12,8 +12,6 @@ $(Configuration.tab).append(
 	"<input type='button' id='rubberbandFormCancel' value='Cancel' />" +
 	"</form></div>"
 	);
-
-console.log(window.jsRoutes.controllers.Tags.search("hi").url);
 
 var mousedown = {},
 	rubberbandRectangle = {},
@@ -27,7 +25,13 @@ $("#rubberbandimage").on("load", function() {
 	var canvas = $("#rubberbandCanvas")[0];
 	var context = canvas.getContext('2d');
 
-	canvas.height = image.height * (canvas.width / image.width);
+	if (image.width < 750) {
+		canvas.width = image.width;
+		canvas.height = image.height;
+	} else {
+		canvas.width = 750;
+		canvas.height = image.height * (canvas.width / image.width);
+	}
 	context.drawImage(image, 0, 0, canvas.width, canvas.height);
 });
 
@@ -71,23 +75,24 @@ function rubberbandEnd() {
    //hideRubberbandDiv();
 
    rubberbandFormDiv.style.display = 'inline';
-   rubberbandFormDiv.style.top  = rubberbandRectangle.top  + 'px';
-   rubberbandFormDiv.style.left = (rubberbandRectangle.left + rubberbandRectangle.width) + 'px';
+   rubberbandFormDiv.style.top  = (canvas.offsetTop + rubberbandRectangle.top)  + 'px';
+   rubberbandFormDiv.style.left = (canvas.offsetLeft + rubberbandRectangle.left + rubberbandRectangle.width) + 'px';
 
    dragging = false;
 }
 
 function moveRubberbandDiv() {
+	var canvas = $("#rubberbandCanvas")[0];
 	var rubberbandDiv = $("#rubberbandDiv")[0];
 
-	rubberbandDiv.style.top  = rubberbandRectangle.top  + 'px';
-	rubberbandDiv.style.left = rubberbandRectangle.left + 'px';
+	rubberbandDiv.style.top  = (canvas.offsetTop + rubberbandRectangle.top) + 'px';
+	rubberbandDiv.style.left = (canvas.offsetLeft + rubberbandRectangle.left) + 'px';
 }
 
 function resizeRubberbandDiv() {
 	var rubberbandDiv = $("#rubberbandDiv")[0];
 
-	rubberbandDiv.style.width  = rubberbandRectangle.width  + 'px';
+	rubberbandDiv.style.width  = rubberbandRectangle.width + 'px';
 	rubberbandDiv.style.height = rubberbandRectangle.height + 'px';
 }
 
@@ -124,16 +129,16 @@ function resetRubberband() {
 // CANVAS MOUSE EVENT HANDLERS
 // ----------------------------------------------------------------------
 $("#rubberbandCanvas").on("mousedown", function (e) {
-	var x = e.pageX,
-	y = e.pageY;
+	var x = e.offsetX;
+	var y = e.offsetY;
 
 	e.preventDefault();
 	rubberbandStart(x, y);
 });
 
 $("#rubberbandCanvas").on("mousemove", function (e) {
-	var x = e.pageX,
-	y = e.pageY;
+	var x = e.offsetX;
+	var y = e.offsetY;
 
 	e.preventDefault();
 	if (dragging) {
@@ -150,22 +155,31 @@ $("#rubberbandCanvas").on("mouseup", function (e) {
 // FORM SUBMISSIONS
 // ----------------------------------------------------------------------
 $("#rubberbandFormSubmit").on("click", function(e) {
+	var canvas = $("#rubberbandCanvas")[0];
+	var x = rubberbandRectangle.left / canvas.width;
+	var y = rubberbandRectangle.top / canvas.height;
+	var w = rubberbandRectangle.width / canvas.width;
+	if (x + w > 1) {
+		w = 1.0 - x;
+	}
+	var h = rubberbandRectangle.height / canvas.height;
+	if (y + h > 1) {
+		h = 1.0 - y;
+	}
 	if ($("#rubberbandFormTag").val() != "") {
 		var text = $("#rubberbandFormTag").val();
 		var request = window.jsRoutes.controllers.Datasets.tag(Configuration.id).ajax({
 			data: JSON.stringify({ text:   text, 
 								   fileid: Configuration.fileid,
-								   x:      rubberbandRectangle.left,
-								   y:      rubberbandRectangle.top,
-								   w:      rubberbandRectangle.width,
-								   h:      rubberbandRectangle.height }),
+								   x:      x,
+								   y:      y,
+								   w:      w,
+								   h:      h }),
 			type: 'POST',
 			contentType: "application/json",
 		});
-		console.log(request);
 
 		request.done(function (response, textStatus, jqXHR){ 
-			console.log("Response " + response);
 			var url = window.jsRoutes.controllers.Tags.search(text).url;
 			$('#tagList').append("<li><a href='" + url + "'>" + text + "</a></li>");
 			$('#tagField').val("");
@@ -182,16 +196,16 @@ $("#rubberbandFormSubmit").on("click", function(e) {
 		var request = window.jsRoutes.controllers.Datasets.comment(Configuration.id).ajax({
 			data: JSON.stringify({ text:   text, 
 								   fileid: Configuration.fileid,
-								   x:      rubberbandRectangle.left,
-								   y:      rubberbandRectangle.top,
-								   w:      rubberbandRectangle.width,
-								   h:      rubberbandRectangle.height }),
+								   x:      x,
+								   y:      y,
+								   w:      w,
+								   h:      h }),
 			type: 'POST',
 			contentType: "application/json",
 		});
 
 		request.done(function (response, textStatus, jqXHR){ 
-			console.log("Response " + response);
+			//console.log("Response " + response);
 		});
 
 		request.fail(function (jqXHR, textStatus, errorThrown){

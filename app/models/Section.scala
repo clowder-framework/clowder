@@ -33,10 +33,10 @@ case class Section (
 )
 
 case class Rectangle (
-    x: Int,
-    y: Int,
-    w: Int,
-    h: Int
+    x: Double,
+    y: Double,
+    w: Double,
+    h: Double
 )
     
 object SectionDAO extends ModelCompanion[Section, ObjectId] {

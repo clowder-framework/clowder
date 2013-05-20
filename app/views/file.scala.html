@@ -35,6 +35,9 @@
 				</div>
 				<div id="collapseOne" class="accordion-body in collapse">
 					@comment(file.comments)
+					@sections.map { s =>
+						@comment(s.comments, s.id.toString())
+					}
 					@if(user.isDefined) {
 						<form class="form-inline">
 							<textarea type="text" id="commentField" class="comment-input-box"></textarea><br/>

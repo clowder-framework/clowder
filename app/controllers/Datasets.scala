@@ -221,10 +221,10 @@ object Datasets extends Controller with SecureSocial {
     }
     val comment = Comment(request.user.id.id, new Date(), text)
     request.body.\("fileid").asOpt[String].map { fileid =>
-      val x = request.body.\("x").asOpt[Int].getOrElse(-1)
-      val y = request.body.\("y").asOpt[Int].getOrElse(-1)
-      val w = request.body.\("w").asOpt[Int].getOrElse(-1)
-      val h = request.body.\("h").asOpt[Int].getOrElse(-1)
+      val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
+      val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
+      val w = request.body.\("w").asOpt[Double].getOrElse(-1.0)
+      val h = request.body.\("h").asOpt[Double].getOrElse(-1.0)
       if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
         FileDAO.comment(fileid, comment)
       } else {
@@ -243,10 +243,10 @@ object Datasets extends Controller with SecureSocial {
       BadRequest("error, no tag supplied.")
     }
     request.body.\("fileid").asOpt[String].map { fileid =>
-      val x = request.body.\("x").asOpt[Int].getOrElse(-1)
-      val y = request.body.\("y").asOpt[Int].getOrElse(-1)
-      val w = request.body.\("w").asOpt[Int].getOrElse(-1)
-      val h = request.body.\("h").asOpt[Int].getOrElse(-1)
+      val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
+      val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
+      val w = request.body.\("w").asOpt[Double].getOrElse(-1.0)
+      val h = request.body.\("h").asOpt[Double].getOrElse(-1.0)
       if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
         FileDAO.tag(fileid, text)
       } else {

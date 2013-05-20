@@ -33,10 +33,4 @@ object Comments extends Controller with SecureSocial {
       BadRequest(toJson("error"))
     }
   }
-  
-  def search(tag: String) = Action {
-    val datasets = Dataset.findByTag(tag)
-//    Logger.debug("Search by tag " + tag + " returned " + datasets.length)
-    Ok(views.html.searchByTag(tag, datasets))
-  }
 }

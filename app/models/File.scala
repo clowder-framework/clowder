@@ -54,6 +54,10 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
 
+  def findByTag(tag: String): List[File] = {
+    dao.find(MongoDBObject("tags" -> tag)).toList
+  }
+
   def tag(id: String, tag: String) { 
     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
   }
