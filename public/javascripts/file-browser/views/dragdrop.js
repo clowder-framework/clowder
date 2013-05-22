@@ -154,7 +154,7 @@ function Output(msg,mgid) {
 }
 var submitBtn=document.getElementById('submit-button-id');
 submitBtn.onclick=function(evt){
-	window.location.href="http://localhost:9000/files/"+fileId+"/similar";
+	window.location.href="http://localhost:9000/queries/"+fileId+"/similar";
 	
 }
 
