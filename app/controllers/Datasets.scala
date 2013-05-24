@@ -27,6 +27,9 @@ import com.mongodb.casbah.commons.MongoDBObject
 import models.SectionDAO
 import play.api.mvc.Flash
 import scala.collection.immutable.Nil
+import models.Comment
+import models.Section
+import models.Rectangle
 
 /**
  * A dataset is a collection of files and streams.
@@ -176,7 +179,7 @@ object Datasets extends Controller with SecureSocial {
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
 			        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 	
 		            // add file to dataset
@@ -186,7 +189,7 @@ object Datasets extends Controller with SecureSocial {
 		            
 			    	// TODO RK need to replace unknown with the server name and dataset type		            
  			    	val dtkey = "unknown." + "dataset."+ "unknown"
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0"))}
 		            // redirect to file page
 		            Redirect(routes.Datasets.dataset(dt.id.toString))
 //		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -206,5 +209,53 @@ object Datasets extends Controller with SecureSocial {
         }
 	    }
 	)
+  }
+
+  /*
+   * Add comment to a dataset
+   */
+  def comment(id: String) = SecuredAction(ajaxCall = true, None, parse.json) { implicit request =>
+    val text = request.body.\("text").asOpt[String].getOrElse("")
+    if (text == "") {
+      BadRequest("error, no comment supplied.")
+    }
+    val comment = Comment(request.user.id.id, new Date(), text)
+    request.body.\("fileid").asOpt[String].map { fileid =>
+      val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
+      val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
+      val w = request.body.\("w").asOpt[Double].getOrElse(-1.0)
+      val h = request.body.\("h").asOpt[Double].getOrElse(-1.0)
+      if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
+        FileDAO.comment(fileid, comment)
+      } else {
+        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), comments=List(comment));
+        SectionDAO.save(section)
+      }    
+    }.getOrElse {
+      Dataset.comment(id, comment)      
+    }
+    Ok("")
+  }
+
+  def tag(id: String) = SecuredAction(ajaxCall = true, None, parse.json) { implicit request =>
+    val text = request.body.\("text").asOpt[String].getOrElse("")
+    if (text == "") {
+      BadRequest("error, no tag supplied.")
+    }
+    request.body.\("fileid").asOpt[String].map { fileid =>
+      val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
+      val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
+      val w = request.body.\("w").asOpt[Double].getOrElse(-1.0)
+      val h = request.body.\("h").asOpt[Double].getOrElse(-1.0)
+      if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
+        FileDAO.tag(fileid, text)
+      } else {
+        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), tags=List(text));
+        SectionDAO.save(section)
+      }    
+    }.getOrElse {
+      Dataset.tag(id, text)      
+    }
+    Ok("")
   }
 }

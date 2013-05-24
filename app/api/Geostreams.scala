@@ -26,8 +26,8 @@ object Geostreams extends Controller {
   val formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
   
   implicit val rds = (
-    (__ \ 'title).read[String] and
-    (__ \ 'timestamp).read[String] and
+    (__ \ 'start_time).read[String] and
+    (__ \ 'end_time).readNullable[String] and
     (__ \ 'geog \ 'coordinates).read[List[Double]] and
     (__ \ 'data).json.pick
   ) tupled
@@ -40,10 +40,16 @@ object Geostreams extends Controller {
   
   def addDatapoint(id: String) = Authenticated {
     Action(parse.json) { request =>
-      request.body.validate[(String, String, List[Double], JsValue)].map{ 
-        case (title, timestamp, longlat, data) => 
+      request.body.validate[(String, Option[String], List[Double], JsValue)].map{ 
+        case (start_time, end_time, longlat, data) => 
           current.plugin[PostgresPlugin].foreach{
-            _.add(title, formatter.parse(timestamp), Json.stringify(data), longlat(1), longlat(0))
+            Logger.info("GEOSTREAM TIME: " + start_time + " " + end_time)
+            val end_date = if (end_time.isDefined) Some(formatter.parse(end_time.get)) else None
+            if (longlat.length == 3) {
+            	_.add(formatter.parse(start_time), end_date, Json.stringify(data), longlat(1), longlat(0), longlat(2))
+            } else { 
+            	_.add(formatter.parse(start_time), end_date, Json.stringify(data), longlat(1), longlat(0), 0.0)
+            }
           }
           Ok(toJson("success"))
       }.recoverTotal{

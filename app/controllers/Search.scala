@@ -38,6 +38,8 @@ import models.Result
 import models.SimilarityResult
 import play.api.libs.json.Reads
 import play.api.libs.json.JsArray
+import models.TempFileDAO
+import com.mongodb.DBCollection
 /**
  * Text search.
  * 
@@ -172,15 +174,6 @@ object Search extends Controller{
  }
  
  
- /*implicit val jsonReads = new Reads[SimilarityResult] {
-  def reads(js: JsValue): SimilarityResult = {
-   SimilarityResult (
-      Option((js \ "docID").as[(String)]),
-      Option((js \ "proximity").as[Double])
-    )
-  }
-}*/
-
  
  
  //GET the query image from the URL and compare within the database and show the result
@@ -188,8 +181,7 @@ object Search extends Controller{
    Logger.debug("Searching for"+query)
    var c:String=null
    val rs=2
-  // val indexId="69c6a099-d8ae-4a60-bf2c-3cac193c72ec"
-   val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
+     val indexId="f08c90b2-9628-4111-91aa-37cc84dc0bb9"
   
        var slashindex=query.lastIndexOf('/')
        
@@ -215,27 +207,63 @@ object Search extends Controller{
     
    /* Find Similar files*/
   def findSimilar(id:String)=Action{
-     
-          val query="http://localhost:9000/files/"+id+"/blob"  
+         val query="http://localhost:9000/queries/"+id+"/blob"  
           var slashindex=query.lastIndexOf('/')
           // val indexId="69c6a099-d8ae-4a60-bf2c-3cac193c72ec"
-          val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
-      Async{
-       WS.url("http://localhost:8080/api/v1/index/"+indexId+"/query").post(Map("infile" -> Seq(query))).map{
-          res=> 
-            
-            //Logger.debug("res.json.toString="+res.json.toString+" res.body="+res.body)
-             
-           
-            val json: JsValue=Json.parse(res.body)
+          val indexId="f08c90b2-9628-4111-91aa-37cc84dc0bb9"
+          Async{
+        	 WS.url("http://localhost:8080/api/v1/index/"+indexId+"/query").post(Map("infile" -> Seq(query))).map{
+        		 res=> 
+                   
+        		 val json: JsValue=Json.parse(res.body)
          
-            val simvalue=json.as[Seq[models.Result.Result]]
-             
-            Services.files.getFile(id)match{
-              case Some(file)=>   
+        		        		 
+        		 val simvalue=json.as[Seq[models.Result.Result]]
+        		 val l=simvalue.length
+        		 val ar=new Array[String](l)
+        		 val se=new Array[(String,String,Double,String)](l)
+        		 var i=0
+        		 simvalue.map{
+        		   s=>
+        		     val a=s.docID.split("/")
+        		     val n=a.length-2
+        		      Services.files.getFile(a(n)) match{
+        		       case Some(file)=>{
+        		         se.update(i,(a(n),s.docID,s.proximity,file.filename))
+        		         ar.update(i, file.filename)
+        		         Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
+        		         i=i+1
+        		       }
+        		       case None=>None
+        		         
+        		     }
+        		         		    
+        		 }
+        		 
+        		 
+            
+                Services.queries.getFile(id)match{
+                case Some(file)=>{ 
+                
+                Logger.debug("file id="+file.id.toString())
+                Ok(views.html.searchImgResults(file,id,simvalue,se))
+                //Ok(views.html.searchImgResults(file,id,simvalue))
+                }
+              case None=>{
+                Ok(id +" not found")
+              }
+            }
+
+           // TempFileDAO.findOneById(new ObjectId(id))
+
+           /*Services.queries.getFile(id)match{
+            //Services.files.getFile(id)match{
+                      case Some(file)=>{   
            // Ok(views.html.searchTextResults(id,simvalue))
             Ok(views.html.searchImgResults(file,id,simvalue))
             }
+              case None=>Ok(id+" no id found")
+           }*/
          // Ok(res.json.toString)  
         }
    }

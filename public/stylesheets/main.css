@@ -215,8 +215,52 @@ ol.comment-threads {
 	width: 80%;
 } 
 
+#rubberbandDiv {
+  position: absolute;
+  border: 3px solid blue;
+  cursor: crosshair;
+  display: none;
+  pointer-events: none;
+}
 
+#rubberbandCanvas {
+  border: thin solid #aaaaaa;
+}
+ 
+#rubberbandFormDiv {
+  width: 400px;
+  background: white;
+  border: 2px solid black;
+  margin: 5px;
+  padding: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  position: absolute;
+  display: none;
+  z-index: 5;
+}
 
+#rubberbandForm {
+  text-align: center;
+}
+
+#rubberbandForm label {
+  display: inline-block;
+  width: 100px;
+  text-align: left;
+}
+
+#rubberbandForm label input {
+  float: right;
+  width: 300px;
+}
+
+#rubberbandForm label textarea {
+  float: right;
+  width: 300px;
+  height: 100px;
+}
 
 button.usr_md_ {
     background:none!important;

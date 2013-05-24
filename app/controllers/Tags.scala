@@ -6,6 +6,8 @@ import play.api.Logger
 import play.api.libs.json.Json._
 import models.Dataset
 import play.api.mvc.Action
+import models.File
+import models.FileDAO
 
 /**
  * Tagging.
@@ -32,7 +34,8 @@ object Tags extends Controller with SecureSocial {
   
   def search(tag: String) = Action {
     val datasets = Dataset.findByTag(tag)
+    val files = FileDAO.findByTag(tag)
 //    Logger.debug("Search by tag " + tag + " returned " + datasets.length)
-    Ok(views.html.searchByTag(tag, datasets))
+    Ok(views.html.searchByTag(tag, datasets, files))
   }
 }

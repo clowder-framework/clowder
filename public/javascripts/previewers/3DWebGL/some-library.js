@@ -8,7 +8,9 @@ var pathImgs = "http://" + Configuration.hostIp + ":" + window.location.port + C
 var width = 750;
 var height = 550;
 
-$(Configuration.tab).append("<p>Move mouse while left-clicking and pressing CTRL, or while clicking the middle mouse button, to pan model.</p>");
+$(Configuration.tab).append("<table><tr><td>Left Button / Left Button + Shift</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>"
+		+ "<tr><td>Mid Button / Left Button + Ctl</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
+		+ "<tr><td>Wheel</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Zoom</td></tr></table>"); 
 
 var s = document.createElement("script");
 s.type = "text/javascript";

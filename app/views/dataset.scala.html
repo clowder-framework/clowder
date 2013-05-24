@@ -24,9 +24,12 @@
 				  		<div id="previewer_@pvs.head._1" ></div>
     					<script>
 							var Configuration = {};
-							Configuration.tab = "#previewer_@pvs.head._1"
+							Configuration.tab = "#previewer_@pvs.head._1";
 							Configuration.id  = "@dataset.id";
 							Configuration.url = "@pvs.head._5";
+							Configuration.fileid = "@pvs.head._1";
+							Configuration.authenticated = @user.isDefined;
+							Configuration.previewer = "@routes.Assets.at(pvs.head._3)";
 							if("@pvs.head._2" === "Thumbnail"){
 								Configuration.fileType = "@pvs.head._6";
 								Configuration.fileSize = @pvs.head._7;
@@ -140,7 +143,11 @@
 					  		class="img-polaroid" width="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
 					  		}
 					  				</td>
-						  			 <td>@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60)) </td>
+						  			 <td>
+						  			 @if(s.startTime.isDefined) {
+						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
+						  			 }
+						  			 </td>
 						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id.toString)">Similar</a></td>
 					  			 </tr>
 					  		}
@@ -207,7 +214,13 @@
 		  </ul>
 		  <div class="tab-content">
 		    <div class="tab-pane active" id="tab1">
-		      <p>No comments.</p>
+		      @comment(dataset.comments)
+			  @dataset.files.map { file =>
+			      @comment(file.comments)
+			      @file.sections.map { section =>
+			      	  @comment(section.comments)
+			      }
+		      }
 		    </div>
 		    <div class="tab-pane" id="tab2">
 		      @metadata(dataset.id.toString, md, usrmd)
@@ -268,8 +281,18 @@
 				<h5>Tags</h5>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
-					  <li><a href="@routes.Tags.search(tag)">@tag</a></li>
+					  <li><a href="@routes.Tags.search(tag)">@tag [Dataset]</a></li>
 					}
+  				    @dataset.files.map { file =>
+						@file.tags.map { tag =>
+						  <li><a href="@routes.Tags.search(tag)">@tag [File]</a></li>
+						}
+				    	@file.sections.map { section =>
+							@section.tags.map { tag =>
+							  <li><a href="@routes.Tags.search(tag)">@tag [Section]</a></li>
+							}
+						}
+				   }
 				</ul>
 				<form class="form-inline">
 					<input type="text" id="tagField">
