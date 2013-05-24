@@ -105,14 +105,16 @@ GET     /javascriptRoutes           controllers.Application.javascriptRoutes
 GET     /api-docs.json        controllers.ApiHelpController.getResources
 
 # Rest API
-GET     /api/files                        	api.Files.list
-POST    /api/files                        	api.Files.upload
-POST	/api/files/uploadIntermediate/:id	api.Files.uploadIntermediate(id) 
-GET     /api/files/:id/metadata           	api.Files.get(id)
-POST    /api/files/:id/metadata           	api.Files.addMetadata(id)
-POST    /api/files/:id/previews/:p_id     	api.Files.attachPreview(id, p_id)
-GET		/api/files/:id/listpreviews		  	api.Files.filePreviewsList(id)
-GET     /api/files/:id                    	api.Files.download(id)
+POST	/api/files/:three_d_file_id/geometries/:geometry_id			api.Files.attachGeometry(three_d_file_id,geometry_id)
+GET     /api/files                        						api.Files.list
+POST    /api/files                        						api.Files.upload
+POST	/api/files/uploadIntermediate/:id						api.Files.uploadIntermediate(id) 
+GET     /api/files/:id/metadata           						api.Files.get(id)
+POST    /api/files/:id/metadata           						api.Files.addMetadata(id)
+POST    /api/files/:id/previews/:p_id     						api.Files.attachPreview(id, p_id)
+GET		/api/files/:id/listpreviews		  						api.Files.filePreviewsList(id)
+GET		/api/files/:three_d_file_id/:filename					api.Files.getGeometry(three_d_file_id,filename)
+GET     /api/files/:id                    						api.Files.download(id)
 
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 POST    /api/datasets/:id/metadata		  api.Datasets.addMetadata(id)
@@ -141,3 +143,4 @@ POST    /api/geostreams/:id               api.Geostreams.addDatapoint(id)
 GET     /api/geostreams/search            api.Geostreams.search(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None)
 
 POST	/api/tiles						  api.ZoomIt.uploadTile
+POST	/api/geometries					  api.Geometry.uploadGeometry

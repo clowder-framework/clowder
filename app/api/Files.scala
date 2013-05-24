@@ -24,6 +24,7 @@ import services.ExtractorMessage
 import services.ElasticsearchPlugin
 import play.api.libs.json.Json._
 import play.api.libs.json._
+import models.GeometryDAO
 
 /**
  * Json API for files.
@@ -278,4 +279,87 @@ object Files extends Controller {
       case None => ""
     }   
   }
+   
+    /**
+   * Add 3D geometry file to file.
+   */
+  def attachGeometry(file_id: String, geometry_id: String) = Authenticated{
+    Action(parse.json) { request =>
+      request.body match {
+        case JsObject(fields) => {
+          // TODO create a service instead of calling salat directly
+          FileDAO.findOneById(new ObjectId(file_id)) match { 
+            case Some(preview) => {
+	              GeometryDAO.findOneById(new ObjectId(geometry_id)) match {
+	                case Some(tile) =>
+	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+	                    GeometryDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(geometry_id)), 
+	                        $set(Seq("metadata"-> metadata, "file_id" -> new ObjectId(file_id))), false, false, WriteConcern.SAFE)
+	                    Ok(toJson(Map("status"->"success")))
+	                case None => BadRequest(toJson("Geometry file not found"))
+	              }
+            }
+	        case None => BadRequest(toJson("File not found " + file_id))
+	      }
+        }
+        case _ => Ok("received something else: " + request.body + '\n')
+    }
+   }
+  }
+  
+   /**
+   * Find geometry file for given 3D file and geometry filename.
+   */
+  def getGeometry(three_d_file_id: String, filename: String) =
+    Action { request => 
+      GeometryDAO.findGeometry(new ObjectId(three_d_file_id), filename) match {
+        case Some(geometry) => {
+          
+          GeometryDAO.getBlob(geometry.id.toString()) match {
+            
+            case Some((inputStream, filename, contentType, contentLength)) => {
+    	    request.headers.get(RANGE) match {
+	          case Some(value) => {
+	            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
+	              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+	              case x => (x(0).toLong,x(1).toLong)
+	            }
+	            range match { case (start,end) =>
+	             
+	              inputStream.skip(start)
+	              import play.api.mvc.{SimpleResult, ResponseHeader}
+	              SimpleResult(
+	                header = ResponseHeader(PARTIAL_CONTENT,
+	                  Map(
+	                    CONNECTION -> "keep-alive",
+	                    ACCEPT_RANGES -> "bytes",
+	                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
+	                    CONTENT_LENGTH -> (end - start + 1).toString,
+	                    CONTENT_TYPE -> contentType
+	                  )
+	                ),
+	                body = Enumerator.fromStream(inputStream)
+	              )
+	            }
+	          }
+	          case None => {
+	            Ok.stream(Enumerator.fromStream(inputStream))
+	            	.withHeaders(CONTENT_TYPE -> contentType)
+	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
+	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+      
+	          }
+	        }
+	      }
+	      case None => Logger.error("No geometry file found: " + geometry.id.toString()); InternalServerError("No tile found")
+            
+          }
+          
+        }         
+        case None => Logger.error("Geometry file not found"); InternalServerError
+      }
+    }
+   
+   
+   
 }

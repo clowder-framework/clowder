@@ -1,4 +1,4 @@
-@(file: models.TempFile, id: String,results: Seq[models.Result.Result] )
+@(file: models.TempFile, id: String,results: Seq[models.Result.Result], name:Array[(String,String,Double,String)] )
 @main("Search Results") {
 	<div class="page-header">
 		<h1>Search Results For <medium>@file.filename</medium></h1>
@@ -22,15 +22,13 @@
 				</tr>
 			</thead>
 			<tbody>
-			   @results.map{   re=>
-	         
-								<tr>
-						<td>@re.docID</td>
-						<td>@re.proximity</td>
-						
+			    @name.map{   re=> 
+	               <tr>
+						<td><a href=@routes.Files.file(re._1)> @re._4</a></td>
+						<td>@re._3</td>
 					</tr>
 				}
-			</tbody>
+		</tbody>
 		</table>
 		
 		
