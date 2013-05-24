@@ -99,8 +99,10 @@ object Previews extends Controller {
    */
   def uploadMetadata(id: String) = Authenticated {
     Action(parse.json) { request =>
+      Logger.debug(request.body.toString)
       request.body match {
         case JsObject(fields) => {
+          Logger.debug(fields.toString)
 	      PreviewDAO.findOneById(new ObjectId(id)) match {
 	        case Some(preview) =>
 	            val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))

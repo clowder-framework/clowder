@@ -112,8 +112,18 @@
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@f.sections.map { s =>
 					  		@if(s.preview.isDefined) {
-					  		<img src="@api.routes.Previews.download(s.preview.get.id.toString)" 
-					  		class="img-polaroid" height="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
+					  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
+					  				class="img-polaroid" height="100px" 
+					  			@if(s.startTime.isDefined) {
+					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
+					  		 	} else {
+					  		 		if (s.area.isDefined) {
+					  		 			data-title="Area" data-description="@s.area.toString"
+					  		 		} else {
+										data-title="Unknown" data-description="Unknown info"
+					  		 		}
+					  		 	}
+					  		 	></img>
 					  		}
 					  	}
 				  	</div>
