@@ -149,7 +149,7 @@ object Files extends Controller {
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 	            val id = f.id.toString	            
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
 	            current.plugin[ElasticsearchPlugin].foreach{
 	              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 	            }
@@ -169,8 +169,16 @@ object Files extends Controller {
    /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
-    def uploadIntermediate(originalId: String) = Authenticated{ Action(parse.multipartFormData) { implicit request =>
-	      request.body.file("File").map { f =>        
+    def uploadIntermediate(originalIdAndFlags: String) =
+      Action(parse.multipartFormData) { implicit request =>
+	      request.body.file("File").map { f =>
+	        var originalId = originalIdAndFlags;
+	        var flags = "";
+	        if(originalIdAndFlags.indexOf("+") != -1){
+	          originalId = originalIdAndFlags.substring(0,originalIdAndFlags.indexOf("+"));
+	          flags = originalIdAndFlags.substring(originalIdAndFlags.indexOf("+"));
+	        }
+	        
 	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
 	        // store file
 	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
@@ -178,9 +186,9 @@ object Files extends Controller {
 	          case Some(f) => {
 	            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
-	            val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_]*$", "")
+	            val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
 	            val id = f.id.toString
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(originalId, id, host, key, Map.empty, f.length.toString))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(originalId, id, host, key, Map.empty, f.length.toString, flags))}
 	            current.plugin[ElasticsearchPlugin].foreach{
 	              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 	            }
@@ -195,7 +203,7 @@ object Files extends Controller {
 	         BadRequest(toJson("File not attached."))
 	      }
 	  }
-    }
+    
     
     
   /**
