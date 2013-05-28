@@ -133,13 +133,13 @@
 				<div class="row-fluid" style="padding-top: 10px">
 				  <div class="span10">
 				  	<div>
-				  		<h5>Shots</h5>
+				  		<h5>Sections</h5>
 						<table class="table">
 							<thead>
 								<tr>
 									<th>#</th>
 									<th>Thumbail</th>
-									<th>Start Time</th>
+									<th>Information</th>
 									<th>Find</th>
 								</tr>
 							</thead>
@@ -148,15 +148,31 @@
 					  			<tr>
 						  			<td>@s.order</td>
 						  			<td>
-						  			@if(s.preview.isDefined) {
-						  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)" 
-					  		class="img-polaroid" width="100px" data-title="Shot" data-description="Starts at @s.startTime seconds."></img>
-					  		}
+								  		@if(s.preview.isDefined) {
+								  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
+								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;" 
+								  			@if(s.startTime.isDefined) {
+								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
+								  		 	} else {
+								  		 		@if(s.area.isDefined) {
+								  		 			data-title="Area" data-description="@s.area.toString"
+								  		 		} else {
+													data-title="Unknown" data-description="Unknown info"
+								  		 		}
+								  		 	}
+								  		 	></img>
+								  		 }
 					  				</td>
 						  			 <td>
 						  			 @if(s.startTime.isDefined) {
 						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
-						  			 }
+						  		 	 } else {
+						  		 		@if(s.area.isDefined) {
+						  		 			@s.area.toString
+						  		 		} else {
+											Unknown info
+						  		 		}
+						  		 	}
 						  			 </td>
 						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id.toString)">Similar</a></td>
 					  			 </tr>
