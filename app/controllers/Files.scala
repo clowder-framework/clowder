@@ -28,6 +28,7 @@ import models.Dataset
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
+import play.api.libs.ws.WS
 
 /**
  * Manage files.
@@ -130,12 +131,12 @@ object Files extends Controller with securesocial.core.SecureSocial {
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
            
-            /* 
-             * val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
+             
+             val indexId="f08c90b2-9628-4111-91aa-37cc84dc0bb9"
              val urlf="http://localhost:9000/files/"+f.id.toString+"/blob"
               
               
-               Async{
+              /* Async{
             		WS.url("http://localhost:8080/api/v1/index/"+indexId+"/add").post(Map("infile" -> Seq(urlf))).map{
             		res=> 
             		Logger.debug("res.body"+res.body);
@@ -334,7 +335,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
         Logger.debug("Uploading file " + f.filename)
         
         // store file       
-        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+      //  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val file = Services.queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
