@@ -108,7 +108,7 @@ GET     /api-docs.json        controllers.ApiHelpController.getResources
 POST	/api/files/:three_d_file_id/geometries/:geometry_id			api.Files.attachGeometry(three_d_file_id,geometry_id)
 GET     /api/files                        						api.Files.list
 POST    /api/files                        						api.Files.upload
-POST	/api/files/uploadIntermediate/:id						api.Files.uploadIntermediate(id) 
+POST	/api/files/uploadIntermediate/:idAndFlags				api.Files.uploadIntermediate(idAndFlags) 
 GET     /api/files/:id/metadata           						api.Files.get(id)
 POST    /api/files/:id/metadata           						api.Files.addMetadata(id)
 POST    /api/files/:id/comment									api.Files.comment(id)
