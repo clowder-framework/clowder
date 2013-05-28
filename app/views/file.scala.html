@@ -34,49 +34,10 @@
 						data-parent="#accordion1" href="#collapseOne">Comments</a>
 				</div>
 				<div id="collapseOne" class="accordion-body in collapse">
-					@comment(file.comments)
+					@comment(List.empty, "post", api.routes.Files.comment(file.id.toString).toString)
+					@comment(file.comments, file.id.toString)
 					@sections.map { s =>
-						@comment(s.comments, s.id.toString())
-					}
-					@if(user.isDefined) {
-						<form class="form-inline">
-							<textarea type="text" id="commentField" class="comment-input-box"></textarea><br/>
-							<button class="btn" id="commentBtn">Comment</button>
-						</form>
-						<script language="javascript">
-							$(function() {
-								
-							   $('#commentBtn').click(function() {
-							     var comment = $('#commentField').val();
-			
-							     if (comment !== "") {
-							     	 console.log("submitting comment " + comment);
-			
-								     var request = jsRoutes.controllers.Files.comment("@file.id").ajax({
-								       data: comment,
-								       type: 'POST',
-								       contentType: "text/plain",
-								     });
-								     
-								     request.done(function (response, textStatus, jqXHR){ 
-								        console.log("Response " + response);
-								        $('#commentList').append("<li>" + comment + "</li>");
-								        $('#commentField').val("");
-								     });
-						    
-								     request.fail(function (jqXHR, textStatus, errorThrown){
-								        console.error(
-								            "The following error occured: "+
-								            textStatus, errorThrown
-								            
-								        );
-								        //window.location = "../login"; // FIXME hardcoded
-								     });
-						     	 }
-						     	return false;
-							  });
-							 });
-				    	 </script>
+						@comment(s.comments, s.id.toString)
 					}
 				</div>
 			</div>

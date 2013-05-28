@@ -240,11 +240,12 @@
 		  </ul>
 		  <div class="tab-content">
 		    <div class="tab-pane active" id="tab1">
-		      @comment(dataset.comments)
+		      @comment(List.empty, "post", api.routes.Datasets.comment(dataset.id.toString).toString))
+		      @comment(dataset.comments, "dataset")
 			  @dataset.files.map { file =>
-			      @comment(file.comments)
+			      @comment(file.comments, file.id.toString)
 			      @file.sections.map { section =>
-			      	  @comment(section.comments)
+			      	  @comment(section.comments, section.id.toString)
 			      }
 		      }
 		    </div>

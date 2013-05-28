@@ -25,6 +25,8 @@ import services.ElasticsearchPlugin
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import models.GeometryDAO
+import models.Comment
+import java.util.Date
 
 /**
  * Json API for files.
@@ -360,6 +362,33 @@ object Files extends Controller {
       }
     }
    
-   
-   
+  def tag(id: String) = Authenticated {
+    Action(parse.json) { request =>
+      request.body.\("tag").asOpt[String] match {
+        case Some(tag) => {
+          FileDAO.tag(id, tag)
+          Ok
+        }
+        case None => {
+          Logger.error("no tag specified.")
+          BadRequest
+        }
+      }
+    }
+  }
+
+  def comment(id: String) = Authenticated {
+    Action(parse.json) { request =>
+      request.body.\("comment").asOpt[String] match {
+        case Some(comment) => {
+          FileDAO.comment(id, new Comment("unknown", new Date(), comment))
+          Ok
+        }
+        case None => {
+          Logger.error("no tag specified.")
+          BadRequest
+        }
+      }
+    }
+  }
 }
