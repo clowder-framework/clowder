@@ -1,0 +1,13 @@
+.pdfview p {
+   padding: 1em;
+}
+
+.pdfview object {
+   display: block;
+   border: solid 1px #666;
+}
+
+.pdfview {
+	width:750px;
+	height:550px;
+}
