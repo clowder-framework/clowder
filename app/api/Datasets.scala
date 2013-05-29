@@ -24,7 +24,21 @@ import com.wordnik.swagger.annotations.ApiOperation
  */
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
 object Datasets extends Controller {
-
+  
+  /**
+   * List all files.
+   */
+  def list = Authenticated {
+    Action {
+      val list = for (dataset <- Services.datasets.listDatasets()) yield jsonDataset(dataset)
+      Ok(toJson(list))
+    }
+  }  
+  
+  def jsonDataset(dataset: Dataset): JsValue = {
+    toJson(Map("id"->dataset.id.toString, "datasetname"->dataset.name, "description"->dataset.description,"created"->dataset.created.toString ))
+  }
+  
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
   def addMetadata(id: String) = Authenticated {
 	  Logger.debug("Adding metadata to dataset " + id)
