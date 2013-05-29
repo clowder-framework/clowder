@@ -4,6 +4,44 @@
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
+@showPreview(id: Int, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
+	<script>
+		var Configuration = {};
+		Configuration.tab = "#previewer_@id";
+		Configuration.id  = "@dataset.id";
+		Configuration.url = "@p._5";
+		Configuration.fileid = "@p._1";
+		Configuration.previewer = "@routes.Assets.at(p._3)";
+		if("@p._2" === "Thumbnail"){
+			Configuration.fileType = "@p._6";
+			Configuration.fileSize = @p._7;
+			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+		}
+		else if("@p._2" === "PTM"){
+			Configuration.appletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
+			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+		}
+		else if("@p._2" === "3DWebGL"){
+			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+			Configuration.imagesPath = "@(routes.Assets.at("images"))";
+		}
+		else if("@p._2" === "Gigaimaging"){							
+			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+		}
+		else if("@p._2" === "X3d"){							
+			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+		}
+		else if("@p._2" === "Pdf"){							
+			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+		}
+	</script>
+	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
+}
+
 @main("Dataset") {
 
     <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
@@ -22,85 +60,19 @@
 		    	<div class="span12">
 		  			@if(pvs.length == 1) {
 				  		<div id="previewer_@pvs.head._1" ></div>
-    					<script>
-							var Configuration = {};
-							Configuration.tab = "#previewer_@pvs.head._1";
-							Configuration.id  = "@dataset.id";
-							Configuration.url = "@pvs.head._5";
-							Configuration.fileid = "@pvs.head._1";
-							Configuration.authenticated = @user.isDefined;
-							Configuration.previewer = "@routes.Assets.at(pvs.head._3)";
-							if("@pvs.head._2" === "Thumbnail"){
-								Configuration.fileType = "@pvs.head._6";
-								Configuration.fileSize = @pvs.head._7;
-								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-							}
-							else if("@pvs.head._2" === "PTM"){
-								Configuration.appletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
-								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-							}
-							else if("@pvs.head._2" === "3DWebGL"){
-								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-								Configuration.imagesPath = "@(routes.Assets.at("images"))";
-							}
-							else if("@pvs.head._2" === "Gigaimaging"){							
-								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-							}
-							else if("@pvs.head._2" === "X3d"){							
-								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-							}
-							else if("@pvs.head._2" === "Pdf"){							
-								Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-								Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-							}
-						</script>
-						<script type="text/javascript" src="@(routes.Assets.at(pvs.head._3) + "/" + pvs.head._4)"></script>
+				  		@showPreview(1, pvs.head)
 		  			} else {
 				  		<div class="tabbable">
 							<ul class="nav nav-pills" id="myTab">
-				  				@for(p <- pvs) {
-						    		<li class=""><a href="#previewer_@p._1" data-toggle="tab">@p._2</a></li>
+								@for(i <- pvs.indices) {
+						    		<li class=""><a href="#previewer_@i" data-toggle="tab">@pvs(i)._2</a></li>
 				  				}
 							</ul>
 							<div class="tab-content">
-				  				@for(p <- pvs) {
-							  		<div class="tab-pane" id="previewer_@p._1"></div>
-			    					<script>
-										var Configuration = {};
-										Configuration.tab = "#previewer_@p._1"
-										Configuration.id  = "@dataset.id";
-										Configuration.url = "@p._5";
-										if("@p._2" === "Thumbnail"){
-											Configuration.fileType = "@p._6";
-											Configuration.fileSize = @p._7;
-											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-										}
-										else if("@p._2" === "PTM"){
-											Configuration.appletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
-											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-				  						}
-										else if("@p._2" === "3DWebGL"){
-											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-											Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-											Configuration.imagesPath = "@(routes.Assets.at("images"))";
-										}
-										else if("@p._2" === "Gigaimaging"){
-											Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-										}
-										else if("@p._2" === "X3d"){
-											Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-										}
-										else if("@p._2" === "Pdf"){
-											Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-											Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-										}
-									</script>
-									<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
+								@for(i <- pvs.indices) {
+							  		<div class="tab-pane" id="previewer_@i"></div>
+							  		@showPreview(i, pvs(i))
+
 								}
 					  			<script type="text/javascript">
 									$(function () {
