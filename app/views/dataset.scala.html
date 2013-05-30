@@ -11,6 +11,7 @@
 		Configuration.id  = "@dataset.id";
 		Configuration.url = "@p._5";
 		Configuration.fileid = "@p._1";
+		Configuration.authenticated = @user.isDefined;
 		Configuration.previewer = "@routes.Assets.at(p._3)";
 		if("@p._2" === "Thumbnail"){
 			Configuration.fileType = "@p._6";
@@ -59,7 +60,7 @@
 			<div class="row-fluid">
 		    	<div class="span12">
 		  			@if(pvs.length == 1) {
-				  		<div id="previewer_@pvs.head._1" ></div>
+				  		<div id="previewer_1" ></div>
 				  		@showPreview(1, pvs.head)
 		  			} else {
 				  		<div class="tabbable">
