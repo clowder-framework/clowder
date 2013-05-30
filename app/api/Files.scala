@@ -34,7 +34,7 @@ import java.util.Date
  * @author Luigi Marini
  *
  */
-object Files extends Controller {
+object Files extends Controller with ApiController {
   
   def get(id: String) = Authenticated { 
     Action { implicit request =>
@@ -370,33 +370,29 @@ object Files extends Controller {
       }
     }
    
-  def tag(id: String) = Authenticated {
-    Action(parse.json) { request =>
-      request.body.\("tag").asOpt[String] match {
-        case Some(tag) => {
-          FileDAO.tag(id, tag)
-          Ok
-        }
-        case None => {
-          Logger.error("no tag specified.")
-          BadRequest
-        }
-      }
+    def tag(id: String) = SecuredAction(parse.json)  { implicit request =>
+	    request.body.\("tag").asOpt[String] match {
+		    case Some(tag) => {
+		    	FileDAO.tag(id, tag)
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
     }
-  }
 
-  def comment(id: String) = Authenticated {
-    Action(parse.json) { request =>
-      request.body.\("comment").asOpt[String] match {
-        case Some(comment) => {
-          FileDAO.comment(id, new Comment("unknown", new Date(), comment))
-          Ok
-        }
-        case None => {
-          Logger.error("no tag specified.")
-          BadRequest
-        }
-      }
+	def comment(id: String) = SecuredAction(parse.json)  { implicit request =>
+	    request.body.\("comment").asOpt[String] match {
+		    case Some(comment) => {
+		    	FileDAO.comment(id, new Comment(request.user.email.get, new Date(), comment))
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
     }
-  }
 }

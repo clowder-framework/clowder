@@ -25,7 +25,7 @@ import java.util.Date
  *
  */
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
-object Datasets extends Controller {
+object Datasets extends Controller with ApiController {
   
   /**
    * List all files.
@@ -98,33 +98,29 @@ object Datasets extends Controller {
   }
 
    
-  def tag(id: String) = Authenticated {
-    Action(parse.json) { request =>
-      request.body.\("tag").asOpt[String] match {
-        case Some(tag) => {
-          Dataset.tag(id, tag)
-          Ok
-        }
-        case None => {
-          Logger.error("no tag specified.")
-          BadRequest
-        }
-      }
+    def tag(id: String) = SecuredAction(parse.json)  { implicit request =>
+	    request.body.\("tag").asOpt[String] match {
+		    case Some(tag) => {
+		    	Dataset.tag(id, tag)
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
     }
-  }
 
-  def comment(id: String) = Authenticated {
-    Action(parse.json) { request =>
-      request.body.\("comment").asOpt[String] match {
-        case Some(comment) => {
-          Dataset.comment(id, new Comment("unknown", new Date(), comment))
-          Ok
-        }
-        case None => {
-          Logger.error("no tag specified.")
-          BadRequest
-        }
-      }
+	def comment(id: String) = SecuredAction(parse.json)  { implicit request =>
+	    request.body.\("comment").asOpt[String] match {
+		    case Some(comment) => {
+		    	Dataset.comment(id, new Comment(request.user.email.get, new Date(), comment))
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
     }
-  }
 }
