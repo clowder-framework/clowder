@@ -26,7 +26,7 @@ import securesocial.core.SecuredRequest
 import securesocial.core.AuthenticationMethod
 
 trait ApiController extends Controller {
-	def SecuredAction[A](p: BodyParser[A])(f: SecuredRequest[A] => Result) = Action(p) {
+	def SecuredAction[A](p: BodyParser[A], allowKey: Boolean = true)(f: SecuredRequest[A] => Result) = Action(p) {
 		implicit request => {
 			request.headers.get("Authorization") match { // basic authentication
 				case Some(authHeader) => {
@@ -52,7 +52,7 @@ trait ApiController extends Controller {
 						case Some(key) => {
 							if (key.length > 0) {
 								// TODO Check for key in database
-								if (key(0).equals("letmein")) {
+								if (allowKey && key(0).equals("letmein")) {
 									val identity = new SocialUser(new UserId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
 									f(SecuredRequest(identity, request))
 								} else {

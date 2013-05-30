@@ -370,7 +370,7 @@ object Files extends Controller with ApiController {
       }
     }
    
-    def tag(id: String) = SecuredAction(parse.json)  { implicit request =>
+    def tag(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
 	    request.body.\("tag").asOpt[String] match {
 		    case Some(tag) => {
 		    	FileDAO.tag(id, tag)
@@ -383,7 +383,7 @@ object Files extends Controller with ApiController {
 	    }
     }
 
-	def comment(id: String) = SecuredAction(parse.json)  { implicit request =>
+	def comment(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
 	    request.body.\("comment").asOpt[String] match {
 		    case Some(comment) => {
 		    	FileDAO.comment(id, new Comment(request.user.email.get, new Date(), comment))
