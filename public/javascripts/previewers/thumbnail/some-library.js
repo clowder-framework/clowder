@@ -6,7 +6,7 @@
 	// --------------------------------------------------------
 	if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png"){
 		$(Configuration.tab).append(
-			"<canvas id='rubberbandCanvas' style='cursor: crosshair;'>" +
+			"<canvas id='rubberbandCanvas'>" +
 			"<img src='" + Configuration.url + "' id='rubberbandimage'></img>" +
 			"</canvas>" +
 			"<div id='rubberbandDiv'></div>"
@@ -210,7 +210,6 @@
 
 			// associate preview with section
 			function sectionCreated(tag, comment, sectionid, x, y, w, h) {
-				console.log(x + " " + y + " " + w + " " + h);
 				// clone canvas to have a subimage
 				var canvas = $("#rubberbandCanvas")[0];
 				var subcanvas = document.createElement("canvas");
@@ -247,7 +246,6 @@
 			
 			// tag and comment on section
 			function previewCreated(tag, comment, sectionid, previewid, w, h) {
-				console.log(window.jsRoutes);
 				var request = window.jsRoutes.api.Previews.uploadMetadata(previewid).ajax({
 					type: 		 "POST",
 					contentType: "application/json",
@@ -324,6 +322,7 @@
 				canvas.width = 750;
 				canvas.height = image.height * (canvas.width / image.width);
 			}
+
 			context.drawImage(image, 0, 0, canvas.width, canvas.height);
 		});
 	}
