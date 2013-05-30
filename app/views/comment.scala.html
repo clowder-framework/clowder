@@ -58,9 +58,17 @@
 	@comments.map { c =>
 		<li class="comment-thread">
 			<div class="comment">
-				<div class="comment-image"><img src='@SocialUserDAO.findOneByEmail(c.author).get.avatarUrl.getOrElse("")'></div>
-				<div class="comment-header">
-					<div class="comment-author">@SocialUserDAO.findOneByEmail(c.author).get.fullName</div>
+				@SocialUserDAO.findOneByEmail(c.author) match {
+					case Some(x) => {
+						<div class="comment-image"><img src='@x.avatarUrl.getOrElse("")'></div>
+						<div class="comment-header">
+							<div class="comment-author">@x.fullName</div>
+					}
+					case None => {
+						<div class="comment-header">
+							<div class="comment-author">@c.author</div>
+					}
+				}
 					<div class="comment-date">@c.posted</div>
 					<div style="clear: both;"></div>
 				</div>
