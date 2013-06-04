@@ -29,6 +29,7 @@ import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
 import play.api.libs.ws.WS
+import fileutils.FilesUtils
 
 /**
  * Manage files.
@@ -118,11 +119,21 @@ object Files extends Controller with securesocial.core.SecureSocial {
         
         // store file       
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val uploadedFile = f
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
+             var fileType = f.contentType
+			    if(fileType.contains("/zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }
+            
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
+            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
@@ -260,11 +271,21 @@ object Files extends Controller with securesocial.core.SecureSocial {
         
         // store file       
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val uploadedFile = f
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
+             var fileType = f.contentType
+			    if(fileType.contains("/zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }
+            
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            val key = "unknown." + "file."+ fileType.replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
@@ -296,12 +317,22 @@ object Files extends Controller with securesocial.core.SecureSocial {
         
         // store file       
          val file = Services.queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+         val uploadedFile = f
 //        Thread.sleep(1000)
         
         file match {
           case Some(f) => {
+            var fileType = f.contentType
+			    if(fileType.contains("/zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }
+            
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            val key = "unknown." + "file."+ fileType.replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             
@@ -337,11 +368,21 @@ object Files extends Controller with securesocial.core.SecureSocial {
         // store file       
       //  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         val file = Services.queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val uploadedFile = f
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
+             var fileType = f.contentType
+			    if(fileType.contains("/zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }
+            
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
+            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
@@ -376,12 +417,22 @@ object Files extends Controller with securesocial.core.SecureSocial {
 				  Logger.debug("Uploading file " + f.filename)
 				  // store file
 				  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
-				  // submit file for extraction
-			
+				  val uploadedFile = f
+				  
+				  // submit file for extraction			
 				  file match {
-				  	case Some(f) => {
+				  case Some(f) => {
+					  var fileType = f.contentType
+					  if(fileType.contains("/zip")){
+						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+						  if(fileType.startsWith("ERROR: ")){
+								Logger.error(fileType.substring(7))
+								InternalServerError(fileType.substring(7))
+								}			          
+						  }
+				  	  
 					  // TODO RK need to replace unknown with the server name
-					  val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
+					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 							  // TODO RK : need figure out if we can use https
 							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id.toString
@@ -488,8 +539,11 @@ object Files extends Controller with securesocial.core.SecureSocial {
     
     // store file
     val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None)
+    
     file match {
       case Some(f) => {
+         var fileType = f.contentType
+        
         // TODO RK need to replace unknown with the server name
         val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
         // TODO RK : need figure out if we can use https

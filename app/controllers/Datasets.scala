@@ -30,6 +30,7 @@ import scala.collection.immutable.Nil
 import models.Comment
 import models.Section
 import models.Rectangle
+import fileutils.FilesUtils
 
 /**
  * A dataset is a collection of files and streams.
@@ -170,10 +171,20 @@ object Datasets extends Controller with SecureSocial {
 			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
 			    Logger.debug("Uploaded file id is " + file.get.id)
 			    Logger.debug("Uploaded file type is " + f.contentType)
+			    
+			    val uploadedFile = f
 			    file match {
-			      case Some(f) => {
+			      case Some(f) => {			        
+			        var fileType = f.contentType
+			        if(fileType.contains("/zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }			        			        
 			    	// TODO RK need to replace unknown with the server name
-			    	val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
+			    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 //			        val key = "unknown." + "file."+ "application.x-ptm"
 
 	                // TODO RK : need figure out if we can use https

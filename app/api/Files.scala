@@ -25,6 +25,8 @@ import services.ElasticsearchPlugin
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import models.GeometryDAO
+import models.ThreeDTextureDAO
+import fileutils.FilesUtils
 
 /**
  * Json API for files.
@@ -138,14 +140,24 @@ object Files extends Controller {
   /**
    * Upload file using multipart form enconding.
    */
-    def upload() = Authenticated { Action(parse.multipartFormData) { implicit request =>
+    def upload() = Authenticated{  Action(parse.multipartFormData) { implicit request =>
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        // store file
 	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	            val key = "unknown." + f.contentType.replace(".", "_").replace("/", ".")
+	            var fileType = f.contentType
+			    if(fileType.contains("/zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }    	
+	            
+	            val key = "unknown." + fileType.replace(".", "_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 	            val id = f.id.toString	            
@@ -169,7 +181,7 @@ object Files extends Controller {
    /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
-    def uploadIntermediate(originalIdAndFlags: String) =
+    def uploadIntermediate(originalIdAndFlags: String) = Authenticated{
       Action(parse.multipartFormData) { implicit request =>
 	      request.body.file("File").map { f =>
 	        var originalId = originalIdAndFlags;
@@ -182,9 +194,19 @@ object Files extends Controller {
 	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
 	        // store file
 	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
+	             var fileType = f.contentType
+			     if(fileType.contains("/zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        } 
+	            
+	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
 	            val id = f.id.toString
@@ -203,7 +225,7 @@ object Files extends Controller {
 	         BadRequest(toJson("File not attached."))
 	      }
 	  }
-    
+    }
     
     
   /**
@@ -297,14 +319,41 @@ object Files extends Controller {
         case JsObject(fields) => {
           // TODO create a service instead of calling salat directly
           FileDAO.findOneById(new ObjectId(file_id)) match { 
-            case Some(preview) => {
+            case Some(file) => {
 	              GeometryDAO.findOneById(new ObjectId(geometry_id)) match {
-	                case Some(tile) =>
+	                case Some(geometry) =>
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	                    GeometryDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(geometry_id)), 
 	                        $set(Seq("metadata"-> metadata, "file_id" -> new ObjectId(file_id))), false, false, WriteConcern.SAFE)
 	                    Ok(toJson(Map("status"->"success")))
 	                case None => BadRequest(toJson("Geometry file not found"))
+	              }
+            }
+	        case None => BadRequest(toJson("File not found " + file_id))
+	      }
+        }
+        case _ => Ok("received something else: " + request.body + '\n')
+    }
+   }
+  }
+  
+   /**
+   * Add 3D texture to file.
+   */
+  def attachTexture(file_id: String, texture_id: String) = Authenticated{
+    Action(parse.json) { request =>
+      request.body match {
+        case JsObject(fields) => {
+          // TODO create a service instead of calling salat directly
+          FileDAO.findOneById(new ObjectId(file_id)) match { 
+            case Some(file) => {
+	              ThreeDTextureDAO.findOneById(new ObjectId(texture_id)) match {
+	                case Some(texture) =>
+	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+	                    ThreeDTextureDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(texture_id)), 
+	                        $set(Seq("metadata"-> metadata, "file_id" -> new ObjectId(file_id))), false, false, WriteConcern.SAFE)
+	                    Ok(toJson(Map("status"->"success")))
+	                case None => BadRequest(toJson("Texture file not found"))
 	              }
             }
 	        case None => BadRequest(toJson("File not found " + file_id))
@@ -359,7 +408,7 @@ object Files extends Controller {
 	          }
 	        }
 	      }
-	      case None => Logger.error("No geometry file found: " + geometry.id.toString()); InternalServerError("No tile found")
+	      case None => Logger.error("No geometry file found: " + geometry.id.toString()); InternalServerError("No geometry file found")
             
           }
           
@@ -368,6 +417,57 @@ object Files extends Controller {
       }
     }
    
-   
+    /**
+   * Find texture file for given 3D file and texture filename.
+   */
+  def getTexture(three_d_file_id: String, filename: String) =
+    Action { request => 
+      ThreeDTextureDAO.findTexture(new ObjectId(three_d_file_id), filename) match {
+        case Some(texture) => {
+          
+          ThreeDTextureDAO.getBlob(texture.id.toString()) match {
+            
+            case Some((inputStream, filename, contentType, contentLength)) => {
+    	    request.headers.get(RANGE) match {
+	          case Some(value) => {
+	            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
+	              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+	              case x => (x(0).toLong,x(1).toLong)
+	            }
+	            range match { case (start,end) =>
+	             
+	              inputStream.skip(start)
+	              import play.api.mvc.{SimpleResult, ResponseHeader}
+	              SimpleResult(
+	                header = ResponseHeader(PARTIAL_CONTENT,
+	                  Map(
+	                    CONNECTION -> "keep-alive",
+	                    ACCEPT_RANGES -> "bytes",
+	                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
+	                    CONTENT_LENGTH -> (end - start + 1).toString,
+	                    CONTENT_TYPE -> contentType
+	                  )
+	                ),
+	                body = Enumerator.fromStream(inputStream)
+	              )
+	            }
+	          }
+	          case None => {
+	            Ok.stream(Enumerator.fromStream(inputStream))
+	            	.withHeaders(CONTENT_TYPE -> contentType)
+	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
+	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+      
+	          }
+	        }
+	      }
+	      case None => Logger.error("No texture file found: " + texture.id.toString()); InternalServerError("No texture found")
+            
+          }
+          
+        }         
+        case None => Logger.error("Texture file not found"); InternalServerError
+      }
+    }
    
 }
