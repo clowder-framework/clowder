@@ -1,19 +1,81 @@
-@(comments: List[models.Comment], name: String = "top")
+@(comments: List[models.Comment], name: String, post: String = "")(implicit user: Option[securesocial.core.Identity])
 
-<ol class="comment-threads unstyled @name">
-	@comments.map { s =>
+@if(user.isDefined && (post != "")) {
+	<form class="form-inline">
+		<textarea type="text" id="commentField" class="comment-input-box"></textarea><br/>
+		<button class="btn" id="commentBtn">Comment</button>
+	</form>
+
+	<script language="javascript">
+		$(function() {		   
+		   $('#commentBtn').click(function() {
+		     var comment = $('#commentField').val();
+  	         $('#commentField').val("");
+
+		     if (comment !== "") {
+		     	 console.log("submitting comment " + comment);
+
+			     var request = $.ajax({
+			       url:  "@post",
+			       data: JSON.stringify({ comment: comment }),
+			       type: "POST",
+			       contentType: "application/json",
+			     });
+			     
+			     request.done(function (response, textStatus, jqXHR){ 
+			        console.log("Response " + response);
+			        var post="<div class=\"comment\">";
+      				@if(user.get.avatarUrl.isDefined) {
+				   	  post += "<div class=\"comment-image\"><img src=\"@user.get.avatarUrl.get\"></div>";
+				    }
+					post += "<div class=\"comment-header\">";
+					post += "<div class=\"comment-author\">@user.get.fullName</div>";
+					post += "<div class=\"comment-date\">" + new Date().toString() + "</div>";
+					post += "<div style=\"clear: both;\"></div>";
+					post += "</div>";
+					post += "<div class=\"comment-body\">" + comment + "</div>";
+@*					post += "<div class=\"comment-footer\"><a href=\"javascript:void(0)\" onclick=\"return reply(this)\">reply</a></div>"; *@
+					post += "</div>";
+					$("#@name").prepend("<li class=\"comment-thread\">" + post + "</li>");
+			     });
+	    
+			     request.fail(function (jqXHR, textStatus, errorThrown){
+			        console.error(
+			            "The following error occured: "+
+			            textStatus, errorThrown
+			            
+			        );
+			        //window.location = "../login"; // FIXME hardcoded
+			     });
+	     	 }
+	     	return false;
+		  });
+		 });
+   	 </script>
+}
+
+<ol class="comment-threads unstyled @name" id="@name">
+	@comments.map { c =>
 		<li class="comment-thread">
 			<div class="comment">
-@*				<div class="comment-image"><img src="http://www.gravatar.com/avatar/43a00942406a477b09ad0cf0764b4023?d=404"></div> *@
-				<div class="comment-header">
-					<div class="comment-author">@s.author</div>
-					<div class="comment-date">@s.posted</div>
+				@SocialUserDAO.findOneByEmail(c.author) match {
+					case Some(x) => {
+						<div class="comment-image"><img src='@x.avatarUrl.getOrElse("")'></div>
+						<div class="comment-header">
+							<div class="comment-author">@x.fullName</div>
+					}
+					case None => {
+						<div class="comment-header">
+							<div class="comment-author">@c.author</div>
+					}
+				}
+					<div class="comment-date">@c.posted</div>
 					<div style="clear: both;"></div>
 				</div>
-				<div class="comment-body">@s.text</div>
+				<div class="comment-body">@c.text</div>
 @*				<div class="comment-footer"><a href="javascript:void(0)" onclick="return reply(this)">reply</a></div> *@
 			</div>
-			@comment(s.replies)
+			@comment(c.replies, c.id.toString)
 		</li>
 	}
 </ol>

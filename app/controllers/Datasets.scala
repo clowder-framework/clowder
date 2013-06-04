@@ -9,7 +9,6 @@ import play.api.Logger
 import play.api.mvc.Action
 import play.api.data.Form
 import play.api.data.Forms._
-import models.Dataset
 import views.html.defaultpages.error
 import java.io.FileInputStream
 import play.api.Play.current
@@ -17,7 +16,6 @@ import services.RabbitmqPlugin
 import services.ElasticsearchPlugin
 import java.io.File
 import org.bson.types.ObjectId
-import models.FileDAO
 import java.util.Date
 import services.ExtractorMessage
 import securesocial.core.SecureSocial
@@ -27,9 +25,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import models.SectionDAO
 import play.api.mvc.Flash
 import scala.collection.immutable.Nil
-import models.Comment
-import models.Section
-import models.Rectangle
+import models._
 import fileutils.FilesUtils
 
 /**
@@ -226,9 +222,13 @@ object Datasets extends Controller with SecureSocial {
    * Add comment to a dataset
    */
   def comment(id: String) = SecuredAction(ajaxCall = true, None, parse.json) { implicit request =>
-    val text = request.body.\("text").asOpt[String].getOrElse("")
+    val text = request.body.\("comment").asOpt[String].getOrElse("")
     if (text == "") {
       BadRequest("error, no comment supplied.")
+    }
+    val preview = request.body.\("preview").asOpt[String] match {
+      case Some(id) => PreviewDAO.findOneById(new ObjectId(id))
+      case None => None
     }
     val comment = Comment(request.user.id.id, new Date(), text)
     request.body.\("fileid").asOpt[String].map { fileid =>
@@ -239,7 +239,7 @@ object Datasets extends Controller with SecureSocial {
       if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
         FileDAO.comment(fileid, comment)
       } else {
-        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), comments=List(comment));
+        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), comments=List(comment), preview=preview);
         SectionDAO.save(section)
       }    
     }.getOrElse {
@@ -253,6 +253,12 @@ object Datasets extends Controller with SecureSocial {
     if (text == "") {
       BadRequest("error, no tag supplied.")
     }
+    Logger.debug(request.body.\("preview").toString)
+    val preview = request.body.\("preview").asOpt[String] match {
+      case Some(id) => PreviewDAO.findOneById(new ObjectId(id))
+      case None => None
+    }
+    Logger.debug(preview.toString())
     request.body.\("fileid").asOpt[String].map { fileid =>
       val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
       val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
@@ -261,7 +267,7 @@ object Datasets extends Controller with SecureSocial {
       if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
         FileDAO.tag(fileid, text)
       } else {
-        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), tags=List(text));
+        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), tags=List(text), preview=preview);
         SectionDAO.save(section)
       }    
     }.getOrElse {

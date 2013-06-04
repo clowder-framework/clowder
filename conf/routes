@@ -112,6 +112,8 @@ POST    /api/files                        						api.Files.upload
 POST	/api/files/uploadIntermediate/:idAndFlags				api.Files.uploadIntermediate(idAndFlags) 
 GET     /api/files/:id/metadata           						api.Files.get(id)
 POST    /api/files/:id/metadata           						api.Files.addMetadata(id)
+POST    /api/files/:id/comment									api.Files.comment(id)
+POST    /api/files/:id/tag										api.Files.tag(id)
 POST    /api/files/:id/previews/:p_id     						api.Files.attachPreview(id, p_id)
 GET		/api/files/:id/listpreviews		  						api.Files.filePreviewsList(id)
 #GET		/api/files/:three_d_file_id/:filename					api.Files.getGeometry(three_d_file_id,filename)
@@ -119,10 +121,13 @@ GET		/api/files/:three_d_file_id/:filename					api.Files.getTexture(three_d_file
 GET     /api/files/:id                    						api.Files.download(id)
 
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
-GET    	/api/datasets					  api.Datasets.list
-POST    /api/datasets/:id/metadata		  api.Datasets.addMetadata(id)
-POST    /api/datasets/:id/usermetadata	  api.Datasets.addUserMetadata(id)
-GET 	/api/datasets/:id/listFiles		  api.Datasets.datasetFilesList(id)
+
+GET    	/api/datasets					  						api.Datasets.list
+POST    /api/datasets/:id/metadata		  						api.Datasets.addMetadata(id)
+POST    /api/datasets/:id/usermetadata	  						api.Datasets.addUserMetadata(id)
+GET 	/api/datasets/:id/listFiles		 						api.Datasets.datasetFilesList(id)
+POST    /api/datasets/:id/comment								api.Datasets.comment(id)
+POST    /api/datasets/:id/tag									api.Datasets.tag(id)
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					api.Previews.downloadPreview(preview_id, datasetid)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			api.Files.downloadByDatasetAndFilename(dataset_id, filename, preview_id)
@@ -138,6 +143,8 @@ POST    /api/indexes/features             api.Indexes.features
 
 POST    /api/sections                     api.Sections.add
 GET     /api/sections/:id                 api.Sections.get(id)
+POST    /api/sections/:id/tags            api.Sections.tag(id)
+POST    /api/sections/:id/comments        api.Sections.comment(id)
 
 POST    /api/geostreams					  api.Geostreams.createStream()
 POST    /api/geostreams/:id               api.Geostreams.addDatapoint(id)

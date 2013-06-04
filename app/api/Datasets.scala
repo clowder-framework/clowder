@@ -15,6 +15,8 @@ import play.api.libs.json.Json._
 import play.api.libs.json.Json
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
+import models.Comment
+import java.util.Date
 
 /**
  * Dataset API.
@@ -23,7 +25,7 @@ import com.wordnik.swagger.annotations.ApiOperation
  *
  */
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
-object Datasets extends Controller {
+object Datasets extends Controller with ApiController {
   
   /**
    * List all files.
@@ -94,4 +96,31 @@ object Datasets extends Controller {
     def jsonFile(file: File): JsValue = {
     toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType))
   }
+
+   
+    def tag(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	    request.body.\("tag").asOpt[String] match {
+		    case Some(tag) => {
+		    	Dataset.tag(id, tag)
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
+    }
+
+	def comment(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	    request.body.\("comment").asOpt[String] match {
+		    case Some(comment) => {
+		    	Dataset.comment(id, new Comment(request.user.email.get, new Date(), comment))
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
+    }
 }

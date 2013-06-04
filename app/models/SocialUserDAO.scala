@@ -17,4 +17,5 @@ object SocialUserDAO extends ModelCompanion[Identity, ObjectId] {
   }
 
   def findOneByUsername(username: String): Option[Identity] = dao.findOne(MongoDBObject("username" -> username))
+  def findOneByEmail(email: String): Option[Identity] = dao.findOne(MongoDBObject("email" -> email))
 }

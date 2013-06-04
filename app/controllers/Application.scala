@@ -3,6 +3,7 @@ package controllers
 import play.api.Routes
 import play.api.mvc.Action
 import play.api.mvc.Controller
+import api.Sections
 
 /**
  * Main application controller.
@@ -34,13 +35,22 @@ object Application extends Controller with securesocial.core.SecureSocial {
    *  Javascript routing.
    */
   def javascriptRoutes = Action { implicit request =>
-    import routes.javascript._
     Ok(
       Routes.javascriptRouter("jsRoutes")(
-        Admin.test, Admin.secureTest, Admin.reindexFiles,
-        Tags.tag, Tags.search,
-        Files.comment,
-        Datasets.comment, Datasets.tag
+        routes.javascript.Admin.test,
+        routes.javascript.Admin.secureTest,
+        routes.javascript.Admin.reindexFiles,
+        routes.javascript.Tags.tag,
+        routes.javascript.Tags.search,
+        routes.javascript.Files.comment,
+        routes.javascript.Datasets.comment,
+        routes.javascript.Datasets.tag,
+        
+        api.routes.javascript.Previews.upload,
+        api.routes.javascript.Previews.uploadMetadata,
+        api.routes.javascript.Sections.add,
+        api.routes.javascript.Sections.tag,
+        api.routes.javascript.Sections.comment
       )
     ).as(JSON) 
   }

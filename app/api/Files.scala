@@ -27,6 +27,8 @@ import play.api.libs.json._
 import models.GeometryDAO
 import models.ThreeDTextureDAO
 import fileutils.FilesUtils
+import models.Comment
+import java.util.Date
 
 /**
  * Json API for files.
@@ -34,7 +36,7 @@ import fileutils.FilesUtils
  * @author Luigi Marini
  *
  */
-object Files extends Controller {
+object Files extends Controller with ApiController {
   
   def get(id: String) = Authenticated { 
     Action { implicit request =>
@@ -470,4 +472,29 @@ object Files extends Controller {
       }
     }
    
+    def tag(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	    request.body.\("tag").asOpt[String] match {
+		    case Some(tag) => {
+		    	FileDAO.tag(id, tag)
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
+    }
+
+	def comment(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	    request.body.\("comment").asOpt[String] match {
+		    case Some(comment) => {
+		    	FileDAO.comment(id, new Comment(request.user.email.get, new Date(), comment))
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
+    }
 }
