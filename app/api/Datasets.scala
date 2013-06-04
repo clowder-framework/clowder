@@ -17,6 +17,7 @@ import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import models.Comment
 import java.util.Date
+import api.ApiController
 
 /**
  * Dataset API.

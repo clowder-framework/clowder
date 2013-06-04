@@ -29,6 +29,7 @@ import models.ThreeDTextureDAO
 import fileutils.FilesUtils
 import models.Comment
 import java.util.Date
+import api.ApiController
 
 /**
  * Json API for files.
