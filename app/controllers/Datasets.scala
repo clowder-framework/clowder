@@ -172,7 +172,7 @@ object Datasets extends Controller with SecureSocial {
 			    file match {
 			      case Some(f) => {			        
 			        var fileType = f.contentType
-			        if(fileType.contains("/zip")){
+			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
