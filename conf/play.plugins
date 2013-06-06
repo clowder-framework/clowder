@@ -9,4 +9,5 @@
 9999:securesocial.core.providers.utils.BCryptPasswordHasher
 10000:securesocial.core.providers.UsernamePasswordProvider
 10001:services.PostgresPlugin
+10002:services.VersusPlugin
 
