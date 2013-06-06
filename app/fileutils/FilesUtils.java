@@ -18,6 +18,11 @@ public class FilesUtils {
 			
             while (zipEntries.hasMoreElements()) {                            	
                 String fileName = ((ZipEntry)zipEntries.nextElement()).getName();
+                if(fileName.endsWith(".x3d")){
+                	zipFile.close();
+                	mainFileType = "model/x3d-zipped";
+                	return mainFileType;
+                }
                 if(fileName.endsWith(".obj")){
                 	zipFile.close();
                 	mainFileType = "model/obj-zipped";
