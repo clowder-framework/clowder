@@ -15,7 +15,7 @@
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + Configuration.tab.replace("#previewer","") + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' style='width:" + width + ";height:" + height + ";' x='0px' y='0px'>";  
+  var inner = "<x3d id='x3dElement" + Configuration.tab.replace("#previewer","") + "' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' style='width:" + width + ";height:" + height + ";' x='0px' y='0px'>";  
   $.ajax({
 	    url: fileUrl,
 	    async:false,
@@ -26,8 +26,7 @@
 	});
   inner = inner + "</x3d>";
   $(Configuration.tab).append(inner);
-  //$(Configuration.tab).append("<a href='#' onClick=\"document.getElementById('x3dElement_1').runtime.showAll();return false;\">Show all</a>");
-    
+
   var s = document.createElement("script");
   s.type = "text/javascript";
   s.src = pathJs + "x3dom.js";
