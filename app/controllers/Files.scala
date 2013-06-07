@@ -142,24 +142,10 @@ object Files extends Controller with securesocial.core.SecureSocial {
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
            
-             
-             val indexId="f08c90b2-9628-4111-91aa-37cc84dc0bb9"
-             val urlf="http://localhost:9000/files/"+f.id.toString+"/blob"
+             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString) }
+             current.plugin[VersusPlugin].foreach{_.build()}
               
-              
-              /* Async{
-            		WS.url("http://localhost:8080/api/v1/index/"+indexId+"/add").post(Map("infile" -> Seq(urlf))).map{
-            		res=> 
-            		Logger.debug("res.body"+res.body);
-            		
-            		/*WS.url("http://localhost:8080/api/v1/index/"+indexId+"/build").get().map{
-            		  r=>Logger.debug("r.body"+r.body);
-            		}*/
-            		Redirect(routes.Files.file(f.id.toString))
-            		}
-            }*/
-            
-            
+                        
             // redirect to file page]
             Redirect(routes.Files.file(f.id.toString))  
          }
