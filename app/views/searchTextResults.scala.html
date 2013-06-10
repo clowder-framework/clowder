@@ -1,9 +1,9 @@
-@(query: String,results: Seq[models.Result.Result])
+@(query: String,size: Integer,results: Array[(String,String,Double,String)])
 @main("Search Results") {
 	<div class="page-header">
 		<h1>Search Results For <small>@query</small></h1>
 	</div>
-	@if(results.size == 0) {
+	@if(size == 0) {
 	<div class="row-fluid">
 		<div class="span12">
 			No results found. Sorry!
@@ -23,33 +23,13 @@
 			</thead>
 			<tbody>
 			   @results.map{   re=>
-	         
-								<tr>
-						<td>@re.docID</td>
-						<td>@re.proximity</td>
-						
-					</tr>
+	                  <tr>
+						<td><a href=@routes.Files.file(re._1)> @re._4</a></td>
+						<td>@re._3</td>
+					
 				}
 			</tbody>
 		</table>
 		
-		<!-- <p> File ID : Proximity></p>
-	         @results.map{   re=>
-	         
-	         <ul>
-			      <li> @re.docID : @re.proximity</li>
-			</ul>
-			}
-			</div>
-	  </div>-->
-			
-    <!-- @for(result <- results) {
-      <div class="row-fluid">
-		<div class="span4">
-			<p @result.docID> @result.proximity
-			
-		</div>
-	  </div>
-	}-->
-	   
+		 
 }

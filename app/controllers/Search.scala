@@ -2,6 +2,7 @@ package controllers
 
 import play.api.mvc._
 import services.ElasticsearchPlugin
+import services.VersusPlugin
 import play.Logger
 import scala.collection.JavaConversions.mapAsScalaMap
 import services.Services
@@ -11,6 +12,7 @@ import java.io.File
 import scala.io.Source
 import java.io._
 import play.api.libs.ws.WS
+
 import models.SectionDAO
 import org.bson.types.ObjectId
 import models.PreviewDAO
@@ -40,6 +42,18 @@ import play.api.libs.json.Reads
 import play.api.libs.json.JsArray
 import models.TempFileDAO
 import com.mongodb.DBCollection
+import play.api.Play.current
+//import play.api.libs.ws.Response
+import play.api.libs.concurrent._
+
+import scala.concurrent.{future, blocking, Future, Await}
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import scala.collection.mutable.ArrayBuffer
+
+//import play.libs.Akka
+
+
 /**
  * Text search.
  * 
@@ -179,79 +193,53 @@ object Search extends Controller{
  //GET the query image from the URL and compare within the database and show the result
  def searchbyURL(query:String)=Action{
    Logger.debug("Searching for"+query)
-   var c:String=null
-   val rs=2
-  // val indexId="69c6a099-d8ae-4a60-bf2c-3cac193c72ec"
-   val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
-  
-       var slashindex=query.lastIndexOf('/')
+   var slashindex=query.lastIndexOf('/')
        
-      Async{
-       WS.url("http://localhost:8080/api/v1/index/"+indexId+"/query").post(Map("infile" -> Seq(query))).map{
-          res=> 
-           
-            Logger.debug("res.json.toString="+res.json.toString+" res.body="+res.body)
-             
-           val sim= Array[models.SimilarityResult]()
-           
-             val json: JsValue=Json.parse(res.body)
-             val simvalue=json.as[Seq[Result.Result]]
-                                   
-            Ok(views.html.searchTextResults(query.substring(slashindex+1),simvalue))
-          
-        }
-   }
-       
-
+  Async{ 
+    	current.plugin[VersusPlugin] match {
+     
+        case Some(plugin)=>{
+          plugin.queryURL(query).map{result=>
+          					val l=result.size
+		                	Ok(views.html.searchTextResults(query.substring(slashindex+1),l,result))
+		                                  	    
+		                   }
+                     }// case some
+	  case None=>{
+		        	Future(Ok("No Versus Service"))
+		       }     
+	 } //match
+   } //Async
  } 
-   
+ 
+ 
+  
     
    /* Find Similar files*/
-  def findSimilar(id:String)=Action{
-         val query="http://localhost:9000/queries/"+id+"/blob"  
-          var slashindex=query.lastIndexOf('/')
-          // val indexId="69c6a099-d8ae-4a60-bf2c-3cac193c72ec"
-          val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
-          Async{
-        	 WS.url("http://localhost:8080/api/v1/index/"+indexId+"/query").post(Map("infile" -> Seq(query))).map{
-        		 res=> 
-                   
-        		 val json: JsValue=Json.parse(res.body)
-         
-        		 val simvalue=json.as[Seq[models.Result.Result]]
-                        
-                 //Logger.debug("collection exist? :" +TempFileDAO.dao.collection.db.collectionExists("uploadquery"))
-        		 //findOneById(new ObjectId(id))match{
-            
-        		/* val c=TempFileDAO.dao.collection.getCollection("uploadquery")
-            
-            	Logger.debug(c.findOne(MongoDBObject("_id"->new ObjectId(id))).toString)
-            	if(c.isEmpty) Logger.debug("c is Empty")*/
-            
-                Services.queries.getFile(id)match{
-                case Some(file)=>{ 
-                
-                Logger.debug("file id="+file.id.toString())
-                Ok(views.html.searchImgResults(file,id,simvalue))
-                }
-              case None=>{
-                Ok(id +" not found")
-              }
-            }
-
-           // TempFileDAO.findOneById(new ObjectId(id))
-
-           /*Services.queries.getFile(id)match{
-            //Services.files.getFile(id)match{
-                      case Some(file)=>{   
-           // Ok(views.html.searchTextResults(id,simvalue))
-            Ok(views.html.searchImgResults(file,id,simvalue))
-            }
-              case None=>Ok(id+" no id found")
-           }*/
-         // Ok(res.json.toString)  
-        }
-   }
+   def findSimilar(id:String)=Action{
+    Async{ 
+    	current.plugin[VersusPlugin] match {
+     
+        case Some(plugin)=>{
+          plugin.query(id).map{result=>
+          			Services.queries.getFile(id)match{
+		                		case Some(file)=>{ 
+		                			Logger.debug("file id="+file.id.toString())
+		                			val l=result.size
+		                	        Ok(views.html.searchImgResults(file,id,l,result))
+		                        	}		
+		                	    case None=>{
+		                		   Ok(id +" not found")
+		                		 }
+		                   }
+                    }
+          
+		     }// case some
+		 case None=>{
+		        Future(Ok("No Versus Service"))
+		       }     
+		 } //match
+   } //Async
   }
  
  def Filterby(id:String)=TODO

@@ -11,6 +11,9 @@ import models.SectionDAO
 import play.api.libs.json.Json._
 import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
+import models.Comment
+import java.util.Date
+import api.ApiController
 
 /**
  * Files sections.
@@ -18,7 +21,7 @@ import org.bson.types.ObjectId
  * @author Luigi Marini
  *
  */
-object Sections extends Controller {
+object Sections extends Controller with ApiController {
   
   def add() = Authenticated {
     Action(parse.json) { request =>
@@ -40,4 +43,29 @@ object Sections extends Controller {
     }
   }
 
+    def tag(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	    request.body.\("tag").asOpt[String] match {
+		    case Some(tag) => {
+		    	SectionDAO.tag(id, tag)
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
+    }
+
+	def comment(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	    request.body.\("comment").asOpt[String] match {
+		    case Some(comment) => {
+		    	SectionDAO.comment(id, new Comment(request.user.email.get, new Date(), comment))
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
+    }
 }

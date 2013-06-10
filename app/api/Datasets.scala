@@ -15,6 +15,9 @@ import play.api.libs.json.Json._
 import play.api.libs.json.Json
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
+import models.Comment
+import java.util.Date
+import api.ApiController
 
 /**
  * Dataset API.
@@ -23,8 +26,22 @@ import com.wordnik.swagger.annotations.ApiOperation
  *
  */
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
-object Datasets extends Controller {
-
+object Datasets extends Controller with ApiController {
+  
+  /**
+   * List all files.
+   */
+  def list = Authenticated {
+    Action {
+      val list = for (dataset <- Services.datasets.listDatasets()) yield jsonDataset(dataset)
+      Ok(toJson(list))
+    }
+  }  
+  
+  def jsonDataset(dataset: Dataset): JsValue = {
+    toJson(Map("id"->dataset.id.toString, "datasetname"->dataset.name, "description"->dataset.description,"created"->dataset.created.toString ))
+  }
+  
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
   def addMetadata(id: String) = Authenticated {
 	  Logger.debug("Adding metadata to dataset " + id)
@@ -80,4 +97,31 @@ object Datasets extends Controller {
     def jsonFile(file: File): JsValue = {
     toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType))
   }
+
+   
+    def tag(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	    request.body.\("tag").asOpt[String] match {
+		    case Some(tag) => {
+		    	Dataset.tag(id, tag)
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
+    }
+
+	def comment(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	    request.body.\("comment").asOpt[String] match {
+		    case Some(comment) => {
+		    	Dataset.comment(id, new Comment(request.user.email.get, new Date(), comment))
+		    	Ok
+		    }
+		    case None => {
+		    	Logger.error("no tag specified.")
+		    	BadRequest
+		    }
+	    }
+    }
 }

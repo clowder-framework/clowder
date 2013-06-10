@@ -7,11 +7,15 @@
   var width = 750;
   var height = 550;
   
-  $(Configuration.tab).append("<table><tr><td>Left Button / Left Button + Shift</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>"
-		  					+ "<tr><td>Mid Button / Left Button + Ctl</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
-		  					+ "<tr><td>Right Button / Wheel / Left Button + Alt</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Zoom</td></tr></table>"); 
+  $(Configuration.tab).append("<table><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>"
+		  					+ "<tr><td>Left mouse button + Ctrl drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
+		  					+ "<tr><td>Right mouse button drag / Left mouse button + Alt drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Zoom</td></tr>"
+		  					+ "<tr><td>m button</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Change rendering (regular-vertices-wireframe)</td></tr>"
+		  					+ "<tr><td>Space</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Display-hide model statistics</td></tr>"
+		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
+		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + Configuration.tab.replace("#previewer","") + "' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' style='width:" + width + ";height:" + height + ";'>";  
+  var inner = "<x3d id='x3dElement" + Configuration.tab.replace("#previewer","") + "' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' style='width:" + width + ";height:" + height + ";' x='0px' y='0px'>";  
   $.ajax({
 	    url: fileUrl,
 	    async:false,
@@ -22,11 +26,16 @@
 	});
   inner = inner + "</x3d>";
   $(Configuration.tab).append(inner);
-    
+
   var s = document.createElement("script");
   s.type = "text/javascript";
   s.src = pathJs + "x3dom.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);
+  
+ 
+//  var e = document.getElementById('x3dElement' + Configuration.tab.replace("#previewer",""));
+//  alert(x3dom.Runtime.prototype.canvas);
+//  x3dom.Viewarea.prototype.showAll("posX");
   
 }(jQuery, Configuration));

@@ -28,6 +28,8 @@ import models.Dataset
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
+import play.api.libs.ws.WS
+import fileutils.FilesUtils
 
 /**
  * Manage files.
@@ -117,37 +119,33 @@ object Files extends Controller with securesocial.core.SecureSocial {
         
         // store file       
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val uploadedFile = f
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
+             var fileType = f.contentType
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }
+            
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
+            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
             current.plugin[ElasticsearchPlugin].foreach{
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
            
-            /* 
-             * val indexId="273af0f1-5e40-4860-a5fa-97a9c5a017c8"
-             val urlf="http://localhost:9000/files/"+f.id.toString+"/blob"
+             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString) }
+             current.plugin[VersusPlugin].foreach{_.build()}
               
-              
-               Async{
-            		WS.url("http://localhost:8080/api/v1/index/"+indexId+"/add").post(Map("infile" -> Seq(urlf))).map{
-            		res=> 
-            		Logger.debug("res.body"+res.body);
-            		
-            		/*WS.url("http://localhost:8080/api/v1/index/"+indexId+"/build").get().map{
-            		  r=>Logger.debug("r.body"+r.body);
-            		}*/
-            		Redirect(routes.Files.file(f.id.toString))
-            		}
-            }*/
-            
-            
+                        
             // redirect to file page]
             Redirect(routes.Files.file(f.id.toString))  
          }
@@ -259,15 +257,25 @@ object Files extends Controller with securesocial.core.SecureSocial {
         
         // store file       
         val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val uploadedFile = f
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
+             var fileType = f.contentType
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }
+            
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            val key = "unknown." + "file."+ fileType.replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
             current.plugin[ElasticsearchPlugin].foreach{
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
@@ -295,18 +303,28 @@ object Files extends Controller with securesocial.core.SecureSocial {
         
         // store file       
          val file = Services.queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+         val uploadedFile = f
 //        Thread.sleep(1000)
         
         file match {
           case Some(f) => {
+            var fileType = f.contentType
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }
+            
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace("/", ".")
+            val key = "unknown." + "file."+ fileType.replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             
             val id = f.id.toString
             val path=f.path
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
             current.plugin[ElasticsearchPlugin].foreach{
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
@@ -334,16 +352,27 @@ object Files extends Controller with securesocial.core.SecureSocial {
         Logger.debug("Uploading file " + f.filename)
         
         // store file       
-        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+      //  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val file = Services.queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val uploadedFile = f
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
+             var fileType = f.contentType
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }
+            
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ f.contentType.replace(".","_").replace("/", ".")
+            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
             current.plugin[ElasticsearchPlugin].foreach{
               _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
            }
@@ -374,16 +403,26 @@ object Files extends Controller with securesocial.core.SecureSocial {
 				  Logger.debug("Uploading file " + f.filename)
 				  // store file
 				  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
-				  // submit file for extraction
-			
+				  val uploadedFile = f
+				  
+				  // submit file for extraction			
 				  file match {
-				  	case Some(f) => {
+				  case Some(f) => {
+					  var fileType = f.contentType
+					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+						  if(fileType.startsWith("ERROR: ")){
+								Logger.error(fileType.substring(7))
+								InternalServerError(fileType.substring(7))
+								}			          
+						  }
+				  	  
 					  // TODO RK need to replace unknown with the server name
-					  val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
+					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 							  // TODO RK : need figure out if we can use https
 							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id.toString
-							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
+							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
 					  current.plugin[ElasticsearchPlugin].foreach{
 						  _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 					  }
@@ -396,7 +435,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
 					// TODO RK need to replace unknown with the server name and dataset type
  			    	val dtkey = "unknown." + "dataset."+ "unknown"
 			    	
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, ""))}
 		
 					  // redirect to dataset page
 					  Logger.info("Uploading Completed")
@@ -486,14 +525,17 @@ object Files extends Controller with securesocial.core.SecureSocial {
     
     // store file
     val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None)
+    
     file match {
       case Some(f) => {
+         var fileType = f.contentType
+        
         // TODO RK need to replace unknown with the server name
         val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
         // TODO RK : need figure out if we can use https
         val host = "http://" + request.host + request.path.replaceAll("upload$", "")
         val id = f.id.toString
-        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
+        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
         current.plugin[ElasticsearchPlugin].foreach{
           _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
         }
