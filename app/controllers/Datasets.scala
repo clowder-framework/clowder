@@ -90,6 +90,8 @@ object Datasets extends Controller with SecureSocial {
     Ok(views.html.datasetList(datasets, prev, next, limit))
   }
   
+ 
+ 
   /**
    * Dataset.
    */
@@ -275,4 +277,12 @@ object Datasets extends Controller with SecureSocial {
     }
     Ok("")
   }
+  
+  def metadataSearch()  = UserAwareAction { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.metadataSearch()) 
+  }
+  
+  
+  
 }

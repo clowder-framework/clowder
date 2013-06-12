@@ -13,31 +13,26 @@
 		Configuration.fileid = "@p._1";
 		Configuration.authenticated = @user.isDefined;
 		Configuration.previewer = "@routes.Assets.at(p._3)";
+		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		if("@p._2" === "Thumbnail"){
 			Configuration.fileType = "@p._6";
-			Configuration.fileSize = @p._7;
-			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+			Configuration.fileSize = @p._7;			
 		}
 		else if("@p._2" === "PTM"){
 			Configuration.appletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
-			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		}
 		else if("@p._2" === "3DWebGL"){
-			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 			Configuration.imagesPath = "@(routes.Assets.at("images"))";
 		}
 		else if("@p._2" === "Gigaimaging"){							
 			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		}
 		else if("@p._2" === "X3d"){							
 			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		}
 		else if("@p._2" === "Pdf"){							
 			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-			Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
