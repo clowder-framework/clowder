@@ -20,8 +20,16 @@ trait MongoDBDataset {
   /**
    * List all datasets in the system.
    */
-  def listDatasets(): List[Dataset] = {
+  def listDatasets(): List[Dataset] = {   
     (for (file <- Dataset.find(MongoDBObject())) yield file).toList
+  }
+  
+  /**
+   * List all datasets in the system in reverse chronological order.
+   */
+  def listDatasetsChronoReverse(): List[Dataset] = {
+     val order = MongoDBObject("created"-> -1)
+     Dataset.findAll.sort(order).toList
   }
   
   /**

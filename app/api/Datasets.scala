@@ -19,6 +19,7 @@ import models.Comment
 import java.util.Date
 import api.ApiController
 
+
 /**
  * Dataset API.
  * 
@@ -41,7 +42,7 @@ object Datasets extends Controller with ApiController {
   def jsonDataset(dataset: Dataset): JsValue = {
     toJson(Map("id"->dataset.id.toString, "datasetname"->dataset.name, "description"->dataset.description,"created"->dataset.created.toString ))
   }
-  
+ 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
   def addMetadata(id: String) = Authenticated {
 	  Logger.debug("Adding metadata to dataset " + id)
@@ -124,4 +125,29 @@ object Datasets extends Controller with ApiController {
 		    }
 	    }
     }
+	
+	
+	
+  /**
+   * List datasets satisfying a user metadata search tree.
+   */
+    def searchDatasetsUserMetadata =  
+	    Action(parse.json) { request => 
+	      	  Logger.debug("Searching datasets' user metadata for search tree." )
+	      	  
+	      	  val searchTree =  scala.util.parsing.json.JSON.parseFull(Json.stringify(request.body)).get
+	      	  var datasetsSatisfying = List[Dataset]()
+	      	  for (dataset <- Services.datasets.listDatasetsChronoReverse){
+	      	    if(Dataset.searchUserMetadata(dataset.id.toString(),searchTree)){
+	      	      datasetsSatisfying = dataset :: datasetsSatisfying
+	      	    }
+	      	  }
+	      	  datasetsSatisfying = datasetsSatisfying.reverse
+	      	  
+	      	  Logger.debug("Search completed. Returning datasets list." )
+	      	  
+	      	  val list = for (dataset <- datasetsSatisfying) yield jsonDataset(dataset)
+	      	  Logger.debug("thelist: " + toJson(list))
+	      	  Ok(toJson(list))
+	    } 
 }

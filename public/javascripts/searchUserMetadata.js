@@ -1,11 +1,4 @@
-/*	var allowedNodes = [["Node 1", "Node"],["Node2", "Node"],["Node3", "Node"],["Node4", "Node"],
-						["String1", "String"],["String2", "String"]];
-							
-	
-	var allowedChildren = [["!root!","Node 1","1","1"],["Node 1","String1", "1", "*"],["Node 1","Node2", "0", "*"],["Node2","String1", "1", "1"],["Node2","Node3", "0", "1"],
-						["Node3","String2", "0", "*"]];*/
-					
-	//CSV file format: Node and whether intermediate node or leaf.
+//CSV file format: Node and whether intermediate node or leaf.
 	var allowedNodes = new Array();	
 	$.ajax({
 	       url: modelIp + '/user_metadata_model_allowedNodes.txt',
@@ -36,8 +29,8 @@
 				
 	//Counter for DOM node uniqueness.
 	var elementCounter = 1;
-
-	$(function() {
+	
+$(function() {
 		
 		$('body').on('click','.usr_md_,.usr_md_submit',function(e){
 			if($(this).is('button')){				
@@ -45,7 +38,7 @@
 					var textBox = document.createElement('input');
 					textBox.classList.add('usr_md_');		   
 					textBox.setAttribute('type', 'text');
-					textBox.value = $(this).parent().children("span").get(0).innerHTML; 
+					textBox.value = $(this).parent().children("span").get(0).innerHTML;  
 					   
 					$(this).parent().get(0).insertBefore(textBox, $(this).parent().children("span").get(0));					
 					$(this).parent().children('span').remove();
@@ -55,7 +48,7 @@
 				  else if($(this).html() == "Ok"){
 				  	var textSpan = document.createElement('span');
 					textSpan.classList.add('usr_md_');
-					textSpan.innerHTML = $(this).parent().children("input").get(0).value; 
+					textSpan.innerHTML = $(this).parent().children("input").get(0).value;  
 						
 					$(this).parent().get(0).insertBefore(textSpan, $(this).parent().children("input").get(0));
 					$(this).parent().get(0).removeChild($(this).parent().children("input").get(0));
@@ -161,24 +154,30 @@
 					}				
 				  }
 				  else if($(this).html() == "Submit"){
-				  	var restrictionViolations = validateCardinalitiesToModel(document.getElementById('datasetUserMetadata').children[1]);
-					if(restrictionViolations != ''){
-						alert('Institution metadata model violation(s): ' + restrictionViolations + ' Metadata not added.');
-						return false;
-					}
-					
+
 					var data = DOMtoJSON(document.getElementById('datasetUserMetadata').children[1]);
 					
 					var request = $.ajax({
 				       type: 'POST',
-				       url: uploadIp,
+				       url: queryIp,
 				       data: JSON.stringify(data),
 				       contentType: "application/json",
+				       dataType: "text"
 				     });
-					 
+		 
 					  request.done(function (response, textStatus, jqXHR){
-					        console.log("Response " + response);
-							alert("Metadata added successfully.");
+						    var respJSON = JSON.parse(response);
+					        console.log("Response " + respJSON);
+					        $('#resultTable tbody tr').remove();
+					        for(var i = 0; i < respJSON.length; i++){
+					        	var createdDateArray = respJSON[i].created.split(" ");
+					        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
+					        	$('#resultTable tbody').append("<tr><td><a href='" + "http://" + hostIp + ":" + window.location.port
+					        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
+					        								+ "<td>" + createdDate + "</td>"
+					        								+ "<td>" + respJSON[i].description + "</td></tr>");
+					        }
+					        $('#resultTable').show();							
 		     			});
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
@@ -186,7 +185,7 @@
 		            		"The following error occured: "+
 		            		textStatus, errorThrown		            
 		        			);
-		        		alert("ERROR: " + errorThrown +". Metadata not added." );
+		        		alert("ERROR: " + errorThrown +". Search not executed." );
 		     			});
 					 
 					 
@@ -195,83 +194,30 @@
 				  return false;
 			}
 		});
-	 
-	   
-	   $('body').on('keypress','.usr_md_,.usr_md_submit',function(e){
-	   	if($(this).is('input')){
-		   	if(e.which == 13){
-				$($(this).parent().children('button')[0]).click();			
-				return false;
-			}
-		}
-	   });
-	   
-	   function DOMtoJSON(branchRootNode){
-	   			var branchData = {};				
-				var childrenProperties = branchRootNode.children;
-				for(var i = 0; i < childrenProperties.length; i++){
-					var key = childrenProperties[i].children[0].innerHTML;
-					key = key.substring(0, key.length - 1) + "__" + elementCounter;
-					elementCounter++;
-					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
-						branchData[key] = childrenProperties[i].children[1].innerHTML;   ////////
-					}else{
-						branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
+		
+		 $('body').on('keypress','.usr_md_,.usr_md_submit',function(e){
+			   	if($(this).is('input')){
+				   	if(e.which == 13){
+						$($(this).parent().children('button')[0]).click();			
+						return false;
 					}
 				}
-				return branchData;
-	   }
-	   
-	   function validateCardinalitiesToModel(branchRootNode){
-	   		var restrictionViolations = "";
+			   });
+			   
+			   function DOMtoJSON(branchRootNode){
+			   			var branchData = {};				
+						var childrenProperties = branchRootNode.children;
+						for(var i = 0; i < childrenProperties.length; i++){
+							var key = childrenProperties[i].children[0].innerHTML;
+							key = key.substring(0, key.length - 1) + "__" + elementCounter;
+							elementCounter++;
+							if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
+								branchData[key] = childrenProperties[i].children[1].innerHTML;   ////////
+							}else{
+								branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
+							}
+						}
+						return branchData;
+			   }
 		
-	   		var childrenProperties = branchRootNode.children;
-			
-			var branchRootNodeType = "";
-			if(branchRootNode.parentElement.tagName.toLowerCase() == 'div'){
-				branchRootNodeType = "!root!";
-			}
-			else{
-				branchRootNodeTypeText = branchRootNode.parentElement.children[0].innerHTML;
-				branchRootNodeType = branchRootNodeTypeText.substring(0, branchRootNodeTypeText.length - 1);
-			}
-			var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == branchRootNodeType;});
-			
-			for (var i = 0; i < allowedChildrenForNode.length; i++){
-				var propertyInstancesCount = 0;
-				for(var j = 0; j < childrenProperties.length; j++){
-					var key = childrenProperties[j].children[0].innerHTML;
-					key = key.substring(0, key.length - 1);					
-					if(key == allowedChildrenForNode[i][1])
-						propertyInstancesCount++;						
-				}
-				if(propertyInstancesCount < allowedChildrenForNode[i][2]){
-					if(branchRootNodeType == "!root!")
-						restrictionViolations+= "Must have at least " + allowedChildrenForNode[i][2] + " " + allowedChildrenForNode[i][1] + "(s).";
-					else
-						restrictionViolations+= "Must have at least " + allowedChildrenForNode[i][2] + " " + allowedChildrenForNode[i][1] + "(s) for each " + allowedChildrenForNode[i][0] + ".";	 
-				}
-				if(allowedChildrenForNode[i][3] != '*' && propertyInstancesCount > allowedChildrenForNode[i][3]){
-					if(branchRootNodeType == "!root!")
-						restrictionViolations+= "Must have no more than " + allowedChildrenForNode[i][3] + " " + allowedChildrenForNode[i][1] + "(s).";
-					else
-						restrictionViolations+= "Must have no more than " + allowedChildrenForNode[i][3] + " " + allowedChildrenForNode[i][1] + "(s) for each " + allowedChildrenForNode[i][0] + ".";	 
-				}				
-			}
-			
-			if(restrictionViolations != '')
-				return restrictionViolations;
-			
-			for (i = 0; i < childrenProperties.length; i++){
-				if(childrenProperties[i].children[1].tagName.toLowerCase() != 'span'){
-					restrictionViolations+= validateCardinalitiesToModel(childrenProperties[i].children[3]);
-					
-					if(restrictionViolations != '')
-						return restrictionViolations;
-				}
-			}
-			
-			return '';
-	   }
-	   	   	  
-	 });
+});

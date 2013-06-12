@@ -31,6 +31,7 @@ POST    /uploadDragDrop					  controllers.Files.uploadDragDrop
 # Datasets
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
 GET     /datasets/new                     controllers.Datasets.newDataset
+GET     /datasets/metadataSearch          controllers.Datasets.metadataSearch
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
 POST	/datasets/:id/comment             controllers.Datasets.comment(id)
 POST	/datasets/:id/tag                 controllers.Datasets.tag(id)
@@ -128,6 +129,7 @@ POST    /api/datasets/:id/usermetadata	  						api.Datasets.addUserMetadata(id)
 GET 	/api/datasets/:id/listFiles		 						api.Datasets.datasetFilesList(id)
 POST    /api/datasets/:id/comment								api.Datasets.comment(id)
 POST    /api/datasets/:id/tag									api.Datasets.tag(id)
+POST	/api/datasets/searchusermetadata						api.Datasets.searchDatasetsUserMetadata
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					api.Previews.downloadPreview(preview_id, datasetid)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			api.Files.downloadByDatasetAndFilename(dataset_id, filename, preview_id)
