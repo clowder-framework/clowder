@@ -4,8 +4,8 @@
 	console.log("Updating tab " + Configuration.tab);
 	
 	//console.log(Configuration);
-	Configuration.hostIp = "141.142.222.60";
-	//Configuration.hostIp = "localhost";
+	//Configuration.hostIp = "141.142.222.60";
+	Configuration.hostIp = "localhost";
 	Configuration.jsPath = "/assets/javascripts";
 	Configuration.assetPath = "/api/previews";
 	
