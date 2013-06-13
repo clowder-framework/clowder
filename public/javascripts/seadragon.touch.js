@@ -13,6 +13,7 @@ var zoom_scale;
 var move_origin = new Seadragon.Point(0,0);
 var move_to = new Seadragon.Point(0,0);
 var move_center = new Seadragon.Point(0,0);
+var move_start_time;
 
 //Event
 var pre_event = '', post_event = '';
@@ -24,10 +25,10 @@ var transform_lock = false;
 var turning_lock = false;
 
 //Attribute
+var view_w = 600; //View port
+var view_h = 600;
 var view_width = 600;
 var view_height = 600;
-var view_w = view_width; //View port
-var view_h = view_height;
 var image_width = 0;
 var image_height = 0;
 var image_left = 0;
@@ -67,7 +68,7 @@ function SDT_get_info() {
 
 function SDT_enable_touch(elem) {
 	if (touch) {
-		elem.hammer({swipe_time:300, prevent_default: false, hold:false, tap:false, tap_double:false, scale_treshold: 0, drag_min_distance: 0});
+		elem.hammer({swipe_time:300, prevent_default: false, hold:false, tap:true, tap_double:false, scale_treshold: 0, drag_min_distance: 0});
 		elem.on('dragstart',do_dragstart);
 		elem.on('drag',do_drag);
 		elem.on('dragend',do_dragend);
@@ -88,7 +89,8 @@ function SDT_animation_event(pre_e,post_e) {
 }
 
 function hammerLog(event) {
-	//event.preventDefault();
+	event.preventDefault();
+	//alert('TAP');
 	//log.append(event.type+"<br/>");
 }
 
@@ -108,25 +110,56 @@ function touch_at_corner(event) {
 	x = event.originalEvent.touches[0].clientX - dBase[0].offsetLeft - image_left;
 	y = event.originalEvent.touches[0].clientY - dBase[0].offsetTop - image_top;
 	csz = 100;
-	//log.append (current_page+','+ x +','+ y +','+image_width+','+image_height+"<br/>");
+	//alert(current_page+','+ x +','+ y +','+image_width+','+image_height+"<br/>");
 	if((y>0&&y<csz) || (y>image_height-csz&&y<image_height)) { // In Y region
-		if(current_page%2 == 0 && current_page-1 != total_page) { // Right page
-			if(current_page < total_page-1 && x>image_width-csz && x<image_width)// Not the last page
-				return true;
-			if(current_page != 0) // Have left page
+		if(magazine_mode == 2) { //Double page
+			if(current_page%2 == 0) { // Right page
+				if(x>image_width-csz && x<image_width) {
+					if(current_page < total_page-1)// Not the last page
+						return true;
+					else
+						turnjs_popupMsg("Last Page");
+				}
 				if(x>0-image_width && x <csz-image_width) {
-					image_left -= image_width;
-					return true;
+					if(current_page != 0) { // Have left page
+						image_left -= image_width;
+						return true;
+					}
+					else
+						turnjs_popupMsg("First Page");
 				}
+			}
+			else if(current_page%2 == 1 ) { // Left page
+				if(x>0 && x<csz) { //Not the first page
+					if(current_page > 0)
+						return true;
+					else
+						turnjs_popupMsg("First Page");
+				}
+				if(x>2*image_width-csz && x<2*image_width) {// Have right page
+					if(current_page != total_page-1) {
+						image_left += image_width;
+						return true;
+					}
+					else
+						turnjs_popupMsg("Last Page");
+				}
+			}
 		}
-		else if(current_page%2 == 1 ) { // Left page
-			if(current_page > 0 && x>0 && x<csz) //Not the first page
-				return true;
-			if(current_page != total_page-1) // Have right page
-				if(x>2*image_width-csz && x<2*image_width) {
-					image_left += image_width;
+		else {
+			if(x>0 && x<csz) { //Not the first page
+				if(current_page > 0)
 					return true;
-				}
+				else
+					turnjs_popupMsg("First Page");
+			}
+			
+			if(x>image_width-csz && x<image_width) {// Not the last page
+				if(current_page < total_page-1)
+					return true;
+				else
+					turnjs_popupMsg("Last Page");
+			}
 		}
 	}
 	return false;
@@ -139,6 +172,7 @@ function touch_at_corner(event) {
 function do_dragstart(event) {
 	//.append(pre_event+"PRE EVENT2<br/>");
 	if(touch_at_corner(event)) { //book.js
+		//alert('corner');
 		//log.append("Corner<br>");
 		turning_lock = true;
 		dMagazine.css("z-index",100);
@@ -159,6 +193,7 @@ function do_dragstart(event) {
 	//hide_overlay();
 	move_origin = get_touchpoint(event);
 	move_center = base.viewport.getCenter();
+	move_start_time = new Date().getTime();
 }
 
 function do_drag(event) {
@@ -166,7 +201,7 @@ function do_drag(event) {
 		event.type = "touchmove";
 		magazine.trigger(event);
 	}
-	else {
+	else if(move_start_time+30 < new Date().getTime()){
 	//TEST pretty flip
 	/*dBase.css('pointer-events','none');
 	dOverlay.css('pointer-events','none');
@@ -273,9 +308,17 @@ function do_zoomBy(m) {
 }
 function do_zoomFit() {
 	base.viewport.goHome();
-	if(post_event != '') {
-		window[post_event]();
-	}
+	
+	if(magazine_mode == 2) // Double page mode
+		if(current_page%2 == 0) //Right page
+			base.viewport.panBy(new Seadragon.Point(-.5,0),true);
+		else
+			base.viewport.panBy(new Seadragon.Point(0.5,0),true);
+		if(post_event != '') {
+			window[post_event]();
+		}
+		
+	$('#blockAction').hide();
 }
 
 function do_release(event) {

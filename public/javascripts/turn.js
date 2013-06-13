@@ -255,7 +255,7 @@ turnMethods = {
 		data.movingpos = {x:0,y:0};
 		data.zoomfactor = 1;
 		data.movingdimension = {w:800,h:800};
-		data.movingdisplay = 2;
+		data.movingdisplay = 1;
 		data.movingviewport = {w:800,h:800};
 
 		if (opts.when)
@@ -1918,12 +1918,12 @@ flipMethods = {
 			if (data.movingdisplay == 1) {
 				$('#magazine').turn('display', 'single');
 				data.movingdisplay = 1;
-				flipMethods.changesize.call(this, 1);
+				flipMethods.update_size.call(this, $('#magazine'));
 			}
 			else {
 				$('#magazine').turn('display', 'double');
 				data.movingdisplay = 2;
-				flipMethods.changesize.call(this, 1);
+				flipMethods.update_size.call(this, $('#magazine'));
 			}
 		}
 		
@@ -1960,7 +1960,6 @@ flipMethods = {
 	
 	update_size : function(mz) {
 		var data = this.data();
-		data.movingdisplay = 2;
 		mz.turn('size', data.movingdisplay*data.movingdimension.w, data.movingdimension.h);
 		mz.css('width',data.movingdisplay*data.movingdimension.w);
 	},
@@ -1970,7 +1969,7 @@ flipMethods = {
 		data.zoomfactor = zoom_f;
 		
 		//Resize		
-		this.turn('size', 2*w, h);
+		this.turn('size', data.movingdisplay*w, h);
 		$('#magazine img').css('width',w);
 		$('#magazine img').css('height',h);
 		
