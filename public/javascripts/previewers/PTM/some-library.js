@@ -3,7 +3,7 @@
   
   console.log("Updating tab " + Configuration.tab);
   
-  var height = 550;
+  var height = 750;  
   var width = 750;
   
   $(Configuration.tab).append(
