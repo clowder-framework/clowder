@@ -125,13 +125,13 @@ object Files extends Controller with ApiController {
   /**
    * Add metadata to file.
    */
-  def addMetadata(id: String) = 
+  def addMetadata(id: String) =  
    Authenticated { 
     Action(parse.json) { request =>
       Logger.debug("Adding metadata to file " + id)
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      val result = FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), 
-	              $set(Seq("metadata" -> doc)), false, false, WriteConcern.SAFE)
+	              $set("metadata" -> doc), false, false, WriteConcern.SAFE)
 	 Logger.debug("Updating previews.files " + id + " with " + doc)
 	 Ok(toJson("success"))
     }
@@ -260,7 +260,7 @@ object Files extends Controller with ApiController {
 	                case Some(preview) =>
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	                    PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), 
-	                        $set(Seq("metadata"-> metadata, "file_id" -> new ObjectId(file_id))), false, false, WriteConcern.SAFE)
+	                        $set("metadata"-> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)
 	                    Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
 	                    Ok(toJson(Map("status"->"success")))
 	                case None => BadRequest(toJson("Preview not found"))
@@ -327,7 +327,7 @@ object Files extends Controller with ApiController {
 	                case Some(geometry) =>
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	                    GeometryDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(geometry_id)), 
-	                        $set(Seq("metadata"-> metadata, "file_id" -> new ObjectId(file_id))), false, false, WriteConcern.SAFE)
+	                        $set("metadata"-> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)
 	                    Ok(toJson(Map("status"->"success")))
 	                case None => BadRequest(toJson("Geometry file not found"))
 	              }
@@ -354,7 +354,7 @@ object Files extends Controller with ApiController {
 	                case Some(texture) =>
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	                    ThreeDTextureDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(texture_id)), 
-	                        $set(Seq("metadata"-> metadata, "file_id" -> new ObjectId(file_id))), false, false, WriteConcern.SAFE)
+	                        $set("metadata"-> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)
 	                    Ok(toJson(Map("status"->"success")))
 	                case None => BadRequest(toJson("Texture file not found"))
 	              }

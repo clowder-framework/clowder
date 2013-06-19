@@ -84,7 +84,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to dataset " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set(Seq("userMetadata" -> md)), false, false, WriteConcern.Safe)
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
   def tag(id: String, tag: String) { 
