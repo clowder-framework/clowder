@@ -1,0 +1,11 @@
+body {margin:0px;}
+/*#bookPreview {width:600px;height:600px;border:1px solid #b8b8b8;}*/
+#d_magazine {overflow:hidden;position:absolute;border:none;background-color:white;width:600px;height:600px;z-index:-100;}
+#magazine {overflow:visible !important;position:absolute;display:none;}
+#dOverlay #dBase {z-index:50}
+#log {position:fixed;bottom:0px;right:0px;}
+#popupMsg {display:none;z-index:1002;left:0px;right:0px;top:41px;position:fixed;background-color:#0088cc;color: #fff;padding:5px;text-align:center;font-size:2em;}
+#blockAction {display:none;background-image:url('loader.gif');background-repeat:no-repeat;background-attachment:fixed;background-position:center;z-index:1001;left:0px;right:0px;top:0px;bottom:0px;position:fixed;background-color:rgba(0,0,0,0.25);}
+#controller {z-index:200;}
+#dOpacityController {position:absolute;}
+#opacityController {width:100%;margin:10px} 
