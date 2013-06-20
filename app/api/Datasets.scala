@@ -3,21 +3,21 @@
  */
 package api
 
-import play.api.mvc.Controller
-import play.api.mvc.Action
-import models.Dataset
-import models.File
-import services.Services
-import play.api.libs.json.JsValue
-import play.api.Logger
-import models.FileDAO
-import play.api.libs.json.Json._
-import play.api.libs.json.Json
+import java.util.Date
+
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
+
 import models.Comment
-import java.util.Date
-import api.ApiController
+import models.Dataset
+import models.File
+import play.api.Logger
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import play.api.libs.json.Json.toJson
+import play.api.mvc.Action
+import play.api.mvc.Controller
+import services.Services
 
 
 /**
@@ -95,8 +95,8 @@ object Datasets extends Controller with ApiController {
 		}
 	}
   
-    def jsonFile(file: File): JsValue = {
-    toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType))
+  def jsonFile(file: File): JsValue = {
+    toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType, "date-created"->file.uploadDate.toString(), "size"->file.length.toString))
   }
 
    

@@ -110,6 +110,7 @@ POST	/api/files/:three_d_file_id/geometries/:geometry_id		api.Files.attachGeomet
 POST	/api/files/:three_d_file_id/3dTextures/:texture_id		api.Files.attachTexture(three_d_file_id,texture_id)
 GET     /api/files                        						api.Files.list
 POST    /api/files                        						api.Files.upload
+POST    /api/files/dataset/:id                        			api.Files.uploadToDataset(id)
 POST	/api/files/uploadIntermediate/:idAndFlags				api.Files.uploadIntermediate(idAndFlags) 
 GET     /api/files/:id/metadata           						api.Files.get(id)
 POST    /api/files/:id/metadata           						api.Files.addMetadata(id)
