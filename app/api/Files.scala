@@ -180,7 +180,60 @@ object Files extends Controller with ApiController {
 	      }
 	  }
     }
-    
+
+  /**
+   * Upload a file to a specific dataset
+   */
+  def uploadToDataset(dataset_id: String) = Action(parse.multipartFormData) { implicit request =>
+    Services.datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        request.body.file("File").map { f =>
+          Logger.debug("Uploading file " + f.filename)
+          // store file
+          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+          // submit file for extraction
+
+          file match {
+            case Some(f) => {
+              // TODO RK need to replace unknown with the server name
+              val key = "unknown." + "file." + f.contentType.replace(".", "_").replace("/", ".")
+              // TODO RK : need figure out if we can use https
+              val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+              val id = f.id.toString
+              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "")) }
+              current.plugin[ElasticsearchPlugin].foreach {
+                _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
+              }
+
+              // add file to dataset
+              val dt = dataset.copy(files = dataset.files ++ List(f))
+              // TODO create a service instead of calling salat directly
+              Dataset.save(dt)
+
+              // TODO RK need to replace unknown with the server name and dataset type
+              val dtkey = "unknown." + "dataset." + "unknown"
+
+              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, "")) }
+
+              Logger.info("Uploading Completed")
+
+              //sending success message
+              Ok(toJson(Map("id" -> id)))
+            }
+            case None => {
+              Logger.error("Could not retrieve file that was just saved.")
+              InternalServerError("Error uploading file")
+            }
+          }
+
+          //Ok(views.html.multimediasearch())
+        }.getOrElse {
+          BadRequest("File not attached.")
+        }
+      }
+      case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
+    }
+  }    
    /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
@@ -274,8 +327,8 @@ object Files extends Controller with ApiController {
     }
   }
   
-  def jsonFile(file: File): JsValue = {
-    toJson(Map("id"->file.id.toString, "filename"->file.filename, "content-type"->file.contentType))
+    def jsonFile(file: File): JsValue = {
+        toJson(Map("id"->file.id.toString, "filename"->file.filename, "content-type"->file.contentType, "date-created"->file.uploadDate.toString(), "size"->file.length.toString))
   }
   
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {
