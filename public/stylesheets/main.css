@@ -275,7 +275,9 @@ button.usr_md_ {
 	margin-bottom:5px;
 }
 
-
+.usr_md_search_list{
+	list-style-type:none;
+}
 
 
 

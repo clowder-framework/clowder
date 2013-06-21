@@ -210,12 +210,14 @@
 	   			var branchData = {};				
 				var childrenProperties = branchRootNode.children;
 				for(var i = 0; i < childrenProperties.length; i++){
+					if(childrenProperties[i].children[0].tagName.toLowerCase() == 'select')
+						continue;	
 					var key = childrenProperties[i].children[0].innerHTML;
 					key = key.substring(0, key.length - 1) + "__" + elementCounter;
 					elementCounter++;
 					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
-						branchData[key] = childrenProperties[i].children[1].innerHTML;   ////////
-					}else{
+						branchData[key] = childrenProperties[i].children[1].innerHTML;  
+					}else if(childrenProperties[i].children[1].tagName.toLowerCase() == 'button'){
 						branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
 					}
 				}
@@ -240,6 +242,8 @@
 			for (var i = 0; i < allowedChildrenForNode.length; i++){
 				var propertyInstancesCount = 0;
 				for(var j = 0; j < childrenProperties.length; j++){
+					if(childrenProperties[j].children[1].tagName.toLowerCase() == 'input' || childrenProperties[j].children[0].tagName.toLowerCase() == 'select')
+						continue;
 					var key = childrenProperties[j].children[0].innerHTML;
 					key = key.substring(0, key.length - 1);					
 					if(key == allowedChildrenForNode[i][1])
@@ -264,6 +268,8 @@
 			
 			for (i = 0; i < childrenProperties.length; i++){
 				if(childrenProperties[i].children[1].tagName.toLowerCase() != 'span'){
+					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'input' || childrenProperties[i].children[0].tagName.toLowerCase() == 'select')
+						continue;
 					restrictionViolations+= validateCardinalitiesToModel(childrenProperties[i].children[3]);
 					
 					if(restrictionViolations != '')

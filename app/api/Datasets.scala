@@ -18,7 +18,8 @@ import com.wordnik.swagger.annotations.ApiOperation
 import models.Comment
 import java.util.Date
 import api.ApiController
-
+import jsonutils.JsonUtil
+import scala.collection.JavaConversions._
 
 /**
  * Dataset API.
@@ -133,9 +134,8 @@ object Datasets extends Controller with ApiController {
    */
     def searchDatasetsUserMetadata =  
 	    Action(parse.json) { request => 
-	      	  Logger.debug("Searching datasets' user metadata for search tree." )
-	      	  
-	      	  val searchTree =  scala.util.parsing.json.JSON.parseFull(Json.stringify(request.body)).get
+	      	  Logger.debug("Searching datasets' user metadata for search tree." )	      	  	      	 
+	      	  var searchTree = JsonUtil.parseJSON(Json.stringify(request.body)).asInstanceOf[java.util.LinkedHashMap[String,Any]]
 	      	  var datasetsSatisfying = List[Dataset]()
 	      	  for (dataset <- Services.datasets.listDatasetsChronoReverse){
 	      	    if(Dataset.searchUserMetadata(dataset.id.toString(),searchTree)){

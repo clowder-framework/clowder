@@ -16,6 +16,7 @@ import play.api.libs.json.Json
 import play.api.Logger
 import scala.Mutable
 import collection.JavaConverters._
+import scala.collection.JavaConversions._
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -99,45 +100,64 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
    * Check recursively whether a dataset's user-input metadata match a requested search tree. 
    */
   def searchUserMetadata(id: String, requestedMetadataQuery: Any): Boolean = {
-    return searchMetadata(id, requestedMetadataQuery.asInstanceOf[scala.collection.immutable.Map[String,Any]], getUserMetadata(id))
+    return searchMetadata(id, requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], getUserMetadata(id))
   }
   
   /**
    * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree. 
    */
-  def searchMetadata(id: String, requestedMap: scala.collection.immutable.Map[String,Any], currentMap: scala.collection.mutable.Map[String,Any]): Boolean = {
+  def searchMetadata(id: String, requestedMap: java.util.LinkedHashMap[String,Any], currentMap: scala.collection.mutable.Map[String,Any]): Boolean = {
       var allMatch = true
+      Logger.debug("req: "+ requestedMap);
+      Logger.debug("curr: "+ currentMap);
       for((reqKey, reqValue) <- requestedMap){
-        val reqKeyCompare = reqKey.replaceAll("__[0-9]*","")
-        var matchFound = false
-        try{
-        	for((currKey, currValue) <- currentMap){
-        	    val currKeyCompare = currKey.replaceAll("__[0-9]*","")
-        		if(reqKeyCompare.equals(currKeyCompare)){
-        		  //If search subtree remaining is a string (ie we have reached a leaf), then remaining subtree currently examined is bound to be a string, as the path so far was the same.
-        		  //Therefore, we do string comparison.
-        		  if(reqValue.isInstanceOf[String]){
-        			  if(reqValue.asInstanceOf[String].equalsIgnoreCase(currValue.asInstanceOf[String])){
-        				  matchFound = true
-        				  throw MustBreak
-        			  }
-        		  }
-        		  //If search subtree remaining is not a string (ie we haven't reached a leaf yet), then remaining subtree currently examined is bound to not be a string, as the path so far was the same.
-        		  //Therefore, we do maps (actually subtrees) comparison.
-        		  else{
-        		      val currValueMap = currValue.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
-        			  if(searchMetadata(id, reqValue.asInstanceOf[scala.collection.immutable.Map[String,Any]], currValueMap)){
-        				  matchFound = true
-        				  throw MustBreak
-        			  }
-        		  }	
-        		}
-        	}
-        } catch {case MustBreak => }        
-        if(! matchFound)
-          return false        
+        var reqKeyCompare = reqKey.replaceAll("__[0-9]*$","")
+        if(reqKeyCompare.equals("OR")){
+          if(allMatch)
+            return true          
+          else
+        	allMatch = true          
+        }
+        else{
+          if(allMatch){
+	        var isNot = false
+	        if(reqKeyCompare.endsWith("__not")){
+	          isNot = true
+	          reqKeyCompare = reqKeyCompare.dropRight(5)
+	        }
+	        var matchFound = false
+	        try{
+	        	for((currKey, currValue) <- currentMap){
+	        	    val currKeyCompare = currKey.replaceAll("__[0-9]*$","")
+	        		if(reqKeyCompare.equals(currKeyCompare)){
+	        		  //If search subtree remaining is a string (ie we have reached a leaf), then remaining subtree currently examined is bound to be a string, as the path so far was the same.
+	        		  //Therefore, we do string comparison.
+	        		  if(reqValue.isInstanceOf[String]){
+	        			  if(reqValue.asInstanceOf[String].trim().equals("*") || reqValue.asInstanceOf[String].trim().equalsIgnoreCase(currValue.asInstanceOf[String].trim())){
+	        				  matchFound = true
+	        				  throw MustBreak
+	        			  }
+	        		  }
+	        		  //If search subtree remaining is not a string (ie we haven't reached a leaf yet), then remaining subtree currently examined is bound to not be a string, as the path so far was the same.
+	        		  //Therefore, we do maps (actually subtrees) comparison.
+	        		  else{
+	        		      val currValueMap = currValue.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
+	        			  if(searchMetadata(id, reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], currValueMap)){
+	        				  matchFound = true
+	        				  throw MustBreak
+	        			  }
+	        		  }	
+	        		}
+	        	}
+	        } catch {case MustBreak => }
+	        if(isNot)
+	          matchFound = !matchFound
+	        if(! matchFound)
+	          allMatch = false  
+	    }      
       }     
-      return true;              
+    }
+    return allMatch              
   }
   
   

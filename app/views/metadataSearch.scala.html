@@ -7,10 +7,12 @@
 <div class="row-fluid">
 	<div class="span12">
 		<form class="form-inline">
-			<h5>Select properties to search for:</h5>
+			<h5>Select properties to search for (in strings, input * alone to search for any string value):</h5>
 			<div id='datasetUserMetadata' class='usr_md_'>
-				<button class="usr_md_" type="button">Add property</button>
-				<ul class="usr_md_"></ul>
+				&nbsp;&nbsp;&nbsp;<button class="usr_md_" type="button">Add property</button>
+				<ul class="usr_md_ usr_md_search_list"></ul>
+				<button class="usr_md_" type="button">Add disjunction</button>
+				<br />
 				<button class="usr_md_submit btn" type="button">Submit</button></div>
 		</form>	
 		<table id='resultTable' class="table table-bordered table-hover" style="display:none;">

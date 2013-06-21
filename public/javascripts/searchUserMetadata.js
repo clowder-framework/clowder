@@ -1,3 +1,6 @@
+String.prototype.endsWith = function(str) 
+{return (this.match(str+"$")==str)}
+
 //CSV file format: Node and whether intermediate node or leaf.
 	var allowedNodes = new Array();	
 	$.ajax({
@@ -58,29 +61,103 @@ $(function() {
 				  else if($(this).html() == "Delete"){
 				  	$(this).parent().parent().get(0).removeChild($(this).parent().get(0));
 				  }
-				  else if($(this).html() == "Add property"){
-					  
+				  else if($(this).html() == "Delete disjunction"){
+					//Start deleting properties from the start of the selected disjunction, ie where the selected OR is  
+					for(var i = $(this).parent().index() + 1; i < $(this).parent().parent().children('li').length; ){
+						var ithSibling = $(this).parent().parent().children('li:nth-child(' + (i+1) + ')');
+						//If start of next disjunction found, stop deleting properties. 
+						if(ithSibling.children('b').length > 0)
+							if(ithSibling.children('b').get(0).textContent == "OR")
+								break;
+						$(this).parent().parent().get(0).removeChild(ithSibling.get(0));																	
+					}   				  
+					$(this).parent().parent().get(0).removeChild($(this).parent().get(0));   
+				  } 
+				  else if($(this).html() == "Add property"){				  
 				  	var newProperty = document.createElement("li");
 					newProperty.classList.add('usr_md_');
 									
 					var newPropertyMenu = document.createElement("select");
 					newPropertyMenu.classList.add('usr_md_');
+					
+					var newPropertyNotBox = document.createElement('input');
+					newPropertyNotBox.classList.add('usr_md_');								   
+					newPropertyNotBox.setAttribute('type', 'checkbox');
+					newPropertyNotBox.setAttribute('value', 'not');
+					
+					var newPropertyNotBoxText = document.createElement('span');
+					newPropertyNotBoxText.classList.add('usr_md_');
+					newPropertyNotBoxText.innerHTML = " NOT";
 									
 					var parentNodeType = "";
 					if($(this).parent().is('div')){
 						parentNodeType = "!root!";
 					}
 					else{
-						parentNodeTypeText = $(this).parent().children('b').get(0).textContent;
-						parentNodeType = parentNodeTypeText.substring(0, parentNodeTypeText.length - 1);
+						parentNodeType = $(this).parent().children('b').get(0).textContent;
+						if(parentNodeType.endsWith(":"))
+							parentNodeType = parentNodeType.substring(0, parentNodeType.length - 1); 
 					}					
-					var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
-					if(allowedChildrenForNode.length == 0){
-						alert("The metadata model states that this property cannot have subproperties of any kind.");
-						return false;
+					if(parentNodeType != "OR"){
+						if(parentNodeType.length >= 4)
+									if(parentNodeType.substring(0,4) == "NOT ")
+										parentNodeType = parentNodeType.substring(4);
+																
+						var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
+						if(allowedChildrenForNode.length == 0){
+							alert("The metadata model states that this property cannot have subproperties of any kind.");
+							return false;
+						}
+						
+						//Position the new property just before the start of the next disjunction, if any.
+						var siblings = $(this).parent().children('ul').children('li');
+						var positionOfNew = siblings.length;
+						for( var i = 0; i < siblings.length; i++){
+							var ithSibling = $(this).parent().children('ul').children('li:nth-child(' + (i+1) + ')');
+							if(ithSibling.children('b').length > 0)
+								if(ithSibling.children('b').get(0).textContent == "OR"){
+									positionOfNew = i;
+									break;
+								}
+						}
+						if(positionOfNew == siblings.length)				
+							$(this).parent().children('ul')[0].appendChild(newProperty);
+						else{
+							$(this).parent().children('ul').children('li:nth-child(' + (positionOfNew+1) + ')').before(newProperty);
+						}	
 					}
-					$(this).parent().children('ul')[0].appendChild(newProperty);	
-									
+					else{   
+						if($(this).parent().parent().parent().is('div')){
+							parentNodeType = "!root!";
+						}
+						else{
+							parentNodeTypeText = $(this).parent().parent().parent().children('b').get(0).textContent;
+							parentNodeType = parentNodeTypeText.substring(0, parentNodeTypeText.length - 1);
+						}
+					
+						var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
+						if(allowedChildrenForNode.length == 0){
+							alert("The metadata model states that this property cannot have subproperties of any kind.");
+							return false;
+						}
+						
+						//Position the new property just before the start of the next disjunction, if any.
+						var siblings = $(this).parent().parent().children('li');
+						var positionOfNew = siblings.length;
+						for( var i = $(this).parent().parent().children('li').index($(this).parent()) + 1; i < siblings.length; i++){
+							var ithSibling = $(this).parent().parent().children('li:nth-child(' + (i+1) + ')');
+							if(ithSibling.children('b').length > 0)
+								if(ithSibling.children('b').get(0).textContent == "OR"){
+									positionOfNew = i;
+									break;
+								}
+						}
+						if(positionOfNew == siblings.length)
+							$(this).parent().parent().get(0).appendChild(newProperty);
+						else{
+							$(this).parent().parent().children('li:nth-child(' + (positionOfNew+1) + ')').before(newProperty);
+						}								
+					}
 					for( var i = 0; i < allowedChildrenForNode.length; i++){
 						var newOption = document.createElement("option");
 						newOption.classList.add('usr_md_');					
@@ -89,18 +166,19 @@ $(function() {
 						if(i == 0){
 							newOption.setAttribute('selected', 'selected');
 						}
-						
+							
 						newPropertyMenu.appendChild(newOption);					
 					}
 					newProperty.appendChild(newPropertyMenu);
-					
+					newProperty.appendChild(newPropertyNotBox);
+					newProperty.appendChild(newPropertyNotBoxText);
+						
 					var newSelectButton = document.createElement('button'); 	
 					newSelectButton.classList.add('usr_md_');
 					newSelectButton.setAttribute('type','button');		
-					
-					newSelectButton.innerHTML = 'Select property';
-					newProperty.appendChild(newSelectButton);
 						
+					newSelectButton.innerHTML = 'Select property';
+					newProperty.appendChild(newSelectButton);	
 				  }
 				  else if($(this).html() == "Select property"){				  	
 				  				
@@ -112,14 +190,19 @@ $(function() {
 							selectedPropertyType = allowedNodes[i][1];
 							break;
 						}
-					} 
+					}
+					var isNot = "";
+					if($(this).parent().children('input').get(0).checked == 1)
+						isNot = "NOT ";
 
 					$(this).parent().children('select').remove();
+					$(this).parent().children('input').remove();
+					$(this).parent().children('span').remove();
 
 					var newPropertyKey = document.createElement('b');
 
 					newPropertyKey.classList.add('usr_md_');
-					newPropertyKey.innerHTML = selectedProperty + ":";
+					newPropertyKey.innerHTML = isNot + selectedProperty + ":";
 					$(this).parent().get(0).insertBefore(newPropertyKey, $(this).get(0));						
 					if(selectedPropertyType == "String"){										
 						var textBox = document.createElement('input');
@@ -138,7 +221,7 @@ $(function() {
 						newDeleteButton.innerHTML = 'Delete';
 						$(this).parent().get(0).appendChild(newDeleteButton);
 					}
-					else{
+					else{    
 						$(this).html("Add property");
 						var newDeleteButton = document.createElement('button'); 	
 						newDeleteButton.classList.add('usr_md_');
@@ -149,14 +232,45 @@ $(function() {
 						
 						var newPropertyList = document.createElement('ul');
 						newPropertyList.classList.add('usr_md_');
+						newPropertyList.classList.add('usr_md_search_list');
 						 
 						$(this).parent().get(0).appendChild(newPropertyList);
+						
+						var newDisjunctionButton = document.createElement('button'); 	
+						newDisjunctionButton.classList.add('usr_md_');
+						newDisjunctionButton.setAttribute('type','button');	
+						
+						newDisjunctionButton.innerHTML = 'Add disjunction';
+						$(this).parent().get(0).appendChild(newDisjunctionButton);
 					}				
+				  }
+				  else if($(this).html() == "Add disjunction"){
+				  	var newDisjunction = document.createElement("li");
+					newDisjunction.classList.add('usr_md_');
+					
+					var newDisjunctionOr = document.createElement('b');
+					newDisjunctionOr.classList.add('usr_md_');
+					newDisjunctionOr.innerHTML = "OR";
+					
+					var newPropertyButton = document.createElement('button'); 	
+					newPropertyButton.classList.add('usr_md_');
+					newPropertyButton.setAttribute('type','button');								
+					newPropertyButton.innerHTML = 'Add property';
+					
+					var deleteButton = document.createElement('button'); 	
+					deleteButton.classList.add('usr_md_');
+					deleteButton.setAttribute('type','button');								
+					deleteButton.innerHTML = 'Delete disjunction';
+										
+					$(this).parent().children('ul')[0].appendChild(newDisjunction);					
+					newDisjunction.appendChild(newDisjunctionOr);
+					newDisjunction.appendChild(newPropertyButton);
+					newDisjunction.appendChild(deleteButton);					
 				  }
 				  else if($(this).html() == "Submit"){
 
 					var data = DOMtoJSON(document.getElementById('datasetUserMetadata').children[1]);
-					
+					alert(JSON.stringify(data));
 					var request = $.ajax({
 				       type: 'POST',
 				       url: queryIp,
@@ -208,13 +322,26 @@ $(function() {
 			   			var branchData = {};				
 						var childrenProperties = branchRootNode.children;
 						for(var i = 0; i < childrenProperties.length; i++){
+							if(childrenProperties[i].children[1].tagName.toLowerCase() == 'input')
+								continue;							
 							var key = childrenProperties[i].children[0].innerHTML;
-							key = key.substring(0, key.length - 1) + "__" + elementCounter;
-							elementCounter++;
-							if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
-								branchData[key] = childrenProperties[i].children[1].innerHTML;   ////////
-							}else{
-								branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
+							if(key == "OR"){
+								key = key + "__" + elementCounter;
+								elementCounter++;
+								branchData[key] = "";
+							}							
+							else{
+								key = key.substring(0, key.length - 1);
+								if(key.length >= 4)
+									if(key.substring(0,4) == "NOT ")
+										key = key.substring(4) + "__not";								
+								key = key + "__" + elementCounter;
+								elementCounter++;
+								if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
+									branchData[key] = childrenProperties[i].children[1].innerHTML;  
+								}else{
+									branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
+								}
 							}
 						}
 						return branchData;
