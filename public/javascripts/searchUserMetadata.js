@@ -233,6 +233,8 @@ $(function() {
 						var newPropertyList = document.createElement('ul');
 						newPropertyList.classList.add('usr_md_');
 						newPropertyList.classList.add('usr_md_search_list');
+						if(isNot == "NOT ")
+							newPropertyList.classList.add('usr_md_search_list_not');
 						 
 						$(this).parent().get(0).appendChild(newPropertyList);
 						
