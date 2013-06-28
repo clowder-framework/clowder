@@ -18,6 +18,11 @@ abstract class DatasetService {
   def listDatasets(): List[Dataset]
   
   /**
+   * List all datasets in the system in reverse chronological order.
+   */
+  def listDatasetsChronoReverse(): List[Dataset]
+  
+  /**
    * List datasets after a specified date.
    */
   def listDatasetsAfter(date: String, limit: Int): List[Dataset]

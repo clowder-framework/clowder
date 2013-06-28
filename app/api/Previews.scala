@@ -99,13 +99,15 @@ object Previews extends Controller {
    */
   def uploadMetadata(id: String) = Authenticated {
     Action(parse.json) { request =>
+      Logger.debug(request.body.toString)
       request.body match {
         case JsObject(fields) => {
+          Logger.debug(fields.toString)
 	      PreviewDAO.findOneById(new ObjectId(id)) match {
 	        case Some(preview) =>
 	            val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	            val result = PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), 
-	                $set(Seq("metadata" -> metadata, "section_id"->new ObjectId(metadata("section_id").asInstanceOf[String]))), false, false, WriteConcern.SAFE)
+	                $set("metadata" -> metadata, "section_id"->new ObjectId(metadata("section_id").asInstanceOf[String])), false, false, WriteConcern.SAFE)
 	            Logger.debug("Updating previews.files " + id + " with " + metadata)
 	            Ok(toJson(Map("status"->"success")))
 	        case None => BadRequest(toJson("Preview not found"))
@@ -143,7 +145,7 @@ object Previews extends Controller {
 	                case Some(tile) =>
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	                    TileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(tile_id)), 
-	                        $set(Seq("metadata"-> metadata, "preview_id" -> new ObjectId(preview_id), "level"->level)), false, false, WriteConcern.SAFE)
+	                        $set("metadata"-> metadata, "preview_id" -> new ObjectId(preview_id), "level"->level), false, false, WriteConcern.SAFE)
 //	                    Logger.debug("Updating tiles.files " + tile_id + " with " + metadata)
 	                    Ok(toJson(Map("status"->"success")))
 	                case None => BadRequest(toJson("Tile not found"))

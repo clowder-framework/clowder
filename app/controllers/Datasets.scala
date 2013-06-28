@@ -9,7 +9,6 @@ import play.api.Logger
 import play.api.mvc.Action
 import play.api.data.Form
 import play.api.data.Forms._
-import models.Dataset
 import views.html.defaultpages.error
 import java.io.FileInputStream
 import play.api.Play.current
@@ -17,7 +16,6 @@ import services.RabbitmqPlugin
 import services.ElasticsearchPlugin
 import java.io.File
 import org.bson.types.ObjectId
-import models.FileDAO
 import java.util.Date
 import services.ExtractorMessage
 import securesocial.core.SecureSocial
@@ -27,9 +25,8 @@ import com.mongodb.casbah.commons.MongoDBObject
 import models.SectionDAO
 import play.api.mvc.Flash
 import scala.collection.immutable.Nil
-import models.Comment
-import models.Section
-import models.Rectangle
+import models._
+import fileutils.FilesUtils
 
 /**
  * A dataset is a collection of files and streams.
@@ -93,6 +90,8 @@ object Datasets extends Controller with SecureSocial {
     Ok(views.html.datasetList(datasets, prev, next, limit))
   }
   
+ 
+ 
   /**
    * Dataset.
    */
@@ -170,16 +169,26 @@ object Datasets extends Controller with SecureSocial {
 			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
 			    Logger.debug("Uploaded file id is " + file.get.id)
 			    Logger.debug("Uploaded file type is " + f.contentType)
+			    
+			    val uploadedFile = f
 			    file match {
-			      case Some(f) => {
+			      case Some(f) => {			        
+			        var fileType = f.contentType
+			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }			        			        
 			    	// TODO RK need to replace unknown with the server name
-			    	val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
+			    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 //			        val key = "unknown." + "file."+ "application.x-ptm"
 
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
 			        current.plugin[ElasticsearchPlugin].foreach{_.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 	
 		            // add file to dataset
@@ -189,7 +198,7 @@ object Datasets extends Controller with SecureSocial {
 		            
 			    	// TODO RK need to replace unknown with the server name and dataset type		            
  			    	val dtkey = "unknown." + "dataset."+ "unknown"
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0"))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", ""))}
 		            // redirect to file page
 		            Redirect(routes.Datasets.dataset(dt.id.toString))
 //		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -215,9 +224,13 @@ object Datasets extends Controller with SecureSocial {
    * Add comment to a dataset
    */
   def comment(id: String) = SecuredAction(ajaxCall = true, None, parse.json) { implicit request =>
-    val text = request.body.\("text").asOpt[String].getOrElse("")
+    val text = request.body.\("comment").asOpt[String].getOrElse("")
     if (text == "") {
       BadRequest("error, no comment supplied.")
+    }
+    val preview = request.body.\("preview").asOpt[String] match {
+      case Some(id) => PreviewDAO.findOneById(new ObjectId(id))
+      case None => None
     }
     val comment = Comment(request.user.id.id, new Date(), text)
     request.body.\("fileid").asOpt[String].map { fileid =>
@@ -228,7 +241,7 @@ object Datasets extends Controller with SecureSocial {
       if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
         FileDAO.comment(fileid, comment)
       } else {
-        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), comments=List(comment));
+        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), comments=List(comment), preview=preview);
         SectionDAO.save(section)
       }    
     }.getOrElse {
@@ -242,6 +255,12 @@ object Datasets extends Controller with SecureSocial {
     if (text == "") {
       BadRequest("error, no tag supplied.")
     }
+    Logger.debug(request.body.\("preview").toString)
+    val preview = request.body.\("preview").asOpt[String] match {
+      case Some(id) => PreviewDAO.findOneById(new ObjectId(id))
+      case None => None
+    }
+    Logger.debug(preview.toString())
     request.body.\("fileid").asOpt[String].map { fileid =>
       val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
       val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
@@ -250,7 +269,7 @@ object Datasets extends Controller with SecureSocial {
       if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
         FileDAO.tag(fileid, text)
       } else {
-        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), tags=List(text));
+        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), tags=List(text), preview=preview);
         SectionDAO.save(section)
       }    
     }.getOrElse {
@@ -258,4 +277,12 @@ object Datasets extends Controller with SecureSocial {
     }
     Ok("")
   }
+  
+  def metadataSearch()  = UserAwareAction { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.metadataSearch()) 
+  }
+  
+  
+  
 }

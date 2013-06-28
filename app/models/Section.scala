@@ -37,7 +37,11 @@ case class Rectangle (
     y: Double,
     w: Double,
     h: Double
-)
+    
+   
+) {
+  override def toString() = f"[ $x%.3f, $y%.3f, $w%.3f, $h%.3f ]"
+}
     
 object SectionDAO extends ModelCompanion[Section, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
