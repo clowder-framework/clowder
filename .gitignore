@@ -4,6 +4,7 @@ project/target
 target
 tmp
 bin
+medici.sublime-project
 .history
 .cache
 .target
