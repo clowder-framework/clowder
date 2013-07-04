@@ -4,6 +4,7 @@ project/target
 target
 tmp
 bin
+/*.sublime-workspace
 .history
 .cache
 .target

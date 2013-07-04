@@ -13,6 +13,10 @@ import play.api.Play.current
 import services.PostgresPlugin
 import java.text.SimpleDateFormat
 import play.api.Logger
+import play.api.libs.ws.WS
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.Future
+import services.ElasticsearchPlugin
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced 
@@ -29,30 +33,34 @@ object Geostreams extends Controller {
     (__ \ 'start_time).read[String] and
     (__ \ 'end_time).readNullable[String] and
     (__ \ 'geog \ 'coordinates).read[List[Double]] and
-    (__ \ 'data).json.pick
+    (__ \ 'data).json.pick and
+    (__ \ 'stream_id).read[String]
   ) tupled
   
   def createStream() = Authenticated {
     Action(parse.json) { request =>
+      Logger.debug("Creating stream")
       Ok(toJson("success"))
     }
   }
   
   def addDatapoint(id: String) = Authenticated {
     Action(parse.json) { request =>
-      request.body.validate[(String, Option[String], List[Double], JsValue)].map{ 
-        case (start_time, end_time, longlat, data) => 
-          current.plugin[PostgresPlugin].foreach{
-            Logger.info("GEOSTREAM TIME: " + start_time + " " + end_time)
-            val end_date = if (end_time.isDefined) Some(formatter.parse(end_time.get)) else None
-            if (longlat.length == 3) {
-            	_.add(formatter.parse(start_time), end_date, Json.stringify(data), longlat(1), longlat(0), longlat(2))
-            } else { 
-            	_.add(formatter.parse(start_time), end_date, Json.stringify(data), longlat(1), longlat(0), 0.0)
+      request.body.validate[(String, Option[String], List[Double], JsValue, String)].map{ 
+        case (start_time, end_time, longlat, data, streamId) => 
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              Logger.info("GEOSTREAM TIME: " + start_time + " " + end_time)
+              val end_date = if (end_time.isDefined) Some(formatter.parse(end_time.get)) else None
+              if (longlat.length == 3) {
+                plugin.add(formatter.parse(start_time), end_date, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId)
+              } else { 
+            	plugin.add(formatter.parse(start_time), end_date, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
+              }
+              Ok(toJson("success"))
             }
-          }
-          Ok(toJson("success"))
-      }.recoverTotal{
+           case None => InternalServerError(toJson("Geostreaming not enabled"))
+      }}.recoverTotal{
         e => BadRequest("Detected error:"+ JsError.toFlatJson(e))
       }
     }

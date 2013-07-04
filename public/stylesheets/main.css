@@ -275,6 +275,14 @@ button.usr_md_ {
 	margin-bottom:5px;
 }
 
+#table-scroll {
+  height:400px;
+  overflow:auto;  
+  margin:10px;
+  border: 1px solid #ddd;
+  padding:10px;
+}
+
 .usr_md_search_list{
 	list-style-type:none;
 }

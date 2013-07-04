@@ -73,15 +73,16 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
   }
 
-  def add(start: java.util.Date, end: Option[java.util.Date], data: String, lat: Double, lon: Double, alt: Double) {
-	val ps = conn.prepareStatement("INSERT INTO geoindex(start_time, end_time, data, geog) VALUES(?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326));")
+  def add(start: java.util.Date, end: Option[java.util.Date], data: String, lat: Double, lon: Double, alt: Double, stream_id: String) {
+	val ps = conn.prepareStatement("INSERT INTO geoindex(start_time, end_time, stream_id, data, geog) VALUES(?, ?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326));")
 	ps.setTimestamp(1, new Timestamp(start.getTime()))
 	if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime()))
 	else ps.setDate(2, null)
-	ps.setString(3, data)
-	ps.setDouble(4, lon)
-	ps.setDouble(5, lat)
-	ps.setDouble(6, alt)
+	ps.setString(3, stream_id)
+	ps.setString(4, data)
+	ps.setDouble(5, lon)
+	ps.setDouble(6, lat)
+	ps.setDouble(7, alt)
 	ps.executeUpdate()
 	ps.close()
   }
@@ -114,7 +115,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i+3,parts(2).toDouble*1000)
     }
     st.setFetchSize(50)
-    Logger.debug("Geostream search: " + st)
+    Logger.trace("Geostream search: " + st)
     val rs = st.executeQuery()
     while (rs.next()) {
       data += rs.getString(1)
@@ -126,7 +127,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
   
   def test() {
-    add(new java.util.Date(), None, """{"value":"test"}""", 40.110588, -88.207270, 0.0)
+    add(new java.util.Date(), None, """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
     Logger.info("Searching postgis: " + search(None, None, None))
   }
 
