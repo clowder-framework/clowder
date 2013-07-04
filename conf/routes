@@ -138,6 +138,9 @@ GET		/api/previews/:dzi_id_dir/:level/:filename									api.Previews.getTile(dzi
 POST    /api/previews/:dzi_id/tiles/:tile_id/:level     							api.Previews.attachTile(dzi_id, tile_id, level)
 POST    /api/previews/:id/metadata        											api.Previews.uploadMetadata(id)
 GET     /api/previews/:id/metadata        											api.Previews.getMetadata(id)
+POST    /api/previews/:id/annotationAdd        									    api.Previews.attachAnnotation(id)
+POST    /api/previews/:id/annotationEdit        									api.Previews.editAnnotation(id)
+GET     /api/previews/:id/annotationsList        									api.Previews.listAnnotations(id)
 GET     /api/previews/:id                 											api.Previews.download(id)
 POST    /api/previews                     											api.Previews.upload
 

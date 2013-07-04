@@ -277,11 +277,10 @@ $(function() {
 				       url: queryIp,
 				       data: JSON.stringify(data),
 				       contentType: "application/json",
-				       dataType: "text"
+				       dataType: "json"
 				     });
 		 
-					  request.done(function (response, textStatus, jqXHR){
-						    var respJSON = JSON.parse(response);
+					  request.done(function (respJSON){
 					        console.log("Response " + respJSON);
 					        $('#resultTable tbody tr').remove();
 					        for(var i = 0; i < respJSON.length; i++){
