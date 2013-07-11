@@ -33,6 +33,9 @@ String.prototype.endsWith = function(str)
 	//Counter for DOM node uniqueness.
 	var elementCounter = 1;
 	
+	var currentFirst = 1;
+	var searchResultsCount = 0;
+	
 $(function() {
 		
 		$('body').on('click','.usr_md_,.usr_md_submit',function(e){
@@ -282,16 +285,30 @@ $(function() {
 		 
 					  request.done(function (respJSON){
 					        console.log("Response " + respJSON);
+					        $('.previous').css('visibility','hidden');
+					        $('.next').css('visibility','hidden');
+					        searchResultsCount = respJSON.length;
 					        $('#resultTable tbody tr').remove();
 					        for(var i = 0; i < respJSON.length; i++){
 					        	var createdDateArray = respJSON[i].created.split(" ");
 					        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
-					        	$('#resultTable tbody').append("<tr><td><a href='" + "http://" + hostIp + ":" + window.location.port
+					        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
 					        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
 					        								+ "<td>" + createdDate + "</td>"
 					        								+ "<td>" + respJSON[i].description + "</td></tr>");
 					        }
-					        $('#resultTable').show();							
+					        $('#resultTable').show();
+					        
+					        for(var i = 0; i < 10; i++){
+					        	$("#resultTable tbody tr[id='resultRow" + (i+1) + "']").each(function() {
+					        	    $(this).css('display','table-row');
+					        	});
+					        }
+					        
+					        if(respJSON.length > 10){
+					        	currentFirst = 1;
+					        	$('.next').css('visibility','visible');
+					        }
 		     			});
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
@@ -317,6 +334,35 @@ $(function() {
 					}
 				}
 			   });
+		 
+		 $('body').on('click','.next',function(e){
+			 currentFirst = currentFirst + 10;
+			 $("#resultTable tbody tr").each(function() {
+	        	    $(this).css('display','none');
+	         });
+			 for(var i = currentFirst; i < currentFirst + 10; i++){
+				 $("#resultTable tbody tr[id='resultRow" + i + "']").each(function() {
+					 $(this).css('display','table-row');
+				 });
+			 }
+			 $('.previous').css('visibility','visible');
+			 if(currentFirst + 10 > searchResultsCount)
+				 $('.next').css('visibility','hidden');			 
+		 });
+		 $('body').on('click','.previous',function(e){
+			 currentFirst = currentFirst - 10;
+			 $("#resultTable tbody tr").each(function() {
+	        	    $(this).css('display','none');
+	         });
+			 for(var i = currentFirst; i < currentFirst + 10; i++){
+				 $("#resultTable tbody tr[id='resultRow" + i + "']").each(function() {
+					 $(this).css('display','table-row');
+				 });
+			 }
+			 $('.next').css('visibility','visible');
+			 if(currentFirst == 1)
+				 $('.previous').css('visibility','hidden');			 
+		 });
 			   
 			   function DOMtoJSON(branchRootNode){
 			   			var branchData = {};				
