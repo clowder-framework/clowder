@@ -92,7 +92,7 @@ function clearConfigTab(prNum){
   	  sphere.setAttribute("solid", "true");
   	  sphere.setAttribute("ccw", "true");
   	  sphere.setAttribute("useGeoCache", "true");
-  	  sphere.setAttribute("radius", "1");
+  	  sphere.setAttribute("radius", "0.06");  
   	  sphere.setAttribute("subdivision", "24,24");
   	  annotationShape.appendChild(sphere);
   	  
@@ -330,8 +330,8 @@ function clearConfigTab(prNum){
     	$("#x3dElement" + prNum + " > scene > transform[data-annotation]").each(function(){
     		annotationsTranslations.push($(this).attr("translation").split(","));
     	});
-    	for(var j = 0; j < annotationsTranslations.length; j++){
-    		if(Math.abs(annotationsTranslations[j][0]-event.hitPnt[0])+Math.abs(annotationsTranslations[j][1]-event.hitPnt[1])+Math.abs(annotationsTranslations[j][2]-event.hitPnt[2]) <= 0.25){
+    	for(var j = 0; j < annotationsTranslations.length; j++){  
+    		if(Math.abs(annotationsTranslations[j][0]-event.hitPnt[0])+Math.abs(annotationsTranslations[j][1]-event.hitPnt[1])+Math.abs(annotationsTranslations[j][2]-event.hitPnt[2]) <= 0.015){
     			focusOnAnnotation(annotationsTranslations[j][0], annotationsTranslations[j][1], annotationsTranslations[j][2], event, prNum);
     			return;
     		}
@@ -392,10 +392,13 @@ function clearConfigTab(prNum){
 	  },
       dataType: "json"
     });
+  
+//  $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("colorPerVertex","false");
+//  $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("colorPerMesh","true");
 
-  $("#x3dElement" + prNum + " > scene > shape > indexedfaceset").attr("DEF","model");
-  $("#x3dElement" + prNum + " > scene > shape > indexedfaceset").attr("solid","true");
-  $("#x3dElement" + prNum + " > scene > shape > indexedfaceset").attr("onclick","handleObjectClick(event,'" + prNum + "');");
+  $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("DEF","model");
+  $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("solid","true");
+  $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("onclick","handleObjectClick(event,'" + prNum + "');");
     
   var s = document.createElement("script");
   s.type = "text/javascript";
