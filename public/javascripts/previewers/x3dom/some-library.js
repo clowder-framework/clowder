@@ -369,7 +369,7 @@ function clearConfigTab(prNum){
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 148) + "px;' >";
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 148) + "px;' >";
 
   $.ajax({
 	    url: fileUrl,
