@@ -393,8 +393,7 @@ function clearConfigTab(prNum){
       dataType: "json"
     });
   
-//  $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("colorPerVertex","false");
-//  $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("colorPerMesh","true");
+  //$("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("colorPerVertex","false");
 
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("DEF","model");
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("solid","true");
@@ -405,6 +404,11 @@ function clearConfigTab(prNum){
   s.src = pathJs + "x3dom.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);
+  
+  var viewPoint = document.createElement('viewpoint');
+  viewPoint.setAttribute("position", "0 0 2");
+  viewPoint.setAttribute("centerOfRotation", "0,0,0");
+  $("#x3dElement" + prNum + " > scene").prepend(viewPoint);
   
   $("body").on('keypress','#x3dElement' + prNum,function(e){
 	  if(e.which == 113){
