@@ -59,42 +59,51 @@ object Search extends Controller {
    * Search results.
    */
   def search(query: String) = Action {
-    Logger.debug("Searching for: " + query)
-    var files = ListBuffer.empty[models.File]
-    var datasets = ListBuffer.empty[models.Dataset]
-    if (query != "") {
-	    import play.api.Play.current
-	    val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query) }
-	    result match {
-	      case Some(searchResponse) => {
-	        for (hit <- searchResponse.getHits().getHits()) {
-	          Logger.debug("Computing search result " + hit.getId())
-	          Logger.info("Fields: ")
-	          for ((key, value) <- mapAsScalaMap(hit.getFields())) {
-	            Logger.info(value.getName + " = " + value.getValue())
-	          }
-	          if (hit.getType() == "file") {
-	        	  Services.files.getFile(hit.getId()) match {
-	        	    case Some(file) => Logger.debug("Search result found file " + hit.getId()); files += file
-	        	    case None => Logger.debug("File not found " + hit.getId())
-	        	  }
-	          } else if (hit.getType() == "dataset") {
-	            Dataset.findOneByID(new ObjectId(hit.getId())) match {
-	              case Some(dataset) => Logger.debug("Search result found dataset" + hit.getId()); datasets += dataset
-	        	  case None => Logger.debug("Dataset not found " + hit.getId())
-	            }
-	          }
-//	          files = searchResponse.getHits().getHits().map(hit => Services.files.getFile(hit.getId()).get)
-//	          files.map(f=>Logger.debug("File: " + f))
-	          Ok(views.html.searchResults(query, files.toArray, datasets.toArray))
-	        }
-	      }
-	      case None => {
-	          Logger.debug("Search returned no results")
-	      }
-	    }
+    current.plugin[ElasticsearchPlugin] match {
+      case Some(plugin) => {
+        Logger.debug("Searching for: " + query)
+        var files = ListBuffer.empty[models.File]
+        var datasets = ListBuffer.empty[models.Dataset]
+        if (query != "") {
+          import play.api.Play.current
+          val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query) }
+          result match {
+            case Some(searchResponse) => {
+              for (hit <- searchResponse.getHits().getHits()) {
+                Logger.debug("Computing search result " + hit.getId())
+                Logger.info("Fields: ")
+                for ((key, value) <- mapAsScalaMap(hit.getFields())) {
+                  Logger.info(value.getName + " = " + value.getValue())
+                }
+                if (hit.getType() == "file") {
+                  Services.files.getFile(hit.getId()) match {
+                    case Some(file) =>
+                      Logger.debug("Search result found file " + hit.getId()); files += file
+                    case None => Logger.debug("File not found " + hit.getId())
+                  }
+                } else if (hit.getType() == "dataset") {
+                  Dataset.findOneById(new ObjectId(hit.getId())) match {
+                    case Some(dataset) =>
+                      Logger.debug("Search result found dataset" + hit.getId()); datasets += dataset
+                    case None => Logger.debug("Dataset not found " + hit.getId())
+                  }
+                }
+                Ok(views.html.searchResults(query, files.toArray, datasets.toArray))
+              }
+            }
+            case None => {
+              Logger.debug("Search returned no results")
+            }
+          }
+        }
+        Ok(views.html.searchResults(query, files.toArray, datasets.toArray))
+      }
+      case None => {
+        Logger.debug("Search plugin not enabled")
+        Ok(views.html.pluginNotEnabled("Text search"))
+      }
     }
-    Ok(views.html.searchResults(query, files.toArray, datasets.toArray))
+
   }
 
   def multimediasearch() = Action {
