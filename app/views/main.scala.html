@@ -49,9 +49,14 @@ body {
 						   </ul>
 						</li>
 					</ul>
-					<form class="navbar-search pull-left" action="@routes.Search.search("")" method="get">
-  						<input type="text" class="search-query" placeholder="Search" name="query">
-					</form>
+					@play.api.Play.current.plugin[services.ElasticsearchPlugin] match {
+						case Some(p) => {
+						<form class="navbar-search pull-left" action="@routes.Search.search("")" method="get">
+	  						<input type="text" class="search-query" placeholder="Search" name="query">
+						</form>
+						}
+						case None => {}
+					}
 					@user match {
     					case Some(x) => {
 							<ul class="nav pull-right">
