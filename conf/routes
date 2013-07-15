@@ -100,7 +100,6 @@ GET     /admin/secureTest           controllers.Admin.secureTest
 GET     /admin/reindexFiles         controllers.Admin.reindexFiles
 
 GET     /admin/extractions          controllers.Extractors.extractions
-GET     /admin/echo                 controllers.Extractors.echo
 
 # Javascript Endpoints
 GET     /javascriptRoutes           controllers.Application.javascriptRoutes
