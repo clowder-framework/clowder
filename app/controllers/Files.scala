@@ -139,7 +139,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
             val id = f.id.toString
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
             current.plugin[ElasticsearchPlugin].foreach{
-              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
            
              current.plugin[VersusPlugin].foreach{ _.index(f.id.toString) }
@@ -374,7 +374,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
             val id = f.id.toString
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
             current.plugin[ElasticsearchPlugin].foreach{
-              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
            }
             
            Ok(f.id.toString)

@@ -12,7 +12,6 @@ import java.io.File
 import scala.io.Source
 import java.io._
 import play.api.libs.ws.WS
-
 import models.SectionDAO
 import org.bson.types.ObjectId
 import models.PreviewDAO
@@ -44,11 +43,10 @@ import models.TempFileDAO
 import com.mongodb.DBCollection
 import play.api.Play.current
 import play.api.libs.concurrent._
-
 import scala.concurrent.{ future, blocking, Future, Await }
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.collection.mutable.ArrayBuffer
+import models.Dataset
 
 /**
  * Text search.
@@ -62,26 +60,41 @@ object Search extends Controller {
    */
   def search(query: String) = Action {
     Logger.debug("Searching for: " + query)
-    import play.api.Play.current
-    val result = current.plugin[ElasticsearchPlugin].map { _.search("files", query) }
-    result match {
-      case Some(searchResult) => {
-        for (hit <- searchResult.hits().hits()) {
-          Logger.debug("Search result: " + hit.getExplanation())
-          Logger.info("Fields: ")
-          for ((key, value) <- mapAsScalaMap(hit.getFields())) {
-            Logger.info(value.getName + " = " + value.getValue())
-          }
-          Services.files.getFile(hit.getId())
-          val files = result.get.hits().hits().map(hit => Services.files.getFile(hit.getId()).get)
-          Ok(views.html.searchResults(query, files))
-        }
-      }
-      case None => {
-    	  Ok(views.html.searchResults(query, Array.empty))
-      }
+    var files = ListBuffer.empty[models.File]
+    var datasets = ListBuffer.empty[models.Dataset]
+    if (query != "") {
+	    import play.api.Play.current
+	    val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query) }
+	    result match {
+	      case Some(searchResponse) => {
+	        for (hit <- searchResponse.getHits().getHits()) {
+	          Logger.debug("Computing search result " + hit.getId())
+	          Logger.info("Fields: ")
+	          for ((key, value) <- mapAsScalaMap(hit.getFields())) {
+	            Logger.info(value.getName + " = " + value.getValue())
+	          }
+	          if (hit.getType() == "file") {
+	        	  Services.files.getFile(hit.getId()) match {
+	        	    case Some(file) => Logger.debug("Search result found file " + hit.getId()); files += file
+	        	    case None => Logger.debug("File not found " + hit.getId())
+	        	  }
+	          } else if (hit.getType() == "dataset") {
+	            Dataset.findOneByID(new ObjectId(hit.getId())) match {
+	              case Some(dataset) => Logger.debug("Search result found dataset" + hit.getId()); datasets += dataset
+	        	  case None => Logger.debug("Dataset not found " + hit.getId())
+	            }
+	          }
+//	          files = searchResponse.getHits().getHits().map(hit => Services.files.getFile(hit.getId()).get)
+//	          files.map(f=>Logger.debug("File: " + f))
+	          Ok(views.html.searchResults(query, files.toArray, datasets.toArray))
+	        }
+	      }
+	      case None => {
+	          Logger.debug("Search returned no results")
+	      }
+	    }
     }
-    Ok(views.html.searchResults(query, Array.empty))
+    Ok(views.html.searchResults(query, files.toArray, datasets.toArray))
   }
 
   def multimediasearch() = Action {

@@ -1,21 +1,53 @@
-@(query: String, files: Array[models.File])
+@(query: String, files: Array[models.File], datasets: Array[models.Dataset])
 
 @main("Search Results") {
 	<div class="page-header">
 		<h1>Search Results <small>@query</small></h1>
 	</div>
-	@if(files.size == 0) {
+	@if(files.size == 0 && datasets.size == 0) {
 	<div class="row-fluid">
 		<div class="span12">
 			No results found. Sorry!
 		</div>
 	</div>
 	}
-    @for(file <- files) {
-      <div class="row-fluid">
-		<div class="span4">
-			<a href="@(routes.Files.file(file.id.toString))">@file.filename</a>
+	<div class="row-fluid">
+	    <div class="span6">
+	    <div class="row-fluid"><div class="span12"><h3>Files</h3></div></div>
+	    @for(file <- files) {
+		  <div class="row-fluid">
+			<div class="span2">
+			@file.previews.map { p =>
+				@if(p.contentType.equals("image/jpeg")){
+				<img src="@api.routes.Previews.download(p.id.toString)" class="img-polaroid" height="100px"></img>
+				}
+			}
+			</div>
+			<div class="span10">
+				<dl class="dl-horizontal">
+					<dt>Filename:</dt>
+					<dd><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></dd>
+					<dt>Type:</dt>
+					<dd>@file.contentType</dd>
+					<dt>Uploaded on:</dt>
+					<dd>@file.uploadDate</dd>
+				</dl>
+			</div>
 		</div>
-	  </div>
-	}
+		}
+		</div>
+	    <div class="span6">
+	    <div class="row-fluid"><div class="span12"><h3>Datasets</h3></div></div>
+	    @for(dataset <- datasets) {
+		  <div class="row-fluid">
+			<div class="span12">
+				<dl class="dl-horizontal">
+					<dt>Title:</dt>
+					<dd><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></dd>
+				</dl>
+			</div>
+		</div>
+		}
+		</div>
+	</div>
 }
