@@ -40,7 +40,7 @@ trait MongoDBDataset {
     if (date == "") {
       Dataset.findAll.sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("After " + sinceDate)
       Dataset.find("created" $lt sinceDate).sort(order).limit(limit).toList
     }
@@ -54,7 +54,7 @@ trait MongoDBDataset {
     if (date == "") {
       Dataset.findAll.sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("Before " + sinceDate)
       Dataset.find("created" $gt sinceDate).sort(order).limit(limit).toList
     }

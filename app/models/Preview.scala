@@ -12,6 +12,8 @@ import java.io.InputStream
 import play.api.Logger
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.Imports._
 
 /**
  * Preview bytes and metadata.
@@ -26,6 +28,7 @@ case class Preview (
 	dataset_id: Option[String] = None,
 	filename: Option[String] = None,
 	contentType: String,
+	annotations: List[ThreeDAnnotation] = List.empty,
 	length: Long
 		
 )
@@ -78,6 +81,59 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
     }
   }
   
- 
+  /**
+   * Add annotation to 3D model preview.
+   */
+   def annotation(id: String, annotation: ThreeDAnnotation) {
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("annotations" -> ThreeDAnnotation.toDBObject(annotation)), false, false, WriteConcern.Safe)
+  }
+   
+  def findAnnotation(preview_id: String, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation] = {
+       dao.findOneById(new ObjectId(preview_id)) match{  
+    	   case Some(preview) => {
+    	      for(annotation <- preview.annotations){
+    	    	  if(annotation.x_coord.equals(x_coord) && annotation.y_coord.equals(y_coord) && annotation.z_coord.equals(z_coord))
+    	    		  return Option(annotation)
+    	      }        
+    	      return None
+    	   }
+    	   case None => return None
+       }         
+  }
+  
+  def updateAnnotation(preview_id: String, annotation_id: String, description: String){
+      
+    dao.findOneById(new ObjectId(preview_id)) match{  
+    	   case Some(preview) => {
+    	      var newAnnotations = List.empty[ThreeDAnnotation]
+    	      for(annotation <- preview.annotations){
+    	    	  if(annotation.id.toString().equals(annotation_id)){
+    	    	    var newAnnotation = ThreeDAnnotation(annotation.x_coord, annotation.y_coord, annotation.z_coord, description)
+    	    	    newAnnotations = newAnnotation :: newAnnotations
+    	    	  }
+    	    	  else
+    	    	    newAnnotations = annotation :: newAnnotations
+    	      }
+    	      dao.update(MongoDBObject("_id" -> new ObjectId(preview_id)), MongoDBObject("$set" -> (MongoDBObject("annotations" -> MongoDBList(newAnnotations.map(annot=>ThreeDAnnotation.toDBObject(annot)): _*)))), false, false, WriteConcern.Safe)
+    	      return
+    	   }
+    	   case None => return
+    } 
+  }
+  
+   
+  def listAnnotations(preview_id: String): List[ThreeDAnnotation] = {
+       dao.findOneById(new ObjectId(preview_id)) match{
+    	   case Some(preview) => {
+    		   return preview.annotations
+    	   }
+    	   case None => return List.empty
+       }
+  }
   
 }
+
+
+
+
+

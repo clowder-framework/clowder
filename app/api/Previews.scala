@@ -17,6 +17,8 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsObject
 import models.TileDAO
 import com.mongodb.WriteConcern
+import models.ThreeDAnnotation
+import play.api.libs.json.JsValue
 
 /**
  * Files and datasets previews.
@@ -159,6 +161,7 @@ object Previews extends Controller {
     }
   }
   
+  
   /**
    * Find tile for given preview, level and filename (row and column).
    */
@@ -213,6 +216,68 @@ object Previews extends Controller {
       }
     }
   
-
+    /**
+   * Add annotation to 3D model preview.
+   */
+  def attachAnnotation(preview_id: String) = 
+    Action(parse.json) { request =>       	  
+	      val x_coord = request.body.\("x_coord").asOpt[String].getOrElse("0.0")
+	      val y_coord = request.body.\("y_coord").asOpt[String].getOrElse("0.0")
+	      val z_coord = request.body.\("z_coord").asOpt[String].getOrElse("0.0")
+	      val description = request.body.\("description").asOpt[String].getOrElse("")
+      
+          // TODO create a service instead of calling salat directly
+          PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
+            case Some(preview) => {
+            	val annotation = ThreeDAnnotation(x_coord, y_coord, z_coord, description)
+            	PreviewDAO.annotation(preview_id, annotation)             
+            	Ok(toJson(Map("status"->"success")))
+            }
+	        case None => BadRequest(toJson("Preview not found " + preview_id))
+	      }
+    }
+    
+  def editAnnotation(preview_id: String) =
+    Action(parse.json) { request =>
+      Logger.debug("thereq: " + request.body.toString) 
+      	  val x_coord = request.body.\("x_coord").asOpt[String].getOrElse("0.0")
+	      val y_coord = request.body.\("y_coord").asOpt[String].getOrElse("0.0")
+	      val z_coord = request.body.\("z_coord").asOpt[String].getOrElse("0.0")
+	      val description = request.body.\("description").asOpt[String].getOrElse("")
+	      
+	      // TODO create a service instead of calling salat directly
+          PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
+            case Some(preview) => {
+            	PreviewDAO.findAnnotation(preview_id, x_coord, y_coord, z_coord) match{
+            	  case Some(annotation) => {
+            		PreviewDAO.updateAnnotation(preview_id, annotation.id.toString(), description)
+            	    Ok(toJson(Map("status"->"success")))
+            	  }
+            	  case None => Ok(toJson(Map("status"->"success"))) //What the user sees locally must not change if an annotation is deleted after the user loads the dataset
+            			  											//but before attempting to modify the selected annotation's description.
+            	    //BadRequest(toJson("Annotation for preview " + preview_id + " not found: " + x_coord + "," + y_coord + "," + z_coord))
+            	}
+            }
+	        case None => BadRequest(toJson("Preview not found " + preview_id))
+	      }
+  }
+  
+   def listAnnotations(preview_id: String) =
+    Action{ request => 
+	      // TODO create a service instead of calling salat directly
+          PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
+            case Some(preview) => {
+            	val annotationsOfPreview = PreviewDAO.listAnnotations(preview_id)
+            	val list = for (annotation <- annotationsOfPreview) yield jsonAnnotation(annotation)           	
+            	Logger.debug("thelist: " + toJson(list))
+	      	  	Ok(toJson(list))
+            }
+	        case None => BadRequest(toJson("Preview not found " + preview_id))
+	      }
+  }
+   
+    def jsonAnnotation(annotation: ThreeDAnnotation): JsValue = {
+    		toJson(Map("x_coord"->annotation.x_coord.toString, "y_coord"->annotation.y_coord.toString, "z_coord"->annotation.z_coord.toString,"description"->annotation.description))
+  }
   
 }

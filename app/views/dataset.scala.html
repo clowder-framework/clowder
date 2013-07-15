@@ -30,6 +30,9 @@
 		}
 		else if("@p._2" === "X3d"){							
 			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
+			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
+			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
 		}
 		else if("@p._2" === "Pdf"){							
 			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";

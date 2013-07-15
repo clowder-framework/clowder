@@ -17,6 +17,7 @@ import services.ElasticsearchPlugin
 import java.io.File
 import org.bson.types.ObjectId
 import java.util.Date
+import java.util.TimeZone
 import services.ExtractorMessage
 import securesocial.core.SecureSocial
 import java.text.SimpleDateFormat
@@ -61,7 +62,7 @@ object Datasets extends Controller with SecureSocial {
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
-    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     var prev, next = ""
     var datasets = List.empty[models.Dataset]
     if (direction == "b") {
@@ -78,8 +79,7 @@ object Datasets extends Controller with SecureSocial {
     	firstPage = datasets.exists(_.id == latest(0).id)
     	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
     }
-    
-    if (datasets.size > 0) {
+    if (datasets.size > 0) {  
       if (date != "" && !firstPage) { // show prev button
     	prev = formatter.format(datasets.head.created)
       }
