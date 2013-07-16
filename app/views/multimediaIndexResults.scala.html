@@ -1,0 +1,46 @@
+@(name: String, id: String, size:Integer, results: scala.collection.mutable.HashMap[String, scala.collection.mutable.ArrayBuffer[(String,String,Double,String)]]) 
+
+
+@main("Search Results") {
+	<div class="page-header">
+		<h1>Search Results For <medium>@name</medium></h1>
+	</div>
+	@if(size == 0) {
+	<div class="row-fluid">
+		<div class="span12">
+			No results found. Sorry!
+		</div>
+	</div>
+	}
+	<div class="row-fluid">
+	<div class="span12">
+	<table class="table table-bordered table-hover">
+	<thead>
+				<tr>
+				    <th>IndexID</th>
+					<th>ID</th>
+					<th>Proximity</th>
+					
+				</tr>
+			</thead>
+			<tbody>
+			
+		@results.map { case (key, list) =>
+		   <tr><td rowspan="11 "><a href="http://localhost:8080/api/v1/index/@key">@key</a></td>
+		 	
+			@list.map { case (id,link, distance, fname) =>
+			<tr>
+			  
+			<td><a href=@routes.Files.file(id)> @fname</a></td>
+			<td>@distance</td>
+			</tr>	
+			}
+			
+		}
+		</tbody>
+		</table>
+	</div>
+</div>
+	
+	
+}

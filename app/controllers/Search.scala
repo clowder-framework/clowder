@@ -234,8 +234,116 @@ object Search extends Controller {
     } //Async
   }
 
+  
+  /*Find similar Filesin Multiple index*/
+  def findSimilar(id:String)=Action{
+ 
+   var results =new HashMap[String,Array[(String,String,Double,String)]]
+     
+ // var file1=new models.TempFile( new ObjectId,None,"",new Date , "image",0)
+ // var test=new ArrayBuffer[(String,String,Double,String)]
+  var s:String=""
+   Async{ 
+      
+    	current.plugin[VersusPlugin] match {
+     
+        case Some(plugin)=>{
+        	 
+        	 var indexListResponse=plugin.getIndexes()
+        	 var indexSeqFuture= for {
+        		 list<-indexListResponse
+        		 listIn=list.json.as[Seq[models.IndexList.IndexList]]
+        		 indexSeqT=listIn.map{
+        		  		    ind=>(ind.indexID,ind.MIMEtype)
+        		  		 }
+        		} yield {
+        	       indexSeqT
+        		 }
+        	          
+           import scala.concurrent.Future
+           var finalR=for{
+            		indexSeq<-indexSeqFuture
+            		} yield {
+            				var resultSeqFuture=indexSeq.map{
+            						index=>
+            						//val indexResultFuture=plugin.queryIndex(id, index._1)
+            						val u= for{
+            							indexResult<-plugin.queryIndex(id, index._1)
+            							} yield {
+            									indexResult
+            								//hm.put(indexResult._1,indexResult._2)
+            							}
+            						u
+            					  }//end of indexSeq.map
+              
+            			
+                        var hashResult=for{
+                        	   				result<-scala.concurrent.Future.sequence(resultSeqFuture)
+                        	   		   } yield {
+                        	   				var t=result.toArray
+                                            var indexid="" 
+                                            var a=0  
+                        	   				var hm= new scala.collection.mutable.HashMap[String, ArrayBuffer[(String,String,Double,String)]]()
+                        	   				for(k<-0 to t.length-1){
+                        	   				   hm.put(t(k)._1,t(k)._2)
+                        	   				}
+                        	   				
+                        	   				hm
+                        	   		   }
+            	   			
+                        	   		
+                        hashResult	   		
+            		}//End yield- outer for 
+            		
+		                			for{
+		                				xFinal<-finalR
+		                				yFinal<-xFinal
+		                				}
+		                			yield {
+		                			  Services.queries.getFile(id)match{
+		                			  	case Some(file)=>{ 
+		                			  		Ok(views.html.multimediaIndexResults(file.filename,id,yFinal.size,yFinal))
+		                			  	}
+		                			  	case None=>{
+		                			  			Ok(id +" not found")
+		                			  			}
+		                			  }
+		                			}
+              
+                    
+            
+                   
+         // import scala.collection.mutable.HashMap
+         
+         /*  var hm= new scala.collection.mutable.HashMap[String, ArrayBuffer[(String,String,Double,String)]]() 
+             val index1="19e7a185-7590-4ee9-9a42-d4e04daec525"
+             val index2="4f3dfccf-8fc8-4d75-8a0d-b5d6368626e7"
+          for{
+            
+            index1Result<-plugin.queryIndex(id, index1)
+            index2Result<-plugin.queryIndex(id, index2)
+           } yield{
+             var hm= new scala.collection.mutable.HashMap[String, ArrayBuffer[(String,String,Double,String)]]() 
+                 hm.put(index1Result._1,index1Result._2)
+                 hm.put(index2Result._1,index2Result._2)
+                 Ok(views.html.multimediaIndexResults("abc","123",hm.size,hm))
+           }*/
+          	  
+        	
+        
+        }//case some
+         
+		 case None=>{
+		        Future(Ok("No Versus Service"))
+		       }     
+		 } //match
+    
+   } //Async
+  }
+  
+  
   /* Find Similar files*/
-  def findSimilar(id: String) = Action {
+/*  def findSimilar(id: String) = Action {
     Async {
       current.plugin[VersusPlugin] match {
 
@@ -259,7 +367,7 @@ object Search extends Controller {
         }
       } //match
     } //Async
-  }
+  }*/
 
   def Filterby(id: String) = TODO
 

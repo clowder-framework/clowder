@@ -142,8 +142,8 @@ object Files extends Controller with securesocial.core.SecureSocial {
               _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
            
-             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString) }
-             current.plugin[VersusPlugin].foreach{_.build()}
+             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+             //current.plugin[VersusPlugin].foreach{_.build()}
               
                         
             // redirect to file page]
