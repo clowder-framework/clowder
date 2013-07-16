@@ -27,7 +27,7 @@ import services.ElasticsearchPlugin
  */
 object Geostreams extends Controller {
 
-  val formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
+  val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss'Z'")
   
   implicit val rds = (
     (__ \ 'start_time).read[String] and
@@ -46,6 +46,7 @@ object Geostreams extends Controller {
   
   def addDatapoint(id: String) = Authenticated {
     Action(parse.json) { request =>
+      Logger.info("Adding datapoint: " + request.body)
       request.body.validate[(String, Option[String], List[Double], JsValue, String)].map{ 
         case (start_time, end_time, longlat, data, streamId) => 
           current.plugin[PostgresPlugin] match {
@@ -61,7 +62,7 @@ object Geostreams extends Controller {
             }
            case None => InternalServerError(toJson("Geostreaming not enabled"))
       }}.recoverTotal{
-        e => BadRequest("Detected error:"+ JsError.toFlatJson(e))
+        e => Logger.debug("Error parsing json: " + e); BadRequest("Detected error:"+ JsError.toFlatJson(e))
       }
     }
   }
