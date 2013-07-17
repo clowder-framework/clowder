@@ -1,10 +1,11 @@
-function clearConfigTab(prNum){
-  	  $(window["configs" + prNum].tab + " > textarea").remove();
-  	  $(window["configs" + prNum].tab + " > button").remove(); 
-  	  $(window["configs" + prNum].tab + " > h5").remove();
-  	  $(window["configs" + prNum].tab + " > span").remove();
-  	  $(window["configs" + prNum].tab + " > br").remove();
-    }
+//ANNOTATIONS FUNCTIONS
+function clearConfigTabAnnotations(prNum){
+  	  $(window["configs" + prNum].tab + " > textarea[data-annotation]").remove();
+  	  $(window["configs" + prNum].tab + " > button[data-annotation]").remove(); 
+  	  $(window["configs" + prNum].tab + " > h5[data-annotation]").remove();
+  	  $(window["configs" + prNum].tab + " > span[data-annotation]").remove();
+  	  $(window["configs" + prNum].tab + " > br[data-annotation]").remove();
+    }  
     
   function focusOnAnnotation(x_coord, y_coord, z_coord, event, prNum){	
   	if(window["showAnnotations" + prNum] && (window["isCurrentSubmitted" + prNum] || (x_coord != window["currentAnnotation" + prNum][0] || y_coord != window["currentAnnotation" + prNum][1] || z_coord != window["currentAnnotation" + prNum][2]))){  	  
@@ -16,7 +17,7 @@ function clearConfigTab(prNum){
   			  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "']").remove();
   			  window["isCurrentSubmitted" + prNum] = true;
   		  }   
-  		  clearConfigTab(prNum);		  
+  		  clearConfigTabAnnotations(prNum);		  
   	  }	  
   	  window["currentAnnotation" + prNum][0] = x_coord;
   	  window["currentAnnotation" + prNum][1] = y_coord;
@@ -27,20 +28,25 @@ function clearConfigTab(prNum){
   	  
         var annotationHeading = document.createElement('h5');
         annotationHeading.innerHTML = "Annotation description";
+        annotationHeading.setAttribute('data-annotation','true');
         $(window["configs" + prNum].tab).append(annotationHeading);
 
         var annotationDescription = document.createElement('span');
         annotationDescription.innerHTML = $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML;
         annotationDescription.setAttribute("style","display:block; width:" + window["width" + prNum] + "px;");
+        annotationDescription.setAttribute('data-annotation','true');
         $(window["configs" + prNum].tab).append(annotationDescription);
 
-        $(window["configs" + prNum].tab).append(document.createElement('br'));
+        var annotationBreak = document.createElement('br');
+        annotationBreak.setAttribute('data-annotation','true');
+        $(window["configs" + prNum].tab).append(annotationBreak);
 
         var annotationEdit = document.createElement('button'); 	
         annotationEdit.setAttribute('type','button');		
         annotationEdit.setAttribute("onclick","editAnnotationDescription('" + prNum + "')");
         annotationEdit.innerHTML = 'Edit';
         annotationEdit.setAttribute("style","margin-bottom: 5px;");
+        annotationEdit.setAttribute('data-annotation','true');
         $(window["configs" + prNum].tab).append(annotationEdit);
         
         event.cancelBubble = true;
@@ -108,7 +114,7 @@ function clearConfigTab(prNum){
   	  annotation['x_coord'] = "" + window["currentAnnotation" + prNum][0];
   	  annotation['y_coord'] = "" + window["currentAnnotation" + prNum][1];
   	  annotation['z_coord'] = "" + window["currentAnnotation" + prNum][2];
-  	  annotation['description'] = $(window["configs" + prNum].tab + " > textarea").get(0).value;
+  	  annotation['description'] = $(window["configs" + prNum].tab + " > textarea[data-annotation]").get(0).value;
   	  
   	  var request = $.ajax({
   	       type: 'POST',
@@ -120,27 +126,32 @@ function clearConfigTab(prNum){
   	  
   		  request.done(function (response, textStatus, jqXHR){
   		        console.log("Response " + response);		        
-  		        $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML = $(window["configs" + prNum].tab + " > textarea").get(0).value;
+  		        $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML = $(window["configs" + prNum].tab + " > textarea[data-annotation]").get(0).value;
 
-  		        clearConfigTab(prNum);
+  		        clearConfigTabAnnotations(prNum);
   		  	  	
   		        var newAnnotationHeading = document.createElement('h5');
   		        newAnnotationHeading.innerHTML = "Annotation description";
+  		        newAnnotationHeading.setAttribute('data-annotation','true');
   		        $(window["configs" + prNum].tab).append(newAnnotationHeading);
 
   		        var newAnnotationDescription = document.createElement('span');
   		        newAnnotationDescription.innerHTML = annotation['description'];
   		        newAnnotationDescription.setAttribute("style","display:block; width:" + window["width" + prNum] + "px;");
+  		        newAnnotationDescription.setAttribute('data-annotation','true');
   		        $(window["configs" + prNum].tab).append(newAnnotationDescription);
 
-  		        $(window["configs" + prNum].tab).append(document.createElement('br'));
+  		        var annotationBreak = document.createElement('br');
+  		        annotationBreak.setAttribute('data-annotation','true');
+  		        $(window["configs" + prNum].tab).append(annotationBreak);
 
   		        var newAnnotationEdit = document.createElement('button'); 	
   		        newAnnotationEdit.setAttribute('type','button');		
   		        newAnnotationEdit.setAttribute("onclick","editAnnotationDescription('" + prNum + "')");
   		        newAnnotationEdit.innerHTML = 'Edit';
   		        newAnnotationEdit.setAttribute("style","margin-bottom: 5px;");
-  		        $(window["configs" + prNum].tab).append(newAnnotationEdit);	
+  		        newAnnotationEdit.setAttribute('data-annotation','true');
+  		        $(window["configs" + prNum].tab).append(newAnnotationEdit);	   
   		  	    		        
   			});
   		 
@@ -154,41 +165,50 @@ function clearConfigTab(prNum){
     }
     
     function cancelAnnotationEdit(prNum){
-  	  	clearConfigTab(prNum);
+  	  	clearConfigTabAnnotations(prNum);
   	  
         var annotationHeading = document.createElement('h5');
         annotationHeading.innerHTML = "Annotation description";
-        $(window["configs" + prNum].tab).append(annotationHeading);
+        annotationHeading.setAttribute('data-annotation','true');
+        $(window["configs" + prNum].tab).append(annotationHeading);  
 
         var annotationDescription = document.createElement('span');
         annotationDescription.innerHTML = $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML;
         annotationDescription.setAttribute("style","display:block; width:" + window["width" + prNum] + "px;");
+        annotationDescription.setAttribute('data-annotation','true');
         $(window["configs" + prNum].tab).append(annotationDescription);
 
-        $(window["configs" + prNum].tab).append(document.createElement('br'));
+        var annotationBreak = document.createElement('br');
+        annotationBreak.setAttribute('data-annotation','true');
+        $(window["configs" + prNum].tab).append(annotationBreak);
 
         var annotationEdit = document.createElement('button'); 	
         annotationEdit.setAttribute('type','button');		
         annotationEdit.setAttribute("onclick","editAnnotationDescription('" + prNum + "')");
         annotationEdit.innerHTML = 'Edit';
         annotationEdit.setAttribute("style","margin-bottom: 5px;");
+        annotationEdit.setAttribute('data-annotation','true');
         $(window["configs" + prNum].tab).append(annotationEdit);	
     }
     
     function editAnnotationDescription(prNum){
-  	  clearConfigTab(prNum);
+      clearConfigTabAnnotations(prNum);
   	  
   	  var editAnnotationHeading = document.createElement('h5');
   	  editAnnotationHeading.innerHTML = "Edit annotation description";
+  	  editAnnotationHeading.setAttribute('data-annotation','true');
   	  $(window["configs" + prNum].tab).append(editAnnotationHeading);
   	  
   	  var editAnnotationTextBox = document.createElement('textarea');
   	  editAnnotationTextBox.setAttribute("rows", "4");
   	  editAnnotationTextBox.setAttribute("style","width:" + (window["width" + prNum] - 15) + "px;");
   	  editAnnotationTextBox.value = $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML;
+  	  editAnnotationTextBox.setAttribute('data-annotation','true');
   	  $(window["configs" + prNum].tab).append(editAnnotationTextBox);
   	  
-  	  $(window["configs" + prNum].tab).append(document.createElement('br'));
+  	  var annotationBreak = document.createElement('br');
+  	  annotationBreak.setAttribute('data-annotation','true');
+  	  $(window["configs" + prNum].tab).append(annotationBreak);
   	  
   	  var editAnnotationSubmit = document.createElement('button'); 	
   	  editAnnotationSubmit.setAttribute('type','button');		
@@ -196,6 +216,7 @@ function clearConfigTab(prNum){
   	  editAnnotationSubmit.setAttribute("onclick","submitAnnotationEdit('" + prNum + "')");
   	  editAnnotationSubmit.innerHTML = 'OK';
   	  editAnnotationSubmit.setAttribute("style","margin-bottom: 5px;");
+  	  editAnnotationSubmit.setAttribute('data-annotation','true');
   	  $(window["configs" + prNum].tab).append(editAnnotationSubmit);
   	  
   	  var editAnnotationCancel = document.createElement('button'); 	
@@ -203,6 +224,7 @@ function clearConfigTab(prNum){
   	  editAnnotationCancel.setAttribute("onclick","cancelAnnotationEdit('" + prNum + "')");
   	  editAnnotationCancel.innerHTML = 'Cancel';
   	  editAnnotationCancel.setAttribute("style","margin-bottom: 5px;");
+  	  editAnnotationCancel.setAttribute('data-annotation','true');
   	  $(window["configs" + prNum].tab).append(editAnnotationCancel);
   	  
     }
@@ -223,28 +245,33 @@ function clearConfigTab(prNum){
 
   		  request.done(function (response, textStatus, jqXHR){
   		        console.log("Response " + response);		        
-  		        $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML = $(window["configs" + prNum].tab + " > textarea").get(0).value;
+  		        $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML = $(window["configs" + prNum].tab + " > textarea[data-annotation]").get(0).value;
   		        window["isCurrentSubmitted" + prNum] = true;
   		        
-  		        clearConfigTab(prNum);
+  		        clearConfigTabAnnotations(prNum);
   		  	  	
   		  	    if(window["showAnnotations" + prNum]){
   		  		  var newAnnotationHeading = document.createElement('h5');
   		  		  newAnnotationHeading.innerHTML = "Annotation description";
+  		  		  newAnnotationHeading.setAttribute('data-annotation','true');
   		  		  $(window["configs" + prNum].tab).append(newAnnotationHeading);
   		  		  
   		  		  var newAnnotationDescription = document.createElement('span');
   		  		  newAnnotationDescription.innerHTML = annotation['description'];
   		  		  newAnnotationDescription.setAttribute("style","display:block; width:" + window["width" + prNum] + "px;");
+  		  		  newAnnotationDescription.setAttribute('data-annotation','true');
   		  		  $(window["configs" + prNum].tab).append(newAnnotationDescription);
   		  		  
-  		  		  $(window["configs" + prNum].tab).append(document.createElement('br'));
+  		  		  var annotationBreak = document.createElement('br');
+  		  		  annotationBreak.setAttribute('data-annotation','true');
+  		  		  $(window["configs" + prNum].tab).append(annotationBreak);
   		  		  
   		  		  var newAnnotationEdit = document.createElement('button'); 	
   		  		  newAnnotationEdit.setAttribute('type','button');		
   		  		  newAnnotationEdit.setAttribute("onclick","editAnnotationDescription('" + prNum + "')");
   		  		  newAnnotationEdit.innerHTML = 'Edit';
   		  		  newAnnotationEdit.setAttribute("style","margin-bottom: 5px;");
+  		  		  newAnnotationEdit.setAttribute('data-annotation','true');
   		  		  $(window["configs" + prNum].tab).append(newAnnotationEdit);	
   		  	    }else{
   		  	    	$("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] 
@@ -266,77 +293,199 @@ function clearConfigTab(prNum){
   	  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "']").remove();
   	  window["isCurrentSubmitted" + prNum] = true;
   	  window["currentAnnotation" + prNum] = new Array();
-  	  clearConfigTab(prNum);	  
+  	  clearConfigTabAnnotations(prNum);	  
     }
   	
-    function addAnnotation(event, prNum, isShiftClicked){
-  	  if(isShiftClicked){
-  		  clearConfigTab(prNum);
+    function addAnnotation(event, prNum){
+    	clearConfigTabAnnotations(prNum);
 
-  		  if(window["currentAnnotation" + prNum].length == 3)
-  			  if(window["isCurrentSubmitted" + prNum])
-  				  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] 
-  				  + "'] > shape > appearance > material").get(0).setAttribute("diffuseColor", "mediumblue");
-  			  else{
-  				  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "']").remove();
-  				  isCurrentSubmitted = true;
-  			  }
-  		  
-  		  window["currentAnnotation" + prNum][0] = event.hitPnt[0];
-  		  window["currentAnnotation" + prNum][1] = event.hitPnt[1];
-  		  window["currentAnnotation" + prNum][2] = event.hitPnt[2];
-  		  
-  		  createAnnotationPoint(window["currentAnnotation" + prNum][0], window["currentAnnotation" + prNum][1], window["currentAnnotation" + prNum][2], "", prNum);
-  		  
-  		  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] 
-  		  + "'] > shape > appearance > material").get(0).setAttribute("diffuseColor", "olivedrab");
-  		  
-  		  window["isCurrentSubmitted" + prNum] = false;
-  		  
-  		  var newAnnotationHeading = document.createElement('h5');
-  		  newAnnotationHeading.innerHTML = "Enter annotation description";
-  		  $(window["configs" + prNum].tab).append(newAnnotationHeading);
-  		  
-  		  var newAnnotationTextBox = document.createElement('textarea');
-  		  newAnnotationTextBox.setAttribute("rows", "4");
-  		  newAnnotationTextBox.setAttribute("style","width:" + (window["width" + prNum] - 15) + "px;");
-  		  $(window["configs" + prNum].tab).append(newAnnotationTextBox);
-  		  
-  		  $(window["configs" + prNum].tab).append(document.createElement('br'));
-  		  
-  		  var newAnnotationSubmit = document.createElement('button'); 	
-  		  newAnnotationSubmit.setAttribute('type','button');		
-  		  newAnnotationSubmit.setAttribute('style','margin-right:10px;');
-  		  newAnnotationSubmit.setAttribute("onclick","submitAnnotation('" + prNum + "')");
-  		  newAnnotationSubmit.innerHTML = 'OK';
-  		  newAnnotationSubmit.setAttribute("style","margin-bottom: 5px;");
-  		  $(window["configs" + prNum].tab).append(newAnnotationSubmit);
-  		  
-  		  var newAnnotationCancel = document.createElement('button'); 	
-  		  newAnnotationCancel.setAttribute('type','button');		
-  		  newAnnotationCancel.setAttribute("onclick","cancelNewAnnotation('" + prNum + "')");
-  		  newAnnotationCancel.innerHTML = 'Cancel annotation addition';
-  		  newAnnotationCancel.setAttribute("style","margin-bottom: 5px;");
-  		  $(window["configs" + prNum].tab).append(newAnnotationCancel);
-  		  
-  	      event.cancelBubble = true;
-  	      event.stopPropagation();
-  	  }	
+    	if(window["currentAnnotation" + prNum].length == 3)
+    		if(window["isCurrentSubmitted" + prNum])
+    			$("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] 
+    			+ "'] > shape > appearance > material").get(0).setAttribute("diffuseColor", "mediumblue");
+    		else{
+    			$("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "']").remove();
+    			isCurrentSubmitted = true;
+    		}
+
+    	window["currentAnnotation" + prNum][0] = event.hitPnt[0];
+    	window["currentAnnotation" + prNum][1] = event.hitPnt[1];
+    	window["currentAnnotation" + prNum][2] = event.hitPnt[2];
+
+    	createAnnotationPoint(window["currentAnnotation" + prNum][0], window["currentAnnotation" + prNum][1], window["currentAnnotation" + prNum][2], "", prNum);
+
+    	$("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] 
+    	+ "'] > shape > appearance > material").get(0).setAttribute("diffuseColor", "olivedrab");
+
+    	window["isCurrentSubmitted" + prNum] = false;
+
+    	var newAnnotationHeading = document.createElement('h5');
+    	newAnnotationHeading.innerHTML = "Enter annotation description";
+    	newAnnotationHeading.setAttribute('data-annotation','true');
+    	$(window["configs" + prNum].tab).append(newAnnotationHeading);
+
+    	var newAnnotationTextBox = document.createElement('textarea');
+    	newAnnotationTextBox.setAttribute("rows", "4");
+    	newAnnotationTextBox.setAttribute("style","width:" + (window["width" + prNum] - 15) + "px;");
+    	newAnnotationTextBox.setAttribute('data-annotation','true');
+    	$(window["configs" + prNum].tab).append(newAnnotationTextBox);
+
+    	var annotationBreak = document.createElement('br');
+    	annotationBreak.setAttribute('data-annotation','true');
+    	$(window["configs" + prNum].tab).append(annotationBreak);
+
+    	var newAnnotationSubmit = document.createElement('button'); 	
+    	newAnnotationSubmit.setAttribute('type','button');		
+    	newAnnotationSubmit.setAttribute('style','margin-right:10px;');
+    	newAnnotationSubmit.setAttribute("onclick","submitAnnotation('" + prNum + "')");
+    	newAnnotationSubmit.innerHTML = 'OK';
+    	newAnnotationSubmit.setAttribute("style","margin-bottom: 5px;");
+    	newAnnotationSubmit.setAttribute('data-annotation','true');
+    	$(window["configs" + prNum].tab).append(newAnnotationSubmit);
+
+    	var newAnnotationCancel = document.createElement('button'); 	
+    	newAnnotationCancel.setAttribute('type','button');		
+    	newAnnotationCancel.setAttribute("onclick","cancelNewAnnotation('" + prNum + "')");
+    	newAnnotationCancel.innerHTML = 'Cancel annotation addition';
+    	newAnnotationCancel.setAttribute("style","margin-bottom: 5px;");
+    	newAnnotationCancel.setAttribute('data-annotation','true');
+    	$(window["configs" + prNum].tab).append(newAnnotationCancel);
+
+    	event.cancelBubble = true;
+    	event.stopPropagation();
     }
     
+  //MEASURING FUNCTIONS
+    function startMeasuring(event, prNum){
+		 window["measuringMode" + prNum] = true;
+		 
+		 $("#measuringlinetrafo").remove();
+		 $("#measuringvalue").each(function(){
+			 $(this).remove();
+			 $("#x3dElementTable" + prNum).css("margin-bottom","-=20");
+	    	});
+		 	 
+		 window["currentMeasureStart" + prNum][0] = event.hitPnt[0];
+		 window["currentMeasureStart" + prNum][1] = event.hitPnt[1];
+		 window["currentMeasureStart" + prNum][2] = event.hitPnt[2];
+		 
+		 var measuringLineTrafo = document.createElement('transform');
+		 measuringLineTrafo.setAttribute("id", "measuringlinetrafo");
+		 measuringLineTrafo.setAttribute("DEF", "measuring_line_trafo");
+		 measuringLineTrafo.setAttribute("translation", "0 0 0");
+		 measuringLineTrafo.setAttribute("bboxCenter", "0,0,0");
+		 measuringLineTrafo.setAttribute("bboxSize", "-1,-1,-1");
+		 measuringLineTrafo.setAttribute("data-measuring", "true");  
+		 
+		 
+		 var measuringLineShape = document.createElement('shape');
+		 measuringLineShape.setAttribute("id", "measuringlineshape");
+		 measuringLineShape.setAttribute("DEF", "measuring_line_shape");
+		 measuringLineShape.setAttribute("isPickable", "false");
+		 measuringLineTrafo.appendChild(measuringLineShape);
+		 
+		 var measuringLineAppearance = document.createElement('appearance');
+		 measuringLineAppearance.setAttribute("id", "measuringlineappearance");
+		 measuringLineAppearance.setAttribute("DEF", "measuring_line_appearance");
+		 measuringLineShape.appendChild(measuringLineAppearance);
+		 
+		 var measuringLineMaterial = document.createElement('material');
+		 measuringLineMaterial.setAttribute("id", "measuringlinematerial");
+		 measuringLineMaterial.setAttribute("DEF", "measuring_line_material");
+		 measuringLineMaterial.setAttribute("emissiveColor", "1 0 0");
+		 measuringLineMaterial.setAttribute("diffuseColor", "0 0 0");
+		 measuringLineAppearance.appendChild(measuringLineMaterial);
+		 
+		 var measuringLine = document.createElement('indexedLineSet');
+		 measuringLine.setAttribute("id", "measuringline");
+		 measuringLine.setAttribute("DEF", "measuring_line");
+		 measuringLine.setAttribute("coordIndex", "0 1 -1");
+		 measuringLineShape.appendChild(measuringLine);
+		 
+		 var measuringLineCoords = document.createElement('coordinate');
+		 measuringLineCoords.setAttribute("id", "measuringlinecoordinate");
+		 measuringLineCoords.setAttribute("DEF", "measuring_line_coordinate");
+		 measuringLineCoords.setAttribute("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
+		 									+ ", " + window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]);		 
+		 measuringLine.appendChild(measuringLineCoords);
+		 
+//		 var measuringLineColor = document.createElement('color');
+//		 measuringLineColor.setAttribute("id", "measuringlinecolor");
+//		 measuringLineColor.setAttribute("DEF", "measuring_line_color");
+//		 measuringLineColor.setAttribute("color", "1 0 0, 1 0 0");
+//		 measuringLine.appendChild(measuringLineColor);
+		 
+		 document.getElementById("x3dElement" + prNum).getElementsByTagName('scene')[0].appendChild(measuringLineTrafo);
+		 
+		 $("#x3dElement" + prNum).get(0).style.cursor = "crosshair";
+		  
+		 event.cancelBubble = true;
+	     event.stopPropagation();
+    }
+    
+    function calculateDistance(event, prNum){
+    	var distanceValue = round_number((Math.abs(window["currentMeasureStart" + prNum][0]-event.hitPnt[0])+Math.abs(window["currentMeasureStart" + prNum][1]-event.hitPnt[1])
+    						+Math.abs(window["currentMeasureStart" + prNum][2]-event.hitPnt[2])) * window["modelMaxDimension" + prNum], 4);
+    	
+    	var resultLine = document.createElement('h5');
+    	resultLine.innerHTML = "Distance: " + distanceValue;
+    	resultLine.setAttribute('id','measuringvalue');
+    	resultLine.setAttribute('data-measuring','true');
+    	resultLine.setAttribute("style","text-align:center;");
+    	$("#x3dElementTable" + prNum).after(resultLine);
+    	
+    	$("#measuringlinecoordinate").attr("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
+		+ ", " + event.hitPnt[0] + " " + event.hitPnt[1] + " " + event.hitPnt[2]); 
+    	
+    	$("#x3dElement" + prNum).get(0).style.cursor = "auto";
+    	
+    	window["measuringMode" + prNum] = false;
+    	
+    	$("#x3dElementTable" + prNum).css("margin-bottom","+=20");
+    	
+    	event.cancelBubble = true;
+    	event.stopPropagation();
+    }
+    
+    function round_number(num, dec) {
+        return Math.round(num * Math.pow(10, dec)) / Math.pow(10, dec);
+    }
+    
+  /////////////////////  
     function handleObjectClick(event, prNum){
-    	var isShiftClicked = window["isShiftClicked" + prNum];
-    	var annotationsTranslations = [];    	
-    	$("#x3dElement" + prNum + " > scene > transform[data-annotation]").each(function(){
-    		annotationsTranslations.push($(this).attr("translation").split(","));
-    	});
-    	for(var j = 0; j < annotationsTranslations.length; j++){  
-    		if(Math.abs(annotationsTranslations[j][0]-event.hitPnt[0])+Math.abs(annotationsTranslations[j][1]-event.hitPnt[1])+Math.abs(annotationsTranslations[j][2]-event.hitPnt[2]) <= 0.015){
-    			focusOnAnnotation(annotationsTranslations[j][0], annotationsTranslations[j][1], annotationsTranslations[j][2], event, prNum);
-    			return;
-    		}
-    	}  	
-    	addAnnotation(event, prNum, isShiftClicked);
+    	if(window["measuringMode" + prNum])
+    		calculateDistance(event, prNum); 		
+    	else if(window["isXClicked" + prNum])
+    		 startMeasuring(event, prNum);
+    	else{
+	    	var annotationsTranslations = [];    	
+	    	$("#x3dElement" + prNum + " > scene > transform[data-annotation]").each(function(){
+	    		annotationsTranslations.push($(this).attr("translation").split(","));
+	    	});
+	    	for(var j = 0; j < annotationsTranslations.length; j++){  
+	    		if(Math.abs(annotationsTranslations[j][0]-event.hitPnt[0])+Math.abs(annotationsTranslations[j][1]-event.hitPnt[1])+Math.abs(annotationsTranslations[j][2]-event.hitPnt[2]) <= 0.015){
+	    			focusOnAnnotation(annotationsTranslations[j][0], annotationsTranslations[j][1], annotationsTranslations[j][2], event, prNum);
+	    			return;
+	    		}
+	    	}
+	    	
+	    	if(window["isShiftClicked" + prNum])
+	    		addAnnotation(event, prNum);
+    	}
+    }
+    
+    function handleMouseMove(event, prNum){
+    	if(window["measuringMode" + prNum]){  
+    		var theRuntime = $("#x3dElement" + prNum).get(0).runtime;
+    		var mousePos = theRuntime.mousePosition(event);
+    		var worldPos =  theRuntime.getViewingRay(mousePos[0], mousePos[1]).pos;
+
+    		$("#measuringlinecoordinate").attr("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
+    										+ ", " + worldPos.x + " " + worldPos.y + " " + worldPos.z);
+    		
+    		event.cancelBubble = true;
+    		event.stopPropagation();
+    	}   	
     }
 
 (function ($, Configuration) {
@@ -351,6 +500,7 @@ function clearConfigTab(prNum){
   
   var prNum = Configuration.tab.replace("#previewer","");
   
+  //Annotations vars
   window["showAnnotations" + prNum] = false; 
   window["currentAnnotation" + prNum] = new Array(); 
   window["isCurrentSubmitted" + prNum] = true;
@@ -360,16 +510,26 @@ function clearConfigTab(prNum){
   window["configs" + prNum] = Configuration;
   window["width" + prNum] = width;
   
-  $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:550px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>"
+  //Measuring vars
+  window["isXClicked" + prNum] = false;
+  window["measuringMode" + prNum] = false;
+  window["currentMeasureStart" + prNum] = new Array();
+  window["modelMaxDimension" + prNum] = 1.0;
+  
+  $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:560px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>"
 		  					+ "<tr><td>Left mouse button + Ctrl drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
 		  					+ "<tr><td>Right mouse button drag / Left mouse button + Alt drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Zoom</td></tr>"
-		  					+ "<tr><td>m button</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Change rendering (regular-vertices-wireframe)</td></tr>"
+		  					+ "<tr><td>M</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Change rendering (regular-vertices-wireframe)</td></tr>"
+		  					+ "<tr><td>D</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Show/hide texture maps</td></tr>"
+		  					+ "<tr><td>Space</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Show/hide model statistics</td></tr>"
 		  					+ "<tr><td>Shift + Left mouse button</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Add annotation</td></tr>"
 		  					+ "<tr><td>Q</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Toggle annotations visibility</td></tr>"
+		  					+ "<tr><td>X + Left mouse button</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Use measuring tool</td></tr>"
+		  					+ "<tr><td>Z</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Remove measurement</td></tr>"
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='false' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 148) + "px;' >";
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 228) + "px;' >";
 
   $.ajax({
 	    url: fileUrl,
@@ -398,6 +558,9 @@ function clearConfigTab(prNum){
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("DEF","model");
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("solid","true");
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("onclick","handleObjectClick(event,'" + prNum + "');");
+  
+  window["modelMaxDimension" + prNum] = $("#x3dElement" + prNum + " > scene").attr("data-modelMaxDimension");
+  $("#x3dElement" + prNum).attr("onmousemove", "handleMouseMove(event,'" + prNum + "');"); 
     
   var s = document.createElement("script");
   s.type = "text/javascript";
@@ -410,8 +573,34 @@ function clearConfigTab(prNum){
   viewPoint.setAttribute("centerOfRotation", "0,0,0");
   $("#x3dElement" + prNum + " > scene").prepend(viewPoint);
   
+//  var background = document.createElement('background');
+//  background.setAttribute("skyColor", "0.000 0.000 0.000");
+//  $("#x3dElement" + prNum + " > scene").prepend(background);
+//  var navInfo = document.createElement('navigationInfo');
+//  navInfo.setAttribute("headlight", "false");
+//  $("#x3dElement" + prNum + " > scene").prepend(navInfo);
+  
+//  var directionalLight = document.createElement('directionalLight');
+//  directionalLight.setAttribute("direction", "1 0 1");
+//  directionalLight.setAttribute("intensity", "1");
+//  $("#x3dElement" + prNum + " > scene").prepend(directionalLight);
+   
+  //alert($("#x3dElement" + prNum).get(0).runtime.getViewingRay(0, 0).pos.x);
+  //$("#x3dElement" + prNum).get(0).style.cursor = "crosshair";
+  
   $("body").on('keypress','#x3dElement' + prNum,function(e){
-	  if(e.which == 113){
+	  if(e.which == 122){
+		  window["measuringMode" + prNum] = false;
+
+		  $("#measuringlinetrafo").remove();
+		  $("#measuringvalue").each(function(){
+			  $(this).remove();
+			  $("#x3dElementTable" + prNum).css("margin-bottom","-=20");
+		  });
+		  
+		  $("#x3dElement" + prNum).get(0).style.cursor = "auto";
+	  }	  
+	  else if(e.which == 113){
 		  if(window["showAnnotations" + prNum]){
 			  $("#x3dElement" + prNum + " > scene > transform[data-annotation]" 
 			  + " > shape > appearance > material").attr("transparency", "1");
@@ -423,7 +612,7 @@ function clearConfigTab(prNum){
 					  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "']").remove();
 					  window["isCurrentSubmitted" + prNum] = true;
 				  }   
-				  clearConfigTab(prNum);
+				  clearConfigTabAnnotations(prNum);
 				  window["currentAnnotation" + prNum] = new Array();
 			  }
 			  window["showAnnotations" + prNum] = false;
@@ -452,10 +641,16 @@ function clearConfigTab(prNum){
 	  if(e.which == 16){
 		  window["isShiftClicked" + prNum] = true;
 	  }
+	  else if(e.which == 88){
+		  window["isXClicked" + prNum] = true;
+	  }
   });  
   $("body").on('keyup',function(e){
 	  if(e.which == 16){
 		  window["isShiftClicked" + prNum] = false;
+	  }
+	  else if(e.which == 88){
+		  window["isXClicked" + prNum] = false;
 	  }
   });
   
