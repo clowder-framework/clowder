@@ -99,6 +99,8 @@ GET     /admin/test                 controllers.Admin.test
 GET     /admin/secureTest           controllers.Admin.secureTest
 GET     /admin/reindexFiles         controllers.Admin.reindexFiles
 
+GET     /admin/extractions          controllers.Extractors.extractions
+
 # Javascript Endpoints
 GET     /javascriptRoutes           controllers.Application.javascriptRoutes
 
@@ -122,9 +124,13 @@ GET		/api/files/:id/listpreviews		  						api.Files.filePreviewsList(id)
 GET		/api/files/:three_d_file_id/:filename					api.Files.getTexture(three_d_file_id,filename)
 GET     /api/files/:id                    						api.Files.download(id)
 
+# DANGER
+GET     /api/delete-data                    					api.Admin.deleteAllData
+
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 
 GET    	/api/datasets					  						api.Datasets.list
+POST    /api/datasets                                           api.Datasets.createDataset
 POST    /api/datasets/:id/metadata		  						api.Datasets.addMetadata(id)
 POST    /api/datasets/:id/usermetadata	  						api.Datasets.addUserMetadata(id)
 GET 	/api/datasets/:id/listFiles		 						api.Datasets.datasetFilesList(id)

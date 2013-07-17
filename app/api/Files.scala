@@ -30,6 +30,7 @@ import fileutils.FilesUtils
 import models.Comment
 import java.util.Date
 import api.ApiController
+import controllers.SecuredController
 
 /**
  * Json API for files.
@@ -160,13 +161,13 @@ object Files extends Controller with ApiController {
 			          }			          
 			        }    	
 	            
-	            val key = "unknown." + fileType.replace(".", "_").replace("/", ".")
+	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 	            val id = f.id.toString	            
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
 	            current.plugin[ElasticsearchPlugin].foreach{
-	              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+	              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 	            }
 	            Ok(toJson(Map("id"->id)))   
 	          }

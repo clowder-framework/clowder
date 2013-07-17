@@ -8,6 +8,7 @@ import play.api.mvc.Action
 import play.api.Routes
 import securesocial.core.SecureSocial._
 import securesocial.core.SecureSocial
+import api.ApiController
 
 /**
  * Administration pages.
@@ -15,13 +16,13 @@ import securesocial.core.SecureSocial
  * @author Luigi Marini
  *
  */
-object Admin extends Controller with SecureSocial {
+object Admin extends Controller with SecuredController {
   
   def main = Action { implicit request =>
     Ok(views.html.admin())
   }
   
-  def reindexFiles = SecuredAction { implicit request =>
+  def reindexFiles = SecuredAction(parse.json) { implicit request =>
     Ok("Reindexing")
   }
   
@@ -29,7 +30,7 @@ object Admin extends Controller with SecureSocial {
     Ok("""{"message":"test"}""").as(JSON)
   }
   
-  def secureTest = SecuredAction { implicit request =>
+  def secureTest = SecuredAction(parse.json) { implicit request =>
     Ok("""{"message":"secure test"}""").as(JSON)
   }
 }

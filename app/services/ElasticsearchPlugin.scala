@@ -29,14 +29,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   override def onStart() {
     val configuration = application.configuration
     try {
-      node = nodeBuilder().client(true).node()
+      node = nodeBuilder().clusterName("medici").client(true).node()
       val settings = ImmutableSettings.settingsBuilder()
       settings.put("client.transport.sniff", true)
       settings.build();
       client = new TransportClient(settings)
       client.addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
-      testIndex()
-      testQuery()
+
+      client.prepareIndex("data", "file")
+      client.prepareIndex("data", "dataset")
+      
       Logger.info("ElasticsearchPlugin has started")
     } catch {
       case nn: NoNodeAvailableException => Logger.error("Error connecting to elasticsearch: " + nn)
@@ -45,16 +47,23 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   def search(index: String, query: String): SearchResponse = {
+    Logger.info("Searching ElasticSearch for " + query)
+    
     val response = client.prepareSearch(index)
+      .setTypes("file","dataset")
       .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-      .setQuery(QueryBuilders.queryString(query))
+      .setQuery(QueryBuilders.matchQuery("_all", query))
       .setFrom(0).setSize(60).setExplain(true)
       .execute()
-      .actionGet();
-    Logger.info(response.toString())
+      .actionGet()
+      
+    Logger.info("Search hits: " + response.getHits().getTotalHits())
     response
   }
 
+  /**
+   * Index document using an arbitrary map of fields.
+   */
   def index(index: String, docType: String, id: String, fields: List[(String, String)]) {
     var builder = jsonBuilder()
       .startObject()
@@ -63,8 +72,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val response = client.prepareIndex(index, docType, id)
       .setSource(builder)
       .execute()
-      .actionGet();
-    Logger.info(response.toString())
+      .actionGet()
+    Logger.info("Indexing document: " + response.getId())
   }
 
   def testQuery() {

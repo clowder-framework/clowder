@@ -1,4 +1,5 @@
 package api
+
 import play.api.mvc.Action
 import play.api.mvc.Result
 import play.api.mvc.Request
@@ -25,7 +26,14 @@ import play.api.mvc.BodyParser
 import securesocial.core.SecuredRequest
 import securesocial.core.AuthenticationMethod
 
+/**
+ * New way to wrap actions for authentication so that we have access to Identity.
+ * 
+ * @author Rob Kooper
+ * 
+ */
 trait ApiController extends Controller {
+  
 	def SecuredAction[A](p: BodyParser[A], allowKey: Boolean = true)(f: SecuredRequest[A] => Result) = Action(p) {
 		implicit request => {
 			request.headers.get("Authorization") match { // basic authentication

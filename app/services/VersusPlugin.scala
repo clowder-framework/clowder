@@ -54,7 +54,18 @@ class VersusPlugin(application:Application) extends Plugin{
     
   }
   
-  def index(id:String){
+   // Get all indexes from Versus
+  def getIndexes():scala.concurrent.Future[play.api.libs.ws.Response]={
+    
+    val configuration = play.api.Play.configuration
+    val host=configuration.getString("versus.host").getOrElse("")
+    val indexurl=host+"/index"
+    var k=0
+    val indexList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(indexurl).get()
+       indexList
+  }
+  //index your file
+  def index(id:String, fileType:String){
     
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
@@ -62,13 +73,34 @@ class VersusPlugin(application:Application) extends Plugin{
     val urlf= client+"/files/"+id+"/blob"
     val host=configuration.getString("versus.host").getOrElse("")
     
-     val indexurl=host+"/index/"+indexId+"/add"
+     var indexurl=host+"/index/"+indexId+"/add"
+     
+     val indexList=getIndexes()
+     var k=0
+      indexList.map{
+	    	response=> 
+	    	Logger.debug("response.body="+response.body)
+	    	val json: JsValue=Json.parse(response.body)
+	    	Logger.debug("index(): json="+json);
+	    	val list=json.as[Seq[models.IndexList.IndexList]]
+	    	val len=list.length
+	    	val indexes=new Array[(String,String)](len)
+	    	
+	    	  list.map{
+	    	  index=>Logger.debug("indexID="+index.indexID+" MIMEType="+index.MIMEtype);
+	    	  indexes.update(k, (index.indexID,index.MIMEtype))
+	    	  if(fileType.contains(index.MIMEtype)) {
+	    	     indexurl=host+"/index/"+index.indexID+"/add"
+	    	    		WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map{
+	    			res=> 
+	    			  Logger.debug("res.body="+res.body)
+	        		      		
+	    		  }//WS map end
+	    	   }//if fileType end
+	    	}
+	    	
+     }
     
-    WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map{
-    	res=> 
-    	Logger.debug("res.body"+res.body)
-        		      		
-    }
   }
   
    def build(){
@@ -126,7 +158,56 @@ class VersusPlugin(application:Application) extends Plugin{
           }
         	 
      }
+ 
   
+  import scala.collection.mutable.ArrayBuffer
+//query a specific index 
+  
+  def queryIndex(id:String,indxId:String):scala.concurrent.Future[(String,scala.collection.mutable.ArrayBuffer[(String,String,Double,String)])]={
+    val configuration = play.api.Play.configuration
+    val client = configuration.getString("versus.client").getOrElse("")
+   // val indexId=configuration.getString("versus.index").getOrElse("")
+    val indexId=indxId
+    val query= client+"/queries/"+id+"/blob"
+    val host=configuration.getString("versus.host").getOrElse("")
+      
+    var queryurl=host+"/index/"+indexId+"/query" 
+    val resultFuture: scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(queryurl).post(Map("infile" -> Seq(query)))
+               
+   resultFuture.map{
+   response=>
+		        val json: JsValue=Json.parse(response.body)
+		        val similarity_value=json.as[Seq[models.Result.Result]]
+		        
+		        val len=similarity_value.length
+		        val ar=new Array[String](len)
+		        val se=new Array[(String,String,Double,String)](len)
+		       
+		        var resultArray=new ArrayBuffer[(String,String,Double,String)]()
+		        
+		        var i=0
+		        similarity_value.map{
+		        	 result=>
+		        	  val a=result.docID.split("/")
+		        	  val n=a.length-2
+		        	  Services.files.getFile(a(n)) match{
+		        	  case Some(file)=>{
+		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
+		        	    resultArray+=((a(n),result.docID,result.proximity,file.filename))
+		        	    ar.update(i, file.filename)
+		        	    //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
+		        	    Logger.debug("resultArray=("+a(n)+", "+result.proximity+", "+file.filename+")\n" )
+		        	    i=i+1
+		        	   }
+		        	 case None=>None
+		        		         
+		        	 }
+		        		         		    
+		        } // End of similarity map
+	          //se
+		        (indexId,resultArray)
+          }
+ }
   
  def queryURL(url:String):scala.concurrent.Future[Array[(String,String,Double,String)]]={
     val configuration = play.api.Play.configuration

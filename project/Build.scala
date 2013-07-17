@@ -11,7 +11,7 @@ object ApplicationBuild extends Build {
       "com.novus" %% "salat" % "1.9.2-SNAPSHOT",
       "securesocial" % "securesocial" % "master-SNAPSHOT",
       "com.rabbitmq" % "amqp-client" % "3.0.0",
-      "org.elasticsearch" % "elasticsearch" % "0.20.1",
+      "org.elasticsearch" % "elasticsearch" % "0.90.2",
       "com.spatial4j" % "spatial4j" % "0.3",
       "org.mongodb" %% "casbah" % "2.5.0",
       "postgresql" % "postgresql" % "9.1-901.jdbc4",
