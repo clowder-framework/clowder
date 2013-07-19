@@ -424,8 +424,8 @@ function clearConfigTabAnnotations(prNum){
     }
     
     function calculateDistance(event, prNum){
-    	var distanceValue = round_number((Math.abs(window["currentMeasureStart" + prNum][0]-event.hitPnt[0])+Math.abs(window["currentMeasureStart" + prNum][1]-event.hitPnt[1])
-    						+Math.abs(window["currentMeasureStart" + prNum][2]-event.hitPnt[2])) * window["modelMaxDimension" + prNum], 4);
+    	var distanceValue = round_number(Math.sqrt(Math.pow(window["currentMeasureStart" + prNum][0]-event.hitPnt[0],2)+Math.pow(window["currentMeasureStart" + prNum][1]-event.hitPnt[1],2)
+    						+Math.pow(window["currentMeasureStart" + prNum][2]-event.hitPnt[2],2)) * window["modelMaxDimension" + prNum], 4);
     	
     	var resultLine = document.createElement('h5');
     	resultLine.innerHTML = "Distance: " + distanceValue;
@@ -435,7 +435,7 @@ function clearConfigTabAnnotations(prNum){
     	$("#x3dElementTable" + prNum).after(resultLine);
     	
     	$("#measuringlinecoordinate").attr("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
-		+ ", " + event.hitPnt[0] + " " + event.hitPnt[1] + " " + event.hitPnt[2]); 
+		+ ", " + event.hitPnt[0] + " " + event.hitPnt[1] + " " + event.hitPnt[2]);   
     	
     	$("#x3dElement" + prNum).get(0).style.cursor = "auto";
     	
@@ -450,6 +450,8 @@ function clearConfigTabAnnotations(prNum){
     function round_number(num, dec) {
         return Math.round(num * Math.pow(10, dec)) / Math.pow(10, dec);
     }
+  //LIGHTING FUNCTIONS
+    
     
   /////////////////////  
     function handleObjectClick(event, prNum){
@@ -463,7 +465,7 @@ function clearConfigTabAnnotations(prNum){
 	    		annotationsTranslations.push($(this).attr("translation").split(","));
 	    	});
 	    	for(var j = 0; j < annotationsTranslations.length; j++){  
-	    		if(Math.abs(annotationsTranslations[j][0]-event.hitPnt[0])+Math.abs(annotationsTranslations[j][1]-event.hitPnt[1])+Math.abs(annotationsTranslations[j][2]-event.hitPnt[2]) <= 0.015){
+	    		if(Math.sqrt(Math.pow(annotationsTranslations[j][0]-event.hitPnt[0],2)+Math.pow(annotationsTranslations[j][1]-event.hitPnt[1],2)+Math.pow(annotationsTranslations[j][2]-event.hitPnt[2],2)) <= 0.009){
 	    			focusOnAnnotation(annotationsTranslations[j][0], annotationsTranslations[j][1], annotationsTranslations[j][2], event, prNum);
 	    			return;
 	    		}
@@ -485,7 +487,25 @@ function clearConfigTabAnnotations(prNum){
     		
     		event.cancelBubble = true;
     		event.stopPropagation();
-    	}   	
+    	}
+    	else if(window["isCClicked" + prNum] && window["mouseDown" + prNum]){   //onmousemove
+    		//window["currentLightingOffset" + prNum][0] += (event.clientY - window["mouseY" + prNum])/80;
+    		
+    		//event.cancelBubble = true;
+    		//event.stopPropagation();
+    	}
+    }
+    
+    function handleViewpointChange(event){
+    	var prNum = event.target.id.replace("x3dom_viewpoint_cam", "");
+    	var rot = event.orientation;
+    	
+    	document.getElementById('EyeCoords'+ prNum).setAttribute(
+    			'rotation', (rot[0].x + window["currentLightingOffset" + prNum][0])+' '+(rot[0].y + window["currentLightingOffset" + prNum][1])+' '+rot[0].z+' '+rot[1]);
+    	
+    	window["currentViewpointRotation" + prNum][0] = rot[0].x;
+    	window["currentViewpointRotation" + prNum][1] = rot[0].y;
+    	window["currentViewpointRotation" + prNum][2] = rot[0].z;
     }
 
 (function ($, Configuration) {
@@ -516,6 +536,14 @@ function clearConfigTabAnnotations(prNum){
   window["currentMeasureStart" + prNum] = new Array();
   window["modelMaxDimension" + prNum] = 1.0;
   
+  //Lighting vars
+  window["isCClicked" + prNum] = false;
+  window["currentLightingOffset" + prNum] = new Array(0,0,0);
+  window["currentViewpointRotation" + prNum] = new Array();
+//  window["mouseX" + prNum] = 0;
+//  window["mouseY" + prNum] = 0;
+  window["mouseDown" + prNum] = false;
+  
   $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:560px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>"
 		  					+ "<tr><td>Left mouse button + Ctrl drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
 		  					+ "<tr><td>Right mouse button drag / Left mouse button + Alt drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Zoom</td></tr>"
@@ -526,10 +554,11 @@ function clearConfigTabAnnotations(prNum){
 		  					+ "<tr><td>Q</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Toggle annotations visibility</td></tr>"
 		  					+ "<tr><td>X + Left mouse button</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Use measuring tool</td></tr>"
 		  					+ "<tr><td>Z</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Remove measurement</td></tr>"
+		  					+ "<tr><td>Left mouse button + C drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Change lighting direction</td></tr>"
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 228) + "px;' >";
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 248) + "px;' >";
 
   $.ajax({
 	    url: fileUrl,
@@ -553,7 +582,6 @@ function clearConfigTabAnnotations(prNum){
       dataType: "json"
     });
   
-  //$("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("colorPerVertex","false");
 
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("DEF","model");
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("solid","true");
@@ -569,27 +597,37 @@ function clearConfigTabAnnotations(prNum){
   $(Configuration.tab).append(s);
   
   var viewPoint = document.createElement('viewpoint');
+  viewPoint.setAttribute("id", "x3dom_viewpoint_cam" + prNum);
   viewPoint.setAttribute("position", "0 0 2");
   viewPoint.setAttribute("centerOfRotation", "0,0,0");
+  viewPoint.setAttribute("bind", "true");
+  viewPoint.setAttribute("isActive", "true");
   $("#x3dElement" + prNum + " > scene").prepend(viewPoint);
   
-//  var background = document.createElement('background');
-//  background.setAttribute("skyColor", "0.000 0.000 0.000");
-//  $("#x3dElement" + prNum + " > scene").prepend(background);
-//  var navInfo = document.createElement('navigationInfo');
-//  navInfo.setAttribute("headlight", "false");
-//  $("#x3dElement" + prNum + " > scene").prepend(navInfo);
+  var navInfo = document.createElement('navigationInfo');
+  navInfo.setAttribute("headlight", "false");
+  navInfo.setAttribute("set_bind", "true");
+  navInfo.setAttribute("isActive", "true");
+  $("#x3dElement" + prNum + " > scene").prepend(navInfo);
   
-//  var directionalLight = document.createElement('directionalLight');
-//  directionalLight.setAttribute("direction", "1 0 1");
-//  directionalLight.setAttribute("intensity", "1");
-//  $("#x3dElement" + prNum + " > scene").prepend(directionalLight);
-   
-  //alert($("#x3dElement" + prNum).get(0).runtime.getViewingRay(0, 0).pos.x);
-  //$("#x3dElement" + prNum).get(0).style.cursor = "crosshair";
+  var directionalLight = document.createElement('directionalLight');
+  directionalLight.setAttribute("direction", "0 0 -1");
+  directionalLight.setAttribute("intensity", "1");
+  directionalLight.setAttribute("color", "1 1 1");
+  directionalLight.setAttribute("ambientIntensity", "0.0");
+  directionalLight.setAttribute("global", "true");
+  var lightTrafo = document.createElement('transform');
+  lightTrafo.setAttribute("id", "EyeCoords" + prNum);
+  lightTrafo.appendChild(directionalLight);  
+  $("#x3dElement" + prNum + " > scene").prepend(lightTrafo);
+  
+  document.onload = function() {
+      document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
+      document.getElementById("x3dElement" + prNum).runtime.resetExamin();
+  };
   
   $("body").on('keypress','#x3dElement' + prNum,function(e){
-	  if(e.which == 122){
+	  if(e.which == 122 || e.which == 90){
 		  window["measuringMode" + prNum] = false;
 
 		  $("#measuringlinetrafo").remove();
@@ -600,7 +638,7 @@ function clearConfigTabAnnotations(prNum){
 		  
 		  $("#x3dElement" + prNum).get(0).style.cursor = "auto";
 	  }	  
-	  else if(e.which == 113){
+	  else if(e.which == 113 || e.which == 81){
 		  if(window["showAnnotations" + prNum]){
 			  $("#x3dElement" + prNum + " > scene > transform[data-annotation]" 
 			  + " > shape > appearance > material").attr("transparency", "1");
@@ -644,6 +682,9 @@ function clearConfigTabAnnotations(prNum){
 	  else if(e.which == 88){
 		  window["isXClicked" + prNum] = true;
 	  }
+	  else if(e.which == 67){
+		  window["isCClicked" + prNum] = true;
+	  }
   });  
   $("body").on('keyup',function(e){
 	  if(e.which == 16){
@@ -652,6 +693,15 @@ function clearConfigTabAnnotations(prNum){
 	  else if(e.which == 88){
 		  window["isXClicked" + prNum] = false;
 	  }
+	  else if(e.which == 67){
+		  window["isCClicked" + prNum] = false;
+	  }
+  });
+  $("body").on('mouseup',function(){
+	  window["mouseDown" + prNum] = false;
+  });
+  $("body").on('mousedown',function(){
+	  window["mouseDown" + prNum] = true;
   });
   
 
