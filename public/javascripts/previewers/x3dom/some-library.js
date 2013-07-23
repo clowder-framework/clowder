@@ -462,6 +462,8 @@ function clearConfigTabAnnotations(prNum){
 		directionArrayNew[2] = parseFloat(directionArrayOld[2]);
 		var increment = 100;
 		var maxHorizontal = 1 - Math.abs(parseFloat(directionArrayOld[1]));
+		
+		console.log("old: " + directionArrayOld[0] + " " + directionArrayOld[1] + " " + directionArrayOld[2]);
 		if(event.clientX - window["mouseX" + prNum] > 0){
 			if(parseFloat(directionArrayOld[0]) < 0){
 				if(parseFloat(directionArrayOld[2]) + (event.clientX - window["mouseX" + prNum])/ increment * maxHorizontal > maxHorizontal){
@@ -564,7 +566,7 @@ function clearConfigTabAnnotations(prNum){
 				}
 			}		
 		}		
-		
+		console.log("new: " + directionArrayNew[0] + " " + directionArrayNew[1] + " " + directionArrayNew[2]);
 		$("#x3dom_directional_light" + prNum).attr("direction", directionArrayNew[0] + " " + directionArrayNew[1] + " " + directionArrayNew[2]);
 		
 		///////////////////////////////////
