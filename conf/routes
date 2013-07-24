@@ -136,6 +136,7 @@ POST    /api/datasets/:id/usermetadata	  						api.Datasets.addUserMetadata(id)
 GET 	/api/datasets/:id/listFiles		 						api.Datasets.datasetFilesList(id)
 POST    /api/datasets/:id/comment								api.Datasets.comment(id)
 POST    /api/datasets/:id/tag									api.Datasets.tag(id)
+GET		/api/datasets/:id/isBeingProcessed						api.Datasets.isBeingProcessed(id)
 POST	/api/datasets/searchusermetadata						api.Datasets.searchDatasetsUserMetadata
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					api.Previews.downloadPreview(preview_id, datasetid)

@@ -20,7 +20,9 @@ import jsonutils.JsonUtil
 import scala.collection.JavaConversions._
 import models.File
 import models.FileDAO
+import models.Extraction
 import services.ElasticsearchPlugin
+
 
 /**
  * Dataset API.
@@ -28,6 +30,8 @@ import services.ElasticsearchPlugin
  * @author Luigi Marini
  *
  */
+object ActivityFound extends Exception { }
+
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
 object Datasets extends Controller with ApiController {
 
@@ -178,4 +182,41 @@ object Datasets extends Controller with ApiController {
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
     }
+  
+  /**
+   * Return whether a dataset is currently being processed.
+   */
+  def isBeingProcessed(id: String) = Action { request =>
+  	Services.datasets.get(id)  match {
+  	  case Some(dataset) => {
+  	    val files = dataset.files map { f =>
+          FileDAO.get(f.id.toString).get
+        }
+  	    
+  	    var isActivity = "false"
+        try{
+        	for(f <- files){
+        		Extraction.findMostRecentByFileId(f.id) match{
+        		case Some(mostRecent) => {
+        			mostRecent.status match{
+        			case "DONE." => 
+        			case _ => { 
+        				isActivity = "true"
+        				throw ActivityFound
+        			  }  
+        			}
+        		}
+        		case None =>       
+        		}
+        	}
+        }catch{
+          case ActivityFound =>
+        }
+        
+        Ok(toJson(Map("isBeingProcessed"->isActivity))) 
+  	  }
+  	  case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+  	}  	
+  } 
+  
 }
