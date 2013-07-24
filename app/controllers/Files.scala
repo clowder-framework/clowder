@@ -36,7 +36,7 @@ import fileutils.FilesUtils
  * 
  * @author Luigi Marini
  */
-object Files extends Controller with securesocial.core.SecureSocial {
+object Files extends Controller with SecuredController {
   
   /**
    * Upload form.
@@ -50,7 +50,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
     * File info.
     */
-  def file(id: String) = UserAwareAction { implicit request =>
+  def file(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
     implicit val user = request.user
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
@@ -70,7 +70,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int) = UserAwareAction { implicit request =>
+  def list(when: String, date: String, limit: Int) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ListFiles)) { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -106,14 +106,14 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * Upload file page.
    */
-  def uploadFile = SecuredAction { implicit request =>
+  def uploadFile = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     Ok(views.html.upload(uploadForm))
   }
    
   /**
    * Upload file.
    */
-  def upload() = Action(parse.multipartFormData) { implicit request =>
+  def upload() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         
@@ -162,7 +162,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: String) = Action { request =>
+  def download(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.DownloadFiles)) { request =>
     Services.files.get(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
     	  request.headers.get(RANGE) match {
@@ -206,7 +206,7 @@ object Files extends Controller with securesocial.core.SecureSocial {
   }
   
   /******Download query used by Versus**********/
-  def downloadquery(id: String) = Action { request =>
+  def downloadquery(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.DownloadFiles)) { request =>
     Services.queries.get(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
     	  request.headers.get(RANGE) match {
@@ -619,20 +619,16 @@ object Files extends Controller with securesocial.core.SecureSocial {
   /*
    * Add comment to a file
    */
-  def comment(id: String) = SecuredAction(ajaxCall = true) { implicit request =>
-    Logger.debug("Commenting " + request.body)
-    
-    request.body.asText match {
-      case Some(text) => {
-    	Logger.debug("Commenting " + id + " with " + text)
-    	val comment = Comment(request.user.id.id, new Date(), text)
-      	FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)),
-      	    $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
-        Ok(toJson(""))
-      }
-      case None => {
-    	  BadRequest(toJson("error"))
-      } 
-    }
+  def comment(id: String) = SecuredAction(parse.text, ajaxCall=true, allowKey=false, authorization=WithPermission(Permission.CreateComments))  { implicit request =>
+  	request.user match {
+  	  case Some(identity) => {
+		Logger.debug("Commenting " + id + " with " + text)
+		val comment = Comment(identity.id.id, new Date(), request.body)
+	  	FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)),
+	  	    $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+	    Ok(toJson(""))
+  	  }
+  	  case None => Unauthorized("Not authorized")
+  	}
   }
 }

@@ -22,7 +22,7 @@ object Admin extends Controller with SecuredController {
     Ok(views.html.admin())
   }
   
-  def reindexFiles = SecuredAction(parse.json) { implicit request =>
+  def reindexFiles = SecuredAction(parse.json, allowKey=false) { implicit request =>
     Ok("Reindexing")
   }
   

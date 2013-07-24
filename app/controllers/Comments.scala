@@ -11,6 +11,7 @@ import com.mongodb.casbah.Imports._
 import play.api.mvc.Action
 /**
  * Tagging.
+ * TODO Move to API
  * 
  * @author Luigi Marini
  */
