@@ -742,6 +742,13 @@ function clearConfigTabAnnotations(prNum){
     			'rotation', rot[0].x +' '+rot[0].y +' '+rot[0].z+' '+rot[1]);
     }
     
+    function updatex3dPosition(prNum){
+    	if(window["oldx3dposition" + prNum] != $(Configuration.tab).offset().top){
+    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + ($(Configuration.tab).offset().top + 288) + "px;");
+    		window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
+    	}
+    }
+    
 (function ($, Configuration) {
 
   console.log("X3D previewer for " + Configuration.id);
@@ -753,7 +760,7 @@ function clearConfigTabAnnotations(prNum){
   var height = 550;
   
   var prNum = Configuration.tab.replace("#previewer","");
-  
+   
   //Annotations vars
   window["showAnnotations" + prNum] = false; 
   window["currentAnnotation" + prNum] = new Array(); 
@@ -796,7 +803,9 @@ function clearConfigTabAnnotations(prNum){
 		  					+ "</table>");
   
   var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 288) + "px;' >";
-
+  window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
+  setInterval("updatex3dPosition('" + prNum + "');", 50);
+  
   $.ajax({
 	    url: fileUrl,
 	    async:false,
@@ -863,7 +872,7 @@ function clearConfigTabAnnotations(prNum){
       document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
       document.getElementById("x3dElement" + prNum).runtime.resetExamin();
   };
-  
+    
   $("body").on('keypress','#x3dElement' + prNum,function(e){
 	  if(e.which == 122 || e.which == 90){
 		  window["measuringMode" + prNum] = false;
