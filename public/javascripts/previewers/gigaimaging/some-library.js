@@ -1,5 +1,5 @@
 (function ($, Configuration) {
-	/* console.log("Gigaimage previewer for " + Configuration.id);
+	console.log("Gigaimage previewer for " + Configuration.id);
 	
 	console.log("Updating tab " + Configuration.tab);
 	
@@ -19,6 +19,6 @@
 		  );
 
 	 viewer = new Seadragon.Viewer("seadragon" + Configuration.tab.replace("#previewer",""));
-	 viewer.openDzi(Configuration.url);  */
+	 viewer.openDzi(Configuration.url);  
 			
 }(jQuery, Configuration));
