@@ -18,8 +18,8 @@ import play.api.mvc.Action
  *
  */
 object Extractors extends Controller with securesocial.core.SecureSocial {
-//SecuredAction(ajaxCall = false)
-  def extractions = Action { implicit request =>
+
+  def extractions = SecuredAction { implicit request =>
     Ok(views.html.extractions(Extraction.findAll.toList))
   }
   
