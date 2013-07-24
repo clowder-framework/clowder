@@ -10,6 +10,7 @@ import services.MongoSalatPlugin
 import com.novus.salat.dao.ModelCompanion
 import com.novus.salat.dao.SalatDAO
 import MongoContext.context
+import com.mongodb.casbah.commons.MongoDBObject
 
 /**
  * Status of extraction job.
@@ -32,4 +33,13 @@ object Extraction extends ModelCompanion[Extraction, ObjectId] {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Extraction, ObjectId](collection = x.collection("extractions")) {}
   }
+  
+  def findMostRecentByFileId(fileId: ObjectId): Option[Extraction] = {
+	val allOfFile = dao.find(MongoDBObject("file_id" -> fileId)).toList
+	if(allOfFile.size != 0)
+	  Some(allOfFile.last)
+	else
+	  None	
+  }
+  
 }

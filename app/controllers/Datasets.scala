@@ -35,6 +35,9 @@ import fileutils.FilesUtils
  * @author Luigi Marini
  *
  */
+
+object ActivityFound extends Exception { }
+
 object Datasets extends Controller with SecureSocial {
    
   /**
@@ -103,6 +106,29 @@ object Datasets extends Controller with SecureSocial {
         val files = dataset.files map { f =>
           FileDAO.get(f.id.toString).get
         }
+        
+        //Search whether dataset is currently being processed by extractor(s)
+        var isActivity = false
+        try{
+        	for(f <- files){
+        		Extraction.findMostRecentByFileId(f.id) match{
+        		case Some(mostRecent) => {
+        			mostRecent.status match{
+        			case "DONE." => 
+        			case _ => { 
+        				isActivity = true
+        				throw ActivityFound
+        			  }  
+        			}
+        		}
+        		case None =>       
+        		}
+        	}
+        }catch{
+          case ActivityFound =>
+        }
+        
+        
         val datasetWithFiles = dataset.copy(files = files)
         val previewers = Previewers.searchFileSystem
         val previewslist = for(f <- datasetWithFiles.files) yield {
@@ -127,7 +153,7 @@ object Datasets extends Controller with SecureSocial {
         val userMetadata = Dataset.getUserMetadata(id)
         Logger.debug("User metadata: " + userMetadata.toString)
         
-        Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata))
+        Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata, isActivity))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }

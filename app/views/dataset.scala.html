@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: List[Map[String,Any]], usrmd: scala.collection.mutable.Map[String,Any])(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: List[Map[String,Any]], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean)(implicit user: Option[securesocial.core.Identity]) 
 
 
 @import helper._
@@ -213,7 +213,9 @@
 			    </script>
     			}
     		}
-    		
+    		@if(beingProcessed == true){
+    			<div><h5>Dataset is being processed...</h5></div>  		
+    		}
     		
     	<div class="tabbable"> <!-- Only required for left/right tabs -->
 		  <ul class="nav nav-tabs">
