@@ -4,7 +4,7 @@
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-@showPreview(id: Int, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
 	<script>
 		var Configuration = {};
 		Configuration.tab = "#previewer_@id";
@@ -53,25 +53,23 @@
 	
 		<!-- left column -->
 		<div class="span8">
-		
 		@for((f, pvs) <- previews) {
 			<div class="row-fluid">
 		    	<div class="span12">
 		  			@if(pvs.length == 1) {
-
-				  		<div id="previewer_1" ></div>
-				  		@showPreview(1, pvs.head)
+				  		<div id="previewer_@(f.id.toString)_1" ></div>
+				  		@showPreview(f.id.toString + "_1", pvs.head)				  		
 		  			} else {
 				  		<div class="tabbable">
 							<ul class="nav nav-pills" id="myTab">
 								@for(i <- pvs.indices) {
-						    		<li class=""><a href="#previewer_@i" data-toggle="tab">@pvs(i)._2</a></li>
+						    		<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
 				  				}
 							</ul>
 							<div class="tab-content">
 								@for(i <- pvs.indices) {
-							  		<div class="tab-pane" id="previewer_@i"></div>
-							  		@showPreview(i, pvs(i))
+							  		<div class="tab-pane" id="previewer_@(f.id.toString)_@i"></div>
+							  		@showPreview(f.id.toString + "_" + i, pvs(i))
 
 								}
 					  			<script type="text/javascript">
@@ -212,7 +210,11 @@
 				    });
 			    </script>
     			}
+    			<hr class='file_separator'></hr>
     		}
+    		<script>
+    			$('.file_separator').last().remove();
+    		</script>
     		@if(beingProcessed == true){
     			<div id='beingProcessed' style='display:block;'><h5>Dataset is being processed...</h5></div>  		
     		}else{
@@ -290,7 +292,7 @@
 				</div>
 				}
 				<!-- Button to trigger modal -->
-				<!-- a href="#myModal" role="button" class="btn" data-toggle="modal">Upload</a-->
+				<a href="#myModal" role="button" class="btn" data-toggle="modal">Upload</a>
 				 
 				<!-- Modal -->
 				<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -302,7 +304,7 @@
 				    <p>Add a new file to dataset.</p>
 				 	@form(action = routes.Files.uploaddnd(dataset.id.toString), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 					    <fieldset>
-					      <legend>Select an Image and Upload</legend>
+					      <legend>Select a File and Upload</legend>
 					     <input type="file" id="query" name="File">
 					    </fieldset>
 				        <div class="form-actions">
