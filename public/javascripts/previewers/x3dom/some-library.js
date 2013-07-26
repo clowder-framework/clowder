@@ -841,7 +841,7 @@ function clearConfigTabAnnotations(prNum){
   s.type = "text/javascript";
   s.src = pathJs + "x3dom.js";
   console.log("Updating tab " + Configuration.tab);
-  $(Configuration.tab).append(s);
+  $(Configuration.tab).append(s); 
   
   var viewPoint = document.createElement('viewpoint');
   viewPoint.setAttribute("id", "x3dom_viewpoint_cam" + prNum);
@@ -868,11 +868,22 @@ function clearConfigTabAnnotations(prNum){
   lightTrafo.setAttribute("id", "EyeCoords" + prNum);
   lightTrafo.appendChild(directionalLight);  
   $("#x3dElement" + prNum + " > scene").prepend(lightTrafo);
+  
+  if(isPageLoaded){
+	  x3dom.reload();
+  }
 
-  document.onload = function() {
-      document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
+  if(isPageLoaded == false){
+	  document.onload = function() {
+	      document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
+	      document.getElementById("x3dElement" + prNum).runtime.resetExamin();
+	  };
+	  }
+  else{
+	  document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
       document.getElementById("x3dElement" + prNum).runtime.resetExamin();
-  };
+  }
+	  
     
   $("body").on('keypress','#x3dElement' + prNum,function(e){
 	  if(e.which == 122 || e.which == 90){
