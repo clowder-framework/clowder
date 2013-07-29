@@ -14,11 +14,12 @@
 			Configuration.fileType = "@p._6";
 			Configuration.fileSize = @p._7;			
 		}
-		else if("@p._2" === "PTM"){ //placeholder in case something changes		
+		else if("@p._2" === "PTM"){
+			Configuration.url = "@api.routes.Files.download(p._1)";  //TEMPORARY FIX  
 		}
 		else if("@p._2" === "3DWebGL"){			
 		}
-		else if("@p._2" === "Gigaimaging"){							
+		else if("@p._2" === "Gigaimaging"){	//placeholder in case something changes							
 		}
 		else if("@p._2" === "X3d"){							
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";

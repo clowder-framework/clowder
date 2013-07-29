@@ -140,7 +140,7 @@ object Datasets extends Controller with SecuredController {
             (f -> pvf)
           } else {
   	        val ff = for(p <- previewers ; if (p.contentType.contains(f.contentType))) yield {
-  	          (f.id.toString, p.id, p.path, p.main, routes.Files.file(f.id.toString) + "/blob", f.contentType, f.length)
+  	          (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id.toString).toString, f.contentType, f.length)
   	        }
   	        (f -> ff)
           }
