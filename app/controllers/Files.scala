@@ -36,7 +36,7 @@ import fileutils.FilesUtils
  * 
  * @author Luigi Marini
  */
-object Files extends Controller with SecuredController {
+object Files extends Controller with securesocial.core.SecureSocial {
   
   /**
    * Upload form.
@@ -50,12 +50,30 @@ object Files extends Controller with SecuredController {
   /**
     * File info.
     */
-  def file(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+  def file(id: String) = UserAwareAction { implicit request =>
     implicit val user = request.user
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
-        val previews = PreviewDAO.findByFileId(file.id)
+        val previewsFromDB = PreviewDAO.findByFileId(file.id)        
+        val previewers = Previewers.searchFileSystem
+        //Logger.info("Number of previews " + previews.length);
+        val files = List(file)        
+         val previewslist = for(f <- files) yield {
+          val pvf = for(p <- previewers ; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {            
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+          }        
+          if (pvf.length > 0) {
+            (file -> pvf)
+          } else {
+  	        val ff = for(p <- previewers ; if (p.contentType.contains(file.contentType))) yield {
+  	          (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+  	        }
+  	        (file -> ff)
+          }
+        }
+        val previews = Map(previewslist:_*)
+        
         val sections = SectionDAO.findByFileId(file.id)
         val sectionsWithPreviews = sections.map { s =>
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
@@ -70,7 +88,7 @@ object Files extends Controller with SecuredController {
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ListFiles)) { implicit request =>
+  def list(when: String, date: String, limit: Int) = UserAwareAction { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -106,14 +124,14 @@ object Files extends Controller with SecuredController {
   /**
    * Upload file page.
    */
-  def uploadFile = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploadFile = SecuredAction { implicit request =>
     Ok(views.html.upload(uploadForm))
   }
    
   /**
    * Upload file.
    */
-  def upload() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def upload() = Action(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         
@@ -139,11 +157,11 @@ object Files extends Controller with SecuredController {
             val id = f.id.toString
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
             current.plugin[ElasticsearchPlugin].foreach{
-              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
             }
            
-             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-             //current.plugin[VersusPlugin].foreach{_.build()}
+             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString, f.contentType) }
+             current.plugin[VersusPlugin].foreach{_.build()}
               
                         
             // redirect to file page]
@@ -162,7 +180,7 @@ object Files extends Controller with SecuredController {
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.DownloadFiles)) { request =>
+  def download(id: String) = Action { request =>
     Services.files.get(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
     	  request.headers.get(RANGE) match {
@@ -206,7 +224,7 @@ object Files extends Controller with SecuredController {
   }
   
   /******Download query used by Versus**********/
-  def downloadquery(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.DownloadFiles)) { request =>
+  def downloadquery(id: String) = Action { request =>
     Services.queries.get(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
     	  request.headers.get(RANGE) match {
@@ -374,7 +392,7 @@ object Files extends Controller with SecuredController {
             val id = f.id.toString
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
             current.plugin[ElasticsearchPlugin].foreach{
-              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
            }
             
            Ok(f.id.toString)
@@ -619,16 +637,20 @@ object Files extends Controller with SecuredController {
   /*
    * Add comment to a file
    */
-  def comment(id: String) = SecuredAction(parse.text, ajaxCall=true, allowKey=false, authorization=WithPermission(Permission.CreateComments))  { implicit request =>
-  	request.user match {
-  	  case Some(identity) => {
-		Logger.debug("Commenting " + id + " with " + text)
-		val comment = Comment(identity.id.id, new Date(), request.body)
-	  	FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)),
-	  	    $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
-	    Ok(toJson(""))
-  	  }
-  	  case None => Unauthorized("Not authorized")
-  	}
+  def comment(id: String) = SecuredAction(ajaxCall = true) { implicit request =>
+    Logger.debug("Commenting " + request.body)
+    
+    request.body.asText match {
+      case Some(text) => {
+    	Logger.debug("Commenting " + id + " with " + text)
+    	val comment = Comment(request.user.id.id, new Date(), text)
+      	FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)),
+      	    $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+        Ok(toJson(""))
+      }
+      case None => {
+    	  BadRequest(toJson("error"))
+      } 
+    }
   }
 }

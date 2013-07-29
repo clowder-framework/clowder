@@ -29,7 +29,6 @@ import models.ThreeDTextureDAO
 import fileutils.FilesUtils
 import models.Comment
 import java.util.Date
-import api.ApiController
 import controllers.SecuredController
 
 /**
@@ -161,7 +160,8 @@ object Files extends Controller with ApiController {
 			          }			          
 			        }    	
 	            
-	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
+	            val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+	            
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 	            val id = f.id.toString	            
@@ -248,7 +248,7 @@ object Files extends Controller with ApiController {
 	          flags = originalIdAndFlags.substring(originalIdAndFlags.indexOf("+"));
 	        }
 	        
-	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
+	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId + "and flags " + flags)
 	        // store file
 	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
 	        val uploadedFile = f
