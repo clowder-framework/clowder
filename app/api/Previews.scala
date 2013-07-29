@@ -19,6 +19,8 @@ import models.TileDAO
 import com.mongodb.WriteConcern
 import models.ThreeDAnnotation
 import play.api.libs.json.JsValue
+import controllers.SecuredController
+import controllers.Permission
 
 /**
  * Files and datasets previews.
@@ -26,10 +28,10 @@ import play.api.libs.json.JsValue
  * @author Luigi Marini
  *
  */
-object Previews extends Controller {
+object Previews extends Controller with SecuredController {
 
   def downloadPreview(id:String, datasetid:String) =
-    Action{ request =>
+    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { request =>
       Redirect(routes.Previews.download(id))    
   }
   
@@ -37,7 +39,7 @@ object Previews extends Controller {
    * Download preview bytes.
    */
   def download(id:String) =
-    Action { request =>
+    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { request =>
 	    PreviewDAO.getBlob(id) match {
 	   
 	      case Some((inputStream, filename, contentType, contentLength)) => {
@@ -82,8 +84,8 @@ object Previews extends Controller {
   /**
    * Upload a preview.
    */  
-  def upload() = Authenticated {
-    Action(parse.multipartFormData) { implicit request =>
+  def upload() = 
+    SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         // store file
@@ -93,14 +95,13 @@ object Previews extends Controller {
          BadRequest(toJson("File not attached."))
       }
     }
-  }
   
   /**
    * Upload preview metadata.
    * 
    */
-  def uploadMetadata(id: String) = Authenticated {
-    Action(parse.json) { request =>
+  def uploadMetadata(id: String) = 
+    SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.ShowDataset)) { request =>
       Logger.debug(request.body.toString)
       request.body match {
         case JsObject(fields) => {
@@ -118,14 +119,14 @@ object Previews extends Controller {
         case _ => Logger.error("Expected a JSObject"); BadRequest(toJson("Expected a JSObject"))
       }
     }
-  }
+
   
   /**
    * Get preview metadata.
    * 
    */
   def getMetadata(id: String) =
-    Action { request =>
+    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { request =>
       PreviewDAO.findOneById(new ObjectId(id)) match {
         case Some(preview) => Ok(toJson(Map("id"->preview.id.toString)))
         case None => Logger.error("Preview metadata not found " + id); InternalServerError
@@ -136,37 +137,37 @@ object Previews extends Controller {
    /**
    * Add pyramid tile to preview.
    */
-  def attachTile(preview_id: String, tile_id: String, level: String) = Authenticated {
-    Action(parse.json) { request =>
-      request.body match {
-        case JsObject(fields) => {
-          // TODO create a service instead of calling salat directly
-          PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
-            case Some(preview) => {
-	              TileDAO.findOneById(new ObjectId(tile_id)) match {
-	                case Some(tile) =>
-	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-	                    TileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(tile_id)), 
-	                        $set("metadata"-> metadata, "preview_id" -> new ObjectId(preview_id), "level"->level), false, false, WriteConcern.SAFE)
-//	                    Logger.debug("Updating tiles.files " + tile_id + " with " + metadata)
-	                    Ok(toJson(Map("status"->"success")))
-	                case None => BadRequest(toJson("Tile not found"))
-	              }
-            }
-	        case None => BadRequest(toJson("Preview not found " + preview_id))
-	      }
-        }
-        case _ => Ok("received something else: " + request.body + '\n')
+  def attachTile(preview_id: String, tile_id: String, level: String) = 
+	    SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.ShowDataset)) { request =>
+	      request.body match {
+	        case JsObject(fields) => {
+	          // TODO create a service instead of calling salat directly
+	          PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
+	            case Some(preview) => {
+		              TileDAO.findOneById(new ObjectId(tile_id)) match {
+		                case Some(tile) =>
+		                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+		                    TileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(tile_id)), 
+		                        $set("metadata"-> metadata, "preview_id" -> new ObjectId(preview_id), "level"->level), false, false, WriteConcern.SAFE)
+	//	                    Logger.debug("Updating tiles.files " + tile_id + " with " + metadata)
+		                    Ok(toJson(Map("status"->"success")))
+		                case None => BadRequest(toJson("Tile not found"))
+		              }
+	            }
+		        case None => BadRequest(toJson("Preview not found " + preview_id))
+		      }
+	        }
+	        case _ => Ok("received something else: " + request.body + '\n')
+	    }
     }
-    }
-  }
+
   
   
   /**
    * Find tile for given preview, level and filename (row and column).
    */
   def getTile(dzi_id_dir: String, level: String, filename: String) =
-    Action { request => 
+    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { request => 
       val dzi_id = dzi_id_dir.replaceAll("_files", "")
       TileDAO.findTile(new ObjectId(dzi_id), filename, level) match {
         case Some(tile) => {
@@ -220,7 +221,7 @@ object Previews extends Controller {
    * Add annotation to 3D model preview.
    */
   def attachAnnotation(preview_id: String) = 
-    Action(parse.json) { request =>       	  
+    SecuredAction(parse.json, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { request =>       	  
 	      val x_coord = request.body.\("x_coord").asOpt[String].getOrElse("0.0")
 	      val y_coord = request.body.\("y_coord").asOpt[String].getOrElse("0.0")
 	      val z_coord = request.body.\("z_coord").asOpt[String].getOrElse("0.0")
@@ -238,7 +239,7 @@ object Previews extends Controller {
     }
     
   def editAnnotation(preview_id: String) =
-    Action(parse.json) { request =>
+    SecuredAction(parse.json, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { request =>
       Logger.debug("thereq: " + request.body.toString) 
       	  val x_coord = request.body.\("x_coord").asOpt[String].getOrElse("0.0")
 	      val y_coord = request.body.\("y_coord").asOpt[String].getOrElse("0.0")
@@ -263,7 +264,7 @@ object Previews extends Controller {
   }
   
    def listAnnotations(preview_id: String) =
-    Action{ request => 
+    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)){ request => 
 	      // TODO create a service instead of calling salat directly
           PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
             case Some(preview) => {

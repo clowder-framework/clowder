@@ -61,7 +61,7 @@ object Files extends Controller with ApiController {
   }
   
   def downloadByDatasetAndFilename(dataset_id: String, filename: String, preview_id: String) = 
-    Action{ request =>
+    SecuredAction(parse.anyContent, allowKey=false){ request =>
       Datasets.datasetFilesGetIdByDatasetAndFilename(dataset_id, filename) match{
         case Some(id) => { 
           Redirect(routes.Files.download(id)) 
@@ -77,48 +77,49 @@ object Files extends Controller with ApiController {
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: String) = 
-    Action { request =>
-	    Services.files.get(id) match {
-	      case Some((inputStream, filename, contentType, contentLength)) => {
-	        
-	         request.headers.get(RANGE) match {
-	          case Some(value) => {
-	            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
-	              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-	              case x => (x(0).toLong,x(1).toLong)
-	            }
-	
-	            range match { case (start,end) =>
-	             
-	              inputStream.skip(start)
-	              import play.api.mvc.{SimpleResult, ResponseHeader}
-	              SimpleResult(
-	                header = ResponseHeader(PARTIAL_CONTENT,
-	                  Map(
-	                    CONNECTION -> "keep-alive",
-	                    ACCEPT_RANGES -> "bytes",
-	                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
-	                    CONTENT_LENGTH -> (end - start + 1).toString,
-	                    CONTENT_TYPE -> contentType
-	                  )
-	                ),
-	                body = Enumerator.fromStream(inputStream)
-	              )
-	            }
-	          }
-	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
-	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
-	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
-	          }
-	        }
-	      }
-	      case None => {
-	        Logger.error("Error getting file" + id)
-	        NotFound
-	      }
+  def download(id: String) = Authenticated { 
+	    Action { request =>
+		    Services.files.get(id) match {
+		      case Some((inputStream, filename, contentType, contentLength)) => {
+		        
+		         request.headers.get(RANGE) match {
+		          case Some(value) => {
+		            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
+		              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+		              case x => (x(0).toLong,x(1).toLong)
+		            }
+		
+		            range match { case (start,end) =>
+		             
+		              inputStream.skip(start)
+		              import play.api.mvc.{SimpleResult, ResponseHeader}
+		              SimpleResult(
+		                header = ResponseHeader(PARTIAL_CONTENT,
+		                  Map(
+		                    CONNECTION -> "keep-alive",
+		                    ACCEPT_RANGES -> "bytes",
+		                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
+		                    CONTENT_LENGTH -> (end - start + 1).toString,
+		                    CONTENT_TYPE -> contentType
+		                  )
+		                ),
+		                body = Enumerator.fromStream(inputStream)
+		              )
+		            }
+		          }
+		          case None => {
+		            Ok.stream(Enumerator.fromStream(inputStream))
+		            	.withHeaders(CONTENT_TYPE -> contentType)
+		            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
+		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		          }
+		        }
+		      }
+		      case None => {
+		        Logger.error("Error getting file" + id)
+		        NotFound
+		      }
+		    }
 	    }
     }
   
@@ -425,7 +426,7 @@ object Files extends Controller with ApiController {
    * Find geometry file for given 3D file and geometry filename.
    */
   def getGeometry(three_d_file_id: String, filename: String) =
-    Action { request => 
+    SecuredAction(parse.anyContent, allowKey=false) { request => 
       GeometryDAO.findGeometry(new ObjectId(three_d_file_id), filename) match {
         case Some(geometry) => {
           
@@ -478,7 +479,7 @@ object Files extends Controller with ApiController {
    * Find texture file for given 3D file and texture filename.
    */
   def getTexture(three_d_file_id: String, filename: String) =
-    Action { request => 
+    SecuredAction(parse.anyContent, allowKey=false) { request => 
       ThreeDTextureDAO.findTexture(new ObjectId(three_d_file_id), filename) match {
         case Some(texture) => {
           
