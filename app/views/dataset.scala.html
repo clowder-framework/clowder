@@ -54,7 +54,7 @@
 		<!-- left column -->
 		<div class="span8">
 		@for((f, pvs) <- previews) {
-			<div id='previewedFileName_@(f.id.toString)'><h4>@f.filename</h4></div>
+			<div id='previewedFileName_@(f.id.toString)'><h5>@f.filename</h5></div>
 			<div class="row-fluid">
 		    	<div class="span12">
 		  			@if(pvs.length == 1) {
@@ -268,14 +268,12 @@
 		      @metadata(dataset.id.toString, md, usrmd)
 		    </div>
 		  </div>
-		</div>	
-    		
-    		
-    		
+		</div>	    		
 		</div>
 		
+
 		<!-- right column -->
-		<div class="span4">
+		<div class="span4 ds-col-narrow">
 		    <div class="row">
 				<dl>
 					<dt>Description:</dt>

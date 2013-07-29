@@ -176,7 +176,7 @@ ol.comment-threads {
 }
 
 .comment {
-	border-top: 1px solid gray;
+	border-top: 1px solid #ddd;
 	padding: 10px 0 10px 0;
 }
 
@@ -197,8 +197,7 @@ ol.comment-threads {
 
 .comment-header {
 	padding-left: 40px;
-	font-size: 85%;
-	color: gray;
+	padding-bottom: 10px;
 }
 
 .comment-body {
@@ -208,7 +207,6 @@ ol.comment-threads {
 .comment-footer {
 	padding-left: 40px;
 	font-size: 85%;
-	color: gray;
 }
 
 .comment-input-box {
@@ -283,16 +281,21 @@ button.usr_md_ {
   padding:10px;
 }
 
-.usr_md_search_list{
+.usr_md_search_list {
 	list-style-type:none;
 }
 
-.usr_md_search_list_not{
+.usr_md_search_list_not {
 	margin-left:58px;
 }
 
-.file_separator{
+.file_separator {
 	border-top:1px solid #141414 !important;
+}
+
+.ds-col-narrow {
+	padding-left: 50px;
+	padding-top: 50px; 
 }
 
 
