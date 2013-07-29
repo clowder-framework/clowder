@@ -124,6 +124,7 @@ object Files extends Controller with SecuredController {
    * Upload file page.
    */
   def uploadFile = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+    implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
    
@@ -131,6 +132,7 @@ object Files extends Controller with SecuredController {
    * Upload file.
    */
   def upload() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+    implicit val user = request.user
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         
