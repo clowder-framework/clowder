@@ -55,7 +55,24 @@ object Files extends Controller with SecuredController {
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
-        val previews = PreviewDAO.findByFileId(file.id)
+        val previewsFromDB = PreviewDAO.findByFileId(file.id)        
+        val previewers = Previewers.searchFileSystem
+        //Logger.info("Number of previews " + previews.length);
+        val files = List(file)        
+         val previewslist = for(f <- files) yield {
+          val pvf = for(p <- previewers ; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {            
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+          }        
+          if (pvf.length > 0) {
+            (file -> pvf)
+          } else {
+  	        val ff = for(p <- previewers ; if (p.contentType.contains(file.contentType))) yield {
+  	          (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+  	        }
+  	        (file -> ff)
+          }
+        }
+        val previews = Map(previewslist:_*)
         val sections = SectionDAO.findByFileId(file.id)
         val sectionsWithPreviews = sections.map { s =>
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
@@ -107,6 +124,7 @@ object Files extends Controller with SecuredController {
    * Upload file page.
    */
   def uploadFile = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+    implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
    
@@ -114,6 +132,7 @@ object Files extends Controller with SecuredController {
    * Upload file.
    */
   def upload() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+    implicit val user = request.user
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         

@@ -1,36 +1,42 @@
 /**
  *
  */
- package controllers
+package controllers
 
- import play.api.mvc.Action
- import play.api.mvc.Result
- import play.api.mvc.Request
- import play.api.Logger
- import views.html.defaultpages.unauthorized
- import play.api.mvc.Results.Unauthorized
- import play.api.libs.Crypto
- import org.apache.commons.codec.binary.Base64
- import securesocial.core.providers.utils.DefaultPasswordValidator
- import securesocial.core.SocialUser
- import models.SocialUserDAO
- import securesocial.core.providers.utils.BCryptPasswordHasher
- import org.mindrot.jbcrypt.BCrypt
- import securesocial.core.UserService
- import securesocial.core.providers.UsernamePasswordProvider
- import play.api.mvc.Session
- import org.joda.time.DateTime
- import securesocial.core.SecureSocial
- import securesocial.core.UserId
- import securesocial.core.Identity
- import play.api.mvc.Controller
- import securesocial.core.Authorization
- import play.api.mvc.BodyParser
- import securesocial.core.SecuredRequest
- import securesocial.core.AuthenticationMethod
- import play.api.mvc.WrappedRequest
- import play.api.mvc.PlainResult
- import play.libs.Json
+import play.api.mvc.Action
+import play.api.mvc.Result
+import play.api.mvc.Request
+import play.api.Logger
+import views.html.defaultpages.unauthorized
+import play.api.mvc.Results.Unauthorized
+import play.api.libs.Crypto
+import org.apache.commons.codec.binary.Base64
+import securesocial.core.providers.utils.DefaultPasswordValidator
+import securesocial.core.SocialUser
+import models.SocialUserDAO
+import securesocial.core.providers.utils.BCryptPasswordHasher
+import org.mindrot.jbcrypt.BCrypt
+import securesocial.core.UserService
+import securesocial.core.providers.UsernamePasswordProvider
+import play.api.mvc.Session
+import org.joda.time.DateTime
+import securesocial.core.SecureSocial
+import securesocial.core.UserId
+import securesocial.core.Identity
+import play.api.mvc.Controller
+import securesocial.core.Authorization
+import play.api.mvc.BodyParser
+import securesocial.core.SecuredRequest
+import securesocial.core.AuthenticationMethod
+import play.api.mvc.WrappedRequest
+import play.api.mvc.PlainResult
+import play.libs.Json
+import play.mvc.Results.Redirect
+import securesocial.core.providers.utils.RoutesHelper
+import securesocial.core.IdentityProvider
+import play.api.mvc.SimpleResult
+import play.api.mvc.Results
+import play.api.http.Status
 
  /**
   * A request that adds the User for the current call
@@ -65,31 +71,34 @@ object Permission extends Enumeration {
  	case class WithPermission(permission: Permission) extends Authorization {
 
  		def isAuthorized(user: Identity): Boolean = {
-			// lockpage
-			if (permission == Public) return true
-			
-			// check if we have a user
-			if (user == null) return false
-			
-			// role based
-			if (hasPermission(user.id, permission)) return true
-			
+			// order is important
+			(user, permission) match {
+			  case (_, Public)       => return true
+			  case (_, ListDatasets) => return true
+			  case (_, ListFiles)    => return true
+			  case (_, ShowDataset)  => return true
+			  case (_, ShowFile)     => return true
+			  case (null, _)         => return false
+			  case (_, _)            => return true
+			}
+
 			// don't enter
 			return false
 		}
-		
-		def hasPermission(userId: UserId, permission: Permission) = {
-			true
-		}
 	}
 
- 	  /**
+  /**
    * A Forbidden response for ajax clients
+   * TODO this should be removed and all calls using ajax should call api
    * @param request
    * @tparam A
    * @return
    */
   private def ajaxCallNotAuthenticated[A](implicit request: Request[A]): PlainResult = {
+    Unauthorized("Not authenticated")
+  }
+
+  private def ajaxCallNotAuthorized[A](implicit request: Request[A]): PlainResult = {
     Unauthorized("Not authorized")
   }
 
@@ -106,27 +115,30 @@ object Permission extends Enumeration {
 									f(RequestWithUser(Some(identity), request))
 								else
 									if (ajaxCall)
-										ajaxCallNotAuthenticated
+										ajaxCallNotAuthorized
 									else
-										Unauthorized(views.html.defaultpages.unauthorized())
-								} else {
-									Logger.debug("Password doesn't match")
-									if (ajaxCall)
-										ajaxCallNotAuthenticated
-									else
-										Unauthorized(views.html.defaultpages.unauthorized())
-								}
-							}
-							case None => {
-								Logger.debug("User not found")
+										Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+											.flashing("error" -> "You are not authorized.")
+							} else {
+								Logger.debug("Password doesn't match")
 								if (ajaxCall)
 									ajaxCallNotAuthenticated
 								else
-									Unauthorized(views.html.defaultpages.unauthorized())
+									Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+										.flashing("error" -> "Username/password are not valid.")
 							}
 						}
+						case None => {
+							Logger.debug("User not found")
+							if (ajaxCall)
+								ajaxCallNotAuthenticated
+							else
+								Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+										.flashing("error" -> "Username/password are not valid.")
+						}
 					}
-					case None => {
+				}
+				case None => {
 					request.queryString.get("key") match { // token in url
 						case Some(key) => {
 							if (key.length > 0) {
@@ -136,21 +148,24 @@ object Permission extends Enumeration {
 										f(RequestWithUser(Some(anonymous), request))
 									else
 										if (ajaxCall)
-											ajaxCallNotAuthenticated
+											ajaxCallNotAuthorized
 										else
-											Unauthorized(views.html.defaultpages.unauthorized())
+											Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+												.flashing("error" -> "You are not authorized.")
 								} else {
 									Logger.debug("Key doesn't match")
 									if (ajaxCall)
 										ajaxCallNotAuthenticated
 									else
-										Unauthorized(views.html.defaultpages.unauthorized())
+										Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+											.flashing("error" -> "Username/password are not valid.")
 								}
 							} else
 								if (ajaxCall)
 									ajaxCallNotAuthenticated
 								else
-									Unauthorized(views.html.defaultpages.unauthorized())
+									Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+											.flashing("error" -> "Username/password are not valid.")
 						}
 						case None => {
 							SecureSocial.currentUser(request) match { // calls from browser
@@ -159,18 +174,20 @@ object Permission extends Enumeration {
 										f(RequestWithUser(Some(identity), request))
 									else
 										if (ajaxCall)
-											ajaxCallNotAuthenticated
+											ajaxCallNotAuthorized
 										else
-											Unauthorized(views.html.defaultpages.unauthorized())
+											Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+												.flashing("error" -> "You are not authorized.")
 								}
 								case None => {
 									if (authorization.isAuthorized(null))
 										f(RequestWithUser(None, request))
 									else
 										if (ajaxCall)
-											ajaxCallNotAuthenticated
+											ajaxCallNotAuthorized
 										else
-											Unauthorized(views.html.defaultpages.unauthorized())
+											Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+												.flashing("error" -> "You are not logged in.")
 								}
 							}
 						}

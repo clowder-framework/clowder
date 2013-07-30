@@ -88,7 +88,7 @@ object Files extends Controller with ApiController {
 		              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
 		              case x => (x(0).toLong,x(1).toLong)
 		            }
-		 
+		
 		            range match { case (start,end) =>
 		             
 		              inputStream.skip(start)
