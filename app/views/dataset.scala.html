@@ -60,15 +60,10 @@
 		<!-- left column -->
 		<div class="span8">
 		@for((f, pvs) <- previews) {
-<<<<<<< HEAD
 			@if(pvs.length > 0) {
 				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4>@f.filename</h4></div>
 			}
 			<div class="row-fluid" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
-=======
-			<div id='previewedFileName_@(f.id.toString)'><h5>@f.filename</h5></div>
-			<div class="row-fluid">
->>>>>>> branch 'master' of https://csophocleous@opensource.ncsa.illinois.edu/stash/scm/MED/medici-play.git
 		    	<div class="span12">
 				  		<div class="tabbable">
 							<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
