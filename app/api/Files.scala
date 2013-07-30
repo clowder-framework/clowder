@@ -61,7 +61,7 @@ object Files extends Controller with SecuredController with ApiController {
   }
   
   def downloadByDatasetAndFilename(dataset_id: String, filename: String, preview_id: String) = 
-    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)){ request =>
+    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.DownloadFiles)){ request =>
       Datasets.datasetFilesGetIdByDatasetAndFilename(dataset_id, filename) match{
         case Some(id) => { 
           Redirect(routes.Files.download(id)) 
@@ -78,7 +78,7 @@ object Files extends Controller with SecuredController with ApiController {
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
   def download(id: String) = 
-	    Action { request =>
+	    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.DownloadFiles)) { request =>
 		    Services.files.get(id) match {
 		      case Some((inputStream, filename, contentType, contentLength)) => {
 		        

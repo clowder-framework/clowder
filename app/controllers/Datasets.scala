@@ -53,7 +53,6 @@ object Datasets extends Controller with SecuredController {
     ((dataset: Dataset) => Some((dataset.name, dataset.description)))
    )
    
-   //Secured
   def newDataset()  = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.newDataset(datasetForm)).flashing("error"->"Please select a file") 
@@ -183,7 +182,7 @@ object Datasets extends Controller with SecuredController {
   /**
    * Upload file.
    */
-  def submit() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
+  def submit() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
         datasetForm.bindFromRequest.fold(
@@ -316,7 +315,7 @@ object Datasets extends Controller with SecuredController {
     Ok("")
   }
   
-  def metadataSearch()  = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
+  def metadataSearch()  = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.metadataSearch()) 
   }

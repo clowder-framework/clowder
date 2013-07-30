@@ -82,6 +82,8 @@ object Permission extends Enumeration {
 			  case (_, SearchDatasets)  => return true
 			  case (_, AddDatasetsMetadata)  => return true
 			  case (_, ShowFile)     => return true
+			  case (_, CreateDatasets)     => return true
+			  case (_, CreateFiles)     => return true
 			  case (null, _)         => return false
 			  case (_, _)            => return true
 			}
