@@ -1,5 +1,4 @@
 (function ($, Configuration) {
-  console.log("Plain text configuration " + Configuration);
 
   var fileUrl = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.url;
   var pathJs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.jsPath + "/";
@@ -25,7 +24,6 @@
 
 	for (var i=0; i<allTextLines.length; i++) {
 		var line = allTextLines[i].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-		console.log(line);
 		table += "<tr><td>"+line+"</td></tr>";
 	}
 
