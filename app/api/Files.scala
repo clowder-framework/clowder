@@ -77,7 +77,7 @@ object Files extends Controller with ApiController {
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: String) = Authenticated { 
+  def download(id: String) = 
 	    Action { request =>
 		    Services.files.get(id) match {
 		      case Some((inputStream, filename, contentType, contentLength)) => {
@@ -121,7 +121,7 @@ object Files extends Controller with ApiController {
 		      }
 		    }
 	    }
-    }
+    
   
   
   /**
