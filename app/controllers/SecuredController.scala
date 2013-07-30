@@ -79,6 +79,7 @@ object Permission extends Enumeration {
 			  case (_, Public)               => true
 			  case (_, ListDatasets)         => true
 			  case (_, ListFiles)            => true
+			  case (_, DownloadFiles)        => true // FIXME: required by ShowDataset if preview uses original file
 			  case (_, ShowDataset)          => true
 			  case (_, SearchDatasets)       => true
 			  case (_, AddDatasetsMetadata)  => true
