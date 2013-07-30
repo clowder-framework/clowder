@@ -28,6 +28,9 @@
 		}
 		else if("@p._2" === "Pdf"){							
 		}
+		else if("@p._2" === "QTVR"){
+			Configuration.url = "@api.routes.Files.download(p._1)";  //TEMPORARY FIX 
+		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 }
