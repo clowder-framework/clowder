@@ -40,7 +40,7 @@ import controllers.Permission
 object ActivityFound extends Exception { }
 
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
-object Datasets extends Controller with SecuredController {
+object Datasets extends Controller with SecuredController with ApiController {
 
   /**
    * List all datasets.
