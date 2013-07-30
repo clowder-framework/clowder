@@ -73,17 +73,14 @@ object Permission extends Enumeration {
  		def isAuthorized(user: Identity): Boolean = {
 			// order is important
 			(user, permission) match {
-			  case (_, Public)       => return true
-			  case (_, ListDatasets) => return true
-			  case (_, ListFiles)    => return true
-			  case (_, ShowDataset)  => return true
-			  case (_, ShowFile)     => return true
-			  case (null, _)         => return false
-			  case (_, _)            => return true
+			  case (_, Public)       => true
+			  case (_, ListDatasets) => true
+			  case (_, ListFiles)    => true
+			  case (_, ShowDataset)  => true
+			  case (_, ShowFile)     => true
+			  case (null, _)         => false
+			  case (_, _)            => true
 			}
-
-			// don't enter
-			return false
 		}
 	}
 
