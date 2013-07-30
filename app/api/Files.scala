@@ -29,8 +29,8 @@ import models.ThreeDTextureDAO
 import fileutils.FilesUtils
 import models.Comment
 import java.util.Date
-import api.ApiController
 import controllers.SecuredController
+import controllers.Permission
 
 /**
  * Json API for files.
@@ -38,7 +38,7 @@ import controllers.SecuredController
  * @author Luigi Marini
  *
  */
-object Files extends Controller with ApiController {
+object Files extends Controller with SecuredController {
   
   def get(id: String) = Authenticated { 
     Action { implicit request =>
@@ -61,7 +61,7 @@ object Files extends Controller with ApiController {
   }
   
   def downloadByDatasetAndFilename(dataset_id: String, filename: String, preview_id: String) = 
-    SecuredAction(parse.anyContent, allowKey=false){ request =>
+    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)){ request =>
       Datasets.datasetFilesGetIdByDatasetAndFilename(dataset_id, filename) match{
         case Some(id) => { 
           Redirect(routes.Files.download(id)) 
@@ -426,7 +426,7 @@ object Files extends Controller with ApiController {
    * Find geometry file for given 3D file and geometry filename.
    */
   def getGeometry(three_d_file_id: String, filename: String) =
-    SecuredAction(parse.anyContent, allowKey=false) { request => 
+    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { request => 
       GeometryDAO.findGeometry(new ObjectId(three_d_file_id), filename) match {
         case Some(geometry) => {
           
@@ -479,7 +479,7 @@ object Files extends Controller with ApiController {
    * Find texture file for given 3D file and texture filename.
    */
   def getTexture(three_d_file_id: String, filename: String) =
-    SecuredAction(parse.anyContent, allowKey=false) { request => 
+    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { request => 
       ThreeDTextureDAO.findTexture(new ObjectId(three_d_file_id), filename) match {
         case Some(texture) => {
           

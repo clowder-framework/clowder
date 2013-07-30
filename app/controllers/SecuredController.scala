@@ -50,6 +50,8 @@ object Permission extends Enumeration {
 		CreateDatasets,
 		ListDatasets,
 		ShowDataset,
+		SearchDatasets,
+		AddDatasetsMetadata,		
 		CreateTags,
 		CreateComments,
 		CreateFiles,
@@ -77,6 +79,8 @@ object Permission extends Enumeration {
 			  case (_, ListDatasets) => return true
 			  case (_, ListFiles)    => return true
 			  case (_, ShowDataset)  => return true
+			  case (_, SearchDatasets)  => return true
+			  case (_, AddDatasetsMetadata)  => return true
 			  case (_, ShowFile)     => return true
 			  case (null, _)         => return false
 			  case (_, _)            => return true

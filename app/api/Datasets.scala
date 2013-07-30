@@ -40,7 +40,7 @@ import controllers.Permission
 object ActivityFound extends Exception { }
 
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
-object Datasets extends Controller with ApiController {
+object Datasets extends Controller with SecuredController {
 
   /**
    * List all datasets.
@@ -100,7 +100,7 @@ object Datasets extends Controller with ApiController {
     }
   }
 
-  def addUserMetadata(id: String) = SecuredAction(parse.json, allowKey=false) { request =>
+  def addUserMetadata(id: String) = SecuredAction(parse.json, allowKey=false, authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding user metadata to dataset " + id)
       Dataset.addUserMetadata(id, Json.stringify(request.body))
       Ok(toJson(Map("status" -> "success")))
@@ -172,7 +172,7 @@ object Datasets extends Controller with ApiController {
    * List datasets satisfying a user metadata search tree.
    */
   def searchDatasetsUserMetadata =
-    SecuredAction(parse.json, allowKey = false) { request =>
+    SecuredAction(parse.json, allowKey = false, authorization=WithPermission(Permission.SearchDatasets)) { request =>
       Logger.debug("Searching datasets' user metadata for search tree.")
       var searchTree = JsonUtil.parseJSON(Json.stringify(request.body)).asInstanceOf[java.util.LinkedHashMap[String, Any]]
       var datasetsSatisfying = List[Dataset]()
@@ -193,7 +193,7 @@ object Datasets extends Controller with ApiController {
   /**
    * Return whether a dataset is currently being processed.
    */
-  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, allowKey = false) { request =>
+  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, allowKey = false, authorization=WithPermission(Permission.ShowDataset)) { request =>
   	Services.datasets.get(id)  match {
   	  case Some(dataset) => {
   	    val files = dataset.files map { f =>
@@ -244,7 +244,7 @@ object Datasets extends Controller with ApiController {
     else    
     	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString , "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))  
   }  
-  def getPreviews(id: String) = SecuredAction(parse.anyContent, allowKey = false) { request =>
+  def getPreviews(id: String) = SecuredAction(parse.anyContent, allowKey = false, authorization=WithPermission(Permission.ShowDataset)) { request =>
     Services.datasets.get(id)  match {
       case Some(dataset) => {
         val files = dataset.files map { f =>
