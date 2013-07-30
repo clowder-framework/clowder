@@ -38,7 +38,7 @@ import controllers.Permission
  * @author Luigi Marini
  *
  */
-object Files extends Controller with SecuredController {
+object Files extends Controller with SecuredController with ApiController {
   
   def get(id: String) = Authenticated { 
     Action { implicit request =>
