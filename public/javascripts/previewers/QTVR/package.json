@@ -1,0 +1,4 @@
+{ "name" : "QTVR",
+  "main" : "some-library.js",
+  "contentType" : ["video/quicktime", "x-world/x-qtvr"]
+  }

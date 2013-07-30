@@ -415,7 +415,7 @@ object Files extends Controller with SecuredController {
   
   
 
-  def uploaddnd(dataset_id: String) = Action(parse.multipartFormData) { implicit request =>
+  def uploaddnd(dataset_id: String) = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
 	  Services.datasets.get(dataset_id)  match {
 		  case Some(dataset) => {
 			  request.body.file("File").map { f =>        

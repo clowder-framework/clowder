@@ -22,6 +22,13 @@ import models.File
 import models.FileDAO
 import models.Extraction
 import services.ElasticsearchPlugin
+import controllers.Previewers
+import models.File
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
+import play.api.Routes
+import controllers.SecuredController
+import controllers.Permission
 
 
 /**
@@ -33,7 +40,7 @@ import services.ElasticsearchPlugin
 object ActivityFound extends Exception { }
 
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
-object Datasets extends Controller with ApiController {
+object Datasets extends Controller with SecuredController with ApiController {
 
   /**
    * List all datasets.
@@ -93,7 +100,7 @@ object Datasets extends Controller with ApiController {
     }
   }
 
-  def addUserMetadata(id: String) = Action(parse.json) { request =>
+  def addUserMetadata(id: String) = SecuredAction(parse.json, allowKey=false, authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding user metadata to dataset " + id)
       Dataset.addUserMetadata(id, Json.stringify(request.body))
       Ok(toJson(Map("status" -> "success")))
@@ -165,7 +172,7 @@ object Datasets extends Controller with ApiController {
    * List datasets satisfying a user metadata search tree.
    */
   def searchDatasetsUserMetadata =
-    Action(parse.json) { request =>
+    SecuredAction(parse.json, allowKey = false, authorization=WithPermission(Permission.SearchDatasets)) { request =>
       Logger.debug("Searching datasets' user metadata for search tree.")
       var searchTree = JsonUtil.parseJSON(Json.stringify(request.body)).asInstanceOf[java.util.LinkedHashMap[String, Any]]
       var datasetsSatisfying = List[Dataset]()
@@ -186,7 +193,7 @@ object Datasets extends Controller with ApiController {
   /**
    * Return whether a dataset is currently being processed.
    */
-  def isBeingProcessed(id: String) = Action { request =>
+  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, allowKey = false, authorization=WithPermission(Permission.ShowDataset)) { request =>
   	Services.datasets.get(id)  match {
   	  case Some(dataset) => {
   	    val files = dataset.files map { f =>
@@ -217,6 +224,54 @@ object Datasets extends Controller with ApiController {
   	  }
   	  case None => {Logger.error("Error getting dataset" + id); InternalServerError}
   	}  	
-  } 
+  }
+  
+  
+  
+  def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
+    val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
+    toJson(list)
+  }  
+  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
+    val list = for (prv <- prvs) yield jsonPreview(prv._1, prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
+    val listJson = toJson(list.toList)
+    toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
+  }
+  def jsonPreview(pvId: java.lang.String, pId: String, pPath: String, pMain: String, pvRoute: java.lang.String, pvContentType: String, pvLength: Long): JsValue = {
+    if(pId.equals("X3d"))
+    	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
+    			"pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(pvId).toString, "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(pvId).toString, "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(pvId).toString)) 
+    else    
+    	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString , "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))  
+  }  
+  def getPreviews(id: String) = SecuredAction(parse.anyContent, allowKey = false, authorization=WithPermission(Permission.ShowDataset)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        val files = dataset.files map { f =>
+          FileDAO.get(f.id.toString).get
+        }
+        
+        val datasetWithFiles = dataset.copy(files = files)
+        val previewers = Previewers.searchFileSystem
+        val previewslist = for(f <- datasetWithFiles.files) yield {
+          val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+          }        
+          if (pvf.length > 0) {
+            (f -> pvf)
+          } else {
+  	        val ff = for(p <- previewers ; if (p.contentType.contains(f.contentType))) yield {
+  	          (f.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(f.id.toString) + "/blob", f.contentType, f.length)
+  	        }
+  	        (f -> ff)
+          }
+        }
+        Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]])) 
+      }
+      case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+    }
+  }
+  
+  
   
 }
