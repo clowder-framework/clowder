@@ -12,7 +12,6 @@ import play.api.mvc.Results.Unauthorized
 import play.api.libs.Crypto
 import org.apache.commons.codec.binary.Base64
 import securesocial.core.providers.utils.DefaultPasswordValidator
-import securesocial.core.SocialUser
 import models.SocialUserDAO
 import securesocial.core.providers.utils.BCryptPasswordHasher
 import org.mindrot.jbcrypt.BCrypt
@@ -37,6 +36,8 @@ import securesocial.core.IdentityProvider
 import play.api.mvc.SimpleResult
 import play.api.mvc.Results
 import play.api.http.Status
+import securesocial.core.Identity
+import securesocial.core.SocialUser
 
  /**
   * A request that adds the User for the current call
@@ -75,21 +76,19 @@ object Permission extends Enumeration {
  		def isAuthorized(user: Identity): Boolean = {
 			// order is important
 			(user, permission) match {
-			  case (_, Public)       => return true
-			  case (_, ListDatasets) => return true
-			  case (_, ListFiles)    => return true
-			  case (_, ShowDataset)  => return true
-			  case (_, SearchDatasets)  => return true
-			  case (_, AddDatasetsMetadata)  => return true
-			  case (_, ShowFile)     => return true
-			  case (_, CreateDatasets)     => return true
-			  case (_, CreateFiles)     => return true
-			  case (null, _)         => return false
-			  case (_, _)            => return true
+			  case (_, Public)               => true
+			  case (_, ListDatasets)         => true
+			  case (_, ListFiles)            => true
+			  case (_, DownloadFiles)        => true // FIXME: required by ShowDataset if preview uses original file
+			  case (_, ShowDataset)          => true
+			  case (_, SearchDatasets)       => true
+			  case (_, AddDatasetsMetadata)  => true
+			  case (_, ShowFile)             => true
+			  case (_, CreateDatasets)       => true
+			  case (_, CreateFiles)          => true
+			  case (null, _)                 => false
+			  case (_, _)                    => true
 			}
-
-			// don't enter
-			return false
 		}
 	}
 

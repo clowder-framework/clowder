@@ -1,4 +1,4 @@
-@(dataset_id: String, metadata: List[Map[String,Any]], userMetadata: scala.collection.mutable.Map[String,Any])
+@(dataset_id: String, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any])
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
@@ -9,9 +9,13 @@
 		@for((key,value) <- metadata) {
 			<li><b>@(key):</b>
 			@if(value.isInstanceOf[String]) {
-				@value
+				@if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
+					<a href="@value">@value</a>
+				} else {
+					@value
+				}
 			} else {
-					@printLevel(value.asInstanceOf[Map[String, Any]])
+			    @printLevel(value.asInstanceOf[Map[String, Any]])
 			}</li>
 		}
 		</ul>
@@ -34,9 +38,7 @@
 	@if(metadata.isEmpty) {
 		<div>No auto-generated metadata.</div>
 	} else {
-		@for(md <- metadata) {
-				<div>@printLevel(md)</div>d
-		}
+		<div>@printLevel(metadata)</div>
 	}
 	<br />
 	<h5>User metadata:</h5>

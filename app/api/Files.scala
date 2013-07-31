@@ -78,8 +78,8 @@ object Files extends Controller with SecuredController with ApiController {
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
   def download(id: String) = 
-	    //SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.DownloadFiles)) { request =>
-		  Action(parse.anyContent) { request =>
+	    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.DownloadFiles)) { request =>
+//		  Action(parse.anyContent) { request =>
 		    Services.files.get(id) match {
 		      case Some((inputStream, filename, contentType, contentLength)) => {
 		        

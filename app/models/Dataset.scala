@@ -17,6 +17,7 @@ import play.api.Logger
 import scala.Mutable
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
+import play.api.libs.json.JsValue
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -32,7 +33,7 @@ case class Dataset (
   files: List[File] = List.empty,
   streams_id: List[ObjectId] = List.empty,
   tags: List[String] = List.empty,
-  metadata: List[Map[String, Any]] = List.empty,
+  metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
   comments: List[Comment] = List.empty
 )
@@ -54,18 +55,19 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     dao.find(MongoDBObject("tags" -> tag)).toList
   }
   
-  def getMetadata(id: String): List[Map[String,Any]] = {
+  def getMetadata(id: String): Map[String,Any] = {
     dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("metadata"->1)) match {
-      case None => List.empty
+      case None => Map.empty
       case Some(x) => {
-        val returnedMetadata = x.getAs[MongoDBList]("metadata").get.toList map {m => m.asInstanceOf[Map[String,Any]]}
-//        metadata map { m => m.asInstanceOf[DBObject].asInstanceOf[Map[String,Any]]}
-//        x.asInstanceOf[List[Map[String,Any]]]
-        returnedMetadata
-//    	  List.empty[Map[String,Any]]
+//        x.getAs[DBObject]("metadata") match {
+//          case Some(map) => map.toMap.asScala.asInstanceOf[Map[String,Any]]
+//          case None => Map.empty
+//        }
+        x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
       }
     }
   }
+  
   def getUserMetadata(id: String): scala.collection.mutable.Map[String,Any] = {
     dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("userMetadata"->1)) match {
       case None => new scala.collection.mutable.HashMap[String,Any]
@@ -79,7 +81,24 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   def addMetadata(id: String, json: String) {
     Logger.debug("Adding metadata to dataset " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> md), false, false, WriteConcern.Safe)
+    dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("metadata"->1)) match {
+      case None => {
+        dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> md), false, false, WriteConcern.Safe)
+      }
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match {
+          case Some(map) => {
+            val union = map.asInstanceOf[DBObject] ++ md
+            dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> union), false, false, WriteConcern.Safe)
+          }
+          case None => Map.empty
+        }
+      }
+    }
+    
+    
+   
+  
   }
 
   def addUserMetadata(id: String, json: String) {
