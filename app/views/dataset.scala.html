@@ -26,7 +26,8 @@
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
 		}
-		else if("@p._2" === "Pdf"){							
+		else if("@p._2" === "Pdf"){	
+			Configuration.url = "@api.routes.Files.download(p._1)";  //TEMPORARY FIX 
 		}
 		else if("@p._2" === "QTVR"){
 			Configuration.url = "@api.routes.Files.download(p._1)";  //TEMPORARY FIX 
