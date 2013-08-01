@@ -29,7 +29,7 @@ POST   	/uploaddnd/:id					  controllers.Files.uploaddnd(id)
 POST    /uploadDragDrop					  controllers.Files.uploadDragDrop
 
 # Datasets
-GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
+GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET     /datasets/metadataSearch          controllers.Datasets.metadataSearch
 GET		/datasets/:id					  controllers.Datasets.dataset(id)

@@ -77,16 +77,21 @@ object Datasets extends Controller with SecuredController {
     }
     // latest object
     val latest = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+    // first object
+    val first = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
     var firstPage = false
+    var lastPage = false
     if (latest.size == 1) {
     	firstPage = datasets.exists(_.id == latest(0).id)
+    	lastPage = datasets.exists(_.id == first(0).id)
     	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
+    	Logger.debug("first " + first(0).id + " last page " + lastPage )
     }
     if (datasets.size > 0) {  
       if (date != "" && !firstPage) { // show prev button
     	prev = formatter.format(datasets.head.created)
       }
-      if (datasets.size == limit) { // show next button
+      if (!lastPage) { // show next button
     	next = formatter.format(datasets.last.created)
       }
     }
