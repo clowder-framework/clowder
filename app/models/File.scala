@@ -12,6 +12,7 @@ import services.MongoSalatPlugin
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
+import collection.JavaConverters._
 
 /**
  * Uploaded files.
@@ -29,7 +30,8 @@ case class File(
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
     comments: List[Comment] = List.empty,
-    tags: List[String] = List.empty
+    tags: List[String] = List.empty,
+    metadata: Map[String, Any] = Map.empty
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -53,6 +55,19 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       case None => None
     }
   }
+  
+  
+  //Not used yet
+  def getMetadata(id: String): scala.collection.immutable.Map[String,Any] = {
+		  dao.collection.findOneByID(new ObjectId(id)) match {
+		  case None => new scala.collection.immutable.HashMap[String,Any]
+		  case Some(x) => {
+			  val returnedMetadata = x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
+					  returnedMetadata
+		  }
+	  }
+  }
+  
 
   def findByTag(tag: String): List[File] = {
     dao.find(MongoDBObject("tags" -> tag)).toList

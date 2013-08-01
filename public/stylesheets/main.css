@@ -273,6 +273,20 @@ button.usr_md_ {
 	margin-bottom:5px;
 }
 
+button.tech_md_ {
+    background:none!important;
+     border:none; 
+     padding:0!important;
+     
+     color:rgb(0, 136, 204);
+     
+}
+
+.tech_md_{
+	margin-right:10px;
+	margin-bottom:5px;
+}
+
 #table-scroll {
   height:400px;
   overflow:auto;  
@@ -297,5 +311,6 @@ button.usr_md_ {
 	padding-left: 50px;
 	padding-top: 50px; 
 }
+
 
 

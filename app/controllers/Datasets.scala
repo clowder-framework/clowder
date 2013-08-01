@@ -103,8 +103,9 @@ object Datasets extends Controller with SecuredController {
     Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
       case Some(dataset) => {
-        val files = dataset.files map { f =>
-          FileDAO.get(f.id.toString).get
+        val files = dataset.files map { f =>{
+        		FileDAO.get(f.id.toString).get
+        	}
         }
         
         //Search whether dataset is currently being processed by extractor(s)
