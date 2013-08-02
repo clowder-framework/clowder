@@ -42,7 +42,8 @@ function clearConfigTabAnnotations(prNum){
         $(window["configs" + prNum].tab).append(annotationBreak);
 
         var annotationEdit = document.createElement('button'); 	
-        annotationEdit.setAttribute('type','button');		
+        annotationEdit.setAttribute('type','button');
+        annotationEdit.className = annotationEdit.className + " btn";
         annotationEdit.setAttribute("onclick","editAnnotationDescription('" + prNum + "')");
         annotationEdit.innerHTML = 'Edit';
         annotationEdit.setAttribute("style","margin-bottom: 5px;");
@@ -146,7 +147,8 @@ function clearConfigTabAnnotations(prNum){
   		        $(window["configs" + prNum].tab).append(annotationBreak);
 
   		        var newAnnotationEdit = document.createElement('button'); 	
-  		        newAnnotationEdit.setAttribute('type','button');		
+  		        newAnnotationEdit.setAttribute('type','button');
+  		        newAnnotationEdit.className = newAnnotationEdit.className + " btn";
   		        newAnnotationEdit.setAttribute("onclick","editAnnotationDescription('" + prNum + "')");
   		        newAnnotationEdit.innerHTML = 'Edit';
   		        newAnnotationEdit.setAttribute("style","margin-bottom: 5px;");
@@ -183,7 +185,8 @@ function clearConfigTabAnnotations(prNum){
         $(window["configs" + prNum].tab).append(annotationBreak);
 
         var annotationEdit = document.createElement('button'); 	
-        annotationEdit.setAttribute('type','button');		
+        annotationEdit.setAttribute('type','button');
+        annotationEdit.className = annotationEdit.className + " btn";
         annotationEdit.setAttribute("onclick","editAnnotationDescription('" + prNum + "')");
         annotationEdit.innerHTML = 'Edit';
         annotationEdit.setAttribute("style","margin-bottom: 5px;");
@@ -211,7 +214,8 @@ function clearConfigTabAnnotations(prNum){
   	  $(window["configs" + prNum].tab).append(annotationBreak);
   	  
   	  var editAnnotationSubmit = document.createElement('button'); 	
-  	  editAnnotationSubmit.setAttribute('type','button');		
+  	  editAnnotationSubmit.setAttribute('type','button');
+  	  editAnnotationSubmit.className = editAnnotationSubmit.className + " btn";
   	  editAnnotationSubmit.setAttribute('style','margin-right:10px;');
   	  editAnnotationSubmit.setAttribute("onclick","submitAnnotationEdit('" + prNum + "')");
   	  editAnnotationSubmit.innerHTML = 'OK';
@@ -220,7 +224,8 @@ function clearConfigTabAnnotations(prNum){
   	  $(window["configs" + prNum].tab).append(editAnnotationSubmit);
   	  
   	  var editAnnotationCancel = document.createElement('button'); 	
-  	  editAnnotationCancel.setAttribute('type','button');		
+  	  editAnnotationCancel.setAttribute('type','button');
+  	  editAnnotationCancel.className = editAnnotationCancel.className + " btn";
   	  editAnnotationCancel.setAttribute("onclick","cancelAnnotationEdit('" + prNum + "')");
   	  editAnnotationCancel.innerHTML = 'Cancel';
   	  editAnnotationCancel.setAttribute("style","margin-bottom: 5px;");
@@ -267,7 +272,8 @@ function clearConfigTabAnnotations(prNum){
   		  		  $(window["configs" + prNum].tab).append(annotationBreak);
   		  		  
   		  		  var newAnnotationEdit = document.createElement('button'); 	
-  		  		  newAnnotationEdit.setAttribute('type','button');		
+  		  		  newAnnotationEdit.setAttribute('type','button');
+  		  		  newAnnotationEdit.className = newAnnotationEdit.className + " btn";
   		  		  newAnnotationEdit.setAttribute("onclick","editAnnotationDescription('" + prNum + "')");
   		  		  newAnnotationEdit.innerHTML = 'Edit';
   		  		  newAnnotationEdit.setAttribute("style","margin-bottom: 5px;");
@@ -335,7 +341,8 @@ function clearConfigTabAnnotations(prNum){
     	$(window["configs" + prNum].tab).append(annotationBreak);
 
     	var newAnnotationSubmit = document.createElement('button'); 	
-    	newAnnotationSubmit.setAttribute('type','button');		
+    	newAnnotationSubmit.setAttribute('type','button');
+    	newAnnotationSubmit.className = newAnnotationSubmit.className + " btn";
     	newAnnotationSubmit.setAttribute('style','margin-right:10px;');
     	newAnnotationSubmit.setAttribute("onclick","submitAnnotation('" + prNum + "')");
     	newAnnotationSubmit.innerHTML = 'OK';
@@ -344,7 +351,8 @@ function clearConfigTabAnnotations(prNum){
     	$(window["configs" + prNum].tab).append(newAnnotationSubmit);
 
     	var newAnnotationCancel = document.createElement('button'); 	
-    	newAnnotationCancel.setAttribute('type','button');		
+    	newAnnotationCancel.setAttribute('type','button');
+    	newAnnotationCancel.className = newAnnotationCancel.className + " btn";
     	newAnnotationCancel.setAttribute("onclick","cancelNewAnnotation('" + prNum + "')");
     	newAnnotationCancel.innerHTML = 'Cancel annotation addition';
     	newAnnotationCancel.setAttribute("style","margin-bottom: 5px;");
