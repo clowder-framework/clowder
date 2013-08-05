@@ -201,10 +201,10 @@ class VersusPlugin(application:Application) extends Plugin{
 		        	     
 		        	  case Some(file)=>{
 		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
-		        	    resultArray+=((a(n),result.docID,result.proximity,file.filename))
+		        	    resultArray+=((subStr,result.docID,result.proximity,file.filename))
 		        	    ar.update(i, file.filename)
 		        	    //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
-		        	    Logger.debug("resultArray=("+a(n)+", "+result.proximity+", "+file.filename+")\n" )
+		        	    Logger.debug("resultArray=("+subStr+", "+result.proximity+", "+file.filename+")\n" )
 		        	    i=i+1
 		        	   }
 		        	 case None=>None
