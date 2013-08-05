@@ -300,9 +300,13 @@ object Search extends Controller {
 		                				yFinal<-xFinal
 		                				}
 		                			yield {
+		                			  val keys=yFinal.keySet
+		                			  var keysArray=new ArrayBuffer[String]
+		                			  keys.copyToBuffer(keysArray)
+		                			  
 		                			  Services.queries.getFile(id)match{
 		                			  	case Some(file)=>{ 
-		                			  		Ok(views.html.multimediaIndexResults(file.filename,id,yFinal.size,yFinal))
+		                			  		Ok(views.html.multimediaIndexResults(keysArray,file.filename,id,yFinal.size,yFinal))
 		                			  	}
 		                			  	case None=>{
 		                			  			Ok(id +" not found")
