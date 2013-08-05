@@ -18,7 +18,7 @@ GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 POST    /files/:id/comment                controllers.Files.comment(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
-GET     /queries/:id/blob				  controllers.Files.downloadquery(id)	
+#GET     /queries/:id/blob				  controllers.Files.downloadquery(id)	
 #GET     /files/:id/similar                controllers.Files.findSimilar(id)
 POST    /upload					          controllers.Files.upload
 POST   /uploadSelect                      controllers.Files.uploadSelect
