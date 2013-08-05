@@ -70,7 +70,8 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId=configuration.getString("versus.index").getOrElse("")
-    val urlf= client+"/files/"+id+"/blob"
+   // val urlf= client+"/files/"+id+"/blob"
+    val urlf=client+"/api/files/"+id+"?key=letmein"
     val host=configuration.getString("versus.host").getOrElse("")
     
      var indexurl=host+"/index/"+indexId+"/add"
@@ -121,7 +122,8 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId=configuration.getString("versus.index").getOrElse("")
-    val query= client+"/queries/"+id+"/blob"
+    //val query= client+"/queries/"+id+"/blob"
+      val query=client+"/api/queries/"+id+"?key=letmein"
     val host=configuration.getString("versus.host").getOrElse("")
       
     val queryurl=host+"/index/"+indexId+"/query" 
@@ -168,10 +170,12 @@ class VersusPlugin(application:Application) extends Plugin{
     val client = configuration.getString("versus.client").getOrElse("")
    // val indexId=configuration.getString("versus.index").getOrElse("")
     val indexId=indxId
-    val query= client+"/queries/"+id+"/blob"
+   // val query= client+"/queries/"+id+"/blob"
+      val query=client+"/api/queries/"+id+"?key=letmein"
     val host=configuration.getString("versus.host").getOrElse("")
       
     var queryurl=host+"/index/"+indexId+"/query" 
+    
     val resultFuture: scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(queryurl).post(Map("infile" -> Seq(query)))
                
    resultFuture.map{
@@ -188,9 +192,13 @@ class VersusPlugin(application:Application) extends Plugin{
 		        var i=0
 		        similarity_value.map{
 		        	 result=>
+		        	   val end=result.docID.lastIndexOf("?")
+		        	   val begin=result.docID.lastIndexOf("/");
+		        	   val subStr=result.docID.substring(begin+1, end);
 		        	  val a=result.docID.split("/")
 		        	  val n=a.length-2
-		        	  Services.files.getFile(a(n)) match{
+		        	  Services.files.getFile(subStr) match{
+		        	     
 		        	  case Some(file)=>{
 		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
 		        	    resultArray+=((a(n),result.docID,result.proximity,file.filename))
