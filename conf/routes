@@ -18,7 +18,7 @@ GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 POST    /files/:id/comment                controllers.Files.comment(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
-GET     /queries/:id/blob				  controllers.Files.downloadquery(id)	
+#GET     /queries/:id/blob				  controllers.Files.downloadquery(id)	
 #GET     /files/:id/similar                controllers.Files.findSimilar(id)
 POST    /upload					          controllers.Files.upload
 POST   /uploadSelect                      controllers.Files.uploadSelect
@@ -123,6 +123,7 @@ GET		/api/files/:id/listpreviews		  						api.Files.filePreviewsList(id)
 #GET		/api/files/:three_d_file_id/:filename					api.Files.getGeometry(three_d_file_id,filename)
 GET		/api/files/:three_d_file_id/:filename					api.Files.getTexture(three_d_file_id,filename)
 GET     /api/files/:id                    						api.Files.download(id)
+GET     /api/queries/:id				                       api.Files.downloadquery(id)	
 
 # DANGER
 GET     /api/delete-data                    					api.Admin.deleteAllData

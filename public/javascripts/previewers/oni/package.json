@@ -1,0 +1,4 @@
+{ "name" : "Oni",
+  "main" : "some-library.js",
+  "contentType" : ["application/oni"]
+  }

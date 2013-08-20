@@ -1,5 +1,5 @@
-@(name: String, id: String, size:Integer, results: scala.collection.mutable.HashMap[String, scala.collection.mutable.ArrayBuffer[(String,String,Double,String)]]) 
-
+@(keysArray:scala.collection.mutable.ArrayBuffer[String],name: String, id: String, size:Integer, results: scala.collection.mutable.HashMap[String, scala.collection.mutable.ArrayBuffer[(String,String,Double,String)]]) 
+@import models.IncrementCounter
 
 @main("Search Results") {
 	<div class="page-header">
@@ -12,35 +12,48 @@
 		</div>
 	</div>
 	}
-	<div class="row-fluid">
-	<div class="span12">
-	<table class="table table-bordered table-hover">
+	
+<div class="container" > 
+	<div class="row-fluid" >
+	
+	@for(index<-keysArray){
+	<div class="span6">
+		
+	<table id='tablec' class="table table-bordered table-hover">
 	<thead>
-				<tr>
-				    <th>IndexID</th>
-					<th>ID</th>
-					<th>Proximity</th>
-					
-				</tr>
-			</thead>
-			<tbody>
-			
-		@results.map { case (key, list) =>
-		   <tr><td rowspan="11 "><a href="http://localhost:8080/api/v1/index/@key">@key</a></td>
+		<tr>
+	    <th colspan="2"><a href="http://localhost:8080/api/v1/index/@index">IndexID: @index</a></th>
+		</tr>
+		<tr>
+		<th id='rank'>Rank</th>
+		<th id='ID'>ID</th>
+		<th id='prox'>Proximity</th>
+		</tr>
+	</thead>
+	<tbody>
+		@results.get(index).map { case (list) =>
+			@defining(new IncrementCounter){ i=>
+		   <tr>
 		 	
 			@list.map { case (id,link, distance, fname) =>
 			<tr>
-			  
+			 <td>@{i.count+=1;i.count}</td> 
 			<td><a href=@routes.Files.file(id)> @fname</a></td>
 			<td>@distance</td>
 			</tr>	
 			}
 			
 		}
-		</tbody>
-		</table>
+	}	
+    </tbody>
+    </table>
 	</div>
-</div>
+	
+	}
+	</div>
+	</div>
+	}
 	
 	
-}
+	
+	
