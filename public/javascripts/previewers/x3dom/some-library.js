@@ -842,6 +842,8 @@ function clearConfigTabAnnotations(prNum){
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("solid","true");
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("onclick","handleObjectClick(event,'" + prNum + "');");
   
+  $("#x3dElement" + prNum + " > scene > transform").attr("render", "true");
+  
   window["modelMaxDimension" + prNum] = $("#x3dElement" + prNum + " > scene").attr("data-modelMaxDimension");
   $("#x3dElement" + prNum).attr("onmousemove", "handleMouseMove(event,'" + prNum + "');");
     

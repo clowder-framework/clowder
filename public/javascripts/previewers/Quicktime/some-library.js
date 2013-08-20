@@ -1,5 +1,5 @@
 (function ($, Configuration) {
-  console.log("QTVR previewer for " + Configuration.id);
+  console.log("Quicktime previewer for " + Configuration.id);
   
   console.log("Updating tab " + Configuration.tab);
   
