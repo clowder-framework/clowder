@@ -39,7 +39,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       val props = new Properties()
       if (!user.equals("")) props.setProperty("user", user)
       if (!password.equals("")) props.setProperty("password", password)
-      conn = DriverManager.getConnection(url)
+      conn = DriverManager.getConnection(url, props)
 //      conn.setAutoCommit(false)
       Logger.debug("Connected to " + url)
     } catch {
