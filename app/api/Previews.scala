@@ -31,7 +31,7 @@ import controllers.Permission
 object Previews extends Controller with SecuredController {
 
   def downloadPreview(id:String, datasetid:String) =
-    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { request =>
+    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request =>
       Redirect(routes.Previews.download(id))    
   }
   
@@ -39,7 +39,7 @@ object Previews extends Controller with SecuredController {
    * Download preview bytes.
    */
   def download(id:String) =
-    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { request =>
+    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request =>
 	    PreviewDAO.getBlob(id) match {
 	   
 	      case Some((inputStream, filename, contentType, contentLength)) => {
@@ -125,7 +125,7 @@ object Previews extends Controller with SecuredController {
    * 
    */
   def getMetadata(id: String) =
-    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { request =>
+    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request =>
       PreviewDAO.findOneById(new ObjectId(id)) match {
         case Some(preview) => Ok(toJson(Map("id"->preview.id.toString)))
         case None => Logger.error("Preview metadata not found " + id); InternalServerError
@@ -166,7 +166,7 @@ object Previews extends Controller with SecuredController {
    * Find tile for given preview, level and filename (row and column).
    */
   def getTile(dzi_id_dir: String, level: String, filename: String) =
-    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { request => 
+    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request => 
       val dzi_id = dzi_id_dir.replaceAll("_files", "")
       TileDAO.findTile(new ObjectId(dzi_id), filename, level) match {
         case Some(tile) => {
@@ -220,7 +220,7 @@ object Previews extends Controller with SecuredController {
    * Add annotation to 3D model preview.
    */
   def attachAnnotation(preview_id: String) = 
-    SecuredAction(parse.json, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { request =>       	  
+    SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { request =>       	  
 	      val x_coord = request.body.\("x_coord").asOpt[String].getOrElse("0.0")
 	      val y_coord = request.body.\("y_coord").asOpt[String].getOrElse("0.0")
 	      val z_coord = request.body.\("z_coord").asOpt[String].getOrElse("0.0")
@@ -263,7 +263,7 @@ object Previews extends Controller with SecuredController {
   }
   
    def listAnnotations(preview_id: String) =
-    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)){ request => 
+    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)){ request => 
 	      // TODO create a service instead of calling salat directly
           PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
             case Some(preview) => {
