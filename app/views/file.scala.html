@@ -5,39 +5,20 @@
 
 @showPreview(id: Int, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
 	<script>
-		var Configuration = {};
 		Configuration.tab = "#previewer_@id";
-		Configuration.id  = "@file.id";
 		Configuration.url = "@p._5";
 		Configuration.fileid = "@p._1";
-		Configuration.authenticated = @user.isDefined;
 		Configuration.previewer = "@routes.Assets.at(p._3)";
-		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		if("@p._2" === "Thumbnail"){
 			Configuration.fileType = "@p._6";
 			Configuration.fileSize = @p._7;			
 		}
-		else if("@p._2" === "PTM"){
-			Configuration.appletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
-		}
-		else if("@p._2" === "3DWebGL"){
-			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-			Configuration.imagesPath = "@(routes.Assets.at("images"))";
-		}
-		else if("@p._2" === "Gigaimaging"){							
-			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-		}
 		else if("@p._2" === "X3d"){							
-			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
 		}
-		else if("@p._2" === "Pdf"){							
-			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-		}
 		else if("@p._2" === "Oni"){							
-			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
@@ -46,9 +27,24 @@
 @main("File") {
 
 	<script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
+	<script>
+    	var isPageLoaded = false;
+    	var Configuration = {};
+    	Configuration.id  = "@file.id";
+		Configuration.authenticated = @user.isDefined;
+		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+		Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
+		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+		Configuration.imagesPath = "@(routes.Assets.at("images"))";		
+    </script>
+    <script>
+    	window.onload = function() {
+    		isPageLoaded = true;
+    	}
+    </script>
 	
 	<div class="page-header">
-		<h1>@file.filename	</h1>
+		<h1>@file.filename</h1>
 	</div>
 	<div class="row-fluid">
 		<div class="span2">				

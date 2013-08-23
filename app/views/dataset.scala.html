@@ -32,23 +32,10 @@
 			Configuration.fileType = "@p._6";
 			Configuration.fileSize = @p._7;			
 		}
-		else if("@p._2" === "PTM"){
-			Configuration.url = "@api.routes.Files.download(p._1)";  //TEMPORARY FIX  
-		}
-		else if("@p._2" === "3DWebGL"){			
-		}
-		else if("@p._2" === "Gigaimaging"){	//placeholder in case something changes							
-		}
 		else if("@p._2" === "X3d"){							
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
-		}
-		else if("@p._2" === "Pdf"){	
-			Configuration.url = "@api.routes.Files.download(p._1)";  //TEMPORARY FIX 
-		}
-		else if("@p._2" === "Quicktime"){
-			Configuration.url = "@api.routes.Files.download(p._1)";  //TEMPORARY FIX 
 		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
