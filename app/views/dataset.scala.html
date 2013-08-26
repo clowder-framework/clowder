@@ -16,7 +16,15 @@
 					@value
 				}
 			} else {
-			    @printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+				@if(value.isInstanceOf[java.lang.Integer]) {
+					@value.toString
+			    } else {
+			    	@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
+			    		@value.toString.replace("[","").replace("]","")
+			    	} else {
+			    		@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+			    	}
+			    }
 			}</li>
 		}
 		</ul>
