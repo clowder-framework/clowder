@@ -103,17 +103,22 @@ object Files extends Controller with SecuredController {
     }
     // latest object
     val latest = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
+    // first object
+    val first = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
     var firstPage = false
+    var lastPage = false
     if (latest.size == 1) {
     	firstPage = files.exists(_.id == latest(0).id)
+    	lastPage = files.exists(_.id == first(0).id)
     	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
+    	Logger.debug("first " + first(0).id + " last page " + lastPage )
     }
     
     if (files.size > 0) {
       if (date != "" && !firstPage) { // show prev button
     	prev = formatter.format(files.head.uploadDate)
       }
-      if (files.size == limit) { // show next button
+      if (!lastPage) { // show next button
     	next = formatter.format(files.last.uploadDate)
       }
     }
