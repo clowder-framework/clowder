@@ -22,6 +22,7 @@ import models.GeometryDAO
 import models.Preview
 import models.PreviewDAO
 import models.ThreeDTextureDAO
+import models.Extraction
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.iteratee.Enumerator
@@ -601,4 +602,34 @@ object Files extends Controller with SecuredController with ApiController {
 		    }
 	    }
     }
+	
+	
+	  /**
+   * Return whether a file is currently being processed.
+   */
+  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowFile)) { request =>
+  	Services.files.getFile(id) match {
+  	  case Some(file) => { 	    
+  		  		  var isActivity = "false"
+  				  Extraction.findMostRecentByFileId(file.id) match{
+	  				  case Some(mostRecent) => {
+	  					  mostRecent.status match{
+	  					  	case "DONE." => 
+	  					  	case _ => { 
+	  						  isActivity = "true"
+	  					  }  
+	  					}
+	  				  }
+	  				  case None =>
+  		  		  }	
+        
+        Ok(toJson(Map("isBeingProcessed"->isActivity))) 
+  	  }
+  	  case None => {Logger.error("Error getting file" + id); InternalServerError}
+  	}  	
+  }
+	
+	
+	
+	
 }

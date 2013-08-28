@@ -30,6 +30,7 @@ import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
 import play.api.libs.ws.WS
 import fileutils.FilesUtils
+import models.Extraction
 
 /**
  * Manage files.
@@ -78,7 +79,23 @@ object Files extends Controller with SecuredController {
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
         }
-        Ok(views.html.file(file, id, previews, sectionsWithPreviews))
+        
+        //Search whether file is currently being processed by extractor(s)
+        var isActivity = false
+        Extraction.findMostRecentByFileId(file.id) match{
+          case Some(mostRecent) => {
+            mostRecent.status match{
+              case "DONE." => 
+              case _ => { 
+        				isActivity = true
+        			  }  
+            }
+          }
+          case None =>
+        }
+        
+        
+        Ok(views.html.file(file, id, previews, sectionsWithPreviews, isActivity))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }

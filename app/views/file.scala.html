@@ -1,4 +1,4 @@
-@(file: models.File, id: String, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section])(implicit user: Option[securesocial.core.Identity])
+@(file: models.File, id: String, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean)(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -220,7 +220,36 @@
 			    </script>
     			}
     		}
-		
+		@if(beingProcessed == true){
+    			<div id='beingProcessed' style='display:block;'><h5>File is being processed...</h5></div>  		
+    		}else{
+    			<div id='beingProcessed' style='display:none;'><h5>File is being processed...</h5></div> 
+    		}
+    		<script>
+    			function updateIsBeingProcessed(){  
+    				var request = $.ajax({
+ 				       type: 'GET',  
+ 				       url: "@api.routes.Files.isBeingProcessed(file.id.toString)",
+ 				       contentType: "application/json"
+ 				     });
+    				request.done(function (respJSON){
+						if(respJSON.isBeingProcessed == "true")
+							$("#beingProcessed").css('display','block');
+						else
+							$("#beingProcessed").css('display','none');
+	     			});				 
+				  request.fail(function (jqXHR, textStatus, errorThrown){
+	        		console.error(
+	            		"The following error occured: "+
+	            		textStatus, errorThrown		            
+	        			);
+	        		//alert("ERROR: " + errorThrown +". Processing of dataset not checked." );
+	     			});
+    			}
+    			$(function() {
+    				setInterval("updateIsBeingProcessed();", 1000);
+    			});   
+    		</script>
 		<div class="span4">
 			<a href="@routes.Files.download(id)" class="btn pull-right" target="_blank">Download</a>
 		</div>
