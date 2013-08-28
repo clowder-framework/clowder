@@ -48,6 +48,9 @@ object Permission extends Enumeration {
 	type Permission = Value
 	val Public,					// Page is public accessible, i.e. no login needed 
 		Admin,
+		CreateCollections,
+		ListCollections,
+		ShowCollection,
 		CreateDatasets,
 		ListDatasets,
 		ShowDataset,
@@ -77,13 +80,16 @@ object Permission extends Enumeration {
 			// order is important
 			(user, permission) match {
 			  case (_, Public)               => true
+			  case (_, ListCollections)      => true
 			  case (_, ListDatasets)         => true
 			  case (_, ListFiles)            => true
 			  case (_, DownloadFiles)        => true // FIXME: required by ShowDataset if preview uses original file
+			  case (_, ShowCollection)       => true
 			  case (_, ShowDataset)          => true
 			  case (_, SearchDatasets)       => true
 			  case (_, AddDatasetsMetadata)  => true
 			  case (_, ShowFile)             => true
+			  case (_, CreateCollections)    => true
 			  case (_, CreateDatasets)       => true
 			  case (_, CreateFiles)          => true
 			  case (null, DownloadFiles)     => true //FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.

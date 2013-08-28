@@ -179,6 +179,20 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     return allMatch              
   }
   
+//  def get(id: String): Option[Dataset] = {
+//    dao.findOneById(new ObjectId(id)) match {
+//      case Some(dataset) => {
+//        val files = FileDAO.findByFileId(file.id)
+//        val sectionsWithPreviews = sections.map { s =>
+//          val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
+//          s.copy(preview = p)
+//        }
+//        Some(file.copy(sections = sectionsWithPreviews, previews = previews))
+//      }
+//      case None => None
+//    }
+//  }
+  
   
   
 }

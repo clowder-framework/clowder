@@ -13,7 +13,7 @@ GET     /users/create/:username           controllers.Users.create(username)
 GET     /users/view/:id                   controllers.Users.view(id)
 
 # Files
-GET		/files					          controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 11)
+GET		/files					          controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
 POST    /files/:id/comment                controllers.Files.comment(id)
@@ -37,6 +37,12 @@ POST	/datasets/:id/comment             controllers.Datasets.comment(id)
 POST	/datasets/:id/tag                 controllers.Datasets.tag(id)
 GET     /datasets_by_section/:id          controllers.Datasets.datasetBySection(id)
 POST    /dataset/submit                   controllers.Datasets.submit
+
+# Collections
+GET		/collections					  controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
+GET     /collections/new                  controllers.Collections.newCollection
+POST	/collection/submit				  controllers.Collections.submit
+GET		/collection/:id					  controllers.Collections.collection(id)	
 
 # Tags
 POST    /tags		                      controllers.Tags.tag
@@ -130,8 +136,12 @@ GET     /api/delete-data                    					api.Admin.deleteAllData
 
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 
+POST	/api/collections/:coll_id/datasets/:ds_id				api.Collections.attachDataset(coll_id,ds_id)
+
 GET    	/api/datasets					  						api.Datasets.list
 POST    /api/datasets                                           api.Datasets.createDataset
+POST	/api/datasets/searchusermetadata						api.Datasets.searchDatasetsUserMetadata
+GET		/api/datasets/listOutsideCollection/:coll_id			api.Datasets.listOutsideCollection(coll_id)
 POST    /api/datasets/:id/metadata		  						api.Datasets.addMetadata(id)
 POST    /api/datasets/:id/usermetadata	  						api.Datasets.addUserMetadata(id)
 GET 	/api/datasets/:id/listFiles		 						api.Datasets.datasetFilesList(id)
@@ -139,7 +149,6 @@ POST    /api/datasets/:id/comment								api.Datasets.comment(id)
 POST    /api/datasets/:id/tag									api.Datasets.tag(id)
 GET		/api/datasets/:id/isBeingProcessed						api.Datasets.isBeingProcessed(id)
 GET		/api/datasets/:id/getPreviews							api.Datasets.getPreviews(id)
-POST	/api/datasets/searchusermetadata						api.Datasets.searchDatasetsUserMetadata
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					api.Previews.downloadPreview(preview_id, datasetid)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			api.Files.downloadByDatasetAndFilename(dataset_id, filename, preview_id)
