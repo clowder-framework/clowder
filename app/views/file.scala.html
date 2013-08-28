@@ -29,7 +29,7 @@
 		</ul>
 	}
 
-@showPreview(id: Int, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
@@ -88,35 +88,35 @@
 		</div>
 		
 		@for((f, pvs) <- previews) {
-			<div class="row-fluid">
+			<div class="row-fluid" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="span12">
-		  			@if(pvs.length == 1) {
-
-				  		<div id="previewer_1" ></div>
-				  		@showPreview(1, pvs.head)
-		  			} else {
 				  		<div class="tabbable">
-							<ul class="nav nav-pills" id="myTab">
+							<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 								@for(i <- pvs.indices) {
-						    		<li class=""><a href="#previewer_@i" data-toggle="tab">@pvs(i)._2</a></li>
+						    		<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
 				  				}
 							</ul>
-							<div class="tab-content">
+							<div class="tab-content"  id="previewsContent_@(f.id.toString)">
 								@for(i <- pvs.indices) {
-							  		<div class="tab-pane" id="previewer_@i"></div>
-							  		@showPreview(i, pvs(i))
+							  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
+							  		@showPreview(f.id.toString + "_" + i, pvs(i))
 
 								}
 					  			<script type="text/javascript">
 									$(function () {
-					    				$('#myTab a:first').tab('show');
+										$('#myTab_@(f.id.toString) a:first').tab('show');
 					 				 })
 								</script>
 							</div>
 						</div>
-					}
+					
 		  		</div>
 			</div>
+			@if(pvs.length <= 1) {
+				<script>
+	    			$('#myTab_@(f.id.toString)').attr('style', 'display:none;');
+	    		</script>
+    		}
 			
 			<!-- sections -->
 			@if(f.sections.size > 0) {	
@@ -294,6 +294,88 @@
     				setInterval("updateIsBeingProcessed();", 1000);
     			});   
     		</script>
+    		<script>
+    			function addPreview(pv, fileId){
+    				var prevsOfFile = parseInt($("#filePrevContainer_" + fileId).attr('data-previewsCount'))
+    				var newTabLink = document.createElement('a');
+    				newTabLink.setAttribute('href', '#previewer_' + fileId +  '_' + (prevsOfFile + 1));
+    				$("#filePrevContainer_" + fileId).attr('data-previewsCount', '' + (prevsOfFile + 1));
+    				newTabLink.setAttribute('data-toggle', 'tab');
+    				newTabLink.innerHTML= pv.p_id;
+    				var newListItem = document.createElement('li');
+    				newListItem.appendChild(newTabLink);
+    				$("#myTab_" + fileId).append(newListItem);
+    				
+    				var newPrevDiv = document.createElement('div');
+    				newPrevDiv.setAttribute('class', 'tab-pane previewDiv');
+    				newPrevDiv.setAttribute('id', 'previewer_' + fileId +  '_' + (prevsOfFile + 1));
+    				newPrevDiv.setAttribute('data-previewId', pv.pv_id);
+    				newPrevDiv.setAttribute('data-previewerId', pv.p_id);
+    				$("#previewsContent_" + fileId).append(newPrevDiv);
+    				
+    				//Previewer config vars
+    				Configuration.tab = '#previewer_' + fileId +  '_' + (prevsOfFile + 1);
+    				Configuration.url = pv.pv_route;
+    				Configuration.fileid = pv.pv_id;
+    				Configuration.previewer = pv.p_path;
+    				if(pv.p_id === "Thumbnail"){
+    					Configuration.fileType = pv.pv_contenttype;
+    					Configuration.fileSize = pv.pv_length;			
+    				}
+    				else if(pv.p_id === "X3d"){							
+    					Configuration.annotationsEditPath = pv.pv_annotationsEditPath;
+    					Configuration.annotationsListPath = pv.pv_annotationsListPath;
+    					Configuration.annotationsAttachPath = pv.pv_annotationsAttachPath;
+    				}
+    				////
+    				
+    				var s = document.createElement("script");
+    				s.type = "text/javascript";
+    				s.src = pv.p_path + "/" + pv.p_main;
+    				$("#previewsContent_" + fileId).append(s);
+    				
+    				if(prevsOfFile == 1){
+    					$("#myTab_" + fileId).attr('style', 'display:block;');
+    				}
+    				    				
+    				$('#myTab_' + fileId + ' a:first').tab('show');
+    			}
+    		
+    			function checkForNewPreviews(){
+	    			var request = $.ajax({
+					       type: 'GET',  
+					       url: "@api.routes.Files.getPreviews(file.id.toString)",
+					       contentType: "application/json"
+					     });
+					request.done(function (respJSON){
+							//alert(JSON.stringify(respJSON));
+						for(var i = 0; i < respJSON.length; i++){
+							var pvs = respJSON[i].previews;
+							for(var j = 0; j < pvs.length; j++){
+								var pvId = pvs[j].pv_id;
+								var pId = pvs[j].p_id;
+								if($(".previewDiv[data-previewId='" + pvId + "'][data-previewerId='" + pId + "']").length == 0){
+									addPreview(pvs[j], respJSON[i].file_id);
+								}
+							}
+						}
+						setTimeout("checkForNewPreviews();", 1000);
+		     		});				 
+					  request.fail(function (jqXHR, textStatus, errorThrown){
+		        		console.error(
+		            		"The following error occured: "+
+		            		textStatus, errorThrown		            
+		        			);
+		        		//alert("ERROR: " + errorThrown +". Did not check for new previews." );
+		        		setTimeout(function(){checkForNewPreviews()}, 1000);
+		     			});
+				}
+    			$(function() {
+    				setTimeout(function(){checkForNewPreviews()}, 1000);
+    			});
+    		</script> 
+    		
+    		
 		<div class="span4">
 			<a href="@routes.Files.download(id)" class="btn pull-right" target="_blank">Download</a>
 		</div>
