@@ -1,7 +1,33 @@
 @(file: models.File, id: String, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean)(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
+@import collection.JavaConverters._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
+@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
+		<ul>
+		@for((key,value) <- metadata) {
+			<li><b>@(key):</b>
+			@if(value.isInstanceOf[String]) {
+				@if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
+					<a href="@value">@value</a>
+				} else {
+					@value
+				}
+			} else {
+				@if(value.isInstanceOf[java.lang.Integer]) {
+					@value.toString
+			    } else {
+			    	@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
+			    		@value.toString.replace("[","").replace("]","")
+			    	} else {
+			    		@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+			    	}
+			    }
+			}</li>
+		}
+		</ul>
+	}
 
 @showPreview(id: Int, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
 	<script>
@@ -220,6 +246,24 @@
 			    </script>
     			}
     		}
+    		@if(!file.metadata.isEmpty) {
+					<div id='technicalMetadata_@(file.id.toString)'>
+						<button class="tech_md_" type="button">Show file technical metadata</button>
+						<div style="display:none;">@printLevel(file.metadata)</div>
+					</div>
+				}
+				<script>
+				$("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
+					if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+						$("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+						$("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
+					}
+					else{
+						$("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+						$("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
+					}
+				});				
+				</script>
 		@if(beingProcessed == true){
     			<div id='beingProcessed' style='display:block;'><h5>File is being processed...</h5></div>  		
     		}else{
