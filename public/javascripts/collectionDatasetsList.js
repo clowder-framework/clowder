@@ -126,7 +126,9 @@
 		        								+ "onclick='addDataset(\"" + respJSON[i].id + "\",\"resultRow" + (i+1) + "\",event)' "
 		        								+ ">"+ respJSON[i].datasetname + "</a></td>"
 		        								+ "<td>" + createdDate + "</td>"
-		        								+ "<td>" + respJSON[i].description + "</td></tr>");
+		        								+ "<td>" + respJSON[i].description + "</td>"
+		        								+ "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
+		        								+ "/datasets/" + respJSON[i].id + "'>View</a></td></tr>");
 		        }
 		        $('#addDatasetsTable').show();
 		        
