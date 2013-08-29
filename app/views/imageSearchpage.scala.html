@@ -1,0 +1,158 @@
+@(keysArray:scala.collection.mutable.ArrayBuffer[String],name: String, id: String, size:Integer, results: scala.collection.mutable.HashMap[String, scala.collection.mutable.ArrayBuffer[(String,String,Double,String)]]) 
+@import models.IncrementCounter
+
+@main("Search Results") {
+	<div class="page-header">
+		<h1>Search Results For <medium>@name</medium></h1>
+	</div>
+	@if(size == 0) {
+	<div class="row-fluid">
+		<div class="span12">
+			No results found. Sorry!
+		</div>
+	</div>
+	}
+	
+<div class="container" > 
+	<div class="row-fluid" >
+	<div>
+	
+	<table id='tablec' border="1">
+	@defining(new IncrementCounter){c=>
+	  @for(index<-keysArray){
+		<thead>
+	  	@{c.count+=1}
+	  	@if(c.count==1){
+	  		<script>
+	  		console.log("if : c.count=",@c.count);
+	  			
+	  		</script>
+			<tr>
+	    	<th colspan="3">IndexID: @index</th>
+			</tr>
+		}else{
+			<script>
+			console.log("if:c.count=",@c.count);
+			var row0=document.getElementById("tablec").rows[0];
+			var x=row0.insertCell(-1);
+				x.innerHTML="<h5>IndexID:@index<h5>";
+				row0.cells[@{c.count-1}].colSpan="2";
+			</script>	
+			}
+		<tr>
+		@if(c.count==1){
+			<th>Rank</th>
+			<th>ID</th>
+			<th>Proximity</th>
+		}else{
+		   <script>
+			var row1=document.getElementById("tablec").rows[1];
+			//console.log("row1.innerHTML=",row1.innerHTML);
+			var x=row1.insertCell(-1);
+			x.align="center";
+			x.innerHTML="<h5>ID </h5>";
+			 var row11=document.getElementById("tablec").rows[1];
+			 var x1=row11.insertCell(-1);
+			 x1.align="center";
+			x1.innerHTML="<h5>Proximity</h5>";
+			</script>	
+			}
+		
+		</tr>
+	</thead>
+	
+		@results.get(index).map {list =>
+				@defining(new IncrementCounter){ i=>   
+					<script>
+					 console.log("i.count=",@i.count," list.length=",@list.length);
+					
+					</script>
+				
+				 @for(ele<-list){	
+					
+		 	    <!-- list.map  case (id,link, distance, fname) -->
+		 		  
+		 		  
+							@if(c.count==1){	
+								@if(i.count<5){
+								<!--<tr>
+								 <td>@{i.count+=1;i.count}</td> 
+								<td><a href=@routes.Files.file(ele._1)> @ele._4</a></td>
+								<td>@ele._3</td>
+								</tr>-->
+								<script>
+								console.log("i=@i.count indexID:@index fileId=@ele._4 distance=@ele._3");
+								    var row2=document.getElementById("tablec").insertRow(-1);
+								 // var row2=document.getElementById("tablec").rows[@{i.count+1}];
+								  var z=row2.insertCell(0);
+								  var t=row2.insertCell(1);
+								  var u=row2.insertCell(2);
+								  z.innerHTML="@i.count";
+								  t.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
+								  u.innerHTML="@ele._3";
+								 // console.log("if:c=1,i.count=",@i.count,"rows["+@{i.count+1}+"].cells[1]=",row2.cells[1].innerHTML);
+								 // console.log("if:c=1,i.count=",@i.count,"rows["+@{i.count+1}+"].cells[2]=",row2.cells[2].innerHTML);
+								</script>
+								}
+							}else{
+								<script>
+								@if(i.count<5){
+								 @{i.count+=1}
+								
+								//console.log("else: c.count=",@c.count," i.count=",@{i.count+1});
+								console.log("i=@i.count indexID:@index fileId=@ele._4 distance=@ele._3");
+								var col3=document.getElementById("tablec").rows[@{i.count+1}];
+								//var z=col3.insertCell(-1);
+									 var z=col3.insertCell(@{2*c.count-1});
+								     var y=col3.insertCell(@{2*c.count});
+								
+								// var y=col3.insertCell(-1);
+								
+								 z.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
+								 y.innerHTML=@ele._3;
+								  var row3=document.getElementById("tablec").rows[@{i.count+1}];
+								 console.log("row2.cells["+@{2*c.count-1}+"].innerHTML=",row3.cells[@{2*c.count-1}].innerHTML);
+								 console.log("row2.cells["+@{2*c.count}+"].innerHTML=",row3.cells[@{2*c.count}].innerHTML);
+								}
+								
+								</script>	
+							}	
+						
+			     } <!--for  list ends here  -->
+			     @if(c.count>1 && list.length<5 ){
+		 		  			<script>
+		 		  			 console.log("inside if length");
+		 		  			 
+		 		  			   for(var j=@i.count+1;j<6;j++){
+								//var j=@i.count+1;	
+								
+								console.log("else: c.count=",@c.count," i.count=",@{i.count+1}," j=",j);
+								
+								var col3=document.getElementById("tablec").rows[j+1];
+								
+									 var z=col3.insertCell(@{2*c.count-1});
+								     var y=col3.insertCell(@{2*c.count});
+								
+								
+								
+								 z.innerHTML="";
+								 y.innerHTML="";
+								  var row3=document.getElementById("tablec").rows[j+1];
+								 console.log("row2.cells["+@{2*c.count-1}+"].innerHTML=",row3.cells[@{2*c.count-1}].innerHTML);
+								 console.log("row2.cells["+@{2*c.count}+"].innerHTML=",row3.cells[@{2*c.count}].innerHTML);
+								}
+								
+								</script>	
+		 		          	 }	
+			
+				}<!--Inc counter ends here-->
+			}<!--results map ends here-->
+          }<!--for ends here--> 
+         }<!--c def ends here-->      
+    </table>
+    
+	</div>
+		
+	</div>
+	</div>
+	}
