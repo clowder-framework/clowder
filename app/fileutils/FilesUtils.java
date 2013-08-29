@@ -27,7 +27,12 @@ public class FilesUtils {
                 	zipFile.close();
                 	mainFileType = "model/obj-zipped";
                 	return mainFileType;
-                }                                                             
+                }
+                if(fileName.endsWith(".sfmdataset")){
+                	zipFile.close();
+                	mainFileType = "model/sfm-zipped";
+                	return mainFileType;
+                } 
             }
             zipFile.close();
 		} catch (IOException e) {

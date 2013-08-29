@@ -21,7 +21,7 @@ trait MongoDBDataset {
    * List all datasets in the system.
    */
   def listDatasets(): List[Dataset] = {   
-    (for (file <- Dataset.find(MongoDBObject())) yield file).toList
+    (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList
   }
   
   /**

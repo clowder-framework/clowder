@@ -814,7 +814,7 @@ function clearConfigTabAnnotations(prNum){
   window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
   window["thisPreview" + prNum] = $(Configuration.tab); 
   setInterval("updatex3dPosition('" + prNum + "');", 50);
-  
+
   $.ajax({
 	    url: fileUrl,
 	    async:false,
@@ -841,6 +841,8 @@ function clearConfigTabAnnotations(prNum){
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("DEF","model");
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("solid","true");
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("onclick","handleObjectClick(event,'" + prNum + "');");
+  
+  $("#x3dElement" + prNum + " > scene > transform").attr("render", "true");
   
   window["modelMaxDimension" + prNum] = $("#x3dElement" + prNum + " > scene").attr("data-modelMaxDimension");
   $("#x3dElement" + prNum).attr("onmousemove", "handleMouseMove(event,'" + prNum + "');");
@@ -880,14 +882,14 @@ function clearConfigTabAnnotations(prNum){
   if(isPageLoaded){
 	  x3dom.reload();
   }
-
+ 
   if(isPageLoaded == false){
-	  document.onload = function() {
-	      document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
-	      document.getElementById("x3dElement" + prNum).runtime.resetExamin();
-	  };
+		  document.onload = function() {
+		      document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
+		      document.getElementById("x3dElement" + prNum).runtime.resetExamin();
+		  };
 	  }
-  else{
+  else{ 
 	  document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
       document.getElementById("x3dElement" + prNum).runtime.resetExamin();
   }

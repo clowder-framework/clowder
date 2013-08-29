@@ -2,35 +2,41 @@
  *
  */
 package api
-import play.api.mvc.Controller
-import play.api.mvc.Action
-import play.api.libs.json.Json._
-import services.Services
-import play.api.Logger
-import models.File
-import play.api.libs.json.JsValue
-import play.api.libs.iteratee.Enumerator
-import models.PreviewDAO
-import models.Preview
-import models.Dataset
-import com.mongodb.casbah.Imports._
-import com.mongodb.WriteConcern
-import models.FileDAO
-import org.bson.types.ObjectId
+
 import java.io.FileInputStream
-import play.api.Play.current
-import services.RabbitmqPlugin
-import services.ExtractorMessage
-import services.ElasticsearchPlugin
-import play.api.libs.json.Json._
-import play.api.libs.json._
-import models.GeometryDAO
-import models.ThreeDTextureDAO
+import java.util.Date
+
+import org.bson.types.ObjectId
+
+import com.mongodb.WriteConcern
+import com.mongodb.casbah.Imports._
+
+import controllers.Permission
+import controllers.SecuredController
+import controllers.Previewers
 import fileutils.FilesUtils
 import models.Comment
-import java.util.Date
-import controllers.SecuredController
-import controllers.Permission
+import models.Dataset
+import models.File
+import models.FileDAO
+import models.GeometryDAO
+import models.Preview
+import models.PreviewDAO
+import models.ThreeDTextureDAO
+import models.Extraction
+import play.api.Logger
+import play.api.Play.current
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.json._
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json._
+import play.api.libs.json.Json._
+import play.api.mvc.Action
+import play.api.mvc.Controller
+import services.ElasticsearchPlugin
+import services.ExtractorMessage
+import services.RabbitmqPlugin
+import services.Services
 
 /**
  * Json API for files.
@@ -40,25 +46,21 @@ import controllers.Permission
  */
 object Files extends Controller with SecuredController with ApiController {
   
-  def get(id: String) = Authenticated { 
-    Action { implicit request =>
+  def get(id: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
 	    Logger.info("GET file with id " + id)    
 	    Services.files.getFile(id) match {
 	      case Some(file) => Ok(jsonFile(file))
 	      case None => {Logger.error("Error getting file" + id); InternalServerError}
 	    }
-    }
   }
   
   /**
    * List all files.
    */
-  def list = Authenticated {
-    Action {
+  def list = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ListFiles)) { request =>
       val list = for (f <- Services.files.listFiles()) yield jsonFile(f)
       Ok(toJson(list))
     }
-  }
   
   def downloadByDatasetAndFilename(dataset_id: String, filename: String, preview_id: String) = 
     SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.DownloadFiles)){ request =>
@@ -173,8 +175,7 @@ object Files extends Controller with SecuredController with ApiController {
    * Add metadata to file.
    */
   def addMetadata(id: String) =  
-   Authenticated { 
-    Action(parse.json) { request =>
+   SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.DownloadFiles)) { request =>
       Logger.debug("Adding metadata to file " + id)
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
@@ -198,7 +199,6 @@ object Files extends Controller with SecuredController with ApiController {
 	 Logger.debug("Updating previews.files " + id + " with " + doc)
 	 Ok(toJson("success"))
     }
-  }
   
   
   
@@ -206,7 +206,7 @@ object Files extends Controller with SecuredController with ApiController {
   /**
    * Upload file using multipart form enconding.
    */
-    def upload() = Authenticated{  Action(parse.multipartFormData) { implicit request =>
+    def upload() = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        // store file
@@ -242,12 +242,11 @@ object Files extends Controller with SecuredController with ApiController {
 	         BadRequest(toJson("File not attached."))
 	      }
 	  }
-    }
 
   /**
    * Upload a file to a specific dataset
    */
-  def uploadToDataset(dataset_id: String) = Action(parse.multipartFormData) { implicit request =>
+  def uploadToDataset(dataset_id: String) = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     Services.datasets.get(dataset_id) match {
       case Some(dataset) => {
         request.body.file("File").map { f =>
@@ -300,8 +299,7 @@ object Files extends Controller with SecuredController with ApiController {
    /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
-    def uploadIntermediate(originalIdAndFlags: String) = Authenticated{
-      Action(parse.multipartFormData) { implicit request =>
+    def uploadIntermediate(originalIdAndFlags: String) = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
 	      request.body.file("File").map { f =>
 	        var originalId = originalIdAndFlags;
 	        var flags = "";
@@ -344,13 +342,12 @@ object Files extends Controller with SecuredController with ApiController {
 	         BadRequest(toJson("File not attached."))
 	      }
 	  }
-    }
     
     
   /**
    * Upload metadata for preview and attach it to a file.
    */  
-  def uploadPreview(file_id: String) = Authenticated { Action(parse.multipartFormData) { implicit request =>
+  def uploadPreview(file_id: String) = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        // store file
@@ -360,13 +357,11 @@ object Files extends Controller with SecuredController with ApiController {
 	         BadRequest(toJson("File not attached."))
 	      }
 	  }
-  }
   
   /**
    * Add preview to file.
    */
-  def attachPreview(file_id: String, preview_id: String) = Authenticated {
-    Action(parse.json) { request =>
+  def attachPreview(file_id: String, preview_id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  request =>
       request.body match {
         case JsObject(fields) => {
           // TODO create a service instead of calling salat directly
@@ -388,7 +383,6 @@ object Files extends Controller with SecuredController with ApiController {
         case _ => Ok("received something else: " + request.body + '\n')
     }
     }
-  }
   
     def jsonFile(file: File): JsValue = {
         toJson(Map("id"->file.id.toString, "filename"->file.filename, "content-type"->file.contentType, "date-created"->file.uploadDate.toString(), "size"->file.length.toString))
@@ -405,8 +399,7 @@ object Files extends Controller with SecuredController with ApiController {
       ).reduce((left:DBObject, right:DBObject) => left ++ right)
     }
   
-  def filePreviewsList(id: String) = Authenticated {
-		Action {
+  def filePreviewsList(id: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  request =>
 			FileDAO.findOneById(new ObjectId(id)) match {
 			case Some(file) => {
                 val filePreviews = PreviewDAO.findByFileId(file.id);
@@ -416,7 +409,6 @@ object Files extends Controller with SecuredController with ApiController {
 			case None => {Logger.error("Error getting file" + id); InternalServerError}
 			}
 		}
-	}
   
   def jsonPreview(preview: Preview): JsValue = {
     toJson(Map("id"->preview.id.toString, "filename"->getFilenameOrEmpty(preview), "contentType"->preview.contentType)) 
@@ -432,8 +424,7 @@ object Files extends Controller with SecuredController with ApiController {
     /**
    * Add 3D geometry file to file.
    */
-  def attachGeometry(file_id: String, geometry_id: String) = Authenticated{
-    Action(parse.json) { request =>
+  def attachGeometry(file_id: String, geometry_id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  request =>
       request.body match {
         case JsObject(fields) => {
           // TODO create a service instead of calling salat directly
@@ -454,13 +445,12 @@ object Files extends Controller with SecuredController with ApiController {
         case _ => Ok("received something else: " + request.body + '\n')
     }
    }
-  }
+  
   
    /**
    * Add 3D texture to file.
    */
-  def attachTexture(file_id: String, texture_id: String) = Authenticated{
-    Action(parse.json) { request =>
+  def attachTexture(file_id: String, texture_id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  request =>
       request.body match {
         case JsObject(fields) => {
           // TODO create a service instead of calling salat directly
@@ -481,13 +471,12 @@ object Files extends Controller with SecuredController with ApiController {
         case _ => Ok("received something else: " + request.body + '\n')
     }
    }
-  }
   
    /**
    * Find geometry file for given 3D file and geometry filename.
    */
   def getGeometry(three_d_file_id: String, filename: String) =
-    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { request => 
+    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request => 
       GeometryDAO.findGeometry(new ObjectId(three_d_file_id), filename) match {
         case Some(geometry) => {
           
@@ -540,7 +529,7 @@ object Files extends Controller with SecuredController with ApiController {
    * Find texture file for given 3D file and texture filename.
    */
   def getTexture(three_d_file_id: String, filename: String) =
-    SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { request => 
+    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request => 
       ThreeDTextureDAO.findTexture(new ObjectId(three_d_file_id), filename) match {
         case Some(texture) => {
           
@@ -589,7 +578,7 @@ object Files extends Controller with SecuredController with ApiController {
       }
     }
    
-    def tag(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+    def tag(id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
 	    request.body.\("tag").asOpt[String] match {
 		    case Some(tag) => {
 		    	FileDAO.tag(id, tag)
@@ -602,7 +591,7 @@ object Files extends Controller with SecuredController with ApiController {
 	    }
     }
 
-	def comment(id: String) = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+	def comment(id: String) = SecuredAction(parse.json, allowKey=true)  { implicit request =>
 	    request.body.\("comment").asOpt[String] match {
 		    case Some(comment) => {
 		    	FileDAO.comment(id, new Comment(request.user.email.get, new Date(), comment))
@@ -614,4 +603,76 @@ object Files extends Controller with SecuredController with ApiController {
 		    }
 	    }
     }
+	
+	
+	  /**
+   * Return whether a file is currently being processed.
+   */
+  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowFile)) { request =>
+  	Services.files.getFile(id) match {
+  	  case Some(file) => { 	    
+  		  		  var isActivity = "false"
+  				  Extraction.findMostRecentByFileId(file.id) match{
+	  				  case Some(mostRecent) => {
+	  					  mostRecent.status match{
+	  					  	case "DONE." => 
+	  					  	case _ => { 
+	  						  isActivity = "true"
+	  					  }  
+	  					}
+	  				  }
+	  				  case None =>
+  		  		  }	
+        
+        Ok(toJson(Map("isBeingProcessed"->isActivity))) 
+  	  }
+  	  case None => {Logger.error("Error getting file" + id); InternalServerError}
+  	}  	
+  }
+	
+	
+   def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
+    val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
+    toJson(list)
+  }  
+  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
+    val list = for (prv <- prvs) yield jsonPreview(prv._1, prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
+    val listJson = toJson(list.toList)
+    toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
+  }
+  def jsonPreview(pvId: java.lang.String, pId: String, pPath: String, pMain: String, pvRoute: java.lang.String, pvContentType: String, pvLength: Long): JsValue = {
+    if(pId.equals("X3d"))
+    	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
+    			"pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(pvId).toString, "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(pvId).toString, "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(pvId).toString)) 
+    else    
+    	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString , "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))  
+  }  
+  def getPreviews(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowFile)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        
+        val previewsFromDB = PreviewDAO.findByFileId(file.id)        
+        val previewers = Previewers.searchFileSystem
+        //Logger.info("Number of previews " + previews.length);
+        val files = List(file)        
+         val previewslist = for(f <- files) yield {
+          val pvf = for(p <- previewers ; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {            
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+          }        
+          if (pvf.length > 0) {
+            (file -> pvf)
+          } else {
+  	        val ff = for(p <- previewers ; if (p.contentType.contains(file.contentType))) yield {
+  	          (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+  	        }
+  	        (file -> ff)
+          }
+        }
+
+        Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]])) 
+      }
+      case None => {Logger.error("Error getting file" + id); InternalServerError}
+    }
+  }
+	
 }

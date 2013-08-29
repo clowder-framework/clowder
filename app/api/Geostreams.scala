@@ -71,7 +71,7 @@ object Geostreams extends Controller {
     Action { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => Ok(plugin.search(since, until, geocode))
+        case Some(plugin) => Ok(Json.prettyPrint(Json.parse(plugin.search(since, until, geocode))))
         case None => InternalServerError(toJson("Geostreaming not enabled"))
       }
     }
