@@ -10,6 +10,7 @@ import org.bson.types.ObjectId
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
+import models.Dataset
 
 object Collections extends Controller with SecuredController with ApiController {
 
@@ -18,12 +19,21 @@ object Collections extends Controller with SecuredController with ApiController 
       case Some(collection) => {
         Services.datasets.get(datasetId) match {
           case Some(dataset) => {
-            
-            // add dataset to collection
-            val cl = collection.copy(datasets = collection.datasets ++ List(dataset))
-            // TODO create a service instead of calling salat directly
-            Collection.save(cl)
-            Logger.info("Adding dataset to collection completed")
+            if(!isInCollection(dataset,collection)){
+	            // add dataset to collection  
+	            val cl = collection.copy(datasets = collection.datasets ++ List(dataset))
+	            // TODO create a service instead of calling salat directly
+	            Collection.save(cl)
+	            
+	            //add collection to dataset
+	            val ds = dataset.copy(collections = dataset.collections ++ List(collection))
+	            Dataset.save(ds)
+	            
+	            Logger.info("Adding dataset to collection completed")
+            }
+            else{
+              Logger.info("Dataset was already in collection.")
+            }
             Ok(toJson(Map("status" -> "success")))
           }
           case None => {
@@ -36,4 +46,60 @@ object Collections extends Controller with SecuredController with ApiController 
       }      
     }    
   }
+  
+  def removeDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.CreateCollections)) { request =>
+    Collection.findOneById(new ObjectId(collectionId)) match{
+      case Some(collection) => {
+        Services.datasets.get(datasetId) match {
+          case Some(dataset) => {
+            if(isInCollection(dataset,collection)){
+	            // remove dataset from collection  
+	            val cl = collection.copy(datasets = removeItemDataset(collection.datasets,dataset))
+	            // TODO create a service instead of calling salat directly
+	            Collection.save(cl)
+	            
+	            //remove collection from dataset
+	            val ds = dataset.copy(collections = removeItemCollection(dataset.collections,collection))
+	            Dataset.save(ds)
+	            
+	            Logger.info("Removing dataset from collection completed")
+            }
+            else{
+              Logger.info("Dataset was already out of the collection.")
+            }
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => {
+        	  Logger.error("Error getting dataset" + datasetId); InternalServerError
+          }
+        }
+      }
+      case None => {
+        Logger.error("Error getting collection" + collectionId); InternalServerError
+      }     
+    }
+  }
+  
+  def removeItemDataset(datasets: List[Dataset], dataset: Dataset): List[Dataset] = {
+    val newList = for(dst <- datasets; if(!dst.id.toString().equals(dataset.id.toString()))) yield {
+      dst
+    }    
+    return newList
+  }
+  def removeItemCollection(collections: List[Collection], collection: Collection): List[Collection] = {
+    val newList = for(cl <- collections; if(!cl.id.toString().equals(collection.id.toString()))) yield {
+      cl
+    }    
+    return newList
+  }
+  
+  
+  def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
+    for(collDataset <- collection.datasets){
+      if(collDataset.id == dataset.id)
+        return true
+    }
+    return false
+  }
+  
 }

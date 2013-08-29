@@ -18,6 +18,7 @@ import scala.Mutable
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import play.api.libs.json.JsValue
+import services.Services
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -35,7 +36,8 @@ case class Dataset (
   tags: List[String] = List.empty,
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
-  comments: List[Comment] = List.empty
+  comments: List[Comment] = List.empty,
+  collections: List[Collection] = List.empty
 )
 
 object MustBreak extends Exception { }
@@ -193,6 +195,28 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 //    }
 //  }
   
+      /**
+   * List all datasets inside a collection.
+   */
+  def listInsideCollection(collectionId: String) : List[Dataset] =  { 
+      Collection.findOneById(new ObjectId(collectionId)) match{
+        case Some(collection) => {
+          val list = for (dataset <- Services.datasets.listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
+          return list
+        }
+        case None =>{
+          val list = for (dataset <- Services.datasets.listDatasetsChronoReverse) yield dataset
+          return list	 	  
+        } 
+      }
+  } 
+  def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
+    for(collDataset <- collection.datasets){
+      if(collDataset.id == dataset.id)
+        return true
+    }
+    return false
+  }
   
   
 }

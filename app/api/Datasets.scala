@@ -58,15 +58,16 @@ object Datasets extends Controller with SecuredController with ApiController {
   def listOutsideCollection(collectionId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ListDatasets)) { request =>
       Collection.findOneById(new ObjectId(collectionId)) match{
         case Some(collection) => {
-          val list = for (dataset <- Services.datasets.listDatasets(); if(!isInCollection(dataset,collection))) yield jsonDataset(dataset)
-          Ok(toJson(list.reverse))
+          val list = for (dataset <- Services.datasets.listDatasetsChronoReverse; if(!isInCollection(dataset,collection))) yield jsonDataset(dataset)
+          Ok(toJson(list))
         }
         case None =>{
-          val list = for (dataset <- Services.datasets.listDatasets()) yield jsonDataset(dataset)
-          Ok(toJson(list.reverse))
+          val list = for (dataset <- Services.datasets.listDatasetsChronoReverse) yield jsonDataset(dataset)
+          Ok(toJson(list))
         } 
       }
-  }  
+  }
+  
   def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
     for(collDataset <- collection.datasets){
       if(collDataset.id == dataset.id)

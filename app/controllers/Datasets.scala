@@ -159,7 +159,10 @@ object Datasets extends Controller with SecuredController {
         val userMetadata = Dataset.getUserMetadata(id)
         Logger.debug("User metadata: " + userMetadata.toString)
         
-        Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata, isActivity))
+        val collectionsOutside = Collection.listOutsideDataset(id)
+        
+        
+        Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata, isActivity, collectionsOutside))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }

@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean)(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
 
 
 @import helper._
@@ -454,6 +454,21 @@
 				    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
 				  </div>
 				</div>
+			</div>
+			
+			<div class="row">
+				<h5>Collections</h5>
+				@dataset.collections.map { collection =>
+					<a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a><br />
+				}
+					<select id="collectionAddSelect">
+					@collectionsOutside.map { collection =>
+						<option value="@(collection.id.toString)">@(collection.name)</option>
+					}					  
+					</select>
+					<script>
+						$("#collectionAddSelect").combobox();
+					</script>
 			</div>
 			
 			<div class="row">

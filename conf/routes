@@ -138,7 +138,8 @@ GET     /api/delete-data                    					api.Admin.deleteAllData
 
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 
-POST	/api/collections/:coll_id/datasets/:ds_id				api.Collections.attachDataset(coll_id,ds_id)
+POST	/api/collections/:coll_id/datasets/:ds_id					api.Collections.attachDataset(coll_id,ds_id)
+POST	/api/collections/:coll_id/datasetsRemove/:ds_id				api.Collections.removeDataset(coll_id,ds_id)
 
 GET    	/api/datasets					  						api.Datasets.list
 POST    /api/datasets                                           api.Datasets.createDataset

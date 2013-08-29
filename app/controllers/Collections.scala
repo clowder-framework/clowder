@@ -14,6 +14,9 @@ import models.Dataset
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import play.api.libs.json.Json.toJson
 
 object Collections  extends Controller with SecuredController {
 
@@ -74,9 +77,10 @@ object Collections  extends Controller with SecuredController {
     Ok(views.html.collectionList(collections, prev, next, limit))
   }
   
-  
-  
-  
+  def jsonCollection(collection: Collection): JsValue = {
+    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description, "created" -> collection.created.toString))
+  }
+ 
    /**
    * Create collection.
    */
@@ -109,7 +113,7 @@ object Collections  extends Controller with SecuredController {
   	implicit val user = request.user
   	Services.collections.get(id)  match {
   	  case Some(collection) => {
-  	    Ok(views.html.collectionofdatasets(collection))
+  	    Ok(views.html.collectionofdatasets(Dataset.listInsideCollection(id),collection.name, collection.id.toString()))
   	  }
   	  case None => {Logger.error("Error getting collection " + id); InternalServerError}
   	}
