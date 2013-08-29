@@ -460,12 +460,15 @@
 				<h5>Collections</h5>
 				@dataset.collections.map { collection =>
 					<a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a><br />
-				}
+				}   
+				<div class="ui-widget">
 					<select id="collectionAddSelect">
 					@collectionsOutside.map { collection =>
 						<option value="@(collection.id.toString)">@(collection.name)</option>
 					}					  
 					</select>
+				</div>	
+					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
 					<script>
 						$("#collectionAddSelect").combobox();
 					</script>
