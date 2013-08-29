@@ -80,4 +80,10 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def comment(id: String, comment: Comment) {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
+  
+  
+  
+  
+  
+  
 }

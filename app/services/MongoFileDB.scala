@@ -27,7 +27,7 @@ trait MongoFileDB {
   def listFiles(): List[File] = {
     (for (file <- FileDAO.find(MongoDBObject())) yield file).toList
   }
-  
+    
   /**
    * List files after a specified date.
    */
@@ -46,13 +46,16 @@ trait MongoFileDB {
    * List files before a specified date.
    */
   def listFilesBefore(date: String, limit: Int): List[File] = {
-    val order = MongoDBObject("uploadDate"-> -1)
+    var order = MongoDBObject("uploadDate"-> -1)
     if (date == "") {
       FileDAO.findAll.sort(order).limit(limit).toList
     } else {
+      order = MongoDBObject("uploadDate"-> 1) 
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
       Logger.info("Before " + sinceDate)
-      FileDAO.find("uploadDate" $gt sinceDate).sort(order).limit(limit).toList
+      var fileList = FileDAO.find("uploadDate" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
+      fileList = fileList.filter(_ != fileList.last)
+      fileList      
     }
   }
 

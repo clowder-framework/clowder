@@ -30,6 +30,7 @@ import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
 import play.api.libs.ws.WS
 import fileutils.FilesUtils
+import models.Extraction
 
 /**
  * Manage files.
@@ -78,7 +79,23 @@ object Files extends Controller with SecuredController {
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
         }
-        Ok(views.html.file(file, id, previews, sectionsWithPreviews))
+        
+        //Search whether file is currently being processed by extractor(s)
+        var isActivity = false
+        Extraction.findMostRecentByFileId(file.id) match{
+          case Some(mostRecent) => {
+            mostRecent.status match{
+              case "DONE." => 
+              case _ => { 
+        				isActivity = true
+        			  }  
+            }
+          }
+          case None =>
+        }
+        
+        
+        Ok(views.html.file(file, id, previews, sectionsWithPreviews, isActivity))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
@@ -103,17 +120,22 @@ object Files extends Controller with SecuredController {
     }
     // latest object
     val latest = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
+    // first object
+    val first = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
     var firstPage = false
+    var lastPage = false
     if (latest.size == 1) {
     	firstPage = files.exists(_.id == latest(0).id)
+    	lastPage = files.exists(_.id == first(0).id)
     	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
+    	Logger.debug("first " + first(0).id + " last page " + lastPage )
     }
     
     if (files.size > 0) {
       if (date != "" && !firstPage) { // show prev button
     	prev = formatter.format(files.head.uploadDate)
       }
-      if (files.size == limit) { // show next button
+      if (!lastPage) { // show next button
     	next = formatter.format(files.last.uploadDate)
       }
     }

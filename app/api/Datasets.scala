@@ -29,6 +29,8 @@ import play.api.libs.json.JsString
 import play.api.Routes
 import controllers.SecuredController
 import controllers.Permission
+import models.Collection
+import org.bson.types.ObjectId
 
 
 /**
@@ -48,6 +50,29 @@ object Datasets extends Controller with SecuredController with ApiController {
   def list = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ListDatasets)) { request =>    
       val list = for (dataset <- Services.datasets.listDatasets()) yield jsonDataset(dataset)
       Ok(toJson(list))
+  }
+  
+    /**
+   * List all datasets outside a collection.
+   */
+  def listOutsideCollection(collectionId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ListDatasets)) { request =>
+      Collection.findOneById(new ObjectId(collectionId)) match{
+        case Some(collection) => {
+          val list = for (dataset <- Services.datasets.listDatasets(); if(!isInCollection(dataset,collection))) yield jsonDataset(dataset)
+          Ok(toJson(list.reverse))
+        }
+        case None =>{
+          val list = for (dataset <- Services.datasets.listDatasets()) yield jsonDataset(dataset)
+          Ok(toJson(list.reverse))
+        } 
+      }
+  }  
+  def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
+    for(collDataset <- collection.datasets){
+      if(collDataset.id == dataset.id)
+        return true
+    }
+    return false
   }
   
   /**

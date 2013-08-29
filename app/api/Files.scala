@@ -13,6 +13,7 @@ import com.mongodb.casbah.Imports._
 
 import controllers.Permission
 import controllers.SecuredController
+import controllers.Previewers
 import fileutils.FilesUtils
 import models.Comment
 import models.Dataset
@@ -22,6 +23,7 @@ import models.GeometryDAO
 import models.Preview
 import models.PreviewDAO
 import models.ThreeDTextureDAO
+import models.Extraction
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.iteratee.Enumerator
@@ -601,4 +603,76 @@ object Files extends Controller with SecuredController with ApiController {
 		    }
 	    }
     }
+	
+	
+	  /**
+   * Return whether a file is currently being processed.
+   */
+  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowFile)) { request =>
+  	Services.files.getFile(id) match {
+  	  case Some(file) => { 	    
+  		  		  var isActivity = "false"
+  				  Extraction.findMostRecentByFileId(file.id) match{
+	  				  case Some(mostRecent) => {
+	  					  mostRecent.status match{
+	  					  	case "DONE." => 
+	  					  	case _ => { 
+	  						  isActivity = "true"
+	  					  }  
+	  					}
+	  				  }
+	  				  case None =>
+  		  		  }	
+        
+        Ok(toJson(Map("isBeingProcessed"->isActivity))) 
+  	  }
+  	  case None => {Logger.error("Error getting file" + id); InternalServerError}
+  	}  	
+  }
+	
+	
+   def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
+    val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
+    toJson(list)
+  }  
+  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
+    val list = for (prv <- prvs) yield jsonPreview(prv._1, prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
+    val listJson = toJson(list.toList)
+    toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
+  }
+  def jsonPreview(pvId: java.lang.String, pId: String, pPath: String, pMain: String, pvRoute: java.lang.String, pvContentType: String, pvLength: Long): JsValue = {
+    if(pId.equals("X3d"))
+    	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
+    			"pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(pvId).toString, "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(pvId).toString, "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(pvId).toString)) 
+    else    
+    	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString , "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))  
+  }  
+  def getPreviews(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowFile)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        
+        val previewsFromDB = PreviewDAO.findByFileId(file.id)        
+        val previewers = Previewers.searchFileSystem
+        //Logger.info("Number of previews " + previews.length);
+        val files = List(file)        
+         val previewslist = for(f <- files) yield {
+          val pvf = for(p <- previewers ; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {            
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+          }        
+          if (pvf.length > 0) {
+            (file -> pvf)
+          } else {
+  	        val ff = for(p <- previewers ; if (p.contentType.contains(file.contentType))) yield {
+  	          (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+  	        }
+  	        (file -> ff)
+          }
+        }
+
+        Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]])) 
+      }
+      case None => {Logger.error("Error getting file" + id); InternalServerError}
+    }
+  }
+	
 }
