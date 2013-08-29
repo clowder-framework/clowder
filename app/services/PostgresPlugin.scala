@@ -126,6 +126,10 @@ class PostgresPlugin(application: Application) extends Plugin {
     data
   }
   
+  def listSensors() {
+    val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM (SELECT gid, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geog FROM geoindex"
+  }
+  
   def test() {
     add(new java.util.Date(), None, """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
     Logger.info("Searching postgis: " + search(None, None, None))
