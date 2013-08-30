@@ -13,6 +13,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import collection.JavaConverters._
+import securesocial.core.Identity
 
 /**
  * Uploaded files.
@@ -23,7 +24,8 @@ import collection.JavaConverters._
 case class File(
     id: ObjectId = new ObjectId, 
     path: Option[String] = None, 
-    filename: String, 
+    filename: String,
+    author: Identity,
     uploadDate: Date, 
     contentType: String,
     length: Long = 0,

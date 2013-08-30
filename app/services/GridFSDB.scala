@@ -10,6 +10,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFS
 import models.File
 import com.mongodb.casbah.WriteConcern
+import securesocial.core.Identity
 
 /**
  * Use GridFS to store blobs.
@@ -22,7 +23,7 @@ trait GridFSDB {
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity): Option[File] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploads")
@@ -39,6 +40,7 @@ trait GridFSDB {
       ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
     }
     mongoFile.contentType = ct
+    mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
     
@@ -50,7 +52,7 @@ trait GridFSDB {
 //      case None => Logger.error("NO FILE!!!!!!")
 //    }
     
-    Some(File(oid, None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
+    Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
   }
 
   /**
