@@ -185,3 +185,5 @@ POST    /api/sensors                      api.Sensors.add
 GET     /api/sensors/:id                  api.Sensors.get(id)
 GET     /api/sensors/search               api.Sensors.search
 DELETE  /api/sensors/:id                  api.Sensors.delete(id)
+
+POST    /api/selected                     api.Selected.add

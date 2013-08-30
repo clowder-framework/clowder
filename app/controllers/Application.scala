@@ -50,7 +50,8 @@ object Application extends Controller with securesocial.core.SecureSocial {
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.tag,
-        api.routes.javascript.Sections.comment
+        api.routes.javascript.Sections.comment,
+        api.routes.javascript.Selected.add
       )
     ).as(JSON) 
   }
