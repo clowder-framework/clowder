@@ -11,7 +11,8 @@
 				<tr>
 					<th style="width: 30%">Name</th>
 					<th style="width: 20%">Created</th>
-					<th style="width: 50%">Description</th>
+					<th style="width: 40%">Description</th>
+					<th style="width: 10%"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -20,10 +21,11 @@
 						<td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a></td>
 						<td>@collection.created.format("MMM dd, yyyy")</td>
 						<td>@collection.description</td>
+						<td><a href="#" onclick="removeCollection('@(collection.id.toString)',event)">Remove</a></td>
 					</tr>
 				}
 			</tbody>
-		</table>
+		</table>		
 		<ul class="pager">
 			@if(prev != "") {
   			<li class="previous"><a href="@(routes.Collections.list("b", prev, limit))">Previous</a></li>
@@ -34,4 +36,8 @@
 		</ul>
 	</div>
 </div>
+<script language="javascript">	
+	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
+</script>
+<script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
 }

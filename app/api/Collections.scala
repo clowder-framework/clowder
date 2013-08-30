@@ -47,7 +47,7 @@ object Collections extends Controller with SecuredController with ApiController 
     }    
   }
   
-  def removeDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.CreateCollections)) { request =>
+  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.CreateCollections)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
         Services.datasets.get(datasetId) match {
@@ -75,7 +75,12 @@ object Collections extends Controller with SecuredController with ApiController 
         }
       }
       case None => {
-        Logger.error("Error getting collection" + collectionId); InternalServerError
+        ignoreNotFound match{
+          case "True" =>
+            Ok(toJson(Map("status" -> "success")))
+          case "False" =>
+        	Logger.error("Error getting collection" + collectionId); InternalServerError
+        }
       }     
     }
   }
@@ -101,5 +106,23 @@ object Collections extends Controller with SecuredController with ApiController 
     }
     return false
   }
+  
+  def removeCollection(collectionId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.DeleteCollections)) { request =>
+    Collection.findOneById(new ObjectId(collectionId)) match{
+      case Some(collection) => {       
+        for(dataset <- collection.datasets){
+          //remove collection from dataset
+	      val ds = dataset.copy(collections = removeItemCollection(dataset.collections,collection))
+	      Dataset.save(ds)
+        }       
+        Collection.remove(collection)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Ok(toJson(Map("status" -> "success")))
+      }       
+    }    
+  }
+
   
 }

@@ -49,6 +49,7 @@ object Permission extends Enumeration {
 	val Public,					// Page is public accessible, i.e. no login needed 
 		Admin,
 		CreateCollections,
+		DeleteCollections,
 		ListCollections,
 		ShowCollection,
 		CreateDatasets,
@@ -92,6 +93,7 @@ object Permission extends Enumeration {
 			  case (_, CreateCollections)    => true
 			  case (_, CreateDatasets)       => true
 			  case (_, CreateFiles)          => true
+			  case (_, DeleteCollections)    => true
 			  case (null, DownloadFiles)     => true //FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
 			  case (null, _)                 => false
 			  case (_, _)                    => true

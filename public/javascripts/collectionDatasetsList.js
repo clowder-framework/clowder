@@ -8,6 +8,8 @@
 	
 	var datasetsInCollection = $("#collectionDatasetsTable tbody tr");
 	var datasetsInCollectionCount = datasetsInCollection.length;
+	
+	var areRestDatasetsVisible = false;
 
 	function addDataset(datasetId, event){
 		var request = $.ajax({
@@ -69,7 +71,7 @@
         		"The following error occured: "+
         		textStatus, errorThrown		            
     			);
-    		alert("ERROR: " + errorThrown +". Dataset not added to collection." );
+    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection was possibly removed." );
  			});
 		
 	}
@@ -77,7 +79,7 @@
 	function removeDataset(datasetId, event){
 		var request = $.ajax({
 		       type: 'POST',
-		       url: "http://"+hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasetsRemove/"+datasetId
+		       url: "http://"+hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasetsRemove/"+datasetId+"/False"
 		     });
 		request.done(function (response, textStatus, jqXHR){
 	        console.log("Response " + response);
@@ -101,7 +103,7 @@
 	    	  if($('#datasetsPagerPrev').is(':visible'))
 	    		  $('#datasetsPagerPrev').click();
 	    
-	      if($("#addDatasetsTable tbody tr[data-datasetId='" + datasetId + "']").length > 0)
+	      if($("#addDatasetsTable tbody tr[data-datasetId='" + datasetId + "']").length > 0 || !areRestDatasetsVisible)
 	    	  return;	
 	      //Add selected dataset to datasets not in collection.
 	      var datasetPos = findPos(event.target.parentNode.parentNode);
@@ -141,7 +143,7 @@
         		"The following error occured: "+
         		textStatus, errorThrown		            
     			);
-    		alert("ERROR: " + errorThrown +". Dataset not removed from collection." );
+    		alert("ERROR: " + errorThrown +". Dataset not removed from collection. The collection was possibly removed." );
  			});	
 	}
 	
@@ -275,13 +277,14 @@
 		        }
 		        
 		        $("#hideAddDatasetBtn").show();
+		        areRestDatasetsVisible = true;
  			});
 			request.fail(function (jqXHR, textStatus, errorThrown){
         		console.error(
             		"The following error occured: "+
             		textStatus, errorThrown		            
         			);
-        		alert("ERROR: " + errorThrown +"." );
+        		alert("ERROR: " + errorThrown +". The collection was possibly removed." );
      			});		 
 	 });
 	 $('body').on('click','#hideAddDatasetBtn',function(e){
@@ -290,6 +293,7 @@
 	     $('#addDatasetsTable tbody tr').remove();
 	     $('#addDatasetsTable').css('display','none');
 	     $('#hideAddDatasetBtn').css('display','none');
+	     areRestDatasetsVisible = false;
 	 });
 	
 	 $('body').on('click','#addPagerNext',function(e){
