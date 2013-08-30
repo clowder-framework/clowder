@@ -232,7 +232,8 @@
 				 $(this).css('display','table-row');
 			 });
 		 }
-		 $('#datasetsPagerNext').css('visibility','visible');
+		 if(currentFirstDatasets + 10 <= datasetsInCollectionCount)
+			 $('#datasetsPagerNext').css('visibility','visible');
 		 if(currentFirstDatasets == 1)
 			 $('#datasetsPagerPrev').css('visibility','hidden');			 
 	 });
@@ -315,7 +316,8 @@
 				 $(this).css('display','table-row');
 			 });
 		 }
-		 $('#addPagerNext').css('visibility','visible');
+		 if(currentFirstAdd + 10 <= searchResultsCount)
+			 $('#addPagerNext').css('visibility','visible');
 		 if(currentFirstAdd == 1)
 			 $('#addPagerPrev').css('visibility','hidden');			 
 	 });	
