@@ -11,7 +11,7 @@ this._createShowAllButton();
 _createAutocomplete: function() {
 var selected = this.element.children( ":selected" ),
 value = selected.val() ? selected.text() : "";
-this.input = $( "<input type='text'>" )
+this.input = $( "<input id='selectCollectionInput' type='text' style='font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif' >" )
 .appendTo( this.wrapper )
 .val( value )
 .attr( "title", "" )
@@ -76,8 +76,9 @@ option: this
 }) );
 },
 _removeIfInvalid: function( event, ui ) {
-// Selected an item, nothing to do
+//Selected an item, nothing to do
 if ( ui.item ) {
+$("#collNotExistError").css('display','none');
 return;
 }
 // Search for a match (case-insensitive)
@@ -87,23 +88,17 @@ valid = false;
 this.element.children( "option" ).each(function() {
 if ( $( this ).text().toLowerCase() === valueLowerCase ) {
 this.selected = valid = true;
+$("#collNotExistError").css('display','none');
 return false;
 }
 });
 // Found a match, nothing to do
 if ( valid ) {
+$("#collNotExistError").css('display','none');	
 return;
 }
-// Remove invalid value
-this.input
-.val( "" )
-.attr( "title", value + " didn't match any item" )
-.tooltip( "open" );
-this.element.val( "" );
-this._delay(function() {
-this.input.tooltip( "close" ).attr( "title", "" );
-}, 2500 );
-this.input.data( "ui-autocomplete" ).term = "";
+$("#collNotExistError").css('display','inline');	
+//////
 },
 _destroy: function() {
 this.wrapper.remove();

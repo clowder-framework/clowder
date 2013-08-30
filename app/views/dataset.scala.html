@@ -458,19 +458,94 @@
 			
 			<div class="row">
 				<h5>Collections</h5>
+				<table id="collTable">
 				@dataset.collections.map { collection =>
-					<a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a><br />
-				}   
-				<div class="ui-widget">
+					<tr><td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a href="#" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
+				}
+				</table>   
+				<div class="ui-widget" id="collectionsUi">
 					<select id="collectionAddSelect">
 					@collectionsOutside.map { collection =>
 						<option value="@(collection.id.toString)">@(collection.name)</option>
 					}					  
 					</select>
+					<button class="btn" id="addCollBtn" style="vertical-align:top;">Add</button>
+					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
 				</div>	
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
 					<script>
 						$("#collectionAddSelect").combobox();
+					</script>
+					<script>
+						$('body').on('click','#addCollBtn',function(e){
+							if($("#collNotExistError").css('display') == 'inline')
+								return;
+							if($("#selectCollectionInput").val() == ""){
+								$("#collNotExistError").css('display','inline');
+								return;
+							}
+							
+							var selectedId = $("#collectionAddSelect").val();
+							var selectedName = $("#collectionAddSelect option:selected").text();
+							var request = $.ajax({
+							       type: 'POST',
+							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/collections/"+selectedId+"/datasets/"+"@dataset.id"
+							     });
+							request.done(function (response, textStatus, jqXHR){
+						        console.log("Response " + response);	        
+						        $("#collectionAddSelect option[value=" + selectedId + "]").remove();
+						        $("#selectCollectionInput").val("");
+						        var i = 1;
+						        var tableLength = $("#collTable tbody tr").length;
+						        while(i <= tableLength && $("#collTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
+						        	i++;
+						        if(i <= tableLength)	        
+							        $("#collTable tbody tr:nth-child("+i+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+							        		);
+						        else
+						        	$("#collTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+							        		);
+							});	
+							request.fail(function (jqXHR, textStatus, errorThrown){
+					    		console.error(
+					        		"The following error occured: "+
+					        		textStatus, errorThrown		            
+					    			);
+					    		alert("ERROR: " + errorThrown +". Dataset not added to collection." );
+					 			});				
+						});
+						
+						function removeCollection(collectionId, collectionName,event){
+							var request = $.ajax({
+							       type: 'POST',
+							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasetsRemove/"+"@dataset.id"
+							     });
+							request.done(function (response, textStatus, jqXHR){
+								console.log("Response " + response);	        
+								$(event.target.parentNode.parentNode).remove();
+								var i = 1;
+						        var selectLength = $("#collectionAddSelect option").length;
+						        while(i <= selectLength && $("#collectionAddSelect option:nth-child("+i+")").text() < collectionName)
+						        	i++;
+						        if(i <= selectLength)
+						        	$("#collectionAddSelect option:nth-child("+i+")").before("<option value='"+collectionId+"'>"+collectionName+"</option>");
+						        else
+						        	$("#collectionAddSelect option:nth-child("+(i-1)+")").after("<option value='"+collectionId+"'>"+collectionName+"</option>");
+								
+						        $("#collectionAddSelect").combobox();
+							});	
+							request.fail(function (jqXHR, textStatus, errorThrown){
+					    		console.error(
+					        		"The following error occured: "+
+					        		textStatus, errorThrown		            
+					    			);
+					    		alert("ERROR: " + errorThrown +". Dataset not removed from collection." );
+					 			});
+						}
+						
 					</script>
 			</div>
 			

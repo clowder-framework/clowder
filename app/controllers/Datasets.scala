@@ -135,7 +135,7 @@ object Datasets extends Controller with SecuredController {
         }
         
         
-        val datasetWithFiles = dataset.copy(files = files)
+        val datasetWithFiles = dataset.copy(files = files,collections= dataset.collections.sortBy(_.name))
         val previewers = Previewers.searchFileSystem
         val previewslist = for(f <- datasetWithFiles.files) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
@@ -159,7 +159,7 @@ object Datasets extends Controller with SecuredController {
         val userMetadata = Dataset.getUserMetadata(id)
         Logger.debug("User metadata: " + userMetadata.toString)
         
-        val collectionsOutside = Collection.listOutsideDataset(id)
+        val collectionsOutside = Collection.listOutsideDataset(id).sortBy(_.name)
         
         
         Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata, isActivity, collectionsOutside))
