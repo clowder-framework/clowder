@@ -205,8 +205,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
           return list
         }
         case None =>{
-          val list = for (dataset <- Services.datasets.listDatasetsChronoReverse) yield dataset
-          return list	 	  
+          return List.empty	 	  
         } 
       }
   } 
