@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
 
 
 @import helper._
@@ -459,7 +459,7 @@
 			<div class="row">
 				<h5>Collections</h5>
 				<table id="collTable">
-				@dataset.collections.map { collection =>
+				@collectionsInside.map { collection =>
 					<tr><td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
 					<td><a href="#" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}

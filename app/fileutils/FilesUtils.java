@@ -13,6 +13,9 @@ public class FilesUtils {
 		String mainFileType = "application/zip";
 		
 		try {
+			if(compressedFile.getName().startsWith("MEDICI2DATASET_"))
+				return "multi/files-zipped";
+			
 			ZipFile zipFile = new ZipFile(compressedFile);			
 			Enumeration zipEntries = zipFile.entries();
 			

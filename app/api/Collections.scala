@@ -26,7 +26,7 @@ object Collections extends Controller with SecuredController with ApiController 
 	            Collection.save(cl)
 	            
 	            //add collection to dataset
-	            val ds = dataset.copy(collections = dataset.collections ++ List(collection))
+	            val ds = dataset.copy(collections = dataset.collections ++ List(collection.id.toString()))
 	            Dataset.save(ds)
 	            
 	            Logger.info("Adding dataset to collection completed")
@@ -91,8 +91,8 @@ object Collections extends Controller with SecuredController with ApiController 
     }    
     return newList
   }
-  def removeItemCollection(collections: List[Collection], collection: Collection): List[Collection] = {
-    val newList = for(cl <- collections; if(!cl.id.toString().equals(collection.id.toString()))) yield {
+  def removeItemCollection(collections: List[String], collection: Collection): List[String] = {
+    val newList = for(cl <- collections; if(!cl.equals(collection.id.toString()))) yield {
       cl
     }    
     return newList

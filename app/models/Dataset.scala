@@ -37,7 +37,7 @@ case class Dataset (
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
   comments: List[Comment] = List.empty,
-  collections: List[Collection] = List.empty
+  collections: List[String] = List.empty
 )
 
 object MustBreak extends Exception { }
