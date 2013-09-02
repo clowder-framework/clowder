@@ -75,7 +75,7 @@
 	<div class="row-fluid">	
 	
 		<!-- left column -->
-		<div class="span8">
+		<div class="span8" id="filePrevsCol">
 		@for((f, pvs) <- previews) {
 			@if(pvs.length > 0 || (!f.metadata.isEmpty)) {
 				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4>@f.filename</h4></div>
@@ -293,6 +293,7 @@
     		</script>
     		<script>
     			function addPreview(pv, fileId){
+    				
     				var prevsOfFile = parseInt($("#filePrevContainer_" + fileId).attr('data-previewsCount'))
     				var newTabLink = document.createElement('a');
     				newTabLink.setAttribute('href', '#previewer_' + fileId +  '_' + (prevsOfFile + 1));
@@ -384,6 +385,39 @@
     			$(function() {
     				setTimeout(function(){checkForNewPreviews()}, 1000);
     			});
+    		</script>
+    		<script>
+    			function updateFiles(){
+    				var request = $.ajax({
+ 				       type: 'GET',  
+ 				       url: "@api.routes.Datasets.datasetFilesList(dataset.id.toString)",
+ 				       contentType: "application/json"
+ 				     });
+    				request.done(function (respJSON){
+    					for(var i = 0; i < respJSON.length; i++){
+    						if($("#filePrevContainer_"+respJSON[i].id).length == 0){
+    							var fileId = respJSON[i].id;
+    							$("#filePrevsCol").append("<div class='row-fluid' id='filePrevContainer_"+fileId+"' data-previewsCount='0' data-filename='"+respJSON[i].filename+"'>"
+    													+"<div class='span12'><div class='tabbable'><ul class='nav nav-pills' id='myTab_"+fileId+"'></ul>"
+    													+"<div class='tab-content' id='previewsContent_"+fileId+"'></div></div></div></div>");
+    							$('#myTab_'+fileId).attr('style', 'display:none;');
+    							
+    							$('#fileUploadBtn').before("<div><a href='http://" + Configuration.hostIp + ":" + window.location.port + "/files/"+ fileId + "' title='"+respJSON[i].contentType+"'>"+respJSON[i].filename+"</a></div>");
+    						}
+    					}
+    					setTimeout(function(){updateFiles()}, 2000);
+	     			});				 
+				  request.fail(function (jqXHR, textStatus, errorThrown){
+	        		console.error(
+	            		"The following error occured: "+
+	            		textStatus, errorThrown		            
+	        			);
+	        		setTimeout(function(){updateFiles()}, 2000);
+	     			});
+    			}
+    			$(function() {
+    				setTimeout(function(){updateFiles()}, 2000);
+    			});
     		</script>    		
     		
     		
@@ -430,7 +464,7 @@
 				</div>
 				}
 				<!-- Button to trigger modal -->
-				<a href="#myModal" role="button" class="btn" data-toggle="modal">Upload</a>
+				<a href="#myModal" role="button" class="btn" data-toggle="modal" id="fileUploadBtn">Upload</a>
 				 
 				<!-- Modal -->
 				<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
