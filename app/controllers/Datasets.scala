@@ -211,7 +211,7 @@ object Datasets extends Controller with SecuredController {
 			      case Some(f) => {			        
 			        var fileType = f.contentType
 			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
@@ -221,14 +221,15 @@ object Datasets extends Controller with SecuredController {
 			    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 //			        val key = "unknown." + "file."+ "application.x-ptm"
 
+			    	// add file to dataset
+			        val dt = dataset.copy(files = List(f))
+			    	
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, ""))}
 			        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
-	
-		            // add file to dataset
-			        val dt = dataset.copy(files = List(f))
+			            
 			        // TODO create a service instead of calling salat directly
 		            Dataset.save(dt)
 		            
@@ -239,7 +240,7 @@ object Datasets extends Controller with SecuredController {
 		            
 			    	// TODO RK need to replace unknown with the server name and dataset type		            
  			    	val dtkey = "unknown." + "dataset."+ "unknown"
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", ""))}
+			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))}
 		            // redirect to file page
 		            Redirect(routes.Datasets.dataset(dt.id.toString))
 //		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))

@@ -216,7 +216,7 @@ object Files extends Controller with SecuredController with ApiController {
 	          case Some(f) => {
 	            var fileType = f.contentType
 			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
@@ -227,7 +227,7 @@ object Files extends Controller with SecuredController with ApiController {
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 	            val id = f.id.toString	            
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
 	            current.plugin[ElasticsearchPlugin].foreach{
 	              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 	            }
@@ -253,16 +253,26 @@ object Files extends Controller with SecuredController with ApiController {
           Logger.debug("Uploading file " + f.filename)
           // store file
           val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+          val uploadedFile = f
+          
           // submit file for extraction
-
           file match {
             case Some(f) => {
+              var fileType = f.contentType
+					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
+						  if(fileType.startsWith("ERROR: ")){
+								Logger.error(fileType.substring(7))
+								InternalServerError(fileType.substring(7))
+								}			          
+						  }
+              
               // TODO RK need to replace unknown with the server name
-              val key = "unknown." + "file." + f.contentType.replace(".", "_").replace("/", ".")
+              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
               // TODO RK : need figure out if we can use https
-              val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+              val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
               val id = f.id.toString
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "")) }
+              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, "")) }
               current.plugin[ElasticsearchPlugin].foreach {
                 _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
               }
@@ -275,7 +285,7 @@ object Files extends Controller with SecuredController with ApiController {
               // TODO RK need to replace unknown with the server name and dataset type
               val dtkey = "unknown." + "dataset." + "unknown"
 
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, "")) }
+              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, "")) }
 
               Logger.info("Uploading Completed")
 
@@ -316,7 +326,7 @@ object Files extends Controller with SecuredController with ApiController {
 	          case Some(f) => {
 	             var fileType = f.contentType
 			     if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
@@ -327,7 +337,7 @@ object Files extends Controller with SecuredController with ApiController {
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
 	            val id = f.id.toString
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(originalId, id, host, key, Map.empty, f.length.toString, flags))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(originalId, id, host, key, Map.empty, f.length.toString, "", flags))}
 	            current.plugin[ElasticsearchPlugin].foreach{
 	              _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 	            }

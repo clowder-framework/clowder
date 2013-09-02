@@ -95,12 +95,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
  
   def receive = {
-      case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, flags) => {
+      case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags) => {
         val msgMap = scala.collection.mutable.Map(
             "id" -> Json.toJson(id),
             "intermediateId" -> Json.toJson(intermediateId),
             "fileSize" -> Json.toJson(fileSize),
             "host" -> Json.toJson(host),
+            "datasetId" -> Json.toJson(datasetId),
             "flags" -> Json.toJson(flags)
             )
         // add extra fields
@@ -131,6 +132,7 @@ case class ExtractorMessage (
     key: String,
     metadata: Map[String, String],
     fileSize: String,
+    datasetId: String,
     flags: String
 )
 

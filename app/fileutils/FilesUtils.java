@@ -6,14 +6,16 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import play.Logger;
+
 public class FilesUtils {
 
-	public static String getMainFileTypeOfZipFile(File compressedFile){
+	public static String getMainFileTypeOfZipFile(File compressedFile, String filename){
 		
 		String mainFileType = "application/zip";
 		
 		try {
-			if(compressedFile.getName().startsWith("MEDICI2DATASET_"))
+			if(filename.startsWith("MEDICI2DATASET_"))
 				return "multi/files-zipped";
 			
 			ZipFile zipFile = new ZipFile(compressedFile);			
