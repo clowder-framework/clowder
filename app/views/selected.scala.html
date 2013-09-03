@@ -1,0 +1,80 @@
+@(datasets: List[Dataset])(implicit user: Option[securesocial.core.Identity]) @main("Selected Datasets") {
+<script src="@routes.Assets.at("javascripts/jquery-ui-1.10.3.custom.min.js")" type="text/javascript"></script>
+
+<div class="page-header">
+	<h1>Selected Datasets</h1>
+</div>
+
+<div class="row-fluid">
+	<div class="span6">
+		@for(d <- datasets) { @datasetInfo(d)</a> }
+	</div>
+	<div class="span6">
+		<div class="row">
+			<div class="span12">
+				<h3>Add Relationship</h3>
+			</div>
+		</div>
+		
+		<div class="row">
+			<div class="span4">
+				<div id="relate1" class="droppable ui-widget-header">
+				  <p>Drop here</p>
+				</div>
+			</div>
+			<div class="span4" style="vertical-align: middle;">
+		      <select id ="relate" class="input-medium">
+			    <option>describes</option>
+			    <option>duplicates</option>
+			    <option>references</option>
+			    <option>relates</option>
+			 </select>
+			</div>
+			<div class="span4">
+				<div id="relate2" class="droppable ui-widget-header">
+				  <p>Drop here</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+$(function() {
+    $( ".draggable" ).draggable({
+
+    // brings the item back to its place when dragging is over
+    revert:true,
+
+    // once the dragging starts, we decrease the opactiy of other items
+    // Appending a class as we do that with CSS
+    drag:function () {
+        $(this).addClass("active");
+        $(this).closest("#product").addClass("active");
+    },
+
+    // removing the CSS classes once dragging is over.
+    stop:function () {
+        $(this).removeClass("active").closest("#product").removeClass("active");
+    }
+});
+    $( "#relate1" ).droppable({
+      drop: function( event, ui ) {
+       var draggableId = ui.draggable.attr("id");
+        $( this )
+          .addClass( "ui-state-highlight" )
+          .find( "p" )
+            .html( "Dropped " + draggableId + " !" );
+      }
+    });
+    $( "#relate2" ).droppable({
+      drop: function( event, ui ) {
+       var draggableId = ui.draggable.attr("id");
+        $( this )
+          .addClass( "ui-state-highlight" )
+          .find( "p" )
+            .html( "Dropped " + draggableId + " !" );
+      }
+    });
+  });
+  </script>
+}

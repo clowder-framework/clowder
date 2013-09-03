@@ -1,0 +1,46 @@
+@(d: Dataset)
+
+<div id="dataset_@d.id" class="draggable ui-widget-content">
+	<a href="@(routes.Datasets.dataset(d.id.toString))">@d.name</a>
+		<p>@d.description</p>
+		<p>@d.created</p>
+		@d.files.map { f =>
+		  @f.previews.map { p =>
+			@if(p.contentType.equals("image/jpeg")){
+			<img src="@api.routes.Previews.download(p.id.toString)" class="img-polaroid" height="100px"></img>
+			}
+		  }
+		}
+	<div class="removeButtonWrapper">
+		<button id="deselect_@d.id">x</button>
+	</div>
+</div>
+<script>
+$(function() {
+    $( "#deselect_@d.id" ).click(function() {
+
+     console.log("deselecting dataset " + "@d.id");
+     var request = jsRoutes.api.Selected.remove().ajax({
+       data: JSON.stringify({"dataset":"@d.id"}),
+       type: 'POST',
+       contentType: "application/json",
+     });
+     
+     request.done(function (response, textStatus, jqXHR){
+        console.log("Response " + response);
+        $("#dataset_@d.id").remove();
+     });
+  
+     request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error(
+            "The following error occured: "+
+            textStatus, errorThrown
+            
+        );
+        window.location = "../login"; // FIXME hardcoded
+     });
+     return false;
+     
+  });
+ });
+</script>

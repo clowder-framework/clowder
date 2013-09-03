@@ -61,6 +61,7 @@ object Permission extends Enumeration {
 		CreateFiles,
 		ListFiles,
 		ShowFile,
+		ListSelected,
 		DownloadFiles = Value
 }
 
@@ -89,9 +90,6 @@ object Permission extends Enumeration {
 			  case (_, SearchDatasets)       => true
 			  case (_, AddDatasetsMetadata)  => true
 			  case (_, ShowFile)             => true
-			  case (_, CreateCollections)    => true
-			  case (_, CreateDatasets)       => true
-			  case (_, CreateFiles)          => true
 			  case (null, DownloadFiles)     => true //FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
 			  case (null, _)                 => false
 			  case (_, _)                    => true

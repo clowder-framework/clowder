@@ -37,4 +37,17 @@ object SelectedDAO extends ModelCompanion[Selected, ObjectId] {
     val update = $addToSet("datasets" -> dataset)
     val result = dao.collection.update(query, update, upsert=true)
   }
+  
+  def remove(dataset: String, user: String) {
+    val query = MongoDBObject("user" -> user)
+    val update = $pull("datasets" -> dataset)
+    val result = dao.collection.update(query, update, upsert=true)
+  }
+  
+  def get(user: String): List[Dataset] = {
+    dao.findOne(MongoDBObject("user"->user)) match {
+      case Some(selected) => selected.datasets.flatMap(x => Dataset.findOneByID(new ObjectId(x)))
+      case None => List.empty
+    }
+  }
 }

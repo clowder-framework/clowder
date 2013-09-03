@@ -58,6 +58,9 @@ body {
 						   </ul>
 						</li>
 					</ul>
+					<ul class="nav">
+						   	<li><a href="@routes.Selected.get">Selected</a></li>
+					</ul>
 					@play.api.Play.current.plugin[services.ElasticsearchPlugin] match {
 						case Some(p) => {
 						<form class="navbar-search pull-left" action="@routes.Search.search("")" method="get">

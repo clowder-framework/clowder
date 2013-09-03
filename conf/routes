@@ -66,7 +66,10 @@ GET      /searchbyfeature					controllers.Search.searchMultimediaIndex(section_i
 GET    /queries/:id/similar					controllers.Search.findSimilar(id)
 
 # Previewers
-GET    /previewers/list                   controllers.Previewers.list	
+GET    /previewers/list                   controllers.Previewers.list
+
+# Selected
+GET     /selected                         controllers.Selected.get
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/img/glyphicons-halflings-white.png      controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
@@ -187,3 +190,4 @@ GET     /api/sensors/search               api.Sensors.search
 DELETE  /api/sensors/:id                  api.Sensors.delete(id)
 
 POST    /api/selected                     api.Selected.add
+POST    /api/selected/remove              api.Selected.remove

@@ -81,9 +81,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
   
-  
-  
-  
-  
-  
+  def getPreviewByType(file_id: String, content_type: String) {
+    
+  }
 }

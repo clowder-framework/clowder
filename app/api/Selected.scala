@@ -29,4 +29,18 @@ object Selected extends Controller with ApiController {
 	    }
     }
   }
+  
+  def remove() = SecuredAction(parse.json, allowKey=false)  { implicit request =>
+    Logger.debug("Requesting Selected.remove" + request.body)
+    request.body.\("dataset").asOpt[String] match {
+	    case Some(dataset) => {
+		    SelectedDAO.remove(dataset, request.user.email.get)
+		    Ok(toJson(Map("success"->"true")))
+	    }
+	    case None => {
+	    	Logger.error("no dataset specified")
+	    	BadRequest
+	    }
+    }
+  }
 }
