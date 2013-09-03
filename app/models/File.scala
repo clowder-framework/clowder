@@ -21,7 +21,7 @@ import collection.JavaConverters._
  *
  */
 case class File(
-    id: ObjectId = new ObjectId, 
+    id: ObjectId = new ObjectId,    
     path: Option[String] = None, 
     filename: String, 
     uploadDate: Date, 

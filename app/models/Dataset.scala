@@ -48,7 +48,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
   }
-  
+    
   def findOneByFileId(file_id: ObjectId): Option[Dataset] = {
     dao.findOne(MongoDBObject("files._id" -> file_id))
   }

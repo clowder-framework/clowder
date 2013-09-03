@@ -144,12 +144,9 @@ object Datasets extends Controller with SecuredController with ApiController {
       }
     }
 
-  def datasetFilesList(id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.ShowDataset)) { request =>
+  def datasetFilesList(id: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowDataset)) { request =>
       Services.datasets.get(id) match {
         case Some(dataset) => {
-          //        val files = dataset.files map { f =>
-          //          FileDAO.get(f.id.toString).get
-          //        }
           val list = for (f <- dataset.files) yield jsonFile(f)
           Ok(toJson(list))
         }

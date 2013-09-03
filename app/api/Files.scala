@@ -279,6 +279,8 @@ object Files extends Controller with SecuredController with ApiController {
 
               // add file to dataset
               val dt = dataset.copy(files = dataset.files ++ List(f))
+//              FileDAO.dao.collection.update(MongoDBObject("_id" -> f.id), 
+//	                        $set("dataset_id" -> new ObjectId(dataset_id)), false, false, WriteConcern.SAFE)    
               // TODO create a service instead of calling salat directly
               Dataset.save(dt)
 
@@ -381,7 +383,7 @@ object Files extends Controller with SecuredController with ApiController {
 	                case Some(preview) =>
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	                    PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), 
-	                        $set("metadata"-> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)
+	                        $set("metadata"-> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)      
 	                    Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
 	                    Ok(toJson(Map("status"->"success")))
 	                case None => BadRequest(toJson("Preview not found"))
