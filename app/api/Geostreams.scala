@@ -5,6 +5,8 @@ package api
 
 import play.api.mvc.Controller
 import play.api.mvc.Action
+import play.api.mvc.Request
+import play.api.mvc.AnyContent
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
@@ -71,9 +73,15 @@ object Geostreams extends Controller {
     Action { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => Ok(Json.prettyPrint(Json.parse(plugin.search(since, until, geocode))))
+        case Some(plugin) => Ok(jsonp(Json.prettyPrint(Json.parse(plugin.search(since, until, geocode))), request))
         case None => InternalServerError(toJson("Geostreaming not enabled"))
       }
     }
   
+  def jsonp(json: String, request: Request[AnyContent]) = {
+    request.getQueryString("callback") match {
+      case Some(callback) => callback + "(" + json + ");"
+      case None => json
+    }
+  }
 }
