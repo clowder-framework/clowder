@@ -367,8 +367,8 @@ function clearConfigTabAnnotations(prNum){
     function startMeasuring(event, prNum){
 		 window["measuringMode" + prNum] = true;
 		 
-		 $("#measuringlinetrafo").remove();
-		 $("#measuringvalue").each(function(){
+		 $("#measuringlinetrafo"+ prNum).remove();
+		 $("#measuringvalue"+ prNum).each(function(){
 			 $(this).remove();
 			 $("#x3dElementTable" + prNum).css("margin-bottom","-=20");
 	    	});
@@ -848,11 +848,14 @@ function clearConfigTabAnnotations(prNum){
   window["modelMaxDimension" + prNum] = $("#x3dElement" + prNum + " > scene").attr("data-modelMaxDimension");
   $("#x3dElement" + prNum).attr("onmousemove", "handleMouseMove(event,'" + prNum + "');");
     
-  var s = document.createElement("script");
-  s.type = "text/javascript";
-  s.src = pathJs + "x3dom.js";
-  console.log("Updating tab " + Configuration.tab);
-  $(Configuration.tab).append(s); 
+  if(!isx3dActive){
+	  isx3dActive = true;
+	  var s = document.createElement("script");
+	  s.type = "text/javascript";
+	  s.src = pathJs + "x3dom.js";
+	  console.log("Updating tab " + Configuration.tab);
+	  $(Configuration.tab).append(s);
+  } 
     
   var viewPoint = document.createElement('viewpoint');
   viewPoint.setAttribute("id", "x3dom_viewpoint_cam" + prNum);
