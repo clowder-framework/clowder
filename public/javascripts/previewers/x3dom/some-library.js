@@ -378,8 +378,8 @@ function clearConfigTabAnnotations(prNum){
 		 window["currentMeasureStart" + prNum][2] = event.hitPnt[2];
 		 
 		 var measuringLineTrafo = document.createElement('transform');
-		 measuringLineTrafo.setAttribute("id", "measuringlinetrafo");
-		 measuringLineTrafo.setAttribute("DEF", "measuring_line_trafo");
+		 measuringLineTrafo.setAttribute("id", "measuringlinetrafo"+prNum);
+		 measuringLineTrafo.setAttribute("DEF", "measuring_line_trafo"+prNum);
 		 measuringLineTrafo.setAttribute("translation", "0 0 0");
 		 measuringLineTrafo.setAttribute("bboxCenter", "0,0,0");
 		 measuringLineTrafo.setAttribute("bboxSize", "-1,-1,-1");
@@ -387,32 +387,32 @@ function clearConfigTabAnnotations(prNum){
 		 
 		 
 		 var measuringLineShape = document.createElement('shape');
-		 measuringLineShape.setAttribute("id", "measuringlineshape");
-		 measuringLineShape.setAttribute("DEF", "measuring_line_shape");
+		 measuringLineShape.setAttribute("id", "measuringlineshape"+prNum);
+		 measuringLineShape.setAttribute("DEF", "measuring_line_shape"+prNum);
 		 measuringLineShape.setAttribute("isPickable", "false");
 		 measuringLineTrafo.appendChild(measuringLineShape);
 		 
 		 var measuringLineAppearance = document.createElement('appearance');
-		 measuringLineAppearance.setAttribute("id", "measuringlineappearance");
-		 measuringLineAppearance.setAttribute("DEF", "measuring_line_appearance");
+		 measuringLineAppearance.setAttribute("id", "measuringlineappearance"+prNum);
+		 measuringLineAppearance.setAttribute("DEF", "measuring_line_appearance"+prNum);
 		 measuringLineShape.appendChild(measuringLineAppearance);
 		 
 		 var measuringLineMaterial = document.createElement('material');
-		 measuringLineMaterial.setAttribute("id", "measuringlinematerial");
-		 measuringLineMaterial.setAttribute("DEF", "measuring_line_material");
+		 measuringLineMaterial.setAttribute("id", "measuringlinematerial"+prNum);
+		 measuringLineMaterial.setAttribute("DEF", "measuring_line_material"+prNum);
 		 measuringLineMaterial.setAttribute("emissiveColor", "1 0 0");
 		 measuringLineMaterial.setAttribute("diffuseColor", "0 0 0");
 		 measuringLineAppearance.appendChild(measuringLineMaterial);
 		 
 		 var measuringLine = document.createElement('indexedLineSet');
-		 measuringLine.setAttribute("id", "measuringline");
-		 measuringLine.setAttribute("DEF", "measuring_line");
+		 measuringLine.setAttribute("id", "measuringline"+prNum);
+		 measuringLine.setAttribute("DEF", "measuring_line"+prNum);
 		 measuringLine.setAttribute("coordIndex", "0 1 -1");
 		 measuringLineShape.appendChild(measuringLine);
 		 
 		 var measuringLineCoords = document.createElement('coordinate');
-		 measuringLineCoords.setAttribute("id", "measuringlinecoordinate");
-		 measuringLineCoords.setAttribute("DEF", "measuring_line_coordinate");
+		 measuringLineCoords.setAttribute("id", "measuringlinecoordinate"+prNum);
+		 measuringLineCoords.setAttribute("DEF", "measuring_line_coordinate"+prNum);
 		 measuringLineCoords.setAttribute("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
 		 									+ ", " + window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]);		 
 		 measuringLine.appendChild(measuringLineCoords);
@@ -437,12 +437,12 @@ function clearConfigTabAnnotations(prNum){
     	
     	var resultLine = document.createElement('h5');
     	resultLine.innerHTML = "Distance: " + distanceValue;
-    	resultLine.setAttribute('id','measuringvalue');
+    	resultLine.setAttribute('id','measuringvalue'+prNum);
     	resultLine.setAttribute('data-measuring','true');
     	resultLine.setAttribute("style","text-align:center;");
     	$("#x3dElementTable" + prNum).after(resultLine);
     	
-    	$("#measuringlinecoordinate").attr("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
+    	$("#measuringlinecoordinate"+prNum).attr("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
 		+ ", " + event.hitPnt[0] + " " + event.hitPnt[1] + " " + event.hitPnt[2]);   
     	
     	$("#x3dElement" + prNum).get(0).style.cursor = "auto";
@@ -729,7 +729,7 @@ function clearConfigTabAnnotations(prNum){
     		var mousePos = theRuntime.mousePosition(event);
     		var worldPos =  theRuntime.getViewingRay(mousePos[0], mousePos[1]).pos;
 
-    		$("#measuringlinecoordinate").attr("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
+    		$("#measuringlinecoordinate"+prNum).attr("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
     										+ ", " + worldPos.x + " " + worldPos.y + " " + worldPos.z);
     		
     		event.cancelBubble = true;
@@ -747,7 +747,7 @@ function clearConfigTabAnnotations(prNum){
     	var rot = event.orientation;
     	
     	document.getElementById('EyeCoords'+ prNum).setAttribute(
-    			'rotation', rot[0].x +' '+rot[0].y +' '+rot[0].z+' '+rot[1]);
+    			'rotation', rot[0].x +' '+rot[0].y +' '+rot[0].z+' '+rot[1]);    	
     }
     
     function updatex3dPosition(prNum){
@@ -813,6 +813,7 @@ function clearConfigTabAnnotations(prNum){
   var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 288) + "px;' >";
   window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
   window["thisPreview" + prNum] = $(Configuration.tab); 
+  //setInterval(function(){updatex3dPosition(prNum);},50);
   setInterval("updatex3dPosition('" + prNum + "');", 50);
 
   $.ajax({
@@ -852,7 +853,7 @@ function clearConfigTabAnnotations(prNum){
   s.src = pathJs + "x3dom.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s); 
-  
+    
   var viewPoint = document.createElement('viewpoint');
   viewPoint.setAttribute("id", "x3dom_viewpoint_cam" + prNum);
   viewPoint.setAttribute("position", "0 0 2");
@@ -880,155 +881,155 @@ function clearConfigTabAnnotations(prNum){
   $("#x3dElement" + prNum + " > scene").prepend(lightTrafo);
   
   if(isPageLoaded){
-	  x3dom.reload();
+	 x3dom.reload();
   }
- 
+  
   if(isPageLoaded == false){
 		  document.onload = function() {
-		      document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
-		      document.getElementById("x3dElement" + prNum).runtime.resetExamin();
+		      document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);		      
+		      document.getElementById("x3dElement" + prNum).runtime.resetExamin();		      
 		  };
 	  }
   else{ 
 	  document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
       document.getElementById("x3dElement" + prNum).runtime.resetExamin();
   }
-	  
-    
-  $("body").on('keypress','#x3dElement' + prNum,function(e){
-	  if(e.which == 122 || e.which == 90){
-		  window["measuringMode" + prNum] = false;
-
-		  $("#measuringlinetrafo").remove();
-		  $("#measuringvalue").each(function(){
-			  $(this).remove();
-			  $("#x3dElementTable" + prNum).css("margin-bottom","-=20");
-		  });
-		  
-		  $("#x3dElement" + prNum).get(0).style.cursor = "auto";
-	  }	  
-	  else if(e.which == 113 || e.which == 81){
-		  if(window["showAnnotations" + prNum]){
-			  $("#x3dElement" + prNum + " > scene > transform[data-annotation]" 
-			  + " > shape > appearance > material").attr("transparency", "1");
-			  if(window["currentAnnotation" + prNum].length == 3){
-				  if(window["isCurrentSubmitted" + prNum])
-					  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] 
-					  + "'] > shape > appearance > material").get(0).setAttribute("diffuseColor", "mediumblue");
-				  else{
-					  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "']").remove();
-					  window["isCurrentSubmitted" + prNum] = true;
-				  }   
-				  clearConfigTabAnnotations(prNum);
-				  window["currentAnnotation" + prNum] = new Array();
-			  }
-			  window["showAnnotations" + prNum] = false;
-		  }else{
-			  $("#x3dElement" + prNum + " > scene > transform[data-annotation]" 
-			  + " > shape > appearance > material").attr("transparency", "0");
+     
+	  $("body").on('keypress','#x3dElement' + prNum,function(e){
+		  if(e.which == 122 || e.which == 90){
+			  window["measuringMode" + prNum] = false;
+	
+			  $("#measuringlinetrafo"+prNum).remove();
+			  $("#measuringvalue"+prNum).each(function(){
+				  $(this).remove();
+				  $("#x3dElementTable" + prNum).css("margin-bottom","-=20");
+			  });
 			  
-			  window["showAnnotations" + prNum] = true; 
-		  }		  
-		  
-		  return false;
-	  }
-	  else if(e.which == 32){
-		  if(window["isStatisticsExtended" + prNum]){
-			  $("#x3dElementTable" + prNum).css("margin-bottom","-=160");
-			  window["isStatisticsExtended" + prNum] = false;
-		  }
-		  else{
-			  $("#x3dElementTable" + prNum).css("margin-bottom","+=160");
-			  window["isStatisticsExtended" + prNum] = true;
-		  }
-	  }
-	  else if(e.which == 106 || e.which == 74){
-   		  if($("#x3dom_directional_light" + prNum).length == 1){
-   			  window["savedLightDir" + prNum] = $("#x3dom_directional_light" + prNum).attr("direction");     			  
-   			  $("#x3dom_directional_light" + prNum).remove();
-   			  $("#x3dom_directional_light_reverse" + prNum).remove();
-   		  }
-   		  else{ 
-   			  var dirLight = document.createElement('directionalLight');
-   			  dirLight.setAttribute("id", "x3dom_directional_light" + prNum);
-   			  dirLight.setAttribute("direction", window["savedLightDir" + prNum]);
-   			  dirLight.setAttribute("intensity", "1");
-   			  dirLight.setAttribute("color", "1 1 1");
-   			  dirLight.setAttribute("ambientIntensity", "0.0");
-   			  dirLight.setAttribute("global", "true");
-   			  $("#EyeCoords" + prNum).append(dirLight);
-   			  
-   			 if(window["reverseLighting" + prNum]){
-   				 var directionArrayMain = $("#x3dom_directional_light" + prNum).attr("direction").split(" ");
-
-   				 var dirLightReverse = document.createElement('directionalLight');
-   				 dirLightReverse.setAttribute("id", "x3dom_directional_light_reverse" + prNum);
-   				 dirLightReverse.setAttribute("direction", (-parseFloat(directionArrayMain[0])) + " " + (-parseFloat(directionArrayMain[1])) + " " + (-parseFloat(directionArrayMain[2])));
-   				 dirLightReverse.setAttribute("intensity", "1");
-   				 dirLightReverse.setAttribute("color", "1 1 1");
-   				 dirLightReverse.setAttribute("ambientIntensity", "0.0");
-   				 dirLightReverse.setAttribute("global", "true");
-   				 $("#EyeCoords" + prNum).append(dirLightReverse);
-   			 }  			  
-   		  }
-   	    }
-	  else if(e.which == 118 || e.which == 86){
-		  if(window["reverseLighting" + prNum]){
-			  window["reverseLighting" + prNum] = false;
-			  $("#x3dom_directional_light_reverse" + prNum).remove();
-		  }
-		  else{ 
-			  window["reverseLighting" + prNum] = true;  
-
-			  if($("#x3dom_directional_light" + prNum).length == 1){
-				  var directionArrayMain = $("#x3dom_directional_light" + prNum).attr("direction").split(" ");
+			  $("#x3dElement" + prNum).get(0).style.cursor = "auto";
+		  }	  
+		  else if(e.which == 113 || e.which == 81){
+			  if(window["showAnnotations" + prNum]){
+				  $("#x3dElement" + prNum + " > scene > transform[data-annotation]" 
+				  + " > shape > appearance > material").attr("transparency", "1");
+				  if(window["currentAnnotation" + prNum].length == 3){
+					  if(window["isCurrentSubmitted" + prNum])
+						  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] 
+						  + "'] > shape > appearance > material").get(0).setAttribute("diffuseColor", "mediumblue");
+					  else{
+						  $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "']").remove();
+						  window["isCurrentSubmitted" + prNum] = true;
+					  }   
+					  clearConfigTabAnnotations(prNum);
+					  window["currentAnnotation" + prNum] = new Array();
+				  }
+				  window["showAnnotations" + prNum] = false;
+			  }else{
+				  $("#x3dElement" + prNum + " > scene > transform[data-annotation]" 
+				  + " > shape > appearance > material").attr("transparency", "0");
 				  
-				  var dirLightReverse = document.createElement('directionalLight');
-				  dirLightReverse.setAttribute("id", "x3dom_directional_light_reverse" + prNum);
-				  dirLightReverse.setAttribute("direction", (-parseFloat(directionArrayMain[0])) + " " + (-parseFloat(directionArrayMain[1])) + " " + (-parseFloat(directionArrayMain[2])));
-				  dirLightReverse.setAttribute("intensity", "1");
-				  dirLightReverse.setAttribute("color", "1 1 1");
-				  dirLightReverse.setAttribute("ambientIntensity", "0.0");
-				  dirLightReverse.setAttribute("global", "true");
-				  $("#EyeCoords" + prNum).append(dirLightReverse); 
-			  }
-
+				  window["showAnnotations" + prNum] = true; 
+			  }		  
+			  return false;
 		  }
-	  }
-  });
-  
-  $("body").on('keydown',function(e){
-	  if(e.which == 16){
-		  window["isShiftClicked" + prNum] = true;
-	  }
-	  else if(e.which == 88){
-		  window["isXClicked" + prNum] = true;
-	  }
-	  else if(e.which == 67){
-		  window["isCClicked" + prNum] = true;
-	  }
-  });  
-  $("body").on('keyup',function(e){
-	  if(e.which == 16){
-		  window["isShiftClicked" + prNum] = false;
-	  }
-	  else if(e.which == 88){
-		  window["isXClicked" + prNum] = false;
-	  }
-	  else if(e.which == 67){
-		  window["isCClicked" + prNum] = false;
-	  }
-  });
-  $("body").on('mouseup',function(){
-	  window["mouseDown" + prNum] = false;
-  });
-  $("body").on('mousedown',function(){
-	  window["mouseDown" + prNum] = true;
-  });
-  $("body").on('mousemove',function(e){
-	  window["mouseX" + prNum] = e.clientX;
-  	  window["mouseY" + prNum] = e.clientY;
-  });
-  
+		  else if(e.which == 32){
+			  if(window["isStatisticsExtended" + prNum]){
+				  $("#x3dElementTable" + prNum).css("margin-bottom","-=160");
+				  window["isStatisticsExtended" + prNum] = false;
+			  }
+			  else{
+				  $("#x3dElementTable" + prNum).css("margin-bottom","+=160");
+				  window["isStatisticsExtended" + prNum] = true;
+			  }
+			  
+		  }
+		  else if(e.which == 106 || e.which == 74){
+	   		  if($("#x3dom_directional_light" + prNum).length == 1){
+	   			  window["savedLightDir" + prNum] = $("#x3dom_directional_light" + prNum).attr("direction");     			  
+	   			  $("#x3dom_directional_light" + prNum).remove();
+	   			  $("#x3dom_directional_light_reverse" + prNum).remove();
+	   		  }
+	   		  else{ 
+	   			  var dirLight = document.createElement('directionalLight');
+	   			  dirLight.setAttribute("id", "x3dom_directional_light" + prNum);
+	   			  dirLight.setAttribute("direction", window["savedLightDir" + prNum]);
+	   			  dirLight.setAttribute("intensity", "1");
+	   			  dirLight.setAttribute("color", "1 1 1");
+	   			  dirLight.setAttribute("ambientIntensity", "0.0");
+	   			  dirLight.setAttribute("global", "true");
+	   			  $("#EyeCoords" + prNum).append(dirLight);
+	   			  
+	   			 if(window["reverseLighting" + prNum]){
+	   				 var directionArrayMain = $("#x3dom_directional_light" + prNum).attr("direction").split(" ");
+	
+	   				 var dirLightReverse = document.createElement('directionalLight');
+	   				 dirLightReverse.setAttribute("id", "x3dom_directional_light_reverse" + prNum);
+	   				 dirLightReverse.setAttribute("direction", (-parseFloat(directionArrayMain[0])) + " " + (-parseFloat(directionArrayMain[1])) + " " + (-parseFloat(directionArrayMain[2])));
+	   				 dirLightReverse.setAttribute("intensity", "1");
+	   				 dirLightReverse.setAttribute("color", "1 1 1");
+	   				 dirLightReverse.setAttribute("ambientIntensity", "0.0");
+	   				 dirLightReverse.setAttribute("global", "true");
+	   				 $("#EyeCoords" + prNum).append(dirLightReverse);
+	   			 }  			  
+	   		  }
+	   	    }
+		  else if(e.which == 118 || e.which == 86){
+			  if(window["reverseLighting" + prNum]){
+				  window["reverseLighting" + prNum] = false;
+				  $("#x3dom_directional_light_reverse" + prNum).remove();
+			  }
+			  else{ 
+				  window["reverseLighting" + prNum] = true;  
+	
+				  if($("#x3dom_directional_light" + prNum).length == 1){
+					  var directionArrayMain = $("#x3dom_directional_light" + prNum).attr("direction").split(" ");
+					  
+					  var dirLightReverse = document.createElement('directionalLight');
+					  dirLightReverse.setAttribute("id", "x3dom_directional_light_reverse" + prNum);
+					  dirLightReverse.setAttribute("direction", (-parseFloat(directionArrayMain[0])) + " " + (-parseFloat(directionArrayMain[1])) + " " + (-parseFloat(directionArrayMain[2])));
+					  dirLightReverse.setAttribute("intensity", "1");
+					  dirLightReverse.setAttribute("color", "1 1 1");
+					  dirLightReverse.setAttribute("ambientIntensity", "0.0");
+					  dirLightReverse.setAttribute("global", "true");
+					  $("#EyeCoords" + prNum).append(dirLightReverse); 
+				  }
+	
+			  }
+		  }
+	  });
+	  
+	 
+	  
+	  $("body").on('keydown',function(e){
+		  if(e.which == 16){
+			  window["isShiftClicked" + prNum] = true;
+		  }
+		  else if(e.which == 88){
+			  window["isXClicked" + prNum] = true;
+		  }
+		  else if(e.which == 67){
+			  window["isCClicked" + prNum] = true;
+		  }
+	  });  
+	  $("body").on('keyup',function(e){
+		  if(e.which == 16){
+			  window["isShiftClicked" + prNum] = false;
+		  }
+		  else if(e.which == 88){
+			  window["isXClicked" + prNum] = false;
+		  }
+		  else if(e.which == 67){
+			  window["isCClicked" + prNum] = false;
+		  }
+	  });
+	  $("body").on('mouseup',function(){
+		  window["mouseDown" + prNum] = false;
+	  });
+	  $("body").on('mousedown',function(){
+		  window["mouseDown" + prNum] = true;
+	  });
+	  $("body").on('mousemove',function(e){
+		  window["mouseX" + prNum] = e.clientX;
+	  	  window["mouseY" + prNum] = e.clientY;
+	  });
 
 }(jQuery, Configuration));
