@@ -207,10 +207,12 @@ object Files extends Controller with SecuredController with ApiController {
    * Upload file using multipart form enconding.
    */
     def upload() = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+      request.user match {
+        case Some(user) => {
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -241,65 +243,78 @@ object Files extends Controller with SecuredController with ApiController {
 	      }.getOrElse {
 	         BadRequest(toJson("File not attached."))
 	      }
-	  }
-
+        }
+        
+        case None => BadRequest(toJson("Not authorized."))
+      }
+  }
+    
   /**
    * Upload a file to a specific dataset
    */
   def uploadToDataset(dataset_id: String) = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
-    Services.datasets.get(dataset_id) match {
-      case Some(dataset) => {
-        request.body.file("File").map { f =>
-          Logger.debug("Uploading file " + f.filename)
-          // store file
-          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-          // submit file for extraction
-
-          file match {
-            case Some(f) => {
-              // TODO RK need to replace unknown with the server name
-              val key = "unknown." + "file." + f.contentType.replace(".", "_").replace("/", ".")
-              // TODO RK : need figure out if we can use https
-              val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
-              val id = f.id.toString
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "")) }
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
-              }
-
-              // add file to dataset
-              val dt = dataset.copy(files = dataset.files ++ List(f))
-              // TODO create a service instead of calling salat directly
-              Dataset.save(dt)
-
-              // TODO RK need to replace unknown with the server name and dataset type
-              val dtkey = "unknown." + "dataset." + "unknown"
-
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, "")) }
-
-              Logger.info("Uploading Completed")
-
-              //sending success message
-              Ok(toJson(Map("id" -> id)))
-            }
-            case None => {
-              Logger.error("Could not retrieve file that was just saved.")
-              InternalServerError("Error uploading file")
-            }
-          }
-
-          //Ok(views.html.multimediasearch())
-        }.getOrElse {
-          BadRequest("File not attached.")
+      request.user match {
+        case Some(user) => {
+		    Services.datasets.get(dataset_id) match {
+		      case Some(dataset) => {
+		        request.body.file("File").map { f =>
+		          Logger.debug("Uploading file " + f.filename)
+		          // store file
+		          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
+		          // submit file for extraction
+		
+		          file match {
+		            case Some(f) => {
+		              // TODO RK need to replace unknown with the server name
+		              val key = "unknown." + "file." + f.contentType.replace(".", "_").replace("/", ".")
+		              // TODO RK : need figure out if we can use https
+		              val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+		              val id = f.id.toString
+		              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "")) }
+		              current.plugin[ElasticsearchPlugin].foreach {
+		                _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
+		              }
+		
+		              // add file to dataset
+		              val dt = dataset.copy(files = dataset.files ++ List(f))
+		              // TODO create a service instead of calling salat directly
+		              Dataset.save(dt)
+		
+		              // TODO RK need to replace unknown with the server name and dataset type
+		              val dtkey = "unknown." + "dataset." + "unknown"
+		
+		              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, "")) }
+		
+		              Logger.info("Uploading Completed")
+		
+		              //sending success message
+		              Ok(toJson(Map("id" -> id)))
+		            }
+		            case None => {
+		              Logger.error("Could not retrieve file that was just saved.")
+		              InternalServerError("Error uploading file")
+		            }
+		          }
+		
+		          //Ok(views.html.multimediasearch())
+		        }.getOrElse {
+		          BadRequest("File not attached.")
+		        }
+		      }
+		      case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
+		    }
         }
+        
+        case None => BadRequest(toJson("Not authorized."))
       }
-      case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
-    }
-  }    
+   }
+  
    /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
     def uploadIntermediate(originalIdAndFlags: String) = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+      request.user match {
+        case Some(user) => {
 	      request.body.file("File").map { f =>
 	        var originalId = originalIdAndFlags;
 	        var flags = "";
@@ -310,7 +325,7 @@ object Files extends Controller with SecuredController with ApiController {
 	        
 	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -342,7 +357,10 @@ object Files extends Controller with SecuredController with ApiController {
 	         BadRequest(toJson("File not attached."))
 	      }
 	  }
-    
+        
+      case None => BadRequest(toJson("Not authorized."))
+    }
+  }
     
   /**
    * Upload metadata for preview and attach it to a file.

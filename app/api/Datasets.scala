@@ -85,7 +85,7 @@ object Datasets extends Controller with SecuredController with ApiController {
       	    (request.body \ "file_id").asOpt[String].map { file_id =>
       	      FileDAO.get(file_id) match {
       	        case Some(file) =>
-      	           val d = Dataset(name=name,description=description, created=new Date(), files=List(file))
+      	           val d = Dataset(name=name,description=description, created=new Date(), files=List(file), author=request.user.get)
 		      	   Dataset.insert(d) match {
 		      	     case Some(id) => {
 		      	       import play.api.Play.current

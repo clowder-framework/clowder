@@ -49,7 +49,7 @@ object Datasets extends Controller with SecuredController {
       "name" -> nonEmptyText,
       "description" -> nonEmptyText
     )
-    ((name, description) => Dataset(name = name, description = description, created = new Date))
+    ((name, description) => Dataset(name = name, description = description, created = new Date, author=null))
     ((dataset: Dataset) => Some((dataset.name, dataset.description)))
    )
    
@@ -191,14 +191,17 @@ object Datasets extends Controller with SecuredController {
   def submit() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
+    user match {
+      case Some(identity) => {
         datasetForm.bindFromRequest.fold(
           errors => BadRequest(views.html.newDataset(errors)),
 	      dataset => {
 	           request.body.file("file").map { f =>
 		        Logger.debug("Uploading file " + f.filename)
 		        
-		        // store file		        
-			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+		        // store file
+		        Logger.info("Adding file" + identity)
+			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
 			    Logger.debug("Uploaded file id is " + file.get.id)
 			    Logger.debug("Uploaded file type is " + f.contentType)
 			    
@@ -224,7 +227,7 @@ object Datasets extends Controller with SecuredController {
 			        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 	
 		            // add file to dataset
-			        val dt = dataset.copy(files = List(f))
+			        val dt = dataset.copy(files = List(f), author=identity)
 			        // TODO create a service instead of calling salat directly
 		            Dataset.save(dt)
 		            
@@ -244,17 +247,21 @@ object Datasets extends Controller with SecuredController {
 			      case None => {
 			        Logger.error("Could not retrieve file that was just saved.")
 			        // TODO create a service instead of calling salat directly
-		            Dataset.save(dataset)
+			        val dt = dataset.copy(author=identity)
+		            Dataset.save(dt)
 		            // redirect to file page
-		            Redirect(routes.Datasets.dataset(dataset.id.toString))
-//		            Ok(views.html.dataset(dataset, Previewers.searchFileSystem))
+		            Redirect(routes.Datasets.dataset(dt.id.toString))
+//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 			      }
 			    }   
-        }.getOrElse{
-          Redirect(routes.Datasets.newDataset()).flashing("error"->"Please select a file")
-        }
-	    }
-	)
+	        }.getOrElse{
+	          Redirect(routes.Datasets.newDataset()).flashing("error"->"Please select a file")
+	        }
+		  }
+		)
+      }
+      case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
+    }
   }
 
   /*

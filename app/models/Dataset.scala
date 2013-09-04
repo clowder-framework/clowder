@@ -18,6 +18,7 @@ import scala.Mutable
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import play.api.libs.json.JsValue
+import securesocial.core.Identity
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -28,6 +29,7 @@ import play.api.libs.json.JsValue
 case class Dataset (
   id: ObjectId = new ObjectId,
   name: String = "N/A",
+  author: Identity,
   description: String = "N/A",
   created: Date, 
   files: List[File] = List.empty,
