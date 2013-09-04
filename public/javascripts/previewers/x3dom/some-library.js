@@ -1,13 +1,13 @@
 //ANNOTATIONS FUNCTIONS
 function clearConfigTabAnnotations(prNum){
-  	  $(window["configs" + prNum].tab + " > textarea[data-annotation]").remove();
-  	  $(window["configs" + prNum].tab + " > button[data-annotation]").remove(); 
-  	  $(window["configs" + prNum].tab + " > h5[data-annotation]").remove();
-  	  $(window["configs" + prNum].tab + " > span[data-annotation]").remove();
-  	  $(window["configs" + prNum].tab + " > br[data-annotation]").remove();
+  	  $(window["configsTab" + prNum] + " > textarea[data-annotation]").remove();
+  	  $(window["configsTab" + prNum] + " > button[data-annotation]").remove(); 
+  	  $(window["configsTab" + prNum] + " > h5[data-annotation]").remove();
+  	  $(window["configsTab" + prNum] + " > span[data-annotation]").remove();
+  	  $(window["configsTab" + prNum] + " > br[data-annotation]").remove();
     }  
     
-  function focusOnAnnotation(x_coord, y_coord, z_coord, event, prNum){	
+  function focusOnAnnotation(x_coord, y_coord, z_coord, event, prNum){
   	if(window["showAnnotations" + prNum] && (window["isCurrentSubmitted" + prNum] || (x_coord != window["currentAnnotation" + prNum][0] || y_coord != window["currentAnnotation" + prNum][1] || z_coord != window["currentAnnotation" + prNum][2]))){  	  
   	  if(window["currentAnnotation" + prNum].length == 3){
   		  if(window["isCurrentSubmitted" + prNum])
@@ -29,17 +29,17 @@ function clearConfigTabAnnotations(prNum){
         var annotationHeading = document.createElement('h5');
         annotationHeading.innerHTML = "Annotation description";
         annotationHeading.setAttribute('data-annotation','true');
-        $(window["configs" + prNum].tab).append(annotationHeading);
+        $(window["configsTab" + prNum]).append(annotationHeading);
 
         var annotationDescription = document.createElement('span');
         annotationDescription.innerHTML = $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML;
         annotationDescription.setAttribute("style","display:block; width:" + window["width" + prNum] + "px;");
         annotationDescription.setAttribute('data-annotation','true');
-        $(window["configs" + prNum].tab).append(annotationDescription);
+        $(window["configsTab" + prNum]).append(annotationDescription);
 
         var annotationBreak = document.createElement('br');
         annotationBreak.setAttribute('data-annotation','true');
-        $(window["configs" + prNum].tab).append(annotationBreak);
+        $(window["configsTab" + prNum]).append(annotationBreak);
 
         var annotationEdit = document.createElement('button'); 	
         annotationEdit.setAttribute('type','button');
@@ -48,7 +48,7 @@ function clearConfigTabAnnotations(prNum){
         annotationEdit.innerHTML = 'Edit';
         annotationEdit.setAttribute("style","margin-bottom: 5px;");
         annotationEdit.setAttribute('data-annotation','true');
-        $(window["configs" + prNum].tab).append(annotationEdit);
+        $(window["configsTab" + prNum]).append(annotationEdit);
         
         event.cancelBubble = true;
         event.stopPropagation();
@@ -59,8 +59,8 @@ function clearConfigTabAnnotations(prNum){
   	  window["annotationsCount"+prNum]++; 
 
   	  var annotation = document.createElement('transform');
-  	  annotation.setAttribute("id", "annotation_" + window["annotationsCount"+prNum]);
-  	  annotation.setAttribute("DEF", "annot_" + window["annotationsCount"+prNum]);
+  	  annotation.setAttribute("id", "annotation_" + prNum+ "__" + window["annotationsCount"+prNum]);
+  	  annotation.setAttribute("DEF", "annot_" + prNum+ "__" + window["annotationsCount"+prNum]);
   	  annotation.setAttribute("scale", ".15 .15 .15");
   	  annotation.setAttribute("render", "true");
   	  annotation.setAttribute("bboxCenter", "0,0,0");
@@ -115,36 +115,36 @@ function clearConfigTabAnnotations(prNum){
   	  annotation['x_coord'] = "" + window["currentAnnotation" + prNum][0];
   	  annotation['y_coord'] = "" + window["currentAnnotation" + prNum][1];
   	  annotation['z_coord'] = "" + window["currentAnnotation" + prNum][2];
-  	  annotation['description'] = $(window["configs" + prNum].tab + " > textarea[data-annotation]").get(0).value;
+  	  annotation['description'] = $(window["configsTab" + prNum] + " > textarea[data-annotation]").get(0).value;
   	  
   	  var request = $.ajax({
   	       type: 'POST',
   	       async:false,
-  	       url: window["configs" + prNum].annotationsEditPath,
+  	       url: window["annotationsEditPath" + prNum],
   	       data: JSON.stringify(annotation),
   	       contentType: "application/json",
   	     });
   	  
   		  request.done(function (response, textStatus, jqXHR){
   		        console.log("Response " + response);		        
-  		        $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML = $(window["configs" + prNum].tab + " > textarea[data-annotation]").get(0).value;
+  		        $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML = $(window["configsTab" + prNum] + " > textarea[data-annotation]").get(0).value;
 
   		        clearConfigTabAnnotations(prNum);
   		  	  	
   		        var newAnnotationHeading = document.createElement('h5');
   		        newAnnotationHeading.innerHTML = "Annotation description";
   		        newAnnotationHeading.setAttribute('data-annotation','true');
-  		        $(window["configs" + prNum].tab).append(newAnnotationHeading);
+  		        $(window["configsTab" + prNum]).append(newAnnotationHeading);
 
   		        var newAnnotationDescription = document.createElement('span');
   		        newAnnotationDescription.innerHTML = annotation['description'];
   		        newAnnotationDescription.setAttribute("style","display:block; width:" + window["width" + prNum] + "px;");
   		        newAnnotationDescription.setAttribute('data-annotation','true');
-  		        $(window["configs" + prNum].tab).append(newAnnotationDescription);
+  		        $(window["configsTab" + prNum]).append(newAnnotationDescription);
 
   		        var annotationBreak = document.createElement('br');
   		        annotationBreak.setAttribute('data-annotation','true');
-  		        $(window["configs" + prNum].tab).append(annotationBreak);
+  		        $(window["configsTab" + prNum]).append(annotationBreak);
 
   		        var newAnnotationEdit = document.createElement('button'); 	
   		        newAnnotationEdit.setAttribute('type','button');
@@ -153,7 +153,7 @@ function clearConfigTabAnnotations(prNum){
   		        newAnnotationEdit.innerHTML = 'Edit';
   		        newAnnotationEdit.setAttribute("style","margin-bottom: 5px;");
   		        newAnnotationEdit.setAttribute('data-annotation','true');
-  		        $(window["configs" + prNum].tab).append(newAnnotationEdit);	   
+  		        $(window["configsTab" + prNum]).append(newAnnotationEdit);	   
   		  	    		        
   			});
   		 
@@ -172,17 +172,17 @@ function clearConfigTabAnnotations(prNum){
         var annotationHeading = document.createElement('h5');
         annotationHeading.innerHTML = "Annotation description";
         annotationHeading.setAttribute('data-annotation','true');
-        $(window["configs" + prNum].tab).append(annotationHeading);  
+        $(window["configsTab" + prNum]).append(annotationHeading);  
 
         var annotationDescription = document.createElement('span');
         annotationDescription.innerHTML = $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML;
         annotationDescription.setAttribute("style","display:block; width:" + window["width" + prNum] + "px;");
         annotationDescription.setAttribute('data-annotation','true');
-        $(window["configs" + prNum].tab).append(annotationDescription);
+        $(window["configsTab" + prNum]).append(annotationDescription);
 
         var annotationBreak = document.createElement('br');
         annotationBreak.setAttribute('data-annotation','true');
-        $(window["configs" + prNum].tab).append(annotationBreak);
+        $(window["configsTab" + prNum]).append(annotationBreak);
 
         var annotationEdit = document.createElement('button'); 	
         annotationEdit.setAttribute('type','button');
@@ -191,7 +191,7 @@ function clearConfigTabAnnotations(prNum){
         annotationEdit.innerHTML = 'Edit';
         annotationEdit.setAttribute("style","margin-bottom: 5px;");
         annotationEdit.setAttribute('data-annotation','true');
-        $(window["configs" + prNum].tab).append(annotationEdit);	
+        $(window["configsTab" + prNum]).append(annotationEdit);	
     }
     
     function editAnnotationDescription(prNum){
@@ -200,18 +200,18 @@ function clearConfigTabAnnotations(prNum){
   	  var editAnnotationHeading = document.createElement('h5');
   	  editAnnotationHeading.innerHTML = "Edit annotation description";
   	  editAnnotationHeading.setAttribute('data-annotation','true');
-  	  $(window["configs" + prNum].tab).append(editAnnotationHeading);
+  	  $(window["configsTab" + prNum]).append(editAnnotationHeading);
   	  
   	  var editAnnotationTextBox = document.createElement('textarea');
   	  editAnnotationTextBox.setAttribute("rows", "4");
   	  editAnnotationTextBox.setAttribute("style","width:" + (window["width" + prNum] - 15) + "px;");
   	  editAnnotationTextBox.value = $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML;
   	  editAnnotationTextBox.setAttribute('data-annotation','true');
-  	  $(window["configs" + prNum].tab).append(editAnnotationTextBox);
+  	  $(window["configsTab" + prNum]).append(editAnnotationTextBox);
   	  
   	  var annotationBreak = document.createElement('br');
   	  annotationBreak.setAttribute('data-annotation','true');
-  	  $(window["configs" + prNum].tab).append(annotationBreak);
+  	  $(window["configsTab" + prNum]).append(annotationBreak);
   	  
   	  var editAnnotationSubmit = document.createElement('button'); 	
   	  editAnnotationSubmit.setAttribute('type','button');
@@ -221,7 +221,7 @@ function clearConfigTabAnnotations(prNum){
   	  editAnnotationSubmit.innerHTML = 'OK';
   	  editAnnotationSubmit.setAttribute("style","margin-bottom: 5px;");
   	  editAnnotationSubmit.setAttribute('data-annotation','true');
-  	  $(window["configs" + prNum].tab).append(editAnnotationSubmit);
+  	  $(window["configsTab" + prNum]).append(editAnnotationSubmit);
   	  
   	  var editAnnotationCancel = document.createElement('button'); 	
   	  editAnnotationCancel.setAttribute('type','button');
@@ -230,7 +230,7 @@ function clearConfigTabAnnotations(prNum){
   	  editAnnotationCancel.innerHTML = 'Cancel';
   	  editAnnotationCancel.setAttribute("style","margin-bottom: 5px;");
   	  editAnnotationCancel.setAttribute('data-annotation','true');
-  	  $(window["configs" + prNum].tab).append(editAnnotationCancel);
+  	  $(window["configsTab" + prNum]).append(editAnnotationCancel);
   	  
     }
     
@@ -239,18 +239,18 @@ function clearConfigTabAnnotations(prNum){
   	  annotation['x_coord'] = "" + window["currentAnnotation" + prNum][0];
   	  annotation['y_coord'] = "" + window["currentAnnotation" + prNum][1];
   	  annotation['z_coord'] = "" + window["currentAnnotation" + prNum][2];
-  	  annotation['description'] = $(window["configs" + prNum].tab + " > textarea").get(0).value;
+  	  annotation['description'] = $(window["configsTab" + prNum] + " > textarea").get(0).value;
   	  var request = $.ajax({
   	       type: 'POST',
   	       async:false,
-  	       url: window["configs" + prNum].annotationsAttachPath,
+  	       url: window["annotationsAttachPath" + prNum],
   	       data: JSON.stringify(annotation),
   	       contentType: "application/json",
   	     });    
 
   		  request.done(function (response, textStatus, jqXHR){
   		        console.log("Response " + response);		        
-  		        $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML = $(window["configs" + prNum].tab + " > textarea[data-annotation]").get(0).value;
+  		        $("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] + "'] > .annotationdescription").get(0).innerHTML = $(window["configsTab" + prNum] + " > textarea[data-annotation]").get(0).value;
   		        window["isCurrentSubmitted" + prNum] = true;
   		        
   		        clearConfigTabAnnotations(prNum);
@@ -259,17 +259,17 @@ function clearConfigTabAnnotations(prNum){
   		  		  var newAnnotationHeading = document.createElement('h5');
   		  		  newAnnotationHeading.innerHTML = "Annotation description";
   		  		  newAnnotationHeading.setAttribute('data-annotation','true');
-  		  		  $(window["configs" + prNum].tab).append(newAnnotationHeading);
+  		  		  $(window["configsTab" + prNum]).append(newAnnotationHeading);
   		  		  
   		  		  var newAnnotationDescription = document.createElement('span');
   		  		  newAnnotationDescription.innerHTML = annotation['description'];
   		  		  newAnnotationDescription.setAttribute("style","display:block; width:" + window["width" + prNum] + "px;");
   		  		  newAnnotationDescription.setAttribute('data-annotation','true');
-  		  		  $(window["configs" + prNum].tab).append(newAnnotationDescription);
+  		  		  $(window["configsTab" + prNum]).append(newAnnotationDescription);
   		  		  
   		  		  var annotationBreak = document.createElement('br');
   		  		  annotationBreak.setAttribute('data-annotation','true');
-  		  		  $(window["configs" + prNum].tab).append(annotationBreak);
+  		  		  $(window["configsTab" + prNum]).append(annotationBreak);
   		  		  
   		  		  var newAnnotationEdit = document.createElement('button'); 	
   		  		  newAnnotationEdit.setAttribute('type','button');
@@ -278,7 +278,7 @@ function clearConfigTabAnnotations(prNum){
   		  		  newAnnotationEdit.innerHTML = 'Edit';
   		  		  newAnnotationEdit.setAttribute("style","margin-bottom: 5px;");
   		  		  newAnnotationEdit.setAttribute('data-annotation','true');
-  		  		  $(window["configs" + prNum].tab).append(newAnnotationEdit);	
+  		  		  $(window["configsTab" + prNum]).append(newAnnotationEdit);	
   		  	    }else{
   		  	    	$("#x3dElement" + prNum + " > scene > transform[data-annotation][translation='" + window["currentAnnotation" + prNum][0] + "," + window["currentAnnotation" + prNum][1] + "," + window["currentAnnotation" + prNum][2] 
   		  	    	+ "'] > shape > appearance > material").get(0).setAttribute("diffuseColor", "mediumblue");
@@ -328,17 +328,17 @@ function clearConfigTabAnnotations(prNum){
     	var newAnnotationHeading = document.createElement('h5');
     	newAnnotationHeading.innerHTML = "Enter annotation description";
     	newAnnotationHeading.setAttribute('data-annotation','true');
-    	$(window["configs" + prNum].tab).append(newAnnotationHeading);
+    	$(window["configsTab" + prNum]).append(newAnnotationHeading);
 
     	var newAnnotationTextBox = document.createElement('textarea');
     	newAnnotationTextBox.setAttribute("rows", "4");
     	newAnnotationTextBox.setAttribute("style","width:" + (window["width" + prNum] - 15) + "px;");
     	newAnnotationTextBox.setAttribute('data-annotation','true');
-    	$(window["configs" + prNum].tab).append(newAnnotationTextBox);
+    	$(window["configsTab" + prNum]).append(newAnnotationTextBox);
 
     	var annotationBreak = document.createElement('br');
     	annotationBreak.setAttribute('data-annotation','true');
-    	$(window["configs" + prNum].tab).append(annotationBreak);
+    	$(window["configsTab" + prNum]).append(annotationBreak);
 
     	var newAnnotationSubmit = document.createElement('button'); 	
     	newAnnotationSubmit.setAttribute('type','button');
@@ -348,7 +348,7 @@ function clearConfigTabAnnotations(prNum){
     	newAnnotationSubmit.innerHTML = 'OK';
     	newAnnotationSubmit.setAttribute("style","margin-bottom: 5px;");
     	newAnnotationSubmit.setAttribute('data-annotation','true');
-    	$(window["configs" + prNum].tab).append(newAnnotationSubmit);
+    	$(window["configsTab" + prNum]).append(newAnnotationSubmit);
 
     	var newAnnotationCancel = document.createElement('button'); 	
     	newAnnotationCancel.setAttribute('type','button');
@@ -357,7 +357,7 @@ function clearConfigTabAnnotations(prNum){
     	newAnnotationCancel.innerHTML = 'Cancel annotation addition';
     	newAnnotationCancel.setAttribute("style","margin-bottom: 5px;");
     	newAnnotationCancel.setAttribute('data-annotation','true');
-    	$(window["configs" + prNum].tab).append(newAnnotationCancel);
+    	$(window["configsTab" + prNum]).append(newAnnotationCancel);
 
     	event.cancelBubble = true;
     	event.stopPropagation();
@@ -768,6 +768,11 @@ function clearConfigTabAnnotations(prNum){
   var height = 550;
   
   var prNum = Configuration.tab.replace("#previewer","");
+  
+  if(isx3dActive && isPageLoaded){
+	  $(Configuration.tab).append("<p><b>New 3D model added to dataset. Reload the webpage to see it.</b></p>");
+	  return;
+  }
    
   //Annotations vars
   window["showAnnotations" + prNum] = false; 
@@ -776,7 +781,9 @@ function clearConfigTabAnnotations(prNum){
   window["annotationsCount" + prNum] = 0;
   window["isStatisticsExtended" + prNum] = false;
   window["isShiftClicked" + prNum] = false;
-  window["configs" + prNum] = Configuration;
+  window["configsTab" + prNum] = Configuration.tab;
+  window["annotationsEditPath" + prNum] = Configuration.annotationsEditPath;
+  window["annotationsAttachPath" + prNum] = Configuration.annotationsAttachPath;
   window["width" + prNum] = width;
   
   //Measuring vars
@@ -849,7 +856,6 @@ function clearConfigTabAnnotations(prNum){
   $("#x3dElement" + prNum).attr("onmousemove", "handleMouseMove(event,'" + prNum + "');");
     
   if(!isx3dActive){
-	  isx3dActive = true;
 	  var s = document.createElement("script");
 	  s.type = "text/javascript";
 	  s.src = pathJs + "x3dom.js";
@@ -888,15 +894,20 @@ function clearConfigTabAnnotations(prNum){
   }
   
   if(isPageLoaded == false){
+	  if(!isx3dActive){		  
 		  document.onload = function() {
-		      document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);		      
-		      document.getElementById("x3dElement" + prNum).runtime.resetExamin();		      
+			  $("x3d").each(function() {				  
+				  document.getElementById("x3dom_viewpoint_cam" + $(this)[0].id.replace("x3dElement", "")).addEventListener('viewpointChanged', handleViewpointChange, false);
+				  $(this)[0].runtime.resetExamin();
+			  });	      
 		  };
+	  	}
 	  }
   else{ 
 	  document.getElementById("x3dom_viewpoint_cam" + prNum).addEventListener('viewpointChanged', handleViewpointChange, false);
       document.getElementById("x3dElement" + prNum).runtime.resetExamin();
   }
+  isx3dActive = true;
      
 	  $("body").on('keypress','#x3dElement' + prNum,function(e){
 		  if(e.which == 122 || e.which == 90){
