@@ -398,7 +398,7 @@
     					for(var i = 0; i < respJSON.length; i++){
     						if($("#filePrevContainer_"+respJSON[i].id).length == 0){
     							var fileId = respJSON[i].id;
-    							$("#filePrevsCol").append("<div class='row-fluid' id='filePrevContainer_"+fileId+"' data-previewsCount='0' data-filename='"+respJSON[i].filename+"'>"
+    							$("#bottomDatasetTabbable").before("<div class='row-fluid' id='filePrevContainer_"+fileId+"' data-previewsCount='0' data-filename='"+respJSON[i].filename+"'>"
     													+"<div class='span12'><div class='tabbable'><ul class='nav nav-pills' id='myTab_"+fileId+"'></ul>"
     													+"<div class='tab-content' id='previewsContent_"+fileId+"'></div></div></div></div>");
     							$('#myTab_'+fileId).attr('style', 'display:none;');
@@ -422,7 +422,7 @@
     		</script>    		
     		
     		
-    	<div class="tabbable"> <!-- Only required for left/right tabs -->
+    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
 		  <ul class="nav nav-tabs">
 		    <li class="active"><a href="#tab1" data-toggle="tab">Comments</a></li>
 		    <li><a href="#tab2" data-toggle="tab">Metadata</a></li>
