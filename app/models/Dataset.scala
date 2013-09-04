@@ -217,5 +217,15 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     return false
   }
   
+  def addFile(datasetId:String, file: File){   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" ->  FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)   
+  }
+  
+  def addCollection(datasetId:String, collectionId: String){   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("collections" ->  collectionId), false, false, WriteConcern.Safe)   
+  }
+  def removeCollection(datasetId:String, collectionId: String){   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("collections" ->  collectionId), false, false, WriteConcern.Safe)   
+  }
   
 }

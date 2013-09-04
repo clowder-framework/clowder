@@ -174,6 +174,7 @@ object Files extends Controller with SecuredController with ApiController {
   /**
    * Add metadata to file.
    */
+  ////////////////////////////////////////////////////////////
   def addMetadata(id: String) =  
    SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.DownloadFiles)) { request =>
       Logger.debug("Adding metadata to file " + id)
@@ -189,6 +190,7 @@ object Files extends Controller with SecuredController with ApiController {
 	    	     FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> doc), false, false, WriteConcern.SAFE)
 	    	  }
 	    	}
+	    	//FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)  
 	      }
 	      case None => {
 	        Logger.error("Error getting file" + id)
@@ -200,7 +202,7 @@ object Files extends Controller with SecuredController with ApiController {
 	 Ok(toJson("success"))
     }
   
-  
+  /////////////////////////////////////////////////////////////
   
   
   /**
@@ -277,12 +279,9 @@ object Files extends Controller with SecuredController with ApiController {
                 _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
               }
 
-              // add file to dataset
-              val dt = dataset.copy(files = dataset.files ++ List(f))
-//              FileDAO.dao.collection.update(MongoDBObject("_id" -> f.id), 
-//	                        $set("dataset_id" -> new ObjectId(dataset_id)), false, false, WriteConcern.SAFE)    
+              // add file to dataset   
               // TODO create a service instead of calling salat directly
-              Dataset.save(dt)
+              Dataset.addFile(dataset.id.toString, f)
 
               // TODO RK need to replace unknown with the server name and dataset type
               val dtkey = "unknown." + "dataset." + "unknown"

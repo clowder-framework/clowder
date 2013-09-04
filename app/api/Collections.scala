@@ -21,13 +21,11 @@ object Collections extends Controller with SecuredController with ApiController 
           case Some(dataset) => {
             if(!isInCollection(dataset,collection)){
 	            // add dataset to collection  
-	            val cl = collection.copy(datasets = collection.datasets ++ List(dataset))
 	            // TODO create a service instead of calling salat directly
-	            Collection.save(cl)
+	            Collection.addDataset(collection.id.toString,dataset)
 	            
 	            //add collection to dataset
-	            val ds = dataset.copy(collections = dataset.collections ++ List(collection.id.toString()))
-	            Dataset.save(ds)
+	            Dataset.addCollection(dataset.id.toString, collection.id.toString)
 	            
 	            Logger.info("Adding dataset to collection completed")
             }
@@ -54,13 +52,11 @@ object Collections extends Controller with SecuredController with ApiController 
           case Some(dataset) => {
             if(isInCollection(dataset,collection)){
 	            // remove dataset from collection  
-	            val cl = collection.copy(datasets = removeItemDataset(collection.datasets,dataset))
 	            // TODO create a service instead of calling salat directly
-	            Collection.save(cl)
+	            Collection.removeDataset(collection.id.toString, dataset)
 	            
 	            //remove collection from dataset
-	            val ds = dataset.copy(collections = removeItemCollection(dataset.collections,collection))
-	            Dataset.save(ds)
+	            Dataset.removeCollection(dataset.id.toString, collection.id.toString)
 	            
 	            Logger.info("Removing dataset from collection completed")
             }
@@ -85,20 +81,6 @@ object Collections extends Controller with SecuredController with ApiController 
     }
   }
   
-  def removeItemDataset(datasets: List[Dataset], dataset: Dataset): List[Dataset] = {
-    val newList = for(dst <- datasets; if(!dst.id.toString().equals(dataset.id.toString()))) yield {
-      dst
-    }    
-    return newList
-  }
-  def removeItemCollection(collections: List[String], collection: Collection): List[String] = {
-    val newList = for(cl <- collections; if(!cl.equals(collection.id.toString()))) yield {
-      cl
-    }    
-    return newList
-  }
-  
-  
   def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
     for(collDataset <- collection.datasets){
       if(collDataset.id == dataset.id)
@@ -112,8 +94,7 @@ object Collections extends Controller with SecuredController with ApiController 
       case Some(collection) => {       
         for(dataset <- collection.datasets){
           //remove collection from dataset
-	      val ds = dataset.copy(collections = removeItemCollection(dataset.collections,collection))
-	      Dataset.save(ds)
+          Dataset.removeCollection(dataset.id.toString, collection.id.toString)
         }       
         Collection.remove(collection)
         Ok(toJson(Map("status" -> "success")))

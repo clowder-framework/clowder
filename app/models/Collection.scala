@@ -69,6 +69,12 @@ object Collection extends ModelCompanion[Collection, ObjectId]{
     }
     return false
   }
-    
+  
+  def addDataset(collectionId:String, dataset: Dataset){   
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId)), $addToSet("datasets" ->  Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)   
+  }
+  def removeDataset(collectionId:String, dataset: Dataset){
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId)), $pull("datasets" ->  MongoDBObject( "_id" -> dataset.id)), false, false, WriteConcern.Safe)
+  }  
   
 }
