@@ -12,6 +12,7 @@ import models.FileDAO
 import org.bson.types.ObjectId
 import java.io.File
 import com.mongodb.casbah.commons.MongoDBObject
+import securesocial.core.Identity
 
 /**
  * Store blobs on the file system.
@@ -25,7 +26,7 @@ trait FileSystemDB {
   /**
    * Save a file to the file system and store metadata about it in Mongo.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[models.File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity): Option[models.File] = {
     Play.current.configuration.getString("files.path") match {
       case Some(path) => {
         val id = UUID.randomUUID().toString()
@@ -39,7 +40,7 @@ trait FileSystemDB {
         f.close()
 
         // store metadata to mongo
-        storeFileMD(id, filename, contentType)
+        storeFileMD(id, filename, contentType, author)
       }
       case None => {
         Logger.error("Could not store file on disk")

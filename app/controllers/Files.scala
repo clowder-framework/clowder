@@ -155,6 +155,7 @@ object Files extends Controller with SecuredController {
    */
   def upload() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
+<<<<<<< HEAD
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         
@@ -197,7 +198,57 @@ object Files extends Controller with SecuredController {
         }
       }.getOrElse {
          BadRequest("File not attached.")
+=======
+    user match {
+      case Some(identity) => {
+	      request.body.file("File").map { f =>        
+	        Logger.debug("Uploading file " + f.filename)
+	        
+	        // store file       
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
+	        val uploadedFile = f
+	//        Thread.sleep(1000)
+	        file match {
+	          case Some(f) => {
+	             var fileType = f.contentType
+				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+				          if(fileType.startsWith("ERROR: ")){
+				             Logger.error(fileType.substring(7))
+				             InternalServerError(fileType.substring(7))
+				          }			          
+				        }
+	            
+	            // TODO RK need to replace unknown with the server name
+	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
+	            // TODO RK : need figure out if we can use https
+	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+	            val id = f.id.toString
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
+	            current.plugin[ElasticsearchPlugin].foreach{
+	              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+	            }
+	           
+	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+	             //current.plugin[VersusPlugin].foreach{_.build()}
+	              
+	                        
+	            // redirect to file page]
+	            Redirect(routes.Files.file(f.id.toString))  
+	         }
+	         case None => {
+	           Logger.error("Could not retrieve file that was just saved.")
+	           InternalServerError("Error uploading file")
+	         }
+	        }
+	      }.getOrElse {
+	         BadRequest("File not attached.")
+	      }
+>>>>>>> refs/heads/master
       }
+      
+      case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
+    }
   }
 
   /**
@@ -255,7 +306,9 @@ object Files extends Controller with SecuredController {
         Logger.debug("Uploading file " + f.filename)
         
         // store file       
-        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        // TODO is this still used? if so replace null with user
+        Logger.info("uploadSelect")
+        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, null)
         val uploadedFile = f
 //        Thread.sleep(1000)
         file match {
@@ -301,6 +354,7 @@ object Files extends Controller with SecuredController {
         Logger.debug("Uploading file " + f.filename)
         
         // store file       
+        Logger.info("uploadSelectQuery")
          val file = Services.queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
          val uploadedFile = f
 //        Thread.sleep(1000)
@@ -352,6 +406,7 @@ object Files extends Controller with SecuredController {
         
         // store file       
       //  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        Logger.info("uploadDragDrop")
         val file = Services.queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         val uploadedFile = f
 //        Thread.sleep(1000)
@@ -396,12 +451,14 @@ object Files extends Controller with SecuredController {
   
 
   def uploaddnd(dataset_id: String) = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
-	  Services.datasets.get(dataset_id)  match {
+    request.user match {
+      case Some(identity) => {
+      	Services.datasets.get(dataset_id)  match {
 		  case Some(dataset) => {
 			  request.body.file("File").map { f =>        
 				  Logger.debug("Uploading file " + f.filename)
 				  // store file
-				  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType)
+				  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType, identity)
 				  val uploadedFile = f
 				  
 				  // submit file for extraction			
@@ -453,7 +510,11 @@ object Files extends Controller with SecuredController {
 			  }
 		  }
 		  case None => {Logger.error("Error getting dataset" + dataset_id); InternalServerError}
-	  }
+      	}
+      }
+
+      case None => {Logger.error("Error getting dataset" + dataset_id); InternalServerError}
+    }
   }
 
 
@@ -479,6 +540,7 @@ object Files extends Controller with SecuredController {
           case parse.Multipart.FileInfo(partName, filename, contentType) =>
             Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
             // TODO RK handle exception for instance if we switch to other DB
+        Logger.info("myPartHandler")
 			val files = current.plugin[MongoSalatPlugin] match {
 			  case None    => throw new RuntimeException("No MongoSalatPlugin");
 			  case Some(x) =>  x.gridFS("uploads")
@@ -523,7 +585,9 @@ object Files extends Controller with SecuredController {
     val filename=f.getName()
     
     // store file
-    val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None)
+    // TODO is this still used? if so replace null with user.
+        Logger.info("uploadAjax")
+    val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None, null)
     
     file match {
       case Some(f) => {

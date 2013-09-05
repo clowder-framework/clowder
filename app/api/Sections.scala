@@ -13,7 +13,6 @@ import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
 import models.Comment
 import java.util.Date
-import api.ApiController
 
 /**
  * Files sections.

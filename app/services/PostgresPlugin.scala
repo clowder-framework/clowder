@@ -39,7 +39,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       val props = new Properties()
       if (!user.equals("")) props.setProperty("user", user)
       if (!password.equals("")) props.setProperty("password", password)
-      conn = DriverManager.getConnection(url)
+      conn = DriverManager.getConnection(url, props)
 //      conn.setAutoCommit(false)
       Logger.debug("Connected to " + url)
     } catch {
@@ -124,6 +124,10 @@ class PostgresPlugin(application: Application) extends Plugin {
     rs.close()
     st.close()
     data
+  }
+  
+  def listSensors() {
+    val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM (SELECT gid, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geog FROM geoindex"
   }
   
   def test() {

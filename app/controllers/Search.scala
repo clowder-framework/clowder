@@ -1,5 +1,5 @@
 package controllers
-
+//import play.api.Logger
 import play.api.mvc._
 import services.ElasticsearchPlugin
 import services.VersusPlugin
@@ -250,16 +250,19 @@ object Search extends Controller {
         case Some(plugin)=>{
         	 
         	 var indexListResponse=plugin.getIndexes()
+        	 
         	 var indexSeqFuture= for {
         		 list<-indexListResponse
+        		
         		 listIn=list.json.as[Seq[models.IndexList.IndexList]]
+        		 
         		 indexSeqT=listIn.map{
-        		  		    ind=>(ind.indexID,ind.MIMEtype)
+        		  		    ind=>(ind.indexID,ind.MIMEtype,ind.ex,ind.me,ind.indxr)
         		  		 }
         		} yield {
         	       indexSeqT
         		 }
-        	          
+        	         
            import scala.concurrent.Future
            var finalR=for{
             		indexSeq<-indexSeqFuture
@@ -273,7 +276,8 @@ object Search extends Controller {
             									indexResult
             								//hm.put(indexResult._1,indexResult._2)
             							}
-            						u
+            						//(u,index._5)
+            							u
             					  }//end of indexSeq.map
               
             			
@@ -306,7 +310,8 @@ object Search extends Controller {
 		                			  
 		                			  Services.queries.getFile(id)match{
 		                			  	case Some(file)=>{ 
-		                			  		Ok(views.html.multimediaIndexResults(keysArray,file.filename,id,yFinal.size,yFinal))
+		                			  		//Ok(views.html.multimediaIndexResults(keysArray,file.filename,id,yFinal.size,yFinal))
+		                			  	  Ok(views.html.imageSearchpage(keysArray,file.filename,id,yFinal.size,yFinal))
 		                			  	}
 		                			  	case None=>{
 		                			  			Ok(id +" not found")

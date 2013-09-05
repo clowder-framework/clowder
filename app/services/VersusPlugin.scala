@@ -62,6 +62,9 @@ class VersusPlugin(application:Application) extends Plugin{
     val indexurl=host+"/index"
     var k=0
     val indexList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(indexurl).get()
+    indexList.map{
+      response=>Logger.debug("GETINDEXES: response.body="+response.body)
+    }
        indexList
   }
   //index your file
@@ -182,6 +185,7 @@ class VersusPlugin(application:Application) extends Plugin{
    response=>
 		        val json: JsValue=Json.parse(response.body)
 		        val similarity_value=json.as[Seq[models.Result.Result]]
+		        
 		        
 		        val len=similarity_value.length
 		        val ar=new Array[String](len)

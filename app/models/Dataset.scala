@@ -18,8 +18,8 @@ import scala.Mutable
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import play.api.libs.json.JsValue
-import services.Services
 import securesocial.core.Identity
+import services.Services
 /**
  * A dataset is a collection of files, and streams.
  * 

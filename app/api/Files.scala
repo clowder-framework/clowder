@@ -208,10 +208,12 @@ object Files extends Controller with SecuredController with ApiController {
    * Upload file using multipart form enconding.
    */
     def upload() = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+      request.user match {
+        case Some(user) => {
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -242,18 +244,24 @@ object Files extends Controller with SecuredController with ApiController {
 	      }.getOrElse {
 	         BadRequest(toJson("File not attached."))
 	      }
-	  }
-
+        }
+        
+        case None => BadRequest(toJson("Not authorized."))
+      }
+    }
+    
   /**
    * Upload a file to a specific dataset
    */
   def uploadToDataset(dataset_id: String) = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+    request.user match {
+        case Some(user) => {
     Services.datasets.get(dataset_id) match {
       case Some(dataset) => {
         request.body.file("File").map { f =>
           Logger.debug("Uploading file " + f.filename)
           // store file
-          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
           val uploadedFile = f
           
           // submit file for extraction
@@ -302,14 +310,21 @@ object Files extends Controller with SecuredController with ApiController {
         }.getOrElse {
           BadRequest("File not attached.")
         }
+      } 
+        case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
       }
-      case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
+     }
+        
+        case None => BadRequest(toJson("Not authorized."))
     }
-  }    
+   }
+  
    /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
     def uploadIntermediate(originalIdAndFlags: String) = SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+      request.user match {
+        case Some(user) => {
 	      request.body.file("File").map { f =>
 	        var originalId = originalIdAndFlags;
 	        var flags = "";
@@ -320,7 +335,7 @@ object Files extends Controller with SecuredController with ApiController {
 	        
 	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -352,7 +367,10 @@ object Files extends Controller with SecuredController with ApiController {
 	         BadRequest(toJson("File not attached."))
 	      }
 	  }
-    
+        
+      case None => BadRequest(toJson("Not authorized."))
+    }
+  }
     
   /**
    * Upload metadata for preview and attach it to a file.

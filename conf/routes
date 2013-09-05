@@ -181,3 +181,9 @@ GET     /api/geostreams/search            api.Geostreams.search(since: Option[St
 POST	/api/tiles						  api.ZoomIt.uploadTile
 POST	/api/geometries					  api.Geometry.uploadGeometry
 POST	/api/3dTextures					  api.ThreeDTexture.uploadTexture
+
+GET     /api/sensors                      api.Sensors.list
+POST    /api/sensors                      api.Sensors.add
+GET     /api/sensors/:id                  api.Sensors.get(id)
+GET     /api/sensors/search               api.Sensors.search
+DELETE  /api/sensors/:id                  api.Sensors.delete(id)

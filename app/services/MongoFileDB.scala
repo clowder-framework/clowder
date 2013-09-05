@@ -12,6 +12,9 @@ import play.api.Play.current
 import com.mongodb.casbah.gridfs.JodaGridFSDBFile
 import models.FileDAO
 import java.text.SimpleDateFormat
+import securesocial.core.Identity
+import com.novus.salat._
+import com.novus.salat.global._
 
 /**
  * Access file metedata from MongoDB.
@@ -69,7 +72,7 @@ trait MongoFileDB {
   /**
    * Store file metadata.
    */
-  def storeFileMD(id: String, filename: String, contentType: Option[String]): Option[File] = {
+  def storeFileMD(id: String, filename: String, contentType: Option[String], author: Identity): Option[File] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploads")
@@ -86,6 +89,7 @@ trait MongoFileDB {
     }
     mongoFile.contentType = ct
     mongoFile.put("path", id)
+    mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
     
@@ -97,6 +101,6 @@ trait MongoFileDB {
 //      case None => Logger.error("NO FILE!!!!!!")
 //    }
     
-    Some(File(oid, None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
+    Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
   }
 }
