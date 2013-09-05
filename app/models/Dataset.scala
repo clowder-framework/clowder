@@ -19,6 +19,7 @@ import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import play.api.libs.json.JsValue
 import securesocial.core.Identity
+import services.Services
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -37,7 +38,8 @@ case class Dataset (
   tags: List[String] = List.empty,
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
-  comments: List[Comment] = List.empty
+  comments: List[Comment] = List.empty,
+  collections: List[String] = List.empty
 )
 
 object MustBreak extends Exception { }
@@ -48,7 +50,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
   }
-  
+    
   def findOneByFileId(file_id: ObjectId): Option[Dataset] = {
     dao.findOne(MongoDBObject("files._id" -> file_id))
   }
@@ -195,6 +197,37 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 //    }
 //  }
   
+      /**
+   * List all datasets inside a collection.
+   */
+  def listInsideCollection(collectionId: String) : List[Dataset] =  { 
+      Collection.findOneById(new ObjectId(collectionId)) match{
+        case Some(collection) => {
+          val list = for (dataset <- Services.datasets.listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
+          return list
+        }
+        case None =>{
+          return List.empty	 	  
+        } 
+      }
+  } 
+  def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
+    for(collDataset <- collection.datasets){
+      if(collDataset.id == dataset.id)
+        return true
+    }
+    return false
+  }
   
+  def addFile(datasetId:String, file: File){   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" ->  FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)   
+  }
+  
+  def addCollection(datasetId:String, collectionId: String){   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("collections" ->  collectionId), false, false, WriteConcern.Safe)   
+  }
+  def removeCollection(datasetId:String, collectionId: String){   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("collections" ->  collectionId), false, false, WriteConcern.Safe)   
+  }
   
 }
