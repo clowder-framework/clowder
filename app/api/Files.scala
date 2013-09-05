@@ -190,7 +190,6 @@ object Files extends Controller with SecuredController with ApiController {
 	    	     FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> doc), false, false, WriteConcern.SAFE)
 	    	  }
 	    	}
-	    	//FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)  
 	      }
 	      case None => {
 	        Logger.error("Error getting file" + id)
