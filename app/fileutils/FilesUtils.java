@@ -10,12 +10,12 @@ import play.Logger;
 
 public class FilesUtils {
 
-	public static String getMainFileTypeOfZipFile(File compressedFile, String filename){
+	public static String getMainFileTypeOfZipFile(File compressedFile, String filename, String containerType){
 		
 		String mainFileType = "application/zip";
 		
 		try {
-			if(filename.startsWith("MEDICI2DATASET_"))
+			if(filename.startsWith("MEDICI2DATASET_") && containerType.equals("dataset"))
 				return "multi/files-zipped";
 			
 			ZipFile zipFile = new ZipFile(compressedFile);			

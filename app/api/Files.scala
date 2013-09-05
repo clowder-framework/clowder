@@ -216,7 +216,7 @@ object Files extends Controller with SecuredController with ApiController {
 	          case Some(f) => {
 	            var fileType = f.contentType
 			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
@@ -266,7 +266,7 @@ object Files extends Controller with SecuredController with ApiController {
             case Some(f) => {
               var fileType = f.contentType
 					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
+						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
 						  if(fileType.startsWith("ERROR: ")){
 								Logger.error(fileType.substring(7))
 								InternalServerError(fileType.substring(7))
@@ -338,7 +338,7 @@ object Files extends Controller with SecuredController with ApiController {
 	          case Some(f) => {
 	             var fileType = f.contentType
 			     if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
