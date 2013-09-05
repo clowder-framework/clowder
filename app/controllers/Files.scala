@@ -155,50 +155,6 @@ object Files extends Controller with SecuredController {
    */
   def upload() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
-<<<<<<< HEAD
-      request.body.file("File").map { f =>        
-        Logger.debug("Uploading file " + f.filename)
-        
-        // store file       
-        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-        val uploadedFile = f
-//        Thread.sleep(1000)
-        file match {
-          case Some(f) => {
-             var fileType = f.contentType
-			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
-			          if(fileType.startsWith("ERROR: ")){
-			             Logger.error(fileType.substring(7))
-			             InternalServerError(fileType.substring(7))
-			          }			          
-			        }
-            
-            // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-            val id = f.id.toString
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
-            current.plugin[ElasticsearchPlugin].foreach{
-              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
-            }
-           
-             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-             //current.plugin[VersusPlugin].foreach{_.build()}
-              
-                        
-            // redirect to file page]
-            Redirect(routes.Files.file(f.id.toString))  
-         }
-         case None => {
-           Logger.error("Could not retrieve file that was just saved.")
-           InternalServerError("Error uploading file")
-         }
-        }
-      }.getOrElse {
-         BadRequest("File not attached.")
-=======
     user match {
       case Some(identity) => {
 	      request.body.file("File").map { f =>        
@@ -212,7 +168,7 @@ object Files extends Controller with SecuredController {
 	          case Some(f) => {
 	             var fileType = f.contentType
 				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file)			          
+				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename)			          
 				          if(fileType.startsWith("ERROR: ")){
 				             Logger.error(fileType.substring(7))
 				             InternalServerError(fileType.substring(7))
@@ -224,7 +180,7 @@ object Files extends Controller with SecuredController {
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
 	            val id = f.id.toString
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, ""))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
 	            current.plugin[ElasticsearchPlugin].foreach{
 	              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 	            }
@@ -243,10 +199,9 @@ object Files extends Controller with SecuredController {
 	        }
 	      }.getOrElse {
 	         BadRequest("File not attached.")
+	
 	      }
->>>>>>> refs/heads/master
       }
-      
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
     }
   }
