@@ -174,7 +174,6 @@ object Files extends Controller with SecuredController with ApiController {
   /**
    * Add metadata to file.
    */
-  ////////////////////////////////////////////////////////////
   def addMetadata(id: String) =  
    SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.DownloadFiles)) { request =>
       Logger.debug("Adding metadata to file " + id)
@@ -200,8 +199,6 @@ object Files extends Controller with SecuredController with ApiController {
 	 Logger.debug("Updating previews.files " + id + " with " + doc)
 	 Ok(toJson("success"))
     }
-  
-  /////////////////////////////////////////////////////////////
   
   
   /**

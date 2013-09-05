@@ -101,20 +101,16 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
        }         
   }
   
-  def updateAnnotation(preview_id: String, annotation_id: String, description: String){
-      
+  def updateAnnotation(preview_id: String, annotation_id: String, description: String){      
     dao.findOneById(new ObjectId(preview_id)) match{  
     	   case Some(preview) => {
-    	      var newAnnotations = List.empty[ThreeDAnnotation]
+    	      //var newAnnotations = List.empty[ThreeDAnnotation]
     	      for(annotation <- preview.annotations){
-    	    	  if(annotation.id.toString().equals(annotation_id)){
-    	    	    var newAnnotation = ThreeDAnnotation(annotation.x_coord, annotation.y_coord, annotation.z_coord, description)
-    	    	    newAnnotations = newAnnotation :: newAnnotations
+    	    	  if(annotation.id.toString().equals(annotation_id)){	
+    	    	    update(MongoDBObject("_id" -> new ObjectId(preview_id), "annotations._id" -> annotation.id) , $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
+    	    	    return
     	    	  }
-    	    	  else
-    	    	    newAnnotations = annotation :: newAnnotations
-    	      }
-    	      dao.update(MongoDBObject("_id" -> new ObjectId(preview_id)), MongoDBObject("$set" -> (MongoDBObject("annotations" -> MongoDBList(newAnnotations.map(annot=>ThreeDAnnotation.toDBObject(annot)): _*)))), false, false, WriteConcern.Safe)
+    	      }	          	      
     	      return
     	   }
     	   case None => return
