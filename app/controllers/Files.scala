@@ -439,9 +439,8 @@ object Files extends Controller with SecuredController {
 					  }
 					  
 					  // add file to dataset
-					  val dt = dataset.copy(files = dataset.files ++ List(f))
 					  // TODO create a service instead of calling salat directly
-					  Dataset.save(dt)
+					  Dataset.addFile(dataset.id.toString, f)
 					  
 					// TODO RK need to replace unknown with the server name and dataset type
  			    	val dtkey = "unknown." + "dataset."+ "unknown"
