@@ -27,6 +27,7 @@ object Admin extends Controller with ApiController {
       current.plugin[MongoSalatPlugin].map { mongo =>
 	      mongo.sources.values.map { source =>
 	        Logger.debug("**DANGER** Deleting data collections **DANGER**")
+	        source.collection("collections").drop()
 	        source.collection("datasets").drop()
 	        source.collection("previews.chunks").drop()
 	        source.collection("previews.files").drop()
