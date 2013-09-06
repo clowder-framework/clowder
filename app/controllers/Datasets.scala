@@ -137,14 +137,14 @@ object Datasets extends Controller with SecuredController {
         
         val datasetWithFiles = dataset.copy(files = files)
         val previewers = Previewers.searchFileSystem
-        val previewslist = for(f <- datasetWithFiles.files) yield {
-          val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
+        val previewslist = for(f <- datasetWithFiles.files) yield {          
+          val pvf = for(p <- previewers ; pv <- f.previews; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-          }        
+          }         
           if (pvf.length > 0) {
             (f -> pvf)
           } else {
-  	        val ff = for(p <- previewers ; if (p.contentType.contains(f.contentType))) yield {
+  	        val ff = for(p <- previewers ; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(f.contentType))) yield {
   	          (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id.toString).toString, f.contentType, f.length)
   	        }
   	        (f -> ff)
@@ -205,13 +205,20 @@ object Datasets extends Controller with SecuredController {
 		        
 		        // store file
 		        Logger.info("Adding file" + identity)
-			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
+		        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity, showPreviews)
 			    Logger.debug("Uploaded file id is " + file.get.id)
 			    Logger.debug("Uploaded file type is " + f.contentType)
 			    
 			    val uploadedFile = f
 			    file match {
-			      case Some(f) => {			        
+			      case Some(f) => {
+			        val id = f.id.toString
+	                var flags = ""	                
+	                if(showPreviews.equals("FileLevel"))
+	                	flags = "+filelevelshowpreviews"
+	                else if(showPreviews.equals("None"))
+	                	flags = "+nopreviews"
 			        var fileType = f.contentType
 			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
@@ -226,12 +233,11 @@ object Datasets extends Controller with SecuredController {
 			    	
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
-	                val id = f.id.toString
       
 	                //If uploaded file contains zipped files to be unzipped and added to the dataset, wait until the dataset is saved before sending extractor messages to unzip
 	                //and return the files
 	                if(!fileType.equals("multi/files-zipped")){
-				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
+				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 			        }
 			        
@@ -241,7 +247,7 @@ object Datasets extends Controller with SecuredController {
 		            Dataset.save(dt)
 		            
 		            if(fileType.equals("multi/files-zipped")){
-				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, ""))}
+				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, flags))}
 				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 			        }
 		            

@@ -19,7 +19,7 @@ abstract class FileService {
   /**
    * Save a file from an input stream.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity): Option[File]
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File]
   
   /**
    * Get the input stream of a file given a file id.

@@ -269,7 +269,7 @@ object Datasets extends Controller with SecuredController with ApiController {
         
         val datasetWithFiles = dataset.copy(files = files)
         val previewers = Previewers.searchFileSystem
-        val previewslist = for(f <- datasetWithFiles.files) yield {
+        val previewslist = for(f <- datasetWithFiles.files; if(f.showPreviews.equals("DatasetLevel"))) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }        

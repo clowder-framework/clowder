@@ -312,5 +312,16 @@ button.tech_md_ {
 	padding-top: 50px; 
 }
 
+#checkboxFieldSet .control-group .control-label{
+	position:relative;
+	left:140px;
+}
+
+#datasetRadioFieldSet .control-group .controls span label{
+	position:relative;
+	top:-17px;
+	left:20px;
+}
+
 
 

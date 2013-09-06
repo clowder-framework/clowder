@@ -20,13 +20,20 @@
         </div>
     }
     
-	  @form(action = routes.Datasets.submit, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {	 
+	  @form(action = routes.Datasets.submit(), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {	 
 	    <fieldset>
 	      @inputText(myForm("name"), '_label -> "Name")
 	      @textarea(myForm("description"), '_label -> "Description")
 	    </fieldset>
 	    <fieldset>
 	      @inputFile(myForm("file"), '_label -> "File")
+	    </fieldset>
+	    <fieldset id="datasetRadioFieldSet">
+	      @inputRadioGroup(
+	          myForm("datasetLevel").copy(value=myForm("datasetLevel").value.orElse(Some("DatasetLevel")) ),
+	          options = options("DatasetLevel"->"Everywhere","FileLevel"->"On file page","None"->"Nowhere"),
+	          '_label -> "Show file preview(s)",
+	          '_error -> myForm("datasetLevel").error.map(_.withMessage("Select where the preview will be viewable.")))
 	    </fieldset>
         <div class="form-actions">
           <input type="submit" class="btn" value="Upload"/>
