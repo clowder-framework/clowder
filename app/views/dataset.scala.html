@@ -281,11 +281,6 @@
 							$("#beingProcessed").css('display','none');
 	     			});				 
 				  request.fail(function (jqXHR, textStatus, errorThrown){
-	        		console.error(
-	            		"The following error occured: "+
-	            		textStatus, errorThrown		            
-	        			);
-	        		//alert("ERROR: " + errorThrown +". Processing of dataset not checked." );
 	     			});
     			}
     			$(function() {
@@ -375,11 +370,6 @@
 						setTimeout("checkForNewPreviews();", 1000);
 		     		});				 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
-		        		console.error(
-		            		"The following error occured: "+
-		            		textStatus, errorThrown		            
-		        			);
-		        		//alert("ERROR: " + errorThrown +". Did not check for new previews." );
 		        		setTimeout(function(){checkForNewPreviews()}, 1000);
 		     			});
 				}
@@ -409,10 +399,6 @@
     					setTimeout(function(){updateFiles()}, 2000);
 	     			});				 
 				  request.fail(function (jqXHR, textStatus, errorThrown){
-	        		console.error(
-	            		"The following error occured: "+
-	            		textStatus, errorThrown		            
-	        			);
 	        		setTimeout(function(){updateFiles()}, 2000);
 	     			});
     			}
