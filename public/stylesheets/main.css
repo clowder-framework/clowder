@@ -209,6 +209,10 @@ ol.comment-threads {
 	font-size: 85%;
 }
 
+.comment-reply {
+	padding-left: 40px;
+}
+
 .comment-input-box {
 	width: 80%;
 } 

@@ -54,13 +54,14 @@ object Sections extends ApiController {
 	def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments))  { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
-		    request.body.\("comment").asOpt[String] match {
-			    case Some(comment) => {
-			    	SectionDAO.comment(id, new Comment(identity.email.get, new Date(), comment))
-			    	Ok
+		    request.body.\("text").asOpt[String] match {
+			    case Some(text) => {
+			        val comment = new Comment(id, identity, text, section_id=Some(id))
+			        Comment.save(comment)
+			        Ok(comment.id.toString())
 			    }
 			    case None => {
-			    	Logger.error("no tag specified.")
+			    	Logger.error("no text specified.")
 			    	BadRequest
 			    }
 		    }

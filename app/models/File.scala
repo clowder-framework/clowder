@@ -32,7 +32,6 @@ case class File(
     //show: Identity,
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
-    comments: List[Comment] = List.empty,
     tags: List[String] = List.empty,
     metadata: Map[String, Any] = Map.empty
 )

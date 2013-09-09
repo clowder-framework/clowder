@@ -164,8 +164,16 @@ object Datasets extends SecuredController {
         val collectionsOutside = Collection.listOutsideDataset(id).sortBy(_.name)
         val collectionsInside = Collection.listInsideDataset(id).sortBy(_.name)
         
+        var comments = Comment.findCommentsByDatasetId(id)
+        datasetWithFiles.files.map { file =>
+          comments ++= Comment.findCommentsByFileId(file.id.toString())
+          file.sections.map { section =>
+            comments ++= Comment.findCommentsBySectionId(section.id.toString())
+          } 
+        }
+        comments = comments.sortBy(_.posted)
         
-        Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside))
+        Ok(views.html.dataset(datasetWithFiles, comments, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }
@@ -281,70 +289,6 @@ object Datasets extends SecuredController {
       }
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
-  }
-
-  /*
-   * Add comment to a dataset
-   * TODO Move to comment API
-   */
-  def comment(id: String) = SecuredAction(parse.json, authorization=WithPermission(Permission.CreateComments)) { implicit request =>
-    request.user match {
-      case Some(identity) => {
-	    val text = request.body.\("comment").asOpt[String].getOrElse("")
-	    if (text == "") {
-	      BadRequest("error, no comment supplied.")
-	    }
-	    val preview = request.body.\("preview").asOpt[String] match {
-	      case Some(id) => PreviewDAO.findOneById(new ObjectId(id))
-	      case None => None
-	    }
-	    val comment = Comment(identity.id.id, new Date(), text)
-	    request.body.\("fileid").asOpt[String].map { fileid =>
-	      val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
-	      val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
-	      val w = request.body.\("w").asOpt[Double].getOrElse(-1.0)
-	      val h = request.body.\("h").asOpt[Double].getOrElse(-1.0)
-	      if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
-	        FileDAO.comment(fileid, comment)
-	      } else {
-	        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), comments=List(comment), preview=preview);
-	        SectionDAO.save(section)
-	      }    
-	    }.getOrElse {
-	      Dataset.comment(id, comment)      
-	    }
-	    Ok("")
-      }
-      case None => Unauthorized("Not authorized")
-    }
-  }
-
-  def tag(id: String) = SecuredAction(parse.json, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
-    val text = request.body.\("text").asOpt[String].getOrElse("")
-    if (text == "") {
-      BadRequest("error, no tag supplied.")
-    }
-    Logger.debug(request.body.\("preview").toString)
-    val preview = request.body.\("preview").asOpt[String] match {
-      case Some(id) => PreviewDAO.findOneById(new ObjectId(id))
-      case None => None
-    }
-    Logger.debug(preview.toString())
-    request.body.\("fileid").asOpt[String].map { fileid =>
-      val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
-      val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
-      val w = request.body.\("w").asOpt[Double].getOrElse(-1.0)
-      val h = request.body.\("h").asOpt[Double].getOrElse(-1.0)
-      if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
-        FileDAO.tag(fileid, text)
-      } else {
-        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), tags=List(text), preview=preview);
-        SectionDAO.save(section)
-      }    
-    }.getOrElse {
-      Dataset.tag(id, text)      
-    }
-    Ok("")
   }
   
   def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>

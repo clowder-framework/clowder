@@ -42,17 +42,18 @@ object Application extends SecuredController {
         routes.javascript.Admin.test,
         routes.javascript.Admin.secureTest,
         routes.javascript.Admin.reindexFiles,
-        routes.javascript.Tags.tag,
         routes.javascript.Tags.search,
-        routes.javascript.Files.comment,
-        routes.javascript.Datasets.comment,
-        routes.javascript.Datasets.tag,
         
+        api.routes.javascript.Comments.comment,
+        api.routes.javascript.Datasets.comment,
+        api.routes.javascript.Datasets.tag,
+        api.routes.javascript.Files.comment,
+        api.routes.javascript.Files.tag,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
-        api.routes.javascript.Sections.tag,
-        api.routes.javascript.Sections.comment
+        api.routes.javascript.Sections.comment,
+        api.routes.javascript.Sections.tag
       )
     ).as(JSON) 
   }

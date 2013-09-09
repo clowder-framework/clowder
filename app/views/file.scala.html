@@ -1,4 +1,4 @@
-@(file: models.File, id: String, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean)(implicit user: Option[securesocial.core.Identity])
+@(file: models.File, id: String, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean)(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
@@ -391,11 +391,12 @@
 						data-parent="#accordion1" href="#collapseOne">Comments</a>
 				</div>
 				<div id="collapseOne" class="accordion-body in collapse">
-					@comment(List.empty, "post", api.routes.Files.comment(file.id.toString).toString)
-					@comment(file.comments, file.id.toString)
-					@sections.map { s =>
-						@comment(s.comments, s.id.toString)
-					}
+			      	@if(user.isDefined) {
+			      		@commentform(file.id.toString, api.routes.Files.comment(file.id.toString).toString)
+			      	}
+			 		<ol class="comment-threads unstyled" id="reply_@file.id.toString">
+				    	@comment(comments)
+				    </ol>
 				</div>
 			</div>
 		</div>

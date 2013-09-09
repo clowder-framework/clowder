@@ -17,23 +17,7 @@ import api.Permission
  * @author Luigi Marini
  */
 object Tags extends SecuredController {
-  
-  def tag() = SecuredAction() { implicit request =>
-    Logger.debug("Tagging " + request.body)
-    
-    request.body.asJson.map {json =>
-      (json \ "id").asOpt[String].map { id =>
-        (json \ "tag").asOpt[String].map { tag =>
-          Logger.debug("Tagging " + id + " with " + tag)
-          Dataset.tag(id, tag)
-        }
-      }
-      Ok(toJson(""))
-    }.getOrElse {
-      BadRequest(toJson("error"))
-    }
-  }
-  
+   
   def search(tag: String) = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     val datasets = Dataset.findByTag(tag)
     val files = FileDAO.findByTag(tag)

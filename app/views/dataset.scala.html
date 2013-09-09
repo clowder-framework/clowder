@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
 
 
 @import helper._
@@ -415,14 +415,12 @@
 		  </ul>
 		  <div class="tab-content">
 		    <div class="tab-pane active" id="tab1">
-		      @comment(List.empty, "post", api.routes.Datasets.comment(dataset.id.toString).toString)
-		      @comment(dataset.comments, "dataset")
-			  @dataset.files.map { file =>
-			      @comment(file.comments, file.id.toString)
-			      @file.sections.map { section =>
-			      	  @comment(section.comments, section.id.toString)
-			      }
+		      @if(user.isDefined) {
+		      	  @commentform(dataset.id.toString, api.routes.Datasets.comment(dataset.id.toString).toString)
 		      }
+	 		  <ol class="comment-threads unstyled" id="reply_@dataset.id.toString">
+		      	 @comment(comments)
+		      </ol>
 		    </div>
 		    <div class="tab-pane" id="tab2">
 		      @metadata(dataset.id.toString, md, usrmd)

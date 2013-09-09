@@ -16,7 +16,6 @@ GET     /users/view/:id                   controllers.Users.view(id)
 GET		/files					          controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
-POST    /files/:id/comment                controllers.Files.comment(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
 #GET     /queries/:id/blob				  controllers.Files.downloadquery(id)	
 #GET     /files/:id/similar                controllers.Files.findSimilar(id)
@@ -33,8 +32,6 @@ GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: Str
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET     /datasets/metadataSearch          controllers.Datasets.metadataSearch
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
-POST	/datasets/:id/comment             controllers.Datasets.comment(id)
-POST	/datasets/:id/tag                 controllers.Datasets.tag(id)
 GET     /datasets_by_section/:id          controllers.Datasets.datasetBySection(id)
 POST    /dataset/submit                   controllers.Datasets.submit
 
@@ -45,7 +42,6 @@ POST	/collection/submit				  controllers.Collections.submit
 GET		/collection/:id					  controllers.Collections.collection(id)	
 
 # Tags
-POST    /tags		                      controllers.Tags.tag
 GET     /tags/search/:tag		          controllers.Tags.search(tag)
 
 # Authentication
@@ -187,3 +183,5 @@ POST    /api/sensors                      api.Sensors.add
 GET     /api/sensors/:id                  api.Sensors.get(id)
 GET     /api/sensors/search               api.Sensors.search
 DELETE  /api/sensors/:id                  api.Sensors.delete(id)
+
+POST	/api/comment/:id					api.Comments.comment(id)

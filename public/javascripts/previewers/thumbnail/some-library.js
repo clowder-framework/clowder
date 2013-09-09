@@ -294,7 +294,7 @@
 						type:        "POST",
 						contentType: "application/json",
 						data:		 JSON.stringify({
-										comment: comment, 
+										text: comment, 
 								  	 }),
 					});
 					request.done(function (response, textStatus, jqXHR){ 

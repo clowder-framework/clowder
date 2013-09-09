@@ -96,8 +96,13 @@ object Files extends Controller with SecuredController {
           case None =>
         }
         
+        var comments = Comment.findCommentsByFileId(id)
+	    sections.map { section =>
+	      comments ++= Comment.findCommentsBySectionId(section.id.toString())
+        }
+        comments = comments.sortBy(_.posted)
         
-        Ok(views.html.file(file, id, previews, sectionsWithPreviews, isActivity))
+        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
@@ -634,20 +639,4 @@ object Files extends Controller with SecuredController {
 //     case _ => { Logger.error("Error uploading file"); error("Some error.", input) }
 //   }
 // }
-  
-  /*
-   * Add comment to a file
-   */
-  def comment(id: String) = SecuredAction(parse.text, authorization=WithPermission(Permission.CreateComments))  { implicit request =>
-  	request.user match {
-  	  case Some(identity) => {
-		Logger.debug("Commenting " + id + " with " + text)
-		val comment = Comment(identity.id.id, new Date(), request.body)
-	  	FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)),
-	  	    $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
-	    Ok(toJson(""))
-  	  }
-  	  case None => Unauthorized("Not authorized")
-  	}
-  }
 }
