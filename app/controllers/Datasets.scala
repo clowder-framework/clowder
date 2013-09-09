@@ -240,12 +240,13 @@ object Datasets extends SecuredController {
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 	                val id = f.id.toString
-      
-	                //If uploaded file contains zipped files to be unzipped and added to the dataset, wait until the dataset is saved before sending extractor messages to unzip
+ 	                //If uploaded file contains zipped files to be unzipped and added to the dataset, wait until the dataset is saved before sending extractor messages to unzip
 	                //and return the files
 	                if(!fileType.equals("multi/files-zipped")){
 				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
-				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
+				       // current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
+			         
+			        
 			        }
 			        
 			        // add file to dataset 
@@ -255,12 +256,19 @@ object Datasets extends SecuredController {
 		            
 		            if(fileType.equals("multi/files-zipped")){
 				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, ""))}
-				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
+				      //  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
+				         //index the file
+		             //  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+				        
 			        }
 		            
+		            //index the file
+		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
 		            // index dataset
-		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id, 
+		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
 		                List(("name",dt.name), ("description", dt.description)))}
+		            
+		            
            
 		            
 			    	// TODO RK need to replace unknown with the server name and dataset type		            
