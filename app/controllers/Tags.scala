@@ -8,15 +8,17 @@ import models.Dataset
 import play.api.mvc.Action
 import models.File
 import models.FileDAO
+import api.WithPermission
+import api.Permission
 
 /**
  * Tagging.
  * 
  * @author Luigi Marini
  */
-object Tags extends Controller with SecureSocial {
+object Tags extends SecuredController {
   
-  def tag() = SecuredAction(ajaxCall = true) { implicit request =>
+  def tag() = SecuredAction() { implicit request =>
     Logger.debug("Tagging " + request.body)
     
     request.body.asJson.map {json =>
@@ -32,7 +34,7 @@ object Tags extends Controller with SecureSocial {
     }
   }
   
-  def search(tag: String) = Action {
+  def search(tag: String) = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     val datasets = Dataset.findByTag(tag)
     val files = FileDAO.findByTag(tag)
 //    Logger.debug("Search by tag " + tag + " returned " + datasets.length)

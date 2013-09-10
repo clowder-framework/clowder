@@ -7,14 +7,12 @@ import java.io.FileInputStream
 import play.api.libs.json.Json._
 import play.api.Logger
 
-object ThreeDTexture extends Controller {
+object ThreeDTexture extends Controller with ApiController {
   
     /**
    * Upload a 3D texture file.
    */  
-  def uploadTexture() = 
-    Authenticated {
-    Action(parse.multipartFormData) { implicit request =>
+  def uploadTexture() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.Add3DTexture)) { request => 
       request.body.file("File").map { f =>        
         Logger.info("Uploading 3D texture file " + f.filename)
         // store file
@@ -23,7 +21,6 @@ object ThreeDTexture extends Controller {
       }.getOrElse {
          BadRequest(toJson("File not attached."))
       }
-    }
   }
 
 }

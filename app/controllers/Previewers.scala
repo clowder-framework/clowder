@@ -4,15 +4,12 @@
 package controllers
 
 import java.util.regex.Pattern
-
 import scala.Array.canBuildFrom
 import scala.collection.JavaConversions
 import scala.io.Source
-
 import org.reflections.Reflections
 import org.reflections.scanners.ResourcesScanner
 import org.reflections.util.ConfigurationBuilder
-
 import models.Previewer
 import play.api.Logger
 import play.api.Play
@@ -21,6 +18,8 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.Controller
 import securesocial.core.SecureSocial
+import api.WithPermission
+import api.Permission
 
 /**
  * Previewers.
@@ -29,12 +28,12 @@ import securesocial.core.SecureSocial
  * @author Rob Kooper
  *
  */
-object Previewers extends Controller with SecureSocial {
-  def list = Action {
-    Ok(views.html.previewers(searchFileSystem))
+object Previewers extends Controller with SecuredController {
+  def list = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+    Ok(views.html.previewers(findPreviewers))
   }
 
-  def searchFileSystem(): Array[Previewer] = {
+  def findPreviewers(): Array[Previewer] = {
     val configuration = ConfigurationBuilder.build("public", new ResourcesScanner())
     val reflections = new Reflections(configuration)
     val previewers = JavaConversions.asScalaSet(reflections.getResources(Pattern.compile("package.json")))

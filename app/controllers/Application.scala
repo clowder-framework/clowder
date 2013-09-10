@@ -4,13 +4,15 @@ import play.api.Routes
 import play.api.mvc.Action
 import play.api.mvc.Controller
 import api.Sections
+import api.WithPermission
+import api.Permission
 
 /**
  * Main application controller.
  * 
  * @author Luigi Marini
  */
-object Application extends Controller with securesocial.core.SecureSocial {
+object Application extends SecuredController {
   
   /**
    * Main page.
@@ -18,7 +20,7 @@ object Application extends Controller with securesocial.core.SecureSocial {
 //  def index = Action { implicit request =>
 //    Ok(views.html.index())
 //  }
-  def index = UserAwareAction { implicit request =>
+  def index = SecuredAction() { request =>
   	implicit val user = request.user
     Ok(views.html.index())
   }
@@ -26,7 +28,7 @@ object Application extends Controller with securesocial.core.SecureSocial {
   /**
    * Testing action.
    */
-  def testJson = Action {
+  def testJson = SecuredAction()  { implicit request =>
     Ok("{test:1}").as(JSON)
   }
   
@@ -34,7 +36,7 @@ object Application extends Controller with securesocial.core.SecureSocial {
   /**
    *  Javascript routing.
    */
-  def javascriptRoutes = Action { implicit request =>
+  def javascriptRoutes = SecuredAction() { implicit request =>
     Ok(
       Routes.javascriptRouter("jsRoutes")(
         routes.javascript.Admin.test,

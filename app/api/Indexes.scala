@@ -26,13 +26,12 @@ import services.ExtractorMessage
  * @author Luigi Marini
  *
  */
-object Indexes extends Controller {
+object Indexes extends Controller with ApiController {
 
   /**
    * Submit section, preview, file for indexing.
    */
-  def index() = Authenticated {
-    Action(parse.json) { request =>
+  def index() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
 //      Logger.debug("Add feature to multimedia index " + request.body)
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
@@ -55,14 +54,12 @@ object Indexes extends Controller {
       }.getOrElse {
         BadRequest(toJson("Missing parameter [section_id]"))
       }
-    }
   }
   
   /**
    * Add feature to index.
    */
-  def features() = Authenticated {
-    Action(parse.json) { request =>
+  def features() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
         MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"->new ObjectId(section_id))) match {
           case Some(mFeatures) => {
@@ -101,6 +98,5 @@ object Indexes extends Controller {
       }.getOrElse {
         BadRequest(toJson("Missing parameter [section_id]"))
       }
-    }
   }
 }

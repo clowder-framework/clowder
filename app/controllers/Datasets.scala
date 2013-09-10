@@ -28,6 +28,8 @@ import play.api.mvc.Flash
 import scala.collection.immutable.Nil
 import models._
 import fileutils.FilesUtils
+import api.WithPermission
+import api.Permission
 
 /**
  * A dataset is a collection of files and streams.
@@ -38,7 +40,7 @@ import fileutils.FilesUtils
 
 object ActivityFound extends Exception { }
 
-object Datasets extends Controller with SecuredController {
+object Datasets extends SecuredController {
 
    
   /**
@@ -53,7 +55,7 @@ object Datasets extends Controller with SecuredController {
     ((dataset: Dataset) => Some((dataset.name, dataset.description)))
    )
    
-  def newDataset()  = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+  def newDataset()  = SecuredAction(authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.newDataset(datasetForm)).flashing("error"->"Please select a file") 
   }
@@ -61,7 +63,7 @@ object Datasets extends Controller with SecuredController {
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ListDatasets)) { implicit request =>
+  def list(when: String, date: String, limit: Int) = SecuredAction(authorization=WithPermission(Permission.ListDatasets)) { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -103,9 +105,9 @@ object Datasets extends Controller with SecuredController {
   /**
    * Dataset.
    */
-  def dataset(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
+  def dataset(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
     implicit val user = request.user    
-    Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
+    Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
       case Some(dataset) => {
         val files = dataset.files map { f =>{
@@ -136,7 +138,7 @@ object Datasets extends Controller with SecuredController {
         
         
         val datasetWithFiles = dataset.copy(files = files)
-        val previewers = Previewers.searchFileSystem
+        val previewers = Previewers.findPreviewers
         val previewslist = for(f <- datasetWithFiles.files) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
@@ -172,7 +174,7 @@ object Datasets extends Controller with SecuredController {
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: String) = Action {
+  def datasetBySection(section_id: String) = SecuredAction(authorization=WithPermission(Permission.ShowDataset)) { request =>
     SectionDAO.findOneById(new ObjectId(section_id)) match {
       case Some(section) => {
         Dataset.findOneByFileId(section.file_id) match {
@@ -184,15 +186,18 @@ object Datasets extends Controller with SecuredController {
     }
   }
   
+  /**
+   * TODO where is this used?
   def upload = Action(parse.temporaryFile) { request =>
     request.body.moveTo(new File("/tmp/picture"))
     Ok("File uploaded")
   }
-  
+   */
+
   /**
    * Upload file.
    */
-  def submit() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
     user match {
@@ -282,7 +287,7 @@ object Datasets extends Controller with SecuredController {
    * Add comment to a dataset
    * TODO Move to comment API
    */
-  def comment(id: String) = SecuredAction(parse.json, ajaxCall=true, allowKey=false, authorization=WithPermission(Permission.CreateComments)) { implicit request =>
+  def comment(id: String) = SecuredAction(parse.json, authorization=WithPermission(Permission.CreateComments)) { implicit request =>
     request.user match {
       case Some(identity) => {
 	    val text = request.body.\("comment").asOpt[String].getOrElse("")
@@ -314,7 +319,7 @@ object Datasets extends Controller with SecuredController {
     }
   }
 
-  def tag(id: String) = SecuredAction(parse.json, ajaxCall=true, allowKey=false, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
+  def tag(id: String) = SecuredAction(parse.json, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
     val text = request.body.\("text").asOpt[String].getOrElse("")
     if (text == "") {
       BadRequest("error, no tag supplied.")
@@ -342,7 +347,7 @@ object Datasets extends Controller with SecuredController {
     Ok("")
   }
   
-  def metadataSearch()  = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.metadataSearch()) 
   }

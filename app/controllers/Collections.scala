@@ -17,8 +17,10 @@ import com.mongodb.casbah.commons.MongoDBObject
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
+import api.WithPermission
+import api.Permission
 
-object Collections  extends Controller with SecuredController {
+object Collections extends SecuredController {
 
   /**
    * New dataset form.
@@ -32,7 +34,7 @@ object Collections  extends Controller with SecuredController {
     ((collection: Collection) => Some((collection.name, collection.description)))
    )
    
-   def newCollection()  = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateCollections)) { implicit request =>
+   def newCollection()  = SecuredAction(authorization=WithPermission(Permission.CreateCollections)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.newCollection(collectionForm))
   }
@@ -40,7 +42,7 @@ object Collections  extends Controller with SecuredController {
   /**
    * List collections.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ListCollections)) { implicit request =>
+  def list(when: String, date: String, limit: Int) = SecuredAction(authorization=WithPermission(Permission.ListCollections)) { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -84,7 +86,7 @@ object Collections  extends Controller with SecuredController {
    /**
    * Create collection.
    */
-  def submit() = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateCollections)) { implicit request =>
+  def submit() = SecuredAction(authorization=WithPermission(Permission.CreateCollections)) { implicit request =>
     implicit val user = request.user
     
         collectionForm.bindFromRequest.fold(
@@ -108,7 +110,7 @@ object Collections  extends Controller with SecuredController {
    /**
    * Collection.
    */
-  def collection(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowCollection)) { implicit request =>
+  def collection(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowCollection)) { implicit request =>
     
   	implicit val user = request.user
   	Services.collections.get(id)  match {

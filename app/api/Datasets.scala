@@ -28,9 +28,9 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.Routes
 import controllers.SecuredController
-import controllers.Permission
 import models.Collection
 import org.bson.types.ObjectId
+import securesocial.views.html.notAuthorized
 
 
 /**
@@ -42,12 +42,12 @@ import org.bson.types.ObjectId
 object ActivityFound extends Exception { }
 
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
-object Datasets extends Controller with SecuredController with ApiController {
+object Datasets extends ApiController {
 
   /**
    * List all datasets.
    */
-  def list = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ListDatasets)) { request =>    
+  def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListDatasets)) { request =>    
       val list = for (dataset <- Services.datasets.listDatasets()) yield jsonDataset(dataset)
       Ok(toJson(list))
   }
@@ -55,7 +55,7 @@ object Datasets extends Controller with SecuredController with ApiController {
     /**
    * List all datasets outside a collection.
    */
-  def listOutsideCollection(collectionId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ListDatasets)) { request =>
+  def listOutsideCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListDatasets)) { request =>
       Collection.findOneById(new ObjectId(collectionId)) match{
         case Some(collection) => {
           val list = for (dataset <- Services.datasets.listDatasetsChronoReverse; if(!isInCollection(dataset,collection))) yield jsonDataset(dataset)
@@ -79,7 +79,7 @@ object Datasets extends Controller with SecuredController with ApiController {
   /**
    * Create new dataset
    */
-    def createDataset() = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateDatasets)) { request =>
+    def createDataset() = SecuredAction(authorization=WithPermission(Permission.CreateDatasets)) { request =>
       Logger.debug("Creating new dataset")
       (request.body \ "name").asOpt[String].map { name =>
       	  (request.body \ "description").asOpt[String].map { description =>
@@ -115,13 +115,13 @@ object Datasets extends Controller with SecuredController with ApiController {
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
-  def addMetadata(id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
+  def addMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding metadata to dataset " + id)
       Dataset.addMetadata(id, Json.stringify(request.body))
       Ok(toJson(Map("status" -> "success")))
   }
 
-  def addUserMetadata(id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
+  def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding user metadata to dataset " + id)
       Dataset.addUserMetadata(id, Json.stringify(request.body))
       Ok(toJson(Map("status" -> "success")))
@@ -144,7 +144,7 @@ object Datasets extends Controller with SecuredController with ApiController {
       }
     }
 
-  def datasetFilesList(id: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowDataset)) { request =>
+  def datasetFilesList(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDataset)) { request =>
       Services.datasets.get(id) match {
         case Some(dataset) => {
           val list = for (f <- dataset.files) yield jsonFile(f)
@@ -158,7 +158,7 @@ object Datasets extends Controller with SecuredController with ApiController {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
 
-  def tag(id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
+  def tag(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateTags)) { implicit request =>
     request.body.\("tag").asOpt[String] match {
       case Some(tag) => {
         Dataset.tag(id, tag)
@@ -171,24 +171,28 @@ object Datasets extends Controller with SecuredController with ApiController {
     }
   }
 
-  def comment(id: String) = SecuredAction(parse.json, allowKey = true) { implicit request =>
-    request.body.\("comment").asOpt[String] match {
-      case Some(comment) => {
-        Dataset.comment(id, new Comment(request.user.email.get, new Date(), comment))
-        Ok
+  def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments)) { implicit request =>
+    request.user match {
+      case Some(identity) => {
+	    request.body.\("comment").asOpt[String] match {
+	      case Some(comment) => {
+	        Dataset.comment(id, new Comment(identity.email.get, new Date(), comment))
+	        Ok
+	      }
+	      case None => {
+	        Logger.error("no tag specified.")
+	        BadRequest
+	      }
+	    }
       }
-      case None => {
-        Logger.error("no tag specified.")
-        BadRequest
-      }
+      case None => BadRequest
     }
   }
 
   /**
    * List datasets satisfying a user metadata search tree.
    */
-  def searchDatasetsUserMetadata =
-    SecuredAction(parse.json, allowKey = true, authorization=WithPermission(Permission.SearchDatasets)) { request =>
+  def searchDatasetsUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
       Logger.debug("Searching datasets' user metadata for search tree.")
       var searchTree = JsonUtil.parseJSON(Json.stringify(request.body)).asInstanceOf[java.util.LinkedHashMap[String, Any]]
       var datasetsSatisfying = List[Dataset]()
@@ -209,7 +213,7 @@ object Datasets extends Controller with SecuredController with ApiController {
   /**
    * Return whether a dataset is currently being processed.
    */
-  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowDataset)) { request =>
+  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDataset)) { request =>
   	Services.datasets.get(id)  match {
   	  case Some(dataset) => {
   	    val files = dataset.files map { f =>
@@ -260,7 +264,7 @@ object Datasets extends Controller with SecuredController with ApiController {
     else    
     	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString , "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))  
   }  
-  def getPreviews(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowDataset)) { request =>
+  def getPreviews(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDataset)) { request =>
     Services.datasets.get(id)  match {
       case Some(dataset) => {
         val files = dataset.files map { f =>
@@ -268,7 +272,7 @@ object Datasets extends Controller with SecuredController with ApiController {
         }
         
         val datasetWithFiles = dataset.copy(files = files)
-        val previewers = Previewers.searchFileSystem
+        val previewers = Previewers.findPreviewers
         val previewslist = for(f <- datasetWithFiles.files) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)

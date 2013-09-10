@@ -7,14 +7,12 @@ import java.io.FileInputStream
 import play.api.libs.json.Json._
 import play.api.Logger
 
-object Geometry extends Controller {
+object Geometry extends Controller with ApiController {
 
     /**
    * Upload a 3D binary geometry file.
    */  
-  def uploadGeometry() = 
-    Authenticated {
-    Action(parse.multipartFormData) { implicit request =>
+  def uploadGeometry() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateCollections)) { request =>
       request.body.file("File").map { f =>        
         Logger.info("Uploading binary geometry file " + f.filename)
         // store file
@@ -23,6 +21,5 @@ object Geometry extends Controller {
       }.getOrElse {
          BadRequest(toJson("File not attached."))
       }
-    }
   }
 }

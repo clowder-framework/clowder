@@ -31,6 +31,8 @@ import play.api.libs.json.Json._
 import play.api.libs.ws.WS
 import fileutils.FilesUtils
 import models.Extraction
+import api.WithPermission
+import api.Permission
 
 /**
  * Manage files.
@@ -51,13 +53,13 @@ object Files extends Controller with SecuredController {
   /**
     * File info.
     */
-  def file(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+  def file(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>
     implicit val user = request.user
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
         val previewsFromDB = PreviewDAO.findByFileId(file.id)        
-        val previewers = Previewers.searchFileSystem
+        val previewers = Previewers.findPreviewers
         //Logger.info("Number of previews " + previews.length);
         val files = List(file)        
          val previewslist = for(f <- files) yield {
@@ -104,7 +106,7 @@ object Files extends Controller with SecuredController {
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ListFiles)) { implicit request =>
+  def list(when: String, date: String, limit: Int) = SecuredAction(authorization=WithPermission(Permission.ListFiles)) { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -145,7 +147,7 @@ object Files extends Controller with SecuredController {
   /**
    * Upload file page.
    */
-  def uploadFile = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploadFile = SecuredAction(authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
@@ -153,7 +155,7 @@ object Files extends Controller with SecuredController {
   /**
    * Upload file.
    */
-  def upload() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def upload() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(identity) => {
@@ -209,7 +211,7 @@ object Files extends Controller with SecuredController {
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.DownloadFiles)) { request =>
+  def download(id: String) = SecuredAction(authorization=WithPermission(Permission.DownloadFiles)) { request =>
     Services.files.get(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
     	  request.headers.get(RANGE) match {
@@ -256,7 +258,7 @@ object Files extends Controller with SecuredController {
   
   
   
-  def uploadSelect() = Action(parse.multipartFormData) { implicit request =>
+  def uploadSelect() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         
@@ -304,7 +306,7 @@ object Files extends Controller with SecuredController {
   
   /*Upload query to temporary folder*/
   
-  def uploadSelectQuery() = Action(parse.multipartFormData) { implicit request =>
+  def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         
@@ -355,7 +357,7 @@ object Files extends Controller with SecuredController {
   
  
   /* Drag and drop */
-   def uploadDragDrop() = Action(parse.multipartFormData) { implicit request =>
+   def uploadDragDrop() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         
@@ -405,7 +407,7 @@ object Files extends Controller with SecuredController {
   
   
 
-  def uploaddnd(dataset_id: String) = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploaddnd(dataset_id: String) = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     request.user match {
       case Some(identity) => {
       	Services.datasets.get(dataset_id)  match {
@@ -481,90 +483,90 @@ object Files extends Controller with SecuredController {
   // EXPERIMENTAL. WORK IN PROGRESS.
   //
   ///////////////////////////////////
-  
-  /**
-   * Stream based uploading of files.
-   */
-  def uploadFileStreaming() = Action(parse.multipartFormData(myPartHandler)) {
-      request => Ok("Done")
-  }
-
-  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {
-        parse.Multipart.handleFilePart {
-          case parse.Multipart.FileInfo(partName, filename, contentType) =>
-            Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
-            // TODO RK handle exception for instance if we switch to other DB
-        Logger.info("myPartHandler")
-			val files = current.plugin[MongoSalatPlugin] match {
-			  case None    => throw new RuntimeException("No MongoSalatPlugin");
-			  case Some(x) =>  x.gridFS("uploads")
-			}
-            
-            //Set up the PipedOutputStream here, give the input stream to a worker thread
-            val pos:PipedOutputStream = new PipedOutputStream();
-            val pis:PipedInputStream  = new PipedInputStream(pos);
-            val worker = new util.UploadFileWorker(pis, files);
-            worker.contentType = contentType.get;
-            worker.start();
-
-//            val mongoFile = files.createFile(f.ref.file)
-//            val filename = f.ref.file.getName()
-//            Logger.debug("Uploading file " + filename)
-//            mongoFile.filename = filename
-//            mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-//            mongoFile.save
-//            val id = mongoFile.getAs[ObjectId]("_id").get.toString
-//            Ok(views.html.file(mongoFile.asDBObject, id))
-            
-            
-            //Read content to the POS
-            Iteratee.fold[Array[Byte], PipedOutputStream](pos) { (os, data) =>
-              os.write(data)
-              os
-            }.mapDone { os =>
-              os.close()
-              Ok("upload done")
-            }
-        }
-   }
-  
-  /**
-   * Ajax upload. How do we pass in the file name?(parse.temporaryFile)
-   */
-  
-  
-  def uploadAjax = Action(parse.temporaryFile) { request =>
-
-    val f = request.body.file
-    val filename=f.getName()
-    
-    // store file
-    // TODO is this still used? if so replace null with user.
-        Logger.info("uploadAjax")
-    val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None, null)
-    
-    file match {
-      case Some(f) => {
-         var fileType = f.contentType
-        
-        // TODO RK need to replace unknown with the server name
-        val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
-        // TODO RK : need figure out if we can use https
-        val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-        val id = f.id.toString
-        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
-        current.plugin[ElasticsearchPlugin].foreach{
-          _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
-        }
-        // redirect to file page
-        Redirect(routes.Files.file(f.id.toString))  
-      }
-      case None => {
-        Logger.error("Could not retrieve file that was just saved.")
-        InternalServerError("Error uploading file")
-      }
-    }
-  }
+//  
+//  /**
+//   * Stream based uploading of files.
+//   */
+//  def uploadFileStreaming() = Action(parse.multipartFormData(myPartHandler)) {
+//      request => Ok("Done")
+//  }
+//
+//  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {
+//        parse.Multipart.handleFilePart {
+//          case parse.Multipart.FileInfo(partName, filename, contentType) =>
+//            Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
+//            // TODO RK handle exception for instance if we switch to other DB
+//        Logger.info("myPartHandler")
+//			val files = current.plugin[MongoSalatPlugin] match {
+//			  case None    => throw new RuntimeException("No MongoSalatPlugin");
+//			  case Some(x) =>  x.gridFS("uploads")
+//			}
+//            
+//            //Set up the PipedOutputStream here, give the input stream to a worker thread
+//            val pos:PipedOutputStream = new PipedOutputStream();
+//            val pis:PipedInputStream  = new PipedInputStream(pos);
+//            val worker = new util.UploadFileWorker(pis, files);
+//            worker.contentType = contentType.get;
+//            worker.start();
+//
+////            val mongoFile = files.createFile(f.ref.file)
+////            val filename = f.ref.file.getName()
+////            Logger.debug("Uploading file " + filename)
+////            mongoFile.filename = filename
+////            mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+////            mongoFile.save
+////            val id = mongoFile.getAs[ObjectId]("_id").get.toString
+////            Ok(views.html.file(mongoFile.asDBObject, id))
+//            
+//            
+//            //Read content to the POS
+//            Iteratee.fold[Array[Byte], PipedOutputStream](pos) { (os, data) =>
+//              os.write(data)
+//              os
+//            }.mapDone { os =>
+//              os.close()
+//              Ok("upload done")
+//            }
+//        }
+//   }
+//  
+//  /**
+//   * Ajax upload. How do we pass in the file name?(parse.temporaryFile)
+//   */
+//  
+//  
+//  def uploadAjax = Action(parse.temporaryFile) { request =>
+//
+//    val f = request.body.file
+//    val filename=f.getName()
+//    
+//    // store file
+//    // TODO is this still used? if so replace null with user.
+//        Logger.info("uploadAjax")
+//    val file = Services.files.save(new FileInputStream(f.getAbsoluteFile()), filename, None, null)
+//    
+//    file match {
+//      case Some(f) => {
+//         var fileType = f.contentType
+//        
+//        // TODO RK need to replace unknown with the server name
+//        val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
+//        // TODO RK : need figure out if we can use https
+//        val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+//        val id = f.id.toString
+//        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
+//        current.plugin[ElasticsearchPlugin].foreach{
+//          _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+//        }
+//        // redirect to file page
+//        Redirect(routes.Files.file(f.id.toString))  
+//      }
+//      case None => {
+//        Logger.error("Could not retrieve file that was just saved.")
+//        InternalServerError("Error uploading file")
+//      }
+//    }
+//  }
   
   /**
    * Reactive file upload.
@@ -636,7 +638,7 @@ object Files extends Controller with SecuredController {
   /*
    * Add comment to a file
    */
-  def comment(id: String) = SecuredAction(parse.text, ajaxCall=true, allowKey=false, authorization=WithPermission(Permission.CreateComments))  { implicit request =>
+  def comment(id: String) = SecuredAction(parse.text, authorization=WithPermission(Permission.CreateComments))  { implicit request =>
   	request.user match {
   	  case Some(identity) => {
 		Logger.debug("Commenting " + id + " with " + text)

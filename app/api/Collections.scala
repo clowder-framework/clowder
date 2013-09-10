@@ -2,7 +2,6 @@ package api
 
 import controllers.SecuredController
 import play.api.mvc.Controller
-import controllers.Permission
 import models.Collection
 import play.api.Logger
 import services.Services
@@ -12,9 +11,9 @@ import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 import models.Dataset
 
-object Collections extends Controller with SecuredController with ApiController {
+object Collections extends ApiController {
 
-  def attachDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.CreateCollections)) { request =>
+  def attachDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateCollections)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
         Services.datasets.get(datasetId) match {
@@ -45,7 +44,7 @@ object Collections extends Controller with SecuredController with ApiController 
     }    
   }
   
-  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.CreateCollections)) { request =>
+  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateCollections)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
         Services.datasets.get(datasetId) match {
@@ -89,7 +88,7 @@ object Collections extends Controller with SecuredController with ApiController 
     return false
   }
   
-  def removeCollection(collectionId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.DeleteCollections)) { request =>
+  def removeCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteCollections)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {       
         for(dataset <- collection.datasets){

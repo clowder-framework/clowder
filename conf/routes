@@ -23,7 +23,7 @@ GET		/files/:id/blob			          controllers.Files.download(id)
 POST    /upload					          controllers.Files.upload
 POST   /uploadSelect                      controllers.Files.uploadSelect
 POST   /uploadSelectQuery                 controllers.Files.uploadSelectQuery   
-POST   	/uploadAjax						  controllers.Files.uploadAjax
+#POST   	/uploadAjax						  controllers.Files.uploadAjax
 POST   	/uploaddnd/:id					  controllers.Files.uploaddnd(id)
 #POST  	/reactiveUpload					  controllers.Files.reactiveUpload
 POST    /uploadDragDrop					  controllers.Files.uploadDragDrop

@@ -47,18 +47,20 @@ import scala.concurrent.{ future, blocking, Future, Await }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.ArrayBuffer
 import models.Dataset
+import api.WithPermission
+import api.Permission
 
 /**
  * Text search.
  *
  * @author Luigi Marini
  */
-object Search extends Controller {
+object Search extends SecuredController {
 
   /**
    * Search results.
    */
-  def search(query: String) = Action {
+  def search(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         Logger.debug("Searching for: " + query)
@@ -106,7 +108,7 @@ object Search extends Controller {
 
   }
 
-  def multimediasearch() = Action {
+  def multimediasearch() = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Starting multimedia search interface")
     Ok(views.html.multimediasearch())
     //Ok("Sucessful")
@@ -115,7 +117,7 @@ object Search extends Controller {
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: String) = Action {
+  def searchMultimediaIndex(section_id: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching multimedia index")
     // TODO handle multiple previews found
     val preview = PreviewDAO.findBySectionId(new ObjectId(section_id))(0)
@@ -200,12 +202,12 @@ object Search extends Controller {
     }
   }
 
-  def advanced() = Action {
+  def advanced() = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Starting Advanced Search interface")
     Ok(views.html.advancedsearch())
   }
 
-  def SearchByText(query: String) = Action {
+  def SearchByText(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching for" + query)
 
     //Ok(views.html.searchTextResults(query))
@@ -213,7 +215,7 @@ object Search extends Controller {
   }
 
   //GET the query image from the URL and compare within the database and show the result
-  def searchbyURL(query: String) = Action {
+  def searchbyURL(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching for" + query)
     var slashindex = query.lastIndexOf('/')
 
@@ -236,7 +238,7 @@ object Search extends Controller {
 
   
   /*Find similar Filesin Multiple index*/
-  def findSimilar(id:String)=Action{
+  def findSimilar(id:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
  
    var results =new HashMap[String,Array[(String,String,Double,String)]]
      
@@ -380,7 +382,7 @@ object Search extends Controller {
 
   def Filterby(id: String) = TODO
 
-  def uploadquery() = Action(parse.multipartFormData) { request =>
+  def uploadquery() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     request.body.file("picture").map { picture =>
       import java.io.File
       val filename = picture.filename
