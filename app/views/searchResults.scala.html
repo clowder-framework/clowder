@@ -40,9 +40,14 @@
 		}
 		</div>
 		@if(datasets.size!=0){
-	    <div class="span6">
-	    <div class="row-fluid">
-	    <h3>Datasets</h3>
+
+
+			<div class="row-fluid">
+
+			<div class="span6">
+	    
+	       <h3> Datasets</h3>
+
 	    @for(dataset <- datasets) {
 		  <div class="row-fluid">
 			<div class="span12">
@@ -53,6 +58,13 @@
 					<dd> @dataset.description</dd>
 					<dt> ID:</dt>
 					<dd> @dataset.id</dd>
+
+					<dt> Tags:</dt>
+					<dd> @{var arraytags=new scala.util.parsing.json.JSONArray(dataset.tags); arraytags}</dd>
+					<dt> Comments:</dt>
+					<dd> @{ var arr=new scala.collection.mutable.ListBuffer[String](); for(i<-0 to dataset.comments.length-1){ arr+= dataset.comments(i).text};
+                        var commentJson=new scala.util.parsing.json.JSONArray(arr.toList);commentJson}</dd>
+
 				</dl>
 			</div>
 		</div>
