@@ -23,7 +23,7 @@ trait GridFSDB {
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity): Option[File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploads")
@@ -40,6 +40,7 @@ trait GridFSDB {
       ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
     }
     mongoFile.contentType = ct
+    mongoFile.put("showPreviews", showPreviews)
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
@@ -52,7 +53,7 @@ trait GridFSDB {
 //      case None => Logger.error("NO FILE!!!!!!")
 //    }
     
-    Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
+    Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
   }
 
   /**

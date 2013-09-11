@@ -14,6 +14,10 @@
 	      <legend>Select file</legend>
 	      @inputFile(myForm("File"))
 	    </fieldset>
+	    <fieldset id="checkboxFieldSet">
+	      @checkbox(myForm("datasetLevel")
+	      			,'_label -> "Show previews ",'_help -> "", 'checked -> "checked")
+	    </fieldset>
         <div class="form-actions">
           <input type="submit" class="btn" value="Upload"/>
         </div>

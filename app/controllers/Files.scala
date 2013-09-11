@@ -63,13 +63,13 @@ object Files extends Controller with SecuredController {
         //Logger.info("Number of previews " + previews.length);
         val files = List(file)        
          val previewslist = for(f <- files) yield {
-          val pvf = for(p <- previewers ; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {            
+          val pvf = for(p <- previewers ; pv <- previewsFromDB; if (!f.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {            
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }        
           if (pvf.length > 0) {
             (file -> pvf)
           } else {
-  	        val ff = for(p <- previewers ; if (p.contentType.contains(file.contentType))) yield {
+  	        val ff = for(p <- previewers ; if (!f.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
   	          (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
   	        }
   	        (file -> ff)
@@ -167,12 +167,20 @@ object Files extends Controller with SecuredController {
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        
+	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+	        if(showPreviews.equals("true"))
+	          showPreviews = "FileLevel"
+	        else
+	          showPreviews = "None"
 	        // store file       
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity, showPreviews)
 	        val uploadedFile = f
 	//        Thread.sleep(1000)
 	        file match {
 	          case Some(f) => {
+	            var flags = ""	                
+	            if(showPreviews.equals("None"))
+	                flags = "+nopreviews"
 	             var fileType = f.contentType
 				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
 				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
@@ -187,7 +195,7 @@ object Files extends Controller with SecuredController {
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
 	            val id = f.id.toString
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 	            current.plugin[ElasticsearchPlugin].foreach{
 	              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 	            }
@@ -419,13 +427,19 @@ object Files extends Controller with SecuredController {
 		  case Some(dataset) => {
 			  request.body.file("File").map { f =>        
 				  Logger.debug("Uploading file " + f.filename)
+				  val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 				  // store file
-				  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType, identity)
+				  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename,f.contentType, identity, showPreviews)
 				  val uploadedFile = f
 				  
 				  // submit file for extraction			
 				  file match {
 				  case Some(f) => {
+	                var flags = ""	                
+	                if(showPreviews.equals("FileLevel"))
+	                	flags = "+filelevelshowpreviews"
+	                else if(showPreviews.equals("None"))
+	                	flags = "+nopreviews"
 					  var fileType = f.contentType
 					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
 						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
@@ -440,7 +454,7 @@ object Files extends Controller with SecuredController {
 							  // TODO RK : need figure out if we can use https
 							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id.toString
-							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, ""))}
+							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
 					  current.plugin[ElasticsearchPlugin].foreach{
 						  _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 					  }
