@@ -32,9 +32,9 @@ import com.novus.salat.annotations.raw.Ignore
  *
  */
 case class Comment(
-    parent_id: String,
     author: Identity,
     text: String,
+    comment_id: Option[String] = None,
     dataset_id: Option[String] = None,
     file_id: Option[String] = None,
     section_id: Option[String] = None,
@@ -50,27 +50,27 @@ object Comment extends ModelCompanion[Comment, ObjectId] {
     case Some(x) =>  new SalatDAO[Comment, ObjectId](collection = x.collection("comments")) {}
   }
 
-  def findCommentsByParentId(id: String) : List[Comment] = {
-    dao.find(MongoDBObject("parent_id"->id)).map { comment =>
-      comment.copy(replies=findCommentsByParentId(comment.id.toString))
+  def findCommentsByCommentId(id: String) : List[Comment] = {
+    dao.find(MongoDBObject("comment_id"->id)).map { comment =>
+      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
     }.toList
   }
 
   def findCommentsByDatasetId(id: String) : List[Comment] = {
-    dao.find(MongoDBObject("dataset_id"->id)).map { comment =>
-      comment.copy(replies=findCommentsByParentId(comment.id.toString))
+    dao.find(("comment_id" $exists false) ++ ("dataset_id"->id)).map { comment =>
+      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
     }.toList
   }
 
   def findCommentsByFileId(id: String) : List[Comment] = {
-    dao.find(MongoDBObject("file_id"->id)).map { comment =>
-      comment.copy(replies=findCommentsByParentId(comment.id.toString))
+    dao.find(("comment_id" $exists false) ++ ("file_id"->id)).map { comment =>
+      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
     }.toList
   }
 
   def findCommentsBySectionId(id: String) : List[Comment] = {
-    dao.find(MongoDBObject("section_id"->id)).map { comment =>
-      comment.copy(replies=findCommentsByParentId(comment.id.toString))
+    dao.find(("comment_id" $exists false) ++ ("section_id"->id)).map { comment =>
+      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
     }.toList
   }
 }

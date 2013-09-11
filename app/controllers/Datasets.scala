@@ -165,9 +165,9 @@ object Datasets extends SecuredController {
         val collectionsInside = Collection.listInsideDataset(id).sortBy(_.name)
         
         var comments = Comment.findCommentsByDatasetId(id)
-        datasetWithFiles.files.map { file =>
+        files.map { file =>
           comments ++= Comment.findCommentsByFileId(file.id.toString())
-          file.sections.map { section =>
+          SectionDAO.findByFileId(file.id).map { section =>
             comments ++= Comment.findCommentsBySectionId(section.id.toString())
           } 
         }
