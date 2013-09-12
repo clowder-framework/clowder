@@ -10,6 +10,9 @@ import models.File
 import models.FileDAO
 import api.WithPermission
 import api.Permission
+import services.ElasticsearchPlugin
+import services.Services
+import scala.util.parsing.json.JSONArray
 
 /**
  * Tagging.
@@ -17,7 +20,7 @@ import api.Permission
  * @author Luigi Marini
  */
 object Tags extends SecuredController {
-   
+
   def search(tag: String) = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     val datasets = Dataset.findByTag(tag)
     val files = FileDAO.findByTag(tag)

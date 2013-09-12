@@ -31,8 +31,10 @@ import controllers.SecuredController
 import models.Collection
 import org.bson.types.ObjectId
 import securesocial.views.html.notAuthorized
+import play.api.Play.current
 
-
+import services.Services
+import scala.util.parsing.json.JSONArray
 /**
  * Dataset API.
  *
@@ -158,10 +160,36 @@ object Datasets extends ApiController {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
 
+  def index(id: String) {
+    Services.datasets.get(id) match {
+      case Some(dataset) => {
+        val tagsJson = new JSONArray(dataset.tags)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByDatasetId(id,false)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "dataset", id,
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+        }
+      }
+      case None => Logger.error("Dataset not found: " + id)
+    }
+  }
+  
+  
+  
   def tag(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateTags)) { implicit request =>
     request.body.\("tag").asOpt[String] match {
       case Some(tag) => {
         Dataset.tag(id, tag)
+        index(id)
         Ok
       }
       case None => {
@@ -178,6 +206,7 @@ object Datasets extends ApiController {
 	      case Some(text) => {
 	        val comment = new Comment(identity, text, dataset_id=Some(id))
 	        Comment.save(comment)
+	        index(id)
 	        Ok(comment.id.toString())
 	      }
 	      case None => {

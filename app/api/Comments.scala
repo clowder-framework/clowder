@@ -15,6 +15,9 @@ object Comments extends ApiController {
 		      case Some(text) => {
 		        val comment = parent.copy(id=new ObjectId(), comment_id=Some(id), author=identity, text=text, posted=new Date())
 		        Comment.save(comment)
+		        if (parent.dataset_id.isDefined) {
+		          Datasets.index(parent.dataset_id.get)
+		        } 
 		        Ok(comment.id.toString())
 		      }
 		      case None => {
