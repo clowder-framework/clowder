@@ -56,10 +56,14 @@ object Comment extends ModelCompanion[Comment, ObjectId] {
     }.toList
   }
 
-  def findCommentsByDatasetId(id: String) : List[Comment] = {
-    dao.find(("comment_id" $exists false) ++ ("dataset_id"->id)).map { comment =>
-      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
-    }.toList
+  def findCommentsByDatasetId(id: String, asTree: Boolean=true) : List[Comment] = {
+    if (asTree) {
+	    dao.find(("comment_id" $exists false) ++ ("dataset_id"->id)).map { comment =>
+	      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
+	    }.toList
+    } else {
+      dao.find(MongoDBObject("dataset_id"->id)).toList
+    }
   }
 
   def findCommentsByFileId(id: String) : List[Comment] = {

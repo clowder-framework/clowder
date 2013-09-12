@@ -161,14 +161,13 @@ object Datasets extends ApiController {
   }
 
   def index(id: String) {
-
     Services.datasets.get(id) match {
       case Some(dataset) => {
         val tagsJson = new JSONArray(dataset.tags)
 
         Logger.debug("tagStr=" + tagsJson);
 
-        val comments = for(comment <- Comment.findCommentsByDatasetId(id)) yield {
+        val comments = for(comment <- Comment.findCommentsByDatasetId(id,false)) yield {
           comment.text
         }
         val commentJson = new JSONArray(comments)
