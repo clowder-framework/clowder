@@ -50,8 +50,7 @@
 }
 
 @main("Dataset") {
-
-    <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
     <script>
     	var isPageLoaded = false;
     	var isx3dActive = false;
@@ -60,6 +59,8 @@
 		Configuration.authenticated = @user.isDefined;
 		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
+		Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
+		Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
 		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 		Configuration.imagesPath = "@(routes.Assets.at("images"))";		
     </script>
