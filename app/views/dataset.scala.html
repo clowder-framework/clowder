@@ -609,8 +609,8 @@
 
 				     if (tag !== "") {
 				     	 console.log("submitting tag " + tag);
-					     var request = jsRoutes.controllers.Tags.tag().ajax({
-					       data: JSON.stringify({"id":"@dataset.id","tag":tag}),
+					     var request = jsRoutes.api.Datasets.tag('@dataset.id').ajax({
+					       data: JSON.stringify({"tag":tag}),
 					       type: 'POST',
 					       contentType: "application/json",
 					     });
