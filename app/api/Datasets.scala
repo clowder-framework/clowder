@@ -168,11 +168,10 @@ object Datasets extends ApiController {
 
         Logger.debug("tagStr=" + tagsJson);
 
-        var arr = new scala.collection.mutable.ListBuffer[String]()
-        for (i <- 0 to dataset.comments.length - 1) {
-          arr += dataset.comments(i).text
+        val comments = for(comment <- Comment.findCommentsByDatasetId(id)) yield {
+          comment.text
         }
-        val commentJson = new JSONArray(arr.toList)
+        val commentJson = new JSONArray(comments)
 
         Logger.debug("commentStr=" + commentJson.toString())
 
