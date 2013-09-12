@@ -160,29 +160,29 @@ object Datasets extends ApiController {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
 
-  def index(id:String){
-    
-    
-          Services.datasets.get(id) match {
-            case Some(dataset)=>{
-                        val tagsJson=new JSONArray(dataset.tags)
-                        
-                        Logger.debug("tagStr="+tagsJson);
-                        
-                        var arr=new scala.collection.mutable.ListBuffer[String]()
-                        for(i<-0 to dataset.comments.length-1){
-                        	arr+= dataset.comments(i).text
-                       }
-                        val commentJson=new JSONArray(arr.toList)
-                        
-                        Logger.debug("commentStr="+commentJson.toString())
-                        
-            			
-		      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id, 
-		      	        			List(("name",dataset.name), ("description", dataset.description),("tag",tagsJson.toString),("comments",commentJson.toString)))}
-            }
-            case None=> Logger.error("Dataset not found: " +id)
-          }  	    
+  def index(id: String) {
+
+    Services.datasets.get(id) match {
+      case Some(dataset) => {
+        val tagsJson = new JSONArray(dataset.tags)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        var arr = new scala.collection.mutable.ListBuffer[String]()
+        for (i <- 0 to dataset.comments.length - 1) {
+          arr += dataset.comments(i).text
+        }
+        val commentJson = new JSONArray(arr.toList)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "dataset", id,
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+        }
+      }
+      case None => Logger.error("Dataset not found: " + id)
+    }
   }
   
   
