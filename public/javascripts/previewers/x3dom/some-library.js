@@ -704,7 +704,7 @@ function clearConfigTabAnnotations(prNum){
     function handleObjectClick(event, prNum){
     	if(window["measuringMode" + prNum])
     		calculateDistance(event, prNum); 		
-    	else if(window["isXClicked" + prNum])
+    	else if(window["isXClicked" + prNum] && window["modelMaxDimension" + prNum] != "nocount")
     		 startMeasuring(event, prNum);
     	else{
 	    	var annotationsTranslations = [];    	
@@ -801,7 +801,7 @@ function clearConfigTabAnnotations(prNum){
   window["mouseDown" + prNum] = false;
   window["reverseLighting" + prNum] = false;
 
-  $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:560px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>"
+  $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:560px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>" 
 		  					+ "<tr><td>Left mouse button + Ctrl drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
 		  					+ "<tr><td>Right mouse button drag / Left mouse button + Alt drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Zoom</td></tr>"
 		  					+ "<tr><td>M</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Change rendering (regular-vertices-wireframe)</td></tr>"
@@ -817,14 +817,14 @@ function clearConfigTabAnnotations(prNum){
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 288) + "px;' >";
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 288) + "px;' >"; 
   window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
   window["thisPreview" + prNum] = $(Configuration.tab); 
   //setInterval(function(){updatex3dPosition(prNum);},50);
   setInterval("updatex3dPosition('" + prNum + "');", 50);
 
   $.ajax({
-	    url: fileUrl,
+	    url: Configuration.url,
 	    async:false,
 	    success: function (data) {
 	    	inner = inner + data;
@@ -910,7 +910,7 @@ function clearConfigTabAnnotations(prNum){
   isx3dActive = true;
      
 	  $("body").on('keypress','#x3dElement' + prNum,function(e){
-		  if(e.which == 122 || e.which == 90){
+		  if((e.which == 122 || e.which == 90) && window["modelMaxDimension" + prNum] != "nocount"){
 			  window["measuringMode" + prNum] = false;
 	
 			  $("#measuringlinetrafo"+prNum).remove();
