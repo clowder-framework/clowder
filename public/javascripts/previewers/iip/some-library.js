@@ -11,6 +11,7 @@
 //	s.src = "http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js";
 //	console.log("Updating tab " + Configuration.tab);
 //	$(Configuration.tab).append(s);
+	$(Configuration.tab).append("<p>Right-click on image for help navigating.</p>");
 	
 	$(Configuration.tab).append(
 		     "<div class='iipDiv' style='width: " + width + "px; height: " + height + "px' id='iip" + Configuration.tab.replace("#previewer","") + "'>Insert image here</div>"
