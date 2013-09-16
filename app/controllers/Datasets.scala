@@ -214,27 +214,37 @@ object Datasets extends SecuredController {
           errors => BadRequest(views.html.newDataset(errors)),
 	      dataset => {
 	           request.body.file("file").map { f =>
-		        Logger.debug("Uploading file " + f.filename)
+	            var nameOfFile = f.filename
+	            var flags = ""
+	            if(nameOfFile.endsWith(".ptm")){
+	              var secondSeparatorIndex = nameOfFile.indexOf("__")
+	              if(secondSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(secondSeparatorIndex+2)
+	              }
+	            }
+
+		        Logger.debug("Uploading file " + nameOfFile)
 		        
 		        // store file
 		        Logger.info("Adding file" + identity)
 		        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
-			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity, showPreviews)
+			    val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
 			    Logger.debug("Uploaded file id is " + file.get.id)
 			    Logger.debug("Uploaded file type is " + f.contentType)
 			    
 			    val uploadedFile = f
 			    file match {
 			      case Some(f) => {
-			        val id = f.id.toString
-	                var flags = ""	                
+			        val id = f.id.toString	                	                
 	                if(showPreviews.equals("FileLevel"))
-	                	flags = "+filelevelshowpreviews"
+	                	flags = flags + "+filelevelshowpreviews"
 	                else if(showPreviews.equals("None"))
-	                	flags = "+nopreviews"
+	                	flags = flags + "+nopreviews"
 			        var fileType = f.contentType
-			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
+			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
@@ -251,7 +261,7 @@ object Datasets extends SecuredController {
 	                //and return the files
 	                if(!fileType.equals("multi/files-zipped")){
 				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
+				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
 			        }
 			        
 			        // add file to dataset 
@@ -261,7 +271,7 @@ object Datasets extends SecuredController {
 		            
 		            if(fileType.equals("multi/files-zipped")){
 				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, flags))}
-				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
+				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
 			        }
 		            
 		            // index dataset

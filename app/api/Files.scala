@@ -206,20 +206,30 @@ object Files extends ApiController {
     def upload(showPreviews: String="FileLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
       request.user match {
         case Some(user) => {
-	      request.body.file("File").map { f =>        
-	        Logger.debug("Uploading file " + f.filename)
+	      request.body.file("File").map { f =>
+	          var nameOfFile = f.filename
+	          var flags = ""
+	          if(nameOfFile.endsWith(".ptm")){
+		          var secondSeparatorIndex = nameOfFile.indexOf("__")
+		          if(secondSeparatorIndex >= 0){
+		             var firstSeparatorIndex = nameOfFile.indexOf("_")
+		             flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)
+		             nameOfFile = nameOfFile.substring(secondSeparatorIndex+2)
+		          }
+	          }
+	        
+	        Logger.debug("Uploading file " + nameOfFile)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user, showPreviews)
+	        val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
 	            val id = f.id.toString
-	            var flags = ""
 	            if(showPreviews.equals("None"))
-	              flags = "+nopreviews"
+	              flags = flags + "+nopreviews"
 	            var fileType = f.contentType
-	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
+	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
 	            	if(fileType.startsWith("ERROR: ")){
 	            		Logger.error(fileType.substring(7))
 	            		InternalServerError(fileType.substring(7))
@@ -233,7 +243,7 @@ object Files extends ApiController {
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 	             
 	            current.plugin[ElasticsearchPlugin].foreach{
-	              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+	              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
 	            }
 	            Ok(toJson(Map("id"->id)))   
 	          }
@@ -260,23 +270,33 @@ object Files extends ApiController {
     Services.datasets.get(dataset_id) match {
       case Some(dataset) => {
         request.body.file("File").map { f =>
-          Logger.debug("Uploading file " + f.filename)
+          		var nameOfFile = f.filename
+	            var flags = ""
+	            if(nameOfFile.endsWith(".ptm")){
+	              var secondSeparatorIndex = nameOfFile.indexOf("__")
+	              if(secondSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(secondSeparatorIndex+2)
+	              }
+	            }
+          
+          Logger.debug("Uploading file " + nameOfFile)
           // store file
-          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user, showPreviews)
+          val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
           val uploadedFile = f
           
           // submit file for extraction
           file match {
             case Some(f) => {
               val id = f.id.toString
-              var flags = ""
               if(showPreviews.equals("FileLevel"))
-	            flags = "+filelevelshowpreviews"
+	            flags = flags + "+filelevelshowpreviews"
 	          else if(showPreviews.equals("None"))
-	            flags = "+nopreviews"
+	            flags = flags + "+nopreviews"
 	          var fileType = f.contentType
-	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-	        	  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
+	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+	        	  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
 	        	  if(fileType.startsWith("ERROR: ")){
 	        		  Logger.error(fileType.substring(7))
 	        		  InternalServerError(fileType.substring(7))
@@ -291,7 +311,7 @@ object Files extends ApiController {
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
                            
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
+                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType)))
               }
 
               // add file to dataset   
