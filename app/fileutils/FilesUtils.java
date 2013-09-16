@@ -12,7 +12,7 @@ public class FilesUtils {
 
 	public static String getMainFileTypeOfZipFile(File compressedFile, String filename, String containerType){
 		
-		String mainFileType = "application/zip";
+		String mainFileType = "multi/files-zipped";
 		
 		try {
 			if(filename.startsWith("MEDICI2DATASET_") && containerType.equals("dataset"))
