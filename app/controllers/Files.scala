@@ -168,12 +168,13 @@ object Files extends Controller with SecuredController {
 	          var nameOfFile = f.filename
 	          var flags = ""
 	          if(nameOfFile.endsWith(".ptm")){
-		          var secondSeparatorIndex = nameOfFile.indexOf("__")
-		          if(secondSeparatorIndex >= 0){
-		             var firstSeparatorIndex = nameOfFile.indexOf("_")
-		             flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)
-		             nameOfFile = nameOfFile.substring(secondSeparatorIndex+2)
-		          }
+		          var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
 	          }
 	        
 	        Logger.debug("Uploading file " + nameOfFile)
@@ -286,12 +287,13 @@ object Files extends Controller with SecuredController {
       	var nameOfFile = f.filename
       	var flags = ""
       	if(nameOfFile.endsWith(".ptm")){
-    	  var secondSeparatorIndex = nameOfFile.indexOf("__")
-    	  if(secondSeparatorIndex >= 0){
-    		  var firstSeparatorIndex = nameOfFile.indexOf("_")
-    		  flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)
-    		  nameOfFile = nameOfFile.substring(secondSeparatorIndex+2)
-    		}
+      			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
       	}
         
         Logger.debug("Uploading file " + nameOfFile)
@@ -345,12 +347,13 @@ object Files extends Controller with SecuredController {
         var nameOfFile = f.filename
       	var flags = ""
       	if(nameOfFile.endsWith(".ptm")){
-    	  var secondSeparatorIndex = nameOfFile.indexOf("__")
-    	  if(secondSeparatorIndex >= 0){
-    		  var firstSeparatorIndex = nameOfFile.indexOf("_")
-    		  flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)
-    		  nameOfFile = nameOfFile.substring(secondSeparatorIndex+2)
-    		}
+      			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
       	}
         
         Logger.debug("Uploading file " + nameOfFile)
@@ -407,12 +410,13 @@ object Files extends Controller with SecuredController {
         var nameOfFile = f.filename
       	var flags = ""
       	if(nameOfFile.endsWith(".ptm")){
-    	  var secondSeparatorIndex = nameOfFile.indexOf("__")
-    	  if(secondSeparatorIndex >= 0){
-    		  var firstSeparatorIndex = nameOfFile.indexOf("_")
-    		  flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)
-    		  nameOfFile = nameOfFile.substring(secondSeparatorIndex+2)
-    		}
+      			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
       	}
         
         Logger.debug("Uploading file " + nameOfFile)
@@ -472,12 +476,13 @@ object Files extends Controller with SecuredController {
 			      var nameOfFile = f.filename
 			      var flags = ""
 			      if(nameOfFile.endsWith(".ptm")){
-			    	  var secondSeparatorIndex = nameOfFile.indexOf("__")
-			    	  if(secondSeparatorIndex >= 0){
-			    		  var firstSeparatorIndex = nameOfFile.indexOf("_")
-			    		  flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)
-			    		  nameOfFile = nameOfFile.substring(secondSeparatorIndex+2)
-			    	  }
+			    	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+		              if(thirdSeparatorIndex >= 0){
+		                var firstSeparatorIndex = nameOfFile.indexOf("_")
+		                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+		            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+		            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+		              }
 			      }	
 			    
 				  Logger.debug("Uploading file " + nameOfFile)
