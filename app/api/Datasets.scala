@@ -224,18 +224,13 @@ object Datasets extends ApiController {
   	    var isActivity = "false"
         try{
         	for(f <- files){
-        		Extraction.findMostRecentByFileId(f.id) match{
-        		case Some(mostRecent) => {
-        			mostRecent.status match{
-        			case "DONE." => 
-        			case _ => { 
+        		Extraction.findIfBeingProcessed(f.id) match{
+        			case false => 
+        			case true => { 
         				isActivity = "true"
         				throw ActivityFound
         			  }  
         			}
-        		}
-        		case None =>       
-        		}
         	}
         }catch{
           case ActivityFound =>

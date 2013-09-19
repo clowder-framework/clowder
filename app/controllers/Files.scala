@@ -84,16 +84,11 @@ object Files extends Controller with SecuredController {
         
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
-        Extraction.findMostRecentByFileId(file.id) match{
-          case Some(mostRecent) => {
-            mostRecent.status match{
-              case "DONE." => 
-              case _ => { 
+        Extraction.findIfBeingProcessed(file.id) match{
+          			  case false => 
+	  				  case true => { 
         				isActivity = true
-        			  }  
-            }
-          }
-          case None =>
+        			  } 
         }
         
         var comments = Comment.findCommentsByFileId(id)

@@ -676,16 +676,11 @@ object Files extends ApiController {
   	Services.files.getFile(id) match {
   	  case Some(file) => { 	    
   		  		  var isActivity = "false"
-  				  Extraction.findMostRecentByFileId(file.id) match{
-	  				  case Some(mostRecent) => {
-	  					  mostRecent.status match{
-	  					  	case "DONE." => 
-	  					  	case _ => { 
-	  						  isActivity = "true"
-	  					  }  
-	  					}
-	  				  }
-	  				  case None =>
+  				  Extraction.findIfBeingProcessed(file.id) match{
+	  				  case false => 
+	  				  case true => { 
+        				isActivity = "true"
+        			  } 
   		  		  }	
         
         Ok(toJson(Map("isBeingProcessed"->isActivity))) 
