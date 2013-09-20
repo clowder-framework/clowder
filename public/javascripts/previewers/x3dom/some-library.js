@@ -761,7 +761,6 @@ function clearConfigTabAnnotations(prNum){
 
   console.log("X3D previewer for " + Configuration.id);
   
-  var fileUrl = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.url;
   var pathJs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.jsPath + "/";
   
   var width = 750;
@@ -800,6 +799,8 @@ function clearConfigTabAnnotations(prNum){
   window["mouseY" + prNum] = 0;
   window["mouseDown" + prNum] = false;
   window["reverseLighting" + prNum] = false;
+  
+  
 
   $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:560px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>" 
 		  					+ "<tr><td>Left mouse button + Ctrl drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
@@ -851,8 +852,10 @@ function clearConfigTabAnnotations(prNum){
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("onclick","handleObjectClick(event,'" + prNum + "');");
   
   $("#x3dElement" + prNum + " > scene > transform").attr("render", "true");
-  
-  window["modelMaxDimension" + prNum] = $("#x3dElement" + prNum + " > scene").attr("data-modelMaxDimension");
+  if(Configuration.wasPTM == false)
+	  window["modelMaxDimension" + prNum] = $("#x3dElement" + prNum + " > scene").attr("data-modelMaxDimension");
+  else
+	  window["modelMaxDimension" + prNum] = "nocount";
   $("#x3dElement" + prNum).attr("onmousemove", "handleMouseMove(event,'" + prNum + "');");
     
   if(!isx3dActive){
@@ -908,6 +911,11 @@ function clearConfigTabAnnotations(prNum){
       document.getElementById("x3dElement" + prNum).runtime.resetExamin();
   }
   isx3dActive = true;
+  
+  if(Configuration.wasPTM == true){
+	  $(Configuration.tab).append("<p>Model created using Bibliotheca Alexandrina's RTI-to-3D generator. The desktop GUI RTI-to-3D viewer can be downloaded from here:</br>" +
+	  								"<a href='http://www.google.com' target='_blank' style='margin-bottom:10px;'>Temporary placeholder</a></p>");
+  } 
      
 	  $("body").on('keypress','#x3dElement' + prNum,function(e){
 		  if((e.which == 122 || e.which == 90) && window["modelMaxDimension" + prNum] != "nocount"){

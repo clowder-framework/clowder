@@ -30,7 +30,7 @@
 		</ul>
 	} 
 
-@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
@@ -44,6 +44,7 @@
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
+			Configuration.wasPTM = "@filename.endsWith(".ptm")";
 		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
@@ -93,7 +94,7 @@
 							<div class="tab-content" id="previewsContent_@(f.id.toString)">
 								@for(i <- pvs.indices) {
 							  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
-							  		@showPreview(f.id.toString + "_" + i, pvs(i))
+							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename)
 
 								}
 					  			<script type="text/javascript">
