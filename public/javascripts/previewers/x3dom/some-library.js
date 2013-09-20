@@ -752,7 +752,7 @@ function clearConfigTabAnnotations(prNum){
     
     function updatex3dPosition(prNum){
     	if(window["oldx3dposition" + prNum] != window["thisPreview" + prNum].offset().top){
-    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + 288) + "px;");
+    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum]) + "px;");
     		window["oldx3dposition" + prNum] = window["thisPreview" + prNum].offset().top;
     	}
     }
@@ -800,7 +800,15 @@ function clearConfigTabAnnotations(prNum){
   window["mouseDown" + prNum] = false;
   window["reverseLighting" + prNum] = false;
   
-  
+  var x3dMeasureInstructions = "<tr><td>X + Left mouse button</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Use measuring tool</td></tr>"
+								+ "<tr><td>Z</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Remove measurement</td></tr>";
+  if(Configuration.wasPTM == 'false'){
+	  window["x3dOffset" + prNum] = 288;
+  }	  
+  else{
+	  window["x3dOffset" + prNum] = 248;
+	  x3dMeasureInstructions = "";
+  }
 
   $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:560px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>" 
 		  					+ "<tr><td>Left mouse button + Ctrl drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
@@ -810,15 +818,14 @@ function clearConfigTabAnnotations(prNum){
 		  					+ "<tr><td>Space</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Show/hide model statistics</td></tr>"
 		  					+ "<tr><td>Shift + Left mouse button</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Add annotation</td></tr>"
 		  					+ "<tr><td>Q</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Toggle annotations visibility</td></tr>"
-		  					+ "<tr><td>X + Left mouse button</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Use measuring tool</td></tr>"
-		  					+ "<tr><td>Z</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Remove measurement</td></tr>"
+		  					+ x3dMeasureInstructions
 		  					+ "<tr><td>J</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Lighting on/off</td></tr>"
 		  					+ "<tr><td>V</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Single-sided/double-sided lighting</td></tr>"
 		  					+ "<tr><td>C drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Change lighting direction</td></tr>"
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + 288) + "px;' >"; 
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style='position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum]) + "px;' >"; 
   window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
   window["thisPreview" + prNum] = $(Configuration.tab); 
   //setInterval(function(){updatex3dPosition(prNum);},50);
@@ -852,7 +859,7 @@ function clearConfigTabAnnotations(prNum){
   $("#x3dElement" + prNum + " > scene > transform[data-actualshape] > shape > indexedfaceset").attr("onclick","handleObjectClick(event,'" + prNum + "');");
   
   $("#x3dElement" + prNum + " > scene > transform").attr("render", "true");
-  if(Configuration.wasPTM == false)
+  if(Configuration.wasPTM == 'false')
 	  window["modelMaxDimension" + prNum] = $("#x3dElement" + prNum + " > scene").attr("data-modelMaxDimension");
   else
 	  window["modelMaxDimension" + prNum] = "nocount";
@@ -912,7 +919,7 @@ function clearConfigTabAnnotations(prNum){
   }
   isx3dActive = true;
   
-  if(Configuration.wasPTM == true){
+  if(Configuration.wasPTM == 'true'){
 	  $(Configuration.tab).append("<p>Model created using Bibliotheca Alexandrina's RTI-to-3D generator. The desktop GUI RTI-to-3D viewer can be downloaded from here:</br>" +
 	  								"<a href='http://www.google.com' target='_blank' style='margin-bottom:10px;'>Temporary placeholder</a></p>");
   } 
