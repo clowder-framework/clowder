@@ -1,0 +1,221 @@
+@(keysArray:scala.collection.mutable.ArrayBuffer[String],name: String, id: String, size:Integer,  results: scala.collection.mutable.HashMap[String, (String,scala.collection.mutable.ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]) 
+@import models.IncrementCounter
+@import helper._
+@import collection.JavaConverters._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
+@main("Search Results") {
+	<script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
+	<script>
+    	var isPageLoaded = false;
+    	var isx3dActive = false;
+    	var Configuration = {};
+    	
+		
+		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+		Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
+		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
+		Configuration.imagesPath = "@(routes.Assets.at("images"))";		
+    </script>
+    <script>
+    	window.onload = function() {
+    		isPageLoaded = true;
+    	}
+    </script>
+	
+	
+	<div class="page-header">
+		<h1>Search Results For <medium>@name</medium></h1>
+	</div>
+	@if(size == 0) {
+	<div class="row-fluid">
+		<div class="span12">
+			No results found. Sorry!
+		</div>
+	</div>
+	}
+	
+<div class="container" > 
+	<div class="row-fluid" >
+	<div>
+	
+	<table id='tablec' border="1">
+	@defining(new IncrementCounter){c=>
+	  @for(index<-keysArray){
+		<thead>
+	  	@{c.count+=1}
+	  	@if(c.count==1){
+	  		<script>
+	  		console.log("if : c.count=",@c.count);
+	  		</script>
+			<tr>
+	    	<th colspan="4">IndexID: @{results.get(index).map {ex =>ex._1}} </th>
+			</tr>
+		}else{
+			<script>
+			console.log("else:c.count=",@c.count);
+			var row0=document.getElementById("tablec").rows[0];
+			var x=row0.insertCell(-1);
+				x.innerHTML="<h5>IndexID:@index<h5>";
+				row0.cells[@{c.count-1}].colSpan="3";
+			</script>	
+			}
+		<tr>
+		@if(c.count==1){
+			<th>Rank</th>
+			<th>ID</th>
+			<th>Preview</th>
+			<th>Proximity</th>
+			
+		}else{
+		   <script>
+			var row1=document.getElementById("tablec").rows[1];
+			//console.log("row1.innerHTML=",row1.innerHTML);
+			var x=row1.insertCell(-1);
+			x.align="center";
+			x.innerHTML="<h5>ID </h5>";
+			
+			var row111=document.getElementById("tablec").rows[1];
+			var x11=row111.insertCell(-1);
+			x11.align="center";
+			x11.innerHTML="<h5>Preview</h5>";
+			
+			var row11=document.getElementById("tablec").rows[1];
+			var x1=row11.insertCell(-1);
+			x1.align="center";
+			x1.innerHTML="<h5>Proximity</h5>";
+
+			
+			</script>	
+			}
+		
+		</tr>
+	</thead>
+	
+		@results.get(index).map {list =>
+				@defining(new IncrementCounter){ i=>   
+					<script>
+					 console.log("i.count=",@i.count," list.length=", @list._2.length);
+					
+					</script>
+				
+				 @for(ele<-list._2){	
+					
+		 	    <!-- list.map  case (id,link, distance, fname) -->
+		 		  
+		 		  
+							@if(c.count==1){	
+								@if(i.count<5){
+									@{i.count+=1}
+								<script>
+								console.log("i=@i.count indexID:@index fileId=@ele._4 distance=@ele._3");
+								    
+								 var row2=document.getElementById("tablec").insertRow(-1);
+								 								  
+								  var z=row2.insertCell(0);
+								  var t=row2.insertCell(1);
+								  var u=row2.insertCell(2);
+								  var v=row2.insertCell(3);
+								  
+								  z.innerHTML="@i.count";
+								  t.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
+								  @for((f, pvs) <- ele._5) {
+								  	@if(pvs.isEmpty){
+								  	    u.innerHTML="";
+								  	   }else{ 
+									       u.innerHTML="<a href=@routes.Search.findSimilarFile(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4'></img></a>";
+									}
+								  }
+								  v.innerHTML="@ele._3";
+								 							 
+								</script>
+								
+							   }
+							}else{
+								<script>
+								@if(i.count<5){
+								 @{i.count+=1}
+								
+								//console.log("else: c.count=",@c.count," i.count=",@{i.count+1});
+								console.log("i=@i.count indexID:@index fileId=@ele._4 distance=@ele._3");
+								
+								var col3=document.getElementById("tablec").rows[@{i.count+1}];
+								
+							   			    
+							    var z=col3.insertCell(@{3*c.count-2});
+							    var y=col3.insertCell(@{3*c.count-1});
+								var s=col3.insertCell(@{3*c.count});
+								
+								
+								 z.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
+								 
+								 @for((f, pvs) <- ele._5) {
+									y.innerHTML="<a href=@routes.Search.findSimilarFile(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4'></img></a>";
+								  }
+								  s.innerHTML=@ele._3;
+									
+								}
+								
+								</script>	
+							}	
+						
+			     } <!--for  list ends here  -->
+			     @if(c.count==1 && list._2.length<5 ){
+			     	@if(i.count<5){
+					 @{i.count+=1}
+			     	<script>
+			     	for(var j=@i.count;j<6;j++){
+						console.log("else: c.count=",@c.count," i.count=",@{i.count+1}," j=",j);
+						
+						var row=document.getElementById("tablec").insertRow(-1);
+								 								  
+								  var z=row2.insertCell(0);
+								  var t=row2.insertCell(1);
+								  var u=row2.insertCell(2);
+								  var v=row2.insertCell(3);
+						
+						
+						
+						 z.innerHTML="";
+						 t.innerHTML="";
+						 u.innerHTML="";
+						 v.innerHTML="";
+						 
+						}
+			     	
+			     	</script>
+			     	}
+			     }
+			     @if(c.count>1 && list._2.length<5 ){
+		 		  			<script>
+		 		  			 console.log("INSIDE SOME USE CASE :inside if length");
+		 		  			 
+		 		  			   for(var j=@i.count+1;j<6;j++){
+								console.log("else: c.count=",@c.count," i.count=",@{i.count+1}," j=",j);
+								
+								var col3=document.getElementById("tablec").rows[j+1];
+								
+									 var z=col3.insertCell(@{3*c.count-2});
+								     var y=col3.insertCell(@{3*c.count-1});
+								     var s=col3.insertCell(@{3*c.count});
+								 z.innerHTML="";
+								 y.innerHTML="";
+								 s.innerHTML="";
+								 
+								}
+								
+								</script>	
+		 		          	 }	
+		 		          	 
+			
+				}<!--Inc counter ends here-->
+			}<!--results map ends here-->
+          }<!--for ends here--> 
+         }<!--c def ends here-->      
+    </table>
+    
+	</div>
+		
+	</div>
+	</div>
+	}
