@@ -4,6 +4,7 @@ import play.api.Routes
 import play.api.mvc.Action
 import play.api.mvc.Controller
 import api.Sections
+import api.Geostreams
 
 /**
  * Main application controller.
@@ -50,7 +51,8 @@ object Application extends Controller with securesocial.core.SecureSocial {
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.tag,
-        api.routes.javascript.Sections.comment
+        api.routes.javascript.Sections.comment,
+        api.routes.javascript.Geostreams.searchSensors
       )
     ).as(JSON) 
   }

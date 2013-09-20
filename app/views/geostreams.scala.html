@@ -1,0 +1,63 @@
+@main("Geostreams") {
+
+ <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+ <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
+ <!--[if lte IE 8]>
+     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.ie.css")">
+ <![endif]-->
+<script src="@routes.Assets.at("javascripts/leaflet-src.js")" type="text/javascript"></script>
+
+	<div class="page-header">
+		<h1>Geostreams</h1>
+	</div>
+	<div class="row-fluid">
+		<div class="span12">
+			<div id="geostreams_map"></div>
+		</div>
+	</div>
+}
+<script language="javascript">
+   $(function() {
+	   var map = L.map('geostreams_map').setView([51.505, -0.09], 13);
+	   L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	    attribution: 'Map data © OpenStreetMap contributors',
+	    maxZoom: 18
+	   }).addTo(map);
+	   
+	   var geojsonMarkerOptions = {
+		    radius: 8,
+		    fillColor: "#ff7800",
+		    color: "#000",
+		    weight: 1,
+		    opacity: 1,
+		    fillOpacity: 0.8
+		};
+	   
+	   var request = jsRoutes.api.Geostreams.searchSensors().ajax({
+	       type: 'GET',
+	       contentType: "application/json",
+	       dataType: 'json',
+	     });
+	     
+	     request.done(function (response, textStatus, jqXHR){
+	        console.log("Response " + JSON.stringify(response));
+	        var geojsonLayer = L.geoJson(response,{style: function (feature) {
+			        return {color: feature.properties.color};
+			    },
+			    pointToLayer: function (feature, latlng) {
+			        return L.circleMarker(latlng, geojsonMarkerOptions);
+			    },
+			    onEachFeature: function (feature, layer) {
+			        layer.bindPopup(JSON.stringify(feature.properties));
+			    }}).addTo(map);
+ 			map.fitBounds(geojsonLayer.getBounds());
+	     });
+	  
+	     request.fail(function (jqXHR, textStatus, errorThrown){
+	        console.error(
+	            "The following error occured: "+
+	            textStatus, errorThrown  
+	        );
+	     });
+   });
+</script>

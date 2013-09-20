@@ -174,9 +174,16 @@ GET     /api/sections/:id                 api.Sections.get(id)
 POST    /api/sections/:id/tags            api.Sections.tag(id)
 POST    /api/sections/:id/comments        api.Sections.comment(id)
 
-POST    /api/geostreams					  api.Geostreams.createStream()
-POST    /api/geostreams/:id               api.Geostreams.addDatapoint(id)
-GET     /api/geostreams/search            api.Geostreams.search(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None)
+# geostreaming
+POST    /api/geostreams/streams			  api.Geostreams.createStream
+POST    /api/geostreams/datapoints        api.Geostreams.addDatapoint
+GET     /api/geostreams/datapoints        api.Geostreams.searchDatapoints(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None)
+POST    /api/geostreams/sensors			  api.Geostreams.createSensor
+GET     /api/geostreams/sensors           api.Geostreams.searchSensors(geocode: Option[String] ?= None)
+POST    /api/geostreams/streams			  api.Geostreams.createStream
+GET     /api/geostreams/streams           api.Geostreams.searchStreams(geocode: Option[String] ?= None)
+GET     /geostreams                       controllers.Geostreams.browse
+
 
 POST	/api/tiles						  api.ZoomIt.uploadTile
 POST	/api/geometries					  api.Geometry.uploadGeometry

@@ -40,15 +40,11 @@ class PostgresPlugin(application: Application) extends Plugin {
       if (!user.equals("")) props.setProperty("user", user)
       if (!password.equals("")) props.setProperty("password", password)
       conn = DriverManager.getConnection(url, props)
-//      conn.setAutoCommit(false)
+      //      conn.setAutoCommit(false)
       Logger.debug("Connected to " + url)
     } catch {
       case unknown: Throwable => Logger.error("Error connecting to postgres: " + unknown)
     }
-
-    setup()
-    
-//    test()
   }
 
   override def onStop() {
@@ -58,40 +54,109 @@ class PostgresPlugin(application: Application) extends Plugin {
   override lazy val enabled = {
     !application.configuration.getString("postgresplugin").filter(_ == "disabled").isDefined
   }
-  
-  def setup() {
-    Logger.debug("Setting up postgres tables")
-    try {
-      val createTable = "CREATE TABLE IF NOT EXISTS geoindex(gid serial PRIMARY KEY, geog geography(Pointz, 4326), start_time timestamp, end_time timestamp, data json, stream_id varchar(255));"  
-      val stmt = conn.createStatement()
-      stmt.execute(createTable)
-      val createIndex = "CREATE INDEX IF NOT EXISTS geoindex_gix ON geoindex USING GIST (geog);"
-      stmt.execute(createIndex)
-      stmt.close()
-    } catch {
-      case unknown: Throwable => Logger.error("Error creating table in postgres: " + unknown)
-    }
+
+  def addDatapoint(start: java.util.Date, end: Option[java.util.Date], geoType: String, data: String, lat: Double, lon: Double, alt: Double, stream_id: String) {
+    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog) VALUES(?, ?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326));")
+    ps.setTimestamp(1, new Timestamp(start.getTime()))
+    if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime()))
+    else ps.setDate(2, null)
+    ps.setString(3, stream_id)
+    ps.setString(4, data)
+    ps.setDouble(5, lon)
+    ps.setDouble(6, lat)
+    ps.setDouble(7, alt)
+    ps.executeUpdate()
+    ps.close()
   }
 
-  def add(start: java.util.Date, end: Option[java.util.Date], data: String, lat: Double, lon: Double, alt: Double, stream_id: String) {
-	val ps = conn.prepareStatement("INSERT INTO geoindex(start_time, end_time, stream_id, data, geog) VALUES(?, ?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326));")
-	ps.setTimestamp(1, new Timestamp(start.getTime()))
-	if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime()))
-	else ps.setDate(2, null)
-	ps.setString(3, stream_id)
-	ps.setString(4, data)
-	ps.setDouble(5, lon)
-	ps.setDouble(6, lat)
-	ps.setDouble(7, alt)
-	ps.executeUpdate()
-	ps.close()
+  def createSensor(name: String, geoType: String, lat: Double, lon: Double, alt: Double, metadata: String) {
+    val ps = conn.prepareStatement("INSERT INTO sensors(name, geog, created, metadata) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), ?, CAST(? AS json));")
+    ps.setString(1, name)
+    ps.setDouble(2, lon)
+    ps.setDouble(3, lat)
+    ps.setDouble(4, alt)
+    ps.setTimestamp(5, new Timestamp(new Date().getTime()))
+    ps.setString(6, metadata)
+    ps.executeUpdate()
+    ps.close()
   }
 
-  def search(since: Option[String], until: Option[String], geocode: Option[String]): String = {
+  def searchSensors(geocode: Option[String]): Option[String] = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-    		"(SELECT gid, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geog FROM geoindex"
-    if (since.isDefined || until.isDefined || geocode.isDefined) query+= " WHERE "
+      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM sensors"
+    if (geocode.isDefined) query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+    query += ") As t;"
+    val st = conn.prepareStatement(query)
+    var i = 0
+    if (geocode.isDefined) {
+      val parts = geocode.get.split(",")
+      st.setDouble(i + 1, parts(1).toDouble)
+      st.setDouble(i + 2, parts(0).toDouble)
+      st.setDouble(i + 3, parts(2).toDouble * 1000)
+    }
+    st.setFetchSize(50)
+    Logger.debug("Sensors search statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Sensor found: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Searching sensors result: " + data)
+    if (data == "null") { // FIXME
+      Logger.debug("Searching NONE")
+      None
+    } else Some(data)
+  }
+
+  def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String) {
+    val ps = conn.prepareStatement("INSERT INTO streams(name, geog, created, metadata, sensor_id) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), ?, CAST(? AS json), ?);")
+    ps.setString(1, name)
+    ps.setDouble(2, lon)
+    ps.setDouble(3, lat)
+    ps.setDouble(4, alt)
+    ps.setTimestamp(5, new Timestamp(new Date().getTime()))
+    ps.setString(6, metadata)
+    ps.setString(7, stream_id)
+    ps.executeUpdate()
+    ps.close()
+  }
+
+  def searchStreams(geocode: Option[String]): Option[String] = {
+    var data = ""
+    var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
+      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id FROM streams"
+    if (geocode.isDefined) query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+    query += ") As t;"
+    val st = conn.prepareStatement(query)
+    var i = 0
+    if (geocode.isDefined) {
+      val parts = geocode.get.split(",")
+      st.setDouble(i + 1, parts(1).toDouble)
+      st.setDouble(i + 2, parts(0).toDouble)
+      st.setDouble(i + 3, parts(2).toDouble * 1000)
+    }
+    st.setFetchSize(50)
+    Logger.debug("Sensors search statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Sensor found: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Searching streams result: " + data)
+    if (data == "null") None // FIXME
+    else Some(data)
+  }
+
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String]): Option[String] = {
+    var data = ""
+    var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
+      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM datapoints"
+    if (since.isDefined || until.isDefined || geocode.isDefined) query += " WHERE "
     if (since.isDefined) query += "start_time >= ? "
     if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
     if (until.isDefined) query += "start_time <= ? "
@@ -101,18 +166,18 @@ class PostgresPlugin(application: Application) extends Plugin {
     val st = conn.prepareStatement(query)
     var i = 0
     if (since.isDefined) {
-      i=i+1 
+      i = i + 1
       st.setTimestamp(i, new Timestamp(formatter.parse(since.get).getTime))
     }
     if (until.isDefined) {
-      i=i+1
+      i = i + 1
       st.setTimestamp(i, new Timestamp(formatter.parse(until.get).getTime))
     }
     if (geocode.isDefined) {
       val parts = geocode.get.split(",")
-      st.setDouble(i+1,parts(1).toDouble)
-      st.setDouble(i+2,parts(0).toDouble)
-      st.setDouble(i+3,parts(2).toDouble*1000)
+      st.setDouble(i + 1, parts(1).toDouble)
+      st.setDouble(i + 2, parts(0).toDouble)
+      st.setDouble(i + 3, parts(2).toDouble * 1000)
     }
     st.setFetchSize(50)
     Logger.trace("Geostream search: " + st)
@@ -124,15 +189,17 @@ class PostgresPlugin(application: Application) extends Plugin {
     rs.close()
     st.close()
     data
+    if (data == "null") None // FIXME
+    else Some(data)
   }
-  
+
   def listSensors() {
-    val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM (SELECT gid, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geog FROM geoindex"
+    val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM (SELECT gid, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM datapoints"
   }
-  
+
   def test() {
-    add(new java.util.Date(), None, """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
-    Logger.info("Searching postgis: " + search(None, None, None))
+    addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
+    Logger.info("Searching postgis: " + searchDatapoints(None, None, None))
   }
 
 }
