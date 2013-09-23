@@ -11,7 +11,7 @@
 		  "<param name='autoplay' value='true'>"+
 		  "<param name='controller' value='true'>"+
 		  "<param name='scale' value='tofit'>"+
-		  "<embed src='" + "http://"+Configuration.hostIp+":"+window.location.port+ Configuration.url   +"' height='"+ height +"' width='"+ width +"' autoplay='true' controller='true' scale='tofit'></embed>"+
+		  "<embed type='video/quicktime' src='" + "http://"+Configuration.hostIp+":"+window.location.port+ Configuration.url   +"' height='"+ height +"' width='"+ width +"' autoplay='true' controller='true' scale='tofit'></embed>"+
 		  "</object>"		  
   );
 
