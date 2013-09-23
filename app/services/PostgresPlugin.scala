@@ -60,7 +60,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setTimestamp(1, new Timestamp(start.getTime()))
     if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime()))
     else ps.setDate(2, null)
-    ps.setString(3, stream_id)
+    ps.setInt(3, stream_id.toInt)
     ps.setString(4, data)
     ps.setDouble(5, lon)
     ps.setDouble(6, lat)
@@ -110,6 +110,27 @@ class PostgresPlugin(application: Application) extends Plugin {
       None
     } else Some(data)
   }
+  
+  def getSensor(id: String): Option[String] = {
+    var data = ""
+    val query = "SELECT row_to_json(t,true) As my_sensor FROM " +
+      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM sensors WHERE gid=?) As t;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Sensors get statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Sensor found: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Searching sensors result: " + data)
+    if (data == "null") { // FIXME
+      Logger.debug("Searching NONE")
+      None
+    } else Some(data)
+  }
 
   def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String) {
     val ps = conn.prepareStatement("INSERT INTO streams(name, geog, created, metadata, sensor_id) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), ?, CAST(? AS json), ?);")
@@ -119,7 +140,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setDouble(4, alt)
     ps.setTimestamp(5, new Timestamp(new Date().getTime()))
     ps.setString(6, metadata)
-    ps.setString(7, stream_id)
+    ps.setInt(7, stream_id.toInt)
     ps.executeUpdate()
     ps.close()
   }
@@ -150,6 +171,27 @@ class PostgresPlugin(application: Application) extends Plugin {
     Logger.debug("Searching streams result: " + data)
     if (data == "null") None // FIXME
     else Some(data)
+  }
+  
+  def getStream(id: String): Option[String] = {
+    var data = ""
+    val query = "SELECT row_to_json(t,true) As my_stream FROM " +
+      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM streams WHERE gid=?) As t;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Streams get statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Streams found: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Searching streams result: " + data)
+    if (data == "null") { // FIXME
+      Logger.debug("Searching NONE")
+      None
+    } else Some(data)
   }
 
   def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String]): Option[String] = {
@@ -191,6 +233,27 @@ class PostgresPlugin(application: Application) extends Plugin {
     data
     if (data == "null") None // FIXME
     else Some(data)
+  }
+  
+  def getDatapoint(id: String): Option[String] = {
+    var data = ""
+    val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +
+      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM datapoints WHERE gid=?) As t;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Datapoints get statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Datapoints found: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Searching datapoints result: " + data)
+    if (data == "null") { // FIXME
+      Logger.debug("Searching NONE")
+      None
+    } else Some(data)
   }
 
   def listSensors() {

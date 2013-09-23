@@ -175,13 +175,20 @@ POST    /api/sections/:id/tags            api.Sections.tag(id)
 POST    /api/sections/:id/comments        api.Sections.comment(id)
 
 # geostreaming
-POST    /api/geostreams/streams			  api.Geostreams.createStream
+
 POST    /api/geostreams/datapoints        api.Geostreams.addDatapoint
+GET     /api/geostreams/datapoints/:id    api.Geostreams.getDatapoint(id: String)
 GET     /api/geostreams/datapoints        api.Geostreams.searchDatapoints(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None)
+
+
 POST    /api/geostreams/sensors			  api.Geostreams.createSensor
+GET     /api/geostreams/sensors/:id       api.Geostreams.getSensor(id: String)
 GET     /api/geostreams/sensors           api.Geostreams.searchSensors(geocode: Option[String] ?= None)
+
 POST    /api/geostreams/streams			  api.Geostreams.createStream
+GET     /api/geostreams/streams/:id       api.Geostreams.getStream(id: String)
 GET     /api/geostreams/streams           api.Geostreams.searchStreams(geocode: Option[String] ?= None)
+
 GET     /geostreams                       controllers.Geostreams.browse
 
 

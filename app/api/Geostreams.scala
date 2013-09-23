@@ -89,7 +89,21 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
-
+  
+  def getSensor(id: String) =
+    Action { request =>
+      Logger.debug("Get sensor " + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getSensor(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  
   def createStream() = Authenticated {
     Action(parse.json) { request =>
       Logger.debug("Creating stream")
@@ -117,6 +131,20 @@ object Geostreams extends ApiController {
           plugin.searchStreams(geocode) match {
             case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
             case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  
+  def getStream(id: String) =
+    Action { request =>
+      Logger.debug("Get stream " + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getStream(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No stream found"}"""))
           }
         }
         case None => pluginNotEnabled
@@ -156,6 +184,20 @@ object Geostreams extends ApiController {
           plugin.searchDatapoints(since, until, geocode) match {
             case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
             case None => Ok(Json.toJson("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+
+  def getDatapoint(id: String) =
+    Action { request =>
+      Logger.debug("Get datapoint " + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getDatapoint(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No stream found"}"""))
           }
         }
         case None => pluginNotEnabled
