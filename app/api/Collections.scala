@@ -103,6 +103,15 @@ object Collections extends ApiController {
       }       
     }    
   }
+  
+  def listCollections() = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListCollections)) { request =>
+    val list = for (collection <- Services.collections.listCollections()) yield jsonCollection(collection)
+      Ok(toJson(list))    
+  }
+  
+  def jsonCollection(collection: Collection): JsValue = {
+    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description, "created" -> collection.created.toString))
+  }
 
   
 }
