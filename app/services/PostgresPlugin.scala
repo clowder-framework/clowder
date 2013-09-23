@@ -194,16 +194,17 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else Some(data)
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String]): Option[String] = {
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]): Option[String] = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM datapoints"
-    if (since.isDefined || until.isDefined || geocode.isDefined) query += " WHERE "
+      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id FROM datapoints"
+    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
     if (since.isDefined) query += "start_time >= ? "
     if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
     if (until.isDefined) query += "start_time <= ? "
     if ((since.isDefined || until.isDefined) && geocode.isDefined) query += " AND "
     if (geocode.isDefined) query += "ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+    if (stream_id.isDefined) query += "stream_id = ?"
     query += ") As t;"
     val st = conn.prepareStatement(query)
     var i = 0
@@ -220,6 +221,10 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
       st.setDouble(i + 3, parts(2).toDouble * 1000)
+    }
+    if (stream_id.isDefined) {
+      i = i + 1
+      st.setInt(i, stream_id.get.toInt)
     }
     st.setFetchSize(50)
     Logger.trace("Geostream search: " + st)
@@ -238,7 +243,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getDatapoint(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +
-      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM datapoints WHERE gid=?) As t;"
+      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id FROM datapoints WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Datapoints get statement: " + st)
@@ -262,7 +267,7 @@ class PostgresPlugin(application: Application) extends Plugin {
 
   def test() {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
-    Logger.info("Searching postgis: " + searchDatapoints(None, None, None))
+    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None))
   }
 
 }
