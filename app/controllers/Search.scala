@@ -286,7 +286,7 @@ object Search extends SecuredController {
             						val u= for{
             							indexResult<-plugin.queryIndex(id, index._1)
             							} yield {
-            									(indexResult,index._2)
+            									(indexResult,index._3,index._4,index._5)
             								//hm.put(indexResult._1,indexResult._2)
             							}
             						//(u,index._5)
@@ -301,9 +301,9 @@ object Search extends SecuredController {
                                             var indexid="" 
                                             var a=0  
                         	   				//var hm= new scala.collection.mutable.HashMap[String, ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]]()
-                        	   				var hm= new scala.collection.mutable.HashMap[String, (String,ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
+                        	   				var hm= new scala.collection.mutable.HashMap[String, (String,String,String,ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
                                             for(k<-0 to t.length-1){
-                        	   				   hm.put(t(k)._1._1,(t(k)._2,t(k)._1._2))
+                        	   				   hm.put(t(k)._1._1,(t(k)._2,t(k)._3,t(k)._4,t(k)._1._2))
                         	   				}
                         	   				
                         	   				hm
@@ -404,7 +404,7 @@ object Search extends SecuredController {
             						val u= for{
             							indexResult<-plugin.queryIndexFile(id, index._1)
             							} yield {
-            									(indexResult,index._2)
+            									(indexResult,index._3,index._4,index._5)
             								//hm.put(indexResult._1,indexResult._2)
             							}
             						//(u,index._5)
@@ -419,9 +419,9 @@ object Search extends SecuredController {
                                             var indexid="" 
                                             var a=0  
                         	   				//var hm= new scala.collection.mutable.HashMap[String, ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]]()
-                        	   				var hm= new scala.collection.mutable.HashMap[String, (String,ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
+                        	   				var hm= new scala.collection.mutable.HashMap[String, (String,String,String,ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
                                             for(k<-0 to t.length-1){
-                        	   				   hm.put(t(k)._1._1,(t(k)._2,t(k)._1._2))
+                        	   				   hm.put(t(k)._1._1,(t(k)._2,t(k)._3,t(k)._4,t(k)._1._2))
                         	   				}
                         	   				
                         	   				hm

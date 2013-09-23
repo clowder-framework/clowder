@@ -86,9 +86,12 @@ class VersusPlugin(application: Application) extends Plugin {
 
         list.map {
           index =>
-            Logger.debug("indexID=" + index.indexID + " MIMEType=" + index.MIMEtype);
+            Logger.debug("indexID=" + index.indexID + " MIMEType=" + index.MIMEtype+" fileType="+fileType);
             indexes.update(k, (index.indexID, index.MIMEtype))
-            if (fileType.contains(index.MIMEtype)) {
+            val typeA=fileType.split("/")
+            val typeB=index.MIMEtype.split("/")
+           // if (fileType.equals(index.MIMEtype)) {
+            if (typeA(0).equals(typeB(0))) {
               indexurl = host + "/index/" + index.indexID + "/add"
               WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map {
                 res =>

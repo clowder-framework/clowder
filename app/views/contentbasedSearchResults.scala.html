@@ -1,4 +1,4 @@
-@(keysArray:scala.collection.mutable.ArrayBuffer[String],name: String, id: String, size:Integer,  results: scala.collection.mutable.HashMap[String, (String,scala.collection.mutable.ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]) 
+@(keysArray:scala.collection.mutable.ArrayBuffer[String],name: String, id: String, size:Integer,  results: scala.collection.mutable.HashMap[String, (String,String,String,scala.collection.mutable.ArrayBuffer[(String,String,Double,String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]) 
 @import models.IncrementCounter
 @import helper._
 @import collection.JavaConverters._
@@ -49,21 +49,24 @@
 	  		console.log("if : c.count=",@c.count);
 	  		</script>
 			<tr>
-	    	<th colspan="4">IndexID: @{results.get(index).map {ex =>ex._1}} </th>
+	    	<th colspan="4">Index: @{ results.get(index).map {ex =>(ex._1,ex._2,ex._3)
+	    	}
+	    		
+	    	} </th>
 			</tr>
 		}else{
 			<script>
 			console.log("else:c.count=",@c.count);
 			var row0=document.getElementById("tablec").rows[0];
 			var x=row0.insertCell(-1);
-				x.innerHTML="<h5>IndexID:@index<h5>";
+				x.innerHTML="<h5>Index:@{results.get(index).map{ex =>(ex._1,ex._2,ex._3)}} <h5>";
 				row0.cells[@{c.count-1}].colSpan="3";
 			</script>	
 			}
 		<tr>
 		@if(c.count==1){
 			<th>Rank</th>
-			<th>ID</th>
+			<th>Name</th>
 			<th>Preview</th>
 			<th>Proximity</th>
 			
@@ -73,7 +76,7 @@
 			//console.log("row1.innerHTML=",row1.innerHTML);
 			var x=row1.insertCell(-1);
 			x.align="center";
-			x.innerHTML="<h5>ID </h5>";
+			x.innerHTML="<h5>Name </h5>";
 			
 			var row111=document.getElementById("tablec").rows[1];
 			var x11=row111.insertCell(-1);
@@ -95,11 +98,11 @@
 		@results.get(index).map {list =>
 				@defining(new IncrementCounter){ i=>   
 					<script>
-					 console.log("i.count=",@i.count," list.length=", @list._2.length);
+					 console.log("i.count=",@i.count," list.length=", @list._4.length);
 					
 					</script>
 				
-				 @for(ele<-list._2){	
+				 @for(ele<-list._4){	
 					
 		 	    <!-- list.map  case (id,link, distance, fname) -->
 		 		  
@@ -160,7 +163,7 @@
 							}	
 						
 			     } <!--for  list ends here  -->
-			     @if(c.count==1 && list._2.length<5 ){
+			     @if(c.count==1 && list._4.length<5 ){
 			     	@if(i.count<5){
 					 @{i.count+=1}
 			     	<script>
@@ -186,7 +189,7 @@
 			     	</script>
 			     	}
 			     }
-			     @if(c.count>1 && list._2.length<5 ){
+			     @if(c.count>1 && list._4.length<5 ){
 		 		  			<script>
 		 		  			 console.log("INSIDE SOME USE CASE :inside if length");
 		 		  			 
