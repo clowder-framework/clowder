@@ -16,5 +16,9 @@
 	        "your browser does not support Adobe Reader or PDF.</div>");
   
   new PDFObject({ url: fileUrl }).embed("pdfview" + Configuration.tab.replace("#previewer",""));
+  
+  if(navigator.appVersion.indexOf("X11")!=-1 || navigator.appVersion.indexOf("Linux")!=-1)
+	  $(Configuration.tab).append("<br/><p>Note: 3D models embedded in PDF cannot be interacted with on Unix-based browsers. You can download the PDF" +
+	  								" and view the model on your desktop.</p>");
     
 }(jQuery, Configuration));

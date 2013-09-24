@@ -15,6 +15,8 @@
 		  "</object>"		  
   );
 
-  
+  if(navigator.appVersion.indexOf("X11")!=-1 || navigator.appVersion.indexOf("Linux")!=-1)
+	  $(Configuration.tab).append("<br/><p>Note: Quicktime VR panoramas (QTVR) are not viewed properly on Unix-based browsers due to lack of format support." +
+	  							" If the file is a QTVR, you can download it and view it on your desktop.</p>");
   
 }(jQuery, Configuration));
