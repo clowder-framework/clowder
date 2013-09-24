@@ -365,7 +365,7 @@
 	}
 	
 	$(Configuration.tab).append("<br/><p>Note: 3D models embedded in PDF cannot be interacted with using this previewer. You can use the \"Pdf\"" +
-								" previewer to interact with them if not using Linux, otherwise you can download the PDF and view the model on your desktop.</p>");
+								" previewer to interact with them.</p>");
 
 
 }(jQuery, Configuration));
