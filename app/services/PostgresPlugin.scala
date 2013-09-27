@@ -131,6 +131,27 @@ class PostgresPlugin(application: Application) extends Plugin {
       None
     } else Some(data)
   }
+  
+  def getSensorStreams(id: String): Option[String] = {
+    var data = ""
+    val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
+      "(SELECT streams.gid As stream_id FROM sensors, streams WHERE sensors.gid = ? AND sensors.gid = streams.sensor_id GROUP BY streams.gid) As t;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Get streams by sensor statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Sensors found: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Searching streams by sensor result: " + data)
+    if (data == "null") { // FIXME
+      Logger.debug("Searching NONE")
+      None
+    } else Some(data)
+  }
 
   def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String) {
     val ps = conn.prepareStatement("INSERT INTO streams(name, geog, created, metadata, sensor_id) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), ?, CAST(? AS json), ?);")
@@ -148,7 +169,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def searchStreams(geocode: Option[String]): Option[String] = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id FROM streams"
+      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text FROM streams"
     if (geocode.isDefined) query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     query += ") As t;"
     val st = conn.prepareStatement(query)
@@ -176,7 +197,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getStream(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_stream FROM " +
-      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM streams WHERE gid=?) As t;"
+      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text FROM streams WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Streams get statement: " + st)
@@ -194,10 +215,25 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else Some(data)
   }
 
+    
+  def deleteStream(id: Integer): Boolean = {
+	val deleteStream = "DELETE from streams where gid = ?"
+    val st = conn.prepareStatement(deleteStream)
+    st.setInt(1, id)
+    st.execute()
+    st.close()
+    val deleteDatapoints = "DELETE from datapoints where stream_id = ?"
+    val st2 = conn.prepareStatement(deleteDatapoints)
+    st2.setInt(1, id)
+    st2.execute()
+    st2.close()
+    true
+  }
+  
   def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]): Option[String] = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id FROM datapoints"
+      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id::text FROM datapoints"
     if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
     if (since.isDefined) query += "start_time >= ? "
     if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
@@ -243,7 +279,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getDatapoint(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +
-      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id FROM datapoints WHERE gid=?) As t;"
+      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id:text FROM datapoints WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Datapoints get statement: " + st)
