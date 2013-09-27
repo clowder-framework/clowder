@@ -104,6 +104,21 @@ object Geostreams extends ApiController {
       }
     }
   
+  
+  def getSensorStreams(id: String) =
+    Action { request =>
+      Logger.debug("Get sensor streams" + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getSensorStreams(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  
   def createStream() = Authenticated {
     Action(parse.json) { request =>
       Logger.debug("Creating stream")
@@ -150,6 +165,19 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
+  
+  def deleteStream(id: String) = Authenticated {
+    Action(parse.empty) { request =>
+      Logger.debug("Delete stream " + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          if (plugin.deleteStream(id.toInt)) Ok(Json.parse("""{"status":"ok"}"""))
+          else Ok(Json.parse("""{"status":"error"}"""))
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  }
 
   def addDatapoint() = Authenticated {
     Action(parse.json) { request =>
