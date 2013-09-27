@@ -447,10 +447,17 @@ function clearConfigTabAnnotations(prNum){
     	var resultLine = document.createElement('h5');
     	resultLine.innerHTML = "Distance: " + distanceValue;
     	resultLine.setAttribute('id','measuringvalue'+prNum);
-    	resultLine.setAttribute('data-measuring','true');
-    	resultLine.setAttribute("style","text-align:center;");
-    	$("#x3dElementTable" + prNum).after(resultLine);
-    	
+    	resultLine.setAttribute('data-measuring','true');   	
+    	if(!(document.fullscreenElement || 
+			       document.mozFullScreenElement || document.webkitFullscreenElement)){
+    		resultLine.setAttribute("style","text-align:center;");
+    		$("#x3dElementTable" + prNum).after(resultLine);
+    	}
+    	else{
+    		resultLine.setAttribute("style","text-align: center; background-color: black; color: white; background: none repeat scroll 0% 0% transparent; max-height: 0%; position: absolute;margin-left: 80%; height:auto; bottom:150px;");
+    		$("#x3dElement" + prNum + " > canvas").before(resultLine);
+    	}
+    		
     	$("#measuringlinecoordinate"+prNum).attr("point", window["currentMeasureStart" + prNum][0] + " " + window["currentMeasureStart" + prNum][1] + " " + window["currentMeasureStart" + prNum][2]
 		+ ", " + event.hitPnt[0] + " " + event.hitPnt[1] + " " + event.hitPnt[2]);   
     	
@@ -786,6 +793,11 @@ function clearConfigTabAnnotations(prNum){
 		theAnnot.setAttribute("style","");
 		thex3d.insertBefore(statDiv, theCanvas.nextSibling);
 		insertAfter(theAnnot, thex3d);
+		if($("#measuringvalue"+prNum).length > 0){
+			var theMeasurement = $("#measuringvalue"+prNum)[0];
+			theMeasurement.setAttribute("style","text-align: center;");						
+			thex3d.parentNode.insertBefore(theMeasurement, thex3d);
+		}
 		
 		$("#x3dElementTableFullscreen"+ prNum).css("display", "none");
 		$("#x3dElement" + prNum + " > canvas").css("height", height+"px");
@@ -1092,6 +1104,12 @@ function clearConfigTabAnnotations(prNum){
 					
 					thex3d.insertBefore(statDiv, theCanvas);
 					thex3d.insertBefore(theAnnot, theCanvas);
+					
+					if($("#measuringvalue"+prNum).length > 0){
+						var theMeasurement = $("#measuringvalue"+prNum)[0];
+						theMeasurement.setAttribute("style","text-align: center; background-color: black; color: white; background: none repeat scroll 0% 0% transparent; max-height: 0%; position: absolute;margin-left: 80%; height:auto; bottom:150px;");						
+						thex3d.insertBefore(theMeasurement, theCanvas);
+					}
 					
 					window["annotTrackingDiff" + prNum] = 0.020;
 					window["annotTrackingDiff2" + prNum] = 0.000;
