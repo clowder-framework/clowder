@@ -279,7 +279,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     if ((since.isDefined || until.isDefined) && geocode.isDefined) query += " AND "
     if (geocode.isDefined) query += "ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     if (stream_id.isDefined) query += "stream_id = ?"
-    query += ") As t;"
+    query += " order by start_time asc) As t;"
     val st = conn.prepareStatement(query)
     var i = 0
     if (since.isDefined) {
