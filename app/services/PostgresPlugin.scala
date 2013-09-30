@@ -11,6 +11,7 @@ import java.util.Properties
 import java.util.Date
 import java.text.SimpleDateFormat
 import java.sql.Timestamp
+import java.sql.Statement
 
 /**
  * Postgres connection and simple geoindex methods.
@@ -84,7 +85,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def searchSensors(geocode: Option[String]): Option[String] = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM sensors"
+      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM sensors"
     if (geocode.isDefined) query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     query += ") As t;"
     val st = conn.prepareStatement(query)
@@ -114,7 +115,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getSensor(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_sensor FROM " +
-      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM sensors WHERE gid=?) As t;"
+      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM sensors WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Sensors get statement: " + st)
@@ -153,8 +154,8 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else Some(data)
   }
 
-  def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String) {
-    val ps = conn.prepareStatement("INSERT INTO streams(name, geog, created, metadata, sensor_id) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), ?, CAST(? AS json), ?);")
+  def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String): String = {
+    val ps = conn.prepareStatement("INSERT INTO streams(name, geog, created, metadata, sensor_id) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), ?, CAST(? AS json), ?);", Statement.RETURN_GENERATED_KEYS)
     ps.setString(1, name)
     ps.setDouble(2, lon)
     ps.setDouble(3, lat)
@@ -163,13 +164,19 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setString(6, metadata)
     ps.setInt(7, stream_id.toInt)
     ps.executeUpdate()
+    val rs = ps.getGeneratedKeys()
+    rs.next()
+    val generatedKey = rs.getInt(1)
+    Logger.debug("Key returned from getGeneratedKeys():"+ generatedKey);
+    rs.close();
     ps.close()
+    return generatedKey.toString()
   }
 
   def searchStreams(geocode: Option[String]): Option[String] = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text FROM streams"
+      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text FROM streams"
     if (geocode.isDefined) query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     query += ") As t;"
     val st = conn.prepareStatement(query)
@@ -197,7 +204,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getStream(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_stream FROM " +
-      "(SELECT gid, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text FROM streams WHERE gid=?) As t;"
+      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text FROM streams WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Streams get statement: " + st)
@@ -233,7 +240,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]): Option[String] = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id::text FROM datapoints"
+      "(SELECT gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id::text FROM datapoints"
     if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
     if (since.isDefined) query += "start_time >= ? "
     if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
@@ -279,7 +286,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getDatapoint(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +
-      "(SELECT gid, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id:text FROM datapoints WHERE gid=?) As t;"
+      "(SELECT gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id:text FROM datapoints WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Datapoints get statement: " + st)
@@ -298,7 +305,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
 
   def listSensors() {
-    val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM (SELECT gid, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM datapoints"
+    val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM (SELECT gid As id, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM datapoints"
   }
 
   def test() {

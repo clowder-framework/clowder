@@ -52,7 +52,8 @@ object Application extends Controller with securesocial.core.SecureSocial {
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.tag,
         api.routes.javascript.Sections.comment,
-        api.routes.javascript.Geostreams.searchSensors
+        api.routes.javascript.Geostreams.searchSensors,
+        api.routes.javascript.Geostreams.getSensorStreams
       )
     ).as(JSON) 
   }

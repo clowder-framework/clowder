@@ -120,20 +120,21 @@ object Geostreams extends ApiController {
     }
   
   def createStream() = Authenticated {
-    Action(parse.json) { request =>
-      Logger.debug("Creating stream")
+    Logger.info("******* Creating stream WTF **********")
+    Action(parse.tolerantJson) { request =>
+      Logger.info("******* Creating stream **********")
       request.body.validate[(String, String, List[Double], JsValue, String)].map {
         case (name, geoType, longlat, metadata, sensor_id) => {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
-              plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
-              Ok(toJson("success"))
+              val id = plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
+              Ok(toJson(Json.obj("status"->"ok","id"->id)))              
             }
             case None => pluginNotEnabled
           }
         }
       }.recoverTotal {
-        e => BadRequest("Detected error:" + JsError.toFlatJson(e))
+        e => Logger.error(e.toString); BadRequest("Detected error:" + JsError.toFlatJson(e))
       }
     }
   }
