@@ -204,12 +204,13 @@ object Datasets extends ApiController {
     Logger.debug("Tagging " + request.body)
     val userObj = request.user;
     request.body.asJson.map {json =>
+      	val tagId = new ObjectId
 		(json \ "tag").asOpt[String].map { tag =>
-		  Logger.debug("Tagging " + id + " with " + tag)
-		  val tagObj = Tag(id = new ObjectId, name = tag, userId = userObj.get.id.toString, created = new Date)
+		  Logger.debug("Tagging " + id + " with " + tag)		   
+		  val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.id.toString, created = new Date)
 		  Dataset.tag(id, tagObj)
 		}
-      Ok(toJson(""))
+      Ok(toJson(tagId.toString()))
     }.getOrElse {
       BadRequest(toJson("error"))
     }

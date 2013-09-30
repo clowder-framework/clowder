@@ -633,8 +633,19 @@
 				   });
 				   $('#tagB').click(function() {
 				     var tag = $('#tagField').val();
+				     
+				      var isTagPresent = false;
+				     
+				     $("#tagList").children("li").each(function (index, tagLi) { 
+				     	if($(tagLi).attr("name")===tag){
+				     			isTagPresent = true;
+				     			alert(true);
+			     			}
+				     	});
+				     
+				     
 
-				     if (tag !== "") {
+				     if (tag !== "" && isTagPresent != true) {
 				     	 console.log("submitting tag " + tag);
 					     var request = jsRoutes.api.Datasets.tag('@dataset.id').ajax({
 					       data: JSON.stringify({"tag":tag}),
@@ -645,7 +656,8 @@
 					     request.done(function (response, textStatus, jqXHR){
 					        console.log("Response " + response);
 					        var url = "../tags/search/" + tag;
-					        $('#tagList').append("<li><a href='" + url + "'>" + tag + "</a></li>");
+					        $('#tagList').append("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='icon-remove'></i></a></li>");
+     						$("#tagList").children("li").hover(function(){$(this).find(".icon-remove").fadeIn(100);},function(){$(this).find(".icon-remove").fadeOut(100);})
 					        $('#tagField').val("");
 					     });
 			    

@@ -35,7 +35,7 @@ case class Dataset (
   created: Date, 
   files: List[File] = List.empty,
   streams_id: List[ObjectId] = List.empty,
-  tags: List[String] = List.empty,
+  tags: List[Tag] = List.empty,
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
   collections: List[String] = List.empty
