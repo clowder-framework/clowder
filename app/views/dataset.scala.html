@@ -602,11 +602,8 @@
 					<button class="btn" id="tagB">Tag</button>
 				</form>
 				<script language="javascript">
-				$(function() {
-					
-				   $("#tagList").children("li").hover(function(){$(this).find(".icon-remove").fadeIn(100);},function(){$(this).find(".icon-remove").fadeOut(100);})	
-					 
-				   $("#tagList").find(".icon-remove").click(function(){
+				
+				function removeTag(){ 
 					console.log("removing tag ");
 				    //alert($(this).attr("id"));
 				    var tagId = $(this).attr("id");
@@ -630,7 +627,29 @@
 				        window.location = "../login"; // FIXME hardcoded
 				     });
 				     return false;
-				   });
+				   }
+				   
+				   function removeIconMouseIn() {
+				   		$(this).find(".icon-remove").fadeIn(100);
+				   }
+				   
+				   function removeIconMouseOut() {
+				   		$(this).find(".icon-remove").fadeOut(100);				   	
+				   }
+				   
+				
+				$(function() {
+					
+					
+				   $("#tagList").children("li").each(function(){
+				   		$(this).hover(
+				   						//function(){$(this).find(".icon-remove").fadeIn(100);},
+				   						//function(){$(this).find(".icon-remove").fadeOut(100);}
+				   						removeIconMouseIn,removeIconMouseOut
+				   					  );
+				   	});
+					 
+				   $("#tagList").find(".icon-remove").click(removeTag);
 				   $('#tagB').click(function() {
 				     var tag = $('#tagField').val();
 				     
@@ -643,8 +662,6 @@
 			     			}
 				     	});
 				     
-				     
-
 				     if (tag !== "" && isTagPresent != true) {
 				     	 console.log("submitting tag " + tag);
 					     var request = jsRoutes.api.Datasets.tag('@dataset.id').ajax({
@@ -656,8 +673,11 @@
 					     request.done(function (response, textStatus, jqXHR){
 					        console.log("Response " + response);
 					        var url = "../tags/search/" + tag;
-					        $('#tagList').append("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='icon-remove'></i></a></li>");
-     						$("#tagList").children("li").hover(function(){$(this).find(".icon-remove").fadeIn(100);},function(){$(this).find(".icon-remove").fadeOut(100);})
+					        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='icon-remove'></i></a></li>").appendTo('#tagList');
+     						/*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
+     						$newTag.find(".icon-remove").click(removeTag);*/     						
+     						$newTag.hover(removeIconMouseIn,removeIconMouseOut);
+     						$newTag.find(".icon-remove").click(removeTag);
 					        $('#tagField').val("");
 					     });
 			    
