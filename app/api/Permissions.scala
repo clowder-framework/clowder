@@ -29,6 +29,7 @@ object Permission extends Enumeration {
 		SearchDatasets,
 		AddDatasetsMetadata,		
 		CreateTags,
+		RemoveTags,
 		CreateComments,
 		AddSections,
 		GetSections,

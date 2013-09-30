@@ -584,7 +584,7 @@
 				<h5>Tags</h5>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
-					  <li><a href="@routes.Tags.search(tag)">@tag [Dataset]</a></li>
+					  <li name='@tag.name'><a href="@routes.Tags.search(tag.name)">@tag.name [Dataset]</a><a href="javascript:void(0);"><i style="display:none;" id="@tag.id" class="icon-remove"></i></a></li>
 					}
   				    @dataset.files.map { file =>
 						@file.tags.map { tag =>
@@ -604,6 +604,33 @@
 				<script language="javascript">
 				$(function() {
 					
+				   $("#tagList").children("li").hover(function(){$(this).find(".icon-remove").fadeIn(100);},function(){$(this).find(".icon-remove").fadeOut(100);})	
+					 
+				   $("#tagList").find(".icon-remove").click(function(){
+					console.log("removing tag ");
+				    //alert($(this).attr("id"));
+				    var tagId = $(this).attr("id");
+				    var request = jsRoutes.api.Datasets.removeTag('@dataset.id').ajax({
+				    	data: JSON.stringify({"tagId":tagId}),
+				       	type: 'POST',
+				       	contentType: "application/json"
+				     });
+				     
+				     request.done(function (response, textStatus, jqXHR){
+				     	console.log("Response " + textStatus);
+				     	$("#" + tagId).parents("li").remove();
+				     });
+				     
+				     request.fail(function (jqXHR, textStatus, errorThrown){
+				        console.error(
+				            "The following error occured: "+
+				            textStatus, errorThrown
+				            
+				        );
+				        window.location = "../login"; // FIXME hardcoded
+				     });
+				     return false;
+				   });
 				   $('#tagB').click(function() {
 				     var tag = $('#tagField').val();
 

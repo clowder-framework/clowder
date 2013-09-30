@@ -19,6 +19,7 @@ import services.Services
 import jsonutils.JsonUtil
 import scala.collection.JavaConversions._
 import models.File
+import models.Tag
 import models.FileDAO
 import models.Extraction
 import services.ElasticsearchPlugin
@@ -185,7 +186,7 @@ object Datasets extends ApiController {
   
   
   
-  def tag(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateTags)) { implicit request =>
+  /*def tag(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateTags)) { implicit request =>
     request.body.\("tag").asOpt[String] match {
       case Some(tag) => {
         Dataset.tag(id, tag)
@@ -196,6 +197,35 @@ object Datasets extends ApiController {
         Logger.error("no tag specified.")
         BadRequest
       }
+    }
+  }*/
+  
+    def tag(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
+    Logger.debug("Tagging " + request.body)
+    val userObj = request.user;
+    request.body.asJson.map {json =>
+		(json \ "tag").asOpt[String].map { tag =>
+		  Logger.debug("Tagging " + id + " with " + tag)
+		  val tagObj = Tag(id = new ObjectId, name = tag, userId = userObj.get.id.toString, created = new Date)
+		  Dataset.tag(id, tagObj)
+		}
+      Ok(toJson(""))
+    }.getOrElse {
+      BadRequest(toJson("error"))
+    }
+  }
+    
+  def removeTag(id: String) = SecuredAction(parse.anyContent,authorization=WithPermission(Permission.RemoveTags)) {implicit request =>
+    Logger.debug("Removing tag " + request.body)
+    
+    request.body.asJson.map {json =>
+		(json \ "tagId").asOpt[String].map { tagId =>
+		  Logger.debug("Removing " + tagId + " from "+ id)
+		  Dataset.removeTag(id, tagId)
+		}
+      Ok(toJson(""))
+    }.getOrElse {
+      BadRequest(toJson("error"))
     }
   }
 

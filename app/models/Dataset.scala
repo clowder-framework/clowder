@@ -110,8 +110,18 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
-  def tag(id: String, tag: String) { 
+  /*def tag(id: String, tag: String) { 
     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  }*/
+  
+  def tag(id: String, tag: Tag) { 
+    //Need to check for the owner of the dataset before adding tag
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" ->  Tag.toDBObject(tag)), false, false, WriteConcern.Safe)
+  }
+  
+  def removeTag(id: String, tagId: String) { 
+	 Logger.debug("Removing tag " + tagId )
+     val result = dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId))), false, false, WriteConcern.Safe)
   }
   
   /**
