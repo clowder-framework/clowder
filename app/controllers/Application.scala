@@ -3,8 +3,6 @@ package controllers
 import play.api.Routes
 import play.api.mvc.Action
 import play.api.mvc.Controller
-import api.Sections
-import api.Geostreams
 
 /**
  * Main application controller.
