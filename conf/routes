@@ -191,6 +191,9 @@ GET     /api/geostreams/streams/:id       api.Geostreams.getStream(id: String)
 GET     /api/geostreams/streams           api.Geostreams.searchStreams(geocode: Option[String] ?= None)
 DELETE  /api/geostreams/streams/:id       api.Geostreams.deleteStream(id: String)
 
+DELETE  /api/geostreams/dropall           api.Geostreams.deleteAll
+GET     /api/geostreams/counts            api.Geostreams.counts
+
 GET     /geostreams                       controllers.Geostreams.browse
 
 

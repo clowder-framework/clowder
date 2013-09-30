@@ -237,6 +237,37 @@ class PostgresPlugin(application: Application) extends Plugin {
     true
   }
   
+  
+  def dropAll(): Boolean = {
+    val deleteSensors = "DELETE from sensors"
+    val st = conn.prepareStatement(deleteSensors)
+    st.executeUpdate()
+    st.close()
+    val deleteStreams = "DELETE from streams"
+    val st2 = conn.prepareStatement(deleteStreams)
+    st2.executeUpdate()
+    st2.close()
+    val deleteDatapoints = "DELETE from datapoints"
+    val st3 = conn.prepareStatement(deleteDatapoints)
+    st3.executeUpdate()
+    st3.close()
+    true
+  }
+  
+  def counts(): (Int, Int, Int) = {
+    var counts = (0, 0, 0)
+    val countQuery = "SELECT (SELECT COUNT(DISTINCT gid) FROM sensors) AS sensors,(SELECT COUNT(DISTINCT gid) FROM streams) AS streams,(SELECT COUNT(DISTINCT gid) FROM datapoints) AS datapoints"
+    val st = conn.prepareStatement(countQuery)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      counts = (rs.getInt(1), rs.getInt(2), rs.getInt(3))
+      System.out.println(counts)
+    }
+    rs.close()
+    st.close()
+    counts
+  }
+  
   def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]): Option[String] = {
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +

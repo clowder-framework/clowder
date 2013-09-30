@@ -30,7 +30,7 @@ import java.sql.Timestamp
  */
 object Geostreams extends ApiController {
 
-  val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssX")
+  val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssXXX")
   val pluginNotEnabled = InternalServerError(toJson("Geostreaming not enabled"))
   
   implicit val sensors = (
@@ -179,6 +179,32 @@ object Geostreams extends ApiController {
       }
     }
   }
+  
+  def deleteAll() = Authenticated {
+    Action(parse.empty) { request =>
+      Logger.debug("Drop all")
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          if (plugin.dropAll()) Ok(Json.parse("""{"status":"ok"}"""))
+          else Ok(Json.parse("""{"status":"error"}"""))
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  }
+  
+  def counts() =  Action { request =>
+      Logger.debug("Counting entries")
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.counts() match {
+          	case (sensors, streams, datapoints) => Ok(toJson(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints))) 
+          	case _ => Ok(Json.parse("""{"status":"error"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
 
   def addDatapoint() = Authenticated {
     Action(parse.json) { request =>
