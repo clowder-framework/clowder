@@ -18,6 +18,7 @@ import play.api.mvc.Controller
 import services.Services
 import jsonutils.JsonUtil
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 import models.File
 import models.Tag
 import models.FileDAO
@@ -164,7 +165,13 @@ object Datasets extends ApiController {
   def index(id: String) {
     Services.datasets.get(id) match {
       case Some(dataset) => {
-        val tagsJson = new JSONArray(dataset.tags)
+        var tagListBuffer = new ListBuffer[String]()
+        
+        for (tag <- dataset.tags){
+          tagListBuffer += tag.name
+        }          
+        
+        val tagsJson = new JSONArray(tagListBuffer.toList)
 
         Logger.debug("tagStr=" + tagsJson);
 
@@ -184,23 +191,7 @@ object Datasets extends ApiController {
     }
   }
   
-  
-  
-  /*def tag(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateTags)) { implicit request =>
-    request.body.\("tag").asOpt[String] match {
-      case Some(tag) => {
-        Dataset.tag(id, tag)
-        index(id)
-        Ok
-      }
-      case None => {
-        Logger.error("no tag specified.")
-        BadRequest
-      }
-    }
-  }*/
-  
-    def tag(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
+  def tag(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
     Logger.debug("Tagging " + request.body)
     val userObj = request.user;
     request.body.asJson.map {json =>
@@ -209,6 +200,7 @@ object Datasets extends ApiController {
 		  Logger.debug("Tagging " + id + " with " + tag)		   
 		  val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.id.toString, created = new Date)
 		  Dataset.tag(id, tagObj)
+		  index(id)
 		}
       Ok(toJson(tagId.toString()))
     }.getOrElse {
@@ -216,7 +208,7 @@ object Datasets extends ApiController {
     }
   }
     
-  def removeTag(id: String) = SecuredAction(parse.anyContent,authorization=WithPermission(Permission.RemoveTags)) {implicit request =>
+  def removeTag(id: String) = SecuredAction(parse.anyContent,authorization=WithPermission(Permission.DeleteTags)) {implicit request =>
     Logger.debug("Removing tag " + request.body)
     
     request.body.asJson.map {json =>
