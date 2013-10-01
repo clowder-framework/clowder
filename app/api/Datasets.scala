@@ -190,36 +190,30 @@ object Datasets extends ApiController {
       case None => Logger.error("Dataset not found: " + id)
     }
   }
-  
-  def tag(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
+
+  def tag(id: String) = SecuredAction(parse.json, authorization = WithPermission(Permission.CreateTags)) { implicit request =>
     Logger.debug("Tagging " + request.body)
+    
     val userObj = request.user;
-    request.body.asJson.map {json =>
-      	val tagId = new ObjectId
-		(json \ "tag").asOpt[String].map { tag =>
-		  Logger.debug("Tagging " + id + " with " + tag)		   
-		  val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.id.toString, created = new Date)
-		  Dataset.tag(id, tagObj)
-		  index(id)
-		}
-      Ok(toJson(tagId.toString()))
-    }.getOrElse {
-      BadRequest(toJson("error"))
+    val tagId = new ObjectId
+    
+    request.body.\("tag").asOpt[String].map { tag =>
+      Logger.debug("Tagging " + id + " with " + tag)
+      val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.id.toString, created = new Date)
+      Dataset.tag(id, tagObj)
+      index(id)
     }
+    Ok(toJson(tagId.toString()))
   }
     
-  def removeTag(id: String) = SecuredAction(parse.anyContent,authorization=WithPermission(Permission.DeleteTags)) {implicit request =>
+  def removeTag(id: String) = SecuredAction(parse.json,authorization=WithPermission(Permission.DeleteTags)) {implicit request =>
     Logger.debug("Removing tag " + request.body)
     
-    request.body.asJson.map {json =>
-		(json \ "tagId").asOpt[String].map { tagId =>
+    request.body.\("tagId").asOpt[String].map { tagId =>
 		  Logger.debug("Removing " + tagId + " from "+ id)
 		  Dataset.removeTag(id, tagId)
 		}
-      Ok(toJson(""))
-    }.getOrElse {
-      BadRequest(toJson("error"))
-    }
+      Ok(toJson(""))    
   }
 
   def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments)) { implicit request =>
