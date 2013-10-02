@@ -1,4 +1,4 @@
 { "name" : "Video",
   "main" : "some-library.js",
-  "contentType" : ["video/mp4"]
+  "contentType" : ["video/mp4", "video/quicktime"]
   }
