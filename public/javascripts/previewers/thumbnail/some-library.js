@@ -280,8 +280,8 @@
 					});
 					request.done(function (response, textStatus, jqXHR){ 
 						var url = window.jsRoutes.controllers.Tags.search(tag).url;
-						$('#tagList').append("<li><a href='" + url + "'>" + tag + "</a></li>");
-						$('#tagField').val("");
+						$('#tagList'+prNum).append("<li><a href='" + url + "'>" + tag + "</a></li>");
+						$('#tagField'+prNum).val("");
 					});
 					request.fail(function (jqXHR, textStatus, errorThrown){
 						console.error("The following error occured: " + textStatus, errorThrown);
@@ -332,7 +332,7 @@
 	// --------------------------------------------------------
 	else if (Configuration.fileType === "image/tiff"){
 		$(Configuration.tab).append(
-			"<embed width=750 height=550	"+
+			"<embed alt='No plugin capable of displaying TIFF images was found.' width=750 height=550	"+
 				"src='" + Configuration.url + "' type='image/tiff'"+
 				" negative=no>"
 			);

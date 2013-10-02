@@ -14,7 +14,7 @@
 	$(Configuration.tab).append("<p>Right-click on image for help navigating.</p>");
 	
 	$(Configuration.tab).append(
-		     "<div class='iipDiv' style='width: " + width + "px; height: " + height + "px' id='iip" + Configuration.tab.replace("#previewer","") + "'>Insert image here</div>"
+		     "<div class='iipDiv' style='width: " + width + "px; height: " + height + "px' id='iip" + Configuration.tab.replace("#previewer","") + "'>Your browser does not support Flash.</div>"
 		  );
 	
 	  $.ajax({
