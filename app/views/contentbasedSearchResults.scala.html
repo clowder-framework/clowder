@@ -5,25 +5,6 @@
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @main("Search Results") {
-	<script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
-	<script>
-    	var isPageLoaded = false;
-    	var isx3dActive = false;
-    	var Configuration = {};
-    	
-		
-		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
-		Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
-		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-		Configuration.imagesPath = "@(routes.Assets.at("images"))";		
-    </script>
-    <script>
-    	window.onload = function() {
-    		isPageLoaded = true;
-    	}
-    </script>
-	
-	
 	<div class="page-header">
 		<h1>Search Results For <medium>@name</medium></h1>
 	</div>
@@ -39,7 +20,8 @@
 	<div class="row-fluid" >
 	<div>
 	
-	<table id='tablec' border="1">
+	<table id='tablec'  style="table-layout: fixed;width: 100%" cellpadding="10"  cellspacing="5" border="2">
+	
 	@defining(new IncrementCounter){c=>
 	  @for(index<-keysArray){
 		<thead>
@@ -49,32 +31,44 @@
 	  		console.log("if : c.count=",@c.count);
 	  		</script>
 			<tr>
-	    	<th colspan="4">Index: @{ results.get(index).map {ex =>(ex._1,ex._2,ex._3)
+	    	<th class="both" id="index" colspan="4">Index: @{results.get(index).map {ex =>
+	    		ex._1
+	    	}} <br>
+	    	@{results.get(index).map {ex =>
+	    		ex._2
+	    	}}<br>
+	    	@{results.get(index).map {ex =>
+	    		ex._3
 	    	}
 	    		
 	    	} </th>
 			</tr>
 		}else{
+		
 			<script>
 			console.log("else:c.count=",@c.count);
 			var row0=document.getElementById("tablec").rows[0];
 			var x=row0.insertCell(-1);
-				x.innerHTML="<h5>Index:@{results.get(index).map{ex =>(ex._1,ex._2,ex._3)}} <h5>";
+				//x.innerHTML="<h5>Index:@{results.get(index).map{ex =>(ex._1,ex._2,ex._3)}} <h5>";
+				x.className="right";			
+				x.align="center";
+				x.innerHTML="<h5>Index: @{results.get(index).map {ex =>ex._1}} <br>"+" @{results.get(index).map{ex =>ex._2}}<br>"+"	@{results.get(index).map {ex =>ex._3}}</h5>"
 				row0.cells[@{c.count-1}].colSpan="3";
 			</script>	
 			}
 		<tr>
 		@if(c.count==1){
-			<th>Rank</th>
+			<th class="left">Rank</th>
 			<th>Name</th>
 			<th>Preview</th>
-			<th>Proximity</th>
+			<th class="right">Proximity</th>
 			
 		}else{
 		   <script>
 			var row1=document.getElementById("tablec").rows[1];
 			//console.log("row1.innerHTML=",row1.innerHTML);
 			var x=row1.insertCell(-1);
+			
 			x.align="center";
 			x.innerHTML="<h5>Name </h5>";
 			
@@ -85,6 +79,7 @@
 			
 			var row11=document.getElementById("tablec").rows[1];
 			var x1=row11.insertCell(-1);
+			x1.className="right";
 			x1.align="center";
 			x1.innerHTML="<h5>Proximity</h5>";
 
@@ -120,16 +115,24 @@
 								  var u=row2.insertCell(2);
 								  var v=row2.insertCell(3);
 								  
+								  z.className="left";
 								  z.innerHTML="@i.count";
+								  
 								  t.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
 								  @for((f, pvs) <- ele._5) {
 								  	@if(pvs.isEmpty){
 								  	    u.innerHTML="";
 								  	   }else{ 
-									       u.innerHTML="<a href=@routes.Search.findSimilarFile(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4'></img></a>";
+								  	    u.align="center";
+ 										u.innerHTML="<a href=@routes.Files.file(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4' Title='Click here for the original image'</img></a><br><br><a href=@routes.Search.findSimilarFile(ele._1)><p>Find Similar</p></a>"; 
+ 										
+ 									//u.innerHTML="<a href=@routes.Search.findSimilarFile(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)'  alt='@ele._4' Title='Find Similar'</img></a>"; 	
+
 									}
 								  }
-								  v.innerHTML="@ele._3";
+								 v.className="right";
+								 v.innerHTML="@ele._3";
+								 
 								 							 
 								</script>
 								
@@ -153,8 +156,12 @@
 								 z.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
 								 
 								 @for((f, pvs) <- ele._5) {
-									y.innerHTML="<a href=@routes.Search.findSimilarFile(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4'></img></a>";
+									//y.innerHTML="<a href=@routes.Search.findSimilarFile(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4'></img></a>";
+								  y.align="center";
+ 								 y.innerHTML="<a href=@routes.Files.file(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)'  alt='@ele._4' </img></a><br><br><a href=@routes.Search.findSimilarFile(ele._1)><p>Find Similar</p></a>"; 
+								  
 								  }
+								  s.className="right";
 								  s.innerHTML=@ele._3;
 									
 								}
@@ -167,47 +174,53 @@
 			     	@if(i.count<5){
 					 @{i.count+=1}
 			     	<script>
+			     	var temp;
 			     	for(var j=@i.count;j<6;j++){
-						console.log("else: c.count=",@c.count," i.count=",@{i.count+1}," j=",j);
+						console.log("if: c.count==1 && list._4.length < 5 : c.count=",@c.count," i.count=",@{i.count}," j=",j);
 						
 						var row=document.getElementById("tablec").insertRow(-1);
 								 								  
-								  var z=row2.insertCell(0);
-								  var t=row2.insertCell(1);
-								  var u=row2.insertCell(2);
-								  var v=row2.insertCell(3);
+								  var z=row.insertCell(0);
+								  var t=row.insertCell(1);
+								  var u=row.insertCell(2);
+								  var v=row.insertCell(3);
 						
 						
-						
-						 z.innerHTML="";
-						 t.innerHTML="";
-						 u.innerHTML="";
-						 v.innerHTML="";
-						 
+						 z.className="left";
+						 z.innerHTML=j;
+						 t.innerHTML="NA";
+						 u.innerHTML="NA";
+						 v.className="right";
+						 v.innerHTML="NA";
+						temp=j; 
 						}
-			     	
+			     	console.log("if: temp=",temp);
 			     	</script>
 			     	}
 			     }
 			     @if(c.count>1 && list._4.length<5 ){
+			     	@if(i.count<5){
+			     		@{i.count+=1}
 		 		  			<script>
-		 		  			 console.log("INSIDE SOME USE CASE :inside if length");
+		 		  			 console.log("INSIDE SOME USE CASE :inside if length:c.count>1 && list._4.length <5");
 		 		  			 
-		 		  			   for(var j=@i.count+1;j<6;j++){
-								console.log("else: c.count=",@c.count," i.count=",@{i.count+1}," j=",j);
+		 		  			   for(var j=@i.count;j<6;j++){
+								console.log("else: c.count=",@c.count," i.count=",@{i.count}," j=",j);
 								
 								var col3=document.getElementById("tablec").rows[j+1];
 								
 									 var z=col3.insertCell(@{3*c.count-2});
 								     var y=col3.insertCell(@{3*c.count-1});
 								     var s=col3.insertCell(@{3*c.count});
-								 z.innerHTML="";
-								 y.innerHTML="";
-								 s.innerHTML="";
+								 z.innerHTML="NA";
+								 y.innerHTML="NA";
+								 v.className="right";
+								 s.innerHTML="NA";
 								 
 								}
 								
-								</script>	
+								</script>
+								}	
 		 		          	 }	
 		 		          	 
 			

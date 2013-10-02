@@ -33,6 +33,7 @@ import akka.actor.ActorRef
 import models.PreviewDAO
 import controllers.Previewers
 import controllers.routes
+import java.text.DecimalFormat
 
 /*Versus Plugin
  * 
@@ -223,7 +224,11 @@ class VersusPlugin(application: Application) extends Plugin {
                 ///Previews ends.........
                 
                 //resultArray += ((subStr, result.docID, result.proximity, file.filename))
-                resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                //resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                 val formatter = new DecimalFormat("#.###")
+               // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                val proxvalue=formatter.format(result.proximity).toDouble
+                resultArray += ((subStr, result.docID, proxvalue, file.filename,previews))
              
                 //     ar.update(i, file.filename)
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
@@ -301,7 +306,10 @@ class VersusPlugin(application: Application) extends Plugin {
                 ///Previews ends.........
                 
                 //resultArray += ((subStr, result.docID, result.proximity, file.filename))
-                resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                val formatter = new DecimalFormat("#.###")
+               // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                val proxvalue=formatter.format(result.proximity).toDouble
+                resultArray += ((subStr, result.docID, proxvalue, file.filename,previews))
              
                 //     ar.update(i, file.filename)
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
