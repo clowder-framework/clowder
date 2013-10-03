@@ -262,6 +262,58 @@ object Files extends ApiController {
       }
     }
     
+    
+     /**
+   * Send job for file preview(s) generation at a later time.
+   */
+    def sendJob(file_id: String, fileType: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+      request.user match {
+        case Some(user) => {
+          FileDAO.get(file_id) match {
+		      case Some(theFile) => { 
+		          var nameOfFile = theFile.filename
+		          var flags = ""
+		          if(nameOfFile.endsWith(".ptm")){
+			          	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+			              if(thirdSeparatorIndex >= 0){
+			                var firstSeparatorIndex = nameOfFile.indexOf("_")
+			                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+			            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+			            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+			              }
+		          }
+		        
+		        val showPreviews = theFile.showPreviews   
+		          
+		        Logger.debug("(Re)sending job for file " + nameOfFile)
+		       
+		            val id = theFile.id.toString
+		            if(showPreviews.equals("None"))
+		              flags = flags + "+nopreviews"   	
+	
+		            val key = "unknown." + "file."+ fileType.replace("__", ".")
+		            		// TODO RK : need figure out if we can use https
+		            val host = "http://" + request.host + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
+	
+		            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, theFile.length.toString, "", flags))}
+		             
+//		            current.plugin[ElasticsearchPlugin].foreach{
+//		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", theFile.contentType)))
+//		            }
+		            Ok(toJson(Map("id"->id)))   
+		          
+		        }
+		      case None => {
+		         BadRequest(toJson("File not found."))
+		      }
+          }
+        } 
+        case None => BadRequest(toJson("Not authorized."))
+      }
+    }
+    
+    
+    
   /**
    * Upload a file to a specific dataset
    */
