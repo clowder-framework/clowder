@@ -39,7 +39,7 @@ trait MongoFileDB {
     if (date == "") {
       FileDAO.findAll.sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("After " + sinceDate)
       FileDAO.find("uploadDate" $lt sinceDate).sort(order).limit(limit).toList
     }
@@ -54,7 +54,7 @@ trait MongoFileDB {
       FileDAO.findAll.sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("uploadDate"-> 1) 
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("Before " + sinceDate)
       var fileList = FileDAO.find("uploadDate" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
       fileList = fileList.filter(_ != fileList.last)
