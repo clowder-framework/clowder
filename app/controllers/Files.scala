@@ -110,7 +110,7 @@ object Files extends Controller with SecuredController {
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
-    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     var prev, next = ""
     var files = List.empty[models.File]
     if (direction == "b") {
