@@ -245,7 +245,11 @@ object Datasets extends SecuredController {
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
 			          }			          
-			        }			        			        
+			        }else if(nameOfFile.endsWith(".mov")){
+			        	fileType = "ambiguous/mov";
+			        }
+			        
+			        
 			    	// TODO RK need to replace unknown with the server name
 			    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 //			        val key = "unknown." + "file."+ "application.x-ptm"

@@ -194,7 +194,9 @@ object Files extends Controller with SecuredController {
 				             Logger.error(fileType.substring(7))
 				             InternalServerError(fileType.substring(7))
 				          }			          
-				        }
+				        }else if(nameOfFile.endsWith(".mov")){
+				        	fileType = "ambiguous/mov";
+			        }
 	            
 	            // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
@@ -226,6 +228,8 @@ object Files extends Controller with SecuredController {
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
     }
   }
+  
+  
 
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
@@ -308,6 +312,8 @@ object Files extends Controller with SecuredController {
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
 			          }			          
+			        }else if(nameOfFile.endsWith(".mov")){
+			        	fileType = "ambiguous/mov";
 			        }
             
             // TODO RK need to replace unknown with the server name
@@ -368,6 +374,8 @@ object Files extends Controller with SecuredController {
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
 			          }			          
+			        }else if(nameOfFile.endsWith(".mov")){
+			        	fileType = "ambiguous/mov";
 			        }
             
             // TODO RK need to replace unknown with the server name
@@ -431,6 +439,8 @@ object Files extends Controller with SecuredController {
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
 			          }			          
+			        }else if(nameOfFile.endsWith(".mov")){
+			        	fileType = "ambiguous/mov";
 			        }
             
             // TODO RK need to replace unknown with the server name
@@ -500,6 +510,8 @@ object Files extends Controller with SecuredController {
 								Logger.error(fileType.substring(7))
 								InternalServerError(fileType.substring(7))
 								}			          
+						  }else if(nameOfFile.endsWith(".mov")){
+							  fileType = "ambiguous/mov";
 						  }
 				  	  
 					  // TODO RK need to replace unknown with the server name
