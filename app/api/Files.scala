@@ -267,8 +267,6 @@ object Files extends ApiController {
    * Send job for file preview(s) generation at a later time.
    */
     def sendJob(file_id: String, fileType: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
-      request.user match {
-        case Some(user) => {
           FileDAO.get(file_id) match {
 		      case Some(theFile) => { 
 		          var nameOfFile = theFile.filename
@@ -307,9 +305,6 @@ object Files extends ApiController {
 		         BadRequest(toJson("File not found."))
 		      }
           }
-        } 
-        case None => BadRequest(toJson("Not authorized."))
-      }
     }
     
     
