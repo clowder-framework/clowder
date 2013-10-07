@@ -46,6 +46,7 @@ object Permission extends Enumeration {
 		GetSensors,
 		SearchSensors,
 		RemoveSensors,
+		AddThumbnail,
 		DownloadFiles = Value
 }
 

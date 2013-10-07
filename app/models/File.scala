@@ -33,7 +33,8 @@ case class File(
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
     tags: List[String] = List.empty,
-    metadata: Map[String, Any] = Map.empty
+    metadata: Map[String, Any] = Map.empty,
+	thumbnail_id: Option[String] = None
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

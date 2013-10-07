@@ -583,6 +583,25 @@ object Files extends ApiController {
     }
    }
   
+  /**
+   * Add thumbnail to file.
+   */
+  def attachThumbnail(file_id: String, thumbnail_id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateFiles)) { implicit  request =>
+          // TODO create a service instead of calling salat directly
+          FileDAO.findOneById(new ObjectId(file_id)) match { 
+            case Some(file) => {
+	              models.Thumbnail.findOneById(new ObjectId(thumbnail_id)) match {
+	                case Some(thumbnail) =>
+	                    FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(file_id)), 
+	                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
+	                    Ok(toJson(Map("status"->"success")))
+	                case None => BadRequest(toJson("Thumbnail not found"))
+	              }
+            }
+	        case None => BadRequest(toJson("File not found " + file_id))
+	      }       
+   }
+  
    /**
    * Find geometry file for given 3D file and geometry filename.
    */

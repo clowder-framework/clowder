@@ -26,6 +26,7 @@ POST   /uploadSelectQuery                 controllers.Files.uploadSelectQuery
 POST   	/uploaddnd/:id					  controllers.Files.uploaddnd(id)
 #POST  	/reactiveUpload					  controllers.Files.reactiveUpload
 POST    /uploadDragDrop					  controllers.Files.uploadDragDrop
+GET		/fileThumbnail/:id/blob			  controllers.Files.thumbnail(id)
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
@@ -112,6 +113,7 @@ GET     /api-docs.json        controllers.ApiHelpController.getResources
 # Rest API
 POST	/api/files/:three_d_file_id/geometries/:geometry_id		api.Files.attachGeometry(three_d_file_id,geometry_id)
 POST	/api/files/:three_d_file_id/3dTextures/:texture_id		api.Files.attachTexture(three_d_file_id,texture_id)
+POST	/api/files/:file_id/thumbnails/:thumbnail_id			api.Files.attachThumbnail(file_id,thumbnail_id)
 GET     /api/files                        						api.Files.list
 POST    /api/files                        						api.Files.upload(showPreviews: String ?= "FileLevel")
 POST    /api/uploadToDataset/:id                        		api.Files.uploadToDataset(id, showPreviews: String ?= "DatasetLevel")
@@ -178,6 +180,7 @@ GET     /api/geostreams/search            api.Geostreams.search(since: Option[St
 POST	/api/tiles						  api.ZoomIt.uploadTile
 POST	/api/geometries					  api.Geometry.uploadGeometry
 POST	/api/3dTextures					  api.ThreeDTexture.uploadTexture
+POST    /api/fileThumbnail                api.Thumbnail.uploadThumbnail
 
 GET     /api/sensors                      api.Sensors.list
 POST    /api/sensors                      api.Sensors.add

@@ -15,6 +15,7 @@ import play.api.libs.iteratee.Input.{El, EOF, Empty}
 import com.mongodb.casbah.gridfs.GridFS
 import models.PreviewDAO
 import models.SectionDAO
+import models.Thumbnail
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
@@ -103,6 +104,7 @@ object Files extends Controller with SecuredController {
     }
   }
   
+    
   /**
    * List a specific number of files before or after a certain date.
    */
@@ -141,6 +143,8 @@ object Files extends Controller with SecuredController {
     	next = formatter.format(files.last.uploadDate)
       }
     }
+    
+    
     Ok(views.html.filesList(files, prev, next, limit))
   }
    
@@ -277,6 +281,49 @@ object Files extends Controller with SecuredController {
     }
   }
   
+  def thumbnail(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>    
+    Thumbnail.getBlob(id) match {
+      case Some((inputStream, filename, contentType, contentLength)) => {
+        request.headers.get(RANGE) match {
+	          case Some(value) => {
+	            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
+	              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+	              case x => (x(0).toLong,x(1).toLong)
+	            }
+	            range match { case (start,end) =>
+	             
+	              inputStream.skip(start)
+	              import play.api.mvc.{SimpleResult, ResponseHeader}
+	              SimpleResult(
+	                header = ResponseHeader(PARTIAL_CONTENT,
+	                  Map(
+	                    CONNECTION -> "keep-alive",
+	                    ACCEPT_RANGES -> "bytes",
+	                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
+	                    CONTENT_LENGTH -> (end - start + 1).toString,
+	                    CONTENT_TYPE -> contentType
+	                  )
+	                ),
+	                body = Enumerator.fromStream(inputStream)
+	              )
+	            }
+	          }
+	          case None => {
+	            Ok.stream(Enumerator.fromStream(inputStream))
+	            	.withHeaders(CONTENT_TYPE -> contentType)
+	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
+	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+      
+	          }
+	        }
+      }
+      case None => {
+        Logger.error("Error getting thumbnail" + id)
+        NotFound
+      }      
+    }
+    
+  }
   
   
   
