@@ -35,7 +35,17 @@ object SelectedDAO extends ModelCompanion[Selected, ObjectId] {
   def add(dataset: String, user: String) {
     val query = MongoDBObject("user" -> user)
     val update = $addToSet("datasets" -> dataset)
-    val result = dao.collection.update(query, update, upsert=true)
+//    val result = dao.collection.update(query, update, upsert=true)
+    val updated = dao.collection.findAndModify(
+      query = query,
+      update = update,
+      upsert = true,
+      fields = null,
+      sort = null,
+      remove = false,
+      returnNew = true
+    )
+    Logger.debug("Selected updated " +  updated)
   }
   
   def remove(dataset: String, user: String) {
