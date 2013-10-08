@@ -1,4 +1,4 @@
-@(file: models.File, id: String, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean)(implicit user: Option[securesocial.core.Identity])
+@(file: models.File, id: String, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean, fileDataset: Option[models.Dataset])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
@@ -90,6 +90,10 @@
 				<dd>@file.contentType</dd>
 				<dt>Uploaded on:</dt>
 				<dd>@file.uploadDate</dd>
+				@if(!fileDataset.isEmpty){
+					<dt>Dataset:</dt>
+					<dd><a target='_blank' href="@(routes.Datasets.dataset(fileDataset.get.id.toString))">@(fileDataset.get.name)</a></dd>
+				}
 			</dl>
 		</div>
 		

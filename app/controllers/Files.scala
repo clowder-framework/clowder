@@ -98,7 +98,9 @@ object Files extends Controller with SecuredController {
         }
         comments = comments.sortBy(_.posted)
         
-        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity))
+        var fileDataset = Dataset.findOneByFileId(file.id)
+        
+        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
