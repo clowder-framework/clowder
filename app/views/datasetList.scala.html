@@ -9,9 +9,10 @@
 		<table class="table table-bordered table-hover">
 			<thead>
 				<tr>
-					<th style="width: 30%">Name</th>
+					<th style="width: 25%">Name</th>
 					<th style="width: 20%">Created</th>
-					<th style="width: 50%">Description</th>
+					<th style="width: 45%">Description</th>
+					<th style="width: 10%"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -20,6 +21,7 @@
 						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
 						<td>@dataset.description</td>
+						<td>@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" height="120" width="120">}</td>
 					</tr>
 				}
 			</tbody>

@@ -38,7 +38,8 @@ case class Dataset (
   tags: List[String] = List.empty,
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
-  collections: List[String] = List.empty
+  collections: List[String] = List.empty,
+  thumbnail_id: Option[String] = None
 )
 
 object MustBreak extends Exception { }
