@@ -111,7 +111,11 @@ object Datasets extends ApiController {
     }
 
   def jsonDataset(dataset: Dataset): JsValue = {
-    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString))
+    var datasetThumbnail = "None"
+    if(!dataset.thumbnail_id.isEmpty)
+      datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
+    
+    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
