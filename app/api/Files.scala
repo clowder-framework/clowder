@@ -416,10 +416,11 @@ object Files extends ApiController {
 	        
 	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)	        
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
+	             FileDAO.setIntermediate(f.id.toString())
 	             var fileType = f.contentType
 			     if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          

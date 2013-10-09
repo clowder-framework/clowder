@@ -34,7 +34,8 @@ case class File(
     previews: List[Preview] = List.empty,
     tags: List[String] = List.empty,
     metadata: Map[String, Any] = Map.empty,
-	thumbnail_id: Option[String] = None
+	thumbnail_id: Option[String] = None,
+	isIntermediate: Option[Boolean] = None
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -84,7 +85,9 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
   
-  
+  def setIntermediate(id: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
+  }
   
   
   
