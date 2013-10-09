@@ -444,9 +444,10 @@ object Files extends Controller with SecuredController {
 							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id.toString
 							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, ""))}
-					  current.plugin[ElasticsearchPlugin].foreach{
-						  _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
-					  }
+					 // current.plugin[ElasticsearchPlugin].foreach{
+					//	  _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
+					//  }
+					  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))}
 					  
 					  // add file to dataset
 					  // TODO create a service instead of calling salat directly
