@@ -73,4 +73,12 @@ object Comment extends ModelCompanion[Comment, ObjectId] {
       comment.copy(replies=findCommentsByParentId(comment.id.toString))
     }.toList
   }
+  
+  def removeComment(c: Comment){
+    for(reply <- findCommentsByParentId(c.id.toString())){
+          Comment.removeComment(reply)
+        }
+    dao.remove(c)
+  }
+  
 }

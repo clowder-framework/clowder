@@ -89,7 +89,32 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
   }
   
-  
+  def removeFile(id: String){
+    dao.findOneById(new ObjectId(id)) match{
+      case Some(file) => {
+        if(file.isIntermediate.isEmpty){
+	        val fileDataset = Dataset.findOneByFileId(file.id)
+	        if(!fileDataset.isEmpty)
+	        	Dataset.removeFile(fileDataset.get.id.toString(), id)         	
+	        for(section <- SectionDAO.findByFileId(file.id)){
+	          SectionDAO.removeSection(section)
+	        }
+	        for(preview <- PreviewDAO.findByFileId(file.id)){
+	          PreviewDAO.removePreview(preview)
+	        }
+	        for(comment <- Comment.findCommentsByFileId(id)){
+	          Comment.removeComment(comment)
+	        }
+	        for(texture <- ThreeDTextureDAO.findTexturesByFileId(id)){
+	          ThreeDTextureDAO.remove(texture)
+	        }
+	        if(!file.thumbnail_id.isEmpty)
+	          Thumbnail.remove(Thumbnail.findOneByID(new ObjectId(file.thumbnail_id.get)).get)
+        }
+        dao.remove(file)
+      }      
+    }    
+  }
   
   
 }

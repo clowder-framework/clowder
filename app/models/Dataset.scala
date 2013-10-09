@@ -225,5 +225,8 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   def removeCollection(datasetId:String, collectionId: String){   
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("collections" ->  collectionId), false, false, WriteConcern.Safe)   
   }
+  def removeFile(datasetId:String, fileId: String){   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files._id" ->  new ObjectId(fileId)), false, false, WriteConcern.Safe)   
+  }
   
 }

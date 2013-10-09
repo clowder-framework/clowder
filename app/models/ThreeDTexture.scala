@@ -40,6 +40,10 @@ object ThreeDTextureDAO extends ModelCompanion[ThreeDTexture, ObjectId]{
 			case e:NoSuchElementException => return None 
 			}   
 	}
+	
+	def findTexturesByFileId(fileId: String) : List[ThreeDTexture] = {
+	    dao.find(MongoDBObject("file_id"->fileId)).toList
+	}
 		    
 	/**
    * Save blob.

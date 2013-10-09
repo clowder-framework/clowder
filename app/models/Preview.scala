@@ -127,6 +127,10 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
        }
   }
   
+  def removePreview(p: Preview){
+    dao.remove(p)    
+  }
+  
 }
 
 
