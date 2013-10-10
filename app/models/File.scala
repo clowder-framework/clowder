@@ -14,6 +14,7 @@ import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import collection.JavaConverters._
 import securesocial.core.Identity
+import play.api.Logger
 
 /**
  * Uploaded files.
@@ -76,7 +77,12 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def findByTag(tag: String): List[File] = {
     dao.find(MongoDBObject("tags" -> tag)).toList
   }
+  
+  def findIntermediates(): List[File] = {
+    dao.find(MongoDBObject("isIntermediate" -> true)).toList
+  }
 
+ 
   def tag(id: String, tag: String) { 
     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
   }
@@ -111,7 +117,8 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 	        if(!file.thumbnail_id.isEmpty)
 	          Thumbnail.remove(Thumbnail.findOneByID(new ObjectId(file.thumbnail_id.get)).get)
         }
-        dao.remove(file)
+        Logger.debug(file.toString)
+        FileDAO.remove(file)
       }      
     }    
   }

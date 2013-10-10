@@ -67,7 +67,7 @@ object SectionDAO extends ModelCompanion[Section, ObjectId] {
     for(comment <- Comment.findCommentsBySectionId(s.id.toString())){
           Comment.removeComment(comment)
         }
-    dao.remove(s)    
+    SectionDAO.remove(s)    
   }
   
   

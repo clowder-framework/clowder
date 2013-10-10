@@ -78,7 +78,7 @@ object Comment extends ModelCompanion[Comment, ObjectId] {
     for(reply <- findCommentsByParentId(c.id.toString())){
           Comment.removeComment(reply)
         }
-    dao.remove(c)
+    Comment.remove(c)
   }
   
 }
