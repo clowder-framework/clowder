@@ -10,6 +10,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 import models.Dataset
+import com.mongodb.casbah.commons.MongoDBObject
 
 object Collections extends ApiController {
 
@@ -95,7 +96,7 @@ object Collections extends ApiController {
           //remove collection from dataset
           Dataset.removeCollection(dataset.id.toString, collection.id.toString)
         }       
-        Collection.remove(collection)
+        Collection.remove(MongoDBObject("_id" -> collection.id))
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
