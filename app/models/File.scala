@@ -100,8 +100,12 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       case Some(file) => {
         if(file.isIntermediate.isEmpty){
 	        val fileDataset = Dataset.findOneByFileId(file.id)
-	        if(!fileDataset.isEmpty)
-	        	Dataset.removeFile(fileDataset.get.id.toString(), id)         	
+	        if(!fileDataset.isEmpty){
+	        	Dataset.removeFile(fileDataset.get.id.toString(), id)
+	        	if(!file.thumbnail_id.isEmpty && !fileDataset.get.thumbnail_id.isEmpty)
+		        	if(file.thumbnail_id.get.equals(fileDataset.get.thumbnail_id.get))
+		        	  Dataset.newThumbnail(fileDataset.get.id.toString())
+	        }         	
 	        for(section <- SectionDAO.findByFileId(file.id)){
 	          SectionDAO.removeSection(section)
 	        }
