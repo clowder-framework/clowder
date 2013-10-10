@@ -15,6 +15,8 @@ import java.text.SimpleDateFormat
 import securesocial.core.Identity
 import com.novus.salat._
 import com.novus.salat.global._
+import java.util.Date
+import java.util.Calendar
 
 /**
  * Access file metedata from MongoDB.
@@ -102,5 +104,15 @@ trait MongoFileDB {
 //    }
     
     Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
+  }
+  
+  def removeOldIntermediates(){
+    val cal = Calendar.getInstance()
+    val timeDiff = play.Play.application().configuration().getInt("intermediateCleanup.removeAfter")
+    cal.add(Calendar.HOUR, -timeDiff)
+    val oldDate = cal.getTime()    
+    val fileList = FileDAO.find($and("isIntermediate" $eq true, "uploadDate" $lt oldDate)).toList
+    for(removeFile <- fileList)
+      FileDAO.removeFile(removeFile.id.toString())
   }
 }
