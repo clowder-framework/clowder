@@ -112,13 +112,12 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 	          Comment.removeComment(comment)
 	        }
 	        for(texture <- ThreeDTextureDAO.findTexturesByFileId(id)){
-	          ThreeDTextureDAO.remove(texture)
+	          ThreeDTextureDAO.remove(MongoDBObject("_id" -> texture.id))
 	        }
 	        if(!file.thumbnail_id.isEmpty)
-	          Thumbnail.remove(Thumbnail.findOneByID(new ObjectId(file.thumbnail_id.get)).get)
+	          Thumbnail.remove(MongoDBObject("_id" -> new ObjectId(file.thumbnail_id.get)))
         }
-        Logger.debug(file.toString)
-        FileDAO.remove(file)
+        FileDAO.remove(MongoDBObject("_id" -> file.id))
       }      
     }    
   }

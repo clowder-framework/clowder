@@ -128,7 +128,7 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
   }
   
   def removePreview(p: Preview){
-    PreviewDAO.remove(p)    
+    PreviewDAO.remove(MongoDBObject("_id" -> p.id))    
   }
   
 }

@@ -33,6 +33,7 @@ object Permission extends Enumeration {
 		AddSections,
 		GetSections,
 		CreateFiles,
+		DeleteFiles,
 		ListFiles,
 		ShowFile,
 		CreateStreams,

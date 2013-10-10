@@ -78,7 +78,7 @@ object Comment extends ModelCompanion[Comment, ObjectId] {
     for(reply <- findCommentsByParentId(c.id.toString())){
           Comment.removeComment(reply)
         }
-    Comment.remove(c)
+    Comment.remove(MongoDBObject("_id" -> c.id))
   }
   
 }
