@@ -35,7 +35,7 @@ case class Dataset (
   created: Date, 
   files: List[File] = List.empty,
   streams_id: List[ObjectId] = List.empty,
-  tags: List[String] = List.empty,
+  tags: List[Tag] = List.empty,
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
   collections: List[String] = List.empty
@@ -109,9 +109,15 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
-
-  def tag(id: String, tag: String) { 
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+ 
+  def tag(id: String, tag: Tag) { 
+    //Need to check for the owner of the dataset before adding tag
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" ->  Tag.toDBObject(tag)), false, false, WriteConcern.Safe)
+  }
+  
+  def removeTag(id: String, tagId: String) { 
+	 Logger.debug("Removing tag " + tagId )
+     val result = dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId))), false, false, WriteConcern.Safe)
   }
   
   /**

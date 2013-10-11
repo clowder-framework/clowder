@@ -56,7 +56,7 @@ object Sections extends ApiController {
 	    case Some(identity) => {
 		    request.body.\("text").asOpt[String] match {
 			    case Some(text) => {
-			        val comment = new Comment(id, identity, text, section_id=Some(id))
+			        val comment = new Comment(identity, text, section_id=Some(id))
 			        Comment.save(comment)
 			        Ok(comment.id.toString())
 			    }

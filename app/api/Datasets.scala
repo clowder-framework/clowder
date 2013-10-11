@@ -18,7 +18,9 @@ import play.api.mvc.Controller
 import services.Services
 import jsonutils.JsonUtil
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 import models.File
+import models.Tag
 import models.FileDAO
 import models.Extraction
 import services.ElasticsearchPlugin
@@ -31,8 +33,10 @@ import controllers.SecuredController
 import models.Collection
 import org.bson.types.ObjectId
 import securesocial.views.html.notAuthorized
+import play.api.Play.current
 
-
+import services.Services
+import scala.util.parsing.json.JSONArray
 /**
  * Dataset API.
  *
@@ -158,17 +162,58 @@ object Datasets extends ApiController {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
 
-  def tag(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateTags)) { implicit request =>
-    request.body.\("tag").asOpt[String] match {
-      case Some(tag) => {
-        Dataset.tag(id, tag)
-        Ok
+  def index(id: String) {
+    Services.datasets.get(id) match {
+      case Some(dataset) => {
+        var tagListBuffer = new ListBuffer[String]()
+        
+        for (tag <- dataset.tags){
+          tagListBuffer += tag.name
+        }          
+        
+        val tagsJson = new JSONArray(tagListBuffer.toList)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByDatasetId(id,false)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "dataset", id,
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+        }
       }
-      case None => {
-        Logger.error("no tag specified.")
-        BadRequest
-      }
+      case None => Logger.error("Dataset not found: " + id)
     }
+  }
+
+  def tag(id: String) = SecuredAction(parse.json, authorization = WithPermission(Permission.CreateTags)) { implicit request =>
+    Logger.debug("Tagging " + request.body)
+    
+    val userObj = request.user;
+    val tagId = new ObjectId
+    
+    request.body.\("tag").asOpt[String].map { tag =>
+      Logger.debug("Tagging " + id + " with " + tag)
+      val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.id.toString, created = new Date)
+      Dataset.tag(id, tagObj)
+      index(id)
+    }
+    Ok(toJson(tagId.toString()))
+  }
+    
+  def removeTag(id: String) = SecuredAction(parse.json,authorization=WithPermission(Permission.DeleteTags)) {implicit request =>
+    Logger.debug("Removing tag " + request.body)
+    
+    request.body.\("tagId").asOpt[String].map { tagId =>
+		  Logger.debug("Removing " + tagId + " from "+ id)
+		  Dataset.removeTag(id, tagId)
+		}
+      Ok(toJson(""))    
   }
 
   def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments)) { implicit request =>
@@ -176,8 +221,9 @@ object Datasets extends ApiController {
       case Some(identity) => {
 	    request.body.\("text").asOpt[String] match {
 	      case Some(text) => {
-	        val comment = new Comment(id, identity, text, dataset_id=Some(id))
+	        val comment = new Comment(identity, text, dataset_id=Some(id))
 	        Comment.save(comment)
+	        index(id)
 	        Ok(comment.id.toString())
 	      }
 	      case None => {
@@ -274,7 +320,7 @@ object Datasets extends ApiController {
         
         val datasetWithFiles = dataset.copy(files = files)
         val previewers = Previewers.findPreviewers
-        val previewslist = for(f <- datasetWithFiles.files; if(f.showPreviews.equals("DatasetLevel"))) yield {
+        val previewslist = for(f <- datasetWithFiles.files) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }        

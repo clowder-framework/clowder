@@ -66,6 +66,7 @@ object Search extends SecuredController {
         Logger.debug("Searching for: " + query)
         var files = ListBuffer.empty[models.File]
         var datasets = ListBuffer.empty[models.Dataset]
+        var mapdatasetIds= new scala.collection.mutable.HashMap[String,(String,String)]
         if (query != "") {
           import play.api.Play.current
           val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query) }
@@ -79,18 +80,28 @@ object Search extends SecuredController {
                 }
                 if (hit.getType() == "file") {
                   Services.files.getFile(hit.getId()) match {
-                    case Some(file) =>
-                      Logger.debug("Search result found file " + hit.getId()); files += file
+                    case Some(file) =>{
+                      Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
+                      Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
+                      //Logger.debug("Search result found file " + hit.getId()); files += file
+                       mapdatasetIds.put(hit.getId(), (hit.getSource().get("datasetId").toString(),hit.getSource.get("datasetName").toString))
+                      files += file
+                    }
                     case None => Logger.debug("File not found " + hit.getId())
                   }
                 } else if (hit.getType() == "dataset") {
-                  Dataset.findOneById(new ObjectId(hit.getId())) match {
+                Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
+                  Logger.debug("DATASETS:Dataset.id="+hit.getId());
+                  //Dataset.findOneById(new ObjectId(hit.getId())) match {
+                   Services.datasets.get(hit.getId()) match {
                     case Some(dataset) =>
                       Logger.debug("Search result found dataset" + hit.getId()); datasets += dataset
-                    case None => Logger.debug("Dataset not found " + hit.getId())
+                    case None => {Logger.debug("Dataset not found " + hit.getId())
+                  	Redirect(routes.Datasets.dataset(hit.getId)) 
+                  }
                   }
                 }
-                Ok(views.html.searchResults(query, files.toArray, datasets.toArray))
+                Ok(views.html.searchResults(query, files.toArray, datasets.toArray,mapdatasetIds))
               }
             }
             case None => {
@@ -98,7 +109,7 @@ object Search extends SecuredController {
             }
           }
         }
-        Ok(views.html.searchResults(query, files.toArray, datasets.toArray))
+        Ok(views.html.searchResults(query, files.toArray, datasets.toArray,mapdatasetIds))
       }
       case None => {
         Logger.debug("Search plugin not enabled")

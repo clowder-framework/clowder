@@ -1,4 +1,4 @@
-@(query: String, files: Array[models.File], datasets: Array[models.Dataset])
+@(query: String, files: Array[models.File], datasets: Array[models.Dataset], mapdatasetIds:scala.collection.mutable.HashMap[String,(String,String)])
 
 @main("Search Results") {
 	<div class="page-header">
@@ -13,7 +13,8 @@
 	}
 	<div class="row-fluid">
 	    <div class="span6">
-	    <div class="row-fluid"><div class="span12"><h3>Files</h3></div></div>
+	   
+	    <h3>Files</h3>
 	    @for(file <- files) {
 		  <div class="row-fluid">
 			<div class="span2">
@@ -31,23 +32,37 @@
 					<dd>@file.contentType</dd>
 					<dt>Uploaded on:</dt>
 					<dd>@file.uploadDate</dd>
+					<dt>Dataset name:</dt>
+					<dd><a href="@(routes.Datasets.dataset(mapdatasetIds.get(file.id.toString).get._1))">@mapdatasetIds.get(file.id.toString).get._2</a></dd>
 				</dl>
 			</div>
 		</div>
 		}
 		</div>
-	    <div class="span6">
-	    <div class="row-fluid"><div class="span12"><h3>Datasets</h3></div></div>
+		@if(datasets.size!=0){
+
+
+			<div class="row-fluid">
+
+			<div class="span6">
+	    
+	       <h3> Datasets</h3>
+
 	    @for(dataset <- datasets) {
 		  <div class="row-fluid">
 			<div class="span12">
 				<dl class="dl-horizontal">
-					<dt>Title:</dt>
+					<dt> Name:</dt>
 					<dd><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></dd>
+					<dt>  Descriptions:</dt>
+					<dd> @dataset.description</dd>
 				</dl>
 			</div>
 		</div>
 		}
 		</div>
+	</div>
+	
+	}
 	</div>
 }

@@ -29,7 +29,7 @@ case class File(
     uploadDate: Date, 
     contentType: String,
     length: Long = 0,
-    showPreviews: String = "DatasetLevel",
+    //show: Identity,
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
     tags: List[String] = List.empty,

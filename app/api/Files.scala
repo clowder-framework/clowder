@@ -203,35 +203,30 @@ object Files extends ApiController {
   /**
    * Upload file using multipart form enconding.
    */
-    def upload(showPreviews: String="FileLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+    def upload() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user, showPreviews)
+	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	            val id = f.id.toString
-	            var flags = ""
-	            if(showPreviews.equals("None"))
-	              flags = "+nopreviews"
 	            var fileType = f.contentType
-	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
-	            	if(fileType.startsWith("ERROR: ")){
-	            		Logger.error(fileType.substring(7))
-	            		InternalServerError(fileType.substring(7))
-	            	}			          
-	            }    	
-
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }			          
+			        }    	
+	            
 	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-	            		// TODO RK : need figure out if we can use https
+	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
-
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-	             
+	            val id = f.id.toString	            
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
 	            current.plugin[ElasticsearchPlugin].foreach{
 	              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
 	            }
@@ -254,7 +249,7 @@ object Files extends ApiController {
   /**
    * Upload a file to a specific dataset
    */
-  def uploadToDataset(dataset_id: String, showPreviews: String="DatasetLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploadToDataset(dataset_id: String) = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     request.user match {
         case Some(user) => {
     Services.datasets.get(dataset_id) match {
@@ -262,34 +257,27 @@ object Files extends ApiController {
         request.body.file("File").map { f =>
           Logger.debug("Uploading file " + f.filename)
           // store file
-          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user, showPreviews)
+          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
           val uploadedFile = f
           
           // submit file for extraction
           file match {
             case Some(f) => {
+              var fileType = f.contentType
+					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
+						  if(fileType.startsWith("ERROR: ")){
+								Logger.error(fileType.substring(7))
+								InternalServerError(fileType.substring(7))
+								}			          
+						  }
+              
+              // TODO RK need to replace unknown with the server name
+              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+              // TODO RK : need figure out if we can use https
+              val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
               val id = f.id.toString
-              var flags = ""
-              if(showPreviews.equals("FileLevel"))
-	            flags = "+filelevelshowpreviews"
-	          else if(showPreviews.equals("None"))
-	            flags = "+nopreviews"
-	          var fileType = f.contentType
-	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-	        	  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
-	        	  if(fileType.startsWith("ERROR: ")){
-	        		  Logger.error(fileType.substring(7))
-	        		  InternalServerError(fileType.substring(7))
-				  }			          
-			  }
-	              
-	          // TODO RK need to replace unknown with the server name
-	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-	          // TODO RK : need figure out if we can use https
-	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
-	              
-	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
-                           
+              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, "")) }
               current.plugin[ElasticsearchPlugin].foreach {
                 _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
               }
@@ -326,7 +314,7 @@ object Files extends ApiController {
         case None => BadRequest(toJson("Not authorized."))
     }
    }
-
+  
    /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
@@ -632,7 +620,7 @@ object Files extends ApiController {
 	    case Some(identity) => {
 		    request.body.\("text").asOpt[String] match {
 			    case Some(text) => {
-			        val comment = new Comment(id, identity, text, file_id=Some(id))
+			        val comment = new Comment(identity, text, file_id=Some(id))
 			        Comment.save(comment)
 			        Ok(comment.id.toString())
 			    }
@@ -697,7 +685,7 @@ object Files extends ApiController {
         val previewers = Previewers.findPreviewers
         //Logger.info("Number of previews " + previews.length);
         val files = List(file)        
-         val previewslist = for(f <- files; if(!f.showPreviews.equals("None"))) yield {
+         val previewslist = for(f <- files) yield {
           val pvf = for(p <- previewers ; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {            
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }        
