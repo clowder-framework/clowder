@@ -38,6 +38,9 @@
 		    	};
 		    	swfobject.embedSWF(Configuration.iipZoomPath, "iip" + Configuration.tab.replace("#previewer",""), width, height, "9.0.0",Configuration.expressInstallPath, flashvars, params);
 		    	 },
+		    	 error: function(jqXHR, textStatus, errorThrown) { 
+		    	        alert("Status: " + textStatus); alert("Error: " + errorThrown); 
+		    	    },
 		    dataType: 'text'
 		});
 
