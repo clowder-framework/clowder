@@ -13,6 +13,7 @@
 					<th>Type</th>
 					<th>Uploaded</th>
 					<th></th>
+					<th></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -22,6 +23,7 @@
 						<td>@(if(file.contentType != null) file.contentType else "N/A")</td>
 						<td>@file.uploadDate</td>
 						<td>@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(file.filename)" height="120" width="120">}</td>
+						<td><a href="#" onclick="removeFile('@(file.id.toString)',event)">Remove</a></td>
 					</tr>
 				}
 			</tbody>
@@ -36,4 +38,8 @@
 		</ul>
 	</div>
 </div>
+<script language="javascript">	
+	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
+</script>
+<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 }

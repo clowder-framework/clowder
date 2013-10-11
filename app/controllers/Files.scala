@@ -235,8 +235,6 @@ object Files extends Controller with SecuredController {
     }
   }
   
-  
-
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
@@ -516,10 +514,6 @@ object Files extends Controller with SecuredController {
          BadRequest("File not attached.")
       }
   }
-
-
-  
-  
 
   def uploaddnd(dataset_id: String) = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     request.user match {
