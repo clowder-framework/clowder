@@ -35,19 +35,20 @@ import play.api.mvc.Controller
 import services.ElasticsearchPlugin
 import services.ExtractorMessage
 import services.RabbitmqPlugin
-import services.Services
-
+import javax.inject.{ Singleton, Inject }
+import services.{ FileService, DatasetService, QueryService }
 /**
  * Json API for files.
  * 
  * @author Luigi Marini
  *
  */
-object Files extends ApiController {
+@Singleton
+class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService)  extends ApiController {
   
   def get(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
 	    Logger.info("GET file with id " + id)    
-	    Services.files.getFile(id) match {
+	    files.getFile(id) match {
 	      case Some(file) => Ok(jsonFile(file))
 	      case None => {Logger.error("Error getting file" + id); InternalServerError}
 	    }
@@ -57,22 +58,24 @@ object Files extends ApiController {
    * List all files.
    */
   def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListFiles)) { request =>
-      val list = for (f <- Services.files.listFiles()) yield jsonFile(f)
+      val list = for (f <- files.listFiles()) yield jsonFile(f)
       Ok(toJson(list))
     }
   
-  def downloadByDatasetAndFilename(dataset_id: String, filename: String, preview_id: String) = 
+  def downloadByDatasetAndFilename(datasetId: String, filename: String, preview_id: String) = 
     SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DownloadFiles)){ request =>
-      Datasets.datasetFilesGetIdByDatasetAndFilename(dataset_id, filename) match{
-        case Some(id) => { 
-          Redirect(routes.Files.download(id)) 
+      datasets.get(datasetId) match {
+      case Some(dataset) => {	  
+        for (file <- dataset.files) {
+          if (file.filename.equals(filename)) {
+            Redirect(routes.Files.download(file.id.toString())) 
+          }
         }
-        case None => {
-          InternalServerError
-        }
+        Logger.error("File does not exist in dataset" + datasetId); InternalServerError
       }
-  
-    }
+      case None => { Logger.error("Error getting dataset" + datasetId); InternalServerError }
+    }  
+  }
   
   
   /**
@@ -81,7 +84,7 @@ object Files extends ApiController {
   def download(id: String) = 
 	    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DownloadFiles)) { request =>
 //		  Action(parse.anyContent) { request =>
-		    Services.files.get(id) match {
+		    files.get(id) match {
 		      case Some((inputStream, filename, contentType, contentLength)) => {
 		        
 		         request.headers.get(RANGE) match {
@@ -128,7 +131,7 @@ object Files extends ApiController {
   def downloadquery(id: String) = 
 	    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DownloadFiles)) { request =>
 //		  Action(parse.anyContent) { request =>
-		    Services.queries.get(id) match {
+		    queries.get(id) match {
 		      case Some((inputStream, filename, contentType, contentLength)) => {
 		        
 		         request.headers.get(RANGE) match {
@@ -209,7 +212,7 @@ object Files extends ApiController {
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
+	        val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -252,12 +255,12 @@ object Files extends ApiController {
   def uploadToDataset(dataset_id: String) = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     request.user match {
         case Some(user) => {
-    Services.datasets.get(dataset_id) match {
+    datasets.get(dataset_id) match {
       case Some(dataset) => {
         request.body.file("File").map { f =>
           Logger.debug("Uploading file " + f.filename)
           // store file
-          val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
+          val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
           val uploadedFile = f
           
           // submit file for extraction
@@ -331,7 +334,7 @@ object Files extends ApiController {
 	        
 	        Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
+	        val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -639,7 +642,7 @@ object Files extends ApiController {
    * Return whether a file is currently being processed.
    */
   def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request =>
-  	Services.files.getFile(id) match {
+  	files.getFile(id) match {
   	  case Some(file) => { 	    
   		  		  var isActivity = "false"
   				  Extraction.findMostRecentByFileId(file.id) match{
@@ -678,7 +681,7 @@ object Files extends ApiController {
     	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString , "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))  
   }  
   def getPreviews(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request =>
-    Services.files.getFile(id)  match {
+    files.getFile(id)  match {
       case Some(file) => {
         
         val previewsFromDB = PreviewDAO.findByFileId(file.id)        

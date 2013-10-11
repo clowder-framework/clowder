@@ -3,6 +3,7 @@
  */
 package services
 import models.Dataset
+import models.Collection
 
 /**
  * Generic dataset service.
@@ -36,4 +37,14 @@ abstract class DatasetService {
    * Get dataset.
    */
   def get(id: String): Option[Dataset]
+  
+  /**
+   * 
+   */
+  def listInsideCollection(collectionId: String) : List[Dataset]
+  
+  /**
+   * 
+   */
+  def isInCollection(dataset: Dataset, collection: Collection): Boolean
 }

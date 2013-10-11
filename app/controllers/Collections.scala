@@ -9,7 +9,6 @@ import play.api.mvc.Flash
 import play.api.Logger
 import play.api.Play.current
 import services.ElasticsearchPlugin
-import services.Services
 import models.Dataset
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
@@ -19,8 +18,11 @@ import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
+import javax.inject.{ Singleton, Inject }
+import services.{ DatasetService, CollectionService }
 
-object Collections extends SecuredController {
+@Singleton
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService) extends SecuredController {
 
   /**
    * New dataset form.
@@ -48,11 +50,11 @@ object Collections extends SecuredController {
     if (when != "") direction = when
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     var prev, next = ""
-    var collections = List.empty[models.Collection]
+    var collectionList = List.empty[models.Collection]
     if (direction == "b") {
-	    collections = Services.collections.listCollectionsBefore(date, limit)
+	    collectionList = collections.listCollectionsBefore(date, limit)
     } else if (direction == "a") {
-    	collections = Services.collections.listCollectionsAfter(date, limit)
+    	collectionList = collections.listCollectionsAfter(date, limit)
     } else {
       badRequest
     }
@@ -63,20 +65,20 @@ object Collections extends SecuredController {
     var firstPage = false
     var lastPage = false
     if (latest.size == 1) {
-    	firstPage = collections.exists(_.id == latest(0).id)
-    	lastPage = collections.exists(_.id == first(0).id)
+    	firstPage = collectionList.exists(_.id == latest(0).id)
+    	lastPage = collectionList.exists(_.id == first(0).id)
     	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
     	Logger.debug("first " + first(0).id + " last page " + lastPage )
     }
-    if (collections.size > 0) {  
+    if (collectionList.size > 0) {  
       if (date != "" && !firstPage) { // show prev button
-    	prev = formatter.format(collections.head.created)
+    	prev = formatter.format(collectionList.head.created)
       }
       if (!lastPage) { // show next button
-    	next = formatter.format(collections.last.created)
+    	next = formatter.format(collectionList.last.created)
       }
     }
-    Ok(views.html.collectionList(collections, prev, next, limit))
+    Ok(views.html.collectionList(collectionList, prev, next, limit))
   }
   
   def jsonCollection(collection: Collection): JsValue = {
@@ -113,9 +115,9 @@ object Collections extends SecuredController {
   def collection(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowCollection)) { implicit request =>
     
   	implicit val user = request.user
-  	Services.collections.get(id)  match {
+  	collections.get(id)  match {
   	  case Some(collection) => {
-  	    Ok(views.html.collectionofdatasets(Dataset.listInsideCollection(id),collection.name, collection.id.toString()))
+  	    Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id),collection.name, collection.id.toString()))
   	  }
   	  case None => {Logger.error("Error getting collection " + id); InternalServerError}
   	}

@@ -9,5 +9,5 @@ package services
  * @author Constantinos Sophocleous
  *
  */
-object MongoDBCollectionService extends CollectionService with MongoDBCollection {
+class MongoDBCollectionService extends CollectionService with MongoDBCollection {
 }

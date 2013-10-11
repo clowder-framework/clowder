@@ -4,7 +4,6 @@
 package controllers
 
 import play.api.mvc.Controller
-import services.Services
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.data.Form
@@ -30,6 +29,10 @@ import models._
 import fileutils.FilesUtils
 import api.WithPermission
 import api.Permission
+import javax.inject.{ Singleton, Inject }
+import services.{ DatasetService, FileService, CollectionService }
+
+object ActivityFound extends Exception { }
 
 /**
  * A dataset is a collection of files and streams.
@@ -37,10 +40,8 @@ import api.Permission
  * @author Luigi Marini
  *
  */
-
-object ActivityFound extends Exception { }
-
-object Datasets extends SecuredController {
+@Singleton
+class Datasets @Inject() (datasets: DatasetService, files: FileService, collections: CollectionService) extends SecuredController {
 
    
   /**
@@ -69,11 +70,11 @@ object Datasets extends SecuredController {
     if (when != "") direction = when
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     var prev, next = ""
-    var datasets = List.empty[models.Dataset]
+    var datasetList = List.empty[models.Dataset]
     if (direction == "b") {
-	    datasets = Services.datasets.listDatasetsBefore(date, limit)
+	    datasetList = datasets.listDatasetsBefore(date, limit)
     } else if (direction == "a") {
-    	datasets = Services.datasets.listDatasetsAfter(date, limit)
+    	datasetList = datasets.listDatasetsAfter(date, limit)
     } else {
       badRequest
     }
@@ -84,20 +85,20 @@ object Datasets extends SecuredController {
     var firstPage = false
     var lastPage = false
     if (latest.size == 1) {
-    	firstPage = datasets.exists(_.id == latest(0).id)
-    	lastPage = datasets.exists(_.id == first(0).id)
+    	firstPage = datasetList.exists(_.id == latest(0).id)
+    	lastPage = datasetList.exists(_.id == first(0).id)
     	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
     	Logger.debug("first " + first(0).id + " last page " + lastPage )
     }
-    if (datasets.size > 0) {  
+    if (datasetList.size > 0) {  
       if (date != "" && !firstPage) { // show prev button
-    	prev = formatter.format(datasets.head.created)
+    	prev = formatter.format(datasetList.head.created)
       }
       if (!lastPage) { // show next button
-    	next = formatter.format(datasets.last.created)
+    	next = formatter.format(datasetList.last.created)
       }
     }
-    Ok(views.html.datasetList(datasets, prev, next, limit))
+    Ok(views.html.datasetList(datasetList, prev, next, limit))
   }
   
  
@@ -108,7 +109,7 @@ object Datasets extends SecuredController {
   def dataset(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
     implicit val user = request.user    
     Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
-    Services.datasets.get(id)  match {
+    datasets.get(id)  match {
       case Some(dataset) => {
         val files = dataset.files map { f =>{
         		FileDAO.get(f.id.toString).get
@@ -161,8 +162,8 @@ object Datasets extends SecuredController {
         val userMetadata = Dataset.getUserMetadata(id)
         Logger.debug("User metadata: " + userMetadata.toString)
         
-        val collectionsOutside = Collection.listOutsideDataset(id).sortBy(_.name)
-        val collectionsInside = Collection.listInsideDataset(id).sortBy(_.name)
+        val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
+        val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
         
         var comments = Comment.findCommentsByDatasetId(id)
         files.map { file =>
@@ -218,7 +219,7 @@ object Datasets extends SecuredController {
 		        
 		        // store file
 		        Logger.info("Adding file" + identity)
-			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
+			    val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
 			    Logger.debug("Uploaded file id is " + file.get.id)
 			    Logger.debug("Uploaded file type is " + f.contentType)
 			    

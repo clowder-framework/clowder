@@ -17,9 +17,6 @@ object Application extends SecuredController {
   /**
    * Main page.
    */
-//  def index = Action { implicit request =>
-//    Ok(views.html.index())
-//  }
   def index = SecuredAction() { request =>
   	implicit val user = request.user
     Ok(views.html.index())

@@ -8,6 +8,7 @@ import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
 import play.api.Logger
 import java.text.SimpleDateFormat
+import models.Collection
 
 /**
  * Implementation of DatasetService using Mongodb.
@@ -16,6 +17,8 @@ import java.text.SimpleDateFormat
  *
  */
 trait MongoDBDataset {
+  
+  val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   
   /**
    * List all datasets in the system.
@@ -61,6 +64,29 @@ trait MongoDBDataset {
       datasetList = datasetList.filter(_ != datasetList.last)
       datasetList
     }
+  }
+  
+    
+  /**
+   * List all datasets inside a collection.
+   */
+  def listInsideCollection(collectionId: String) : List[Dataset] =  { 
+      Collection.findOneById(new ObjectId(collectionId)) match{
+        case Some(collection) => {
+          val list = for (dataset <- listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
+          return list
+        }
+        case None =>{
+          return List.empty	 	  
+        } 
+      }
+  } 
+  def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
+    for(collDataset <- collection.datasets){
+      if(collDataset.id == dataset.id)
+        return true
+    }
+    return false
   }
   
   /**

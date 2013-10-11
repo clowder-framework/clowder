@@ -26,6 +26,8 @@ import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.providers.utils.RoutesHelper
 
 /**
+ * Enforce authentication and authorization.
+ * 
  * @author Luigi Marini
  * @author Rob Kooper
  *

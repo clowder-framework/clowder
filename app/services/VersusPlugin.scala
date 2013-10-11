@@ -6,8 +6,8 @@ import java.util.Date
 import play.api.libs.json.Json
 import play.api.Play.current
 import play.api.libs.ws.WS
- import play.api.libs.concurrent.Promise
- import java.io._
+import play.api.libs.concurrent.Promise
+import java.io._
 import models.FileMD
 import play.api.Logger
 import play.api.Play.current
@@ -21,7 +21,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Input.{El, EOF, Empty}
 import com.mongodb.casbah.gridfs.GridFS
 
-
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 
@@ -31,8 +30,6 @@ import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
 
-
-
 import scala.concurrent.{future, blocking, Future, Await}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -41,22 +38,23 @@ import akka.actor.Props
 import akka.actor.Actor
 import akka.actor.ActorRef
 
-/*Versus Plugin
+/** 
+ * Versus Plugin
  * 
  * @author Smruti
  * 
- * */
-
+ **/
 class VersusPlugin(application:Application) extends Plugin{
+  
+  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  val files: FileService =  DI.injector.getInstance(classOf[FileService])
   
   override def onStart() {
     Logger.debug("Starting Versus Plugin")
-    
   }
   
    // Get all indexes from Versus
-  def getIndexes():scala.concurrent.Future[play.api.libs.ws.Response]={
-    
+  def getIndexes():scala.concurrent.Future[play.api.libs.ws.Response]={  
     val configuration = play.api.Play.configuration
     val host=configuration.getString("versus.host").getOrElse("")
     val indexurl=host+"/index"
@@ -147,7 +145,7 @@ class VersusPlugin(application:Application) extends Plugin{
 		        	 s=>
 		        	  val a=s.docID.split("/")
 		        	  val n=a.length-2
-		        	  Services.files.getFile(a(n)) match{
+		        	  files.getFile(a(n)) match{
 		        	  case Some(file)=>{
 		        	    se.update(i,(a(n),s.docID,s.proximity,file.filename))
 		        	    ar.update(i, file.filename)
@@ -201,7 +199,7 @@ class VersusPlugin(application:Application) extends Plugin{
 		        	   val subStr=result.docID.substring(begin+1, end);
 		        	  val a=result.docID.split("/")
 		        	  val n=a.length-2
-		        	  Services.files.getFile(subStr) match{
+		        	  files.getFile(subStr) match{
 		        	     
 		        	  case Some(file)=>{
 		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
@@ -245,7 +243,7 @@ class VersusPlugin(application:Application) extends Plugin{
 		        	 s=>
 		        	  val a=s.docID.split("/")
 		        	  val n=a.length-2
-		        	  Services.files.getFile(a(n)) match{
+		        	  files.getFile(a(n)) match{
 		        	  case Some(file)=>{
 		        	    se.update(i,(a(n),s.docID,s.proximity,file.filename))
 		        	    ar.update(i, file.filename)

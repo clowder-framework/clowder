@@ -5,7 +5,6 @@ import services.ElasticsearchPlugin
 import services.VersusPlugin
 import play.Logger
 import scala.collection.JavaConversions.mapAsScalaMap
-import services.Services
 import sys.process._
 import java.net.URL
 import java.io.File
@@ -49,13 +48,16 @@ import scala.collection.mutable.ArrayBuffer
 import models.Dataset
 import api.WithPermission
 import api.Permission
+import services.{ CollectionService, DatasetService, FileService, QueryService}
+import javax.inject.{ Singleton, Inject }
 
 /**
  * Text search.
  *
  * @author Luigi Marini
  */
-object Search extends SecuredController {
+class Search @Inject() (datasets: DatasetService, files: FileService, 
+    collections: CollectionService, queries: QueryService) extends SecuredController {
 
   /**
    * Search results.
@@ -64,8 +66,8 @@ object Search extends SecuredController {
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         Logger.debug("Searching for: " + query)
-        var files = ListBuffer.empty[models.File]
-        var datasets = ListBuffer.empty[models.Dataset]
+        var fileList = ListBuffer.empty[models.File]
+        var datasetList = ListBuffer.empty[models.Dataset]
         var mapdatasetIds= new scala.collection.mutable.HashMap[String,(String,String)]
         if (query != "") {
           import play.api.Play.current
@@ -79,13 +81,13 @@ object Search extends SecuredController {
                   Logger.info(value.getName + " = " + value.getValue())
                 }
                 if (hit.getType() == "file") {
-                  Services.files.getFile(hit.getId()) match {
+                  files.getFile(hit.getId()) match {
                     case Some(file) =>{
                       Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                       Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
                       //Logger.debug("Search result found file " + hit.getId()); files += file
                        mapdatasetIds.put(hit.getId(), (hit.getSource().get("datasetId").toString(),hit.getSource.get("datasetName").toString))
-                      files += file
+                      fileList += file
                     }
                     case None => Logger.debug("File not found " + hit.getId())
                   }
@@ -93,15 +95,15 @@ object Search extends SecuredController {
                 Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
                   Logger.debug("DATASETS:Dataset.id="+hit.getId());
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
-                   Services.datasets.get(hit.getId()) match {
+                   datasets.get(hit.getId()) match {
                     case Some(dataset) =>
-                      Logger.debug("Search result found dataset" + hit.getId()); datasets += dataset
+                      Logger.debug("Search result found dataset" + hit.getId()); datasetList += dataset
                     case None => {Logger.debug("Dataset not found " + hit.getId())
                   	Redirect(routes.Datasets.dataset(hit.getId)) 
                   }
                   }
                 }
-                Ok(views.html.searchResults(query, files.toArray, datasets.toArray,mapdatasetIds))
+                Ok(views.html.searchResults(query, fileList.toArray, datasetList.toArray,mapdatasetIds))
               }
             }
             case None => {
@@ -109,7 +111,7 @@ object Search extends SecuredController {
             }
           }
         }
-        Ok(views.html.searchResults(query, files.toArray, datasets.toArray,mapdatasetIds))
+        Ok(views.html.searchResults(query, fileList.toArray, datasetList.toArray,mapdatasetIds))
       }
       case None => {
         Logger.debug("Search plugin not enabled")
@@ -321,7 +323,7 @@ object Search extends SecuredController {
 		                			  var keysArray=new ArrayBuffer[String]
 		                			  keys.copyToBuffer(keysArray)
 		                			  
-		                			  Services.queries.getFile(id)match{
+		                			  queries.getFile(id)match{
 		                			  	case Some(file)=>{ 
 		                			  		//Ok(views.html.multimediaIndexResults(keysArray,file.filename,id,yFinal.size,yFinal))
 		                			  	  Ok(views.html.imageSearchpage(keysArray,file.filename,id,yFinal.size,yFinal))
@@ -371,7 +373,7 @@ object Search extends SecuredController {
 
         case Some(plugin) => {
           plugin.query(id).map { result =>
-            Services.queries.getFile(id) match {
+            queries.getFile(id) match {
               case Some(file) => {
                 Logger.debug("file id=" + file.id.toString())
                 val l = result.size

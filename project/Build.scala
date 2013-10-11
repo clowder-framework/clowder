@@ -16,7 +16,9 @@ object ApplicationBuild extends Build {
     "org.mongodb" %% "casbah" % "2.6.2",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
     "com.wordnik" %% "swagger-play2" % "1.2.1-SNAPSHOT",
-    "org.reflections" % "reflections" % "0.9.9-RC1"
+    "org.reflections" % "reflections" % "0.9.9-RC1",
+    "com.google.inject" % "guice" % "3.0",
+    "com.google.inject.extensions" % "guice-assistedinject" % "3.0"
   //      "org.scalaj" %% "scalaj-collection" % "1.2"
   )
 

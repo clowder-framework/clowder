@@ -19,7 +19,7 @@ import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import play.api.libs.json.JsValue
 import securesocial.core.Identity
-import services.Services
+
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -62,10 +62,6 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("metadata"->1)) match {
       case None => Map.empty
       case Some(x) => {
-//        x.getAs[DBObject]("metadata") match {
-//          case Some(map) => map.toMap.asScala.asInstanceOf[Map[String,Any]]
-//          case None => Map.empty
-//        }
         x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
       }
     }
@@ -98,10 +94,6 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
         }
       }
     }
-    
-    
-   
-  
   }
 
   def addUserMetadata(id: String, json: String) {
@@ -182,42 +174,6 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
       }     
     }
     return allMatch              
-  }
-  
-//  def get(id: String): Option[Dataset] = {
-//    dao.findOneById(new ObjectId(id)) match {
-//      case Some(dataset) => {
-//        val files = FileDAO.findByFileId(file.id)
-//        val sectionsWithPreviews = sections.map { s =>
-//          val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
-//          s.copy(preview = p)
-//        }
-//        Some(file.copy(sections = sectionsWithPreviews, previews = previews))
-//      }
-//      case None => None
-//    }
-//  }
-  
-      /**
-   * List all datasets inside a collection.
-   */
-  def listInsideCollection(collectionId: String) : List[Dataset] =  { 
-      Collection.findOneById(new ObjectId(collectionId)) match{
-        case Some(collection) => {
-          val list = for (dataset <- Services.datasets.listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
-          return list
-        }
-        case None =>{
-          return List.empty	 	  
-        } 
-      }
-  } 
-  def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
-    for(collDataset <- collection.datasets){
-      if(collDataset.id == dataset.id)
-        return true
-    }
-    return false
   }
   
   def addFile(datasetId:String, file: File){   
