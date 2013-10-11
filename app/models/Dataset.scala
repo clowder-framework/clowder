@@ -38,7 +38,6 @@ case class Dataset (
   tags: List[String] = List.empty,
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
-  comments: List[Comment] = List.empty,
   collections: List[String] = List.empty
 )
 
@@ -113,10 +112,6 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 
   def tag(id: String, tag: String) { 
     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
-  }
-
-  def comment(id: String, comment: Comment) {
-    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
   
   /**

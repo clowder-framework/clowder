@@ -26,7 +26,7 @@ trait FileSystemDB {
   /**
    * Save a file to the file system and store metadata about it in Mongo.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity): Option[models.File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[models.File] = {
     Play.current.configuration.getString("files.path") match {
       case Some(path) => {
         val id = UUID.randomUUID().toString()

@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
 
 
 @import helper._
@@ -281,11 +281,6 @@
 							$("#beingProcessed").css('display','none');
 	     			});				 
 				  request.fail(function (jqXHR, textStatus, errorThrown){
-	        		console.error(
-	            		"The following error occured: "+
-	            		textStatus, errorThrown		            
-	        			);
-	        		//alert("ERROR: " + errorThrown +". Processing of dataset not checked." );
 	     			});
     			}
     			$(function() {
@@ -375,11 +370,6 @@
 						setTimeout("checkForNewPreviews();", 1000);
 		     		});				 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
-		        		console.error(
-		            		"The following error occured: "+
-		            		textStatus, errorThrown		            
-		        			);
-		        		//alert("ERROR: " + errorThrown +". Did not check for new previews." );
 		        		setTimeout(function(){checkForNewPreviews()}, 1000);
 		     			});
 				}
@@ -409,10 +399,6 @@
     					setTimeout(function(){updateFiles()}, 2000);
 	     			});				 
 				  request.fail(function (jqXHR, textStatus, errorThrown){
-	        		console.error(
-	            		"The following error occured: "+
-	            		textStatus, errorThrown		            
-	        			);
 	        		setTimeout(function(){updateFiles()}, 2000);
 	     			});
     			}
@@ -429,14 +415,12 @@
 		  </ul>
 		  <div class="tab-content">
 		    <div class="tab-pane active" id="tab1">
-		      @comment(List.empty, "post", api.routes.Datasets.comment(dataset.id.toString).toString)
-		      @comment(dataset.comments, "dataset")
-			  @dataset.files.map { file =>
-			      @comment(file.comments, file.id.toString)
-			      @file.sections.map { section =>
-			      	  @comment(section.comments, section.id.toString)
-			      }
+		      @if(user.isDefined) {
+		      	  @commentform(dataset.id.toString, api.routes.Datasets.comment(dataset.id.toString).toString)
 		      }
+	 		  <ol class="comment-threads unstyled" id="reply_@dataset.id.toString">
+		      	 @comment(comments)
+		      </ol>
 		    </div>
 		    <div class="tab-pane" id="tab2">
 		      @metadata(dataset.id.toString, md, usrmd)
@@ -482,6 +466,14 @@
 					      <legend>Select a File and Upload</legend>
 					     <input type="file" id="query" name="File">
 					    </fieldset>
+					    <br/>
+					    <fieldset>
+		          			Show file preview(s)
+		          			<br/>				
+		          			<input type="radio" name="datasetLevel" value="DatasetLevel" checked> Everywhere<br>
+							<input type="radio" name="datasetLevel" value="FileLevel"> On file page<br>
+							<input type="radio" name="datasetLevel" value="None"> Nowhere					          							
+	    				</fieldset>
 				        <div class="form-actions">
 				          <input type="submit" class="btn btn-primary" value="Upload"/>
 				        </div>

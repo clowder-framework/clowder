@@ -28,7 +28,6 @@ case class Section (
     endTime: Option[Int] = None, // in seconds
     area: Option[Rectangle] = None,
     preview: Option[Preview] = None,
-    comments: List[Comment] = List.empty,
     tags: List[String] = List.empty
 )
 

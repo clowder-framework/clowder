@@ -16,14 +16,13 @@ GET     /users/view/:id                   controllers.Users.view(id)
 GET		/files					          controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET		/files/new					      controllers.Files.uploadFile
 GET		/files/:id					      controllers.Files.file(id)
-POST    /files/:id/comment                controllers.Files.comment(id)
 GET		/files/:id/blob			          controllers.Files.download(id)
 #GET     /queries/:id/blob				  controllers.Files.downloadquery(id)	
 #GET     /files/:id/similar                controllers.Files.findSimilar(id)
 POST    /upload					          controllers.Files.upload
 POST   /uploadSelect                      controllers.Files.uploadSelect
 POST   /uploadSelectQuery                 controllers.Files.uploadSelectQuery   
-POST   	/uploadAjax						  controllers.Files.uploadAjax
+#POST   	/uploadAjax						  controllers.Files.uploadAjax
 POST   	/uploaddnd/:id					  controllers.Files.uploaddnd(id)
 #POST  	/reactiveUpload					  controllers.Files.reactiveUpload
 POST    /uploadDragDrop					  controllers.Files.uploadDragDrop
@@ -33,8 +32,6 @@ GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: Str
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET     /datasets/metadataSearch          controllers.Datasets.metadataSearch
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
-POST	/datasets/:id/comment             controllers.Datasets.comment(id)
-POST	/datasets/:id/tag                 controllers.Datasets.tag(id)
 GET     /datasets_by_section/:id          controllers.Datasets.datasetBySection(id)
 POST    /dataset/submit                   controllers.Datasets.submit
 
@@ -45,7 +42,6 @@ POST	/collection/submit				  controllers.Collections.submit
 GET		/collection/:id					  controllers.Collections.collection(id)	
 
 # Tags
-POST    /tags		                      controllers.Tags.tag
 GET     /tags/search/:tag		          controllers.Tags.search(tag)
 
 # Authentication
@@ -117,8 +113,8 @@ GET     /api-docs.json        controllers.ApiHelpController.getResources
 POST	/api/files/:three_d_file_id/geometries/:geometry_id		api.Files.attachGeometry(three_d_file_id,geometry_id)
 POST	/api/files/:three_d_file_id/3dTextures/:texture_id		api.Files.attachTexture(three_d_file_id,texture_id)
 GET     /api/files                        						api.Files.list
-POST    /api/files                        						api.Files.upload
-POST    /api/uploadToDataset/:id                        		api.Files.uploadToDataset(id)
+POST    /api/files                        						api.Files.upload(showPreviews: String ?= "FileLevel")
+POST    /api/uploadToDataset/:id                        		api.Files.uploadToDataset(id, showPreviews: String ?= "DatasetLevel")
 POST	/api/files/uploadIntermediate/:idAndFlags				api.Files.uploadIntermediate(idAndFlags) 
 GET     /api/files/:id/metadata           						api.Files.get(id)
 POST    /api/files/:id/metadata           						api.Files.addMetadata(id)
@@ -187,3 +183,5 @@ POST    /api/sensors                      api.Sensors.add
 GET     /api/sensors/:id                  api.Sensors.get(id)
 GET     /api/sensors/search               api.Sensors.search
 DELETE  /api/sensors/:id                  api.Sensors.delete(id)
+
+POST	/api/comment/:id					api.Comments.comment(id)

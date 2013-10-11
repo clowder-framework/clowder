@@ -28,6 +28,8 @@ import play.api.mvc.Flash
 import scala.collection.immutable.Nil
 import models._
 import fileutils.FilesUtils
+import api.WithPermission
+import api.Permission
 
 /**
  * A dataset is a collection of files and streams.
@@ -38,7 +40,7 @@ import fileutils.FilesUtils
 
 object ActivityFound extends Exception { }
 
-object Datasets extends Controller with SecuredController {
+object Datasets extends SecuredController {
 
    
   /**
@@ -53,7 +55,7 @@ object Datasets extends Controller with SecuredController {
     ((dataset: Dataset) => Some((dataset.name, dataset.description)))
    )
    
-  def newDataset()  = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+  def newDataset()  = SecuredAction(authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.newDataset(datasetForm)).flashing("error"->"Please select a file") 
   }
@@ -61,7 +63,7 @@ object Datasets extends Controller with SecuredController {
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ListDatasets)) { implicit request =>
+  def list(when: String, date: String, limit: Int) = SecuredAction(authorization=WithPermission(Permission.ListDatasets)) { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -103,9 +105,9 @@ object Datasets extends Controller with SecuredController {
   /**
    * Dataset.
    */
-  def dataset(id: String) = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
+  def dataset(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
     implicit val user = request.user    
-    Previewers.searchFileSystem.foreach(p => Logger.info("Previewer found " + p.id))
+    Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
     Services.datasets.get(id)  match {
       case Some(dataset) => {
         val files = dataset.files map { f =>{
@@ -136,15 +138,15 @@ object Datasets extends Controller with SecuredController {
         
         
         val datasetWithFiles = dataset.copy(files = files)
-        val previewers = Previewers.searchFileSystem
-        val previewslist = for(f <- datasetWithFiles.files) yield {
-          val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
+        val previewers = Previewers.findPreviewers
+        val previewslist = for(f <- datasetWithFiles.files) yield {          
+          val pvf = for(p <- previewers ; pv <- f.previews; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-          }        
+          }         
           if (pvf.length > 0) {
             (f -> pvf)
           } else {
-  	        val ff = for(p <- previewers ; if (p.contentType.contains(f.contentType))) yield {
+  	        val ff = for(p <- previewers ; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(f.contentType))) yield {
   	          (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id.toString).toString, f.contentType, f.length)
   	        }
   	        (f -> ff)
@@ -162,8 +164,16 @@ object Datasets extends Controller with SecuredController {
         val collectionsOutside = Collection.listOutsideDataset(id).sortBy(_.name)
         val collectionsInside = Collection.listInsideDataset(id).sortBy(_.name)
         
+        var comments = Comment.findCommentsByDatasetId(id)
+        datasetWithFiles.files.map { file =>
+          comments ++= Comment.findCommentsByFileId(file.id.toString())
+          file.sections.map { section =>
+            comments ++= Comment.findCommentsBySectionId(section.id.toString())
+          } 
+        }
+        comments = comments.sortBy(_.posted)
         
-        Ok(views.html.dataset(datasetWithFiles, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside))
+        Ok(views.html.dataset(datasetWithFiles, comments, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }
@@ -172,7 +182,7 @@ object Datasets extends Controller with SecuredController {
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: String) = Action {
+  def datasetBySection(section_id: String) = SecuredAction(authorization=WithPermission(Permission.ShowDataset)) { request =>
     SectionDAO.findOneById(new ObjectId(section_id)) match {
       case Some(section) => {
         Dataset.findOneByFileId(section.file_id) match {
@@ -184,15 +194,18 @@ object Datasets extends Controller with SecuredController {
     }
   }
   
+  /**
+   * TODO where is this used?
   def upload = Action(parse.temporaryFile) { request =>
     request.body.moveTo(new File("/tmp/picture"))
     Ok("File uploaded")
   }
-  
+   */
+
   /**
    * Upload file.
    */
-  def submit() = SecuredAction(parse.multipartFormData, allowKey=false, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
     user match {
@@ -205,13 +218,20 @@ object Datasets extends Controller with SecuredController {
 		        
 		        // store file
 		        Logger.info("Adding file" + identity)
-			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
+		        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity, showPreviews)
 			    Logger.debug("Uploaded file id is " + file.get.id)
 			    Logger.debug("Uploaded file type is " + f.contentType)
 			    
 			    val uploadedFile = f
 			    file match {
-			      case Some(f) => {			        
+			      case Some(f) => {
+			        val id = f.id.toString
+	                var flags = ""	                
+	                if(showPreviews.equals("FileLevel"))
+	                	flags = "+filelevelshowpreviews"
+	                else if(showPreviews.equals("None"))
+	                	flags = "+nopreviews"
 			        var fileType = f.contentType
 			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
@@ -226,12 +246,11 @@ object Datasets extends Controller with SecuredController {
 			    	
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
-	                val id = f.id.toString
       
 	                //If uploaded file contains zipped files to be unzipped and added to the dataset, wait until the dataset is saved before sending extractor messages to unzip
 	                //and return the files
 	                if(!fileType.equals("multi/files-zipped")){
-				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
+				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 			        }
 			        
@@ -241,7 +260,7 @@ object Datasets extends Controller with SecuredController {
 		            Dataset.save(dt)
 		            
 		            if(fileType.equals("multi/files-zipped")){
-				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, ""))}
+				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, flags))}
 				        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
 			        }
 		            
@@ -277,72 +296,8 @@ object Datasets extends Controller with SecuredController {
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
   }
-
-  /*
-   * Add comment to a dataset
-   * TODO Move to comment API
-   */
-  def comment(id: String) = SecuredAction(parse.json, ajaxCall=true, allowKey=false, authorization=WithPermission(Permission.CreateComments)) { implicit request =>
-    request.user match {
-      case Some(identity) => {
-	    val text = request.body.\("comment").asOpt[String].getOrElse("")
-	    if (text == "") {
-	      BadRequest("error, no comment supplied.")
-	    }
-	    val preview = request.body.\("preview").asOpt[String] match {
-	      case Some(id) => PreviewDAO.findOneById(new ObjectId(id))
-	      case None => None
-	    }
-	    val comment = Comment(identity.id.id, new Date(), text)
-	    request.body.\("fileid").asOpt[String].map { fileid =>
-	      val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
-	      val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
-	      val w = request.body.\("w").asOpt[Double].getOrElse(-1.0)
-	      val h = request.body.\("h").asOpt[Double].getOrElse(-1.0)
-	      if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
-	        FileDAO.comment(fileid, comment)
-	      } else {
-	        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), comments=List(comment), preview=preview);
-	        SectionDAO.save(section)
-	      }    
-	    }.getOrElse {
-	      Dataset.comment(id, comment)      
-	    }
-	    Ok("")
-      }
-      case None => Unauthorized("Not authorized")
-    }
-  }
-
-  def tag(id: String) = SecuredAction(parse.json, ajaxCall=true, allowKey=false, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
-    val text = request.body.\("text").asOpt[String].getOrElse("")
-    if (text == "") {
-      BadRequest("error, no tag supplied.")
-    }
-    Logger.debug(request.body.\("preview").toString)
-    val preview = request.body.\("preview").asOpt[String] match {
-      case Some(id) => PreviewDAO.findOneById(new ObjectId(id))
-      case None => None
-    }
-    Logger.debug(preview.toString())
-    request.body.\("fileid").asOpt[String].map { fileid =>
-      val x = request.body.\("x").asOpt[Double].getOrElse(-1.0)
-      val y = request.body.\("y").asOpt[Double].getOrElse(-1.0)
-      val w = request.body.\("w").asOpt[Double].getOrElse(-1.0)
-      val h = request.body.\("h").asOpt[Double].getOrElse(-1.0)
-      if ((x < 0) || (y < 0) || (w < 0) || (h < 0)) {
-        FileDAO.tag(fileid, text)
-      } else {
-        val section = new Section(area=Some(new Rectangle(x, y, w, h)), file_id=new ObjectId(fileid), tags=List(text), preview=preview);
-        SectionDAO.save(section)
-      }    
-    }.getOrElse {
-      Dataset.tag(id, text)      
-    }
-    Ok("")
-  }
   
-  def metadataSearch()  = SecuredAction(parse.anyContent, allowKey=false, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.metadataSearch()) 
   }

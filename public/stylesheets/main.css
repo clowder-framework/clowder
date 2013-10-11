@@ -209,11 +209,15 @@ ol.comment-threads {
 	font-size: 85%;
 }
 
+.comment-reply {
+	padding-left: 40px;
+}
+
 .comment-input-box {
 	width: 80%;
 } 
 
-#rubberbandDiv {
+.rubberbandDiv {
   position: absolute;
   border: 3px solid blue;
   cursor: crosshair;
@@ -221,11 +225,11 @@ ol.comment-threads {
   pointer-events: none;
 }
 
-#rubberbandCanvas {
+.rubberbandCanvas {
   border: thin solid #aaaaaa;
 }
  
-#rubberbandFormDiv {
+.rubberbandFormDiv {
   width: 400px;
   background: white;
   border: 2px solid black;
@@ -239,22 +243,22 @@ ol.comment-threads {
   z-index: 5;
 }
 
-#rubberbandForm {
+.rubberbandForm {
   text-align: center;
 }
 
-#rubberbandForm label {
+.rubberbandForm label {
   display: inline-block;
   width: 100px;
   text-align: left;
 }
 
-#rubberbandForm label input {
+.rubberbandForm label input {
   float: right;
   width: 300px;
 }
 
-#rubberbandForm label textarea {
+.rubberbandForm label textarea {
   float: right;
   width: 300px;
   height: 100px;
@@ -310,6 +314,17 @@ button.tech_md_ {
 .ds-col-narrow {
 	padding-left: 50px;
 	padding-top: 50px; 
+}
+
+#checkboxFieldSet .control-group .control-label{
+	position:relative;
+	left:140px;
+}
+
+#datasetRadioFieldSet .control-group .controls span label{
+	position:relative;
+	top:-17px;
+	left:20px;
 }
 
 

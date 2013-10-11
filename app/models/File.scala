@@ -29,10 +29,9 @@ case class File(
     uploadDate: Date, 
     contentType: String,
     length: Long = 0,
-    //show: Identity,
+    showPreviews: String = "DatasetLevel",
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
-    comments: List[Comment] = List.empty,
     tags: List[String] = List.empty,
     metadata: Map[String, Any] = Map.empty
 )

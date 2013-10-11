@@ -27,7 +27,7 @@ import services.ElasticsearchPlugin
  * @author Luigi Marini
  *
  */
-object Geostreams extends Controller {
+object Geostreams extends Controller with ApiController {
 
   val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss'Z'")
   
@@ -39,15 +39,12 @@ object Geostreams extends Controller {
     (__ \ 'stream_id).read[String]
   ) tupled
   
-  def createStream() = Authenticated {
-    Action(parse.json) { request =>
+  def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateStreams)) { request =>
       Logger.debug("Creating stream")
       Ok(toJson("success"))
-    }
   }
   
-  def addDatapoint(id: String) = Authenticated {
-    Action(parse.json) { request =>
+  def addDatapoint(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDataPoints)) { request =>
       Logger.info("Adding datapoint: " + request.body)
       request.body.validate[(String, Option[String], List[Double], JsValue, String)].map{ 
         case (start_time, end_time, longlat, data, streamId) => 
@@ -66,14 +63,12 @@ object Geostreams extends Controller {
       }}.recoverTotal{
         e => Logger.debug("Error parsing json: " + e); BadRequest("Detected error:"+ JsError.toFlatJson(e))
       }
-    }
   }
   
-  def search(since: Option[String], until: Option[String], geocode: Option[String]) =
-    Action { request =>
+  def search(since: Option[String], until: Option[String], geocode: Option[String]) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.SearchStreams)) { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => Ok(jsonp(Json.prettyPrint(Json.parse(plugin.search(since, until, geocode))), request))
+        case Some(plugin) => Ok(jsonp(Json.prettyPrint(Json.parse(plugin.search(since, until, geocode))), request.request))
         case None => InternalServerError(toJson("Geostreaming not enabled"))
       }
     }
