@@ -103,7 +103,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 	        if(!fileDataset.isEmpty){
 	        	Dataset.removeFile(fileDataset.get.id.toString(), id)
 	        	if(!file.thumbnail_id.isEmpty && !fileDataset.get.thumbnail_id.isEmpty)
-		        	if(file.thumbnail_id.get.equals(fileDataset.get.thumbnail_id.get))
+		        	if(file.thumbnail_id.get == fileDataset.get.thumbnail_id.get)
 		        	  Dataset.newThumbnail(fileDataset.get.id.toString())
 	        }         	
 	        for(section <- SectionDAO.findByFileId(file.id)){
@@ -115,14 +115,15 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 	        for(comment <- Comment.findCommentsByFileId(id)){
 	          Comment.removeComment(comment)
 	        }
-	        for(texture <- ThreeDTextureDAO.findTexturesByFileId(id)){
+	        for(texture <- ThreeDTextureDAO.findTexturesByFileId(file.id)){
 	          ThreeDTextureDAO.remove(MongoDBObject("_id" -> texture.id))
 	        }
 	        if(!file.thumbnail_id.isEmpty)
-	          Thumbnail.remove(MongoDBObject("_id" -> new ObjectId(file.thumbnail_id.get)))
+	          Thumbnail.remove(MongoDBObject("_id" -> file.thumbnail_id.get))
         }
         FileDAO.remove(MongoDBObject("_id" -> file.id))
-      }      
+      }
+      case None =>
     }    
   }
   

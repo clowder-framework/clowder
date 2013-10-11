@@ -592,7 +592,7 @@ object Files extends ApiController {
           FileDAO.findOneById(new ObjectId(file_id)) match { 
             case Some(file) => {
 	              models.Thumbnail.findOneById(new ObjectId(thumbnail_id)) match {
-	                case Some(thumbnail) =>
+	                case Some(thumbnail) =>{
 	                    FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(file_id)), 
 	                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
 	                        
@@ -601,10 +601,12 @@ object Files extends ApiController {
 	                        if(dataset.thumbnail_id.isEmpty)
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
 		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
-	                      }	                      
+	                      }
+	                      case None =>
 	                    }
 	                        
 	                    Ok(toJson(Map("status"->"success")))
+	                }
 	                case None => BadRequest(toJson("Thumbnail not found"))
 	              }
             }
@@ -815,5 +817,16 @@ object Files extends ApiController {
       case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
   }
+  
+  def removeFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteFiles)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        FileDAO.removeFile(id)
+        Ok(toJson(Map("status"->"success")))
+      }
+      case None => Ok(toJson(Map("status"->"success")))
+    }
+  }
+  
 	
 }

@@ -118,7 +118,8 @@ GET     /api/files                        						api.Files.list
 POST    /api/files                        						api.Files.upload(showPreviews: String ?= "FileLevel")
 POST    /api/uploadToDataset/:id                        		api.Files.uploadToDataset(id, showPreviews: String ?= "DatasetLevel")
 POST	/api/files/uploadIntermediate/:idAndFlags				api.Files.uploadIntermediate(idAndFlags)
-POST	/api/files/sendJob/:fileId/:fileType					api.Files.sendJob(fileId,fileType) 
+POST	/api/files/sendJob/:fileId/:fileType					api.Files.sendJob(fileId,fileType)
+POST	/api/files/:fileId/remove								api.Files.removeFile(fileId) 
 GET     /api/files/:id/metadata           						api.Files.get(id)
 POST    /api/files/:id/metadata           						api.Files.addMetadata(id)
 POST    /api/files/:id/comment									api.Files.comment(id)
@@ -189,3 +190,4 @@ GET     /api/sensors/search               api.Sensors.search
 DELETE  /api/sensors/:id                  api.Sensors.delete(id)
 
 POST	/api/comment/:id					api.Comments.comment(id)
+

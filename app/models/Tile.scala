@@ -40,7 +40,7 @@ object TileDAO extends ModelCompanion[Tile, ObjectId] {
        case e:NoSuchElementException => return None 
      }   
   }
-  def findByPreviewId(previewId: String): List[Tile] = {
+  def findByPreviewId(previewId: ObjectId): List[Tile] = {
     dao.find(MongoDBObject("preview_id" -> previewId)).toList
   } 
    

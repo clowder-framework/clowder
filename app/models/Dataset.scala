@@ -226,20 +226,24 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("collections" ->  collectionId), false, false, WriteConcern.Safe)   
   }
   def removeFile(datasetId:String, fileId: String){   
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files._id" ->  new ObjectId(fileId)), false, false, WriteConcern.Safe)   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files" -> MongoDBObject("_id" ->  new ObjectId(fileId))), false, false, WriteConcern.Safe)   
   }
   
   def newThumbnail(datasetId:String){
     dao.findOneById(new ObjectId(datasetId)) match{
 	    case Some(dataset) => {
-			    for(file <- dataset.files){
+	    		val files = dataset.files map { f =>{
+	    			FileDAO.get(f.id.toString).get
+	    		}}
+			    for(file <- files){
 			      if(!file.thumbnail_id.isEmpty){
-			        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> new ObjectId(file.thumbnail_id.get)), false, false, WriteConcern.Safe)
+			        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> file.thumbnail_id.get), false, false, WriteConcern.Safe)
 			        return
 			      }
 			    }
 			    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
 	    }
+	    case None =>
     }  
   }
   

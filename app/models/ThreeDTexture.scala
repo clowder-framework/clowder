@@ -41,7 +41,7 @@ object ThreeDTextureDAO extends ModelCompanion[ThreeDTexture, ObjectId]{
 			}   
 	}
 	
-	def findTexturesByFileId(fileId: String) : List[ThreeDTexture] = {
+	def findTexturesByFileId(fileId: ObjectId) : List[ThreeDTexture] = {
 	    dao.find(MongoDBObject("file_id"->fileId)).toList
 	}
 		    
