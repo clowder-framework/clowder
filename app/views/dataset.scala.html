@@ -447,11 +447,16 @@
 			
 			<div class="row">
 				<h5>Files</h5>
-				@dataset.files.map { file =>
-				<div>
-					<a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>
-				</div>
+				<table id="datasetFilesTable">
+				@dataset.files.map { file =>				
+					<tr><td><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a href="#" style="font-style:italic;" onclick="removeFile('@(file.id.toString)',event,true);">Remove</a></td></tr>				
 				}
+				</table>
+				<script language="javascript">	
+					var hostIp = "@play.Play.application().configuration().getString("hostIp")";
+				</script> 
+				<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 				<!-- Button to trigger modal -->
 				<a href="#myModal" role="button" class="btn" data-toggle="modal" id="fileUploadBtn">Upload</a>
 				 
