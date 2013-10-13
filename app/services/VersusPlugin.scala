@@ -46,7 +46,6 @@ import akka.actor.ActorRef
  **/
 class VersusPlugin(application:Application) extends Plugin{
   
-  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val files: FileService =  DI.injector.getInstance(classOf[FileService])
   
   override def onStart() {

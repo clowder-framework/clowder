@@ -18,7 +18,11 @@ object ApplicationBuild extends Build {
     "com.wordnik" %% "swagger-play2" % "1.2.1-SNAPSHOT",
     "org.reflections" % "reflections" % "0.9.9-RC1",
     "com.google.inject" % "guice" % "3.0",
-    "com.google.inject.extensions" % "guice-assistedinject" % "3.0"
+    "com.google.inject.extensions" % "guice-assistedinject" % "3.0",
+    "com.netflix.astyanax" % "astyanax-core" % "1.56.43",
+    "com.netflix.astyanax" % "astyanax-thrift" % "1.56.43",
+    "com.netflix.astyanax" % "astyanax-cassandra" % "1.56.43",
+    "com.netflix.astyanax" % "astyanax-recipes" % "1.56.43"
   //      "org.scalaj" %% "scalaj-collection" % "1.2"
   )
 

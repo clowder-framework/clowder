@@ -8,7 +8,6 @@
 9998:services.MongoUserService
 9999:securesocial.core.providers.utils.BCryptPasswordHasher
 10000:securesocial.core.providers.UsernamePasswordProvider
-10001:services.PostgresPlugin
 10002:services.ElasticsearchPlugin
 10003:services.VersusPlugin
 

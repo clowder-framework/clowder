@@ -22,6 +22,9 @@ object DI {
   }
 }
 
+/**
+ * Default production module.
+ */
 class ProdModule extends AbstractModule {
   protected def configure() {
     bind(classOf[DatasetService]).to(classOf[MongoDBDatasetService])
@@ -31,6 +34,9 @@ class ProdModule extends AbstractModule {
   }
 }
 
+/**
+ * Default development module.
+ */
 class DevModule extends AbstractModule {
   protected def configure() {
     bind(classOf[DatasetService]).to(classOf[MongoDBDatasetService])
