@@ -258,7 +258,7 @@ object Search extends SecuredController {
    * 
    * */
   def findSimilar(id: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
- 
+
     Async {
 
       current.plugin[VersusPlugin] match {
@@ -278,30 +278,29 @@ object Search extends SecuredController {
           } yield {
             indexSeqT
           }
-         
+
           var finalR = for {
             indexSeq <- indexSeqFuture
           } yield {
             var resultSeqFuture = indexSeq.map {
-            		index =>
-              			var u = for {
-              				indexResult <- plugin.queryIndex(id, index._1)
-              				} yield {
-              					(indexResult, index._3, index._4, index._5)
-                  				}
-              				u
-            			} //end of indexSeq.map
+              index =>
+                var u = for {
+                  indexResult <- plugin.queryIndex(id, index._1)
+                } yield {
+                  (indexResult, index._3, index._4, index._5)
+                }
+                u
+            } //end of indexSeq.map
 
-           var hashResult = for {
+            var hashResult = for {
               result <- scala.concurrent.Future.sequence(resultSeqFuture)
             } yield {
-              var t = result.toArray
-              var indexid = ""
-              var a = 0
+              val t = result.toArray
+              
               var hm = new scala.collection.mutable.HashMap[String, (String, String, String, ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
               for (k <- 0 to t.length - 1) {
                 hm.put(t(k)._1._1, (t(k)._2, t(k)._3, t(k)._4, t(k)._1._2))
-              	}
+              }
               hm
             }
 
@@ -318,7 +317,7 @@ object Search extends SecuredController {
 
             Services.queries.getFile(id) match {
               case Some(file) => {
-                  Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
+                Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {
                 Ok(id + " not found")
@@ -326,7 +325,7 @@ object Search extends SecuredController {
             }
           }
 
-         } //case some
+        } //case some
 
         case None => {
           Future(Ok("No Versus Service"))
@@ -336,9 +335,9 @@ object Search extends SecuredController {
     } //Async
   }
 
-  /*Find similar images/objects in Multiple index*/
+  /*Find similar images/objects in Multiple index for an image in the Medici repository*/
   def findSimilarFile(id: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-  	Async {
+    Async {
 
       current.plugin[VersusPlugin] match {
 
@@ -357,30 +356,28 @@ object Search extends SecuredController {
           } yield {
             indexSeqT
           }
-         
+
           var finalR = for {
             indexSeq <- indexSeqFuture
           } yield {
             var resultSeqFuture = indexSeq.map {
-            		index =>
-              			var u = for {
-              				indexResult <- plugin.queryIndexFile(id, index._1)
-              				} yield {
-              					(indexResult, index._3, index._4, index._5)
-                  				}
-              				u
-            			} //end of indexSeq.map
+              index =>
+                val u = for {
+                  indexResult <- plugin.queryIndexFile(id, index._1)
+                } yield {
+                  (indexResult, index._3, index._4, index._5)
+                }
+                u
+            } //end of indexSeq.map
 
-           var hashResult = for {
+            var hashResult = for {
               result <- scala.concurrent.Future.sequence(resultSeqFuture)
             } yield {
-              var t = result.toArray
-              var indexid = ""
-              var a = 0
+              val t = result.toArray
               var hm = new scala.collection.mutable.HashMap[String, (String, String, String, ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
               for (k <- 0 to t.length - 1) {
                 hm.put(t(k)._1._1, (t(k)._2, t(k)._3, t(k)._4, t(k)._1._2))
-              	}
+              }
               hm
             }
 
@@ -397,7 +394,7 @@ object Search extends SecuredController {
 
             Services.files.getFile(id) match {
               case Some(file) => {
-                  Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
+                Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {
                 Ok(id + " not found")
@@ -405,7 +402,7 @@ object Search extends SecuredController {
             }
           }
 
-         } //case some
+        } //case some
 
         case None => {
           Future(Ok("No Versus Service"))
@@ -413,36 +410,8 @@ object Search extends SecuredController {
       } //match
 
     } //Async
-    
 
   }
-
-  /* Find Similar files*/
-  /*  def findSimilar(id: String) = Action {
-    Async {
-      current.plugin[VersusPlugin] match {
-
-        case Some(plugin) => {
-          plugin.query(id).map { result =>
-            Services.queries.getFile(id) match {
-              case Some(file) => {
-                Logger.debug("file id=" + file.id.toString())
-                val l = result.size
-                Ok(views.html.searchImgResults(file, id, l, result))
-              }
-              case None => {
-                Ok(id + " not found")
-              }
-            }
-          }
-
-        } // case some
-        case None => {
-          Future(Ok("No Versus Service"))
-        }
-      } //match
-    } //Async
-  }*/
 
   def Filterby(id: String) = TODO
 
