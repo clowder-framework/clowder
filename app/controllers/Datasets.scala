@@ -163,9 +163,9 @@ object Datasets extends SecuredController {
         val collectionsInside = Collection.listInsideDataset(id).sortBy(_.name)
         
         var comments = Comment.findCommentsByDatasetId(id)
-        SectionDAO.findByFileId(file.id).map { file =>
+        files.map { file =>
           comments ++= Comment.findCommentsByFileId(file.id.toString())
-          file.sections.map { section =>
+          SectionDAO.findByFileId(file.id).map { section =>
             comments ++= Comment.findCommentsBySectionId(section.id.toString())
           } 
         }
@@ -278,7 +278,7 @@ object Datasets extends SecuredController {
 			        }
 			        
 		            //index the file
-		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
 		            // index dataset
 		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
 		                List(("name",dt.name), ("description", dt.description)))}

@@ -29,6 +29,7 @@ import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
+import play.api.libs.json.Json._
 import play.api.mvc.Action
 import play.api.mvc.Controller
 import services.ElasticsearchPlugin
@@ -748,7 +749,8 @@ object Files extends ApiController {
 		    }
 	    }
 	    case None => BadRequest
-	  
+	  }
+    }
 	
 	
   /**
