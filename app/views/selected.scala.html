@@ -60,19 +60,21 @@ $(function() {
     $( "#relate1" ).droppable({
       drop: function( event, ui ) {
        var draggableId = ui.draggable.attr("id");
-        $( this )
-          .addClass( "ui-state-highlight" )
-          .find( "p" )
-            .html( "Dropped " + draggableId + " !" );
+       var title = ui.draggable.find("a").text();
+        $(this)
+          .addClass("ui-state-highlight")
+          .find("p")
+            .html(title);
       }
     });
     $( "#relate2" ).droppable({
       drop: function( event, ui ) {
        var draggableId = ui.draggable.attr("id");
-        $( this )
-          .addClass( "ui-state-highlight" )
-          .find( "p" )
-            .html( "Dropped " + draggableId + " !" );
+       var title = ui.draggable.find("a").text();
+        $(this)
+          .addClass("ui-state-highlight")
+          .find("p")
+            .html(title);
       }
     });
   });
