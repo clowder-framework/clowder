@@ -35,6 +35,8 @@ import controllers.Previewers
 import controllers.routes
 import java.text.DecimalFormat
 
+import scala.collection.mutable.ArrayBuffer
+
 /*Versus Plugin
  * 
  * @author Smruti
@@ -101,6 +103,42 @@ class VersusPlugin(application: Application) extends Plugin {
     }
     indexList
   }
+  def deleteIndex(indexId: String): scala.concurrent.Future[play.api.libs.ws.Response] = {
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("versus.host").getOrElse("")
+    val deleteurl = host + "/index/" + indexId 
+    Logger.debug("IndexID=" + indexId);
+    var deleteResponse: scala.concurrent.Future[play.api.libs.ws.Response] = WS.url(deleteurl).delete()
+    deleteResponse.map {
+      r => Logger.debug("r.body" + r.body);
+
+    }
+    deleteResponse
+  }
+
+  def deleteAllIndexes(): scala.concurrent.Future[play.api.libs.ws.Response] = {
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("versus.host").getOrElse("")
+    val indexurl = host + "/index"
+
+    val response: scala.concurrent.Future[play.api.libs.ws.Response] = WS.url(indexurl).delete()
+    response
+  }
+
+  def createIndex(adapter: String, extractor: String, measure: String, indexer: String): scala.concurrent.Future[play.api.libs.ws.Response] = {
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("versus.host").getOrElse("")
+
+    val createIndexUrl = host + "/index";
+    Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
+    val response = WS.url(createIndexUrl).post(Map("Adapter" -> Seq(adapter), "Extractor" -> Seq(extractor), "Measure" -> Seq(measure), "Indexer" -> Seq(indexer))).map {
+      res =>
+        //Logger.debug("res.body="+res.body)
+        res
+    }
+    response
+  }
+  
   
   //index your file
   def index(id: String, fileType: String) {
@@ -163,7 +201,7 @@ class VersusPlugin(application: Application) extends Plugin {
 
   //  def query(id:String):scala.concurrent.Future[play.api.libs.ws.Response]= {
 
-  def query(id: String): scala.concurrent.Future[Array[(String, String, Double, String)]] = {
+ /* def query(id: String): scala.concurrent.Future[Array[(String, String, Double, String)]] = {
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId = configuration.getString("versus.index").getOrElse("")
@@ -204,11 +242,10 @@ class VersusPlugin(application: Application) extends Plugin {
     }
 
   }
+*/
+ 
 
-  import scala.collection.mutable.ArrayBuffer
-  //query a specific index 
-
-  //def queryIndex(id: String, indxId: String): scala.concurrent.Future[(String, scala.collection.mutable.ArrayBuffer[(String, String, Double, String)])] = {
+ 
  def queryIndex(id: String, indxId: String): scala.concurrent.Future[(String, scala.collection.mutable.ArrayBuffer[(String, String, Double, String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])] = {
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
