@@ -56,7 +56,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   }
   
   def findByTag(tag: String): List[Dataset] = {
-    dao.find(MongoDBObject("tags" -> tag)).toList
+    dao.find(MongoDBObject("tags.name" -> tag)).toList
   }
   
   def getMetadata(id: String): Map[String,Any] = {

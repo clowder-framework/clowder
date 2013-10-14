@@ -21,7 +21,7 @@ import scala.util.parsing.json.JSONArray
  */
 object Tags extends SecuredController {
 
-  def search(tag: String) = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def search(tag: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     val datasets = Dataset.findByTag(tag)
     val files = FileDAO.findByTag(tag)
 //    Logger.debug("Search by tag " + tag + " returned " + datasets.length)
