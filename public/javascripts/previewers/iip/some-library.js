@@ -5,7 +5,7 @@
 	
 	var width = 750;
 	var height = 550;
-
+		
 //	var s = document.createElement("script");
 //	s.type = "text/javascript";
 //	s.src = "http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js";
@@ -37,6 +37,21 @@
 		    		allowscriptaccess: "always"
 		    	};
 		    	swfobject.embedSWF(Configuration.iipZoomPath, "iip" + Configuration.tab.replace("#previewer",""), width, height, "9.0.0",Configuration.expressInstallPath, flashvars, params);
+		    	
+		    	var fn = function(e) {		    		
+		            var element = document.elementFromPoint(e.pageX, e.pageY);
+		            if(element){
+		            	if(element.hasAttribute("data"))
+				            if (element.getAttribute("data").toLowerCase().indexOf("iipzoom") != -1) {			            	
+				                e.preventDefault();
+				                e.stopPropagation();
+				            }
+		            }
+		        };
+
+		        window.addEventListener('DOMMouseScroll', fn);
+		        window.addEventListener('mousewheel', fn);
+		    	
 		    	 },
 		    	 error: function(jqXHR, textStatus, errorThrown) { 
 		    	        alert("Status: " + textStatus); alert("Error: " + errorThrown); 
