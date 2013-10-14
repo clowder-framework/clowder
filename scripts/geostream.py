@@ -7,7 +7,7 @@ import requests
 from urlparse import urljoin
 
 host = 'http://localhost:9000'
-key  = 'letmein'
+key  = 'r1ek3rs'
 headers={'Content-Type': 'application/json'}
 
 def main():

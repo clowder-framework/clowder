@@ -27,7 +27,7 @@ trait ApiController extends Controller {
           case Some(key) => {
             if (key.length > 0) {
               // TODO Check for key in database
-              if (key(0).equals("letmein")) {
+              if (key(0).equals(play.Play.application().configuration().getString("commKey"))) {
                 if (authorization.isAuthorized(anonymous))
                   f(RequestWithUser(Some(anonymous), request))
                 else

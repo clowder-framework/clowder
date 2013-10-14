@@ -74,7 +74,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId=configuration.getString("versus.index").getOrElse("")
    // val urlf= client+"/files/"+id+"/blob"
-    val urlf=client+"/api/files/"+id+"?key=letmein"
+    val urlf=client+"/api/files/"+id+"?key="+play.Play.application().configuration().getString("commKey")
     val host=configuration.getString("versus.host").getOrElse("")
     
      var indexurl=host+"/index/"+indexId+"/add"
@@ -126,7 +126,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId=configuration.getString("versus.index").getOrElse("")
     //val query= client+"/queries/"+id+"/blob"
-      val query=client+"/api/queries/"+id+"?key=letmein"
+      val query=client+"/api/queries/"+id+"?key="+play.Play.application().configuration().getString("commKey")
     val host=configuration.getString("versus.host").getOrElse("")
       
     val queryurl=host+"/index/"+indexId+"/query" 
@@ -174,7 +174,7 @@ class VersusPlugin(application:Application) extends Plugin{
    // val indexId=configuration.getString("versus.index").getOrElse("")
     val indexId=indxId
    // val query= client+"/queries/"+id+"/blob"
-      val query=client+"/api/queries/"+id+"?key=letmein"
+      val query=client+"/api/queries/"+id+"?key="+play.Play.application().configuration().getString("commKey")
     val host=configuration.getString("versus.host").getOrElse("")
       
     var queryurl=host+"/index/"+indexId+"/query" 
