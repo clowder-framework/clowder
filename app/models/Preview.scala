@@ -127,6 +127,13 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
        }
   }
   
+  def removePreview(p: Preview){
+    for(tile <- TileDAO.findByPreviewId(p.id)){
+	          TileDAO.remove(MongoDBObject("_id" -> tile.id))
+	        }
+    PreviewDAO.remove(MongoDBObject("_id" -> p.id))    
+  }
+  
 }
 
 

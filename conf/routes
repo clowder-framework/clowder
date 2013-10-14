@@ -26,6 +26,7 @@ POST   /uploadSelectQuery                 controllers.Files.uploadSelectQuery
 POST   	/uploaddnd/:id					  controllers.Files.uploaddnd(id)
 #POST  	/reactiveUpload					  controllers.Files.reactiveUpload
 POST    /uploadDragDrop					  controllers.Files.uploadDragDrop
+GET		/fileThumbnail/:id/blob			  controllers.Files.thumbnail(id)
 
 # Datasets
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
@@ -112,10 +113,13 @@ GET     /api-docs.json        controllers.ApiHelpController.getResources
 # Rest API
 POST	/api/files/:three_d_file_id/geometries/:geometry_id		api.Files.attachGeometry(three_d_file_id,geometry_id)
 POST	/api/files/:three_d_file_id/3dTextures/:texture_id		api.Files.attachTexture(three_d_file_id,texture_id)
+POST	/api/files/:file_id/thumbnails/:thumbnail_id			api.Files.attachThumbnail(file_id,thumbnail_id)
 GET     /api/files                        						api.Files.list
 POST    /api/files                        						api.Files.upload(showPreviews: String ?= "FileLevel")
 POST    /api/uploadToDataset/:id                        		api.Files.uploadToDataset(id, showPreviews: String ?= "DatasetLevel")
-POST	/api/files/uploadIntermediate/:idAndFlags				api.Files.uploadIntermediate(idAndFlags) 
+POST	/api/files/uploadIntermediate/:idAndFlags				api.Files.uploadIntermediate(idAndFlags)
+POST	/api/files/sendJob/:fileId/:fileType					api.Files.sendJob(fileId,fileType)
+POST	/api/files/:fileId/remove								api.Files.removeFile(fileId) 
 GET     /api/files/:id/metadata           						api.Files.get(id)
 POST    /api/files/:id/metadata           						api.Files.addMetadata(id)
 POST    /api/files/:id/comment									api.Files.comment(id)
@@ -147,7 +151,7 @@ POST    /api/datasets/:id/usermetadata	  						api.Datasets.addUserMetadata(id)
 GET 	/api/datasets/:id/listFiles		 						api.Datasets.datasetFilesList(id)
 POST    /api/datasets/:id/comment								api.Datasets.comment(id)
 POST    /api/datasets/:id/tag									api.Datasets.tag(id)
-POST    /api/datasets/:id/removeTag								api.Datasets.removeTag(id)
+POST 	/api/datasets/:id/removeTag 							api.Datasets.removeTag(id)
 GET		/api/datasets/:id/isBeingProcessed						api.Datasets.isBeingProcessed(id)
 GET		/api/datasets/:id/getPreviews							api.Datasets.getPreviews(id)
 
@@ -178,6 +182,7 @@ GET     /api/geostreams/search            api.Geostreams.search(since: Option[St
 POST	/api/tiles						  api.ZoomIt.uploadTile
 POST	/api/geometries					  api.Geometry.uploadGeometry
 POST	/api/3dTextures					  api.ThreeDTexture.uploadTexture
+POST    /api/fileThumbnail                api.Thumbnail.uploadThumbnail
 
 GET     /api/sensors                      api.Sensors.list
 POST    /api/sensors                      api.Sensors.add
@@ -186,3 +191,4 @@ GET     /api/sensors/search               api.Sensors.search
 DELETE  /api/sensors/:id                  api.Sensors.delete(id)
 
 POST	/api/comment/:id					api.Comments.comment(id)
+

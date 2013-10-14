@@ -34,6 +34,7 @@ object Permission extends Enumeration {
 		AddSections,
 		GetSections,
 		CreateFiles,
+		DeleteFiles,
 		ListFiles,
 		ShowFile,
 		CreateStreams,
@@ -47,6 +48,7 @@ object Permission extends Enumeration {
 		GetSensors,
 		SearchSensors,
 		RemoveSensors,
+		AddThumbnail,
 		DownloadFiles = Value
 }
 

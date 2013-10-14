@@ -2,6 +2,9 @@
 	console.log(Configuration);
 	console.log(Configuration.previewer);
 	
+	var prNum = Configuration.tab.replace("#previewer","");
+	window["configsFileId" + prNum] = Configuration.fileid;
+	
 	// load the PDF JS library
 	var s = document.createElement("script");
 	s.type = "text/javascript";
@@ -9,182 +12,182 @@
 	$(Configuration.tab).append(s);
 
 	$(Configuration.tab).append(
-		"<button id='prevPage' value='prev'>&lt;</button>" + 
-		"<button id='nextPage' value='prev'>&gt;</button><br/>" + 
-		"<canvas id='rubberbandCanvas'/>" +
-		"<div id='rubberbandDiv'></div>"
+		"<button id='prevPage"+prNum+"' value='prev'>&lt;</button>" + 
+		"<button id='nextPage"+prNum+"' value='prev'>&gt;</button><br/>" + 
+		"<canvas id='rubberbandCanvas"+prNum+"'/>" +
+		"<div id='rubberbandDiv"+prNum+"'></div>"
 		);
 
 	if (Configuration.authenticated) {
-		$("#rubberbandCanvas").css("cursor", "crosshair");
+		$("#rubberbandCanvas"+prNum).css("cursor", "crosshair");
 
 		$(Configuration.tab).append(
-			"<div id='rubberbandFormDiv'><form id='rubberbandForm' action='#' onsubmit='return false;'>" +
+			"<div id='rubberbandFormDiv"+prNum+"'><form id='rubberbandForm"+prNum+"' action='#' onsubmit='return false;'>" +
 			"<fieldset>" +
-			"<label for='rubberbandFormTag'>Tag :</label><input type='text' id='rubberbandFormTag' />" +
-			"<label for='rubberbandFormComment'>Comment :</label><textarea type='text' id='rubberbandFormComment'></textarea>" +
+			"<label for='rubberbandFormTag"+prNum+"'>Tag :</label><input type='text' id='rubberbandFormTag"+prNum+"' />" +
+			"<label for='rubberbandFormComment"+prNum+"'>Comment :</label><textarea type='text' id='rubberbandFormComment"+prNum+"'></textarea>" +
 			"</fieldset>" +
-			"<input type='button' id='rubberbandFormSubmit' value='Submit' />" +
-			"<input type='button' id='rubberbandFormCancel' value='Cancel' />" +
+			"<input type='button' id='rubberbandFormSubmit"+prNum+"' value='Submit' />" +
+			"<input type='button' id='rubberbandFormCancel"+prNum+"' value='Cancel' />" +
 			"</form></div>"
 		);
 
-		var mousedown = {},
-			rubberbandRectangle = {},
-			dragging = false,
-			pageno = 1,
-			page = {},
-			pdf = {};
+		 window["mousedown" + prNum] = {};
+		 window["rubberbandRectangle" + prNum] = {};
+	     window["dragging" + prNum] = false;
+	     window["pageno" + prNum] = 1;
+	     window["page" + prNum] = {};
+	     window["pdf" + prNum] = {};
 
 		// ----------------------------------------------------------------------
 		// RUBBER BAND CODE
 		// ----------------------------------------------------------------------
-		function rubberbandStart(x, y) {
-			mousedown.x = x;
-			mousedown.y = y;
+		function rubberbandStart(x, y, prNum) {
+			window["mousedown" + prNum].x = x;
+			window["mousedown" + prNum].y = y;
 
-			rubberbandRectangle.left	 = mousedown.x;
-			rubberbandRectangle.top		= mousedown.y;
-			rubberbandRectangle.width	= 0,
-			rubberbandRectangle.height = 0;
+			window["rubberbandRectangle" + prNum].left	= window["mousedown" + prNum].x;
+			window["rubberbandRectangle" + prNum].top	= window["mousedown" + prNum].y;
+			window["rubberbandRectangle" + prNum].width	= 0,
+			window["rubberbandRectangle" + prNum].height= 0;
 
-			resizeRubberbandDiv();
-			moveRubberbandDiv();
-			showRubberbandDiv();
+			resizeRubberbandDiv(prNum);
+			moveRubberbandDiv(prNum);
+			showRubberbandDiv(prNum);
 
-			dragging = true;
+			window["dragging" + prNum] = true;
 		}
 
-		function rubberbandStretch(x, y) {
-			rubberbandRectangle.left	 = x < mousedown.x ? x : mousedown.x;
-			rubberbandRectangle.top		= y < mousedown.y ? y : mousedown.y;
-			rubberbandRectangle.width	= Math.abs(x - mousedown.x),
-			rubberbandRectangle.height = Math.abs(y - mousedown.y);
+		function rubberbandStretch(x, y, prNum) {
+			window["rubberbandRectangle" + prNum].left	 = x < window["mousedown" + prNum].x ? x : window["mousedown" + prNum].x;
+			window["rubberbandRectangle" + prNum].top	 = y < window["mousedown" + prNum].y ? y : window["mousedown" + prNum].y;
+			window["rubberbandRectangle" + prNum].width	 = Math.abs(x - window["mousedown" + prNum].x),
+			window["rubberbandRectangle" + prNum].height = Math.abs(y - window["mousedown" + prNum].y);
 
-			moveRubberbandDiv();
-			resizeRubberbandDiv();
+			moveRubberbandDiv(prNum);
+			resizeRubberbandDiv(prNum);
 		}
 
-		function rubberbandEnd() {
-			var canvas = $("#rubberbandCanvas")[0];
-			var rubberbandFormDiv = $("#rubberbandFormDiv")[0];
+		function rubberbandEnd(prNum) {
+			var canvas = $("#rubberbandCanvas"+prNum)[0];
+			var rubberbandFormDiv = $("#rubberbandFormDiv"+prNum)[0];
 			var bbox = canvas.getBoundingClientRect();
 
 			//rubberbandDiv.style.width = 0;
 			//rubberbandDiv.style.height = 0;
 
 			//hideRubberbandDiv();
-			if ((rubberbandRectangle.width > 0) && (rubberbandRectangle.height > 0)) {
+			if ((window["rubberbandRectangle" + prNum].width > 0) && (window["rubberbandRectangle" + prNum].height > 0)) {
 				rubberbandFormDiv.style.display = 'inline';
-				rubberbandFormDiv.style.top	= (canvas.offsetTop + rubberbandRectangle.top)	+ 'px';
-				rubberbandFormDiv.style.left = (canvas.offsetLeft + rubberbandRectangle.left + rubberbandRectangle.width) + 'px';
+				rubberbandFormDiv.style.top	= (canvas.offsetTop + window["rubberbandRectangle" + prNum].top)	+ 'px';
+				rubberbandFormDiv.style.left = (canvas.offsetLeft + window["rubberbandRectangle" + prNum].left + window["rubberbandRectangle" + prNum].width) + 'px';
 			}
-			dragging = false;
+			window["dragging" + prNum] = false;
 		}
 
-		function moveRubberbandDiv() {
-			var canvas = $("#rubberbandCanvas")[0];
-			var rubberbandDiv = $("#rubberbandDiv")[0];
+		function moveRubberbandDiv(prNum) {
+			var canvas = $("#rubberbandCanvas"+prNum)[0];
+			var rubberbandDiv = $("#rubberbandDiv"+prNum)[0];
 
-			rubberbandDiv.style.top	= (canvas.offsetTop + rubberbandRectangle.top) + 'px';
-			rubberbandDiv.style.left = (canvas.offsetLeft + rubberbandRectangle.left) + 'px';
+			rubberbandDiv.style.top	= (canvas.offsetTop + window["rubberbandRectangle" + prNum].top) + 'px';
+			rubberbandDiv.style.left = (canvas.offsetLeft + window["rubberbandRectangle" + prNum].left) + 'px';
 		}
 
-		function resizeRubberbandDiv() {
-			var rubberbandDiv = $("#rubberbandDiv")[0];
+		function resizeRubberbandDiv(prNum) {
+			var rubberbandDiv = $("#rubberbandDiv"+prNum)[0];
 
-			rubberbandDiv.style.width	= rubberbandRectangle.width + 'px';
-			rubberbandDiv.style.height = rubberbandRectangle.height + 'px';
+			rubberbandDiv.style.width	= window["rubberbandRectangle" + prNum].width + 'px';
+			rubberbandDiv.style.height = window["rubberbandRectangle" + prNum].height + 'px';
 		}
 
-		function showRubberbandDiv() {
-			var rubberbandDiv = $("#rubberbandDiv")[0];
-			var rubberbandFormDiv = $("#rubberbandFormDiv")[0];
+		function showRubberbandDiv(prNum) {
+			var rubberbandDiv = $("#rubberbandDiv"+prNum)[0];
+			var rubberbandFormDiv = $("#rubberbandFormDiv"+prNum)[0];
 
 			rubberbandFormDiv.style.display = 'none';
 			rubberbandDiv.style.display = 'inline';
 		}
 
-		function hideRubberbandDiv() {
-			var rubberbandDiv = $("#rubberbandDiv")[0];
-			var rubberbandFormDiv = $("#rubberbandFormDiv")[0];
+		function hideRubberbandDiv(prNum) {
+			var rubberbandDiv = $("#rubberbandDiv"+prNum)[0];
+			var rubberbandFormDiv = $("#rubberbandFormDiv"+prNum)[0];
 
 			rubberbandDiv.style.display = 'none';
 			rubberbandFormDiv.style.display = 'none';
 		}
 
-		function resetRubberband() {
-			var image = $("#rubberbandimage")[0];
-			var canvas = $("#rubberbandCanvas")[0];
+		function resetRubberband(prNum) {
+			var image = $("#rubberbandimage"+prNum)[0];
+			var canvas = $("#rubberbandCanvas"+prNum)[0];
 			var context = canvas.getContext('2d');
-			var rubberbandDiv = $("#rubberbandDiv")[0];
+			var rubberbandDiv = $("#rubberbandDiv"+prNum)[0];
 
 			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 			page.render({canvasContext: context, viewport: viewport});
 			rubberbandDiv.style.width = 0;
 			rubberbandDiv.style.height = 0;
-			hideRubberbandDiv();
+			hideRubberbandDiv(prNum);
 
-			$("#rubberbandFormTag").val("");
-			$("#rubberbandFormComment").val("");
+			$("#rubberbandFormTag"+prNum).val("");
+			$("#rubberbandFormComment"+prNum).val("");
 		}
 
 		// ----------------------------------------------------------------------
 		// CANVAS MOUSE EVENT HANDLERS
 		// ----------------------------------------------------------------------
-		$("#rubberbandCanvas").on("mousedown", function (e) {
+		$("#rubberbandCanvas"+prNum).on("mousedown", function (e) {
 			var x = e.offsetX;
 			var y = e.offsetY;
 
 			e.preventDefault();
-			rubberbandStart(x, y);
+			rubberbandStart(x, y,prNum);
 		});
 
-		$("#rubberbandCanvas").on("mousemove", function (e) {
+		$("#rubberbandCanvas"+prNum).on("mousemove", function (e) {
 			var x = e.offsetX;
 			var y = e.offsetY;
 
 			e.preventDefault();
-			if (dragging) {
-				rubberbandStretch(x, y);
+			if (window["dragging" + prNum]) {
+				rubberbandStretch(x, y,prNum);
 			}
 		});
 
-		$("#rubberbandCanvas").on("mouseup", function (e) {
+		$("#rubberbandCanvas"+prNum).on("mouseup", function (e) {
 			e.preventDefault();
-			rubberbandEnd();
+			rubberbandEnd(prNum);
 		});
 
 		// ----------------------------------------------------------------------
 		// FORM SUBMISSIONS
 		// ----------------------------------------------------------------------
-		$("#rubberbandFormSubmit").on("click", function(e) {
+		$("#rubberbandFormSubmit"+prNum).on("click", function(e) {
 			// quick check
-			var tag = $("#rubberbandFormTag").val();
-			var comment = $("#rubberbandFormComment").val();
+			var tag = $("#rubberbandFormTag"+prNum).val();
+			var comment = $("#rubberbandFormComment"+prNum).val();
 			if ((tag == "") && (comment == "")) {
-				resetRubberband();
+				resetRubberband(prNum);
 				return false;
 			}
 
 			// get selected rectangle
-			var canvas = $("#rubberbandCanvas")[0];
-			var x = rubberbandRectangle.left / canvas.width;
-			var y = rubberbandRectangle.top / canvas.height;
-			var w = rubberbandRectangle.width / canvas.width;
+			var canvas = $("#rubberbandCanvas"+prNum)[0];
+			var x = window["rubberbandRectangle" + prNum].left / canvas.width;
+			var y = window["rubberbandRectangle" + prNum].top / canvas.height;
+			var w = window["rubberbandRectangle" + prNum].width / canvas.width;
 			if (x + w > 1) {
 				w = 1.0 - x;
 			}
 			if (w <= 0) {
-				resetRubberband();
+				resetRubberband(prNum);
 				return false;
 			}
-			var h = rubberbandRectangle.height / canvas.height;
+			var h = window["rubberbandRectangle" + prNum].height / canvas.height;
 			if (y + h > 1) {
 				h = 1.0 - y;
 			}
 			if (h <= 0) {
-				resetRubberband();
+				resetRubberband(prNum);
 				return false;
 			}
 
@@ -193,8 +196,8 @@
 			var request = window.jsRoutes.api.Sections.add().ajax({
 				type: 		 "POST",
 				contentType: "application/json",
-				data:		 JSON.stringify({
-								file_id: Configuration.fileid,
+				data:		 JSON.stringify({  
+								file_id: window["configsFileId" + prNum],
 								area: {
 									x:	    x,
 									y: 	    y,
@@ -204,20 +207,20 @@
 							 }),
 				});
 			request.done(function(response, textStatus, jqXHR) {
-				sectionCreated(tag, comment, response.id, x, y, w, h);
+				sectionCreated(tag, comment, response.id, x, y, w, h, prNum);
 			});
 			request.fail(function (jqXHR, textStatus, errorThrown){
 				console.error("The following error occured: " + textStatus, errorThrown);
 			});
 
-			resetRubberband();
+			resetRubberband(prNum);
 			return false;
 		});
 
 		// associate preview with section
-		function sectionCreated(tag, comment, sectionid, x, y, w, h) {
+		function sectionCreated(tag, comment, sectionid, x, y, w, h, prNum) {
 			// clone canvas to have a subimage
-			var canvas = $("#rubberbandCanvas")[0];
+			var canvas = $("#rubberbandCanvas"+prNum)[0];
 			var subcanvas = document.createElement("canvas");
 			var cx = x * canvas.width;
 			var cy = y * canvas.height;
@@ -243,7 +246,7 @@
                     processData: false,
                 });
 			request.done(function(response, textStatus, jqXHR) {
-				previewCreated(tag, comment, sectionid, response.id, w, h);
+				previewCreated(tag, comment, sectionid, response.id, w, h, prNum);
 			});
 			request.fail(function (jqXHR, textStatus, errorThrown){
 				console.error("The following error occured: " + textStatus, errorThrown);
@@ -251,7 +254,7 @@
 		}
 		
 		// tag and comment on section
-		function previewCreated(tag, comment, sectionid, previewid, w, h) {
+		function previewCreated(tag, comment, sectionid, previewid, w, h, prNum) {
 			var request = window.jsRoutes.api.Previews.uploadMetadata(previewid).ajax({
 				type: 		 "POST",
 				contentType: "application/json",
@@ -300,15 +303,15 @@
 				request.fail(function (jqXHR, textStatus, errorThrown){
 					console.error("The following error occured: " + textStatus, errorThrown);
 				});
-				$("#rubberbandFormComment").val("");
+				$("#rubberbandFormComment"+prNum).val("");
 			}
 		}
 
 
-		$("#rubberbandFormCancel").on("click", function(e) {
-			$("#rubberbandFormTag").val("");
-			$("#rubberbandFormComment").val("");
-			resetRubberband();
+		$("#rubberbandFormCancel"+prNum).on("click", function(e) {
+			$("#rubberbandFormTag"+prNum).val("");
+			$("#rubberbandFormComment"+prNum).val("");
+			resetRubberband(prNum);
 			return false;
 		});
 	}
@@ -318,35 +321,35 @@
 	// ----------------------------------------------------------------------
 	PDFJS.disableWorker = true;
 	PDFJS.getDocument(Configuration.url).then(function (x) {
-		pageno = 1;
-		pdf = x;
-		console.log(pdf);
-		showPage();
+		window["pageno" + prNum] = 1;
+		window["pdf" + prNum] = x;
+		console.log(window["pdf" + prNum]);
+		showPage(prNum);
 	});
 
-	$("#prevPage").on("click", function(e) {
-		if (pageno > 1) {
-			pageno--;
-			showPage();
+	$("#prevPage"+prNum).on("click", function(e) {
+		if (window["pageno" + prNum] > 1) {
+			window["pageno" + prNum]--;
+			showPage(prNum);
 		}
 	});
 
-	$("#nextPage").on("click", function(e) {
-		if (pageno < pdf.numPages) {
-			pageno++;
-			showPage();
+	$("#nextPage"+prNum).on("click", function(e) {
+		if (window["pageno" + prNum] < window["pdf" + prNum].numPages) {
+			window["pageno" + prNum]++;
+			showPage(prNum);
 		}
 	});
 
-	function showPage() {
-		pdf.getPage(pageno).then(function (y) {
-			page = y;
-			var canvas = $("#rubberbandCanvas")[0];
+	function showPage(prNum) {
+		window["pdf" + prNum].getPage(window["pageno" + prNum]).then(function (y) {
+			window["page" + prNum] = y;
+			var canvas = $("#rubberbandCanvas"+prNum)[0];
 			var context = canvas.getContext('2d');
 
-			viewport = page.getViewport(1);
+			viewport = window["page" + prNum].getViewport(1);
 			if (viewport.width > 750) {
-				viewport = page.getViewport(750 / viewport.width);
+				viewport = window["page" + prNum].getViewport(750 / viewport.width);
 			}
 			canvas.width = viewport.width;
 			canvas.height = viewport.height;
@@ -357,9 +360,12 @@
 			canvas.width = viewport.width;
 
 			// Render PDF page into canvas context
-			page.render({canvasContext: context, viewport: viewport});
+			window["page" + prNum].render({canvasContext: context, viewport: viewport});
 		});
 	}
+	
+	$(Configuration.tab).append("<br/><p>Note: 3D models embedded in PDF cannot be interacted with using this previewer. You can use the \"Pdf\"" +
+								" previewer to interact with them (use Firefox if on Unix) or download the PDF and view the model on your desktop.</p>");
 
 
 }(jQuery, Configuration));

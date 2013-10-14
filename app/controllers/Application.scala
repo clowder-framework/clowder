@@ -48,6 +48,7 @@ object Application extends SecuredController {
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.tag,
         api.routes.javascript.Datasets.removeTag,
+        api.routes.javascript.Datasets.removeTag,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.tag,
         api.routes.javascript.Previews.upload,

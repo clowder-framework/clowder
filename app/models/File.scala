@@ -14,6 +14,7 @@ import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import collection.JavaConverters._
 import securesocial.core.Identity
+import play.api.Logger
 
 /**
  * Uploaded files.
@@ -29,11 +30,13 @@ case class File(
     uploadDate: Date, 
     contentType: String,
     length: Long = 0,
-    //show: Identity,
+    showPreviews: String = "DatasetLevel",
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
     tags: List[String] = List.empty,
-    metadata: Map[String, Any] = Map.empty
+    metadata: Map[String, Any] = Map.empty,
+	thumbnail_id: Option[String] = None,
+	isIntermediate: Option[Boolean] = None
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -74,7 +77,12 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def findByTag(tag: String): List[File] = {
     dao.find(MongoDBObject("tags" -> tag)).toList
   }
+  
+  def findIntermediates(): List[File] = {
+    dao.find(MongoDBObject("isIntermediate" -> true)).toList
+  }
 
+ 
   def tag(id: String, tag: String) { 
     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
   }
@@ -83,9 +91,41 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
   
+  def setIntermediate(id: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
+  }
   
-  
-  
+  def removeFile(id: String){
+    dao.findOneById(new ObjectId(id)) match{
+      case Some(file) => {
+        if(file.isIntermediate.isEmpty){
+	        val fileDataset = Dataset.findOneByFileId(file.id)
+	        if(!fileDataset.isEmpty){
+	        	Dataset.removeFile(fileDataset.get.id.toString(), id)
+	        	if(!file.thumbnail_id.isEmpty && !fileDataset.get.thumbnail_id.isEmpty)
+		        	if(file.thumbnail_id.get == fileDataset.get.thumbnail_id.get)
+		        	  Dataset.newThumbnail(fileDataset.get.id.toString())
+	        }         	
+	        for(section <- SectionDAO.findByFileId(file.id)){
+	          SectionDAO.removeSection(section)
+	        }
+	        for(preview <- PreviewDAO.findByFileId(file.id)){
+	          PreviewDAO.removePreview(preview)
+	        }
+	        for(comment <- Comment.findCommentsByFileId(id)){
+	          Comment.removeComment(comment)
+	        }
+	        for(texture <- ThreeDTextureDAO.findTexturesByFileId(file.id)){
+	          ThreeDTextureDAO.remove(MongoDBObject("_id" -> texture.id))
+	        }
+	        if(!file.thumbnail_id.isEmpty)
+	          Thumbnail.remove(MongoDBObject("_id" -> file.thumbnail_id.get))
+        }
+        FileDAO.remove(MongoDBObject("_id" -> file.id))
+      }
+      case None =>
+    }    
+  }
   
   
 }

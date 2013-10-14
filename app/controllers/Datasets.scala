@@ -97,6 +97,9 @@ object Datasets extends SecuredController {
     	next = formatter.format(datasets.last.created)
       }
     }
+    
+    
+    
     Ok(views.html.datasetList(datasets, prev, next, limit))
   }
   
@@ -119,17 +122,12 @@ object Datasets extends SecuredController {
         var isActivity = false
         try{
         	for(f <- files){
-        		Extraction.findMostRecentByFileId(f.id) match{
-        		case Some(mostRecent) => {
-        			mostRecent.status match{
-        			case "DONE." => 
-        			case _ => { 
+        		Extraction.findIfBeingProcessed(f.id) match{
+        			case false => 
+        			case true => { 
         				isActivity = true
         				throw ActivityFound
-        			  }  
-        			}
-        		}
-        		case None =>       
+        			  }       
         		}
         	}
         }catch{
@@ -139,14 +137,14 @@ object Datasets extends SecuredController {
         
         val datasetWithFiles = dataset.copy(files = files)
         val previewers = Previewers.findPreviewers
-        val previewslist = for(f <- datasetWithFiles.files) yield {
-          val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
+        val previewslist = for(f <- datasetWithFiles.files) yield {          
+          val pvf = for(p <- previewers ; pv <- f.previews; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-          }        
+          }         
           if (pvf.length > 0) {
             (f -> pvf)
           } else {
-  	        val ff = for(p <- previewers ; if (p.contentType.contains(f.contentType))) yield {
+  	        val ff = for(p <- previewers ; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(f.contentType))) yield {
   	          (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id.toString).toString, f.contentType, f.length)
   	        }
   	        (f -> ff)
@@ -165,9 +163,9 @@ object Datasets extends SecuredController {
         val collectionsInside = Collection.listInsideDataset(id).sortBy(_.name)
         
         var comments = Comment.findCommentsByDatasetId(id)
-        files.map { file =>
+        SectionDAO.findByFileId(file.id).map { file =>
           comments ++= Comment.findCommentsByFileId(file.id.toString())
-          SectionDAO.findByFileId(file.id).map { section =>
+          file.sections.map { section =>
             comments ++= Comment.findCommentsBySectionId(section.id.toString())
           } 
         }
@@ -214,39 +212,59 @@ object Datasets extends SecuredController {
           errors => BadRequest(views.html.newDataset(errors)),
 	      dataset => {
 	           request.body.file("file").map { f =>
-		        Logger.debug("Uploading file " + f.filename)
+	            var nameOfFile = f.filename
+	            var flags = ""
+	            if(nameOfFile.endsWith(".ptm")){
+	              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
+	            }
+
+		        Logger.debug("Uploading file " + nameOfFile)
 		        
 		        // store file
 		        Logger.info("Adding file" + identity)
-			    val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
+		        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+			    val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
 			    Logger.debug("Uploaded file id is " + file.get.id)
 			    Logger.debug("Uploaded file type is " + f.contentType)
 			    
 			    val uploadedFile = f
 			    file match {
-			      case Some(f) => {			        
+			      case Some(f) => {
+			        val id = f.id.toString	                	                
+	                if(showPreviews.equals("FileLevel"))
+	                	flags = flags + "+filelevelshowpreviews"
+	                else if(showPreviews.equals("None"))
+	                	flags = flags + "+nopreviews"
 			        var fileType = f.contentType
-			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")			          
+			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
 			          }			          
-			        }			        			        
+			        }else if(nameOfFile.endsWith(".mov")){
+			        	fileType = "ambiguous/mov";
+			        }
+			        
+			        
 			    	// TODO RK need to replace unknown with the server name
 			    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 //			        val key = "unknown." + "file."+ "application.x-ptm"
 			    	
 	                // TODO RK : need figure out if we can use https
 	                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
-	                val id = f.id.toString
- 	                //If uploaded file contains zipped files to be unzipped and added to the dataset, wait until the dataset is saved before sending extractor messages to unzip
+      
+	                //If uploaded file contains zipped files to be unzipped and added to the dataset, wait until the dataset is saved before sending extractor messages to unzip
 	                //and return the files
 	                if(!fileType.equals("multi/files-zipped")){
-				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
-				       // current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
-			         
-			        
+				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
+				        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
 			        }
 			        
 			        // add file to dataset 
@@ -255,20 +273,15 @@ object Datasets extends SecuredController {
 		            Dataset.save(dt)
 		            
 		            if(fileType.equals("multi/files-zipped")){
-				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, ""))}
-				      //  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))}
-				         //index the file
-		             //  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
-				        
+				        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, flags))}
+				        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
 			        }
-		            
+			        
 		            //index the file
 		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
 		            // index dataset
 		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
 		                List(("name",dt.name), ("description", dt.description)))}
-		            
-		            
            
 		            
 			    	// TODO RK need to replace unknown with the server name and dataset type		            

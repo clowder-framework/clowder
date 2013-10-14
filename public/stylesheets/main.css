@@ -327,5 +327,9 @@ button.tech_md_ {
 	left:20px;
 }
 
+:-webkit-full-screen x3d {
+  width: 100%;
+  height: 100%;
+}
 
 
