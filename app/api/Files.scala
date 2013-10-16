@@ -463,7 +463,7 @@ object Files extends ApiController {
 	      request.body.file("File").map { f =>        
 	        Logger.debug("Uploading file " + f.filename)
 	        // store file
-	        val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+	        val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)	        
 	        Ok(toJson(Map("id"->id)))   
 	      }.getOrElse {
 	         BadRequest(toJson("File not attached."))

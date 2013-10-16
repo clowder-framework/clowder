@@ -14,6 +14,13 @@ import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
+import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.entity.mime.HttpMultipartMode
+import org.apache.http.entity.mime.content.StringBody
+import java.nio.charset.Charset
+import org.apache.http.util.EntityUtils
 
 /**
  * Preview bytes and metadata.
@@ -29,14 +36,20 @@ case class Preview (
 	filename: Option[String] = None,
 	contentType: String,
 	annotations: List[ThreeDAnnotation] = List.empty,
-	length: Long
-		
+	length: Long,
+	iipURL: Option[String] = None,
+	iipImage: Option[String] = None,
+	iipKey: Option[String] = None		
 )
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Preview, ObjectId](collection = x.collection("previews.files")) {}
+  }
+  
+  def setIIPReferences(id: String, iipURL: String, iipImage: String, iipKey: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
   }
   
   def findByFileId(id: ObjectId): List[Preview] = {
@@ -131,8 +144,27 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
     for(tile <- TileDAO.findByPreviewId(p.id)){
 	          TileDAO.remove(MongoDBObject("_id" -> tile.id))
 	        }
+    // for IIP server references, also delete the files being referenced on the IIP server they reside
+    if(!p.iipURL.isEmpty){
+      val httpclient = new DefaultHttpClient()
+      val httpPost = new HttpPost(p.iipURL.get+"/deleteFile.php")
+      val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE)
+      entity.addPart("key", new StringBody(p.iipKey.get, "text/plain",
+                Charset.forName( "UTF-8" )))
+      entity.addPart("file", new StringBody(p.iipImage.get, "text/plain",
+                Charset.forName( "UTF-8" )))
+      httpPost.setEntity(entity)
+      val imageUploadResponse = httpclient.execute(httpPost)
+      Logger.info(imageUploadResponse.getStatusLine().toString())
+      
+      val dirEntity = imageUploadResponse.getEntity()
+      Logger.info("IIP server: " + EntityUtils.toString(dirEntity))
+    }
+    
     PreviewDAO.remove(MongoDBObject("_id" -> p.id))    
   }
+  
+  
   
 }
 

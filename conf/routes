@@ -165,7 +165,7 @@ POST    /api/previews/:id/annotationAdd        									    api.Previews.attachA
 POST    /api/previews/:id/annotationEdit        									api.Previews.editAnnotation(id)
 GET     /api/previews/:id/annotationsList        									api.Previews.listAnnotations(id)
 GET     /api/previews/:id                 											api.Previews.download(id)
-POST    /api/previews                     											api.Previews.upload
+POST    /api/previews                     											api.Previews.upload(iipKey: String ?= "")
 
 POST    /api/indexes                      api.Indexes.index
 POST    /api/indexes/features             api.Indexes.features
