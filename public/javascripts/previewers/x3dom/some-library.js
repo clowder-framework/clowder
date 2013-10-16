@@ -1086,12 +1086,18 @@ function clearConfigTabAnnotations(prNum){
 					$("#x3dElement" + prNum + " > canvas").css("height", "100%");
 					$("#x3dElement" + prNum + " > canvas").css("width", "100%");
 					
-					$("#x3dElementTableFullscreen"+ prNum).css("display", "block");
-					
 					var statDiv = $("#x3dElement" + prNum + " > .x3dom-statdiv")[0];
 					var thex3d = $("#x3dElement" + prNum)[0];
 					var theCanvas = $("#x3dElement" + prNum + " > canvas")[0];
-					var theAnnot = $("#annotFields"+prNum)[0];			
+					var theAnnot = $("#annotFields"+prNum)[0];	
+					
+					if($("#x3dElementTableFullscreen"+ prNum+":last-child").size() == 1){
+						thex3d.insertBefore($("#x3dElementTableFullscreen"+ prNum)[0], theCanvas);  
+					}
+					
+					$("#x3dElementTableFullscreen"+ prNum).css("display", "block");
+					
+							
 					theAnnot.setAttribute("style","background-color: black; color: white; background: none repeat scroll 0% 0% transparent; max-height: 0%; position: absolute;margin-left: 0.5%; height:auto; bottom:210px;");
 					var theDisplay = "";
 					if(window["isStatisticsExtended" + prNum]){
