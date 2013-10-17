@@ -21,6 +21,8 @@ import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.content.StringBody
 import java.nio.charset.Charset
 import org.apache.http.util.EntityUtils
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 /**
  * Preview bytes and metadata.
@@ -160,6 +162,36 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
       val dirEntity = imageUploadResponse.getEntity()
       Logger.info("IIP server: " + EntityUtils.toString(dirEntity))
     }
+    
+    if(!p.filename.isEmpty)
+      // for oni previews, read the ONI frame references from the preview file and remove them
+      if(p.filename.get.endsWith(".oniv")){
+    	  	  val theFile = getBlob(p.id.toString()) 
+    	  	  val frameRefReader = new BufferedReader(new InputStreamReader(theFile.get._1))
+    	  	  var fileData = new StringBuilder()
+    	  	  var currLine = frameRefReader.readLine()
+    	  	  while(currLine != null) {
+    	  		  fileData.append(currLine)
+    	  		  currLine = frameRefReader.readLine()
+    	  	  }
+    	  	  frameRefReader.close()
+    	  	  val frames = fileData.toString().split(",",-1)
+    	  	  var i = 0
+    	  	  for(i <- 0 to frames.length - 2){
+    	  	    PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(frames(i))))
+    	  	  }
+      //same for PTM file map references 
+      }else if(p.filename.get.endsWith(".ptmmaps")){
+    	  	  val theFile = getBlob(p.id.toString()) 
+    	  	  val frameRefReader = new BufferedReader(new InputStreamReader(theFile.get._1))
+    	  	  var currLine = frameRefReader.readLine()
+    	  	  while(currLine != null) {
+    	  	      if(!currLine.equals(""))
+    	  	    	  PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(currLine.substring(currLine.indexOf(": ")+2))))
+    	  		  currLine = frameRefReader.readLine()
+    	  	  }
+    	  	  frameRefReader.close()       
+      }
     
     PreviewDAO.remove(MongoDBObject("_id" -> p.id))    
   }

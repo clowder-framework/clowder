@@ -106,6 +106,8 @@ object Previews extends ApiController {
 	          val imageLine = iipRefReader.readLine();
 	          val iipImage = imageLine.substring(imageLine.lastIndexOf("/")+1)
 	          
+	          iipRefReader.close()
+	          
 	          PreviewDAO.setIIPReferences(id, iipURL, iipImage, iipKey)  
 	        }
         Ok(toJson(Map("id"->id)))   

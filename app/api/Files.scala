@@ -489,7 +489,16 @@ object Files extends ApiController {
 	                case None => BadRequest(toJson("Preview not found"))
 	              }
             }
-	        case None => BadRequest(toJson("File not found " + file_id))
+            //If file to be previewed is not found, just delete the preview 
+	        case None => {
+	          PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+	                case Some(preview) =>    
+	                    Logger.debug("File not found. Deleting previews.files " + preview_id)
+	                    PreviewDAO.removePreview(preview)
+	                    BadRequest(toJson("File not found. Preview deleted."))
+	                case None => BadRequest(toJson("Preview not found"))
+	              }	          
+	        }
 	      }
         }
         case _ => Ok("received something else: " + request.body + '\n')
