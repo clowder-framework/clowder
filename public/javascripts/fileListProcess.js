@@ -17,6 +17,6 @@ function removeFile(fileId,event, reloadPage){
     		"The following error occured: "+
     		textStatus, errorThrown		            
 			);
-		alert("ERROR: " + errorThrown +". File not removed." );
+		alert("ERROR: " + errorThrown +". File not removed. Maybe it was already removed." );
 			});	
 }

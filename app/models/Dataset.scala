@@ -239,12 +239,15 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     dao.findOneById(new ObjectId(datasetId)) match{
 	    case Some(dataset) => {
 	    		val files = dataset.files map { f =>{
-	    			FileDAO.get(f.id.toString).get
+	    			FileDAO.get(f.id.toString).getOrElse{None}
 	    		}}
 			    for(file <- files){
-			      if(!file.thumbnail_id.isEmpty){
-			        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> file.thumbnail_id.get), false, false, WriteConcern.Safe)
-			        return
+			      if(file.isInstanceOf[models.File]){
+			          val theFile = file.asInstanceOf[models.File]
+				      if(!theFile.thumbnail_id.isEmpty){
+				        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+				        return
+				      }
 			      }
 			    }
 			    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
