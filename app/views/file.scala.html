@@ -4,8 +4,7 @@
 @import collection.JavaConverters._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
-		<ul>
+@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {		
 		@for((key,value) <- metadata) {
 			<li><b>@(key):</b>
 			@if(value.isInstanceOf[String]) {
@@ -21,13 +20,14 @@
 			    	@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
 			    		@value.toString.replace("[","").replace("]","")
 			    	} else {
+			    		<ul>
 			    		@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+			    		</ul>
 			    	}
 			    }
 			}</li>
 		}
-		</ul>
-	}
+	} 
 
 @showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String) = {
 	<script>
@@ -256,10 +256,16 @@
 			    </script>
     			}
     		}
-    		@if(!file.metadata.isEmpty) {
+			@if(!file.metadata.isEmpty) {
 					<div id='technicalMetadata_@(file.id.toString)'>
 						<button class="tech_md_" type="button">Show file technical metadata</button>
-						<div style="display:none;">@printLevel(file.metadata)</div>
+						<div style="display:none;">
+						<ul>
+							@for(i <- 0 until file.metadata.length){								
+								@printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+							}
+						</ul>
+						</div>
 					</div>
 				}
 				<script>

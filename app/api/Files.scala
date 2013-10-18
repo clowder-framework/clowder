@@ -179,15 +179,7 @@ object Files extends ApiController {
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
 	      case Some(x) => {
-	    	  x.getAs[DBObject]("metadata") match {
-	    	  case Some(map) => {
-	    		  val union = map.asInstanceOf[DBObject] ++ doc
-	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> union), false, false, WriteConcern.SAFE)
-	    	  }
-	    	  case None => {
-	    	     FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> doc), false, false, WriteConcern.SAFE)
-	    	  }
-	    	}
+	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)  	
 	      }
 	      case None => {
 	        Logger.error("Error getting file" + id)
@@ -335,7 +327,7 @@ object Files extends ApiController {
           Logger.debug("Uploading file " + nameOfFile)
           // store file
           val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
-          val uploadedFile = f
+          val uploadedFile = f         
           
           // submit file for extraction
           file match {
