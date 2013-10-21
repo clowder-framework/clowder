@@ -8,16 +8,15 @@ object ApplicationBuild extends Build {
   val appVersion = "1.0-SNAPSHOT"
 
   val appDependencies = Seq(
-    "com.novus" %% "salat" % "1.9.2",
-    "securesocial" % "securesocial" % "master-SNAPSHOT",
+    "com.novus" %% "salat" % "1.9.2" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "securesocial" %% "securesocial" % "master-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "com.rabbitmq" % "amqp-client" % "3.0.0",
     "org.elasticsearch" % "elasticsearch" % "0.90.2",
     "com.spatial4j" % "spatial4j" % "0.3",
     "org.mongodb" %% "casbah" % "2.6.2",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
-    "com.wordnik" %% "swagger-play2" % "1.2.1-SNAPSHOT",
+    "com.wordnik" %% "swagger-play2" % "1.2.1-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.reflections" % "reflections" % "0.9.9-RC1"
-  //      "org.scalaj" %% "scalaj-collection" % "1.2"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 

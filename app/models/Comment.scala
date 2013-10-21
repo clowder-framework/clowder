@@ -8,7 +8,6 @@ import play.api.Play.current
 import services.MongoSalatPlugin
 import com.mongodb.casbah.commons.MongoDBObject
 import securesocial.core.Identity
-import securesocial.core.UserId
 import scala.util.Random
 import java.util.Date
 import org.bson.types.ObjectId

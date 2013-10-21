@@ -36,6 +36,7 @@ import services.ElasticsearchPlugin
 import services.ExtractorMessage
 import services.RabbitmqPlugin
 import services.Services
+import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Json API for files.
