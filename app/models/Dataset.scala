@@ -256,4 +256,17 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     }  
   }
   
+  def removeDataset(id: String){
+    dao.findOneById(new ObjectId(id)) match{
+      case Some(dataset) => {
+        for(collection <- Collection.listInsideDataset(id))
+          Collection.removeDataset(collection.id.toString, dataset)
+	    for(f <- dataset.files)
+	      FileDAO.removeFile(f.id.toString)
+        Dataset.remove(MongoDBObject("_id" -> dataset.id))        
+      }
+      case None => 
+    }      
+  }
+  
 }

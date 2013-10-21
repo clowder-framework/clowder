@@ -24,6 +24,7 @@ object Permission extends Enumeration {
 		ListCollections,
 		ShowCollection,
 		CreateDatasets,
+		DeleteDatasets,
 		ListDatasets,
 		ShowDataset,
 		SearchDatasets,

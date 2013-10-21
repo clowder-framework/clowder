@@ -338,6 +338,16 @@ object Datasets extends ApiController {
     }
   }
   
+  def deleteDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteDatasets)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        Dataset.removeDataset(id)
+        Ok(toJson(Map("status"->"success")))
+      }
+      case None => Ok(toJson(Map("status"->"success")))
+    }
+  }
+  
   
   
 }
