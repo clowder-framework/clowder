@@ -1,3 +1,4 @@
+<<<<<<< Upstream, based on play-2.2
 /**
  *
  */
@@ -181,6 +182,190 @@ object Files extends ApiController {
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
 	      case Some(x) => {
+=======
+/**
+ *
+ */
+package api
+
+import java.io.FileInputStream
+import java.util.Date
+
+import org.bson.types.ObjectId
+
+import com.mongodb.WriteConcern
+import com.mongodb.casbah.Imports._
+
+import controllers.SecuredController
+import controllers.Previewers
+import fileutils.FilesUtils
+import models.Comment
+import models.Dataset
+import models.File
+import models.FileDAO
+import models.GeometryDAO
+import models.Preview
+import models.PreviewDAO
+import models.ThreeDTextureDAO
+import models.Extraction
+import play.api.Logger
+import play.api.Play.current
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.json._
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json._
+import play.api.libs.json.Json._
+import play.api.mvc.Action
+import play.api.mvc.Controller
+import services.ElasticsearchPlugin
+import services.ExtractorMessage
+import services.RabbitmqPlugin
+import services.Services
+import play.api.libs.concurrent.Execution.Implicits._
+
+/**
+ * Json API for files.
+ * 
+ * @author Luigi Marini
+ *
+ */
+object Files extends ApiController {
+  
+  def get(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+	    Logger.info("GET file with id " + id)    
+	    Services.files.getFile(id) match {
+	      case Some(file) => Ok(jsonFile(file))
+	      case None => {Logger.error("Error getting file" + id); InternalServerError}
+	    }
+  }
+  
+  /**
+   * List all files.
+   */
+  def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListFiles)) { request =>
+      val list = for (f <- Services.files.listFiles()) yield jsonFile(f)
+      Ok(toJson(list))
+    }
+  
+  def downloadByDatasetAndFilename(dataset_id: String, filename: String, preview_id: String) = 
+    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DownloadFiles)){ request =>
+      Datasets.datasetFilesGetIdByDatasetAndFilename(dataset_id, filename) match{
+        case Some(id) => { 
+          Redirect(routes.Files.download(id)) 
+        }
+        case None => {
+          InternalServerError
+        }
+      }
+  
+    }
+  
+  
+  /**
+   * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+   */
+  def download(id: String) = 
+	    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DownloadFiles)) { request =>
+//		  Action(parse.anyContent) { request =>
+		    Services.files.get(id) match {
+		      case Some((inputStream, filename, contentType, contentLength)) => {
+		        
+		         request.headers.get(RANGE) match {
+		          case Some(value) => {
+		            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
+		              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+		              case x => (x(0).toLong,x(1).toLong)
+		            }
+		
+		            range match { case (start,end) =>
+		             
+		              inputStream.skip(start)
+		              import play.api.mvc.{SimpleResult, ResponseHeader}
+		              SimpleResult(
+		                header = ResponseHeader(PARTIAL_CONTENT,
+		                  Map(
+		                    CONNECTION -> "keep-alive",
+		                    ACCEPT_RANGES -> "bytes",
+		                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
+		                    CONTENT_LENGTH -> (end - start + 1).toString,
+		                    CONTENT_TYPE -> contentType
+		                  )
+		                ),
+		                body = Enumerator.fromStream(inputStream)
+		              )
+		            }
+		          }
+		          case None => {
+		            Ok.stream(Enumerator.fromStream(inputStream))
+		            	.withHeaders(CONTENT_TYPE -> contentType)
+		            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
+		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		          }
+		        }
+		      }
+		      case None => {
+		        Logger.error("Error getting file" + id)
+		        NotFound
+		      }
+		    }
+	    }
+    
+  /// /******Download query used by Versus**********/
+  def downloadquery(id: String) = 
+	    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DownloadFiles)) { request =>
+//		  Action(parse.anyContent) { request =>
+		    Services.queries.get(id) match {
+		      case Some((inputStream, filename, contentType, contentLength)) => {
+		        
+		         request.headers.get(RANGE) match {
+		          case Some(value) => {
+		            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
+		              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+		              case x => (x(0).toLong,x(1).toLong)
+		            }
+		
+		            range match { case (start,end) =>
+		             
+		              inputStream.skip(start)
+		              import play.api.mvc.{SimpleResult, ResponseHeader}
+		              SimpleResult(
+		                header = ResponseHeader(PARTIAL_CONTENT,
+		                  Map(
+		                    CONNECTION -> "keep-alive",
+		                    ACCEPT_RANGES -> "bytes",
+		                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
+		                    CONTENT_LENGTH -> (end - start + 1).toString,
+		                    CONTENT_TYPE -> contentType
+		                  )
+		                ),
+		                body = Enumerator.fromStream(inputStream)
+		              )
+		            }
+		          }
+		          case None => {
+		            Ok.stream(Enumerator.fromStream(inputStream))
+		            	.withHeaders(CONTENT_TYPE -> contentType)
+		            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
+		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		          }
+		        }
+		      }
+		      case None => {
+		        Logger.error("Error getting file" + id)
+		        NotFound
+		      }
+		    }
+	    }
+  /**
+   * Add metadata to file.
+   */
+  def addMetadata(id: String) =  
+   SecuredAction(authorization=WithPermission(Permission.DownloadFiles)) { request =>
+      Logger.debug("Adding metadata to file " + id)
+     val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
+     FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
+	      case Some(x) => {
+>>>>>>> 8d0afe8 Upgraded to play 2.2. Compile errors are all fixed plus a few runtime errors. Current runtime error is:
 	    	  x.getAs[DBObject]("metadata") match {
 	    	  case Some(map) => {
 	    		  val union = map.asInstanceOf[DBObject] ++ doc

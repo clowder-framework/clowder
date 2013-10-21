@@ -31,8 +31,12 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return an optional user
    */
   def find(id: IdentityId):Option[Identity] = {
+<<<<<<< Upstream, based on play-2.2
     Logger.trace("Searching for user " + id)
     SocialUserDAO.findOne(MongoDBObject("identityId.userId"->id.userId, "identityId.providerId"->id.providerId))
+=======
+    SocialUserDAO.findOne(MongoDBObject("_id._id"->id.userId, "_id.providerId"->id.providerId))
+>>>>>>> 8d0afe8 Upgraded to play 2.2. Compile errors are all fixed plus a few runtime errors. Current runtime error is:
   }
 
   /**
