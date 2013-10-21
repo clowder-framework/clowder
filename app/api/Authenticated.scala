@@ -18,7 +18,6 @@ import securesocial.core.providers.UsernamePasswordProvider
 import play.api.mvc.Session
 import org.joda.time.DateTime
 import securesocial.core.SecureSocial
-import securesocial.core.UserId
 import securesocial.core.Identity
 import play.api.mvc.Controller
 import securesocial.core.Authorization
@@ -27,6 +26,9 @@ import securesocial.core.SecuredRequest
 import securesocial.core.AuthenticationMethod
 import play.api.mvc.EssentialAction
 import play.api.mvc.RequestHeader
+import play.api.mvc.SimpleResult
+import scala.concurrent.Future
+import securesocial.core.IdentityId
 
 /**
  * Secure API. 
@@ -38,7 +40,7 @@ import play.api.mvc.RequestHeader
  */
 case class Authenticated[A](action: Action[A]) extends Action[A] {
   
-  def apply(request: Request[A]): Result = {
+  def apply(request: Request[A]): Future[SimpleResult] = {
     request.headers.get("Authorization") match { // basic authentication
       case Some(authHeader) => {
         val header = new String(Base64.decodeBase64(authHeader.slice(6,authHeader.length).getBytes))
@@ -49,12 +51,12 @@ case class Authenticated[A](action: Action[A]) extends Action[A] {
 	               action(SecuredRequest(identity, request))
 	            } else {
 	               Logger.debug("Password doesn't match")
-	               Unauthorized(views.html.defaultpages.unauthorized())
+	               Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
 	            }
 	          }
 	          case None => {
 	            Logger.debug("User not found")
-	            Unauthorized(views.html.defaultpages.unauthorized())
+	            Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
 	          }
 	        }
 	      }
@@ -64,18 +66,18 @@ case class Authenticated[A](action: Action[A]) extends Action[A] {
             if (key.length > 0) {
               // TODO Check for key in database
               if (key(0).equals(play.Play.application().configuration().getString("commKey"))) {
-    	        action(SecuredRequest(new SocialUser(new UserId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword), request))
+    	        action(SecuredRequest(new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword), request))
               } else {
                 Logger.debug("Key doesn't match")
-                Unauthorized(views.html.defaultpages.unauthorized())
+                Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
               }
-            } else Unauthorized(views.html.defaultpages.unauthorized())
+            } else Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
           }
           case None => {
             
             SecureSocial.currentUser(request) match { // calls from browser
 		      case Some(identity) => action(SecuredRequest(identity, request))
-		      case None => Unauthorized(views.html.defaultpages.unauthorized())
+		      case None => Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
 		    }
           }
         }

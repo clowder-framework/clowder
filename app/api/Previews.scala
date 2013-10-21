@@ -20,7 +20,7 @@ import com.mongodb.WriteConcern
 import models.ThreeDAnnotation
 import play.api.libs.json.JsValue
 import controllers.SecuredController
-
+import play.api.libs.concurrent.Execution.Implicits._
 import java.io.BufferedReader
 import java.io.FileReader
 

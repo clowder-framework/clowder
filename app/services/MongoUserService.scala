@@ -1,7 +1,7 @@
 package services
 
 import securesocial.core.UserServicePlugin
-import securesocial.core.UserId
+import securesocial.core.IdentityId
 import play.api.{Application, Logger}
 import securesocial.core.providers.Token
 import com.mongodb.casbah.Imports._
@@ -30,8 +30,8 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param id the user id
    * @return an optional user
    */
-  def find(id: UserId):Option[Identity] = {
-    SocialUserDAO.findOne(MongoDBObject("_id._id"->id.id, "_id.providerId"->id.providerId))
+  def find(id: IdentityId):Option[Identity] = {
+    SocialUserDAO.findOne(MongoDBObject("_id._id"->id.userId, "_id.providerId"->id.providerId))
   }
 
   /**

@@ -37,6 +37,7 @@ import services.ElasticsearchPlugin
 import services.ExtractorMessage
 import services.RabbitmqPlugin
 import services.Services
+import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Json API for files.
@@ -180,7 +181,15 @@ object Files extends ApiController {
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
 	      case Some(x) => {
-	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)  	
+	    	  x.getAs[DBObject]("metadata") match {
+	    	  case Some(map) => {
+	    		  val union = map.asInstanceOf[DBObject] ++ doc
+	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> union), false, false, WriteConcern.SAFE)
+	      }
+	      case None => {
+	    	     FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> doc), false, false, WriteConcern.SAFE)
+	    	  }
+	    	}
 	      }
 	      case None => {
 	        Logger.error("Error getting file" + id)
