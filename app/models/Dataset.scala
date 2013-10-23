@@ -261,6 +261,9 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
       case Some(dataset) => {
         for(collection <- Collection.listInsideDataset(id))
           Collection.removeDataset(collection.id.toString, dataset)
+        for(comment <- Comment.findCommentsByDatasetId(id)){
+        	Comment.removeComment(comment)
+        }  
 	    for(f <- dataset.files)
 	      FileDAO.removeFile(f.id.toString)
         Dataset.remove(MongoDBObject("_id" -> dataset.id))        
