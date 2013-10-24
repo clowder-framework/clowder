@@ -292,6 +292,10 @@ $(function() {
 					        for(var i = 0; i < respJSON.length; i++){
 					        	var createdDateArray = respJSON[i].created.split(" ");
 					        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
+					        	var removeCell = "";
+					        	if(window["userDefined"] == true){
+					        		removeCell = "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
+					        	}					        	
 					        	var datasetThumbnail = "";
 					        	if(respJSON[i].thumbnail != "None")
 					        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
@@ -301,7 +305,7 @@ $(function() {
 					        								+ "<td>" + createdDate + "</td>"
 					        								+ "<td>" + respJSON[i].description + "</td>"
 					        								+ "<td>" + datasetThumbnail + "</td>"
-					        								+ "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td></tr>");
+					        								+ removeCell + "</tr>");
 					        }
 					        $('#resultTable').show();
 					        

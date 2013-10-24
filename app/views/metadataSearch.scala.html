@@ -18,11 +18,19 @@
 		<table id='resultTable' class="table table-bordered table-hover" style="display:none;">
 			<thead>
 				<tr>
-					<th style="width: 25%">Name</th>
-					<th style="width: 15%">Created</th>
-					<th style="width: 40%">Description</th>
-					<th style="width: 10%"></th>
-					<th style="width: 10%"></th>
+					@if(user.isDefined) {
+						<th style="width: 25%">Name</th>
+						<th style="width: 15%">Created</th>
+						<th style="width: 40%">Description</th>
+						<th style="width: 10%"></th>
+						<th style="width: 10%"></th>
+					}
+					@if(!user.isDefined) {
+						<th style="width: 25%">Name</th>
+						<th style="width: 15%">Created</th>
+						<th style="width: 50%">Description</th>
+						<th style="width: 10%"></th>
+					}
 				</tr>
 			</thead>
 			<tbody>
@@ -34,6 +42,14 @@
 		</ul>
 	</div>
 </div>
+<script language="javascript">
+	window["userDefined"] = false;
+</script>
+@if(user.isDefined) {
+	<script language="javascript">
+		window["userDefined"] = true;
+	</script>
+}
 <script language="javascript">	
 	var queryIp = "@api.routes.Datasets.searchDatasetsUserMetadata";
 	var modelIp = "@(routes.Assets.at("userMetadataModel"))";
