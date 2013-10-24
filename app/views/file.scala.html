@@ -414,30 +414,34 @@
 			</div>
 		</div>
 		
-		<div class="accordion" id="accordion2">
-			<div class="accordion-group">
-				<div class="accordian-heading">
-					<a class="accordion-toggle" data-toggle="collapse"
-						data-parent="#accordion2" href="#collapseTwo">Debug</a>
-				</div>
-				<div id="collapseTwo" class="accordion-body collapse">
-					<div class="accordion-inner">@file</div>
-					<div class="accordion-inner">Previews:
-						<ul>
-							@previews.map { p =>
-							<li>@p</li>
-						}
-						</ul>
+		<!--Debug code-->
+		@if(false){ 
+			<div class="accordion" id="accordion2">
+				<div class="accordion-group">
+					<div class="accordian-heading">
+						<a class="accordion-toggle" data-toggle="collapse"
+							data-parent="#accordion2" href="#collapseTwo">Debug</a>
 					</div>
-					<div class="accordion-inner">Sections:
-						<ul>
-						@sections.map { s =>
-							<li>@s</li>
-						}
-						</ul>
+					<div id="collapseTwo" class="accordion-body collapse">
+						<div class="accordion-inner">@file</div>
+						<div class="accordion-inner">Previews:
+							<ul>
+								@previews.map { p =>
+								<li>@p</li>
+							}
+							</ul>
+						</div>
+						<div class="accordion-inner">Sections:
+							<ul>
+							@sections.map { s =>
+								<li>@s</li>
+							}
+							</ul>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		}
+		<!--End of debug code-->
 	</div>
 }
