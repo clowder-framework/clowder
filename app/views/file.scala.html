@@ -92,7 +92,7 @@
 				<dd>@file.uploadDate</dd>
 				@if(!fileDataset.isEmpty){
 					<dt>Dataset:</dt>
-					<dd><a target='_blank' href="@(routes.Datasets.dataset(fileDataset.get.id.toString))">@(fileDataset.get.name)</a></dd>
+					<dd><a href="@(routes.Datasets.dataset(fileDataset.get.id.toString))">@(fileDataset.get.name)</a></dd>
 				}
 			</dl>
 		</div>
