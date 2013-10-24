@@ -31,7 +31,10 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return an optional user
    */
   def find(id: IdentityId):Option[Identity] = {
-    SocialUserDAO.findOne(MongoDBObject("_id._id"->id.userId, "_id.providerId"->id.providerId))
+    Logger.debug("Searching for user " + id)
+    val user = SocialUserDAO.findOne(MongoDBObject("identityId.userId"->id.userId, "identityId.providerId"->id.providerId))
+    Logger.debug("User " + user)
+    user
   }
 
   /**
@@ -45,7 +48,8 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return
    */  
   def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
-    SocialUserDAO.findOne(MongoDBObject("email"->email, "_id.providerId"->providerId))
+    Logger.debug("Searching for user " + email + " " + providerId)
+    SocialUserDAO.findOne(MongoDBObject("email"->email, "identityId.providerId"->providerId))
   }
 
   /**
@@ -54,6 +58,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param user
    */
   def save(user: Identity): Identity = {
+    Logger.debug("Saving user " + user)
     SocialUserDAO.save(user)
     user
   }
@@ -69,6 +74,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return A string with a uuid that will be embedded in the welcome email.
    */
   def save(token: Token) {
+    Logger.debug("Saving token " + token)
     TokenDAO.save(MongoToken(new ObjectId, token.uuid, token.email, token.creationTime.toDate, token.expirationTime.toDate, token.isSignUp))
   }
 
@@ -83,6 +89,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return
    */
   def findToken(token: String): Option[Token] = {
+    Logger.debug("Searching for token " + token)
     TokenDAO.findByUUID(token) match {
       case Some(t) => Some(Token(t.id.toString, t.email, new DateTime(t.creationTime), new DateTime(t.expirationTime), t.isSignUp))
       case None => None
@@ -98,6 +105,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param uuid the token id
    */
   def deleteToken(uuid: String) {
+    Logger.debug("Deleting token " + uuid)
     TokenDAO.removeById(new ObjectId(uuid), WriteConcern.Normal)
   }
 
@@ -109,6 +117,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    *
    */
   def deleteExpiredTokens() {
+    Logger.debug("Deleting expired tokens")
     for (token <- TokenDAO.findAll) if (token.isExpired) TokenDAO.remove(token)
   }
 }

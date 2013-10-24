@@ -15,7 +15,7 @@ object ApplicationBuild extends Build {
     "com.spatial4j" % "spatial4j" % "0.3",
     "org.mongodb" %% "casbah" % "2.6.2",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
-    "com.wordnik" %% "swagger-play2" % "1.2.1-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "com.wordnik" %% "swagger-play2" % "1.2.6-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.reflections" % "reflections" % "0.9.9-RC1"
   )
 
@@ -33,5 +33,5 @@ object ApplicationBuild extends Build {
     resolvers += Resolver.url("sbt-plugin-releases", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("sbt-plugin-snapshots", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
-  )
+  ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
