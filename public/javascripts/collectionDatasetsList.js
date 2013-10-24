@@ -73,7 +73,7 @@
         		"The following error occured: "+
         		textStatus, errorThrown		            
     			);
-    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection was possibly removed." );
+    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection or dataset was possibly removed from the system." );
  			});
 		
 	}
@@ -147,7 +147,7 @@
         		"The following error occured: "+
         		textStatus, errorThrown		            
     			);
-    		alert("ERROR: " + errorThrown +". Dataset not removed from collection. The collection was possibly removed." );
+    		alert("ERROR: " + errorThrown +". Dataset not removed from collection. The collection was possibly removed from the system." );
  			});	
 	}
 	

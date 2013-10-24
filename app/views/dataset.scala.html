@@ -564,7 +564,7 @@
 					        		"The following error occured: "+
 					        		textStatus, errorThrown		            
 					    			);
-					    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection was possibly removed." );
+					    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection or dataset was possibly removed." );
 					 			});				
 						});
 						
@@ -623,94 +623,98 @@
 					<button class="btn" id="tagB">Tag</button>
 				</form>
 				<script language="javascript">
-				function removeTag(){
-					console.log("removing tag ");
-					//alert($(this).attr("id"));
-					var tagId = $(this).attr("id");
-					var request = jsRoutes.api.Datasets.removeTag('@dataset.id').ajax({
-					data: JSON.stringify({"tagId":tagId}),
-					type: 'POST',
-					contentType: "application/json"
-					});
-					request.done(function (response, textStatus, jqXHR){
-					console.log("Response " + textStatus);
-					$("#" + tagId).parents("li").remove();
-					});
-					request.fail(function (jqXHR, textStatus, errorThrown){
-					console.error(
-					"The following error occured: "+
-					textStatus, errorThrown
-					);
-					window.location = "../login"; // FIXME hardcoded
-					});
-					return false;
-					}
+					function removeTag(){
+							console.log("removing tag ");
+							//alert($(this).attr("id"));
+							var tagId = $(this).attr("id");
+							
+							var request = jsRoutes.api.Datasets.removeTag('@dataset.id').ajax({
+								data: JSON.stringify({"tagId":tagId}),
+								type: 'POST',
+								contentType: "application/json"
+							});
+							request.done(function (response, textStatus, jqXHR){
+								console.log("Response " + textStatus);
+								$("#" + tagId).parents("li").remove();
+							});
+							request.fail(function (jqXHR, textStatus, errorThrown){
+								console.error(
+								"The following error occured: "+
+								textStatus, errorThrown
+								);
+								//alert("ERROR: " + errorThrown +". Tag not removed from dataset." );					
+								window.location = "../login"; // FIXME hardcoded
+							});
+							
+							return false;
+						}
+				
 					function removeIconMouseIn() {
-					$(this).find(".icon-remove").fadeIn(100);
+						$(this).find(".icon-remove").fadeIn(100);
 					}
 					function removeIconMouseOut() {
-					$(this).find(".icon-remove").fadeOut(100);
+						$(this).find(".icon-remove").fadeOut(100);
 					}
 					$(function() {
-					$("#tagList").children("li").each(function(){
-					$(this).hover(
-					//function(){$(this).find(".icon-remove").fadeIn(100);},
-					//function(){$(this).find(".icon-remove").fadeOut(100);}
-					removeIconMouseIn,removeIconMouseOut
-					);
-					});
-					$("#tagList").find(".icon-remove").click(removeTag);
-					
-				   $('#tagB').click(function() {
-				     var tag = $('#tagField').val();
-				     
-				     var isTagPresent = false;
-				     $("#tagList").children("li").each(function (index, tagLi) {
-				     if($(tagLi).attr("name")===tag){
-				     isTagPresent = true;
-				     alert(true);
-				     }
-				     });
-
-				     if (tag !== "" && isTagPresent != true) {
-				     	 console.log("submitting tag " + tag);
-				     	var request = jsRoutes.api.Datasets.tag('@dataset.id').ajax({
-				     		data: JSON.stringify({"tag":tag}),
-					       type: 'POST',
-					       contentType: "application/json",
-					     });
+						$("#tagList").children("li").each(function(){
+							$(this).hover(
+							//function(){$(this).find(".icon-remove").fadeIn(100);},
+							//function(){$(this).find(".icon-remove").fadeOut(100);}
+							removeIconMouseIn,removeIconMouseOut
+							);
+						});
+						$("#tagList").find(".icon-remove").click(removeTag);
+						
+					   $('#tagB').click(function() {
+					     var tag = $('#tagField').val();
 					     
-					     request.done(function (response, textStatus, jqXHR){
-					        console.log("Response " + response);
-					        var url = "../tags/search/" + tag;
-					        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='icon-remove'></i></a></li>").appendTo('#tagList');
-					        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
-					        $newTag.find(".icon-remove").click(removeTag);*/
-					        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
-					        $newTag.find(".icon-remove").click(removeTag);
-					        $('#tagField').val("");
+					     var isTagPresent = false;
+					     $("#tagList").children("li").each(function (index, tagLi) {
+					     if($(tagLi).attr("name")===tag){
+					     isTagPresent = true;
+					     alert(true);
+					     }
 					     });
-			    
-					     request.fail(function (jqXHR, textStatus, errorThrown){
-					        console.error(
-					            "The following error occured: "+
-					            textStatus, errorThrown
-					            
-					        );
-					        window.location = "../login"; // FIXME hardcoded
-					     });
-					     return false;
-				     }
-				     
-				  });
-				  
-				  	$('#tagField').keypress(function (e) {
-					  if (e.which == 13) {
-					    console.log("enter");
-					    $('#tagB').click();
-					    return false;
-					  }
-					});
+	
+					     if (tag !== "" && isTagPresent != true) {
+					     	 console.log("submitting tag " + tag);
+					     	var request = jsRoutes.api.Datasets.tag('@dataset.id').ajax({
+					     		data: JSON.stringify({"tag":tag}),
+						       type: 'POST',
+						       contentType: "application/json",
+						     });
+						     
+						     request.done(function (response, textStatus, jqXHR){
+						        console.log("Response " + response);
+						        var url = "../tags/search/" + tag;
+						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='icon-remove'></i></a></li>").appendTo('#tagList');
+						        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
+						        $newTag.find(".icon-remove").click(removeTag);*/
+						        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
+						        $newTag.find(".icon-remove").click(removeTag);
+						        $('#tagField').val("");
+						     });
+				    
+						     request.fail(function (jqXHR, textStatus, errorThrown){
+						        console.error(
+						            "The following error occured: "+
+						            textStatus, errorThrown
+						            
+						        );
+						        window.location = "../login"; // FIXME hardcoded
+						     });
+						     return false;
+					     }
+					     
+					  });
+					  
+					  	$('#tagField').keypress(function (e) {
+						  if (e.which == 13) {
+						    console.log("enter");
+						    $('#tagB').click();
+						    return false;
+						  }
+						});
 				  
 				 });
 			     </script>

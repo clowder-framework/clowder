@@ -17,6 +17,7 @@ import fileutils.FilesUtils
 import models.Comment
 import models.Dataset
 import models.File
+import models.Collection
 import models.FileDAO
 import models.GeometryDAO
 import models.Preview
@@ -599,9 +600,14 @@ object Files extends ApiController {
 	                        
 	                    Dataset.findOneByFileId(file.id) match {
 	                      case Some(dataset) => {
-	                        if(dataset.thumbnail_id.isEmpty)
+	                        if(dataset.thumbnail_id.isEmpty){
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
 		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
+		                        
+		                        for(collection <- Collection.listInsideDataset(dataset.id.toString)){
+		                          
+		                        }
+		                    }
 	                      }
 	                      case None =>
 	                    }

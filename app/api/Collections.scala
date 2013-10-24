@@ -66,7 +66,7 @@ object Collections extends ApiController {
             Ok(toJson(Map("status" -> "success")))
           }
           case None => {
-        	  Logger.error("Error getting dataset" + datasetId); InternalServerError
+        	  Ok(toJson(Map("status" -> "success")))
           }
         }
       }
