@@ -292,10 +292,16 @@ $(function() {
 					        for(var i = 0; i < respJSON.length; i++){
 					        	var createdDateArray = respJSON[i].created.split(" ");
 					        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
+					        	var datasetThumbnail = "";
+					        	if(respJSON[i].thumbnail != "None")
+					        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+					        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
 					        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
 					        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
 					        								+ "<td>" + createdDate + "</td>"
-					        								+ "<td>" + respJSON[i].description + "</td></tr>");
+					        								+ "<td>" + respJSON[i].description + "</td>"
+					        								+ "<td>" + datasetThumbnail + "</td>"
+					        								+ "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td></tr>");
 					        }
 					        $('#resultTable').show();
 					        
