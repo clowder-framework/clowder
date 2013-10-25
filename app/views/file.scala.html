@@ -312,6 +312,12 @@
     		</script>
     		<script>
     			function addPreview(pv, fileId){
+    				String.prototype.endsWith = function(str)
+    				{
+    				    var lastIndex = this.lastIndexOf(str);
+    				    return (lastIndex != -1) && (lastIndex + str.length == this.length);
+    				}
+    				
     				var prevsOfFile = parseInt($("#filePrevContainer_" + fileId).attr('data-previewsCount'))
     				var newTabLink = document.createElement('a');
     				newTabLink.setAttribute('href', '#previewer_' + fileId +  '_' + (prevsOfFile + 1));
@@ -342,6 +348,10 @@
     					Configuration.annotationsEditPath = pv.pv_annotationsEditPath;
     					Configuration.annotationsListPath = pv.pv_annotationsListPath;
     					Configuration.annotationsAttachPath = pv.pv_annotationsAttachPath;
+    					if("@file.filename".endsWith(".ptm"))   					
+    						Configuration.wasPTM = 'true';
+    					else
+    						Configuration.wasPTM = 'false';
     				}
     				////
     				
