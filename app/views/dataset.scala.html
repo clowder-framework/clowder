@@ -75,16 +75,16 @@
 		<h1>@dataset.name</h1>
 	</div>
 	
-	<div class="row-fluid">	
+	<div class="row">	
 	
 		<!-- left column -->
-		<div class="span8" id="filePrevsCol">
+		<div class="col-md-8" id="filePrevsCol">
 		@for((f, pvs) <- previews) {
 			@if(pvs.length > 0 || (!f.metadata.isEmpty)) {
 				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4>@f.filename</h4></div>
 			}
-			<div class="row-fluid" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
-		    	<div class="span12">
+			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
+		    	<div class="col-md-12">
 				  		<div class="tabbable">
 							<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 								@for(i <- pvs.indices) {
@@ -114,8 +114,8 @@
 			
 			<!-- sections -->
 			@if(f.sections.size > 0) {	
-			  	<div class="row-fluid" style="padding-top: 10px">
-			  	  <div class="span6">
+			  	<div class="row" style="padding-top: 10px">
+			  	  <div class="col-md-6">
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@f.sections.map { s =>
 					  		@if(s.preview.isDefined) {
@@ -137,8 +137,8 @@
 				  </div>
 				</div>
 				  
-				<div class="row-fluid" style="padding-top: 10px">
-				  <div class="span10">
+				<div class="row" style="padding-top: 10px">
+				  <div class="col-md-10">
 				  	<div>
 				  		<h5>Sections</h5>
 						<table class="table">
@@ -448,7 +448,7 @@
 		
 
 		<!-- right column -->
-		<div class="span4 ds-col-narrow">
+		<div class="col-md-4 ds-col-narrow">
 		    <div class="row">
 				<dl>
 					<dt>Author:</dt>
