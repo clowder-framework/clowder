@@ -1,11 +1,9 @@
-/*!
- * Bootstrap v3.0.0 by @fat and @mdo
- * Copyright 2013 Twitter, Inc.
- * Licensed under http://www.apache.org/licenses/LICENSE-2.0
- *
- * Designed and built with all the love in the world by @mdo and @fat.
- */
-if (typeof jQuery === "undefined") { throw new Error("Bootstrap requires jQuery") }
+/**
+* bootstrap.js v3.0.0 by @fat and @mdo
+* Copyright 2013 Twitter Inc.
+* http://www.apache.org/licenses/LICENSE-2.0
+*/
+if (!jQuery) { throw new Error("Bootstrap requires jQuery") }
 
 /* ========================================================================
  * Bootstrap: transition.js v3.0.0
@@ -1769,7 +1767,7 @@ if (typeof jQuery === "undefined") { throw new Error("Bootstrap requires jQuery"
   Tab.prototype.show = function () {
     var $this    = this.element
     var $ul      = $this.closest('ul:not(.dropdown-menu)')
-    var selector = $this.data('target')
+    var selector = $this.attr('data-target')
 
     if (!selector) {
       selector = $this.attr('href')
