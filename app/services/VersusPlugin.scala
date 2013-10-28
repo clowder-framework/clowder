@@ -189,7 +189,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val host=configuration.getString("versus.host").getOrElse("")
     val buildurl=host+"/index/"+indexId+"/build"
         Logger.debug("IndexID="+indexId);
-    var buildResponse:scala.concurrent.Future[play.api.libs.ws.Response]=WS.url(buildurl).get()
+    var buildResponse:scala.concurrent.Future[play.api.libs.ws.Response]=WS.url(buildurl).post("")
     buildResponse.map{
     	r=>Logger.debug("r.body"+r.body);
     	
