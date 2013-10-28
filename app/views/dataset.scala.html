@@ -450,31 +450,29 @@
 					<a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>
 				</div>
 				}
-				<!-- Button to trigger modal -->
-				<a href="#myModal" role="button" class="btn" data-toggle="modal" id="fileUploadBtn">Upload</a>
-				 
-				<!-- Modal -->
-				<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-				  <div class="modal-header">
-				    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">��</button>
-				    <h3 id="myModalLabel">Upload File</h3>
-				  </div>
-				  <div class="modal-body">
-				    <p>Add a new file to dataset.</p>
-				 	@form(action = routes.Files.uploaddnd(dataset.id.toString), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
-					    <fieldset>
-					      <legend>Select a File and Upload</legend>
-					     <input type="file" id="query" name="File">
-					    </fieldset>
-				        <div class="form-actions">
-				          <input type="submit" class="btn btn-primary" value="Upload"/>
+				<a href="#myModal" class="btn btn-default btn-sm" data-toggle="modal" id="fileUploadBtn">Add file</a>
+				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+				    <div class="modal-dialog">
+				      <div class="modal-content">
+				      @form(action = routes.Files.uploaddnd(dataset.id.toString), 'enctype -> "multipart/form-data", 'role -> "form") {
+				        <div class="modal-header">
+				          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				          <h4 class="modal-title">Add file</h4>
 				        </div>
-					  }
-				  </div>
-				  <div class="modal-footer">
-				    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-				  </div>
-				</div>
+				        <div class="modal-body">
+						 		  <div class="form-group">
+								    <label for="exampleInputFile">New File</label>
+								    <input type="file" id="query" name="File">
+								    <p class="help-block">The file will be uploaded and added to this dataset.</p>
+								  </div>
+				        </div>
+				        <div class="modal-footer">
+				          <input type="submit" class="btn btn-default" value="Upload"/>
+				        </div>
+				      }
+				      </div><!-- /.modal-content -->
+				    </div><!-- /.modal-dialog -->
+				  </div><!-- /.modal -->
 			</div>
 			
 			<div class="row">
@@ -491,7 +489,7 @@
 						<option value="@(collection.id.toString)">@(collection.name)</option>
 					}					  
 					</select>
-					<button class="btn" id="addCollBtn" style="vertical-align:top;">Add</button>
+					<button class="btn btn-default" id="addCollBtn" style="vertical-align:top;">Add</button>
 					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
 				</div>
 					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
@@ -584,7 +582,10 @@
 				<h5>Tags</h5>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
-					  <li name='@tag.name'><a href="@routes.Tags.search(tag.name)">@tag.name [Dataset]</a><a href="javascript:void(0);"><i style="display:none;" id="@tag.id" class="icon-remove"></i></a></li>
+					  <li name='@tag.name'>
+					  	<a href="@routes.Tags.search(tag.name)">@tag.name [Dataset]</a>
+					  	<a href="javascript:void(0);"><span id="@tag.id" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
+					  </li>
 					}
   				    @dataset.files.map { file =>
 						@file.tags.map { tag =>
@@ -599,7 +600,7 @@
 				</ul>
 				<form class="form-inline">
 					<input type="text" id="tagField">
-					<button class="btn" id="tagB">Tag</button>
+					<button class="btn btn-default" id="tagB">Tag</button>
 				</form>
 				<script language="javascript">
 				
@@ -630,11 +631,11 @@
 				   }
 				   
 				   function removeIconMouseIn() {
-				   		$(this).find(".icon-remove").fadeIn(100);
+				   		$(this).find(".glyphicon-remove").fadeIn(100);
 				   }
 				   
 				   function removeIconMouseOut() {
-				   		$(this).find(".icon-remove").fadeOut(100);				   	
+				   		$(this).find(".glyphicon-remove").fadeOut(100);				   	
 				   }
 				   
 				
@@ -643,13 +644,13 @@
 					
 				   $("#tagList").children("li").each(function(){
 				   		$(this).hover(
-				   						//function(){$(this).find(".icon-remove").fadeIn(100);},
-				   						//function(){$(this).find(".icon-remove").fadeOut(100);}
+				   						//function(){$(this).find(".glyphicon-remove").fadeIn(100);},
+				   						//function(){$(this).find(".glyphicon-remove").fadeOut(100);}
 				   						removeIconMouseIn,removeIconMouseOut
 				   					  );
 				   	});
 					 
-				   $("#tagList").find(".icon-remove").click(removeTag);
+				   $("#tagList").find(".glyphicon-remove").click(removeTag);
 				   $('#tagB').click(function() {
 				     var tag = $('#tagField').val();
 				     
@@ -673,11 +674,11 @@
 					     request.done(function (response, textStatus, jqXHR){
 					        console.log("Response " + response);
 					        var url = "../tags/search/" + tag;
-					        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='icon-remove'></i></a></li>").appendTo('#tagList');
+					        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
      						/*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
-     						$newTag.find(".icon-remove").click(removeTag);*/     						
+     						$newTag.find(".glyphicon-remove").click(removeTag);*/     						
      						$newTag.hover(removeIconMouseIn,removeIconMouseOut);
-     						$newTag.find(".icon-remove").click(removeTag);
+     						$newTag.find(".glyphicon-remove").click(removeTag);
 					        $('#tagField').val("");
 					     });
 			    
