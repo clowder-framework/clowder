@@ -1,9 +1,12 @@
-
+@(theme: Int)
 @main("Administration") {
 	<div class="page-header">
 		<h1>Administration</h1>
 	</div>
 	<div id="test1"></div>
+	<div class="row">
+		<div class="col-md-2">@themes(theme)</div>
+	</div>
 	<legend> Create an Index</legend>
 	
 	<div class="container-fluid">
