@@ -59,7 +59,7 @@ POST  	 /uploadquery						controllers.Search.uploadquery
 GET      /searchbyURL                       controllers.Search.searchbyURL(query:String?="")
 GET      /Filterby                          controllers.Search.Filterby(id)
 GET      /searchbyfeature					controllers.Search.searchMultimediaIndex(section_id)
-#GET     /files/:id/similar                  controllers.Search.findSimilar(id)
+GET     /files/:id/similar                  controllers.Search.findSimilarFile(id)
 GET    /queries/:id/similar					controllers.Search.findSimilar(id)
 
 # Previewers
