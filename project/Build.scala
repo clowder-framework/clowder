@@ -16,7 +16,8 @@ object ApplicationBuild extends Build {
     "org.mongodb" %% "casbah" % "2.6.2",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
     "com.wordnik" %% "swagger-play2" % "1.2.6-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
-    "org.reflections" % "reflections" % "0.9.9-RC1"
+    "org.reflections" % "reflections" % "0.9.9-RC1",
+    "com.google.code.findbugs" % "jsr305" % "2.0.1"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
@@ -33,5 +34,5 @@ object ApplicationBuild extends Build {
     resolvers += Resolver.url("sbt-plugin-releases", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("sbt-plugin-snapshots", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
-  )
+  ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
