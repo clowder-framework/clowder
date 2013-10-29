@@ -43,6 +43,7 @@ object Application extends SecuredController {
         routes.javascript.Admin.secureTest,
         routes.javascript.Admin.reindexFiles,
         routes.javascript.Tags.search,
+        routes.javascript.Admin.setTheme,
         
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Datasets.comment,

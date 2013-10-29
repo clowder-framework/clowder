@@ -483,13 +483,13 @@
 					<td><a href="#" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}
 				</table>   
-				<div class="ui-widget" id="collectionsUi">
+				<div id="collectionsUi">
 					<select id="collectionAddSelect">
 					@collectionsOutside.map { collection =>
 						<option value="@(collection.id.toString)">@(collection.name)</option>
 					}					  
 					</select>
-					<button class="btn btn-default" id="addCollBtn" style="vertical-align:top;">Add</button>
+					<button class="btn btn-default btn-sm" id="addCollBtn">Add</button>
 					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
 				</div>
 					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
@@ -600,7 +600,7 @@
 				</ul>
 				<form class="form-inline">
 					<input type="text" id="tagField">
-					<button class="btn btn-default" id="tagB">Tag</button>
+					<button class="btn btn-default btn-sm" id="tagB">Tag</button>
 				</form>
 				<script language="javascript">
 				

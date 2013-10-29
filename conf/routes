@@ -102,6 +102,7 @@ GET     /admin/secureTest           controllers.Admin.secureTest
 GET     /admin/reindexFiles         controllers.Admin.reindexFiles
 
 GET     /admin/extractions          controllers.Extractors.extractions
+POST    /admin/theme                controllers.Admin.setTheme
 
 # Javascript Endpoints
 GET     /javascriptRoutes           controllers.Application.javascriptRoutes
