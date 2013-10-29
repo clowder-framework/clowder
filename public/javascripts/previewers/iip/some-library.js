@@ -38,9 +38,9 @@
 		    	};
 		    	swfobject.embedSWF(Configuration.iipZoomPath, "iip" + Configuration.tab.replace("#previewer",""), width, height, "9.0.0",Configuration.expressInstallPath, flashvars, params);
 		    	
-		    	var fn = function(e) {		    		
+		    	var fn = function(e) {	    		
 		            var element = document.elementFromPoint(e.pageX, e.pageY);
-		            if(element){
+		            if(element || true){ 
 		            	if(element.hasAttribute("data"))
 				            if (element.getAttribute("data").toLowerCase().indexOf("iipzoom") != -1) {			            	
 				                e.preventDefault();

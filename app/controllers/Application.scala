@@ -42,6 +42,11 @@ object Application extends SecuredController {
         routes.javascript.Admin.test,
         routes.javascript.Admin.secureTest,
         routes.javascript.Admin.reindexFiles,
+        routes.javascript.Admin.createIndex,
+        routes.javascript.Admin.buildIndex,
+        routes.javascript.Admin.deleteIndex,
+        routes.javascript.Admin.deleteAllIndexes,
+        routes.javascript.Admin.getIndexes,
         routes.javascript.Tags.search,
         
         api.routes.javascript.Comments.comment,

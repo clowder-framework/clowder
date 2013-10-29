@@ -123,7 +123,7 @@
 			var rubberbandDiv = $("#rubberbandDiv"+prNum)[0];
 
 			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-			page.render({canvasContext: context, viewport: viewport});
+			window["page" + prNum].render({canvasContext: context, viewport: viewport});
 			rubberbandDiv.style.width = 0;
 			rubberbandDiv.style.height = 0;
 			hideRubberbandDiv(prNum);
