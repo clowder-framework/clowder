@@ -53,7 +53,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val configuration = play.api.Play.configuration
     val host=configuration.getString("versus.host").getOrElse("")
     val adapterUrl=host+"/adapters"
-    val adapterList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(adapterUrl).get()
+    val adapterList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(adapterUrl).withHeaders("Accept"->"application/json").get()
     adapterList.map{
       response=>Logger.debug("GET: AdapterLister: response.body="+response.body)
     }
@@ -63,7 +63,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val configuration = play.api.Play.configuration
     val host=configuration.getString("versus.host").getOrElse("")
     val extractorUrl=host+"/extractors"
-    val extractorList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(extractorUrl).get()
+    val extractorList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(extractorUrl).withHeaders("Accept"->"application/json").get()
     extractorList.map{
       response=>Logger.debug("GET: ExtractorList: response.body="+response.body)
     }
@@ -73,7 +73,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val configuration = play.api.Play.configuration
     val host=configuration.getString("versus.host").getOrElse("")
     val measureUrl=host+"/measures"
-    val measureList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(measureUrl).get()
+    val measureList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(measureUrl).withHeaders("Accept"->"application/json").get()
     measureList.map{
       response=>Logger.debug("GET: measureList: response.body="+response.body)
     }
@@ -83,7 +83,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val configuration = play.api.Play.configuration
     val host=configuration.getString("versus.host").getOrElse("")
     val indexerUrl=host+"/indexers"
-    val indexerList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(indexerUrl).get()
+    val indexerList:scala.concurrent.Future[play.api.libs.ws.Response]= WS.url(indexerUrl).withHeaders("Accept"->"application/json").get()
     indexerList.map{
       response=>Logger.debug("GET: indexerList: response.body="+response.body)
     }
@@ -97,7 +97,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val host = configuration.getString("versus.host").getOrElse("")
     val indexurl = host + "/index"
     var k = 0
-    val indexList: scala.concurrent.Future[play.api.libs.ws.Response] = WS.url(indexurl).get()
+    val indexList: scala.concurrent.Future[play.api.libs.ws.Response] = WS.url(indexurl).withHeaders("Accept"->"application/json").get()
     indexList.map {
       response => Logger.debug("GETINDEXES: response.body=" + response.body)
     }
