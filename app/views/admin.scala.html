@@ -19,6 +19,10 @@
 				<div style="text-align: left;">			
       			 <input id="create" type="submit" class="btn " value="Create" />
       			 </div>
+      			 <br>
+      			 <br>
+      			 <div id="createIndex"style="text-align: left;">
+      			 </div>
 				
 			</div>		
 				
@@ -59,6 +63,8 @@
 				<div style="text-align: left;">
 				<input id="build" class="btn" type="submit" value="Build Index">
 				</div>
+				<div id="buildIndex"style="text-align: left;">
+      			 </div>
 		</div>		
 	</div>
 </div>
@@ -89,18 +95,21 @@
 				<div style="text-align: left;">
 				<input id="delete" class="btn" type="submit" value="Delete Index">
 				</div>
+				<br>
+				<br>
+				<div id="deleteIndex"style="text-align: left;">
+      			 </div>
 		</div>		
 	</div>
 </div>
-
 <br>
-<br>
-
 <div class="row-fluid">
 <div class="span12">
 	   <div style="text-align: left;">			
        <input id="deleteAll" type="submit" class="btn btn-danger" value="Delete All" />
        </div>
+         <div id="deleteAllIndex"style="text-align: left;">
+      </div>
    </div>  
 </div>
 	
@@ -134,7 +143,7 @@ $(document).ready(function setAvailableAdapters(){
 function getAdapters() {
 
 $.ajax({
-            type : 'GET',
+            type : "GET",
             url : "@routes.Admin.getAdapters()",
             dataType : "json",
             success : function(data) {
@@ -444,7 +453,8 @@ var createBtn=document.getElementById('create');
               //  $('#test1').text(data1.message);
                 console.log("data1:", data1);
                 console.log("Sucessfully created");
-                alert("Sucessfully created");
+                $('#createIndex').text("Sucessfully created index with id:  "+ data1);
+                //alert("Sucessfully created");
             },
             error : function(xhr, textStatus, errorThrown) {
                 console.log('Make call failed ' +  errorThrown);
@@ -461,10 +471,10 @@ var createBtn=document.getElementById('create');
     	var id=indexselected;
     
     	var request=jsRoutes.controllers.Admin.buildIndex(id).ajax({
-   					 type:'GET'
+   					 type:'POST'
     				});
     				request.done(function (response, textStatus, jqXHR){
-    				alert(response);
+    				$('#buildIndex').text(response);
 					console.log("Response =" + response);
    					 });
     	    }						
@@ -512,7 +522,13 @@ var deleteBtn=document.getElementById('delete');
     deleteBtn.onclick=function(evt){
     
     	console.log("I am inside delete click function");
-    
+    	var request=jsRoutes.controllers.Admin.deleteIndex().ajax({
+   					 type:'DELETE'
+    				});
+    				request.done(function (response, textStatus, jqXHR){
+    				$('#deleteIndex').text(response);
+					console.log("Response =" + response);
+   					 });
     }		
     
    var deleteAllBtn=document.getElementById('deleteAll');
@@ -521,9 +537,10 @@ var deleteBtn=document.getElementById('delete');
     	console.log("I am inside delete All click function");
     	
     	var request=jsRoutes.controllers.Admin.deleteAllIndexes().ajax({
-   					 type:'GET'
+   					 type:'DELETE'
     				});
     				request.done(function (response, textStatus, jqXHR){
+    				$('#deleteAllIndex').text(response);
 					console.log("Response =" + response);
    					 });
     
