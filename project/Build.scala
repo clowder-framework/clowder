@@ -13,7 +13,7 @@ object ApplicationBuild extends Build {
     "com.rabbitmq" % "amqp-client" % "3.0.0",
     "org.elasticsearch" % "elasticsearch" % "0.90.2",
     "com.spatial4j" % "spatial4j" % "0.3",
-    "org.mongodb" %% "casbah" % "2.6.2",
+    "org.mongodb" %% "casbah" % "2.6.3",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
     "com.wordnik" %% "swagger-play2" % "1.2.6-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.reflections" % "reflections" % "0.9.9-RC1",
