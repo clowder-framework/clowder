@@ -36,7 +36,8 @@ case class File(
     tags: List[String] = List.empty,
     metadata: List[Map[String, Any]] = List.empty,
 	thumbnail_id: Option[String] = None,
-	isIntermediate: Option[Boolean] = None
+	isIntermediate: Option[Boolean] = None,
+	userMetadata: Option[Map[String, Any]] = Some(Map.empty)
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -48,7 +49,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   
   def get(id: String): Option[File] = {
     dao.findOneById(new ObjectId(id)) match {
-      case Some(file) => {
+      case Some(file) => { 
         val previews = PreviewDAO.findByFileId(file.id)
         val sections = SectionDAO.findByFileId(file.id)
         val sectionsWithPreviews = sections.map { s =>
