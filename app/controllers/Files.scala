@@ -190,7 +190,11 @@ object Files extends Controller with SecuredController {
 	        val uploadedFile = f
 	//        Thread.sleep(1000)
 	        file match {
-	          case Some(f) => {                
+	          case Some(f) => {
+	            if(play.Play.application().configuration().getString("filedump.dodump").toLowerCase().equals("yes"))
+		            	FilesUtils.dumpFile(uploadedFile.ref.file, f.id.toString, nameOfFile)
+
+	            
 	            if(showPreviews.equals("None"))
 	                flags = flags + "+nopreviews"
 	             var fileType = f.contentType
