@@ -266,7 +266,7 @@ object Files extends Controller with SecuredController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
@@ -308,7 +308,7 @@ object Files extends Controller with SecuredController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
