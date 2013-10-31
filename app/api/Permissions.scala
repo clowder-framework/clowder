@@ -24,6 +24,7 @@ object Permission extends Enumeration {
 		ListCollections,
 		ShowCollection,
 		CreateDatasets,
+		DeleteDatasets,
 		ListDatasets,
 		ShowDataset,
 		SearchDatasets,
@@ -34,6 +35,7 @@ object Permission extends Enumeration {
 		AddSections,
 		GetSections,
 		CreateFiles,
+		DeleteFiles,
 		ListFiles,
 		ShowFile,
 		CreateStreams,
@@ -47,6 +49,7 @@ object Permission extends Enumeration {
 		GetSensors,
 		SearchSensors,
 		RemoveSensors,
+		AddThumbnail,
 		DownloadFiles = Value
 }
 

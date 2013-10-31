@@ -65,7 +65,7 @@ case class Authenticated[A](action: Action[A]) extends Action[A] {
           case Some(key) => {
             if (key.length > 0) {
               // TODO Check for key in database
-              if (key(0).equals("letmein")) {
+              if (key(0).equals(play.Play.application().configuration().getString("commKey"))) {
     	        action(SecuredRequest(new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword), request))
               } else {
                 Logger.debug("Key doesn't match")

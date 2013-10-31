@@ -10,6 +10,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 import models.Dataset
+import com.mongodb.casbah.commons.MongoDBObject
 
 object Collections extends ApiController {
 
@@ -65,7 +66,7 @@ object Collections extends ApiController {
             Ok(toJson(Map("status" -> "success")))
           }
           case None => {
-        	  Logger.error("Error getting dataset" + datasetId); InternalServerError
+        	  Ok(toJson(Map("status" -> "success")))
           }
         }
       }
@@ -95,13 +96,22 @@ object Collections extends ApiController {
           //remove collection from dataset
           Dataset.removeCollection(dataset.id.toString, collection.id.toString)
         }       
-        Collection.remove(collection)
+        Collection.remove(MongoDBObject("_id" -> collection.id))
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
         Ok(toJson(Map("status" -> "success")))
       }       
     }    
+  }
+  
+  def listCollections() = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListCollections)) { request =>
+    val list = for (collection <- Services.collections.listCollections()) yield jsonCollection(collection)
+      Ok(toJson(list))    
+  }
+  
+  def jsonCollection(collection: Collection): JsValue = {
+    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description, "created" -> collection.created.toString))
   }
 
   

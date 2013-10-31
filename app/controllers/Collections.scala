@@ -20,6 +20,8 @@ import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
 
+object ThumbnailFound extends Exception { }
+
 object Collections extends SecuredController {
 
   /**
@@ -76,7 +78,26 @@ object Collections extends SecuredController {
     	next = formatter.format(collections.last.created)
       }
     }
-    Ok(views.html.collectionList(collections, prev, next, limit))
+    
+    var collectionsWithThumbnails = List.empty[models.Collection]
+    for(collection <- collections){
+      var collectionThumbnail:Option[String] = None
+      try{
+	        for(dataset <- collection.datasets){
+	          if(!dataset.thumbnail_id.isEmpty){
+	            collectionThumbnail = dataset.thumbnail_id
+	            throw ThumbnailFound		
+	          }
+	        }
+        }catch {
+        	case ThumbnailFound =>
+        }
+      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+      collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails       
+    }
+    collectionsWithThumbnails = collectionsWithThumbnails.reverse
+    
+    Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit))
   }
   
   def jsonCollection(collection: Collection): JsValue = {

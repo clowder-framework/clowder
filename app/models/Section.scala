@@ -59,4 +59,17 @@ object SectionDAO extends ModelCompanion[Section, ObjectId] {
   def comment(id: String, comment: Comment) {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
+  
+  def removeSection(s: Section){
+    for(preview <- PreviewDAO.findBySectionId(s.id)){
+          PreviewDAO.removePreview(preview)
+        }
+    for(comment <- Comment.findCommentsBySectionId(s.id.toString())){
+          Comment.removeComment(comment)
+        }
+    SectionDAO.remove(MongoDBObject("_id" -> s.id))    
+  }
+  
+  
+  
 }

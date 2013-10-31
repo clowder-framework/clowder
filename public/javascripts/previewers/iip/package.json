@@ -1,0 +1,4 @@
+{ "name" : "IIP",
+  "main" : "some-library.js",
+  "contentType" : ["image/previewUrl"]
+  }

@@ -19,13 +19,11 @@ import services.Services
 import jsonutils.JsonUtil
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
-import models.File
-import models.Tag
 import models.FileDAO
 import models.Extraction
+import models.Tag
 import services.ElasticsearchPlugin
 import controllers.Previewers
-import models.File
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.Routes
@@ -37,6 +35,8 @@ import play.api.Play.current
 
 import services.Services
 import scala.util.parsing.json.JSONArray
+
+
 /**
  * Dataset API.
  *
@@ -115,7 +115,11 @@ object Datasets extends ApiController {
     }
 
   def jsonDataset(dataset: Dataset): JsValue = {
-    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString))
+    var datasetThumbnail = "None"
+    if(!dataset.thumbnail_id.isEmpty)
+      datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
+    
+    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
@@ -270,18 +274,14 @@ object Datasets extends ApiController {
   	    var isActivity = "false"
         try{
         	for(f <- files){
-        		Extraction.findMostRecentByFileId(f.id) match{
-        		case Some(mostRecent) => {
-        			mostRecent.status match{
-        			case "DONE." => 
-        			case _ => { 
+        		Extraction.findIfBeingProcessed(f.id) match{
+        			case false => 
+        			case true => { 
         				isActivity = "true"
         				throw ActivityFound
         			  }  
         			}
-        		}
-        		case None =>       
-        		}
+
         	}
         }catch{
           case ActivityFound =>
@@ -320,7 +320,7 @@ object Datasets extends ApiController {
         
         val datasetWithFiles = dataset.copy(files = files)
         val previewers = Previewers.findPreviewers
-        val previewslist = for(f <- datasetWithFiles.files) yield {
+        val previewslist = for(f <- datasetWithFiles.files; if(f.showPreviews.equals("DatasetLevel"))) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }        
@@ -336,6 +336,16 @@ object Datasets extends ApiController {
         Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]])) 
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+    }
+  }
+  
+  def deleteDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteDatasets)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        Dataset.removeDataset(id)
+        Ok(toJson(Map("status"->"success")))
+      }
+      case None => Ok(toJson(Map("status"->"success")))
     }
   }
   

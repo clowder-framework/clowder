@@ -46,7 +46,7 @@ object AuthenticatorDAO extends ModelCompanion[LocalAuthenticator, ObjectId] {
   }
 
   def find(id: String): Option[Authenticator] = {
-    Logger.debug("Searching Authenticator " + id)
+    Logger.trace("Searching Authenticator " + id)
     dao.findOne(MongoDBObject("authenticatorId" -> id)) match {
       case Some(localAuth) => {
         Some(Authenticator(localAuth.authenticatorId, localAuth.identityId,
@@ -58,7 +58,7 @@ object AuthenticatorDAO extends ModelCompanion[LocalAuthenticator, ObjectId] {
   }
 
   def delete(id: String) {
-    Logger.debug("Deleting id from Authenticator" + id)
+    Logger.trace("Deleting id from Authenticator" + id)
     AuthenticatorDAO.remove(MongoDBObject("authenticatorId" -> id), WriteConcern.Normal)
   }
 

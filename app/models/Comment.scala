@@ -76,4 +76,12 @@ object Comment extends ModelCompanion[Comment, ObjectId] {
       comment.copy(replies=findCommentsByCommentId(comment.id.toString))
     }.toList
   }
+  
+  def removeComment(c: Comment){
+    for(reply <- findCommentsByCommentId(c.id.toString())){
+          Comment.removeComment(reply)
+        }
+    Comment.remove(MongoDBObject("_id" -> c.id))
+  }
+  
 }
