@@ -1,4 +1,4 @@
-@(file: models.File, id: String, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean, fileDataset: Option[models.Dataset])(implicit user: Option[securesocial.core.Identity])
+@(file: models.File, id: String, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean, fileDataset: Option[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
@@ -453,5 +453,20 @@
 			</div>
 		}
 		<!--End of debug code-->
+		
+			<div class="accordion" id="accordion3">
+				<div class="accordion-group">
+					<div class="accordian-heading">
+						<a class="accordion-toggle" data-toggle="collapse"
+							data-parent="#accordion3" href="#collapseThree">User metadata</a>
+					</div>
+					<div id="collapseThree" class="accordion-body in collapse">
+				      	@fileusermetadata(id, usrmd)
+					</div>
+				</div>
+			</div>
+		
+		
+		
 	</div>
 }
