@@ -78,8 +78,13 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.collection.findOneByID(new ObjectId(id)) match {
       case None => new scala.collection.mutable.HashMap[String,Any]
       case Some(x) => {
-    	val returnedMetadata = x.getAs[DBObject]("userMetadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
-		returnedMetadata
+        x.getAs[DBObject]("userMetadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = x.getAs[DBObject]("userMetadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
+			returnedMetadata
+          }
+          case None => new scala.collection.mutable.HashMap[String,Any]
+		}
       }
     }
   }
