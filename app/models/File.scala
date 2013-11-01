@@ -73,7 +73,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 		  }
 	  }
   }
-  
+    
   def getUserMetadata(id: String): scala.collection.mutable.Map[String,Any] = {
     dao.collection.findOneByID(new ObjectId(id)) match {
       case None => new scala.collection.mutable.HashMap[String,Any]
