@@ -770,7 +770,7 @@ function clearConfigTabAnnotations(prNum){
     
     function updatex3dPosition(prNum){
     	if(window["oldx3dposition" + prNum] != window["thisPreview" + prNum].offset().top){
-    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum]) + "px;");
+    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum] - 200) + "px;");
     		window["oldx3dposition" + prNum] = window["thisPreview" + prNum].offset().top;
     	}
     }
@@ -902,7 +902,7 @@ function clearConfigTabAnnotations(prNum){
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style=' position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum]) + "px;' >"; 
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style=' position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum] - 200) + "px;' >"; 
   window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
   window["thisPreview" + prNum] = $(Configuration.tab); 
   //setInterval(function(){updatex3dPosition(prNum);},50);
