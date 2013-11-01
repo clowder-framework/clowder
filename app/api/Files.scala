@@ -835,5 +835,10 @@ object Files extends ApiController {
     }
   }
   
+  def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) { request =>
+      Logger.debug("Adding user metadata to file " + id)
+      FileDAO.addUserMetadata(id, Json.stringify(request.body))
+      Ok(toJson(Map("status" -> "success")))
+    }
 	
 }

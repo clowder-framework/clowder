@@ -37,6 +37,7 @@ object Permission extends Enumeration {
 		CreateFiles,
 		DeleteFiles,
 		ListFiles,
+		AddFilesMetadata,
 		ShowFile,
 		CreateStreams,
 		AddDataPoints,

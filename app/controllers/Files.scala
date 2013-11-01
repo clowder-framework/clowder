@@ -92,6 +92,9 @@ object Files extends Controller with SecuredController {
         			  } 
         }
         
+        val userMetadata = FileDAO.getUserMetadata(file.id.toString)
+        Logger.debug("User metadata: " + userMetadata.toString)
+        
         var comments = Comment.findCommentsByFileId(id)
 	    sections.map { section =>
 	      comments ++= Comment.findCommentsBySectionId(section.id.toString())
@@ -100,7 +103,7 @@ object Files extends Controller with SecuredController {
         
         var fileDataset = Dataset.findOneByFileId(file.id)
         
-        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset))
+        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, userMetadata))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }

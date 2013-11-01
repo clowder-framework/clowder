@@ -114,6 +114,7 @@ object Datasets extends SecuredController {
     Services.datasets.get(id)  match {
       case Some(dataset) => {
         val files = dataset.files map { f =>{
+        		Logger.debug(f.metadata.toString)
         		FileDAO.get(f.id.toString).get
         	}
         }

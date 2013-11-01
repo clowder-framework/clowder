@@ -37,7 +37,7 @@ case class File(
     metadata: List[Map[String, Any]] = List.empty,
 	thumbnail_id: Option[String] = None,
 	isIntermediate: Option[Boolean] = None,
-	userMetadata: Option[Map[String, Any]] = Some(Map.empty)
+	userMetadata: Map[String, Any] = Map.empty
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -72,6 +72,22 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 					  returnedMetadata
 		  }
 	  }
+  }
+  
+  def getUserMetadata(id: String): scala.collection.mutable.Map[String,Any] = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => new scala.collection.mutable.HashMap[String,Any]
+      case Some(x) => {
+    	val returnedMetadata = x.getAs[DBObject]("userMetadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
+		returnedMetadata
+      }
+    }
+  }
+  
+  def addUserMetadata(id: String, json: String) {
+    Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
+    val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
   
 
