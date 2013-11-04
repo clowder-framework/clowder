@@ -505,7 +505,7 @@
 					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}
 				</table>   
-				<div class="requiresLogin" id="collectionsUi ui-widget">
+				<div class="requiresLogin" id="collectionsUi">
 					<select id="collectionAddSelect">
 					@collectionsOutside.map { collection =>
 						<option value="@(collection.id.toString)">@(collection.name)</option>
