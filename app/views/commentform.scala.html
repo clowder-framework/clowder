@@ -13,10 +13,10 @@
 				var form="<form class=\"form-inline\">";
 				form += "<textarea id=\"commentField_" + id + "\" class=\"comment-input-box\"></textarea>";
 				form += "<br />";
-				form += "<button class=\"btn\" onclick=\"return replyComment('" + id + "')\">Reply</button>";
-				form += "<button class=\"btn\" onclick=\"return cancelComment('" + id + "')\">Cancel</button>";
+				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return replyComment('" + id + "')\">Reply</button>";
+				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return cancelComment('" + id + "')\">Cancel</button>";
 				form += "</form>";
-				$("#reply_" + id).prepend("<li class=\"comment-thread\" id=\"form_" + id + "\">" + form + "</li>");
+				$("#reply_" + id).prepend("<div class=\"comment-thread\" id=\"form_" + id + "\">" + form + "</div>");
 			}
 			return false;
 		}
@@ -49,22 +49,30 @@
 		     
 				request.done(function (response, textStatus, jqXHR) { 
 					console.log("Response " + response);
+					var date = new Date();
 					var post="<div class=\"comment\">";
-					post += "<div class=\"comment-image\"><img src=\"@user.get.avatarUrl.getOrElse("")\"></div>";
+					post += "<div class=\"media\">";
+					post += "<a class='pull-left' href='#'>";
+  					post += "<div class='thumbnail'>";
+    				post += "<img class='avatar' src='@(user.get.avatarUrl.getOrElse(""))'>";
+    				post += "</div></a>";
+					post += "<div class='media-body'>";
 					post += "<div class=\"comment-header\">";
-					post += "<div class=\"comment-author\">@user.get.fullName</div>";
+					post += "<div class=\"comment-author\"><a href='#'>@user.get.fullName</a></div>";
 					@* TODO add dateformat plugin *@
-					post += "<div class=\"comment-date\">" + new Date().toString() + "</div>";
+					post += "<div class=\"comment-date\">" + date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDay() + "</div>";
 					post += "<div style=\"clear: both;\"></div>";
 					post += "</div>";
 					post += "<div class=\"comment-body\">" + text + "</div>";
 					post += "<div class=\"comment-footer\"><a href=\"javascript:void(0)\" onclick=\"return showReplyComment('" + response + "');\">reply</a></div>";
 					post += "<div class=\"comment-reply\">";
-					post += "<ol class=\"comment-threads unstyled\" id=\"reply_" + response + "\">";
-					post += "</ol>";
+					post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">";
 					post += "</div>";
 					post += "</div>";
-					$("#reply_" + id).prepend("<li class=\"comment-thread\">" + post + "</li>");
+					post += "</div>";
+					post += "</div>";
+					post += "</div>";
+					$("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");
 				});
 	
 				request.fail(function (jqXHR, textStatus, errorThrown){
@@ -75,4 +83,5 @@
 			return false;
 		}
 	</script>
+	
 }
