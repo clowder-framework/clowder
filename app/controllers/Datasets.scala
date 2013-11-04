@@ -30,6 +30,8 @@ import models._
 import fileutils.FilesUtils
 import api.WithPermission
 import api.Permission
+import services.DumpOfFile
+import services.FileDumpService
 
 /**
  * A dataset is a collection of files and streams.
@@ -236,6 +238,8 @@ object Datasets extends SecuredController {
 			    val uploadedFile = f
 			    file match {
 			      case Some(f) => {
+			        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+			        
 			        val id = f.id.toString	                	                
 	                if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"

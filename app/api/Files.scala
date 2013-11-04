@@ -37,6 +37,8 @@ import services.ElasticsearchPlugin
 import services.ExtractorMessage
 import services.RabbitmqPlugin
 import services.Services
+import services.FileDumpService
+import services.DumpOfFile
 
 /**
  * Json API for files.
@@ -218,6 +220,8 @@ object Files extends ApiController {
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
+	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+	            
 	            val id = f.id.toString
 	            if(showPreviews.equals("None"))
 	              flags = flags + "+nopreviews"
@@ -333,6 +337,8 @@ object Files extends ApiController {
           // submit file for extraction
           file match {
             case Some(f) => {
+              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+              
               val id = f.id.toString
               if(showPreviews.equals("FileLevel"))
 	            flags = flags + "+filelevelshowpreviews"

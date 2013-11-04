@@ -359,6 +359,8 @@ object Files extends Controller with SecuredController {
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
+            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+            
              var fileType = f.contentType
 			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
@@ -421,6 +423,8 @@ object Files extends Controller with SecuredController {
         
         file match {
           case Some(f) => {
+            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+            
             var fileType = f.contentType
 			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
@@ -486,6 +490,8 @@ object Files extends Controller with SecuredController {
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
+            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+            
              var fileType = f.contentType
 			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
@@ -548,7 +554,9 @@ object Files extends Controller with SecuredController {
 				  
 				  // submit file for extraction			
 				  file match {
-				  case Some(f) => {                
+				  case Some(f) => {
+				    current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+				    
 	                if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"
 	                else if(showPreviews.equals("None"))
