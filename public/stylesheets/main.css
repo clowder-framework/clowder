@@ -180,8 +180,7 @@ ol.comment-threads {
 }
 
 .comment {
-	border-top: 1px solid #ddd;
-	padding: 10px 0 10px 0;
+	padding-top: 20px;
 }
 
 .comment-image {
@@ -200,26 +199,35 @@ ol.comment-threads {
 }
 
 .comment-header {
-	padding-left: 40px;
+	padding-left: 10px;
 	padding-bottom: 10px;
 }
 
 .comment-body {
-	padding-left: 40px
+	padding-left: 40px;
+	min-height:   10px;
 }
 
 .comment-footer {
-	padding-left: 40px;
+	padding-left: 10px;
 	font-size: 85%;
+	text-align: right;
+	padding-right: 10px;
 }
 
 .comment-reply {
-	padding-left: 40px;
+	padding-left: 0px;
 }
 
 .comment-input-box {
-	width: 80%;
+	width: 100%;
+	margin: 10px 0px;
 } 
+
+.file-list-cell {
+	text-align: right;
+	width: 80%;
+}
 
 .rubberbandDiv {
   position: absolute;
@@ -315,9 +323,18 @@ button.tech_md_ {
 	border-top:1px solid #141414 !important;
 }
 
-.ds-col-narrow {
-	padding-left: 50px;
-	padding-top: 50px; 
+.ds-section-sm {
+	margin-bottom: 20px;
+	padding: 0 15px;
+}
+
+.wrapped {
+	padding: 15px 5px;
+}
+
+.avatar {
+	width: 48px;
+	height: 48px;
 }
 
 #checkboxFieldSet .control-group .control-label{

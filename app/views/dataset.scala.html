@@ -425,33 +425,35 @@
     		</script>    		
     		
     		
-    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
-		  <ul class="nav nav-tabs">
-		    <li class="active"><a href="#tab1" data-toggle="tab">Comments</a></li>
-		    <li><a href="#tab2" data-toggle="tab">Metadata</a></li>
-		  </ul>
-		  <div class="tab-content">
-		    <div class="tab-pane active" id="tab1">
-		      @if(user.isDefined) {
-		      	  @commentform(dataset.id.toString, api.routes.Datasets.comment(dataset.id.toString).toString)
-		      }
-	 		  <ol class="comment-threads unstyled" id="reply_@dataset.id.toString">
-		      	 @comment(comments)
-		      </ol>
-		    </div>
-		    <div class="tab-pane" id="tab2">
-		      @metadata(dataset.id.toString, md, usrmd)
-		    </div>
-		  </div>
-		</div>	    		
+	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
+			  <ul class="nav nav-tabs">
+			    <li class="active"><a href="#tab1" data-toggle="tab">Comments</a></li>
+			    <li><a href="#tab2" data-toggle="tab">Metadata</a></li>
+			  </ul>
+			  <div class="tab-content">
+			    <div class="tab-pane active" id="tab1">
+				      @if(user.isDefined) {
+				      	  @commentform(dataset.id.toString, api.routes.Datasets.comment(dataset.id.toString).toString)
+				      }
+			 		  <div class="comment-threads unstyled" id="reply_@dataset.id.toString">
+				      	 @comment(comments)
+				      </div> 
+			    </div>
+			    <div class="tab-pane" id="tab2">
+			      @metadata(dataset.id.toString, md, usrmd)
+			    </div>
+			  </div>
+			</div>	
+			    		
 		</div>
 		
 
 		<!-- right column -->
-		<div class="col-md-4 ds-col-narrow">
-		    <div class="row">
-				<dl>
-					<dt>Author:</dt>
+		<div class="col-md-4">
+		    <div class="row ds-section-sm">
+		    	<h3>About</h3>
+				<dl class="dl-horizontal">
+					<dt>Owner:</dt>
 					<dd>@dataset.author.fullName</dd>
 					<dt>Description:</dt>
 					<dd>@dataset.description</dd>
@@ -460,11 +462,11 @@
 				</dl>
 			</div>
 			
-			<div class="row">
-				<h5>Files</h5>
+			<div class="row ds-section-sm">
+				<h3>Files</h3>
 				<table id="datasetFilesTable">
 				@dataset.files.map { file =>				
-					<tr><td><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<tr><td class="file-list-cell"><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
 					<td><a class="requiresLogin" href="#" style="font-style:italic;" onclick="removeFile('@(file.id.toString)',event,true);">Remove</a></td></tr>				
 				}
 				</table>
@@ -482,11 +484,11 @@
 				          <h4 class="modal-title">Add file</h4>
 				        </div>
 				        <div class="modal-body">
-						 		  <div class="form-group">
-								    <label for="exampleInputFile">New File</label>
-								    <input type="file" id="query" name="File">
-								    <p class="help-block">The file will be uploaded and added to this dataset.</p>
-								  </div>
+				 		  <div class="form-group">
+						    <label for="exampleInputFile">New File</label>
+						    <input type="file" id="query" name="File">
+						    <p class="help-block">The file will be uploaded and added to this dataset.</p>
+						  </div>
 				        </div>
 				        <div class="modal-footer">
 				          <input type="submit" class="btn btn-default" value="Upload"/>
@@ -497,22 +499,30 @@
 				  </div><!-- /.modal -->
 				</div>
 			
-			<div class="row">
-				<h5>Collections</h5>
+			<div class="row ds-section-sm">
+				<h3>Collections</h3>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
 					<tr><td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
 					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}
-				</table>   
+				</table>
 				<div class="requiresLogin" id="collectionsUi">
-					<select id="collectionAddSelect">
-					@collectionsOutside.map { collection =>
-						<option value="@(collection.id.toString)">@(collection.name)</option>
-					}					  
-					</select>
-					<button class="btn btn-default btn-sm" id="addCollBtn">Add</button>
-					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
+				
+				
+					<form class="form-inline">
+						<div class="input-group input-group-sm col-md-8"">
+							<select id="collectionAddSelect" class="form-control">
+							@collectionsOutside.map { collection =>
+								<option value="@(collection.id.toString)">@(collection.name)</option>
+							}					  
+							</select>
+							<span class="input-group-btn">
+								<button class="btn btn-default btn-sm" id="addCollBtn">Add</button>
+							</span>
+						</div>
+						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
+					</form>
 				</div>
 					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
@@ -600,8 +610,8 @@
 					</script>
 			</div>
 			
-			<div class="row">
-				<h5>Tags</h5>
+			<div class="row ds-section-sm">
+				<h3>Tags</h3>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
 					  <li name='@tag.name'>
@@ -621,8 +631,12 @@
 				   }
 				</ul>
 				<form class="form-inline requiresLogin">
-					<input type="text" id="tagField">
-					<button class="btn btn-default btn-sm" id="tagB">Tag</button>
+					<div class="input-group input-group-sm col-md-8"">
+						<input type="text" id="tagField" class="form-control">
+						<span class="input-group-btn">
+							<button class="btn btn-default btn-sm" id="tagB">Tag</button>
+						</span>
+					</div>
 				</form>
 				<script language="javascript">
 			     		window["userDefined"] = false;
