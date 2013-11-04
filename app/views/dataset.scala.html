@@ -511,18 +511,25 @@
 				}
 				</table>   
 				<div class="requiresLogin" id="collectionsUi">
-					<select id="collectionAddSelect">
+					<select id="collectionAddSelect" style="display:inline;">
 					@collectionsOutside.map { collection =>
 						<option value="@(collection.id.toString)">@(collection.name)</option>
 					}					  
-					</select>
+					</select>					
 					<button class="btn btn-default btn-sm" id="addCollBtn">Add</button>
 					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
 				</div>
-					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
+					
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-					<script>
+					<script type="text/javascript">
 						$("#collectionAddSelect").combobox();
+						$("#collectionAddSelect").css("display", "inline");
+						
+	  					function selectClickChange() {
+	  						var theSelectedColl = document.getElementById("collectionAddSelect");
+	  						document.getElementById("selectCollectionInput").value = theSelectedColl.options[theSelectedColl.selectedIndex].text;
+	  					}
+	  					document.getElementById("collectionAddSelect").onchange = selectClickChange;
 					</script>
 					<script>
 						$('body').on('click','#addCollBtn',function(e){
