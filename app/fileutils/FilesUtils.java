@@ -49,39 +49,4 @@ public class FilesUtils {
 		return mainFileType;
 	}
 	
-	public static void dumpFile(File fileToDump, String fileId, String fileName){
-		new FilesUtils().new DumpFile(fileToDump, fileId, fileName).run();		
-	}
-	
-	class DumpFile implements Runnable{
-		
-		private final File fileToDump;
-		private final String fileId;
-		private final String fileName;
-		
-		public DumpFile(File fileToDump, String fileId, String fileName){
-			this.fileToDump = fileToDump;
-			this.fileId = fileId;
-			this.fileName = fileName;
-		}
-		
-		public void run() {
-			try{
-				String fileSep = System.getProperty("file.separator");
-				String fileDumpDir = play.Play.application().configuration().getString("filedump.dir");
-				if(!fileDumpDir.endsWith(fileSep))
-					fileDumpDir = fileDumpDir + fileSep;
-				fileDumpDir = fileDumpDir + fileId.charAt(fileId.length()-3) + fileSep + fileId.charAt(fileId.length()-2)+fileId.charAt(fileId.length()-1)
-							+ fileSep + fileId + fileSep + fileName;
-						
-				FileUtils.copyFile(fileToDump, new File(fileDumpDir));
-			}catch(Exception e){
-				Logger.error("Could not save a dump of the file");
-			}
-		}
-		
-	}
-	
-	
-	
 }

@@ -9,6 +9,7 @@ import play.api.data.Forms._
 import play.api.libs.iteratee._
 import play.api.mvc._
 import services._
+import services.FileDumpService
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Input.{El, EOF, Empty}
@@ -34,6 +35,7 @@ import fileutils.FilesUtils
 import models.Extraction
 import api.WithPermission
 import api.Permission
+import services.DumpOfFile
 
 /**
  * Manage files.
@@ -194,9 +196,7 @@ object Files extends Controller with SecuredController {
 	//        Thread.sleep(1000)
 	        file match {
 	          case Some(f) => {
-	            if(play.Play.application().configuration().getString("filedump.dodump").toLowerCase().equals("yes"))
-		            	FilesUtils.dumpFile(uploadedFile.ref.file, f.id.toString, nameOfFile)
-
+		        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 	            
 	            if(showPreviews.equals("None"))
 	                flags = flags + "+nopreviews"
