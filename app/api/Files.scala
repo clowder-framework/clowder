@@ -183,11 +183,8 @@ object Files extends ApiController {
 	    	  case Some(map) => {
 	    		  val union = map.asInstanceOf[DBObject] ++ doc
 	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> union), false, false, WriteConcern.SAFE)
-	      }
-	      case None => {
-	    	     FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> doc), false, false, WriteConcern.SAFE)
 	    	  }
-	    	}
+	      }
 	      }
 	      case None => {
 	        Logger.error("Error getting file" + id)

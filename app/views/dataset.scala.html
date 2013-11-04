@@ -488,6 +488,11 @@
 						    <label for="exampleInputFile">New File</label>
 						    <input type="file" id="query" name="File">
 						    <p class="help-block">The file will be uploaded and added to this dataset.</p>
+								    	Show file preview(s)
+		          						<br/>				
+		          						<input type="radio" name="datasetLevel" value="DatasetLevel" checked> Everywhere<br>
+										<input type="radio" name="datasetLevel" value="FileLevel"> On file page<br>
+										<input type="radio" name="datasetLevel" value="None"> Nowhere
 						  </div>
 				        </div>
 				        <div class="modal-footer">
@@ -512,7 +517,7 @@
 				
 					<form class="form-inline">
 						<div class="input-group input-group-sm col-md-8"">
-							<select id="collectionAddSelect" class="form-control">
+							<select id="collectionAddSelect">
 							@collectionsOutside.map { collection =>
 								<option value="@(collection.id.toString)">@(collection.name)</option>
 							}					  
@@ -524,10 +529,16 @@
 						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
 					</form>
 				</div>
-					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-					<script>
+					<script type="text/javascript">
 						$("#collectionAddSelect").combobox();
+						$("#collectionAddSelect").css("display", "inline");
+						
+	  					function selectClickChange() {
+	  						var theSelectedColl = document.getElementById("collectionAddSelect");
+	  						document.getElementById("selectCollectionInput").value = theSelectedColl.options[theSelectedColl.selectedIndex].text;
+	  					}
+	  					document.getElementById("collectionAddSelect").onchange = selectClickChange;
 					</script>
 					<script>
 						$('body').on('click','#addCollBtn',function(e){
