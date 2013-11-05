@@ -1,27 +1,33 @@
 @(comments: List[models.Comment])(implicit user: Option[securesocial.core.Identity])
 
 @comments.reverse.map { c =>
-	<li class="comment-thread">
-		<div class="comment">
-			<div class="comment-image">
-				<img src='@c.author.avatarUrl.getOrElse("")'>
-			</div>
+<div class="comment">
+	<div class="media">
+  		<a class="pull-left" href="#">
+  			<div class="thumbnail">
+    			<img class="avatar" src='@c.author.avatarUrl.getOrElse("")'>
+    		</div>
+  		</a>
+		<div class="media-body">
 			<div class="comment-header">
-				<div class="comment-author">@c.author.fullName</div>
-				<div class="comment-date">@c.posted.format("MMM dd, yyyy HH:mm:ss")</div>
-				<div style="clear: both;"></div>
+				<div class="comment-author"><a href="#">@c.author.fullName</a></div>
+			<div class="comment-date">@c.posted.format("MMM dd, yyyy HH:mm:ss")</div>
+			<div style="clear: both;"></div>
 			</div>
 			<div class="comment-body">@c.text</div>
 			@if(user.isDefined) {
-				<div class="comment-footer">
-					<a href="javascript:void(0)" onclick="return showReplyComment('@c.id');">reply</a>
-				</div>
+			<div class="comment-footer">
+				<a href="javascript:void(0)" onclick="return showReplyComment('@c.id');">reply</a>
+			</div>
 			}
 			<div class="comment-reply">
-				<ol class="comment-threads unstyled" id="reply_@c.id">
-					@comment(c.replies.sortBy(_.posted))
-				</ol>
+				<div class="comment-threads unstyled" id="reply_@c.id">
+				@comment(c.replies.sortBy(_.posted))
+				</div>
 			</div>
 		</div>
-	</li>
+	</div>
+</div>
+	
+
 }

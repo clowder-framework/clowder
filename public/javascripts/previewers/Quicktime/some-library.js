@@ -8,6 +8,11 @@
   
   $(Configuration.tab).append("<p>For panoramic images viewed through Quicktime, Shift can be used to zoom in and Ctrl to zoom out.</p>");
 
+
+
+	  alert(navigator.mimeTypes.length);
+  
+  
   $(Configuration.tab).append(
 		  "<object classid='clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B' height='"+ height +"' width='"+ width +"'>"+
 		  "<param name='src' value='" + "http://"+Configuration.hostIp+":"+window.location.port+ Configuration.url   +"' />"+

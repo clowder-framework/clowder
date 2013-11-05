@@ -801,7 +801,7 @@ function clearConfigTabAnnotations(prNum){
 		insertAfter(theAnnot, thex3d);
 		if($("#measuringvalue"+prNum).length > 0){
 			var theMeasurement = $("#measuringvalue"+prNum)[0];
-			theMeasurement.setAttribute("style","text-align: center;font-weight: bold;");						
+			theMeasurement.setAttribute("style","text-align: center;");						
 			thex3d.parentNode.insertBefore(theMeasurement, thex3d);
 		}
 		
