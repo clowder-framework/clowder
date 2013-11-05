@@ -81,7 +81,7 @@
 		<div class="col-md-8" id="filePrevsCol">
 		@for((f, pvs) <- previews) {
 			@if(pvs.length > 0 || (!f.metadata.isEmpty)) {
-				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4>@f.filename</h4></div>
+				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4 style="font-weight:bold;">@f.filename</h4></div>
 			}
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
@@ -349,7 +349,7 @@
     					$("#myTab_" + fileId).attr('style', 'display:block;');
     				}
     				else if(prevsOfFile == 0 && ($("#technicalMetadata_" + fileId).length == 0)){   					
-    					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
+    					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4 style='font-weight:bold;'>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
     					var followingVisibleFiles = $("#filePrevContainer_" + fileId).nextAll(".filenameDiv");
     					if(followingVisibleFiles.length > 0){
     						followingVisibleFiles[0].prepend("<hr class='file_separator'></hr>");
@@ -461,7 +461,7 @@
 			</div>
 			
 			<div class="row">
-				<h5>Files</h5>
+				<h5 style="font-weight: bold;">Files</h5>
 				<table id="datasetFilesTable">
 				@dataset.files.map { file =>				
 					<tr><td><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
@@ -503,7 +503,7 @@
 				</div>
 			
 			<div class="row">
-				<h5>Collections</h5>
+				<h5 style="font-weight:bold;">Collections</h5>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
 					<tr><td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
@@ -613,7 +613,7 @@
 			</div>
 			
 			<div class="row">
-				<h5>Tags</h5>
+				<h5 style="font-weight:bold;">Tags</h5>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
 					  <li name='@tag.name'>
