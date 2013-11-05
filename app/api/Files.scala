@@ -39,6 +39,7 @@ import services.RabbitmqPlugin
 import services.Services
 import services.FileDumpService
 import services.DumpOfFile
+import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Json API for files.
@@ -113,9 +114,8 @@ object Files extends ApiController {
 		            }
 		          }
 		          case None => {
-		            Ok.stream(Enumerator.fromStream(inputStream))
+		            Ok.chunked(Enumerator.fromStream(inputStream))
 		            	.withHeaders(CONTENT_TYPE -> contentType)
-		            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 		          }
 		        }
@@ -160,9 +160,8 @@ object Files extends ApiController {
 		            }
 		          }
 		          case None => {
-		            Ok.stream(Enumerator.fromStream(inputStream))
+		            Ok.chunked(Enumerator.fromStream(inputStream))
 		            	.withHeaders(CONTENT_TYPE -> contentType)
-		            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 		          }
 		        }
@@ -663,9 +662,8 @@ object Files extends ApiController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
@@ -716,9 +714,8 @@ object Files extends ApiController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }

@@ -15,11 +15,15 @@ import services.VersusPlugin
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
+import models.AppConfiguration
+import play.api.libs.json.Json
+import play.api.libs.json.Json._
+import play.api.Logger
+
 import scala.concurrent._
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
-import play.Logger
 
 /**
  * Administration pages.
@@ -32,18 +36,19 @@ object Admin extends SecuredController {
   def main = SecuredAction(authorization=WithPermission(Permission.Admin)) { request =>
     Ok(views.html.admin())
   }
-  
-  def reindexFiles = SecuredAction(parse.json, authorization=WithPermission(Permission.AddIndex)) { request =>
+
+  def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
     Ok("Reindexing")
   }
-  
-  def test = SecuredAction(parse.json, authorization=WithPermission(Permission.Public)) { request =>
+
+  def test = SecuredAction(parse.json, authorization = WithPermission(Permission.Public)) { request =>
     Ok("""{"message":"test"}""").as(JSON)
   }
-  
-  def secureTest = SecuredAction(parse.json, authorization=WithPermission(Permission.Admin)) { request =>
+
+  def secureTest = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { request =>
     Ok("""{"message":"secure test"}""").as(JSON)
   }
+
   //get the available Adapters from Versus
   def getAdapters() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>

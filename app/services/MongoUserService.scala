@@ -1,7 +1,7 @@
 package services
 
 import securesocial.core.UserServicePlugin
-import securesocial.core.UserId
+import securesocial.core.IdentityId
 import play.api.{Application, Logger}
 import securesocial.core.providers.Token
 import com.mongodb.casbah.Imports._
@@ -30,8 +30,9 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param id the user id
    * @return an optional user
    */
-  def find(id: UserId):Option[Identity] = {
-    SocialUserDAO.findOne(MongoDBObject("_id._id"->id.id, "_id.providerId"->id.providerId))
+  def find(id: IdentityId):Option[Identity] = {
+    Logger.trace("Searching for user " + id)
+    SocialUserDAO.findOne(MongoDBObject("identityId.userId"->id.userId, "identityId.providerId"->id.providerId))
   }
 
   /**
@@ -45,7 +46,8 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return
    */  
   def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
-    SocialUserDAO.findOne(MongoDBObject("email"->email, "_id.providerId"->providerId))
+    Logger.trace("Searching for user " + email + " " + providerId)
+    SocialUserDAO.findOne(MongoDBObject("email"->email, "identityId.providerId"->providerId))
   }
 
   /**
@@ -54,6 +56,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param user
    */
   def save(user: Identity): Identity = {
+    Logger.trace("Saving user " + user)
     SocialUserDAO.save(user)
     user
   }
@@ -69,6 +72,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return A string with a uuid that will be embedded in the welcome email.
    */
   def save(token: Token) {
+    Logger.trace("Saving token " + token)
     TokenDAO.save(MongoToken(new ObjectId, token.uuid, token.email, token.creationTime.toDate, token.expirationTime.toDate, token.isSignUp))
   }
 
@@ -83,6 +87,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @return
    */
   def findToken(token: String): Option[Token] = {
+    Logger.trace("Searching for token " + token)
     TokenDAO.findByUUID(token) match {
       case Some(t) => Some(Token(t.id.toString, t.email, new DateTime(t.creationTime), new DateTime(t.expirationTime), t.isSignUp))
       case None => None
@@ -98,6 +103,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param uuid the token id
    */
   def deleteToken(uuid: String) {
+    Logger.trace("Deleting token " + uuid)
     TokenDAO.removeById(new ObjectId(uuid), WriteConcern.Normal)
   }
 
@@ -109,6 +115,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    *
    */
   def deleteExpiredTokens() {
+    Logger.trace("Deleting expired tokens")
     for (token <- TokenDAO.findAll) if (token.isExpired) TokenDAO.remove(token)
   }
 }
