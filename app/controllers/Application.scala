@@ -6,6 +6,8 @@ import play.api.mvc.Controller
 import api.Sections
 import api.WithPermission
 import api.Permission
+import models.FileDAO
+import com.mongodb.casbah.commons.MongoDBObject
 
 /**
  * Main application controller.
@@ -22,7 +24,8 @@ object Application extends SecuredController {
 //  }
   def index = SecuredAction() { request =>
   	implicit val user = request.user
-    Ok(views.html.index())
+  	val latestFiles = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(5).toList
+    Ok(views.html.index(latestFiles))
   }
   
   /**

@@ -1,10 +1,13 @@
-@()(implicit user: Option[securesocial.core.Identity])
+@(files: List[models.File])(implicit user: Option[securesocial.core.Identity])
 
 @main("Medici 2.0") {
-<div class="hero-unit">
+
+<div class="jumbotron">
   <h1>Medici 2.0</h1>
   <p>Hello @(user.map{_.firstName}.getOrElse("stranger"))! 
-     Welcome to Medici 2.0, a cutting-edge data repository where you can share, organize and analyze data.</p>
+     Welcome to Medici 2.0, a scalable data repository where you can share, organize and analyze data.</p>
 </div>
+
+@*@carousel(files: List[models.File])*@
 
 }
