@@ -181,7 +181,7 @@
 						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
 						  		 	 } else {
 						  		 		@if(s.area.isDefined) {
-						  		 			@s.area.toString
+						  		 			@s.area.get.toString
 						  		 		} else {
 											Unknown info
 						  		 		}
