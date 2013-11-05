@@ -30,7 +30,10 @@
 						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
 						<td>@dataset.description</td>
-						<td>@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" height="120" width="120">}</td>
+						<td>
+							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" height="120" width="120">}
+							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
+						</td>
 						@if(user.isDefined) {
 							<td><a href="#" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
 						}
