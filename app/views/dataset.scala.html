@@ -153,7 +153,13 @@
 							<tbody>
 					  		@f.sections.map { s =>
 					  			<tr>
-						  			<td>@s.order</td>
+						  			<td>
+						  				@if(s.order != -1) {
+						  					@s.order
+						  				} else {
+						  					*
+						  				}
+						  			</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"

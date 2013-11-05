@@ -353,4 +353,12 @@ button.tech_md_ {
   height: 100%;
 }
 
+.mmd-img {
+	width: 80px;
+}
+
+.mmd-col {
+	width: 10%;
+}
+
 
