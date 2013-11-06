@@ -1,3 +1,5 @@
+
+(function ($, Configuration){
 var fileId;
 
 if (window.File && window.FileList && window.FileReader) {
@@ -70,8 +72,7 @@ function tableinsert(msg,output){
 	document.getElementById(msg).innerHTML=output.join('');
 }		
 function UploadFile(file) {
-	//if(file==null)
-	//	console.log("form data is null");
+	
 	var xhr = new XMLHttpRequest();
 	if (xhr.upload) {
 			xhr.addEventListener('readystatechange', function completionhandler(evt) {
@@ -79,12 +80,12 @@ function UploadFile(file) {
 			console.log("File xhr Upload: " + file.name);
 			
 			},false);
-		//xhr.setRequestHeader("X_FILENAME", file.name);
+		
 		fd=new FormData();
-		//var File=file;
+		
 		fd.append("File",file);
-		xhr.open("POST", "http://localhost:9000/uploadDragDrop", true);
-		//xhr.setRequestHeader("Content-type","multipart/form-data");
+		//xhr.open("POST", "http://localhost:9000/uploadDragDrop", true);
+		xhr.open("POST", "http://"+Configuration.hostIp+":"+window.location.port+"/uploadDragDrop", true);
 		console.log("File ready to send ...");
 		xhr.send(fd);
 		//xhr.send(file);
@@ -93,11 +94,11 @@ function UploadFile(file) {
 		console.log("xhr upload failed");
 	}
 }
-//function onreadystatechangeHandler(evt) {
+
 function onreadystatechangeHandler(file,evt){
  var status = 0;
  var readyState=0;
- //console.log("File name: " + file.name);
+ 
  try {
    status = evt.target.status;
    readyState=evt.target.readyState;
@@ -148,14 +149,14 @@ function $id(id) {
 	return document.getElementById(id);
 	}
 function Output(msg,mgid) {
-	//	var m = $id("messages");
+	
 	var m=$id(mgid);
 		m.innerHTML = msg + m.innerHTML;
 }
 var submitBtn=document.getElementById('submit-button-id');
 submitBtn.onclick=function(evt){
-	window.location.href="http://localhost:9000/queries/"+fileId+"/similar";
-	
+	//window.location.href="http://localhost:9000/queries/"+fileId+"/similar";
+	window.location.href="http://"+Configuration.hostIp+":"+window.location.port+"/queries/"+fileId+"/similar";
 }
 
-
+}(jQuery, Configuration));
