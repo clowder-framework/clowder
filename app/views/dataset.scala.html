@@ -512,10 +512,7 @@
 					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}
 				</table>
-				<div class="requiresLogin" id="collectionsUi">
-				
-				
-					<form class="form-inline">
+				<div class="requiresLogin ui-widget" id="collectionsUi">			
 						<div class="input-group input-group-sm col-md-8"">
 							<select id="collectionAddSelect">
 							@collectionsOutside.map { collection =>
@@ -527,7 +524,7 @@
 							</span>
 						</div>
 						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
-					</form>
+					
 				</div>
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
 					<script type="text/javascript">
