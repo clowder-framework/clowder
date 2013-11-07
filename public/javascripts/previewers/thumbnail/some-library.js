@@ -7,7 +7,8 @@
 	// --------------------------------------------------------
 	// IMAGE FORMATS SUPPORTED BY MOST BROWSERS
 	// --------------------------------------------------------
-	if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png"){
+	if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png" || Configuration.fileType === "image/gif"
+		|| Configuration.fileType === "image/bmp"){
 		$(Configuration.tab).append(
 			"<canvas class='rubberbandCanvas' id='rubberbandCanvas"+prNum+"'>" +
 			"<img src='" + Configuration.url + "' class='rubberbandimage' id='rubberbandimage"+prNum+"'></img>" +
