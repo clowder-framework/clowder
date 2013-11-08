@@ -843,5 +843,29 @@ object Files extends ApiController {
       FileDAO.addUserMetadata(id, Json.stringify(request.body))
       Ok(toJson(Map("status" -> "success")))
     }
+  
+  
+  def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        
+        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
+        var rdfPreviewList = List.empty[models.Preview]
+        for(currPreview <- previewsList){
+          if(currPreview.contentType.equals("application/rdf+xml") || currPreview.contentType.equals("application/rdf+xml-metadata")){
+            rdfPreviewList = rdfPreviewList :+ currPreview
+          }
+        }
+        val hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
+        val list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
+        val listJson = toJson(list.toList)
+        
+        Ok(listJson) 
+      }
+      case None => {Logger.error("Error getting file" + id); InternalServerError}
+    }
+    
+  }
+  
 	
 }

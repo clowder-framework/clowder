@@ -128,6 +128,7 @@ POST    /api/files                        						api.Files.upload(showPreviews: S
 POST    /api/uploadToDataset/:id                        		api.Files.uploadToDataset(id, showPreviews: String ?= "DatasetLevel")
 POST	/api/files/uploadIntermediate/:idAndFlags				api.Files.uploadIntermediate(idAndFlags)
 POST	/api/files/sendJob/:fileId/:fileType					api.Files.sendJob(fileId,fileType)
+GET		/api/files/getRDFURLsForFile/:id						api.Files.getRDFURLsForFile(id)
 POST	/api/files/:fileId/remove								api.Files.removeFile(fileId) 
 GET     /api/files/:id/metadata           						api.Files.get(id)
 POST    /api/files/:id/metadata           						api.Files.addMetadata(id)

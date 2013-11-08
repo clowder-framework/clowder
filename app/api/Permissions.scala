@@ -38,6 +38,7 @@ object Permission extends Enumeration {
 		DeleteFiles,
 		ListFiles,
 		AddFilesMetadata,
+		ShowFilesMetadata,
 		ShowFile,
 		CreateStreams,
 		AddDataPoints,
@@ -76,6 +77,7 @@ case class WithPermission(permission: Permission) extends Authorization {
 		  case (_, GetSections)          => true
 		  case (_, ListFiles)            => true
 		  case (_, ShowFile)             => true
+		  case (_, ShowFilesMetadata)    => true
 		  case (_, SearchStreams)        => true
 		  case (_, ListSensors)          => true
 		  case (_, GetSensors)           => true
