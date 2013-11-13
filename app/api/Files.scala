@@ -519,7 +519,7 @@ object Files extends ApiController {
 	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString()
 	          new java.io.File(resultDir).mkdir()
               
-              if(!theJSON.equals("{}")){
+              if(!theJSON.replaceAll(" ","").equals("{}")){
 	              val xmlFile = jsonToXML(theJSON)	              	              
 	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir").getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
 	              xmlFile.delete()
