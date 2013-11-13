@@ -15,6 +15,10 @@ import com.mongodb.casbah.Imports._
 import collection.JavaConverters._
 import securesocial.core.Identity
 import play.api.Logger
+import java.util.Calendar
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.FileSystems
 
 /**
  * Uploaded files.
@@ -89,6 +93,21 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
   
+  def getUserMetadataJSON(id: String): String = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("userMetadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)    
+			returnedMetadata
+          }
+          case None => "{}"
+		}
+      }
+    }
+  }
+  
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
@@ -147,6 +166,25 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       }
       case None =>
     }    
+  }
+  
+  def removeTemporaries(){
+    val cal = Calendar.getInstance()
+    val timeDiff = play.Play.application().configuration().getInt("rdfTempCleanup.removeAfter")
+    cal.add(Calendar.MINUTE, -timeDiff)
+    val oldDate = cal.getTime()    
+    
+    val folder = new java.io.File(play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse(""))
+    val listOfFiles = folder.listFiles()
+    for(currFileDir <- listOfFiles){
+      val currFile = currFileDir.listFiles()(0)
+      val attrs = Files.readAttributes(FileSystems.getDefault().getPath(currFile.getAbsolutePath()),  classOf[BasicFileAttributes])
+      val timeCreated = new Date(attrs.creationTime().toMillis())
+      if(timeCreated.compareTo(oldDate) < 0){
+    	  currFile.delete()
+    	  currFileDir.delete()
+        }
+    }
   }
   
   

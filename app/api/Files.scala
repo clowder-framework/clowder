@@ -5,6 +5,9 @@ package api
 
 import java.io.FileInputStream
 import java.util.Date
+import java.io.BufferedWriter
+import java.io.FileWriter
+import java.io.ByteArrayInputStream
 
 import org.bson.types.ObjectId
 
@@ -40,6 +43,12 @@ import services.Services
 import services.FileDumpService
 import services.DumpOfFile
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.Files.TemporaryFile
+
+import org.json.JSONObject
+import org.json.XML
+
+import Transformation.LidoToCidocConvertion
 
 /**
  * Json API for files.
@@ -478,7 +487,7 @@ object Files extends ApiController {
           FileDAO.findOneById(new ObjectId(file_id)) match { 
             case Some(file) => {
 	              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
-	                case Some(preview) =>
+	                case Some(preview) =>	                  
 	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 	                    PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), 
 	                        $set("metadata"-> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)      
@@ -501,7 +510,92 @@ object Files extends ApiController {
         }
         case _ => Ok("received something else: " + request.body + '\n')
     }
+  }
+  
+  def getRDFUserMetadata(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
+    FileDAO.findOneById(new ObjectId(id)) match { 
+            case Some(file) => {
+              val theJSON = FileDAO.getUserMetadataJSON(id)
+              val xmlFile = jsonToXML(theJSON)
+              
+              val fileSep = System.getProperty("file.separator")
+              var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString()
+              new java.io.File(resultDir).mkdir()
+              
+              new LidoToCidocConvertion(play.api.Play.configuration.getString("xmltordfmapping.dir").getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
+              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")              
+              xmlFile.delete()
+              
+              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+            }
+            case None => BadRequest(toJson("File not found " + id))
     }
+  
+  }
+  
+  def jsonToXML(theJSON: String): java.io.File = {
+    
+    val jsonObject = new JSONObject(theJSON)    
+    var xml = org.json.XML.toString(jsonObject)
+    xml = xml.replaceAll("__[0-9]+", "")
+    
+    //Remove spaces from XML tags
+    var currStart = xml.indexOf("<")
+    var currEnd = -1
+    var xmlNoSpaces = ""
+    while(currStart != -1){
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
+      currEnd = xml.indexOf(">", currStart+1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
+      currStart = xml.indexOf("<", currEnd+1)
+    }
+    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
+    
+    val xmlFile = java.io.File.createTempFile("xml",".xml")
+    val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
+    fileWriter.write(xmlNoSpaces)
+    fileWriter.close()
+    
+    return xmlFile    
+  }
+  
+  def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        
+        //RDF from XML of the file itself (for XML metadata-only files)
+        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
+        var rdfPreviewList = List.empty[models.Preview]
+        for(currPreview <- previewsList){
+          if(currPreview.contentType.equals("application/rdf+xml")){
+            rdfPreviewList = rdfPreviewList :+ currPreview
+          }
+        }        
+        var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
+        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
+        
+        //RDF from export of file community-generated metadata to RDF
+        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/")
+        list = list :+ Json.toJson(hostString)
+        
+        val listJson = toJson(list.toList)
+        
+        Ok(listJson) 
+      }
+      case None => {Logger.error("Error getting file" + id); InternalServerError}
+    }
+    
+  }
+  
+  def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) {implicit request =>
+	      Logger.debug("Adding user metadata to file " + id)
+	      val theJSON = Json.stringify(request.body)
+	      FileDAO.addUserMetadata(id, theJSON)
+	      Ok(toJson(Map("status" -> "success")))
+
+  }
   
     def jsonFile(file: File): JsValue = {
         toJson(Map("id"->file.id.toString, "filename"->file.filename, "content-type"->file.contentType, "date-created"->file.uploadDate.toString(), "size"->file.length.toString))
@@ -838,34 +932,9 @@ object Files extends ApiController {
     }
   }
   
-  def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) { request =>
-      Logger.debug("Adding user metadata to file " + id)
-      FileDAO.addUserMetadata(id, Json.stringify(request.body))
-      Ok(toJson(Map("status" -> "success")))
-    }
-  
-  
-  def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
-    Services.files.getFile(id)  match {
-      case Some(file) => {
-        
-        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
-        var rdfPreviewList = List.empty[models.Preview]
-        for(currPreview <- previewsList){
-          if(currPreview.contentType.equals("application/rdf+xml") || currPreview.contentType.equals("application/rdf+xml-metadata")){
-            rdfPreviewList = rdfPreviewList :+ currPreview
-          }
-        }
-        val hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
-        val list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
-        val listJson = toJson(list.toList)
-        
-        Ok(listJson) 
-      }
-      case None => {Logger.error("Error getting file" + id); InternalServerError}
-    }
+
     
-  }
+
   
 	
 }
