@@ -43,16 +43,23 @@
 	<br />
 	<h5>User metadata:</h5>
 	
-	<div id='generalUserMetadata_@(dataset_id)' class='usr_md_'><button class="usr_md_" type="button">Add property</button>@printLevelUserMetadata(userMetadata)<button class="usr_md_submit btn" type="button">Submit</button></div>		
+	<div id='generalUserMetadata_@(dataset_id)' class='usr_md_'>
+		<button class="usr_md_" type="button">Add property</button>
+		@printLevelUserMetadata(userMetadata)
+		<button class="usr_md_submit btn" type="button">Submit</button>
+		<button class="usr_md_submit btn rdfbtn" type="button">Get as RDF</button>
+	</div>		
 </form>
 <script language="javascript">
 	var topId = "generalUserMetadata_@(dataset_id)"; 
 	window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(dataset_id)";
+	window["rdfIp"+topId] = "@api.routes.Datasets.getRDFUserMetadata(dataset_id)";
 	window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
 </script>
 <script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
 @if(!user.isDefined) {
 		      	   <script language="javascript">
 			     		$("#generalUserMetadata_@(dataset_id) button").css("display","none");
+			     		$("#generalUserMetadata_@(dataset_id) .rdfbtn").css("display","inline");
 			       </script>
 		      	}
