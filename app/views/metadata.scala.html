@@ -43,7 +43,11 @@
 	<br />
 	<h5>User metadata:</h5>
 	
-	<div id='generalUserMetadata_@(dataset_id)' class='usr_md_'><button class="usr_md_" type="button">Add property</button>@printLevelUserMetadata(userMetadata)<button class="usr_md_submit btn" type="button">Submit</button></div>		
+	<div id='generalUserMetadata_@(dataset_id)' class='usr_md_'>
+		<button class="usr_md_" type="button">Add property</button>
+		@printLevelUserMetadata(userMetadata)
+		<button class="usr_md_submit btn" type="button">Submit</button>
+	</div>		
 </form>
 <script language="javascript">
 	var topId = "generalUserMetadata_@(dataset_id)"; 

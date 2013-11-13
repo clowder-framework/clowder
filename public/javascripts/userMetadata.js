@@ -194,7 +194,10 @@
 		     			});
 					 
 					 
-				  }	
+				  }
+				  else if($(this).html() == "Get as RDF"){
+					  window.location = window["rdfIp"+topId];
+				  }
 				  
 				  return false;
 			}
