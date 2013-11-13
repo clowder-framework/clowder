@@ -99,7 +99,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       case Some(x) => {
         x.getAs[DBObject]("userMetadata") match{
           case Some(y)=>{
-	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)    
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)
 			returnedMetadata
           }
           case None => "{}"

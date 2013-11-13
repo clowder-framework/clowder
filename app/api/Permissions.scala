@@ -28,7 +28,8 @@ object Permission extends Enumeration {
 		ListDatasets,
 		ShowDataset,
 		SearchDatasets,
-		AddDatasetsMetadata,		
+		AddDatasetsMetadata,
+		ShowDatasetsMetadata,
 		CreateTags,
 		DeleteTags,
 		CreateComments,
@@ -78,6 +79,7 @@ case class WithPermission(permission: Permission) extends Authorization {
 		  case (_, ListFiles)            => true
 		  case (_, ShowFile)             => true
 		  case (_, ShowFilesMetadata)    => true
+		  case (_, ShowDatasetsMetadata) => true
 		  case (_, SearchStreams)        => true
 		  case (_, ListSensors)          => true
 		  case (_, GetSensors)           => true

@@ -36,6 +36,17 @@ import play.api.Play.current
 import services.Services
 import scala.util.parsing.json.JSONArray
 
+import models.PreviewDAO
+
+import org.json.JSONObject
+import org.json.XML
+import Transformation.LidoToCidocConvertion
+import java.io.BufferedWriter
+import java.io.FileWriter
+import play.api.libs.iteratee.Enumerator
+import java.io.FileInputStream
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 /**
  * Dataset API.
@@ -347,6 +358,87 @@ object Datasets extends ApiController {
       }
       case None => Ok(toJson(Map("status"->"success")))
     }
+  }
+  
+  
+  def getRDFUserMetadata(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) {implicit request =>
+    Services.datasets.get(id) match { 
+            case Some(dataset) => {
+              val theJSON = Dataset.getUserMetadataJSON(id)
+              val fileSep = System.getProperty("file.separator")
+	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString()
+	          new java.io.File(resultDir).mkdir()
+              
+              if(!theJSON.replaceAll(" ","").equals("{}")){
+	              val xmlFile = jsonToXML(theJSON)	              	              
+	              new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir").getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+	              xmlFile.delete()
+              }
+              else{
+                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+              }
+              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+              
+              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+            }
+            case None => BadRequest(toJson("Dataset not found " + id))
+    }
+  
+  }
+  
+  def jsonToXML(theJSON: String): java.io.File = {
+    
+    val jsonObject = new JSONObject(theJSON)    
+    var xml = org.json.XML.toString(jsonObject)
+    xml = xml.replaceAll("__[0-9]+", "")
+    
+    //Remove spaces from XML tags
+    var currStart = xml.indexOf("<")
+    var currEnd = -1
+    var xmlNoSpaces = ""
+    while(currStart != -1){
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
+      currEnd = xml.indexOf(">", currStart+1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
+      currStart = xml.indexOf("<", currEnd+1)
+    }
+    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
+    
+    val xmlFile = java.io.File.createTempFile("xml",".xml")
+    val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
+    fileWriter.write(xmlNoSpaces)
+    fileWriter.close()
+    
+    return xmlFile    
+  }
+  
+  def getRDFURLsForDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        
+        val previewsList = PreviewDAO.findByDatasetId(new ObjectId(id))
+        var rdfPreviewList = List.empty[models.Preview]
+        for(currPreview <- previewsList){
+          if(currPreview.contentType.equals("application/rdf+xml")){
+            rdfPreviewList = rdfPreviewList :+ currPreview
+          }
+        }        
+        var hostString = "http://" + request.host + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
+        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
+        
+        //RDF from export of file community-generated metadata to RDF
+        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/")
+        list = list :+ Json.toJson(hostString)
+        
+        val listJson = toJson(list.toList)
+        
+        Ok(listJson) 
+      }
+      case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+    }
+    
   }
   
   
