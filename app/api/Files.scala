@@ -515,15 +515,19 @@ object Files extends ApiController {
     Services.files.getFile(id) match { 
             case Some(file) => {
               val theJSON = FileDAO.getUserMetadataJSON(id)
-              val xmlFile = jsonToXML(theJSON)
-              
               val fileSep = System.getProperty("file.separator")
-              var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString()
-              new java.io.File(resultDir).mkdir()
+	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString()
+	          new java.io.File(resultDir).mkdir()
               
-              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir").getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
-              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")              
-              xmlFile.delete()
+              if(!theJSON.equals("{}")){
+	              val xmlFile = jsonToXML(theJSON)	              	              
+	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir").getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+	              xmlFile.delete()
+              }
+              else{
+                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+              }
+              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
               
               Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
 		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
