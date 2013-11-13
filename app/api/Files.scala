@@ -43,7 +43,6 @@ import services.Services
 import services.FileDumpService
 import services.DumpOfFile
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.Files.TemporaryFile
 
 import org.json.JSONObject
 import org.json.XML
