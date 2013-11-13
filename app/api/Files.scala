@@ -512,7 +512,7 @@ object Files extends ApiController {
   }
   
   def getRDFUserMetadata(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
-    FileDAO.findOneById(new ObjectId(id)) match { 
+    Services.files.getFile(id) match { 
             case Some(file) => {
               val theJSON = FileDAO.getUserMetadataJSON(id)
               val xmlFile = jsonToXML(theJSON)
