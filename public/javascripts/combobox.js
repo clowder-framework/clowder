@@ -11,7 +11,7 @@ this._createShowAllButton();
 _createAutocomplete: function() {
 var selected = this.element.children( ":selected" ),
 value = selected.val() ? selected.text() : "";
-this.input = $( "<input id='selectCollectionInput' type='text' style='font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif' >" )
+this.input = $( "<input id='selectingInput' type='text' style='font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif' >" )
 .appendTo( this.wrapper )
 .val( value )
 .attr( "title", "" )
@@ -78,7 +78,7 @@ option: this
 _removeIfInvalid: function( event, ui ) {
 //Selected an item, nothing to do
 if ( ui.item ) {
-$("#collNotExistError").css('display','none');
+$("#doesNotExistError").css('display','none');
 return;
 }
 // Search for a match (case-insensitive)
@@ -88,16 +88,16 @@ valid = false;
 this.element.children( "option" ).each(function() {
 if ( $( this ).text().toLowerCase() === valueLowerCase ) {
 this.selected = valid = true;
-$("#collNotExistError").css('display','none');
+$("#doesNotExistError").css('display','none');
 return false;
 }
 });
 // Found a match, nothing to do
 if ( valid ) {
-$("#collNotExistError").css('display','none');	
+$("#doesNotExistError").css('display','none');	
 return;
 }
-$("#collNotExistError").css('display','inline');	
+$("#doesNotExistError").css('display','inline');	
 //////
 },
 _destroy: function() {

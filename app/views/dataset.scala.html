@@ -558,7 +558,7 @@
 					}					  
 					</select>
 					<button class="btn" id="addCollBtn" style="vertical-align:top;">Add</button>
-					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
+					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistError" >Collection does not exist or already added.</span>
 				</div>
 					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
@@ -567,10 +567,10 @@
 					</script>
 					<script>
 						$('body').on('click','#addCollBtn',function(e){
-							if($("#collNotExistError").css('display') == 'inline')
+							if($("#doesNotExistError").css('display') == 'inline')
 								return;
-							if($("#selectCollectionInput").val() == ""){
-								$("#collNotExistError").css('display','inline');
+							if($("#selectingInput").val() == ""){
+								$("#doesNotExistError").css('display','inline');
 								return;
 							}
 							
@@ -583,7 +583,7 @@
 							request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);	        
 						        $("#collectionAddSelect option[value=" + selectedId + "]").remove();
-						        $("#selectCollectionInput").val("");
+						        $("#selectingInput").val("");
 						        var i = 1;
 						        var tableLength = $("#collTable tbody tr").length;
 						        while(i <= tableLength && $("#collTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
