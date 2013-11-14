@@ -446,7 +446,8 @@
     													+"<div class='tab-content' id='previewsContent_"+fileId+"'></div></div></div></div>");
     							$('#myTab_'+fileId).attr('style', 'display:none;');
     							
-    							$('#fileUploadBtn').before("<div><a href='http://" + Configuration.hostIp + ":" + window.location.port + "/files/"+ fileId + "' title='"+respJSON[i].contentType+"'>"+respJSON[i].filename+"</a></div>");
+    							$('#datasetFilesTable').append("<tr><td><a href='http://" + Configuration.hostIp + ":" + window.location.port + "/files/"+ fileId + "' title='"+respJSON[i].contentType+"'>"+respJSON[i].filename+"</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>"
+    															+"<td><a class='requiresLogin' href='#' style='font-style:italic;' onclick='removeFile(&#39;"+ fileId +"&#39;,event,true);' >Remove</a></td></tr>");
     						}
     					}
     					setTimeout(function(){updateFiles()}, 2000);
