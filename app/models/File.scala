@@ -82,10 +82,27 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.find(MongoDBObject("isIntermediate" -> true)).toList
   }
 
- 
-  def tag(id: String, tag: String) { 
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  // ---------- Tags related code starts ------------------
+  def tag(id: String, tags: List[String]) {
+    // TODO: Having issue with "$each", so do multiple updates for now. Improve later.
+    // Remove leading and trailing spaces, and reduce multiple continuous spaces to one single space.
+    val tags1 = tags.map(t => t.trim().replaceAll("\\s+", " "))
+    Logger.debug("tag: tags: " + tags + ".  After removing extra spaces, tags1: " + tags1)
+    tags1.foreach(tag => {
+      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+    })
   }
+
+  def removeTags(id: String, tags: List[String]) {
+    val tags1 = tags.map(t => t.trim().replaceAll("\\s+", " "))
+    Logger.debug("removeTags: tags: " + tags + ".  After removing extra spaces, tags1: " + tags1)
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pullAll("tags" -> tags1), false, false, WriteConcern.Safe)
+  }
+
+  def removeAllTags(id: String) {
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List[String]()), false, false, WriteConcern.Safe)
+  }
+  // ---------- Tags related code ends ------------------
 
   def comment(id: String, comment: Comment) {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)

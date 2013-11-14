@@ -726,19 +726,65 @@ object Files extends ApiController {
         case None => Logger.error("Texture file not found"); InternalServerError
       }
     }
-   
-    def tag(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateTags)) { implicit request =>
-	    request.body.\("tag").asOpt[String] match {
-		    case Some(tag) => {
-		    	FileDAO.tag(id, tag)
-		    	Ok
-		    }
-		    case None => {
-		    	Logger.error("no tag specified.")
-		    	BadRequest
-		    }
-	    }
+
+  // ---------- Tags related code starts ------------------
+  /**
+   *  REST endpoint: GET: get the tag data associated with this file.
+   */
+  def getTags(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+    Logger.info("Getting tags for file with id " + id)
+    Services.files.getFile(id) match {
+      case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename, "tags" -> Json.toJson(file.tags)))
+      case None => {
+        Logger.error("Error getting file" + id);
+        InternalServerError
+      }
     }
+  }
+
+  /**
+   *  REST endpoint: POST: Add tags to a file.
+   */
+  def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
+    Logger.info("Adding tags for file with id " + id)
+    request.body.\("tags").asOpt[List[String]] match {
+      case Some(tags) => {
+        FileDAO.tag(id, tags)
+        Ok
+      }
+      case None => {
+        Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
+        BadRequest(toJson("No \"tags\" specified."))
+      }
+    }
+  }
+
+  /**
+   *  REST endpoint: POST: remove tags.
+   */
+  def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
+    Logger.info("Removing tags for file with id " + id)
+    request.body.\("tags").asOpt[List[String]] match {
+      case Some(tags) => {
+        FileDAO.removeTags(id, tags)
+        Ok
+      }
+      case None => {
+        Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
+        BadRequest(toJson("No \"tags\" specified."))
+      }
+    }
+  }
+
+  /**
+   *  REST endpoint: POST: remove all tags.
+   */
+  def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
+    Logger.debug("Removing all tags for file with id: " + id)
+    FileDAO.removeAllTags(id)
+    Ok
+  }
+  // ---------- Tags related code ends ------------------
 
 	def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments))  { implicit request =>
 	  request.user match {
