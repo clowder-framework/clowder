@@ -104,9 +104,10 @@ object Files extends Controller with SecuredController {
         }
         comments = comments.sortBy(_.posted)
         
-        var fileDataset = Dataset.findOneByFileId(file.id)
+        var fileDataset = Dataset.findByFileId(file.id).sortBy(_.name)
+        var datasetsOutside = Dataset.findNotContainingFile(file.id).sortBy(_.name)
         
-        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, userMetadata))
+        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }
@@ -187,10 +188,7 @@ object Files extends Controller with SecuredController {
 	        Logger.debug("Uploading file " + nameOfFile)
 	        
 	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
-	        if(showPreviews.equals("true"))
-	          showPreviews = "FileLevel"
-	        else
-	          showPreviews = "None"
+
 	        // store file       
 	        val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
 	        val uploadedFile = f
@@ -199,8 +197,10 @@ object Files extends Controller with SecuredController {
 	          case Some(f) => {
 		        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 	            
-	            if(showPreviews.equals("None"))
-	                flags = flags + "+nopreviews"
+	            if(showPreviews.equals("FileLevel"))
+	                	flags = flags + "+filelevelshowpreviews"
+	            else if(showPreviews.equals("None"))
+	                	flags = flags + "+nopreviews"
 	             var fileType = f.contentType
 				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
 				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
