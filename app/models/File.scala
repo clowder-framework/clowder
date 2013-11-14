@@ -121,13 +121,13 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.findOneById(new ObjectId(id)) match{
       case Some(file) => {
         if(file.isIntermediate.isEmpty){
-	        val fileDataset = Dataset.findOneByFileId(file.id)
-	        if(!fileDataset.isEmpty){
-	        	Dataset.removeFile(fileDataset.get.id.toString(), id)
-	        	if(!file.thumbnail_id.isEmpty && !fileDataset.get.thumbnail_id.isEmpty)
-		        	if(file.thumbnail_id.get == fileDataset.get.thumbnail_id.get)
-		        	  Dataset.newThumbnail(fileDataset.get.id.toString())
-	        }         	
+        	val fileDatasets = Dataset.findByFileId(file.id)
+        	for(fileDataset <- fileDatasets){
+	        	Dataset.removeFile(fileDataset.id.toString(), id)
+	        	if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
+		        	if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
+		        	  Dataset.newThumbnail(fileDataset.id.toString())
+		    }   		        	  
 	        for(section <- SectionDAO.findByFileId(file.id)){
 	          SectionDAO.removeSection(section)
 	        }
