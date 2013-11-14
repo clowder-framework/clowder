@@ -384,19 +384,19 @@
     				if(prevsOfFile == 1){
     					$("#myTab_" + fileId).attr('style', 'display:block;');
     				}
-//     				else if(prevsOfFile == 0 && ($("#technicalMetadata_" + fileId).length == 0) && ($("#fileUserMetadata_" + fileId).length == 0)){   					
-//     					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
-//     					var followingVisibleFiles = $("#filePrevContainer_" + fileId).nextAll(".filenameDiv");
-//     					if(followingVisibleFiles.length > 0){
-//     						followingVisibleFiles[0].prepend("<hr class='file_separator'></hr>");
-//     					}
-//     					else{
-//     						var previousVisibleFiles = $("#previewedFileName_" + fileId).prevAll(".filenameDiv");
-//     						if(previousVisibleFiles.length > 0){
-//     							$("#previewedFileName_" + fileId).prepend("<hr class='file_separator'></hr>");
-//         					}
-//     					}			
-//     				}
+    				else if(prevsOfFile == 0 && ($("#technicalMetadata_" + fileId).length == 0) && ($("#fileUserMetadata_" + fileId).length == 0)){   					
+    					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
+    					var followingVisibleFiles = $("#filePrevContainer_" + fileId).nextAll(".filenameDiv");
+    					if(followingVisibleFiles.length > 0){
+    						followingVisibleFiles[0].prepend("<hr class='file_separator'></hr>");
+    					}
+    					else{
+    						var previousVisibleFiles = $("#previewedFileName_" + fileId).prevAll(".filenameDiv");
+    						if(previousVisibleFiles.length > 0){
+    							$("#previewedFileName_" + fileId).prepend("<hr class='file_separator'></hr>");
+        					}
+    					}			
+    				}
     				
     				
     				$('#myTab_' + fileId + ' a:first').tab('show');
