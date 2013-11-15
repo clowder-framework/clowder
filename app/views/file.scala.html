@@ -472,7 +472,7 @@
 				      	<table id="datasTable">
 						@fileDataset.map { dataset =>
 							<tr><td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-							<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id.toString)','@(dataset.name)',event)">Remove</a></td></tr>
+							<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id.toString)','@(dataset.name)',event)">Detach</a></td></tr>
 						}
 						</table>
 						<div class="ui-widget requiresLogin" id="datasetsUi">
