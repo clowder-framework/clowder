@@ -742,7 +742,7 @@ object Files extends ApiController {
         case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename, "tags" -> Json.toJson(file.tags)))
         case None => {
           Logger.error("The file with id " + id + " is not found.")
-          InternalServerError("The file with id " + id + " is not found.")
+          NotFound(toJson("The file with id " + id + " is not found."))
         }
       }
     } else {
