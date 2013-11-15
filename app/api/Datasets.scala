@@ -32,6 +32,8 @@ import models.Collection
 import org.bson.types.ObjectId
 import securesocial.views.html.notAuthorized
 import play.api.Play.current
+import com.mongodb.casbah.Imports._
+import com.mongodb.WriteConcern
 
 import services.Services
 import scala.util.parsing.json.JSONArray
@@ -124,6 +126,81 @@ object Datasets extends ApiController {
       }
 
     }
+    
+  def attachExistingFile(dsId: String, fileId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateDatasets)) { request =>
+    Services.datasets.get(dsId) match {
+      case Some(dataset) => {
+        Services.files.get(fileId) match {
+          case Some(file) => {
+            val theFile = FileDAO.get(fileId).get
+            if(!isInDataset(theFile,dataset)){
+	            Dataset.addFile(dsId, theFile)
+	            Logger.info("Adding file to dataset completed")
+	            
+	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
+		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
+		                        $set("thumbnail_id" -> theFile.thumbnail_id), false, false, WriteConcern.SAFE)		                        
+		       }
+            }
+            else{
+              Logger.info("File was already in dataset.")
+            }
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => { Logger.error("Error getting file" + fileId); InternalServerError }
+        }        
+      }
+      case None => { Logger.error("Error getting dataset" + dsId); InternalServerError }
+    }  
+  }
+  
+  def isInDataset(file: File, dataset: Dataset): Boolean = {
+    for(dsFile <- dataset.files){
+      if(dsFile.id == file.id)
+        return true
+    }
+    return false
+  }
+  
+  def detachFile(datasetId: String, fileId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateCollections)) { request =>
+    Services.datasets.get(datasetId) match{
+      case Some(dataset) => {
+        Services.files.get(fileId) match {
+          case Some(file) => {
+            val theFile = FileDAO.get(fileId).get
+            if(isInDataset(theFile,dataset)){
+	            //remove file from dataset
+	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)	            
+	            Logger.info("Removing file from dataset completed")
+	            
+	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
+	              if(dataset.thumbnail_id.get.equals(theFile.thumbnail_id.get)){
+		             Dataset.newThumbnail(dataset.id.toString())
+		          }		                        
+		       }
+	            
+            }
+            else{
+              Logger.info("File was already out of the dataset.")
+            }
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => {
+        	  Ok(toJson(Map("status" -> "success")))
+          }
+        }
+      }
+      case None => {
+        ignoreNotFound match{
+          case "True" =>
+            Ok(toJson(Map("status" -> "success")))
+          case "False" =>
+        	Logger.error("Error getting dataset" + datasetId); InternalServerError
+        }
+      }     
+    }
+  }
+  
 
   def jsonDataset(dataset: Dataset): JsValue = {
     var datasetThumbnail = "None"

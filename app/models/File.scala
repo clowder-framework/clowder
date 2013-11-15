@@ -19,6 +19,8 @@ import java.util.Calendar
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileSystems
+import services.Services
+
 
 /**
  * Uploaded files.
@@ -64,6 +66,26 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       }
       case None => None
     }
+  }
+  
+  def listOutsideDataset(dataset_id: String): List[File] = {
+    Dataset.findOneById(new ObjectId(dataset_id)) match{
+        case Some(dataset) => {
+          val list = for (file <- Services.files.listFiles(); if(!isInDataset(file,dataset))) yield file
+          return list
+        }
+        case None =>{
+          return Services.files.listFiles()	 	  
+        } 
+      }
+  }
+  
+  def isInDataset(file: File, dataset: Dataset): Boolean = {
+    for(dsFile <- dataset.files){
+      if(dsFile.id == file.id)
+        return true
+    }
+    return false
   }
   
   
@@ -140,13 +162,13 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.findOneById(new ObjectId(id)) match{
       case Some(file) => {
         if(file.isIntermediate.isEmpty){
-	        val fileDataset = Dataset.findOneByFileId(file.id)
-	        if(!fileDataset.isEmpty){
-	        	Dataset.removeFile(fileDataset.get.id.toString(), id)
-	        	if(!file.thumbnail_id.isEmpty && !fileDataset.get.thumbnail_id.isEmpty)
-		        	if(file.thumbnail_id.get == fileDataset.get.thumbnail_id.get)
-		        	  Dataset.newThumbnail(fileDataset.get.id.toString())
-	        }         	
+        	val fileDatasets = Dataset.findByFileId(file.id)
+        	for(fileDataset <- fileDatasets){
+	        	Dataset.removeFile(fileDataset.id.toString(), id)
+	        	if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
+		        	if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
+		        	  Dataset.newThumbnail(fileDataset.id.toString())
+		    }   		        	  
 	        for(section <- SectionDAO.findByFileId(file.id)){
 	          SectionDAO.removeSection(section)
 	        }

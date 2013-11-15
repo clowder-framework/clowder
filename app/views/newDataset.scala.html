@@ -1,9 +1,14 @@
-@(myForm: Form[Dataset])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(myForm: Form[Dataset], filesList: List[(String, String)])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @main("Dataset") {
+  <script>
+  	function clearUpload(){
+  		$('#file').val('');
+  	}
+  </script>  
   <div class="page-header">
     <h1>Create New Dataset</h1>
   </div>
@@ -26,7 +31,17 @@
 	      @textarea(myForm("description"), '_label -> "Description")
 	    </fieldset>
 	    <fieldset>
-	      @inputFile(myForm("file"), '_label -> "File")
+	      @inputFile(myForm("file"), '_label -> "Upload file")
+	    </fieldset>
+	    <button id="uploadCLearBtn" style="position: relative; left:180px; top: -17px;" onclick="clearUpload();return false;">Clear</button>
+	    <fieldset>
+	      @select(
+  			myForm("existingFile"),
+  			("__nofile" -> "--NONE--") +: filesList.map{ oneFile =>
+    			oneFile._1 -> (oneFile._2)
+  			},
+  			'_label -> "or select an existing file"
+		)
 	    </fieldset>
 	    <fieldset id="datasetRadioFieldSet">
 	      @inputRadioGroup(

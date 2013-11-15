@@ -14,9 +14,12 @@
 	      <legend>Select file</legend>
 	      @inputFile(myForm("File"))
 	    </fieldset>
-	    <fieldset id="checkboxFieldSet">
-	      @checkbox(myForm("datasetLevel")
-	      			,'_label -> "Show previews ",'_help -> "", 'checked -> "checked")
+	    <fieldset id="fileRadioFieldSet">
+	      @inputRadioGroup(
+	          myForm("datasetLevel").copy(value=myForm("datasetLevel").value.orElse(Some("DatasetLevel")) ),
+	          options = options("DatasetLevel"->"Everywhere","FileLevel"->"On file page","None"->"Nowhere"),
+	          '_label -> "Show file preview(s)",
+	          '_error -> myForm("datasetLevel").error.map(_.withMessage("Select where the preview will be viewable.")))
 	    </fieldset>
         <div class="form-actions">
           <input type="submit" class="btn" value="Upload"/>

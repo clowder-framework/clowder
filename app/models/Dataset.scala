@@ -55,6 +55,16 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     dao.findOne(MongoDBObject("files._id" -> file_id))
   }
   
+  def findByFileId(file_id: ObjectId): List[Dataset] = {
+    dao.find(MongoDBObject("files._id" -> file_id)).toList
+  }
+  
+  def findNotContainingFile(file_id: ObjectId): List[Dataset] = {
+        val listContaining = findByFileId(file_id)
+        (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
+  }
+  
+  
   def findByTag(tag: String): List[Dataset] = {
     dao.find(MongoDBObject("tags.name" -> tag)).toList
   }

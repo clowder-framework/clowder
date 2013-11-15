@@ -205,7 +205,7 @@ object Files extends ApiController {
   /**
    * Upload file using multipart form enconding.
    */
-    def upload(showPreviews: String="FileLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+    def upload(showPreviews: String="DatasetLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>
@@ -230,8 +230,10 @@ object Files extends ApiController {
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 	            
 	            val id = f.id.toString
-	            if(showPreviews.equals("None"))
-	              flags = flags + "+nopreviews"
+	            if(showPreviews.equals("FileLevel"))
+	            	flags = flags + "+filelevelshowpreviews"
+	            else if(showPreviews.equals("None"))
+	            	flags = flags + "+nopreviews"
 	            var fileType = f.contentType
 	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
 	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
@@ -700,20 +702,17 @@ object Files extends ApiController {
 	                    FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(file_id)), 
 	                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
 	                        
-	                    Dataset.findOneByFileId(file.id) match {
-	                      case Some(dataset) => {
-	                        if(dataset.thumbnail_id.isEmpty){
+	                    val datasetList = Dataset.findByFileId(file.id)
+	                    for(dataset <- datasetList){
+	                      if(dataset.thumbnail_id.isEmpty){
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
-		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
-		                        
-		                        for(collection <- Collection.listInsideDataset(dataset.id.toString)){
-		                          
-		                        }
+		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)		                        
+//		                        for(collection <- Collection.listInsideDataset(dataset.id.toString)){
+//		                          
+//		                        }
 		                    }
-	                      }
-	                      case None =>
 	                    }
-	                        
+	                    	                        
 	                    Ok(toJson(Map("status"->"success")))
 	                }
 	                case None => BadRequest(toJson("Thumbnail not found"))
