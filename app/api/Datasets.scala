@@ -32,6 +32,8 @@ import models.Collection
 import org.bson.types.ObjectId
 import securesocial.views.html.notAuthorized
 import play.api.Play.current
+import com.mongodb.casbah.Imports._
+import com.mongodb.WriteConcern
 
 import services.Services
 import scala.util.parsing.json.JSONArray
@@ -122,7 +124,12 @@ object Datasets extends ApiController {
             val theFile = FileDAO.get(fileId).get
             if(!isInDataset(theFile,dataset)){
 	            Dataset.addFile(dsId, theFile)
-	            Logger.info("Adding file to dataset completed")	            
+	            Logger.info("Adding file to dataset completed")
+	            
+	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
+		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
+		                        $set("thumbnail_id" -> theFile.thumbnail_id), false, false, WriteConcern.SAFE)		                        
+		       }
             }
             else{
               Logger.info("File was already in dataset.")
@@ -154,6 +161,13 @@ object Datasets extends ApiController {
 	            //remove file from dataset
 	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)	            
 	            Logger.info("Removing file from dataset completed")
+	            
+	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
+	              if(dataset.thumbnail_id.get.equals(theFile.thumbnail_id.get)){
+		             Dataset.newThumbnail(dataset.id.toString())
+		          }		                        
+		       }
+	            
             }
             else{
               Logger.info("File was already out of the dataset.")

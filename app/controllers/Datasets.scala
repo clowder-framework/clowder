@@ -163,6 +163,7 @@ object Datasets extends SecuredController {
         
         val collectionsOutside = Collection.listOutsideDataset(id).sortBy(_.name)
         val collectionsInside = Collection.listInsideDataset(id).sortBy(_.name)
+        val filesOutside = FileDAO.listOutsideDataset(id).sortBy(_.filename)
         
         var comments = Comment.findCommentsByDatasetId(id)
         files.map { file =>
@@ -173,7 +174,7 @@ object Datasets extends SecuredController {
         }
         comments = comments.sortBy(_.posted)
         
-        Ok(views.html.dataset(datasetWithFiles, comments, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside))
+        Ok(views.html.dataset(datasetWithFiles, comments, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }

@@ -15,6 +15,7 @@ import com.mongodb.casbah.Imports._
 import collection.JavaConverters._
 import securesocial.core.Identity
 import play.api.Logger
+import services.Services
 
 /**
  * Uploaded files.
@@ -60,6 +61,26 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       }
       case None => None
     }
+  }
+  
+  def listOutsideDataset(dataset_id: String): List[File] = {
+    Dataset.findOneById(new ObjectId(dataset_id)) match{
+        case Some(dataset) => {
+          val list = for (file <- Services.files.listFiles(); if(!isInDataset(file,dataset))) yield file
+          return list
+        }
+        case None =>{
+          return Services.files.listFiles()	 	  
+        } 
+      }
+  }
+  
+  def isInDataset(file: File, dataset: Dataset): Boolean = {
+    for(dsFile <- dataset.files){
+      if(dsFile.id == file.id)
+        return true
+    }
+    return false
   }
   
   

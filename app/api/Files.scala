@@ -605,20 +605,17 @@ object Files extends ApiController {
 	                    FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(file_id)), 
 	                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
 	                        
-	                    Dataset.findOneByFileId(file.id) match {
-	                      case Some(dataset) => {
-	                        if(dataset.thumbnail_id.isEmpty){
+	                    val datasetList = Dataset.findByFileId(file.id)
+	                    for(dataset <- datasetList){
+	                      if(dataset.thumbnail_id.isEmpty){
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
-		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
-		                        
-		                        for(collection <- Collection.listInsideDataset(dataset.id.toString)){
-		                          
-		                        }
+		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)		                        
+//		                        for(collection <- Collection.listInsideDataset(dataset.id.toString)){
+//		                          
+//		                        }
 		                    }
-	                      }
-	                      case None =>
 	                    }
-	                        
+	                    	                        
 	                    Ok(toJson(Map("status"->"success")))
 	                }
 	                case None => BadRequest(toJson("Thumbnail not found"))
