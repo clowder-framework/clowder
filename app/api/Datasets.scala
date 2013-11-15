@@ -428,6 +428,18 @@ object Datasets extends ApiController {
         var hostString = "http://" + request.host + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
         var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
         
+        for(file <- dataset.files){
+           val filePreviewsList = PreviewDAO.findByFileId(file.id)
+           var fileRdfPreviewList = List.empty[models.Preview]
+           for(currPreview <- filePreviewsList){
+	           if(currPreview.contentType.equals("application/rdf+xml")){
+	        	   fileRdfPreviewList = fileRdfPreviewList :+ currPreview
+	           }
+           }
+           val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
+           list = list ++ filesList
+        }
+        
         //RDF from export of file community-generated metadata to RDF
         hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/")
         list = list :+ Json.toJson(hostString)
