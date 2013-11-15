@@ -382,7 +382,7 @@ object Files extends ApiController {
 
           //Ok(views.html.multimediasearch())
         }.getOrElse {
-          BadRequest("File not attached.")
+          BadRequest(toJson("File not attached."))
         }
       } 
         case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
@@ -733,12 +733,21 @@ object Files extends ApiController {
    */
   def getTags(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     Logger.info("Getting tags for file with id " + id)
-    Services.files.getFile(id) match {
-      case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename, "tags" -> Json.toJson(file.tags)))
-      case None => {
-        Logger.error("Error getting file" + id);
-        InternalServerError
+    /* Found in testing: given an invalid ObjectId, a runtime exception
+     * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.getFile().
+     * So check it first.
+     */
+    if (ObjectId.isValid(id)) {
+      Services.files.getFile(id) match {
+        case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename, "tags" -> Json.toJson(file.tags)))
+        case None => {
+          Logger.error("The file with id " + id + " is not found.")
+          InternalServerError("The file with id " + id + " is not found.")
+        }
       }
+    } else {
+      Logger.error("The given file id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given file id " + id + " is not a valid ObjectId."))
     }
   }
 
@@ -750,7 +759,7 @@ object Files extends ApiController {
     request.body.\("tags").asOpt[List[String]] match {
       case Some(tags) => {
         FileDAO.tag(id, tags)
-        Ok
+        Ok(toJson("success"))
       }
       case None => {
         Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
@@ -767,7 +776,7 @@ object Files extends ApiController {
     request.body.\("tags").asOpt[List[String]] match {
       case Some(tags) => {
         FileDAO.removeTags(id, tags)
-        Ok
+        Ok(toJson("success"))
       }
       case None => {
         Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
@@ -782,7 +791,7 @@ object Files extends ApiController {
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.debug("Removing all tags for file with id: " + id)
     FileDAO.removeAllTags(id)
-    Ok
+    Ok(toJson("success"))
   }
   // ---------- Tags related code ends ------------------
 
@@ -797,11 +806,13 @@ object Files extends ApiController {
 			    }
 			    case None => {
 			    	Logger.error("no text specified.")
-			    	BadRequest
+			    	BadRequest(toJson("no text specified."))
 			    }
 		    }
 	    }
-	    case None => BadRequest
+	    case None =>
+	      Logger.error(("No user identity found in the request, request body: " + request.body))
+	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
 	  }
     }
 	
