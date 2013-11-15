@@ -185,10 +185,14 @@ POST    /api/previews                     											api.Previews.upload(iipKey:
 POST    /api/indexes                      api.Indexes.index
 POST    /api/indexes/features             api.Indexes.features
 
-POST    /api/sections                     api.Sections.add
-GET     /api/sections/:id                 api.Sections.get(id)
-POST    /api/sections/:id/tags            api.Sections.tag(id)
-POST    /api/sections/:id/comments        api.Sections.comment(id)
+POST    /api/sections                                           api.Sections.add
+GET     /api/sections/:id                                       api.Sections.get(id)
+POST    /api/sections/:id/comments                              api.Sections.comment(id)
+
+GET     /api/sections/:id/tags                                  api.Sections.getTags(id)
+POST    /api/sections/:id/tags                                  api.Sections.addTags(id)
+POST    /api/sections/:id/tags/remove                           api.Sections.removeTags(id)
+POST    /api/sections/:id/tags/remove_all                       api.Sections.removeAllTags(id)
 
 POST    /api/geostreams					  api.Geostreams.createStream()
 POST    /api/geostreams/:id               api.Geostreams.addDatapoint(id)

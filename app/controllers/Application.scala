@@ -62,7 +62,7 @@ object Application extends SecuredController {
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.comment,
-        api.routes.javascript.Sections.tag
+        api.routes.javascript.Sections.addTags
       )
     ).as(JSON) 
   }
