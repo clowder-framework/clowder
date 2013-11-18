@@ -100,7 +100,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   }
 
   def removeAllTags(id: String) {
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List[String]()), false, false, WriteConcern.Safe)
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List()), false, false, WriteConcern.Safe)
   }
   // ---------- Tags related code ends ------------------
 
