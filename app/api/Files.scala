@@ -617,7 +617,7 @@ object Files extends ApiController {
       ).reduce((left:DBObject, right:DBObject) => left ++ right)
     }
   
-  def filePreviewsList(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateFiles)) {  request =>
+  def filePreviewsList(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) {  request =>
 			FileDAO.findOneById(new ObjectId(id)) match {
 			case Some(file) => {
                 val filePreviews = PreviewDAO.findByFileId(file.id);
