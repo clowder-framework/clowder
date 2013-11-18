@@ -511,7 +511,7 @@ object Files extends ApiController {
     }
   }
   
-  def getRDFUserMetadata(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
+  def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
     Services.files.getFile(id) match { 
             case Some(file) => {
               val theJSON = FileDAO.getUserMetadataJSON(id)
@@ -521,7 +521,7 @@ object Files extends ApiController {
               
               if(!theJSON.replaceAll(" ","").equals("{}")){
 	              val xmlFile = jsonToXML(theJSON)	              	              
-	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir").getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
 	              xmlFile.delete()
               }
               else{
