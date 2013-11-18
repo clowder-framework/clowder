@@ -201,6 +201,18 @@ object Datasets extends ApiController {
     }
   }
   
+  def getInCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowCollection)) { request =>
+    Collection.findOneById(new ObjectId(collectionId)) match{
+      case Some(collection) => {
+        val list = for (dataset <- Dataset.listInsideCollection(collectionId)) yield jsonDataset(dataset)
+        Ok(toJson(list))
+      }
+      case None => {
+        Logger.error("Error getting collection" + collectionId); InternalServerError
+      }
+    }
+  }
+  
 
   def jsonDataset(dataset: Dataset): JsValue = {
     var datasetThumbnail = "None"

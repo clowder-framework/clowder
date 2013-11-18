@@ -13,7 +13,8 @@ import models.Dataset
 import com.mongodb.casbah.commons.MongoDBObject
 
 object Collections extends ApiController {
-
+  
+  
   def attachDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateCollections)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
