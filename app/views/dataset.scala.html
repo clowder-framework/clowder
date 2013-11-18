@@ -81,7 +81,7 @@
 		<div class="col-md-8" id="filePrevsCol">
 		@for((f, pvs) <- previews) {
 			@if(pvs.length > 0 || (!f.metadata.isEmpty)) {
-				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4>@f.filename</h4></div>
+				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4 style="font-weight:bold;">@f.filename</h4></div>
 			}
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
@@ -355,7 +355,7 @@
     					$("#myTab_" + fileId).attr('style', 'display:block;');
     				}
     				else if(prevsOfFile == 0 && ($("#technicalMetadata_" + fileId).length == 0)){   					
-    					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
+    					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4 style='font-weight:bold;'>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
     					var followingVisibleFiles = $("#filePrevContainer_" + fileId).nextAll(".filenameDiv");
     					if(followingVisibleFiles.length > 0){
     						followingVisibleFiles[0].prepend("<hr class='file_separator'></hr>");
@@ -518,7 +518,9 @@
 					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}
 				</table>
-				<div class="requiresLogin ui-widget" id="collectionsUi">
+
+				<div class="requiresLogin ui-widget" id="collectionsUi">			
+
 						<div class="input-group input-group-sm col-md-8"">
 							<select id="collectionAddSelect">
 							@collectionsOutside.map { collection =>
@@ -530,6 +532,7 @@
 							</span>
 						</div>
 						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
+
 				</div>
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
 					<script type="text/javascript">
