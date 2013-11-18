@@ -165,8 +165,13 @@ POST    /api/datasets/:id/metadata		  						api.Datasets.addMetadata(id)
 POST    /api/datasets/:id/usermetadata	  						api.Datasets.addUserMetadata(id)
 GET 	/api/datasets/:id/listFiles		 						api.Datasets.datasetFilesList(id)
 POST    /api/datasets/:id/comment								api.Datasets.comment(id)
-POST    /api/datasets/:id/tag									api.Datasets.tag(id)
-POST 	/api/datasets/:id/removeTag 							api.Datasets.removeTag(id)
+
+POST    /api/datasets/:id/removeTag                             api.Datasets.removeTag(id)
+GET     /api/datasets/:id/tags                                  api.Datasets.getTags(id)
+POST    /api/datasets/:id/tags                                  api.Datasets.addTags(id)
+POST    /api/datasets/:id/tags/remove                           api.Datasets.removeTags(id)
+POST    /api/datasets/:id/tags/remove_all                       api.Datasets.removeAllTags(id)
+
 GET		/api/datasets/:id/isBeingProcessed						api.Datasets.isBeingProcessed(id)
 GET		/api/datasets/:id/getPreviews							api.Datasets.getPreviews(id)
 
