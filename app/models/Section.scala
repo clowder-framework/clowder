@@ -52,6 +52,10 @@ object SectionDAO extends ModelCompanion[Section, ObjectId] {
   def findByFileId(id: ObjectId): List[Section] = {
     dao.find(MongoDBObject("file_id"->id)).sort(MongoDBObject("startTime"->1)).toList
   }
+  
+  def findByTag(tag: String): List[Section] = {
+    dao.find(MongoDBObject("tags.name" -> tag)).toList
+  }
 
   // ---------- Tags related code starts ------------------
   // Input validation is done in api.Files, so no need to check again.

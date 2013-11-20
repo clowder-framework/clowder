@@ -618,11 +618,11 @@
 					}
   				    @dataset.files.map { file =>
 						@file.tags.map { tag =>
-						  <li><a href="@routes.Tags.search(tag.name)">@tag [File]</a></li>
+						  <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
 						}
 				    	@file.sections.map { section =>
 							@section.tags.map { tag =>
-							  <li><a href="@routes.Tags.search(tag.name)">@tag [Section]</a></li>
+							  <li><a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a></li>
 							}
 						}
 				   }

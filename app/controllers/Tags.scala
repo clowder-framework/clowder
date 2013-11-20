@@ -8,6 +8,7 @@ import models.Dataset
 import play.api.mvc.Action
 import models.File
 import models.FileDAO
+import models.SectionDAO
 import api.WithPermission
 import api.Permission
 import services.ElasticsearchPlugin
@@ -23,8 +24,9 @@ object Tags extends SecuredController {
 
   def search(tag: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     val datasets = Dataset.findByTag(tag)
-    val files = FileDAO.findByTag(tag)
+    val files    = FileDAO.findByTag(tag)
+    val sections = SectionDAO.findByTag(tag)
 //    Logger.debug("Search by tag " + tag + " returned " + datasets.length)
-    Ok(views.html.searchByTag(tag, datasets, files))
+    Ok(views.html.searchByTag(tag, datasets, files, sections))
   }
 }

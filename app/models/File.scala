@@ -76,7 +76,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   
 
   def findByTag(tag: String): List[File] = {
-    dao.find(MongoDBObject("tags" -> tag)).toList
+    dao.find(MongoDBObject("tags.name" -> tag)).toList
   }
   
   def findIntermediates(): List[File] = {
