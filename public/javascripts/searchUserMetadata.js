@@ -1,6 +1,6 @@
 String.prototype.endsWith = function(str) 
 {return (this.match(str+"$")==str)}
-
+alert(modelIp);
 //CSV file format: Node and whether intermediate node or leaf.
 	var allowedNodes = new Array();	
 	$.ajax({
@@ -275,6 +275,7 @@ $(function() {
 				  else if($(this).html() == "Submit"){
 
 					var data = DOMtoJSON(document.getElementById('datasetUserMetadata').children[1]);
+					//alert(data);
 					var request = $.ajax({
 				       type: 'POST',
 				       url: queryIp,
