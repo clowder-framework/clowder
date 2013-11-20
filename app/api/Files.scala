@@ -513,7 +513,7 @@ object Files extends ApiController {
     }
   }
   
-  def getRDFUserMetadata(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
+  def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
     Services.files.getFile(id) match { 
             case Some(file) => {
               val theJSON = FileDAO.getUserMetadataJSON(id)
@@ -522,8 +522,8 @@ object Files extends ApiController {
 	          new java.io.File(resultDir).mkdir()
               
               if(!theJSON.replaceAll(" ","").equals("{}")){
-	              val xmlFile = jsonToXML(theJSON)	              	              
-	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir").getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+	              val xmlFile = jsonToXML(theJSON)
+	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
 	              xmlFile.delete()
               }
               else{
@@ -582,9 +582,20 @@ object Files extends ApiController {
         var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
         
         //RDF from export of file community-generated metadata to RDF
-        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/")
-        list = list :+ Json.toJson(hostString)
-        
+        var connectionChars = ""
+        if(hostString.contains("?")){
+          connectionChars = "&mappingNum="
+        }
+        else{
+          connectionChars = "?mappingNum="
+        }
+        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars                
+        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
+        for(i <- 1 to mappingsQuantity){
+          var currHostString = hostString + i
+          list = list :+ Json.toJson(currHostString)
+        }
+
         val listJson = toJson(list.toList)
         
         Ok(listJson) 

@@ -450,7 +450,7 @@ object Datasets extends ApiController {
   }
   
   
-  def getRDFUserMetadata(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) {implicit request =>
+  def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) {implicit request =>
     Services.datasets.get(id) match { 
             case Some(dataset) => {
               val theJSON = Dataset.getUserMetadataJSON(id)
@@ -460,7 +460,7 @@ object Datasets extends ApiController {
               
               if(!theJSON.replaceAll(" ","").equals("{}")){
 	              val xmlFile = jsonToXML(theJSON)	              	              
-	              new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir").getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+	              new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
 	              xmlFile.delete()
               }
               else{
@@ -507,6 +507,7 @@ object Datasets extends ApiController {
     Services.datasets.get(id)  match {
       case Some(dataset) => {
         
+        //RDF from XML files in the dataset itself (for XML metadata-only files)
         val previewsList = PreviewDAO.findByDatasetId(new ObjectId(id))
         var rdfPreviewList = List.empty[models.Preview]
         for(currPreview <- previewsList){
@@ -529,10 +530,22 @@ object Datasets extends ApiController {
            list = list ++ filesList
         }
         
-        //RDF from export of file community-generated metadata to RDF
-        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/")
-        list = list :+ Json.toJson(hostString)
+        //RDF from export of dataset community-generated metadata to RDF
+        var connectionChars = ""
+		if(hostString.contains("?")){
+			connectionChars = "&mappingNum="
+		}
+		else{
+			connectionChars = "?mappingNum="
+		}        
+        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/") + connectionChars
         
+        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("datasetsxmltordfmapping.dircount").getOrElse("1"))
+        for(i <- 1 to mappingsQuantity){
+          var currHostString = hostString + i
+          list = list :+ Json.toJson(currHostString)
+        }
+
         val listJson = toJson(list.toList)
         
         Ok(listJson) 
