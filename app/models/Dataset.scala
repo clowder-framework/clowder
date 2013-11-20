@@ -162,7 +162,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
       Logger.debug("req: "+ requestedMap);
       Logger.debug("curr: "+ currentMap);
       for((reqKey, reqValue) <- requestedMap){
-        var reqKeyCompare = reqKey.replaceAll("__[0-9]*$","")
+        var reqKeyCompare = reqKey
         if(reqKeyCompare.equals("OR")){
           if(allMatch)
             return true          
@@ -179,25 +179,46 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 	        var matchFound = false
 	        try{
 	        	for((currKey, currValue) <- currentMap){
-	        	    val currKeyCompare = currKey.replaceAll("__[0-9]*$","")
+	        	    val currKeyCompare = currKey
 	        		if(reqKeyCompare.equals(currKeyCompare)){
 	        		  //If search subtree remaining is a string (ie we have reached a leaf), then remaining subtree currently examined is bound to be a string, as the path so far was the same.
 	        		  //Therefore, we do string comparison.
-	        		  if(reqValue.isInstanceOf[String]){
-	        			  if(reqValue.asInstanceOf[String].trim().equals("*") || reqValue.asInstanceOf[String].trim().equalsIgnoreCase(currValue.asInstanceOf[String].trim())){
+	        		  if(reqValue.isInstanceOf[String]){        		    
+	        		    if(currValue.isInstanceOf[com.mongodb.BasicDBList]){
+	        		      for(itemInCurrValue <- currValue.asInstanceOf[com.mongodb.BasicDBList]){
+	        		        if(reqValue.asInstanceOf[String].trim().equals("*") || reqValue.asInstanceOf[String].trim().equalsIgnoreCase(itemInCurrValue.asInstanceOf[String].trim())){
 	        				  matchFound = true
 	        				  throw MustBreak
+	        		        }
+	        		      }
+	        		    }
+	        		    else{
+	        		      if(reqValue.asInstanceOf[String].trim().equals("*") || reqValue.asInstanceOf[String].trim().equalsIgnoreCase(currValue.asInstanceOf[String].trim())){
+	        				  matchFound = true
 	        			  }
+	        		    } 
 	        		  }
 	        		  //If search subtree remaining is not a string (ie we haven't reached a leaf yet), then remaining subtree currently examined is bound to not be a string, as the path so far was the same.
 	        		  //Therefore, we do maps (actually subtrees) comparison.
 	        		  else{
+	        		    if(currValue.isInstanceOf[com.mongodb.BasicDBList]){
+	        		      for(itemInCurrValue <- currValue.asInstanceOf[com.mongodb.BasicDBList]){
+	        		        val currValueMap = itemInCurrValue.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
+	        			    if(searchMetadata(id, reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], currValueMap)){
+	        				  matchFound = true
+	        				  throw MustBreak
+	        			    }
+	        		      }
+	        		    }
+	        		    else{
 	        		      val currValueMap = currValue.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
 	        			  if(searchMetadata(id, reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], currValueMap)){
 	        				  matchFound = true
-	        				  throw MustBreak
 	        			  }
-	        		  }	
+	        		    } 
+	        		  }
+	        		  
+	        		  throw MustBreak
 	        		}
 	        	}
 	        } catch {case MustBreak => }

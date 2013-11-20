@@ -345,7 +345,10 @@ object Datasets extends ApiController {
    */
   def searchDatasetsUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
       Logger.debug("Searching datasets' user metadata for search tree.")
-      var searchTree = JsonUtil.parseJSON(Json.stringify(request.body)).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchJSON = Json.stringify(request.body).replaceAll("__[0-9]*\"","\"")
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
       var datasetsSatisfying = List[Dataset]()
       for (dataset <- Services.datasets.listDatasetsChronoReverse) {
         if (Dataset.searchUserMetadata(dataset.id.toString(), searchTree)) {
