@@ -374,7 +374,7 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
 
             Services.queries.getFile(id) match {
               case Some(file) => {
-                Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
+                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {
                 Ok(id + " not found")
@@ -451,7 +451,7 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
 
             Services.files.getFile(id) match {
               case Some(file) => {
-                Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
+                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {
                 Ok(id + " not found")

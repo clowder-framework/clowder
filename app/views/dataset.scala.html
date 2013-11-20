@@ -153,7 +153,13 @@
 							<tbody>
 					  		@f.sections.map { s =>
 					  			<tr>
-						  			<td>@s.order</td>
+						  			<td>
+						  				@if(s.order != -1) {
+						  					@s.order
+						  				} else {
+						  					*
+						  				}
+						  			</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
@@ -175,7 +181,7 @@
 						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
 						  		 	 } else {
 						  		 		@if(s.area.isDefined) {
-						  		 			@s.area.toString
+						  		 			@s.area.get.toString
 						  		 		} else {
 											Unknown info
 						  		 		}
@@ -512,10 +518,9 @@
 					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}
 				</table>
-				<div class="requiresLogin" id="collectionsUi">
-				
-				
-					<form class="form-inline">
+
+				<div class="requiresLogin ui-widget" id="collectionsUi">			
+
 						<div class="input-group input-group-sm col-md-8"">
 							<select id="collectionAddSelect">
 							@collectionsOutside.map { collection =>
@@ -527,12 +532,12 @@
 							</span>
 						</div>
 						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
-					</form>
+
 				</div>
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
 					<script type="text/javascript">
 						$("#collectionAddSelect").combobox();
-						$("#collectionAddSelect").css("display", "inline");
+						//$("#collectionAddSelect").css("display", "inline");
 						
 	  					function selectClickChange() {
 	  						var theSelectedColl = document.getElementById("collectionAddSelect");

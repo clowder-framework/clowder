@@ -147,7 +147,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId = configuration.getString("versus.index").getOrElse("")
     
-    val urlf = client + "/api/files/" + id + "?key=letmein"
+    val urlf = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get
     val host = configuration.getString("versus.host").getOrElse("")
 
     var indexurl = host + "/index/" + indexId + "/add"
@@ -252,7 +252,7 @@ class VersusPlugin(application: Application) extends Plugin {
    
     val indexId = indxId
    
-    val query = client + "/api/queries/" + id + "?key=letmein"
+    val query = client + "/api/queries/" + id + "?key=" + configuration.getString("commKey").get
     val host = configuration.getString("versus.host").getOrElse("")
 
     var queryurl = host + "/index/" + indexId + "/query"
@@ -334,7 +334,7 @@ class VersusPlugin(application: Application) extends Plugin {
    
     val indexId = indxId
    
-    val query = client + "/api/files/" + id + "?key=letmein"
+    val query = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get
     val host = configuration.getString("versus.host").getOrElse("")
 
     var queryurl = host + "/index/" + indexId + "/query"

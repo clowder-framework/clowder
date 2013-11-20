@@ -96,7 +96,10 @@
 				}
 			</dl>
 		</div>
+		</div>
 		
+		<div class="row">
+		<div class="col-md-12">
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
@@ -256,6 +259,7 @@
 			    </script>
     			}
     		}
+
 			@if(!file.metadata.isEmpty) {
 					<div id='technicalMetadata_@(file.id.toString)'>
 						<button class="tech_md_" type="button">Show file technical metadata</button>
@@ -280,6 +284,9 @@
 					}
 				});				
 				</script>
+				
+			</div>
+    	</div>
 		@if(beingProcessed == true){
     			<div id='beingProcessed' style='display:block;'><h5>File is being processed...</h5></div>  		
     		}else{
@@ -402,9 +409,11 @@
     		</script> 
     		
     		
+
 		<div class="col-md-4">
-			<a href="@routes.Files.download(id)" class="btn pull-right" target="_blank">Download</a>
+			<a href="@routes.Files.download(id)" class="btn btn-default pull-right" target="_blank">Download</a>
 		</div>
+
 	</div>
 	<div class="row" style="margin-top:50px">
 		<div class="accordion" id="accordion1">

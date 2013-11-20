@@ -38,7 +38,6 @@ function clearConfigTabAnnotations(prNum){
         var annotationHeading = document.createElement('h5');
         annotationHeading.innerHTML = "Annotation description";
         annotationHeading.setAttribute('data-annotation','true');
-        annotationHeading.setAttribute('style','font-weight: bold;');
         $("#annotFields"+prNum).append(annotationHeading);
 
         var annotationDescription = document.createElement('span');
