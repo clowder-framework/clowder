@@ -34,10 +34,7 @@
 	       dataType: "text"
 	     });
 	
-					
-	//Counter for DOM node uniqueness.
-	window["elementCounter"+topId] = 1;
-
+				
 	if(typeof usrmdFuncsAlreadyLoaded === "undefined")
 	$(function() {
 		
@@ -220,12 +217,31 @@
 					if(childrenProperties[i].children[0].tagName.toLowerCase() == 'select')
 						continue;	
 					var key = childrenProperties[i].children[0].innerHTML;
-					key = key.substring(0, key.length - 1) + "__" + window["elementCounter"+topId];
-					window["elementCounter"+topId]++;
-					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
-						branchData[key] = childrenProperties[i].children[1].innerHTML;  
+					key = key.substring(0, key.length - 1);
+					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){						
+						if(key in branchData){
+							if(branchData[key] instanceof Array){
+								branchData[key].push(childrenProperties[i].children[1].innerHTML);
+							}
+							else{
+								branchData[key] = new Array(branchData[key], childrenProperties[i].children[1].innerHTML);
+							}
+						}
+						else{	
+							branchData[key] = childrenProperties[i].children[1].innerHTML;
+						}  
 					}else if(childrenProperties[i].children[1].tagName.toLowerCase() == 'button'){
-						branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
+						if(key in branchData){
+							if(branchData[key] instanceof Array){
+								branchData[key].push(DOMtoJSON(childrenProperties[i].children[3]));
+							}
+							else{
+								branchData[key] = new Array(branchData[key], DOMtoJSON(childrenProperties[i].children[3]));
+							}
+						}
+						else{
+							branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
+						}				
 					}
 				}
 				return branchData;

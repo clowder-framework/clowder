@@ -8,12 +8,23 @@
 	@printLevelUserMetadata(metadata: scala.collection.mutable.Map[String,Any]) = {
 		<ul class="usr_md_">
 		@for((key,value) <- metadata) {
-			<li class="usr_md_"><b class="usr_md_">@(key.replaceAll("__[0-9]*$","")):</b>
-			@if(value.isInstanceOf[String]) {			
-				<span class="usr_md_">@value</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
-			} else {
-					<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
-			}</li>
+			@if(value.isInstanceOf[com.mongodb.BasicDBList]){
+				@for(listValue <- value.asInstanceOf[com.mongodb.BasicDBList]) {
+						<li class="usr_md_"><b class="usr_md_">@(key):</b>
+						@if(listValue.isInstanceOf[String]) {			
+							<span class="usr_md_">@listValue</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
+						} else {
+								<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(listValue.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
+						}</li>
+				}
+			}else{
+				<li class="usr_md_"><b class="usr_md_">@(key):</b>
+				@if(value.isInstanceOf[String]) {			
+					<span class="usr_md_">@value</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
+				} else {
+						<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
+				}</li>
+			}	
 		}
 		</ul>
 	}
