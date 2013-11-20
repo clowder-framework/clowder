@@ -204,13 +204,21 @@ object Datasets extends ApiController {
   @ApiOperation(value = "Get the tags associated with this dataset", notes = "Returns a JSON object of multiple fields", responseClass = "None", httpMethod = "GET")
   def getTags(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     Logger.info("Getting tags for dataset with id " + id)
-    Services.datasets.get(id) match {
-      case Some(dataset) =>
-        Ok(Json.obj("id" -> dataset.id.toString, "tags" -> Json.toJson(dataset.tags.map(_.name))))
-      case None => {
-        Logger.error("Dataset not found, id: " + id)
-        NotFound(toJson("Dataset not found, id: " + id))
+    /* Found in testing: given an invalid ObjectId, a runtime exception
+     * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
+     */
+    if (ObjectId.isValid(id)) {
+      Services.datasets.get(id) match {
+        case Some(dataset) =>
+          Ok(Json.obj("id" -> dataset.id.toString, "name" -> dataset.name, "tags" -> Json.toJson(dataset.tags.map(_.name))))
+        case None => {
+          Logger.error("The dataset with id " + id + " is not found.")
+          NotFound(toJson("The dataset with id " + id + " is not found."))
+        }
       }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
     }
   }
 
@@ -256,12 +264,25 @@ object Datasets extends ApiController {
 
     request.body.\("tags").asOpt[List[String]] match {
       case Some(tags) => {
-        Dataset.addTags(id, userObj.get.id.id, tags)
-        index(id)
-        Ok(Json.obj("status" -> "success"))
+        if (ObjectId.isValid(id)) {
+          Services.datasets.get(id) match {
+            case Some(dataset) => {
+              Dataset.addTags(id, userObj.get.id.id, tags)
+              index(id)
+              Ok(Json.obj("status" -> "success"))
+            }
+            case None => {
+              Logger.error("The dataset with id " + id + " is not found.")
+              NotFound(toJson("The dataset with id " + id + " is not found."))
+            }
+          }
+        } else {
+          Logger.error("The given id " + id + " is not a valid ObjectId.")
+          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+        }
       }
       case None => {
-        Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
+        Logger.error("No \"tags\" specified, request.body: " + request.body.toString)
         BadRequest(toJson("No \"tags\" specified."))
       }
     }
@@ -275,8 +296,21 @@ object Datasets extends ApiController {
     Logger.info("Removing tags for dataset with id " + id)
     request.body.\("tags").asOpt[List[String]] match {
       case Some(tags) => {
-        Dataset.removeTags(id, tags)
-        Ok(Json.obj("status" -> "success"))
+        if (ObjectId.isValid(id)) {
+          Services.datasets.get(id) match {
+            case Some(dataset) => {
+              Dataset.removeTags(id, tags)
+              Ok(Json.obj("status" -> "success"))
+            }
+            case None => {
+              Logger.error("The dataset with id " + id + " is not found.")
+              NotFound(toJson("The dataset with id " + id + " is not found."))
+            }
+          }
+        } else {
+          Logger.error("The given id " + id + " is not a valid ObjectId.")
+          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+        }
       }
       case None => {
         Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
@@ -290,8 +324,21 @@ object Datasets extends ApiController {
    */
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.info("Removing all tags for dataset with id: " + id)
-    Dataset.removeAllTags(id)
-    Ok(Json.obj("status" -> "success"))
+    if (ObjectId.isValid(id)) {
+      Services.datasets.get(id) match {
+        case Some(dataset) => {
+          Dataset.removeAllTags(id)
+          Ok(Json.obj("status" -> "success"))
+        }
+        case None => {
+          Logger.error("The dataset with id " + id + " is not found.")
+          NotFound(toJson("The dataset with id " + id + " is not found."))
+        }
+      }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
   }
   // ---------- Tags related code ends ------------------
   

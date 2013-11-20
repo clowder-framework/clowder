@@ -739,15 +739,16 @@ object Files extends ApiController {
      */
     if (ObjectId.isValid(id)) {
       Services.files.getFile(id) match {
-        case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename, "tags" -> Json.toJson(file.tags)))
+        case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename,
+          "tags" -> Json.toJson(file.tags.map(_.name))))
         case None => {
           Logger.error("The file with id " + id + " is not found.")
           NotFound(toJson("The file with id " + id + " is not found."))
         }
       }
     } else {
-      Logger.error("The given file id " + id + " is not a valid ObjectId.")
-      BadRequest(toJson("The given file id " + id + " is not a valid ObjectId."))
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
     }
   }
 
@@ -756,13 +757,31 @@ object Files extends ApiController {
    */
   def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
     Logger.info("Adding tags for file with id " + id)
+
+    val userObj = request.user
+    Logger.debug("user id: " + userObj.get.id.id + ", user.firstName: " + userObj.get.firstName
+      + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
+
     request.body.\("tags").asOpt[List[String]] match {
       case Some(tags) => {
-        FileDAO.tag(id, tags)
-        Ok(toJson("success"))
+        if (ObjectId.isValid(id)) {
+          Services.files.getFile(id) match {
+            case Some(file) => {
+              FileDAO.addTags(id, userObj.get.id.id, tags)
+              Ok(Json.obj("status" -> "success"))
+            }
+            case None => {
+              Logger.error("The file with id " + id + " is not found.")
+              NotFound(toJson("The file with id " + id + " is not found."))
+            }
+          }
+        } else {
+          Logger.error("The given id " + id + " is not a valid ObjectId.")
+          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+        }
       }
       case None => {
-        Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
+        Logger.error("No \"tags\" specified, request.body: " + request.body.toString)
         BadRequest(toJson("No \"tags\" specified."))
       }
     }
@@ -775,8 +794,21 @@ object Files extends ApiController {
     Logger.info("Removing tags for file with id " + id)
     request.body.\("tags").asOpt[List[String]] match {
       case Some(tags) => {
-        FileDAO.removeTags(id, tags)
-        Ok(toJson("success"))
+        if (ObjectId.isValid(id)) {
+          Services.files.getFile(id) match {
+            case Some(file) => {
+              FileDAO.removeTags(id, tags)
+              Ok(Json.obj("status" -> "success"))
+            }
+            case None => {
+              Logger.error("The file with id " + id + " is not found.")
+              NotFound(toJson("The file with id " + id + " is not found."))
+            }
+          }
+        } else {
+          Logger.error("The given id " + id + " is not a valid ObjectId.")
+          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+        }
       }
       case None => {
         Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
@@ -789,9 +821,22 @@ object Files extends ApiController {
    *  REST endpoint: POST: remove all tags.
    */
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
-    Logger.debug("Removing all tags for file with id: " + id)
-    FileDAO.removeAllTags(id)
-    Ok(toJson("success"))
+    Logger.info("Removing all tags for file with id: " + id)
+    if (ObjectId.isValid(id)) {
+      Services.files.getFile(id) match {
+        case Some(file) => {
+          FileDAO.removeAllTags(id)
+          Ok(Json.obj("status" -> "success"))
+        }
+        case None => {
+          Logger.error("The file with id " + id + " is not found.")
+          NotFound(toJson("The file with id " + id + " is not found."))
+        }
+      }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
   }
   // ---------- Tags related code ends ------------------
 

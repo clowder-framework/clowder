@@ -15,6 +15,7 @@ import com.mongodb.casbah.Imports._
 import collection.JavaConverters._
 import securesocial.core.Identity
 import play.api.Logger
+import services.Services
 
 /**
  * Uploaded files.
@@ -33,7 +34,7 @@ case class File(
     showPreviews: String = "DatasetLevel",
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
-    tags: List[String] = List.empty,
+    tags: List[Tag] = List.empty,
     metadata: List[Map[String, Any]] = List.empty,
 	thumbnail_id: Option[String] = None,
 	isIntermediate: Option[Boolean] = None
@@ -83,20 +84,30 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   }
 
   // ---------- Tags related code starts ------------------
-  def tag(id: String, tags: List[String]) {
-    // TODO: Having issue with "$each", so do multiple updates for now. Improve later.
-    // Remove leading and trailing spaces, and reduce multiple continuous spaces to one single space.
-    val tags1 = tags.map(t => t.trim().replaceAll("\\s+", " "))
-    Logger.debug("tag: tags: " + tags + ".  After removing extra spaces, tags1: " + tags1)
-    tags1.foreach(tag => {
-      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  // Input validation is done in api.Files, so no need to check again.
+  def addTags(id: String, userIdStr: String, tags: List[String]) {
+    Logger.debug("Adding tags to file " + id + " : " + tags)
+    val file = Services.files.getFile(id).get
+    val createdDate = new Date
+    tags.foreach(tag => {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
+      val tagList = file.tags.map(_.name)
+      // Only add tags with new values.
+      if (!tagList.exists(_ == tagCleaned)) {
+        val tagObj = Tag(id = new ObjectId, name = tagCleaned, userId = userIdStr, created = createdDate)
+        dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+      }
     })
   }
 
   def removeTags(id: String, tags: List[String]) {
-    val tags1 = tags.map(t => t.trim().replaceAll("\\s+", " "))
-    Logger.debug("removeTags: tags: " + tags + ".  After removing extra spaces, tags1: " + tags1)
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pullAll("tags" -> tags1), false, false, WriteConcern.Safe)
+    Logger.debug("Removing tags in file " + id + " : " + tags)
+    tags.foreach(tag => {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
+      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tagCleaned)), false, false, WriteConcern.Safe)
+    })
   }
 
   def removeAllTags(id: String) {

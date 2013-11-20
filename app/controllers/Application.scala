@@ -51,9 +51,11 @@ object Application extends SecuredController {
         
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Datasets.comment,
+        api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,
         api.routes.javascript.Datasets.removeTag,
         api.routes.javascript.Datasets.removeTags,
+        api.routes.javascript.Datasets.removeAllTags,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
         api.routes.javascript.Files.addTags,
@@ -63,7 +65,10 @@ object Application extends SecuredController {
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.comment,
-        api.routes.javascript.Sections.addTags
+        api.routes.javascript.Sections.getTags,
+        api.routes.javascript.Sections.addTags,
+        api.routes.javascript.Sections.removeTags,
+        api.routes.javascript.Sections.removeAllTags
       )
     ).as(JSON) 
   }

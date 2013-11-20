@@ -110,8 +110,9 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
- 
+
   // ---------- Tags related code ends ------------------
+  // Input validation is done in api.Files, so no need to check again.
   /* Commented out.  Old code to add one tag. */
   /*
   def tag(id: String, tag: Tag) { 
@@ -124,25 +125,20 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
 
-    Services.datasets.get(id) match {
-      case Some(dataset) =>
-        val createdDate = new Date
-        tags.foreach(tag => {
-          // Clean up leading, trailing and multiple contiguous white spaces.
-          val tagCleaned = tag.trim().replaceAll("\\s+", " ")
-          val tagList: List[String] = dataset.tags.map(_.name)
-          // Only add tags with new values.
-          if (!tagList.exists(_ == tagCleaned)) {
-            val tagObj = Tag(id = new ObjectId, name = tagCleaned, userId = userIdStr, created = createdDate)
-            dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
-          }
-        })
-      case None => {
-        Logger.error("Dataset not found, id: " + id)
+    val dataset = Services.datasets.get(id).get
+    val createdDate = new Date
+    tags.foreach(tag => {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
+      val tagList = dataset.tags.map(_.name)
+      // Only add tags with new values.
+      if (!tagList.exists(_ == tagCleaned)) {
+        val tagObj = Tag(id = new ObjectId, name = tagCleaned, userId = userIdStr, created = createdDate)
+        dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
-    }
+    })
   }
-  
+
   /* Old code to remove a tag BY its ObjectId.  Leave it for a while.  Might be needed by GUI. */
   def removeTag(id: String, tagId: String) { 
 	 Logger.debug("Removing tag " + tagId )

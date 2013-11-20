@@ -70,7 +70,7 @@ object Sections extends ApiController {
     SectionDAO.findOneById(new ObjectId(id)) match {
       case Some(section) =>
         Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
-          "startTime" -> section.startTime.getOrElse(-1).toString, "tags" -> Json.toJson(section.tags)))
+          "startTime" -> section.startTime.getOrElse(-1).toString, "tags" -> Json.toJson(section.tags.map(_.name))))
       case None => Logger.error("Section not found " + id); NotFound(toJson("Section not found, id: " + id))
     }
   }
@@ -83,30 +83,56 @@ object Sections extends ApiController {
    */
   def getTags(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     Logger.info("Getting tags for section with id " + id)
-    SectionDAO.findOneById(new ObjectId(id)) match {
-      case Some(section) =>
-        Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
-          "tags" -> Json.toJson(section.tags)))
-      case None => {
-        Logger.error("Section not found, id: " + id)
-        NotFound(toJson("Section not found, id: " + id))
+    /* Found in testing: given an invalid ObjectId, a runtime exception
+     * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
+     */
+    if (ObjectId.isValid(id)) {
+      SectionDAO.findOneById(new ObjectId(id)) match {
+        case Some(section) =>
+          Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
+            "tags" -> Json.toJson(section.tags.map(_.name))))
+        case None => {
+          Logger.error("The section with id " + id + " is not found.")
+          NotFound(toJson("The section with id " + id + " is not found."))
+        }
       }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
     }
   }
 
   /**
    *  REST endpoint: POST: Add tags to a section.
-   *  Requires that the request body contains a "tags" field of List[String] type. 
+   *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
     Logger.info("Adding tags for section with id " + id)
+
+    val userObj = request.user
+    Logger.debug("user id: " + userObj.get.id.id + ", user.firstName: " + userObj.get.firstName
+      + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
+
     request.body.\("tags").asOpt[List[String]] match {
       case Some(tags) => {
-        SectionDAO.addTags(id, tags)
-        Ok(toJson("success"))
+        if (ObjectId.isValid(id)) {
+          SectionDAO.findOneById(new ObjectId(id)) match {
+            case Some(section) => {
+              SectionDAO.addTags(id, userObj.get.id.id, tags)
+              Ok(Json.obj("status" -> "success"))
+            }
+            case None => {
+              Logger.error("The section with id " + id + " is not found.")
+              NotFound(toJson("The section with id " + id + " is not found."))
+            }
+          }
+        } else {
+          Logger.error("The given id " + id + " is not a valid ObjectId.")
+          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+        }
       }
       case None => {
-        Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
+        Logger.error("No \"tags\" specified, request.body: " + request.body.toString)
         BadRequest(toJson("No \"tags\" specified."))
       }
     }
@@ -120,11 +146,24 @@ object Sections extends ApiController {
     Logger.info("Removing tags for section with id " + id)
     request.body.\("tags").asOpt[List[String]] match {
       case Some(tags) => {
-        SectionDAO.removeTags(id, tags)
-        Ok(toJson("success"))
+        if (ObjectId.isValid(id)) {
+          SectionDAO.findOneById(new ObjectId(id)) match {
+            case Some(section) => {
+              SectionDAO.removeTags(id, tags)
+              Ok(Json.obj("status" -> "success"))
+            }
+            case None => {
+              Logger.error("The section with id " + id + " is not found.")
+              NotFound(toJson("The section with id " + id + " is not found."))
+            }
+          }
+        } else {
+          Logger.error("The given id " + id + " is not a valid ObjectId.")
+          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+        }
       }
       case None => {
-        Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
+        Logger.error("No \"tags\" specified, request.body: " + request.body.toString)
         BadRequest(toJson("No \"tags\" specified."))
       }
     }
@@ -135,8 +174,21 @@ object Sections extends ApiController {
    */
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.info("Removing all tags for section with id: " + id)
-    SectionDAO.removeAllTags(id)
-    Ok(toJson("success"))
+    if (ObjectId.isValid(id)) {
+      SectionDAO.findOneById(new ObjectId(id)) match {
+        case Some(section) => {
+          SectionDAO.removeAllTags(id)
+          Ok(Json.obj("status" -> "success"))
+        }
+        case None => {
+          Logger.error("The section with id " + id + " is not found.")
+          NotFound(toJson("The section with id " + id + " is not found."))
+        }
+      }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
   }
   // ---------- Tags related code ends ------------------
 

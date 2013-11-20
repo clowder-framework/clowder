@@ -3,6 +3,7 @@
  */
 package models
 
+import java.util.Date
 import org.bson.types.ObjectId
 import services.MongoSalatPlugin
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -28,7 +29,7 @@ case class Section (
     endTime: Option[Int] = None, // in seconds
     area: Option[Rectangle] = None,
     preview: Option[Preview] = None,
-    tags: List[String] = List.empty
+    tags: List[Tag] = List.empty
 )
 
 case class Rectangle (
@@ -53,20 +54,30 @@ object SectionDAO extends ModelCompanion[Section, ObjectId] {
   }
 
   // ---------- Tags related code starts ------------------
-  def addTags(id: String, tags: List[String]) {
-    // TODO: Having issue with "$each", so do multiple updates for now. Improve later.
-    // Remove leading and trailing spaces, and reduce multiple continuous spaces to one single space.
-    val tags1 = tags.map(t => t.trim().replaceAll("\\s+", " "))
-    Logger.debug("tag: tags: " + tags + ".  After removing extra spaces, tags1: " + tags1)
-    tags1.foreach(tag => {
-      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  // Input validation is done in api.Files, so no need to check again.
+  def addTags(id: String, userIdStr: String, tags: List[String]) {
+    Logger.debug("Adding tags to section " + id + " : " + tags)
+    val section = SectionDAO.findOneById(new ObjectId(id)).get
+    val createdDate = new Date
+    tags.foreach(tag => {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
+      val tagList = section.tags.map(_.name)
+      // Only add tags with new values.
+      if (!tagList.exists(_ == tagCleaned)) {
+        val tagObj = Tag(id = new ObjectId, name = tagCleaned, userId = userIdStr, created = createdDate)
+        dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+      }
     })
   }
 
   def removeTags(id: String, tags: List[String]) {
-    val tags1 = tags.map(t => t.trim().replaceAll("\\s+", " "))
-    Logger.debug("removeTags: tags: " + tags + ".  After removing extra spaces, tags1: " + tags1)
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pullAll("tags" -> tags1), false, false, WriteConcern.Safe)
+    Logger.debug("Removing tags in section " + id + " : " + tags)
+    tags.foreach(tag => {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
+      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tagCleaned)), false, false, WriteConcern.Safe)
+    })
   }
 
   def removeAllTags(id: String) {
