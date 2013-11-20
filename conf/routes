@@ -159,7 +159,7 @@ POST    /api/datasets                                           api.Datasets.cre
 POST	/api/datasets/searchusermetadata						api.Datasets.searchDatasetsUserMetadata
 GET		/api/datasets/listOutsideCollection/:coll_id			api.Datasets.listOutsideCollection(coll_id)
 GET		/api/datasets/getRDFURLsForDataset/:id					api.Datasets.getRDFURLsForDataset(id)
-GET		/api/datasets/rdfUserMetadata/:id						api.Datasets.getRDFUserMetadata(id)
+GET		/api/datasets/rdfUserMetadata/:id						api.Datasets.getRDFUserMetadata(id, mappingNum: String ?= "1")
 POST	/api/datasets/:datasetId/remove							api.Datasets.deleteDataset(datasetId) 
 POST    /api/datasets/:id/metadata		  						api.Datasets.addMetadata(id)
 POST    /api/datasets/:id/usermetadata	  						api.Datasets.addUserMetadata(id)
