@@ -349,6 +349,10 @@ object Datasets extends ApiController {
       var searchJSON = Json.stringify(request.body).replaceAll("__[0-9]*\"","\"")
       Logger.debug("thejsson: "+searchJSON)
       var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = Dataset.searchUserMetadataFormulateQuery(searchTree)
+      
+      
       var datasetsSatisfying = List[Dataset]()
       for (dataset <- Services.datasets.listDatasetsChronoReverse) {
         if (Dataset.searchUserMetadata(dataset.id.toString(), searchTree)) {

@@ -154,6 +154,51 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     return searchMetadata(id, requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], getUserMetadata(id))
   }
   
+  def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): String = {
+    return searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]])
+  }
+  
+  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any]): String = {
+    Logger.debug("req: "+ requestedMap)
+    var queryString = "{"
+    var queryPrevPart = ""
+    var inOr = 0
+    for((reqKey, reqValue) <- requestedMap){
+      if(inOr > 0)
+        inOr = inOr -1
+            
+      if(reqKey.equals("OR")){
+        if(inOr == 0){
+	        queryPrevPart = "$or: [ {" + queryPrevPart + "},"	        
+        }
+        else{
+            queryPrevPart = "{" + queryPrevPart + "},"
+        }
+        inOr = 2
+      }
+      else{
+        
+        if(inOr == true){
+	        queryPrevPart = "$or: [ {" + queryPrevPart + "},"
+	        inOr = true
+        }
+        else{
+            queryPrevPart = "{" + queryPrevPart + "},"
+        }
+        
+      }
+      
+      
+      
+    }  
+    
+      
+    queryString = queryString + "}"
+    return queryString
+  }
+  
+  
+  
   /**
    * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree. 
    */
