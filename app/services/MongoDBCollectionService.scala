@@ -10,4 +10,5 @@ package services
  *
  */
 class MongoDBCollectionService extends CollectionService with MongoDBCollection {
+
 }

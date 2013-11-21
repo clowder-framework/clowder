@@ -14,6 +14,7 @@ import play.api.libs.iteratee.Input.{ El, EOF, Empty }
 import com.mongodb.casbah.gridfs.GridFS
 import models.PreviewDAO
 import models.SectionDAO
+import models.Thumbnail
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
@@ -35,6 +36,7 @@ import api.Permission
 import javax.inject.{ Singleton, Inject }
 import services.{ FileService, DatasetService, QueryService }
 import services.{ RabbitmqPlugin, ExtractorMessage, ElasticsearchPlugin, VersusPlugin }
+import models.FileMD
 
 /**
  * Manage files.
@@ -66,13 +68,13 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         //Logger.info("Number of previews " + previews.length);
         val files = List(file)
         val previewslist = for (f <- files) yield {
-          val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
+          val pvf = for(p <- previewers ; pv <- previewsFromDB; if (!f.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {            
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }
           if (pvf.length > 0) {
             (file -> pvf)
           } else {
-            val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
+  	        val ff = for(p <- previewers ; if (!f.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
               (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
             }
             (file -> ff)
@@ -87,16 +89,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
-        Extraction.findMostRecentByFileId(file.id) match {
-          case Some(mostRecent) => {
-            mostRecent.status match {
-              case "DONE." =>
-              case _ => {
-                isActivity = true
-              }
-            }
-          }
-          case None =>
+        Extraction.findIfBeingProcessed(file.id) match{
+		  case false => 
+		  case true => isActivity = true
         }
 
         var comments = Comment.findCommentsByFileId(id)
@@ -105,7 +100,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         }
         comments = comments.sortBy(_.posted)
 
-        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity))
+        var fileDataset = Dataset.findOneByFileId(file.id)
+        
+        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset))
       }
       case None => { Logger.error("Error getting file " + id); InternalServerError }
     }
@@ -118,7 +115,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
-    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     var prev, next = ""
     var fileList = List.empty[models.File]
     if (direction == "b") {
@@ -168,17 +165,36 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     user match {
       case Some(identity) => {
         request.body.file("File").map { f =>
-          Logger.debug("Uploading file " + f.filename)
+	          var nameOfFile = f.filename
+	          var flags = ""
+	          if(nameOfFile.endsWith(".ptm")){
+		          var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
+	          }
+	        
+	        Logger.debug("Uploading file " + nameOfFile)
 
-          // store file       
-          val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
+	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+	        if(showPreviews.equals("true"))
+	          showPreviews = "FileLevel"
+	        else
+	          showPreviews = "None"
+          // store file
+	      val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
           val uploadedFile = f
           //        Thread.sleep(1000)
           file match {
             case Some(f) => {
+	            if(showPreviews.equals("None"))
+	                flags = flags + "+nopreviews"
               var fileType = f.contentType
-              if (fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")) {
-                fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")
+				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
                 if (fileType.startsWith("ERROR: ")) {
                   Logger.error(fileType.substring(7))
                   InternalServerError(fileType.substring(7))
@@ -190,7 +206,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
               // TODO RK : need figure out if we can use https
               val host = "http://" + request.host + request.path.replaceAll("upload$", "")
               val id = f.id.toString
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", "")) }
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
               current.plugin[ElasticsearchPlugin].foreach {
                 _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", ""), ("datasetName", "")))
               }
@@ -226,8 +242,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
               case x if x.length == 1 => (x.head.toLong, contentLength - 1)
               case x => (x(0).toLong, x(1).toLong)
             }
-            range match {
-              case (start, end) =>
+	            range match { case (start,end) =>
 
                 inputStream.skip(start)
                 import play.api.mvc.{ SimpleResult, ResponseHeader }
@@ -246,9 +261,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
             }
           }
           case None => {
-            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
               .withHeaders(CONTENT_TYPE -> contentType)
-              .withHeaders(CONTENT_LENGTH -> contentLength.toString)
               .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 
           }
@@ -261,21 +275,79 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     }
   }
 
+  def thumbnail(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>    
+    Thumbnail.getBlob(id) match {
+      case Some((inputStream, filename, contentType, contentLength)) => {
+        request.headers.get(RANGE) match {
+	          case Some(value) => {
+	            val range: (Long,Long) = value.substring("bytes=".length).split("-") match {
+	              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+	              case x => (x(0).toLong,x(1).toLong)
+	            }
+	            range match { case (start,end) =>
+
+	             
+	              inputStream.skip(start)
+	              import play.api.mvc.{SimpleResult, ResponseHeader}
+	              SimpleResult(
+	                header = ResponseHeader(PARTIAL_CONTENT,
+	                  Map(
+	                    CONNECTION -> "keep-alive",
+	                    ACCEPT_RANGES -> "bytes",
+	                    CONTENT_RANGE -> "bytes %d-%d/%d".format(start,end,contentLength),
+	                    CONTENT_LENGTH -> (end - start + 1).toString,
+	                    CONTENT_TYPE -> contentType
+	                  )
+	                ),
+	                body = Enumerator.fromStream(inputStream)
+	              )
+	            }
+	          }
+	          case None => {
+	            Ok.chunked(Enumerator.fromStream(inputStream))
+	            	.withHeaders(CONTENT_TYPE -> contentType)
+	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+      
+	          }
+	        }
+      }
+      case None => {
+        Logger.error("Error getting thumbnail" + id)
+        NotFound
+      }      
+    }
+    
+  }
+  
+  
+  
   def uploadSelect() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
     request.body.file("File").map { f =>
-      Logger.debug("Uploading file " + f.filename)
+      	var nameOfFile = f.filename
+      	var flags = ""
+      	if(nameOfFile.endsWith(".ptm")){
+      			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
+      	}
+        
+        Logger.debug("Uploading file " + nameOfFile)
 
       // store file       
       // TODO is this still used? if so replace null with user
       Logger.info("uploadSelect")
-      val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, null)
+      val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, null)
       val uploadedFile = f
       //        Thread.sleep(1000)
       file match {
         case Some(f) => {
           var fileType = f.contentType
-          if (fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")) {
-            fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
             if (fileType.startsWith("ERROR: ")) {
               Logger.error(fileType.substring(7))
               InternalServerError(fileType.substring(7))
@@ -287,9 +359,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
           // TODO RK : need figure out if we can use https
           val host = "http://" + request.host + request.path.replaceAll("upload$", "")
           val id = f.id.toString
-          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", "")) }
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
           current.plugin[ElasticsearchPlugin].foreach {
-            _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
+              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
           }
           // redirect to file page]
           // val query="http://localhost:9000/files/"+id+"/blob"  
@@ -310,19 +382,31 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 
   def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     request.body.file("File").map { f =>
-      Logger.debug("Uploading file " + f.filename)
+        var nameOfFile = f.filename
+      	var flags = ""
+      	if(nameOfFile.endsWith(".ptm")){
+      			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
+      	}
+        
+        Logger.debug("Uploading file " + nameOfFile)
 
       // store file       
       Logger.info("uploadSelectQuery")
-      val file = queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+      val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
       val uploadedFile = f
       //        Thread.sleep(1000)
 
       file match {
         case Some(f) => {
           var fileType = f.contentType
-          if (fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")) {
-            fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
             if (fileType.startsWith("ERROR: ")) {
               Logger.error(fileType.substring(7))
               InternalServerError(fileType.substring(7))
@@ -336,9 +420,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 
           val id = f.id.toString
           val path = f.path
-          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", "")) }
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
           current.plugin[ElasticsearchPlugin].foreach {
-            _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
+              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
           }
           // redirect to file page]
           Logger.debug("Query file id= " + id + " path= " + path);
@@ -358,19 +442,31 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   /* Drag and drop */
   def uploadDragDrop() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     request.body.file("File").map { f =>
-      Logger.debug("Uploading file " + f.filename)
+        var nameOfFile = f.filename
+      	var flags = ""
+      	if(nameOfFile.endsWith(".ptm")){
+      			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
+      	}
+        
+        Logger.debug("Uploading file " + nameOfFile)
 
       // store file       
       //  val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
       Logger.info("uploadDragDrop")
-      val file = queries.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+      val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
       val uploadedFile = f
       //        Thread.sleep(1000)
       file match {
         case Some(f) => {
           var fileType = f.contentType
-          if (fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")) {
-            fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
             if (fileType.startsWith("ERROR: ")) {
               Logger.error(fileType.substring(7))
               InternalServerError(fileType.substring(7))
@@ -382,9 +478,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
           // TODO RK : need figure out if we can use https
           val host = "http://" + request.host + request.path.replaceAll("upload$", "")
           val id = f.id.toString
-          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", "")) }
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
           current.plugin[ElasticsearchPlugin].foreach {
-            _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
+              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
           }
 
           Ok(f.id.toString)
@@ -408,17 +504,34 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         datasets.get(dataset_id) match {
           case Some(dataset) => {
             request.body.file("File").map { f =>
-              Logger.debug("Uploading file " + f.filename)
+			      var nameOfFile = f.filename
+			      var flags = ""
+			      if(nameOfFile.endsWith(".ptm")){
+			    	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+		              if(thirdSeparatorIndex >= 0){
+		                var firstSeparatorIndex = nameOfFile.indexOf("_")
+		                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+		            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+		            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+		              }
+			      }	
+			    
+				  Logger.debug("Uploading file " + nameOfFile)
+				  val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
               // store file
-              val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, identity)
+              val file = files.save(new FileInputStream(f.ref.file), nameOfFile,f.contentType, identity, showPreviews)
               val uploadedFile = f
 
               // submit file for extraction			
               file match {
                 case Some(f) => {
+	                if(showPreviews.equals("FileLevel"))
+	                	flags = flags + "+filelevelshowpreviews"
+	                else if(showPreviews.equals("None"))
+	                	flags = flags + "+nopreviews"
                   var fileType = f.contentType
-                  if (fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")) {
-                    fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "dataset")
+					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
                     if (fileType.startsWith("ERROR: ")) {
                       Logger.error(fileType.substring(7))
                       InternalServerError(fileType.substring(7))
@@ -430,10 +543,11 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
                   // TODO RK : need figure out if we can use https
                   val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
                   val id = f.id.toString
-                  current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, "")) }
-                  current.plugin[ElasticsearchPlugin].foreach {
-                    _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
-                  }
+							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
+//					  		  current.plugin[ElasticsearchPlugin].foreach{
+//					  			  _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+//					  }
+					  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))}
 
                   // add file to dataset
                   // TODO create a service instead of calling salat directly
@@ -467,19 +581,6 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
       case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
     }
   }
-
-  ///////////////////////////////////
-  //
-  // EXPERIMENTAL. WORK IN PROGRESS.
-  //
-  ///////////////////////////////////
-  //  
-  //  /**
-  //   * Stream based uploading of files.
-  //   */
-  //  def uploadFileStreaming() = Action(parse.multipartFormData(myPartHandler)) {
-  //      request => Ok("Done")
-  //  }
   //
   //  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {
   //        parse.Multipart.handleFilePart {

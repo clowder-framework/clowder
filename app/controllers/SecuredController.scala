@@ -5,7 +5,6 @@ package controllers
 
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
-
 import api.Permission
 import api.RequestWithUser
 import api.WithPermission
@@ -20,10 +19,10 @@ import securesocial.core.Authorization
 import securesocial.core.IdentityProvider
 import securesocial.core.SecureSocial
 import securesocial.core.SocialUser
-import securesocial.core.UserId
 import securesocial.core.UserService
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.providers.utils.RoutesHelper
+import securesocial.core.IdentityId
 
 /**
  * Enforce authentication and authorization.
@@ -33,7 +32,7 @@ import securesocial.core.providers.utils.RoutesHelper
  *
  */
 trait SecuredController extends Controller {
-  val anonymous = new SocialUser(new UserId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
+  val anonymous = new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
 
   def SecuredAction[A](p: BodyParser[A] = parse.anyContent, authorization: Authorization = WithPermission(Permission.Public))(f: RequestWithUser[A] => Result) = Action(p) {
     implicit request =>

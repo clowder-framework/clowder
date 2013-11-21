@@ -9,7 +9,7 @@ import securesocial.core.AuthenticationMethod
 import securesocial.core.Authorization
 import securesocial.core.SecureSocial
 import securesocial.core.SocialUser
-import securesocial.core.UserId
+import securesocial.core.IdentityId
 
 /**
  * New way to wrap actions for authentication so that we have access to Identity.
@@ -18,7 +18,7 @@ import securesocial.core.UserId
  *
  */
 trait ApiController extends Controller {
-  val anonymous = new SocialUser(new UserId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
+  val anonymous = new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
 
   def SecuredAction[A](p: BodyParser[A] = parse.json, authorization: Authorization = WithPermission(Permission.Public))(f: RequestWithUser[A] => Result) = Action(p) {
     implicit request =>
@@ -27,7 +27,7 @@ trait ApiController extends Controller {
           case Some(key) => {
             if (key.length > 0) {
               // TODO Check for key in database
-              if (key(0).equals("letmein")) {
+              if (key(0).equals(play.Play.application().configuration().getString("commKey"))) {
                 if (authorization.isAuthorized(anonymous))
                   f(RequestWithUser(Some(anonymous), request))
                 else

@@ -47,5 +47,4 @@ abstract class CollectionService {
    * 
    */
   def listOutsideDataset(datasetId: String): List[Collection]
-  
 }

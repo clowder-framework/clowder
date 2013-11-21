@@ -21,6 +21,8 @@ import api.Permission
 import javax.inject.{ Singleton, Inject }
 import services.{ DatasetService, CollectionService }
 
+object ThumbnailFound extends Exception { }
+
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService) extends SecuredController {
 
@@ -78,7 +80,26 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     	next = formatter.format(collectionList.last.created)
       }
     }
-    Ok(views.html.collectionList(collectionList, prev, next, limit))
+    
+    var collectionsWithThumbnails = List.empty[models.Collection]
+    for(collection <- collectionList){
+      var collectionThumbnail:Option[String] = None
+      try{
+	        for(dataset <- collection.datasets){
+	          if(!dataset.thumbnail_id.isEmpty){
+	            collectionThumbnail = dataset.thumbnail_id
+	            throw ThumbnailFound		
+	          }
+	        }
+        }catch {
+        	case ThumbnailFound =>
+        }
+      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+      collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails       
+    }
+    collectionsWithThumbnails = collectionsWithThumbnails.reverse
+    
+    Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit))
   }
   
   def jsonCollection(collection: Collection): JsValue = {

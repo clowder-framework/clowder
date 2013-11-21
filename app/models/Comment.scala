@@ -8,7 +8,6 @@ import play.api.Play.current
 import services.MongoSalatPlugin
 import com.mongodb.casbah.commons.MongoDBObject
 import securesocial.core.Identity
-import securesocial.core.UserId
 import scala.util.Random
 import java.util.Date
 import org.bson.types.ObjectId
@@ -77,4 +76,12 @@ object Comment extends ModelCompanion[Comment, ObjectId] {
       comment.copy(replies=findCommentsByCommentId(comment.id.toString))
     }.toList
   }
+  
+  def removeComment(c: Comment){
+    for(reply <- findCommentsByCommentId(c.id.toString())){
+          Comment.removeComment(reply)
+        }
+    Comment.remove(MongoDBObject("_id" -> c.id))
+  }
+  
 }

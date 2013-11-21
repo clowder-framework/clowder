@@ -20,6 +20,9 @@ import com.mongodb.WriteConcern
 import models.ThreeDAnnotation
 import play.api.libs.json.JsValue
 import controllers.SecuredController
+import play.api.libs.concurrent.Execution.Implicits._
+import java.io.BufferedReader
+import java.io.FileReader
 
 /**
  * Files and datasets previews.
@@ -67,9 +70,8 @@ object Previews extends ApiController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
@@ -83,12 +85,30 @@ object Previews extends ApiController {
   /**
    * Upload a preview.
    */  
-  def upload() = 
+  def upload(iipKey: String="") = 
     SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         // store file
         val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        // for IIP server references, store the IIP URL, key and filename on the IIP server for possible later deletion of the previewed file
+	        if(f.filename.endsWith(".imageurl")){
+	          val iipRefReader = new BufferedReader(new FileReader(f.ref.file));
+	          
+	          val serverLine = iipRefReader.readLine();
+	          var urlEnd = serverLine.indexOf("/",serverLine.indexOf("://")+3)
+	          if(urlEnd == -1){
+	            urlEnd = serverLine.length()
+	          }
+	          val iipURL = serverLine.substring(8,urlEnd)
+	          
+	          val imageLine = iipRefReader.readLine();
+	          val iipImage = imageLine.substring(imageLine.lastIndexOf("/")+1)
+	          
+	          iipRefReader.close()
+	          
+	          PreviewDAO.setIIPReferences(id, iipURL, iipImage, iipKey)  
+	        }
         Ok(toJson(Map("id"->id)))   
       }.getOrElse {
          BadRequest(toJson("File not attached."))
@@ -198,9 +218,8 @@ object Previews extends ApiController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }

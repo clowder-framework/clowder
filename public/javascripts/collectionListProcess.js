@@ -12,6 +12,6 @@ function removeCollection(collectionId,event){
     		"The following error occured: "+
     		textStatus, errorThrown		            
 			);
-		alert("ERROR: " + errorThrown +". Collection not removed." );
+		alert("ERROR: " + errorThrown +". Collection not removed. Maybe it was already removed." );
 			});
 }

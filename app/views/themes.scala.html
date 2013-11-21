@@ -1,0 +1,39 @@
+@(theme: Int)
+<form role="form-horizontal">
+  <div class="form-group">
+    <label for="theme">Theme</label>
+	<select id="themeSelect" class="form-control">
+	  <option value="0">Default</option>
+	  <option value="1">Amelia</option>
+	  <option value="2">Simplex</option>
+	</select>
+  </div>
+</form>
+
+<script>
+	$(function() {
+		$("#themeSelect").val('@theme');
+		
+		$('#themeSelect').bind('change', function(ev) {
+			var value = parseInt($(this).val());
+			console.log(value);
+
+		    var request = jsRoutes.controllers.Admin.setTheme().ajax({
+		    	data: JSON.stringify({"theme":value}),
+		       	type: 'POST',
+		       	contentType: "application/json"
+		     });
+		     
+		     request.done(function (response, textStatus, jqXHR){
+		     	console.log("Response " + textStatus);
+		     	location.reload();
+		     });
+		     
+		     request.fail(function (jqXHR, textStatus, errorThrown){
+		        console.error(
+		            "The following error occured: "+textStatus, errorThrown      
+		        );
+		     });
+		   });
+	});
+</script>

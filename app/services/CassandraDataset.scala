@@ -61,4 +61,11 @@ class CassandraDataset extends DatasetService {
   def isInCollection(dataset: Dataset, collection: Collection): Boolean  = {
     false
   }
+  
+  /**
+   * 
+   */
+  def getFileId(datasetId: String, filename: String): Option[String] = {
+    None
+  }
 }

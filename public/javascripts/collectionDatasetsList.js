@@ -23,6 +23,7 @@
 
 	        var inputDate = $("#" + resultId + " td:nth-child(2)").text();
 	        var inputDescr = $("#" + resultId + " td:nth-child(3)").text();
+	        var inputThumbnail = $("#" + resultId + " td:nth-child(4)").html(); 
 	        $("#addDatasetsTable tbody tr[id='" + resultId + "']").remove();
 	        $("#addDatasetsTable tbody tr[id='resultRow" + (currentFirstAdd+10) + "']").css('display','table-row');
 	        searchResultsCount--;
@@ -51,7 +52,8 @@
 					+ "/datasets/" + datasetId + "'>"+ event.target.innerHTML + "</a></td>"
 					+ "<td>" + inputDate + "</td>"
 					+ "<td>" + inputDescr + "</td>"
-					+ "<td><a href='#' onclick='removeDataset(\"" + datasetId + "\",event)'>Remove</a></td></tr>");
+					+ "<td>" + inputThumbnail + "</td>"
+					+ "<td><a href='#!' onclick='removeDataset(\"" + datasetId + "\",event)'>Remove</a></td></tr>");
 	        $('#collectionDatasetsTable tbody tr').css('display','none');
 	        for(var i = 0; i < 10; i++){
 	        	$("#collectionDatasetsTable tbody tr[id='datasetRow" + (i+1) + "']").each(function() {
@@ -71,7 +73,7 @@
         		"The following error occured: "+
         		textStatus, errorThrown		            
     			);
-    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection was possibly removed." );
+    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection or dataset was possibly removed from the system." );
  			});
 		
 	}
@@ -88,6 +90,7 @@
 	      var rowId = event.target.parentNode.parentNode.getAttribute('id');
 	      var inputDate = $("#" + rowId + " td:nth-child(2)").text();
 	      var inputDescr = $("#" + rowId + " td:nth-child(3)").text();
+	      var inputThumbnail = $("#" + rowId + " td:nth-child(4)").html();
 	      $("#collectionDatasetsTable tbody tr[id='" + rowId + "']").remove(); 
 	      $("#collectionDatasetsTable tbody tr[id='datasetRow" + (currentFirstDatasets+10) + "']").css('display','table-row');
 	      datasetsInCollectionCount--;
@@ -113,11 +116,12 @@
 	    	  });
 	      }
 	      searchResultsCount++;  
-	      var newDatasetHTML = "<tr id='resultRow" + datasetPos + "' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='#' "
+	      var newDatasetHTML = "<tr id='resultRow" + datasetPos + "' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='#!' "
 	      + "onclick='addDataset(\"" + datasetId + "\",event)' "
 	      + ">"+ event.target.parentNode.parentNode.children[0].children[0].innerHTML + "</a></td>"
 	      + "<td>" + inputDate + "</td>"
 	      + "<td>" + inputDescr + "</td>"
+	      + "<td>" + inputThumbnail + "</td>"
 	      + "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
 	      + "/datasets/" + datasetId + "'>View</a></td></tr>";
 	      if(datasetPos > 1)
@@ -143,7 +147,7 @@
         		"The following error occured: "+
         		textStatus, errorThrown		            
     			);
-    		alert("ERROR: " + errorThrown +". Dataset not removed from collection. The collection was possibly removed." );
+    		alert("ERROR: " + errorThrown +". Dataset not removed from collection. The collection was possibly removed from the system." );
  			});	
 	}
 	
@@ -222,7 +226,9 @@
 		 }
 		 $('#datasetsPagerPrev').css('visibility','visible');
 		 if(currentFirstDatasets + 10 > datasetsInCollectionCount)
-			 $('#datasetsPagerNext').css('visibility','hidden');			 
+			 $('#datasetsPagerNext').css('visibility','hidden');
+		 
+		 return false;
 	 });
 	 $('body').on('click','#datasetsPagerPrev',function(e){
 		 currentFirstDatasets = currentFirstDatasets - 10;
@@ -237,7 +243,9 @@
 		 if(currentFirstDatasets + 10 <= datasetsInCollectionCount)
 			 $('#datasetsPagerNext').css('visibility','visible');
 		 if(currentFirstDatasets == 1)
-			 $('#datasetsPagerPrev').css('visibility','hidden');			 
+			 $('#datasetsPagerPrev').css('visibility','hidden');
+		 
+		 return false;
 	 });
 	 
 	 $('body').on('click','#addDatasetBtn',function(e){
@@ -255,11 +263,17 @@
 		        for(var i = 0; i < respJSON.length; i++){
 		        	var createdDateArray = respJSON[i].created.split(" ");
 		        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
-		        	$('#addDatasetsTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;' data-datasetId='" + respJSON[i].id + "'><td><a href='#' "
+		        	var datasetThumbnail = "";
+		        	if(respJSON[i].thumbnail != "None")
+		        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
+		        	
+		        	$('#addDatasetsTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;' data-datasetId='" + respJSON[i].id + "'><td><a href='#!' "
 		        								+ "onclick='addDataset(\"" + respJSON[i].id + "\",event)' "
 		        								+ ">"+ respJSON[i].datasetname + "</a></td>"
 		        								+ "<td>" + createdDate + "</td>"
 		        								+ "<td>" + respJSON[i].description + "</td>"
+		        								+ "<td>" + datasetThumbnail + "</td>"
 		        								+ "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
 		        								+ "/datasets/" + respJSON[i].id + "'>View</a></td></tr>");
 		        }
@@ -278,6 +292,8 @@
 		        
 		        $("#hideAddDatasetBtn").show();
 		        areRestDatasetsVisible = true;
+		        
+		        return false;
  			});
 			request.fail(function (jqXHR, textStatus, errorThrown){
         		console.error(
@@ -285,6 +301,8 @@
             		textStatus, errorThrown		            
         			);
         		alert("ERROR: " + errorThrown +". The collection was possibly removed." );
+        		
+        		return false;
      			});		 
 	 });
 	 $('body').on('click','#hideAddDatasetBtn',function(e){
@@ -294,6 +312,8 @@
 	     $('#addDatasetsTable').css('display','none');
 	     $('#hideAddDatasetBtn').css('display','none');
 	     areRestDatasetsVisible = false;
+	     
+	     return false;
 	 });
 	
 	 $('body').on('click','#addPagerNext',function(e){
@@ -309,6 +329,8 @@
 		 $('#addPagerPrev').css('visibility','visible');
 		 if(currentFirstAdd + 10 > searchResultsCount)
 			 $('#addPagerNext').css('visibility','hidden');
+		 
+		 return false;
 	 });
 	 $('body').on('click','#addPagerPrev',function(e){
 		 currentFirstAdd = currentFirstAdd - 10;
@@ -323,7 +345,9 @@
 		 if(currentFirstAdd + 10 <= searchResultsCount)
 			 $('#addPagerNext').css('visibility','visible');
 		 if(currentFirstAdd == 1)
-			 $('#addPagerPrev').css('visibility','hidden');			 
+			 $('#addPagerPrev').css('visibility','hidden');
+		 
+		 return false;
 	 });	
 		
 		

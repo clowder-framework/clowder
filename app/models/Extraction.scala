@@ -11,6 +11,7 @@ import com.novus.salat.dao.ModelCompanion
 import com.novus.salat.dao.SalatDAO
 import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
+import java.util.ArrayList
 
 /**
  * Status of extraction job.
@@ -34,12 +35,13 @@ object Extraction extends ModelCompanion[Extraction, ObjectId] {
     case Some(x) =>  new SalatDAO[Extraction, ObjectId](collection = x.collection("extractions")) {}
   }
   
-  def findMostRecentByFileId(fileId: ObjectId): Option[Extraction] = {
+  def findIfBeingProcessed(fileId: ObjectId): Boolean = {
 	val allOfFile = dao.find(MongoDBObject("file_id" -> fileId)).toList
-	if(allOfFile.size != 0)
-	  Some(allOfFile.last)
-	else
-	  None	
+	var extractorsArray:collection.mutable.Map[String,String] = collection.mutable.Map()
+	for(currentExtraction <- allOfFile){
+	    extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
+	}
+	return extractorsArray.values.exists(_ != "DONE.")  
   }
   
 }

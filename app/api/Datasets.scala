@@ -118,7 +118,11 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
   }
 
   def jsonDataset(dataset: Dataset): JsValue = {
-    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString))
+    var datasetThumbnail = "None"
+    if(!dataset.thumbnail_id.isEmpty)
+      datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
+    
+    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
@@ -135,17 +139,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
   }
 
   def datasetFilesGetIdByDatasetAndFilename(datasetId: String, filename: String): Option[String] = {
-    datasets.get(datasetId) match {
-      case Some(dataset) => {	  
-        for (file <- dataset.files) {
-          if (file.filename.equals(filename)) {
-            return Some(file.id.toString)
-          }
-        }
-        Logger.error("File does not exist in dataset" + datasetId); return None
-      }
-      case None => { Logger.error("Error getting dataset" + datasetId); return None }
-    }
+    datasets.getFileId(datasetId, filename)
   }
 
   def datasetFilesList(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset)) { request =>
@@ -165,7 +159,27 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
   def index(id: String) {
     datasets.get(id) match {
       case Some(dataset) => {
-        current.plugin[ElasticsearchPlugin].foreach {_.indexDataset(dataset)}
+        var tagListBuffer = new ListBuffer[String]()
+        
+        for (tag <- dataset.tags){
+          tagListBuffer += tag.name
+        }          
+        
+        val tagsJson = new JSONArray(tagListBuffer.toList)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByDatasetId(id,false)) yield {
+          comment.text
+      }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "dataset", id,
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+        }
       }
       case None => Logger.error("Dataset not found: " + id)
     }
@@ -179,7 +193,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
 
     request.body.\("tag").asOpt[String].map { tag =>
       Logger.debug("Tagging " + id + " with " + tag)
-      val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.id.toString, created = new Date)
+      val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.identityId.toString, created = new Date)
       Dataset.tag(id, tagObj)
       index(id)
     }
@@ -250,18 +264,13 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
         var isActivity = "false"
         try {
           for (f <- files) {
-            Extraction.findMostRecentByFileId(f.id) match {
-              case Some(mostRecent) => {
-                mostRecent.status match {
-                  case "DONE." =>
-                  case _ => {
+        		Extraction.findIfBeingProcessed(f.id) match{
+        			case false => 
+        			case true => { 
                     isActivity = "true"
                     throw ActivityFound
                   }
                 }
-              }
-              case None =>
-            }
           }
         } catch {
           case ActivityFound =>
@@ -298,7 +307,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
 
         val datasetWithFiles = dataset.copy(files = files)
         val previewers = Previewers.findPreviewers
-        val previewslist = for (f <- datasetWithFiles.files) yield {
+        val previewslist = for(f <- datasetWithFiles.files; if(f.showPreviews.equals("DatasetLevel"))) yield {
           val pvf = for (p <- previewers; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }
@@ -317,4 +326,14 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
     }
   }
 
+  def deleteDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteDatasets)) { request =>
+    datasets.get(id)  match {
+      case Some(dataset) => {
+        Dataset.removeDataset(id)
+        Ok(toJson(Map("status"->"success")))
+      }
+      case None => Ok(toJson(Map("status"->"success")))
+    }
+  }
+  
 }

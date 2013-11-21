@@ -11,6 +11,8 @@ import play.api.libs.json.Json.toJson
 import models.Dataset
 import javax.inject.{ Singleton, Inject }
 import services.DatasetService
+import com.mongodb.casbah.commons.MongoDBObject
+import services.CollectionService
 
 /**
  * Manipulate collections.
@@ -18,7 +20,7 @@ import services.DatasetService
  * @author Constantinos Sophocleous
  */
 @Singleton
-class Collections @Inject() (datasets: DatasetService) extends ApiController {
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService) extends ApiController {
 
   def attachDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateCollections)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
@@ -72,7 +74,7 @@ class Collections @Inject() (datasets: DatasetService) extends ApiController {
             Ok(toJson(Map("status" -> "success")))
           }
           case None => {
-        	  Logger.error("Error getting dataset" + datasetId); InternalServerError
+        	  Ok(toJson(Map("status" -> "success")))
           }
         }
       }
@@ -102,13 +104,22 @@ class Collections @Inject() (datasets: DatasetService) extends ApiController {
           //remove collection from dataset
           Dataset.removeCollection(dataset.id.toString, collection.id.toString)
         }       
-        Collection.remove(collection)
+        Collection.remove(MongoDBObject("_id" -> collection.id))
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
         Ok(toJson(Map("status" -> "success")))
       }       
     }    
+  }
+
+  def listCollections() = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListCollections)) { request =>
+    val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
+      Ok(toJson(list))    
+  }
+  
+  def jsonCollection(collection: Collection): JsValue = {
+    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description, "created" -> collection.created.toString))
   }
 
   

@@ -95,4 +95,21 @@ trait MongoDBDataset {
   def get(id: String): Option[Dataset] = {
     Dataset.findOneById(new ObjectId(id))
   }
+  
+  /**
+   * 
+   */
+  def getFileId(datasetId: String, filename: String): Option[String] = {
+    get(datasetId) match {
+      case Some(dataset) => {	  
+        for (file <- dataset.files) {
+          if (file.filename.equals(filename)) {
+            return Some(file.id.toString)
+          }
+        }
+        Logger.error("File does not exist in dataset" + datasetId); return None
+      }
+      case None => { Logger.error("Error getting dataset" + datasetId); return None }
+    }
+  }
 }

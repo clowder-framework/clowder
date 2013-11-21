@@ -4,13 +4,18 @@
 
 @main("Medici 2.0") {
 
+<script>	
+var Configuration = {};
+Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+</script>
+
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/dragdrop.css")">
 
 <div class="page-header">
     <h1>Multimedia Search</h1>
   </div>
-<div class="row-fluid">
-	<div class="span12">
+<div class="row">
+	<div class="col-md-12">
 		
 	<!-- 		@form(action = routes.Search.SearchByText(""), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 					<legend>Search by Text</legend>
@@ -51,18 +56,7 @@
 	  
    @form(action = routes.Search.searchbyURL(""), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 	    <fieldset>
-	      <!-- <legend> <h3>Search by Image</h3></legend>
-	      <label><h4>Upload a query Image</h4></label>
-	      <input type="file" id="query" name="picture">
 	      <br>
-	      <h5 style="text-align: center;">OR </h5>
-	      <br>
-	      <div id="filedrag"> Drop your query image here</div>
-	    
-	     <output id="list"></output>
-	    <br>
-	     <h5 style="text-align: center;">OR</h5>-->
-	    <br>
 	 	    <label><h4>Paste your query image URL</h4></label>
     	<input type="text" placeholder="Paste your URL here" name="query">
 	    <br>
@@ -94,7 +88,7 @@
    
         
 	</div>		
-    <script src="@routes.Assets.at("javascripts/file-browser/views/dragdrop.js")" type="text/javascript"></script>
+   <script src="@routes.Assets.at("javascripts/file-browser/views/dragdrop.js")" type="text/javascript"></script>
     
   }
  

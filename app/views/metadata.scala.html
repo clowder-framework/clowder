@@ -1,4 +1,4 @@
-@(dataset_id: String, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any])
+@(dataset_id: String, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any])(implicit user: Option[securesocial.core.Identity]) 
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
@@ -50,3 +50,8 @@
 	var modelIp = "@(routes.Assets.at("userMetadataModel"))";
 </script>
 <script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
+@if(!user.isDefined) {
+		      	   <script language="javascript">
+			     		$("#datasetUserMetadata button").css("display","none");
+			       </script>
+		      	}

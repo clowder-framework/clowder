@@ -3,6 +3,13 @@ import play.api.{ GlobalSettings, Application }
 import play.api.Logger
 import play.api.Play.current
 import services.MongoSalatPlugin
+import services.MongoFileDB
+import play.libs.Akka
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
+import services.FileService
+import services.DI
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
@@ -25,6 +32,14 @@ object Global extends GlobalSettings {
         source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
       }
     }
+    
+    //Delete garbage files (ie past intermediate extractor results files) from DB
+    val timeInterval = play.Play.application().configuration().getInt("intermediateCleanup.checkEvery")
+    val files: FileService =  DI.injector.getInstance(classOf[FileService])
+    Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
+      files.removeOldIntermediates()
+    }
+    
   }
 
   override def onStop(app: Application) {

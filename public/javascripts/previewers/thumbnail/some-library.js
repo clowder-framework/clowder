@@ -1,3 +1,5 @@
+
+
 (function ($, Configuration) {	
 	var prNum = Configuration.tab.replace("#previewer","");
 	window["configs" + prNum] = Configuration;
@@ -280,7 +282,7 @@
 					});
 					request.done(function (response, textStatus, jqXHR){ 
 						var url = window.jsRoutes.controllers.Tags.search(tag).url;
-						$('#tagList').append("<li><a href='" + url + "'>" + tag + "</a></li>");
+						$('#tagList').append("<li><a href='" + url + "'>" + tag + " [Section]</a></li>");
 						$('#tagField').val("");
 					});
 					request.fail(function (jqXHR, textStatus, errorThrown){
@@ -332,10 +334,11 @@
 	// --------------------------------------------------------
 	else if (Configuration.fileType === "image/tiff"){
 		$(Configuration.tab).append(
-			"<embed width=750 height=550	"+
+			"<embed alt='No plugin capable of displaying TIFF images was found.' width=750 height=550	"+
 				"src='" + Configuration.url + "' type='image/tiff'"+
 				" negative=no>"
 			);
+				
 	}
 
 	// --------------------------------------------------------
