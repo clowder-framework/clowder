@@ -20,7 +20,9 @@ import com.mongodb.WriteConcern
 import models.ThreeDAnnotation
 import play.api.libs.json.JsValue
 import controllers.SecuredController
-import controllers.Permission
+import play.api.libs.concurrent.Execution.Implicits._
+import java.io.BufferedReader
+import java.io.FileReader
 
 /**
  * Files and datasets previews.
@@ -28,10 +30,10 @@ import controllers.Permission
  * @author Luigi Marini
  *
  */
-object Previews extends Controller with SecuredController {
+object Previews extends ApiController {
 
   def downloadPreview(id:String, datasetid:String) =
-    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request =>
+    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request =>
       Redirect(routes.Previews.download(id))    
   }
   
@@ -39,7 +41,7 @@ object Previews extends Controller with SecuredController {
    * Download preview bytes.
    */
   def download(id:String) =
-    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request =>
+    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request =>
 	    PreviewDAO.getBlob(id) match {
 	   
 	      case Some((inputStream, filename, contentType, contentLength)) => {
@@ -68,9 +70,8 @@ object Previews extends Controller with SecuredController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
@@ -84,12 +85,30 @@ object Previews extends Controller with SecuredController {
   /**
    * Upload a preview.
    */  
-  def upload() = 
-    SecuredAction(parse.multipartFormData, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def upload(iipKey: String="") = 
+    SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         // store file
         val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        // for IIP server references, store the IIP URL, key and filename on the IIP server for possible later deletion of the previewed file
+	        if(f.filename.endsWith(".imageurl")){
+	          val iipRefReader = new BufferedReader(new FileReader(f.ref.file));
+	          
+	          val serverLine = iipRefReader.readLine();
+	          var urlEnd = serverLine.indexOf("/",serverLine.indexOf("://")+3)
+	          if(urlEnd == -1){
+	            urlEnd = serverLine.length()
+	          }
+	          val iipURL = serverLine.substring(8,urlEnd)
+	          
+	          val imageLine = iipRefReader.readLine();
+	          val iipImage = imageLine.substring(imageLine.lastIndexOf("/")+1)
+	          
+	          iipRefReader.close()
+	          
+	          PreviewDAO.setIIPReferences(id, iipURL, iipImage, iipKey)  
+	        }
         Ok(toJson(Map("id"->id)))   
       }.getOrElse {
          BadRequest(toJson("File not attached."))
@@ -101,7 +120,7 @@ object Previews extends Controller with SecuredController {
    * 
    */
   def uploadMetadata(id: String) = 
-    SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { request =>
+    SecuredAction(authorization=WithPermission(Permission.CreateFiles)) { request =>
       Logger.debug(request.body.toString)
       request.body match {
         case JsObject(fields) => {
@@ -125,7 +144,7 @@ object Previews extends Controller with SecuredController {
    * 
    */
   def getMetadata(id: String) =
-    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request =>
+    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request =>
       PreviewDAO.findOneById(new ObjectId(id)) match {
         case Some(preview) => Ok(toJson(Map("id"->preview.id.toString)))
         case None => Logger.error("Preview metadata not found " + id); InternalServerError
@@ -137,7 +156,7 @@ object Previews extends Controller with SecuredController {
    * Add pyramid tile to preview.
    */
   def attachTile(preview_id: String, tile_id: String, level: String) = 
-	    SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { request =>
+	    SecuredAction(authorization=WithPermission(Permission.CreateFiles)) { request =>
 	      request.body match {
 	        case JsObject(fields) => {
 	          // TODO create a service instead of calling salat directly
@@ -166,7 +185,7 @@ object Previews extends Controller with SecuredController {
    * Find tile for given preview, level and filename (row and column).
    */
   def getTile(dzi_id_dir: String, level: String, filename: String) =
-    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)) { request => 
+    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request => 
       val dzi_id = dzi_id_dir.replaceAll("_files", "")
       TileDAO.findTile(new ObjectId(dzi_id), filename, level) match {
         case Some(tile) => {
@@ -199,9 +218,8 @@ object Previews extends Controller with SecuredController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
@@ -220,7 +238,7 @@ object Previews extends Controller with SecuredController {
    * Add annotation to 3D model preview.
    */
   def attachAnnotation(preview_id: String) = 
-    SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateFiles)) { request =>       	  
+    SecuredAction(authorization=WithPermission(Permission.CreateFiles)) { request =>       	  
 	      val x_coord = request.body.\("x_coord").asOpt[String].getOrElse("0.0")
 	      val y_coord = request.body.\("y_coord").asOpt[String].getOrElse("0.0")
 	      val z_coord = request.body.\("z_coord").asOpt[String].getOrElse("0.0")
@@ -238,7 +256,7 @@ object Previews extends Controller with SecuredController {
     }
     
   def editAnnotation(preview_id: String) =
-    SecuredAction(parse.json, allowKey=false, authorization=WithPermission(Permission.CreateFiles)) { request =>
+    SecuredAction(authorization=WithPermission(Permission.CreateFiles)) { request =>
       Logger.debug("thereq: " + request.body.toString) 
       	  val x_coord = request.body.\("x_coord").asOpt[String].getOrElse("0.0")
 	      val y_coord = request.body.\("y_coord").asOpt[String].getOrElse("0.0")
@@ -263,7 +281,7 @@ object Previews extends Controller with SecuredController {
   }
   
    def listAnnotations(preview_id: String) =
-    SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowFile)){ request => 
+    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)){ request => 
 	      // TODO create a service instead of calling salat directly
           PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
             case Some(preview) => {

@@ -1,6 +1,6 @@
-(function ($, Configuration) {
-	console.log(Configuration);
-	
+
+
+(function ($, Configuration) {	
 	var prNum = Configuration.tab.replace("#previewer","");
 	window["configs" + prNum] = Configuration;
 		
@@ -9,17 +9,17 @@
 	// --------------------------------------------------------
 	if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png"){
 		$(Configuration.tab).append(
-			"<canvas id='rubberbandCanvas"+prNum+"'>" +
-			"<img src='" + Configuration.url + "' id='rubberbandimage"+prNum+"'></img>" +
+			"<canvas class='rubberbandCanvas' id='rubberbandCanvas"+prNum+"'>" +
+			"<img src='" + Configuration.url + "' class='rubberbandimage' id='rubberbandimage"+prNum+"'></img>" +
 			"</canvas>" +
-			"<div id='rubberbandDiv"+prNum+"'></div>"
+			"<div class='rubberbandDiv' id='rubberbandDiv"+prNum+"'></div>"
 		);
 
 		if (Configuration.authenticated) {
 			$("#rubberbandCanvas"+prNum).css("cursor", "crosshair");
 
 			$(Configuration.tab).append(
-				"<div id='rubberbandFormDiv"+prNum+"'><form id='rubberbandForm"+prNum+"' action='#' onsubmit='return false;'>" +
+				"<div class='rubberbandFormDiv' id='rubberbandFormDiv"+prNum+"'><form id='rubberbandForm' id='rubberbandForm"+prNum+"' action='#' onsubmit='return false;'>" +
 				"<fieldset>" +
 				"<label for='rubberbandFormTag"+prNum+"'>Tag :</label><input type='text' id='rubberbandFormTag"+prNum+"' />" +
 				"<label for='rubberbandFormComment"+prNum+"'>Comment :</label><textarea type='text' id='rubberbandFormComment"+prNum+"'></textarea>" +
@@ -53,9 +53,9 @@
 			}
 
 			function rubberbandStretch(x, y, prNum) {
-				rubberbandRectangle.left	 = x < mousedown.x ? x : mousedown.x;
-				rubberbandRectangle.top		= y < mousedown.y ? y : mousedown.y;
-				rubberbandRectangle.width	= Math.abs(x - mousedown.x),
+				rubberbandRectangle.left   = x < mousedown.x ? x : mousedown.x;
+				rubberbandRectangle.top    = y < mousedown.y ? y : mousedown.y;
+				rubberbandRectangle.width  = Math.abs(x - mousedown.x),
 				rubberbandRectangle.height = Math.abs(y - mousedown.y);
 
 				moveRubberbandDiv(prNum);
@@ -155,6 +155,13 @@
 			// ----------------------------------------------------------------------
 			// FORM SUBMISSIONS
 			// ----------------------------------------------------------------------
+			$("#rubberbandFormCancel"+prNum).on("click", function(e) {
+				$("#rubberbandFormTag"+prNum).val("");
+				$("#rubberbandFormComment"+prNum).val("");
+				resetRubberband(prNum);
+				return false;
+			});
+
 			$("#rubberbandFormSubmit"+prNum).on("click", function(e) {
 				// quick check
 				var tag = $("#rubberbandFormTag"+prNum).val();
@@ -275,7 +282,7 @@
 					});
 					request.done(function (response, textStatus, jqXHR){ 
 						var url = window.jsRoutes.controllers.Tags.search(tag).url;
-						$('#tagList').append("<li><a href='" + url + "'>" + tag + "</a></li>");
+						$('#tagList').append("<li><a href='" + url + "'>" + tag + " [Section]</a></li>");
 						$('#tagField').val("");
 					});
 					request.fail(function (jqXHR, textStatus, errorThrown){
@@ -289,7 +296,7 @@
 						type:        "POST",
 						contentType: "application/json",
 						data:		 JSON.stringify({
-										comment: comment, 
+										text: comment, 
 								  	 }),
 					});
 					request.done(function (response, textStatus, jqXHR){ 
@@ -300,14 +307,6 @@
 					$("#rubberbandFormComment"+prNum).val("");
 				}
 			}
-
-
-			$("#rubberbandFormCancel"+prNum).on("click", function(e) {
-				$("#rubberbandFormTag"+prNum).val("");
-				$("#rubberbandFormComment"+prNum).val("");
-				resetRubberband();
-				return false;
-			});
 		}
 
 		// ----------------------------------------------------------------------
@@ -335,10 +334,11 @@
 	// --------------------------------------------------------
 	else if (Configuration.fileType === "image/tiff"){
 		$(Configuration.tab).append(
-			"<embed width=750 height=550	"+
+			"<embed alt='No plugin capable of displaying TIFF images was found.' width=750 height=550	"+
 				"src='" + Configuration.url + "' type='image/tiff'"+
 				" negative=no>"
 			);
+				
 	}
 
 	// --------------------------------------------------------

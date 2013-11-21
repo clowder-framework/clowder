@@ -1,5 +1,5 @@
 (function ($, Configuration) {
-	console.log("Gigaimage previewer for " + Configuration.id);
+	console.log("Gigaimage previewer (zoom.it) for " + Configuration.id);
 	
 	console.log("Updating tab " + Configuration.tab);
 	

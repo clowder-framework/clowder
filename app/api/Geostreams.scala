@@ -20,6 +20,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import scala.concurrent.Future
 import services.ElasticsearchPlugin
 import java.sql.Timestamp
+import services.PostgresPlugin
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced
@@ -57,8 +58,7 @@ object Geostreams extends ApiController {
     (__ \ 'stream_id).read[String]
   ) tupled
 
-  def createSensor() = Authenticated {
-    Action(parse.json) { request =>
+  def createSensor() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
       Logger.debug("Creating sensor")
       request.body.validate[(String, String, List[Double], JsValue)].map {
         case (name, geoType, longlat, metadata) => {
@@ -73,7 +73,6 @@ object Geostreams extends ApiController {
       }.recoverTotal {
         e => BadRequest("Detected error:" + JsError.toFlatJson(e))
       }
-    }
   }
 
   def searchSensors(geocode: Option[String]) =
@@ -119,10 +118,8 @@ object Geostreams extends ApiController {
       }
     }
   
-  def createStream() = Authenticated {
-    Logger.info("******* Creating stream WTF **********")
-    Action(parse.tolerantJson) { request =>
-      Logger.info("******* Creating stream **********")
+  def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
+      Logger.info("Creating stream")
       request.body.validate[(String, String, List[Double], JsValue, String)].map {
         case (name, geoType, longlat, metadata, sensor_id) => {
           current.plugin[PostgresPlugin] match {
@@ -136,7 +133,6 @@ object Geostreams extends ApiController {
       }.recoverTotal {
         e => Logger.error(e.toString); BadRequest("Detected error:" + JsError.toFlatJson(e))
       }
-    }
   }
 
   def searchStreams(geocode: Option[String]) =

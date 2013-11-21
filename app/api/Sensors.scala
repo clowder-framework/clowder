@@ -14,10 +14,9 @@ import services.PostgresPlugin
  * @author Luigi Marini
  *
  */
-object Sensors extends Controller {
+object Sensors extends Controller with ApiController {
 
-  def add() = Authenticated {
-    Action(parse.json) { request =>
+  def add() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           Ok("")
@@ -26,11 +25,9 @@ object Sensors extends Controller {
           Ok("")
          }
       }
-    }
   }
   
-  def get(id: String) = Authenticated {
-    Action(parse.json) { request =>
+  def get(id: String) = SecuredAction(authorization=WithPermission(Permission.GetSensors)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           Ok("")
@@ -39,11 +36,9 @@ object Sensors extends Controller {
           Ok("")
          }
       }
-    }
   }
   
-  def list() = Authenticated {
-    Action(parse.json) { request =>
+  def list() = SecuredAction(authorization=WithPermission(Permission.ListSensors)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           val sensors = plugin.listSensors()
@@ -53,11 +48,9 @@ object Sensors extends Controller {
           Ok("")
          }
       }
-    }
   }
   
-  def search() = Authenticated {
-    Action(parse.json) { request =>
+  def search() = SecuredAction(authorization=WithPermission(Permission.SearchSensors)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           Ok("")
@@ -66,11 +59,9 @@ object Sensors extends Controller {
           Ok("")
          }
       }
-    }
   }
   
-  def delete(id: String) = Authenticated {
-    Action(parse.json) { request =>
+  def delete(id: String) = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           Ok("")
@@ -79,7 +70,6 @@ object Sensors extends Controller {
           Ok("")
          }
       }
-    }
   }
   
 }

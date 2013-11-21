@@ -4,15 +4,24 @@
 <div class="page-header">
   <h1>Collections</h1>
 </div>
-<div class="row-fluid">
-	<div class="span12">
+<div class="row">
+	<div class="col-md-12">
 		<table class="table table-bordered table-hover">
 			<thead>
 				<tr>
-					<th style="width: 30%">Name</th>
-					<th style="width: 20%">Created</th>
-					<th style="width: 40%">Description</th>
-					<th style="width: 10%"></th>
+					@if(user.isDefined) {
+						<th style="width: 25%">Name</th>
+						<th style="width: 15%">Created</th>
+						<th style="width: 40%">Description</th>
+						<th style="width: 10%"></th>
+						<th style="width: 10%"></th>
+					}
+					@if(!user.isDefined) {
+						<th style="width: 25%">Name</th>
+						<th style="width: 15%">Created</th>
+						<th style="width: 50%">Description</th>
+						<th style="width: 10%"></th>
+					}
 				</tr>
 			</thead>
 			<tbody>
@@ -21,7 +30,10 @@
 						<td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a></td>
 						<td>@collection.created.format("MMM dd, yyyy")</td>
 						<td>@collection.description</td>
-						<td><a href="#" onclick="removeCollection('@(collection.id.toString)',event)">Remove</a></td>
+						<td>@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(collection.name)" height="120" width="120">}</td>
+						@if(user.isDefined) {
+							<td><a href="#" onclick="removeCollection('@(collection.id.toString)',event)">Remove</a></td>
+						}
 					</tr>
 				}
 			</tbody>

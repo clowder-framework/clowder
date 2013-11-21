@@ -35,11 +35,11 @@ case class Dataset (
   created: Date, 
   files: List[File] = List.empty,
   streams_id: List[ObjectId] = List.empty,
-  tags: List[String] = List.empty,
+  tags: List[Tag] = List.empty,
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
-  comments: List[Comment] = List.empty,
-  collections: List[String] = List.empty
+  collections: List[String] = List.empty,
+  thumbnail_id: Option[String] = None
 )
 
 object MustBreak extends Exception { }
@@ -56,7 +56,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   }
   
   def findByTag(tag: String): List[Dataset] = {
-    dao.find(MongoDBObject("tags" -> tag)).toList
+    dao.find(MongoDBObject("tags.name" -> tag)).toList
   }
   
   def getMetadata(id: String): Map[String,Any] = {
@@ -110,13 +110,15 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
-
-  def tag(id: String, tag: String) { 
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+ 
+  def tag(id: String, tag: Tag) { 
+    //Need to check for the owner of the dataset before adding tag
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" ->  Tag.toDBObject(tag)), false, false, WriteConcern.Safe)
   }
-
-  def comment(id: String, comment: Comment) {
-    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+  
+  def removeTag(id: String, tagId: String) { 
+	 Logger.debug("Removing tag " + tagId )
+     val result = dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId))), false, false, WriteConcern.Safe)
   }
   
   /**
@@ -228,6 +230,46 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   }
   def removeCollection(datasetId:String, collectionId: String){   
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("collections" ->  collectionId), false, false, WriteConcern.Safe)   
+  }
+  def removeFile(datasetId:String, fileId: String){   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files" -> MongoDBObject("_id" ->  new ObjectId(fileId))), false, false, WriteConcern.Safe)   
+  }
+  
+  def newThumbnail(datasetId:String){
+    dao.findOneById(new ObjectId(datasetId)) match{
+	    case Some(dataset) => {
+	    		val files = dataset.files map { f =>{
+	    			FileDAO.get(f.id.toString).getOrElse{None}
+	    		}}
+			    for(file <- files){
+			      if(file.isInstanceOf[models.File]){
+			          val theFile = file.asInstanceOf[models.File]
+				      if(!theFile.thumbnail_id.isEmpty){
+				        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+				        return
+				      }
+			      }
+			    }
+			    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+	    }
+	    case None =>
+    }  
+  }
+  
+  def removeDataset(id: String){
+    dao.findOneById(new ObjectId(id)) match{
+      case Some(dataset) => {
+        for(collection <- Collection.listInsideDataset(id))
+          Collection.removeDataset(collection.id.toString, dataset)
+        for(comment <- Comment.findCommentsByDatasetId(id)){
+        	Comment.removeComment(comment)
+        }  
+	    for(f <- dataset.files)
+	      FileDAO.removeFile(f.id.toString)
+        Dataset.remove(MongoDBObject("_id" -> dataset.id))        
+      }
+      case None => 
+    }      
   }
   
 }

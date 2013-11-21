@@ -4,6 +4,8 @@
 package controllers
 
 import play.api.mvc.Controller
+import api.WithPermission
+import api.Permission
 
 /**
  * Geostreaming playground.
@@ -13,7 +15,7 @@ import play.api.mvc.Controller
  */
 object Geostreams extends Controller with SecuredController {
   
-  def browse() = SecuredAction(parse.anyContent, allowKey=false) { implicit request =>
+  def browse() = SecuredAction(authorization=WithPermission(Permission.SearchSensors)) { implicit request =>
     implicit val user = request.user
     Ok(views.html.geostreams())
   }

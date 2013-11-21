@@ -1,0 +1,29 @@
+@CHARSET "US-ASCII";
+
+
+td.right
+{
+border-style:solid ;
+border-right:thick double grey;
+}
+td.left
+{
+border-style:solid ;
+border-left:thick double grey;
+}
+th.right
+{
+border-style:solid ;
+border-right:thick double grey;
+}
+th.left
+{
+border-style:solid ;
+border-left:thick double grey;
+}
+th.both
+{
+border-style:solid ;
+border-left:thick double grey;
+border-right:thick double grey;
+}

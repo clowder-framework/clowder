@@ -15,6 +15,8 @@ import java.text.SimpleDateFormat
 import securesocial.core.Identity
 import com.novus.salat._
 import com.novus.salat.global._
+import java.util.Date
+import java.util.Calendar
 
 /**
  * Access file metedata from MongoDB.
@@ -37,11 +39,11 @@ trait MongoFileDB {
   def listFilesAfter(date: String, limit: Int): List[File] = {
     val order = MongoDBObject("uploadDate"-> -1)
     if (date == "") {
-      FileDAO.findAll.sort(order).limit(limit).toList
+      FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("After " + sinceDate)
-      FileDAO.find("uploadDate" $lt sinceDate).sort(order).limit(limit).toList
+      FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
   
@@ -51,12 +53,12 @@ trait MongoFileDB {
   def listFilesBefore(date: String, limit: Int): List[File] = {
     var order = MongoDBObject("uploadDate"-> -1)
     if (date == "") {
-      FileDAO.findAll.sort(order).limit(limit).toList
+      FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("uploadDate"-> 1) 
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("Before " + sinceDate)
-      var fileList = FileDAO.find("uploadDate" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
+      var fileList = FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit + 1).toList.reverse
       fileList = fileList.filter(_ != fileList.last)
       fileList      
     }
@@ -102,5 +104,15 @@ trait MongoFileDB {
 //    }
     
     Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
+  }
+  
+  def removeOldIntermediates(){
+    val cal = Calendar.getInstance()
+    val timeDiff = play.Play.application().configuration().getInt("intermediateCleanup.removeAfter")
+    cal.add(Calendar.HOUR, -timeDiff)
+    val oldDate = cal.getTime()    
+    val fileList = FileDAO.find($and("isIntermediate" $eq true, "uploadDate" $lt oldDate)).toList
+    for(removeFile <- fileList)
+      FileDAO.removeFile(removeFile.id.toString())
   }
 }

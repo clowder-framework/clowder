@@ -343,5 +343,4 @@ class PostgresPlugin(application: Application) extends Plugin {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
     Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None))
   }
-
 }

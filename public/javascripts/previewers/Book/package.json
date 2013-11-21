@@ -1,4 +1,4 @@
 { "name" : "Book",
   "main" : "some-library.js",
-  "contentType" : ["application/xml"]
+  "contentType" : [""]
   }

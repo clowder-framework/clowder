@@ -52,8 +52,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val response = client.prepareSearch(index)
       .setTypes("file","dataset")
       .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-      .setQuery(QueryBuilders.matchQuery("_all", query))
-      .setFrom(0).setSize(60).setExplain(true)
+      //.setQuery(QueryBuilders.matchQuery("_all", query))
+      .setQuery(QueryBuilders.queryString(query))
+       .setFrom(0).setSize(60).setExplain(true)
       .execute()
       .actionGet()
       

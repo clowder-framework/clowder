@@ -1,0 +1,55 @@
+@(files: List[models.File])
+<div class="jumbotron">
+<h2 style="text-align: center">Latest Contributions</h2>
+<div id="carousel-example-generic" class="carousel slide" style="width: 800px; margin: 0 auto">
+  <!-- Indicators -->
+  <ol class="carousel-indicators">
+    @for((f,i) <- files.zipWithIndex) {
+  		@if(!f.thumbnail_id.isEmpty){
+		   	@if(i==0) {
+		   		<li data-target="#carousel-example-generic" data-slide-to="@i" class="active"></li>
+		   	} else {
+		   		<li data-target="#carousel-example-generic" data-slide-to="@i"></li>
+		   	}
+    	}
+    }
+  </ol>
+
+  <!-- Wrapper for slides -->
+  <div class="carousel-inner">
+  	@for((f,i) <- files.zipWithIndex) {
+	    @if(!f.thumbnail_id.isEmpty){
+	    	@if(i==0) {
+	    		<div class="item active inner-item">
+	    	} else {
+	    		<div class="item inner-item">
+	    	}
+	    	<a href="@(routes.Files.file(f.id.toString))">
+	    	<img src="@routes.Files.download(f.id.toString)" alt="@(f.filename)">
+	    	</a>
+	    	<div class="carousel-caption">
+	    		@f.filename
+	      	</div>
+	      	</div>
+	    }
+    }
+  </div>
+
+  <!-- Controls -->
+  <a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">
+    <span class="glyphicon glyphicon-chevron-left"></span>
+  </a>
+  <a class="right carousel-control" href="#carousel-example-generic" data-slide="next">
+    <span class="glyphicon glyphicon-chevron-right"></span>
+  </a>
+</div>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $('.carousel').carousel({
+        interval: 5000
+    });
+    $('.carousel').carousel('cycle');
+});
+</script>  

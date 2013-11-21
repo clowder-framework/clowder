@@ -1,12 +1,11 @@
-@(dataset: models.Dataset, previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection])(implicit user: Option[securesocial.core.Identity]) 
 
 
 @import helper._
 @import collection.JavaConverters._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
-		<ul>
+	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {		
 		@for((key,value) <- metadata) {
 			<li><b>@(key):</b>
 			@if(value.isInstanceOf[String]) {
@@ -22,15 +21,16 @@
 			    	@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
 			    		@value.toString.replace("[","").replace("]","")
 			    	} else {
+			    		<ul>
 			    		@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+			    		</ul>
 			    	}
 			    }
 			}</li>
 		}
-		</ul>
-	} 
+	}
 
-@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long)) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
@@ -44,14 +44,14 @@
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
+			Configuration.wasPTM = "@filename.endsWith(".ptm")";
 		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 }
 
 @main("Dataset") {
-
-    <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
     <script>
     	var isPageLoaded = false;
     	var isx3dActive = false;
@@ -60,6 +60,8 @@
 		Configuration.authenticated = @user.isDefined;
 		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
+		Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
+		Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
 		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 		Configuration.imagesPath = "@(routes.Assets.at("images"))";		
     </script>
@@ -73,16 +75,16 @@
 		<h1>@dataset.name</h1>
 	</div>
 	
-	<div class="row-fluid">	
+	<div class="row">	
 	
 		<!-- left column -->
-		<div class="span8" id="filePrevsCol">
+		<div class="col-md-8" id="filePrevsCol">
 		@for((f, pvs) <- previews) {
 			@if(pvs.length > 0 || (!f.metadata.isEmpty)) {
-				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4>@f.filename</h4></div>
+				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4 style="font-weight:bold;">@f.filename</h4></div>
 			}
-			<div class="row-fluid" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
-		    	<div class="span12">
+			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
+		    	<div class="col-md-12">
 				  		<div class="tabbable">
 							<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 								@for(i <- pvs.indices) {
@@ -92,7 +94,7 @@
 							<div class="tab-content" id="previewsContent_@(f.id.toString)">
 								@for(i <- pvs.indices) {
 							  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
-							  		@showPreview(f.id.toString + "_" + i, pvs(i))
+							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename)
 
 								}
 					  			<script type="text/javascript">
@@ -112,8 +114,8 @@
 			
 			<!-- sections -->
 			@if(f.sections.size > 0) {	
-			  	<div class="row-fluid" style="padding-top: 10px">
-			  	  <div class="span6">
+			  	<div class="row" style="padding-top: 10px">
+			  	  <div class="col-md-6">
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@f.sections.map { s =>
 					  		@if(s.preview.isDefined) {
@@ -135,8 +137,8 @@
 				  </div>
 				</div>
 				  
-				<div class="row-fluid" style="padding-top: 10px">
-				  <div class="span10">
+				<div class="row" style="padding-top: 10px">
+				  <div class="col-md-10">
 				  	<div>
 				  		<h5>Sections</h5>
 						<table class="table">
@@ -151,7 +153,13 @@
 							<tbody>
 					  		@f.sections.map { s =>
 					  			<tr>
-						  			<td>@s.order</td>
+						  			<td>
+						  				@if(s.order != -1) {
+						  					@s.order
+						  				} else {
+						  					*
+						  				}
+						  			</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
@@ -173,7 +181,7 @@
 						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
 						  		 	 } else {
 						  		 		@if(s.area.isDefined) {
-						  		 			@s.area.toString
+						  		 			@s.area.get.toString
 						  		 		} else {
 											Unknown info
 						  		 		}
@@ -240,7 +248,13 @@
     			@if(!f.metadata.isEmpty) {
 					<div id='technicalMetadata_@(f.id.toString)'>
 						<button class="tech_md_" type="button">Show file technical metadata</button>
-						<div style="display:none;">@printLevel(f.metadata)</div>
+						<div style="display:none;">
+						<ul>
+							@for(i <- 0 until f.metadata.length){								
+								@printLevel(f.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+							}
+						</ul>
+						</div>
 					</div>
 				}
 				<script>
@@ -281,11 +295,6 @@
 							$("#beingProcessed").css('display','none');
 	     			});				 
 				  request.fail(function (jqXHR, textStatus, errorThrown){
-	        		console.error(
-	            		"The following error occured: "+
-	            		textStatus, errorThrown		            
-	        			);
-	        		//alert("ERROR: " + errorThrown +". Processing of dataset not checked." );
 	     			});
     			}
     			$(function() {
@@ -294,6 +303,11 @@
     		</script>
     		<script>
     			function addPreview(pv, fileId){
+    				String.prototype.endsWith = function(str)
+    				{
+    				    var lastIndex = this.lastIndexOf(str);
+    				    return (lastIndex != -1) && (lastIndex + str.length == this.length);
+    				}
     				
     				var prevsOfFile = parseInt($("#filePrevContainer_" + fileId).attr('data-previewsCount'))
     				var newTabLink = document.createElement('a');
@@ -325,6 +339,10 @@
     					Configuration.annotationsEditPath = pv.pv_annotationsEditPath;
     					Configuration.annotationsListPath = pv.pv_annotationsListPath;
     					Configuration.annotationsAttachPath = pv.pv_annotationsAttachPath;
+    					if($("#previewedFileName_" + fileId +" :nth-child(1)").text().endsWith(".ptm"))   					
+    						Configuration.wasPTM = 'true';
+    					else
+    						Configuration.wasPTM = 'false';
     				}
     				////
     				
@@ -337,7 +355,7 @@
     					$("#myTab_" + fileId).attr('style', 'display:block;');
     				}
     				else if(prevsOfFile == 0 && ($("#technicalMetadata_" + fileId).length == 0)){   					
-    					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
+    					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4 style='font-weight:bold;'>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
     					var followingVisibleFiles = $("#filePrevContainer_" + fileId).nextAll(".filenameDiv");
     					if(followingVisibleFiles.length > 0){
     						followingVisibleFiles[0].prepend("<hr class='file_separator'></hr>");
@@ -375,11 +393,6 @@
 						setTimeout("checkForNewPreviews();", 1000);
 		     		});				 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
-		        		console.error(
-		            		"The following error occured: "+
-		            		textStatus, errorThrown		            
-		        			);
-		        		//alert("ERROR: " + errorThrown +". Did not check for new previews." );
 		        		setTimeout(function(){checkForNewPreviews()}, 1000);
 		     			});
 				}
@@ -398,7 +411,7 @@
     					for(var i = 0; i < respJSON.length; i++){
     						if($("#filePrevContainer_"+respJSON[i].id).length == 0){
     							var fileId = respJSON[i].id;
-    							$("#bottomDatasetTabbable").before("<div class='row-fluid' id='filePrevContainer_"+fileId+"' data-previewsCount='0' data-filename='"+respJSON[i].filename+"'>"
+    							$("#bottomDatasetTabbable").before("<div class='row' id='filePrevContainer_"+fileId+"' data-previewsCount='0' data-filename='"+respJSON[i].filename+"'>"
     													+"<div class='span12'><div class='tabbable'><ul class='nav nav-pills' id='myTab_"+fileId+"'></ul>"
     													+"<div class='tab-content' id='previewsContent_"+fileId+"'></div></div></div></div>");
     							$('#myTab_'+fileId).attr('style', 'display:none;');
@@ -409,10 +422,6 @@
     					setTimeout(function(){updateFiles()}, 2000);
 	     			});				 
 				  request.fail(function (jqXHR, textStatus, errorThrown){
-	        		console.error(
-	            		"The following error occured: "+
-	            		textStatus, errorThrown		            
-	        			);
 	        		setTimeout(function(){updateFiles()}, 2000);
 	     			});
     			}
@@ -422,35 +431,35 @@
     		</script>    		
     		
     		
-    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
-		  <ul class="nav nav-tabs">
-		    <li class="active"><a href="#tab1" data-toggle="tab">Comments</a></li>
-		    <li><a href="#tab2" data-toggle="tab">Metadata</a></li>
-		  </ul>
-		  <div class="tab-content">
-		    <div class="tab-pane active" id="tab1">
-		      @comment(List.empty, "post", api.routes.Datasets.comment(dataset.id.toString).toString)
-		      @comment(dataset.comments, "dataset")
-			  @dataset.files.map { file =>
-			      @comment(file.comments, file.id.toString)
-			      @file.sections.map { section =>
-			      	  @comment(section.comments, section.id.toString)
-			      }
-		      }
-		    </div>
-		    <div class="tab-pane" id="tab2">
-		      @metadata(dataset.id.toString, md, usrmd)
-		    </div>
-		  </div>
-		</div>	    		
+	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
+			  <ul class="nav nav-tabs">
+			    <li class="active"><a href="#tab1" data-toggle="tab">Comments</a></li>
+			    <li><a href="#tab2" data-toggle="tab">Metadata</a></li>
+			  </ul>
+			  <div class="tab-content">
+			    <div class="tab-pane active" id="tab1">
+				      @if(user.isDefined) {
+				      	  @commentform(dataset.id.toString, api.routes.Datasets.comment(dataset.id.toString).toString)
+				      }
+			 		  <div class="comment-threads unstyled" id="reply_@dataset.id.toString">
+				      	 @comment(comments)
+				      </div> 
+			    </div>
+			    <div class="tab-pane" id="tab2">
+			      @metadata(dataset.id.toString, md, usrmd)
+			    </div>
+			  </div>
+			</div>	
+			    		
 		</div>
 		
 
 		<!-- right column -->
-		<div class="span4 ds-col-narrow">
-		    <div class="row">
-				<dl>
-					<dt>Author:</dt>
+		<div class="col-md-4">
+		    <div class="row ds-section-sm">
+		    	<h3>About</h3>
+				<dl class="dl-horizontal">
+					<dt>Owner:</dt>
 					<dd>@dataset.author.fullName</dd>
 					<dt>Description:</dt>
 					<dd>@dataset.description</dd>
@@ -459,61 +468,82 @@
 				</dl>
 			</div>
 			
-			<div class="row">
-				<h5>Files</h5>
-				@dataset.files.map { file =>
-				<div>
-					<a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>
-				</div>
+			<div class="row ds-section-sm">
+				<h3>Files</h3>
+				<table id="datasetFilesTable">
+				@dataset.files.map { file =>				
+					<tr><td class="file-list-cell"><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a class="requiresLogin" href="#" style="font-style:italic;" onclick="removeFile('@(file.id.toString)',event,true);">Remove</a></td></tr>				
 				}
-				<!-- Button to trigger modal -->
-				<a href="#myModal" role="button" class="btn" data-toggle="modal" id="fileUploadBtn">Upload</a>
-				 
-				<!-- Modal -->
-				<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-				  <div class="modal-header">
-				    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">��</button>
-				    <h3 id="myModalLabel">Upload File</h3>
-				  </div>
-				  <div class="modal-body">
-				    <p>Add a new file to dataset.</p>
-				 	@form(action = routes.Files.uploaddnd(dataset.id.toString), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
-					    <fieldset>
-					      <legend>Select a File and Upload</legend>
-					     <input type="file" id="query" name="File">
-					    </fieldset>
-				        <div class="form-actions">
-				          <input type="submit" class="btn btn-primary" value="Upload"/>
+				</table>
+				<script language="javascript">	
+					var hostIp = "@play.Play.application().configuration().getString("hostIp")";
+				</script> 
+				<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
+				<a href="#myModal" class="btn btn-default btn-sm" data-toggle="modal" id="fileUploadBtn">Add file</a>
+				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+				    <div class="modal-dialog">
+				      <div class="modal-content">
+				      @form(action = routes.Files.uploaddnd(dataset.id.toString), 'enctype -> "multipart/form-data", 'role -> "form") {
+				        <div class="modal-header">
+				          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				          <h4 class="modal-title">Add file</h4>
 				        </div>
-					  }
-				  </div>
-				  <div class="modal-footer">
-				    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-				  </div>
+				        <div class="modal-body">
+				 		  <div class="form-group">
+						    <label for="exampleInputFile">New File</label>
+						    <input type="file" id="query" name="File">
+						    <p class="help-block">The file will be uploaded and added to this dataset.</p>
+								    	Show file preview(s)
+		          						<br/>				
+		          						<input type="radio" name="datasetLevel" value="DatasetLevel" checked> Everywhere<br>
+										<input type="radio" name="datasetLevel" value="FileLevel"> On file page<br>
+										<input type="radio" name="datasetLevel" value="None"> Nowhere
+						  </div>
+				        </div>
+				        <div class="modal-footer">
+				          <input type="submit" class="btn btn-default" value="Upload"/>
+				        </div>
+				      }
+				      </div><!-- /.modal-content -->
+				    </div><!-- /.modal-dialog -->
+				  </div><!-- /.modal -->
 				</div>
-			</div>
 			
-			<div class="row">
-				<h5>Collections</h5>
+			<div class="row ds-section-sm">
+				<h3>Collections</h3>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
 					<tr><td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-					<td><a href="#" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
+					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}
-				</table>   
-				<div class="ui-widget" id="collectionsUi">
-					<select id="collectionAddSelect">
-					@collectionsOutside.map { collection =>
-						<option value="@(collection.id.toString)">@(collection.name)</option>
-					}					  
-					</select>
-					<button class="btn" id="addCollBtn" style="vertical-align:top;">Add</button>
-					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
+				</table>
+
+				<div class="requiresLogin ui-widget" id="collectionsUi">			
+
+						<div class="input-group input-group-sm col-md-8"">
+							<select id="collectionAddSelect">
+							@collectionsOutside.map { collection =>
+								<option value="@(collection.id.toString)">@(collection.name)</option>
+							}					  
+							</select>
+							<span class="input-group-btn">
+								<button class="btn btn-default btn-sm" id="addCollBtn">Add</button>
+							</span>
+						</div>
+						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="collNotExistError" >Collection does not exist or already added.</span>
+
 				</div>
-					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-					<script>
+					<script type="text/javascript">
 						$("#collectionAddSelect").combobox();
+						//$("#collectionAddSelect").css("display", "inline");
+						
+	  					function selectClickChange() {
+	  						var theSelectedColl = document.getElementById("collectionAddSelect");
+	  						document.getElementById("selectCollectionInput").value = theSelectedColl.options[theSelectedColl.selectedIndex].text;
+	  					}
+	  					document.getElementById("collectionAddSelect").onchange = selectClickChange;
 					</script>
 					<script>
 						$('body').on('click','#addCollBtn',function(e){
@@ -559,7 +589,7 @@
 					        		"The following error occured: "+
 					        		textStatus, errorThrown		            
 					    			);
-					    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection was possibly removed." );
+					    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection or dataset was possibly removed." );
 					 			});				
 						});
 						
@@ -596,11 +626,14 @@
 					</script>
 			</div>
 			
-			<div class="row">
-				<h5>Tags</h5>
+			<div class="row ds-section-sm">
+				<h3>Tags</h3>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
-					  <li><a href="@routes.Tags.search(tag)">@tag [Dataset]</a></li>
+					  <li name='@tag.name'>
+					  	<a href="@routes.Tags.search(tag.name)">@tag.name [Dataset]</a>
+					  	<a href="javascript:void(0);"><span id="@tag.id" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
+					  </li>
 					}
   				    @dataset.files.map { file =>
 						@file.tags.map { tag =>
@@ -613,54 +646,124 @@
 						}
 				   }
 				</ul>
-				<form class="form-inline">
-					<input type="text" id="tagField">
-					<button class="btn" id="tagB">Tag</button>
+				<form class="form-inline requiresLogin">
+					<div class="input-group input-group-sm col-md-8"">
+						<input type="text" id="tagField" class="form-control">
+						<span class="input-group-btn">
+							<button class="btn btn-default btn-sm" id="tagB">Tag</button>
+						</span>
+					</div>
 				</form>
 				<script language="javascript">
-				$(function() {
-					
-				   $('#tagB').click(function() {
-				     var tag = $('#tagField').val();
-
-				     if (tag !== "") {
-				     	 console.log("submitting tag " + tag);
-					     var request = jsRoutes.controllers.Tags.tag().ajax({
-					       data: JSON.stringify({"id":"@dataset.id","tag":tag}),
-					       type: 'POST',
-					       contentType: "application/json",
-					     });
+			     		window["userDefined"] = false;
+			       </script>
+				@if(user.isDefined) {
+		      	   <script language="javascript">
+			     		window["userDefined"] = true;
+			       </script>
+		      	}
+				<script language="javascript">
+					function removeTag(){
+							console.log("removing tag ");
+							//alert($(this).attr("id"));
+							var tagId = $(this).attr("id");
+							
+							var request = jsRoutes.api.Datasets.removeTag('@dataset.id').ajax({
+								data: JSON.stringify({"tagId":tagId}),
+								type: 'POST',
+								contentType: "application/json"
+							});
+							request.done(function (response, textStatus, jqXHR){
+								console.log("Response " + textStatus);
+								$("#" + tagId).parents("li").remove();
+							});
+							request.fail(function (jqXHR, textStatus, errorThrown){
+								console.error(
+								"The following error occured: "+
+								textStatus, errorThrown
+								);
+								//alert("ERROR: " + errorThrown +". Tag not removed from dataset." );					
+								window.location = "../login"; // FIXME hardcoded
+							});
+							
+							return false;
+						}
+				
+					function removeIconMouseIn() {
+				   		$(this).find(".glyphicon-remove").fadeIn(100);
+					}
+					function removeIconMouseOut() {
+				   		$(this).find(".glyphicon-remove").fadeOut(100);				   	
+					}
+					$(function() {
+						if(window["userDefined"] == true)
+							$("#tagList").children("li").each(function(){
+								$(this).hover(
+				   						//function(){$(this).find(".glyphicon-remove").fadeIn(100);},
+				   						//function(){$(this).find(".glyphicon-remove").fadeOut(100);}
+								removeIconMouseIn,removeIconMouseOut
+								);
+							});
+						$("#tagList").find(".glyphicon-remove").click(removeTag);
+						
+					   $('#tagB').click(function() {
+					     var tag = $('#tagField').val();
 					     
-					     request.done(function (response, textStatus, jqXHR){
-					        console.log("Response " + response);
-					        var url = "../tags/search/" + tag;
-					        $('#tagList').append("<li><a href='" + url + "'>" + tag + "</a></li>");
-					        $('#tagField').val("");
+					     var isTagPresent = false;
+					     $("#tagList").children("li").each(function (index, tagLi) {
+					     if($(tagLi).attr("name")===tag){
+					     isTagPresent = true;
+					     alert(true);
+					     }
 					     });
-			    
-					     request.fail(function (jqXHR, textStatus, errorThrown){
-					        console.error(
-					            "The following error occured: "+
-					            textStatus, errorThrown
-					            
-					        );
-					        window.location = "../login"; // FIXME hardcoded
-					     });
-					     return false;
-				     }
-				     
-				  });
-				  
-				  	$('#tagField').keypress(function (e) {
-					  if (e.which == 13) {
-					    console.log("enter");
-					    $('#tagB').click();
-					    return false;
-					  }
-					});
+	
+					     if (tag !== "" && isTagPresent != true) {
+					     	 console.log("submitting tag " + tag);
+					     	var request = jsRoutes.api.Datasets.tag('@dataset.id').ajax({
+					     		data: JSON.stringify({"tag":tag}),
+						       type: 'POST',
+						       contentType: "application/json",
+						     });
+						     
+						     request.done(function (response, textStatus, jqXHR){
+						        console.log("Response " + response);
+						        var url = "../tags/search/" + tag;
+					        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
+						        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
+     						$newTag.find(".glyphicon-remove").click(removeTag);*/     						
+						        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
+     						$newTag.find(".glyphicon-remove").click(removeTag);
+						        $('#tagField').val("");
+						     });
+				    
+						     request.fail(function (jqXHR, textStatus, errorThrown){
+						        console.error(
+						            "The following error occured: "+
+						            textStatus, errorThrown
+						            
+						        );
+						        window.location = "../login"; // FIXME hardcoded
+						     });
+						     return false;
+					     }
+					     
+					  });
+					  
+					  	$('#tagField').keypress(function (e) {
+						  if (e.which == 13) {
+						    console.log("enter");
+						    $('#tagB').click();
+						    return false;
+						  }
+						});
 				  
 				 });
-			     </script>
+			     </script>			     
+			     @if(!user.isDefined) {
+		      	   <script language="javascript">
+			     		$(".requiresLogin").css("display","none");
+			       </script>
+		      	}
 			</div>
 		</div>
 	</div>

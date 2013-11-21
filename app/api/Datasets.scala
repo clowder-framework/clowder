@@ -18,19 +18,23 @@ import play.api.mvc.Controller
 import services.Services
 import jsonutils.JsonUtil
 import scala.collection.JavaConversions._
-import models.File
+import scala.collection.mutable.ListBuffer
 import models.FileDAO
 import models.Extraction
+import models.Tag
 import services.ElasticsearchPlugin
 import controllers.Previewers
-import models.File
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.Routes
 import controllers.SecuredController
-import controllers.Permission
 import models.Collection
 import org.bson.types.ObjectId
+import securesocial.views.html.notAuthorized
+import play.api.Play.current
+
+import services.Services
+import scala.util.parsing.json.JSONArray
 
 
 /**
@@ -42,12 +46,12 @@ import org.bson.types.ObjectId
 object ActivityFound extends Exception { }
 
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
-object Datasets extends Controller with SecuredController with ApiController {
+object Datasets extends ApiController {
 
   /**
    * List all datasets.
    */
-  def list = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ListDatasets)) { request =>    
+  def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListDatasets)) { request =>    
       val list = for (dataset <- Services.datasets.listDatasets()) yield jsonDataset(dataset)
       Ok(toJson(list))
   }
@@ -55,7 +59,7 @@ object Datasets extends Controller with SecuredController with ApiController {
     /**
    * List all datasets outside a collection.
    */
-  def listOutsideCollection(collectionId: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ListDatasets)) { request =>
+  def listOutsideCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListDatasets)) { request =>
       Collection.findOneById(new ObjectId(collectionId)) match{
         case Some(collection) => {
           val list = for (dataset <- Services.datasets.listDatasetsChronoReverse; if(!isInCollection(dataset,collection))) yield jsonDataset(dataset)
@@ -79,7 +83,7 @@ object Datasets extends Controller with SecuredController with ApiController {
   /**
    * Create new dataset
    */
-    def createDataset() = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateDatasets)) { request =>
+    def createDataset() = SecuredAction(authorization=WithPermission(Permission.CreateDatasets)) { request =>
       Logger.debug("Creating new dataset")
       (request.body \ "name").asOpt[String].map { name =>
       	  (request.body \ "description").asOpt[String].map { description =>
@@ -111,17 +115,21 @@ object Datasets extends Controller with SecuredController with ApiController {
     }
 
   def jsonDataset(dataset: Dataset): JsValue = {
-    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString))
+    var datasetThumbnail = "None"
+    if(!dataset.thumbnail_id.isEmpty)
+      datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
+    
+    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
-  def addMetadata(id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
+  def addMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding metadata to dataset " + id)
       Dataset.addMetadata(id, Json.stringify(request.body))
       Ok(toJson(Map("status" -> "success")))
   }
 
-  def addUserMetadata(id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
+  def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding user metadata to dataset " + id)
       Dataset.addUserMetadata(id, Json.stringify(request.body))
       Ok(toJson(Map("status" -> "success")))
@@ -144,7 +152,7 @@ object Datasets extends Controller with SecuredController with ApiController {
       }
     }
 
-  def datasetFilesList(id: String) = SecuredAction(parse.anyContent, allowKey=true, authorization=WithPermission(Permission.ShowDataset)) { request =>
+  def datasetFilesList(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDataset)) { request =>
       Services.datasets.get(id) match {
         case Some(dataset) => {
           val list = for (f <- dataset.files) yield jsonFile(f)
@@ -158,37 +166,84 @@ object Datasets extends Controller with SecuredController with ApiController {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
 
-  def tag(id: String) = SecuredAction(parse.json, allowKey=true, authorization=WithPermission(Permission.CreateTags)) { implicit request =>
-    request.body.\("tag").asOpt[String] match {
-      case Some(tag) => {
-        Dataset.tag(id, tag)
-        Ok
+  def index(id: String) {
+    Services.datasets.get(id) match {
+      case Some(dataset) => {
+        var tagListBuffer = new ListBuffer[String]()
+        
+        for (tag <- dataset.tags){
+          tagListBuffer += tag.name
+        }          
+        
+        val tagsJson = new JSONArray(tagListBuffer.toList)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByDatasetId(id,false)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "dataset", id,
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+        }
       }
-      case None => {
-        Logger.error("no tag specified.")
-        BadRequest
-      }
+      case None => Logger.error("Dataset not found: " + id)
     }
   }
 
-  def comment(id: String) = SecuredAction(parse.json, allowKey = true) { implicit request =>
-    request.body.\("comment").asOpt[String] match {
-      case Some(comment) => {
-        Dataset.comment(id, new Comment(request.user.email.get, new Date(), comment))
-        Ok
+  def tag(id: String) = SecuredAction(parse.json, authorization = WithPermission(Permission.CreateTags)) { implicit request =>
+    Logger.debug("Tagging " + request.body)
+    
+    val userObj = request.user;
+    val tagId = new ObjectId
+    
+    request.body.\("tag").asOpt[String].map { tag =>
+      Logger.debug("Tagging " + id + " with " + tag)
+      val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.identityId.toString, created = new Date)
+      Dataset.tag(id, tagObj)
+      index(id)
+    }
+    Ok(toJson(tagId.toString()))
+  }
+    
+  def removeTag(id: String) = SecuredAction(parse.json,authorization=WithPermission(Permission.DeleteTags)) {implicit request =>
+    Logger.debug("Removing tag " + request.body)
+    
+    request.body.\("tagId").asOpt[String].map { tagId =>
+		  Logger.debug("Removing " + tagId + " from "+ id)
+		  Dataset.removeTag(id, tagId)
+		}
+      Ok(toJson(""))    
+  }
+
+  def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments)) { implicit request =>
+    request.user match {
+      case Some(identity) => {
+	    request.body.\("text").asOpt[String] match {
+	      case Some(text) => {
+	        val comment = new Comment(identity, text, dataset_id=Some(id))
+	        Comment.save(comment)
+	        index(id)
+	        Ok(comment.id.toString())
+	      }
+	      case None => {
+	        Logger.error("no text specified.")
+	        BadRequest
+	      }
+	    }
       }
-      case None => {
-        Logger.error("no tag specified.")
-        BadRequest
-      }
+      case None => BadRequest
     }
   }
 
   /**
    * List datasets satisfying a user metadata search tree.
    */
-  def searchDatasetsUserMetadata =
-    SecuredAction(parse.json, allowKey = true, authorization=WithPermission(Permission.SearchDatasets)) { request =>
+  def searchDatasetsUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
       Logger.debug("Searching datasets' user metadata for search tree.")
       var searchTree = JsonUtil.parseJSON(Json.stringify(request.body)).asInstanceOf[java.util.LinkedHashMap[String, Any]]
       var datasetsSatisfying = List[Dataset]()
@@ -209,7 +264,7 @@ object Datasets extends Controller with SecuredController with ApiController {
   /**
    * Return whether a dataset is currently being processed.
    */
-  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowDataset)) { request =>
+  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDataset)) { request =>
   	Services.datasets.get(id)  match {
   	  case Some(dataset) => {
   	    val files = dataset.files map { f =>
@@ -219,18 +274,14 @@ object Datasets extends Controller with SecuredController with ApiController {
   	    var isActivity = "false"
         try{
         	for(f <- files){
-        		Extraction.findMostRecentByFileId(f.id) match{
-        		case Some(mostRecent) => {
-        			mostRecent.status match{
-        			case "DONE." => 
-        			case _ => { 
+        		Extraction.findIfBeingProcessed(f.id) match{
+        			case false => 
+        			case true => { 
         				isActivity = "true"
         				throw ActivityFound
         			  }  
         			}
-        		}
-        		case None =>       
-        		}
+
         	}
         }catch{
           case ActivityFound =>
@@ -260,7 +311,7 @@ object Datasets extends Controller with SecuredController with ApiController {
     else    
     	toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString , "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))  
   }  
-  def getPreviews(id: String) = SecuredAction(parse.anyContent, allowKey = true, authorization=WithPermission(Permission.ShowDataset)) { request =>
+  def getPreviews(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDataset)) { request =>
     Services.datasets.get(id)  match {
       case Some(dataset) => {
         val files = dataset.files map { f =>
@@ -268,8 +319,8 @@ object Datasets extends Controller with SecuredController with ApiController {
         }
         
         val datasetWithFiles = dataset.copy(files = files)
-        val previewers = Previewers.searchFileSystem
-        val previewslist = for(f <- datasetWithFiles.files) yield {
+        val previewers = Previewers.findPreviewers
+        val previewslist = for(f <- datasetWithFiles.files; if(f.showPreviews.equals("DatasetLevel"))) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }        
@@ -285,6 +336,16 @@ object Datasets extends Controller with SecuredController with ApiController {
         Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]])) 
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+    }
+  }
+  
+  def deleteDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteDatasets)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        Dataset.removeDataset(id)
+        Ok(toJson(Map("status"->"success")))
+      }
+      case None => Ok(toJson(Map("status"->"success")))
     }
   }
   

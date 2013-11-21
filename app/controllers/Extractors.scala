@@ -8,8 +8,9 @@ import models.Extraction
 import play.api.mvc.WebSocket
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.iteratee.Enumerator
-
 import play.api.mvc.Action
+import api.WithPermission
+import api.Permission
 
 /**
  * Information about extractors.
@@ -17,9 +18,9 @@ import play.api.mvc.Action
  * @author Luigi Marini
  *
  */
-object Extractors extends Controller with securesocial.core.SecureSocial {
+object Extractors extends Controller with SecuredController {
 
-  def extractions = SecuredAction(ajaxCall = false) { implicit request =>
+  def extractions = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     Ok(views.html.extractions(Extraction.findAll.toList))
   }
   
