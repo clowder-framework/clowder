@@ -219,28 +219,18 @@
 					var key = childrenProperties[i].children[0].innerHTML;
 					key = key.substring(0, key.length - 1);
 					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){						
-						if(key in branchData){
-							if(branchData[key] instanceof Array){
-								branchData[key].push(childrenProperties[i].children[1].innerHTML);
-							}
-							else{
-								branchData[key] = new Array(branchData[key], childrenProperties[i].children[1].innerHTML);
-							}
+						if(key in branchData){							
+							branchData[key].push(childrenProperties[i].children[1].innerHTML);
 						}
 						else{	
-							branchData[key] = childrenProperties[i].children[1].innerHTML;
+							branchData[key] = new Array(childrenProperties[i].children[1].innerHTML);
 						}  
 					}else if(childrenProperties[i].children[1].tagName.toLowerCase() == 'button'){
 						if(key in branchData){
-							if(branchData[key] instanceof Array){
-								branchData[key].push(DOMtoJSON(childrenProperties[i].children[3]));
-							}
-							else{
-								branchData[key] = new Array(branchData[key], DOMtoJSON(childrenProperties[i].children[3]));
-							}
+							branchData[key].push(DOMtoJSON(childrenProperties[i].children[3]));
 						}
 						else{
-							branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
+							branchData[key] = new Array(DOMtoJSON(childrenProperties[i].children[3]));
 						}				
 					}
 				}
