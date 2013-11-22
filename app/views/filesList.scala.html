@@ -25,7 +25,7 @@
 						<td>@(if(file.contentType != null) file.contentType else "N/A")</td>
 						<td>@file.uploadDate</td>
 						<td>
-							@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(file.filename)" height="120" width="120">}
+							@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(file.filename)" width="120">}
 							@if(file.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
 						@if(user.isDefined) {

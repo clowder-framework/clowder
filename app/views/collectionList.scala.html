@@ -31,7 +31,7 @@
 						<td>@collection.created.format("MMM dd, yyyy")</td>
 						<td>@collection.description</td>
 						<td>
-							@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(collection.name)" height="120" width="120">}
+							@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(collection.name)" width="120">}
 							@if(collection.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
 						@if(user.isDefined) {

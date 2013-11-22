@@ -283,8 +283,8 @@
 					});
 					request.done(function (response, textStatus, jqXHR){ 
 						var url = window.jsRoutes.controllers.Tags.search(tag).url;
-						$('#tagList'+prNum).append("<li><a href='" + url + "'>" + tag + "</a></li>");
-						$('#tagField'+prNum).val("");
+						$('#tagList').append("<li><a href='" + url + "'>" + tag + " [Section]</a></li>");
+						$('#tagField').val("");
 					});
 					request.fail(function (jqXHR, textStatus, errorThrown){
 						console.error("The following error occured: " + textStatus, errorThrown);

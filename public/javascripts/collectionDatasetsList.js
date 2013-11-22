@@ -266,7 +266,7 @@
 		        	var datasetThumbnail = "";
 		        	if(respJSON[i].thumbnail != "None")
 		        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
-		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
+		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' width='120'>";
 		        	else
 		        		datasetThumbnail = "No thumbnail available"
 		        	

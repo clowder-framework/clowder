@@ -231,24 +231,81 @@ object Search extends SecuredController {
   }
 
   //GET the query image from the URL and compare within the database and show the result
-  def searchbyURL(query: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    Logger.debug("Searching for" + query)
-    var slashindex = query.lastIndexOf('/')
+def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
 
     Async {
+
       current.plugin[VersusPlugin] match {
 
         case Some(plugin) => {
-          plugin.queryURL(query).map { result =>
-            val l = result.size
-            Ok(views.html.searchTextResults(query.substring(slashindex + 1), l, result))
 
+          var indexListResponse = plugin.getIndexes()
+
+          var indexSeqFuture = for {
+            list <- indexListResponse
+
+            listIn = list.json.as[Seq[models.IndexList.IndexList]]
+
+            indexSeqT = listIn.map {
+              ind => (ind.indexID, ind.MIMEtype, ind.ex, ind.me, ind.indxr)
+            }
+          } yield {
+            indexSeqT
           }
-        } // case some
+
+          var finalR = for {
+            indexSeq <- indexSeqFuture
+          } yield {
+            var resultSeqFuture = indexSeq.map {
+              index =>
+                var u = for {
+                  indexResult <- plugin.queryURL(queryurl, index._1)
+                } yield {
+                  (indexResult, index._3, index._4, index._5)
+                }
+                u
+            } //end of indexSeq.map
+
+            var hashResult = for {
+              result <- scala.concurrent.Future.sequence(resultSeqFuture)
+            } yield {
+              val t = result.toArray
+              
+              var hm = new scala.collection.mutable.HashMap[String, (String, String, String, ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
+              for (k <- 0 to t.length - 1) {
+                hm.put(t(k)._1._1, (t(k)._2, t(k)._3, t(k)._4, t(k)._1._2))
+              }
+              hm
+            }
+
+            hashResult
+          } //End yield- outer for 
+
+          for {
+            xFinal <- finalR
+            yFinal <- xFinal
+          } yield {
+            val keys = yFinal.keySet
+            var keysArray = new ArrayBuffer[String]
+            keys.copyToBuffer(keysArray)
+            Ok(views.html.contentbasedSearchResults(keysArray,queryurl , queryurl, yFinal.size, yFinal))
+            /*Services.queries.getFile(id) match {
+              case Some(file) => {
+                Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
+              }
+              case None => {
+                Ok(id + " not found")
+              }
+            }*/
+          }
+
+        } //case some
+
         case None => {
           Future(Ok("No Versus Service"))
         }
       } //match
+
     } //Async
   }
 
@@ -317,7 +374,7 @@ object Search extends SecuredController {
 
             Services.queries.getFile(id) match {
               case Some(file) => {
-                Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
+                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {
                 Ok(id + " not found")
@@ -394,7 +451,7 @@ object Search extends SecuredController {
 
             Services.files.getFile(id) match {
               case Some(file) => {
-                Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
+                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {
                 Ok(id + " not found")
