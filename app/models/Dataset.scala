@@ -64,6 +64,16 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
         (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
   }
   
+//  def executeRawQuery(theQuery: String): List[Dataset] = {
+//    val thePlugin = current.plugin[MongoSalatPlugin]
+//    if(thePlugin.isEmpty){
+//      throw new RuntimeException("No MongoSalatPlugin")
+//     }
+//    val executionResult = thePlugin.get.source("medici")
+//    
+//    
+//  }
+  
   
   def findByTag(tag: String): List[Dataset] = {
     dao.find(MongoDBObject("tags.name" -> tag)).toList
@@ -155,48 +165,51 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   }
   
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): String = {
-    //return searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]])
-    return ""
+    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    return searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
   }
   
-//  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any]): String = {
-//    Logger.debug("req: "+ requestedMap)
-//    var queryString = "{"
-//    var queryPrevPart = ""
-//    var inOr = 0
-//    for((reqKey, reqValue) <- requestedMap){
-//      if(inOr > 0)
-//        inOr = inOr -1
-//            
-//      if(reqKey.equals("OR")){
-//        if(inOr == 0){
-//	        queryPrevPart = "$or: [ {" + queryPrevPart + "},"	        
-//        }
-//        else{
-//            queryPrevPart = "{" + queryPrevPart + "},"
-//        }
-//        inOr = 2
-//      }
-//      else{
-//        
-//        if(inOr == true){
-//	        queryPrevPart = "$or: [ {" + queryPrevPart + "},"
-//	        inOr = true
-//        }
-//        else{
-//            queryPrevPart = "{" + queryPrevPart + "},"
-//        }
-//        
-//      }
-//      
-//      
-//      
-//    }  
-//    
-//      
-//    queryString = queryString + "}"
-//    return queryString
-//  }
+  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): String = {
+    Logger.debug("req: "+ requestedMap)
+    var queryString = "{$or: [ {"
+    for((reqKey, reqValue) <- requestedMap){ 
+        val keyTrimmed = reqKey.replaceAll("__[0-9]$","")
+        if(keyTrimmed.equals("OR")){
+          queryString = queryString.substring(0, queryString.length()-1) + "},{"
+        }
+        else{
+          var actualKey = keyTrimmed
+          var isNot = ""
+          if(keyTrimmed.endsWith("__not")){
+        	  actualKey = actualKey.substring(0, actualKey.length()-5) 
+        	  isNot =  "{$not: "
+          }
+          if(!root.equals(""))
+            actualKey = root + "." + actualKey 
+          
+          
+          queryString = queryString + "\'" + actualKey + "\': " + isNot
+          
+          if(reqValue.isInstanceOf[String]){ 
+            queryString = queryString + "\'" + reqValue.asInstanceOf[String] + "\'"
+          }
+          else{
+            //recursive
+            queryString = queryString + "{$elemMatch: " + searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "") + "}"
+          }
+          
+          if(keyTrimmed.endsWith("__not")){
+        	  queryString = queryString + "}"
+          }
+          queryString = queryString + ","
+        }
+    }
+    queryString = queryString.replaceAll(",$", "")
+    
+      
+    queryString = queryString + "}]}"
+    return queryString
+  }
   
   
   

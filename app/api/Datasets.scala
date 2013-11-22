@@ -346,12 +346,12 @@ object Datasets extends ApiController {
   def searchDatasetsUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
       Logger.debug("Searching datasets' user metadata for search tree.")
       
-      var searchJSON = Json.stringify(request.body).replaceAll("__[0-9]*\"","\"")
+      var searchJSON = Json.stringify(request.body)
       Logger.debug("thejsson: "+searchJSON)
       var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
       
       var searchQuery = Dataset.searchUserMetadataFormulateQuery(searchTree)
-      
+      Logger.debug("thequery: "+searchQuery)
       
       var datasetsSatisfying = List[Dataset]()
       for (dataset <- Services.datasets.listDatasetsChronoReverse) {
@@ -366,7 +366,7 @@ object Datasets extends ApiController {
       val list = for (dataset <- datasetsSatisfying) yield jsonDataset(dataset)
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
-    }
+    }  
   
   /**
    * Return whether a dataset is currently being processed.
@@ -489,6 +489,8 @@ object Datasets extends ApiController {
     val jsonObject = new JSONObject(theJSON)    
     var xml = org.json.XML.toString(jsonObject)
     xml = xml.replaceAll("__[0-9]+", "")
+    
+    Logger.debug("thexml: " + xml)
     
     //Remove spaces from XML tags
     var currStart = xml.indexOf("<")

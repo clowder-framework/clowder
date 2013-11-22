@@ -385,7 +385,7 @@ $(function() {
 							if(key == "OR"){
 								key = key + "__" + elementCounter;
 								elementCounter++;
-								branchData[key] = "";
+								branchData[key] = "dummy";
 							}							
 							else{
 								key = key.substring(0, key.length - 1);
