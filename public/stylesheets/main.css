@@ -262,3 +262,37 @@ button.tech_md_ {
 .inner-item img {
     margin: 0 auto;
 }
+
+.img-thumbnail {
+    padding: 10px;
+}
+
+.post-box {
+    margin: 15px 0 15px 0;
+}
+
+.file-type {
+	display:block;
+	font-size: 33px;
+    font-weight: 500;
+	color: white;
+	background-color: #0B61A4;
+	width: 100%;
+	min-height: 200px;
+	border: 1px solid;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.file-type:hover {
+	color: white;
+	text-decoration: none;
+}
+
+.wordwrap { 
+   white-space: pre-wrap;      /* CSS3 */   
+   white-space: -moz-pre-wrap; /* Firefox */    
+   white-space: -pre-wrap;     /* Opera <7 */   
+   white-space: -o-pre-wrap;   /* Opera 7 */    
+   word-wrap: break-word;      /* IE */
+}

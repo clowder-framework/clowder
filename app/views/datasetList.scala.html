@@ -1,9 +1,63 @@
 @(datasets: List[models.Dataset], prev: String, next: String, limit: Int)(implicit user: Option[securesocial.core.Identity])
 
 @main("Datasets") {
+
+<script src="@routes.Assets.at("javascripts/lib/masonry.pkgd.min.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/lib/imagesloaded.pkgd.min.js")" type="text/javascript"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+ // initialize Masonry
+ var $container = $('#masonry').masonry();
+ // layout Masonry again after all images have loaded
+ imagesLoaded( '#masonry', function() {
+	 $container.masonry({
+       itemSelector: '.post-box',
+       columnWidth: '.post-box',
+       transitionDuration: 4
+ 	 });
+ });
+});
+</script>
+
 <div class="page-header">
   <h1>Datasets</h1>
 </div>
+
+<div class="row">
+	<div class="col-md-12">
+	<div class="container">
+	<div class="row">
+	<div class="col-md-12">
+		<div id="masonry">
+		@datasets.map { dataset =>
+		  <div class="post-box col-lg-4 col-md-4 col-sm-4">
+		  <div class="panel panel-default">
+  			<div class="panel-body">
+			  	
+			  		@if(!dataset.thumbnail_id.isEmpty){
+						<a href="@(routes.Datasets.dataset(dataset.id.toString))">
+							<img class="img-responsive" src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)">
+						</a>
+					} else {
+						<a class="file-type wordwrap" href="@(routes.Datasets.dataset(dataset.id.toString))">
+							PDF, JPEG
+						</a>
+					}
+			  		
+			  	</a>
+			  	<div class="caption"><h3><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></h3><p>@dataset.description</p></div>
+			</div>
+			</div>
+    	  </div>
+		}
+		</div>
+	</div>
+	</div>
+	</div>
+	</div>
+</div>
+
 <div class="row">
 	<div class="col-md-12">
 		<table class="table table-bordered table-hover">
