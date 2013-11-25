@@ -275,7 +275,6 @@ $(function() {
 				  else if($(this).html() == "Submit"){
 
 					var data = DOMtoJSON(document.getElementById('datasetUserMetadata').children[1]);
-					alert(JSON.stringify(data));
 					var request = $.ajax({
 				       type: 'POST',
 				       url: queryIp,
