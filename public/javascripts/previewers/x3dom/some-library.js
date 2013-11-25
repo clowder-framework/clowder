@@ -1125,7 +1125,7 @@ function clearConfigTabAnnotations(prNum){
 					window["exFullscreenElemEntered"] = "#x3dElement" + prNum;
 				}
 				else{
-					window["fullscreenExitedProperly"] = true;
+					window["fullscreenExitedProperly"] = true;					
 					leaveFullscreen(prNum);
 				}
 			}
@@ -1215,36 +1215,39 @@ function clearConfigTabAnnotations(prNum){
 		  }
 		  else if((e.which == 27 || (e.which == 81 && window["isShiftClicked" + prNum])) && (document.fullscreenElement || 
 			       document.mozFullScreenElement || document.webkitFullscreenElement)){
-			  var fullScreenElem;
-			  if(document.mozFullScreenElement){
-				  fullScreenElem = document.mozFullScreenElement;
-			  }
-			  else if(document.webkitFullscreenElement){
-				  fullScreenElem = document.webkitFullscreenElement;
-			  }
-			  else{
-				  fullScreenElem = document.fullscreenElement;
-			  }
-			  if(fullScreenElem.getAttribute('id').indexOf("x3dElement") != -1){
-				 if(e.which != 27 && e.target !== undefined)
-					 if(e.target.getAttribute('id') !== null)
-						 if(navigator.userAgent.indexOf("hrome") == -1){
-							 e.preventDefault();
-							  return false;
-						 }
-				 
-				  var prNumber = fullScreenElem.getAttribute('id').replace("x3dElement","");
-				  
-				  window["fullscreenExitedProperly"] = true;
-				  
-				  leaveFullscreen(prNumber);
-				  
-				  window["exFullscreenElemExited"] = "#x3dElement" + prNumber;
-				  				  
-				  e.preventDefault();
-				  return false;
-			  }
+			  if(document.activeElement != $("#x3dElement" + prNum + " > canvas").get(0)){
+
+				  var fullScreenElem;
+				  if(document.mozFullScreenElement){
+					  fullScreenElem = document.mozFullScreenElement;
+				  }
+				  else if(document.webkitFullscreenElement){
+					  fullScreenElem = document.webkitFullscreenElement;
+				  }
+				  else{
+					  fullScreenElem = document.fullscreenElement;
+				  }
+				  if(fullScreenElem.getAttribute('id').indexOf("x3dElement") != -1){
+					 if(e.which != 27 && e.target !== undefined)
+						 if(e.target.getAttribute('id') !== null)
+							 if(navigator.userAgent.indexOf("hrome") == -1){
+								 e.preventDefault();
+								  return false;
+							 }
+					 
+					  var prNumber = fullScreenElem.getAttribute('id').replace("x3dElement","");
+					  
+					  window["fullscreenExitedProperly"] = true;
+					  
+					  leaveFullscreen(prNumber);
+					  
+					  window["exFullscreenElemExited"] = "#x3dElement" + prNumber;
+					  				  
+					  e.preventDefault();
+					  return false;
+				  }
 		  }
+		}
 	  });  
 	  $("body").on('keyup',function(e){
 		  if(e.which == 16){
