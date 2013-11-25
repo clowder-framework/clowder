@@ -351,19 +351,12 @@ object Datasets extends ApiController {
       var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
       
       var searchQuery = Dataset.searchUserMetadataFormulateQuery(searchTree)
-      Logger.debug("thequery: "+searchQuery)
       
-      var datasetsSatisfying = List[Dataset]()
-      for (dataset <- Services.datasets.listDatasetsChronoReverse) {
-        if (Dataset.searchUserMetadata(dataset.id.toString(), searchTree)) {
-          datasetsSatisfying = dataset :: datasetsSatisfying
-        }
-      }
-      datasetsSatisfying = datasetsSatisfying.reverse
+      //searchQuery = searchQuery.reverse
 
       Logger.debug("Search completed. Returning datasets list.")
 
-      val list = for (dataset <- datasetsSatisfying) yield jsonDataset(dataset)
+      val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
     }  

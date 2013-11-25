@@ -164,54 +164,63 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     return searchMetadata(id, requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], getUserMetadata(id))
   }
   
-  def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): String = {
+  def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset] = {
     Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
-    return searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
-  }
-  
-  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): String = {
-    Logger.debug("req: "+ requestedMap)
-    var queryString = "{$or: [ {"
-    for((reqKey, reqValue) <- requestedMap){ 
-        val keyTrimmed = reqKey.replaceAll("__[0-9]$","")
-        if(keyTrimmed.equals("OR")){
-          queryString = queryString.substring(0, queryString.length()-1) + "},{"
-        }
-        else{
-          var actualKey = keyTrimmed
-          var isNot = ""
-          if(keyTrimmed.endsWith("__not")){
-        	  actualKey = actualKey.substring(0, actualKey.length()-5) 
-        	  isNot =  "{$not: "
-          }
-          if(!root.equals(""))
-            actualKey = root + "." + actualKey 
-          
-          
-          queryString = queryString + "\'" + actualKey + "\': " + isNot
-          
-          if(reqValue.isInstanceOf[String]){ 
-            queryString = queryString + "\'" + reqValue.asInstanceOf[String] + "\'"
-          }
-          else{
-            //recursive
-            queryString = queryString + "{$elemMatch: " + searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "") + "}"
-          }
-          
-          if(keyTrimmed.endsWith("__not")){
-        	  queryString = queryString + "}"
-          }
-          queryString = queryString + ","
-        }
-    }
-    queryString = queryString.replaceAll(",$", "")
+    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
+    Logger.debug("thequery: "+theQuery.toString)
     
-      
-    queryString = queryString + "}]}"
-    return queryString
+    val dsList = dao.find(theQuery).toList
+    return dsList
   }
   
+  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
+    Logger.debug("req: "+ requestedMap)
+    var queryMap = MongoDBList()
+    var builder = MongoDBObject()
+    var orFound = false
+    for((reqKey, reqValue) <- requestedMap){
+      val keyTrimmed = reqKey.replaceAll("__[0-9]+$","")
+      
+      if(keyTrimmed.equals("OR")){
+          queryMap.add(builder.result)
+          builder = MongoDBObject()
+          orFound = true
+        }
+      else{
+        var actualKey = keyTrimmed
+        if(keyTrimmed.endsWith("__not")){
+        	  actualKey = actualKey.substring(0, actualKey.length()-5) 
+          }
+        if(!root.equals(""))
+        	actualKey = root + "." + actualKey 
+        
+        if(reqValue.isInstanceOf[String]){ 
+            val currValue = reqValue.asInstanceOf[String]            
+            if(keyTrimmed.endsWith("__not")){
+            	builder += actualKey -> MongoDBObject("$not" ->  currValue)
+            }
+            else{
+            	builder += actualKey -> currValue
+            }           
+        }else{
+          //recursive
+            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+            val elemMatch = actualKey $elemMatch currValue
+            builder = builder ++ elemMatch
+        }
+      }
+    }
+    queryMap.add(builder.result)
+    
+    if(orFound){
+    	return MongoDBObject("$or" ->  queryMap)
+    }
+    else{
+      return builder.result
+    }
+  }
   
+
   
   /**
    * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree. 

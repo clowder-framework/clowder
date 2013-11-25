@@ -241,12 +241,12 @@ $(function() {
 						 
 						$(this).parent().get(0).appendChild(newPropertyList);
 						
-						var newDisjunctionButton = document.createElement('button'); 	
-						newDisjunctionButton.classList.add('usr_md_');
-						newDisjunctionButton.setAttribute('type','button');	
-						
-						newDisjunctionButton.innerHTML = 'Add disjunction';
-						$(this).parent().get(0).appendChild(newDisjunctionButton);
+//						var newDisjunctionButton = document.createElement('button'); 	
+//						newDisjunctionButton.classList.add('usr_md_');
+//						newDisjunctionButton.setAttribute('type','button');	
+//						
+//						newDisjunctionButton.innerHTML = 'Add disjunction';
+//						$(this).parent().get(0).appendChild(newDisjunctionButton);
 					}				
 				  }
 				  else if($(this).html() == "Add disjunction"){
