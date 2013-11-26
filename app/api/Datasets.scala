@@ -491,7 +491,6 @@ object Datasets extends ApiController {
     
     val jsonObject = new JSONObject(theJSON)    
     var xml = org.json.XML.toString(jsonObject)
-    xml = xml.replaceAll("__[0-9]+", "")
     
     Logger.debug("thexml: " + xml)
     

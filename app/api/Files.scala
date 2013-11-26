@@ -546,7 +546,6 @@ object Files extends ApiController {
     
     val jsonObject = new JSONObject(theJSON)    
     var xml = org.json.XML.toString(jsonObject)
-    xml = xml.replaceAll("__[0-9]+", "")
     
     //Remove spaces from XML tags
     var currStart = xml.indexOf("<")
