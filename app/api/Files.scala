@@ -845,6 +845,7 @@ object Files extends ApiController {
 	    request.body.\("tag").asOpt[String] match {
 		    case Some(tag) => {
 		    	FileDAO.tag(id, tag)
+		    	index(id)
 		    	Ok
 		    }
 		    case None => {
