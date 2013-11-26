@@ -612,6 +612,7 @@ object Files extends ApiController {
 	      Logger.debug("Adding user metadata to file " + id)
 	      val theJSON = Json.stringify(request.body)
 	      FileDAO.addUserMetadata(id, theJSON)
+	      index(id)
 	      Ok(toJson(Map("status" -> "success")))
 
   }
