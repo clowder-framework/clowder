@@ -975,6 +975,9 @@ def index(id: String) {
         val techMd = FileDAO.getTechnicalMetadataJSON(id)
         Logger.debug("techmd=" + techMd)
         
+        val xmlMd = FileDAO.getXMLMetadataJSON(id)
+	    Logger.debug("xmlmd=" + xmlMd)
+        
         var fileDsId = ""
         var fileDsName = ""
           
@@ -985,7 +988,7 @@ def index(id: String) {
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd)))
+            List(("filename", file.filename), ("contentType", file.contentType),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
         }
       }
       case None => Logger.error("File not found: " + id)
