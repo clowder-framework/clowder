@@ -192,7 +192,8 @@ object Files extends ApiController {
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
 	      case Some(x) => {
-	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)  	
+	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)
+	    		  index(id)
 	      }
 	      case None => {
 	        Logger.error("Error getting file" + id)
@@ -972,6 +973,9 @@ def index(id: String) {
         val usrMd = FileDAO.getUserMetadataJSON(id)
         Logger.debug("usrmd=" + usrMd)
         
+        val techMd = FileDAO.getTechnicalMetadataJSON(id)
+        Logger.debug("techmd=" + techMd)
+        
         var fileDsId = ""
         var fileDsName = ""
           
@@ -982,7 +986,7 @@ def index(id: String) {
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd)))
+            List(("filename", file.filename), ("contentType", file.contentType),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd)))
         }
       }
       case None => Logger.error("File not found: " + id)

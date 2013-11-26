@@ -115,6 +115,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
   
+  
   def getUserMetadataJSON(id: String): String = {
     dao.collection.findOneByID(new ObjectId(id)) match {
       case None => "{}"
@@ -129,6 +130,22 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       }
     }
   }
+  
+  def getTechnicalMetadataJSON(id: String): String = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+			returnedMetadata
+          }
+          case None => "{}"
+		}
+      }
+    }
+  }
+
   
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
