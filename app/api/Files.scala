@@ -44,6 +44,9 @@ import services.FileDumpService
 import services.DumpOfFile
 import play.api.libs.concurrent.Execution.Implicits._
 
+import scala.collection.mutable.ListBuffer
+import scala.util.parsing.json.JSONArray
+
 import org.json.JSONObject
 import org.json.XML
 
@@ -945,7 +948,46 @@ object Files extends ApiController {
     }
   }
   
+def index(id: String) {
+    Services.files.getFile(id) match {
+      case Some(file) => {
+        var tagListBuffer = new ListBuffer[String]()
+        
+        for (tag <- file.tags){
+          tagListBuffer += tag
+        }          
+        
+        val tagsJson = new JSONArray(tagListBuffer.toList)
 
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByFileId(id)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+        
+        val usrMd = FileDAO.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
+        
+        var fileDsId = ""
+        var fileDsName = ""      
+        val fileDs = Dataset.findOneByFileId(file.id)
+        if(!fileDs.isEmpty){
+          val theFileDs = fileDs.get
+          fileDsId = theFileDs.id.toString()
+          fileDsName = theFileDs.name
+        }
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "file", id,
+            List(("filename", file.filename), ("contentType", file.contentType),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd)))
+        }
+      }
+      case None => Logger.error("File not found: " + id)
+    }
+  }
     
 
   
