@@ -7,7 +7,7 @@
   var width = 750;
   
   $(Configuration.tab).append("<p>For panoramic images viewed through Quicktime, Shift can be used to zoom in and Ctrl to zoom out.</p>");
-  
+
 
 
 	  alert(navigator.mimeTypes.length);

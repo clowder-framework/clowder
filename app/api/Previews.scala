@@ -20,7 +20,7 @@ import com.mongodb.WriteConcern
 import models.ThreeDAnnotation
 import play.api.libs.json.JsValue
 import controllers.SecuredController
-
+import play.api.libs.concurrent.Execution.Implicits._
 import java.io.BufferedReader
 import java.io.FileReader
 
@@ -70,9 +70,8 @@ object Previews extends ApiController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
@@ -219,9 +218,8 @@ object Previews extends ApiController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }

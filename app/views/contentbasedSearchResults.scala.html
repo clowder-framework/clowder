@@ -9,8 +9,8 @@
 		<h1>Search Results For <medium>@name</medium></h1>
 	</div>
 	@if(size == 0) {
-	<div class="row-fluid">
-		<div class="span12">
+	<div class="row">
+		<div class="col-md-12">
 			No results found. Sorry!
 		</div>
 	</div>
@@ -20,7 +20,7 @@
 	<div class="row-fluid" >
 	<div>
 	
-	<table id='tablec'  style="table-layout: fixed;width: 100%" cellpadding="10"  cellspacing="5" border="2">
+	<table id='tablec'  style="table-layout: fixed;width: 100%" cellpadding="10"  cellspacing="0" border="2">
 	
 	@defining(new IncrementCounter){c=>
 	  @for(index<-keysArray){
@@ -31,7 +31,7 @@
 	  		console.log("if : c.count=",@c.count);
 	  		</script>
 			<tr>
-	    	<th class="both" id="index" colspan="4">Index: @{results.get(index).map {ex =>
+	    	<th id="index" colspan="4">Index: @{results.get(index).map {ex =>
 	    		ex._1
 	    	}} <br>
 	    	@{results.get(index).map {ex =>
@@ -89,7 +89,7 @@
 		
 		</tr>
 	</thead>
-	
+	<tbody>
 		@results.get(index).map {list =>
 				@defining(new IncrementCounter){ i=>   
 					<script>
@@ -124,9 +124,9 @@
 								  	    u.innerHTML="";
 								  	   }else{ 
 								  	    u.align="center";
- 										u.innerHTML="<a href=@routes.Files.file(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4' Title='Click here for the original image'</img></a><br><br><a href=@routes.Search.findSimilarFile(ele._1)><p>Find Similar</p></a>"; 
+ 										u.innerHTML="<a href=@routes.Files.file(ele._1)><img class='mmd-img' src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4' Title='Click here for the original image'</img></a><br><br><a href=@routes.Search.findSimilarFile(ele._1)><p>Find Similar</p></a>"; 
  										
- 									//u.innerHTML="<a href=@routes.Search.findSimilarFile(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)'  alt='@ele._4' Title='Find Similar'</img></a>"; 	
+ 									
 
 									}
 								  }
@@ -156,9 +156,9 @@
 								 z.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
 								 
 								 @for((f, pvs) <- ele._5) {
-									//y.innerHTML="<a href=@routes.Search.findSimilarFile(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4'></img></a>";
+									
 								  y.align="center";
- 								 y.innerHTML="<a href=@routes.Files.file(ele._1)><img src='@api.routes.Previews.download(pvs(0)._1)'  alt='@ele._4' </img></a><br><br><a href=@routes.Search.findSimilarFile(ele._1)><p>Find Similar</p></a>"; 
+ 								 y.innerHTML="<a href=@routes.Files.file(ele._1)><img class='mmd-img' src='@api.routes.Previews.download(pvs(0)._1)'  alt='@ele._4' </img></a><br><br><a href=@routes.Search.findSimilarFile(ele._1)><p>Find Similar</p></a>"; 
 								  
 								  }
 								  s.className="right";
@@ -226,6 +226,9 @@
 			
 				}<!--Inc counter ends here-->
 			}<!--results map ends here-->
+			</tbody>
+			
+			
           }<!--for ends here--> 
          }<!--c def ends here-->      
     </table>

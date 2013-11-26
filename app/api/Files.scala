@@ -38,6 +38,7 @@ import services.ElasticsearchPlugin
 import services.ExtractorMessage
 import services.RabbitmqPlugin
 import services.Services
+import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Json API for files.
@@ -114,9 +115,8 @@ object Files extends ApiController {
 		            }
 		          }
 		          case None => {
-		            Ok.stream(Enumerator.fromStream(inputStream))
+		            Ok.chunked(Enumerator.fromStream(inputStream))
 		            	.withHeaders(CONTENT_TYPE -> contentType)
-		            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 		          }
 		        }
@@ -161,9 +161,8 @@ object Files extends ApiController {
 		            }
 		          }
 		          case None => {
-		            Ok.stream(Enumerator.fromStream(inputStream))
+		            Ok.chunked(Enumerator.fromStream(inputStream))
 		            	.withHeaders(CONTENT_TYPE -> contentType)
-		            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 		          }
 		        }
@@ -183,7 +182,7 @@ object Files extends ApiController {
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
 	      case Some(x) => {
-	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)  	
+	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)
 	      }
 	      case None => {
 	        Logger.error("Error getting file" + id)
@@ -230,10 +229,11 @@ object Files extends ApiController {
 	            	if(fileType.startsWith("ERROR: ")){
 	            		Logger.error(fileType.substring(7))
 	            		InternalServerError(fileType.substring(7))
-	            	}			          
-	            }else if(nameOfFile.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        }    	
+	            	}	
+	            }
+//	            }else if(nameOfFile.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        }    	
 
 	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 	            		// TODO RK : need figure out if we can use https
@@ -347,10 +347,11 @@ object Files extends ApiController {
 	        	  if(fileType.startsWith("ERROR: ")){
 	        		  Logger.error(fileType.substring(7))
 	        		  InternalServerError(fileType.substring(7))
-				  }			          
-			  }else if(nameOfFile.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        }
+				  }	
+	          }
+//			  }else if(nameOfFile.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        }
 	              
 	          // TODO RK need to replace unknown with the server name
 	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
@@ -423,10 +424,11 @@ object Files extends ApiController {
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
-			          }			          
-			        }else if(f.filename.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        } 
+			          }
+			     }
+//			        }else if(f.filename.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        } 
 	            
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
@@ -660,9 +662,8 @@ object Files extends ApiController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
@@ -713,9 +714,8 @@ object Files extends ApiController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }

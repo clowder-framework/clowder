@@ -15,35 +15,46 @@ import services.VersusPlugin
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
+import models.AppConfiguration
+import play.api.libs.json.Json
+import play.api.libs.json.Json._
+import play.api.Logger
+
 import scala.concurrent._
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
-import play.Logger
 
 /**
  * Administration pages.
- * 
+ *
  * @author Luigi Marini
  *
  */
 object Admin extends SecuredController {
-  
-  def main = SecuredAction(authorization=WithPermission(Permission.Admin)) { request =>
-    Ok(views.html.admin())
+
+  private val themes = "bootstrap/bootstrap.css" ::
+    "bootstrap-amelia.min.css" ::
+    "bootstrap-simplex.min.css" :: Nil
+
+  def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
+    val themeId = themes.indexOf(getTheme)
+    Logger.debug("Theme id " + themeId)
+    Ok(views.html.admin(themeId))
   }
-  
-  def reindexFiles = SecuredAction(parse.json, authorization=WithPermission(Permission.AddIndex)) { request =>
+
+  def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
     Ok("Reindexing")
   }
-  
-  def test = SecuredAction(parse.json, authorization=WithPermission(Permission.Public)) { request =>
+
+  def test = SecuredAction(parse.json, authorization = WithPermission(Permission.Public)) { request =>
     Ok("""{"message":"test"}""").as(JSON)
   }
-  
-  def secureTest = SecuredAction(parse.json, authorization=WithPermission(Permission.Admin)) { request =>
+
+  def secureTest = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { request =>
     Ok("""{"message":"secure test"}""").as(JSON)
   }
+
   //get the available Adapters from Versus
   def getAdapters() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
@@ -298,5 +309,25 @@ object Admin extends SecuredController {
         } //match
 
       }
+  }
+  
+  def setTheme() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { implicit request =>
+    request.body.\("theme").asOpt[Int] match {
+      case Some(theme) => {
+        AppConfiguration.setTheme(themes(theme))
+        Ok("""{"status":"ok"}""").as(JSON)
+      }
+      case None => {
+        Logger.error("no theme specified")
+        BadRequest
+      }
+    }
+  }
+
+  def getTheme(): String = {
+    AppConfiguration.getDefault match {
+      case Some(appConf) => Logger.debug("Theme" + appConf.theme); appConf.theme
+      case None => themes(0)
+    }
   }
 }

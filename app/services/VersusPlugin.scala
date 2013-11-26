@@ -147,7 +147,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId = configuration.getString("versus.index").getOrElse("")
     
-    val urlf = client + "/api/files/" + id + "?key=letmein"
+    val urlf = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get
     val host = configuration.getString("versus.host").getOrElse("")
 
     var indexurl = host + "/index/" + indexId + "/add"
@@ -252,7 +252,7 @@ class VersusPlugin(application: Application) extends Plugin {
    
     val indexId = indxId
    
-    val query = client + "/api/queries/" + id + "?key=letmein"
+    val query = client + "/api/queries/" + id + "?key=" + configuration.getString("commKey").get
     val host = configuration.getString("versus.host").getOrElse("")
 
     var queryurl = host + "/index/" + indexId + "/query"
@@ -334,7 +334,7 @@ class VersusPlugin(application: Application) extends Plugin {
    
     val indexId = indxId
    
-    val query = client + "/api/files/" + id + "?key=letmein"
+    val query = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get
     val host = configuration.getString("versus.host").getOrElse("")
 
     var queryurl = host + "/index/" + indexId + "/query"
@@ -408,50 +408,86 @@ class VersusPlugin(application: Application) extends Plugin {
   
   
   
-  
-  
-  
-
-  def queryURL(url: String): scala.concurrent.Future[Array[(String, String, Double, String)]] = {
+  def queryURL(url: String, indxId: String): scala.concurrent.Future[(String, scala.collection.mutable.ArrayBuffer[(String, String, Double, String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])] = {
     val configuration = play.api.Play.configuration
-    // val client = configuration.getString("versus.client").getOrElse("")
-    val indexId = configuration.getString("versus.index").getOrElse("")
-    val query = url
+    val client = configuration.getString("versus.client").getOrElse("")
+   
+    val indexId = indxId
+   
+   // val query = client + "/api/queries/" + indxId + "?key=letmein"
+    val query=url
     val host = configuration.getString("versus.host").getOrElse("")
-    val queryurl = host + "/index/" + indexId + "/query"
+
+    var queryurl = host + "/index/" + indexId + "/query"
 
     val resultFuture: scala.concurrent.Future[play.api.libs.ws.Response] = WS.url(queryurl).post(Map("infile" -> Seq(query)))
 
     resultFuture.map {
-      res =>
-        val json: JsValue = Json.parse(res.body)
-        val simvalue = json.as[Seq[models.Result.Result]]
+      response =>
+        val json: JsValue = Json.parse(response.body)
+        val similarity_value = json.as[Seq[models.Result.Result]]
 
-        val l = simvalue.length
-        val ar = new Array[String](l)
-        val se = new Array[(String, String, Double, String)](l)
+        val len = similarity_value.length
+       // val ar = new Array[String](len)
+        val se = new Array[(String, String, Double, String)](len)
+
+        //var resultArray = new ArrayBuffer[(String, String, Double, String)]()
+        var resultArray = new ArrayBuffer[(String, String, Double, String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]()
         var i = 0
-        simvalue.map {
-          s =>
-            val a = s.docID.split("/")
-            val n = a.length - 2
-            Services.files.getFile(a(n)) match {
+        similarity_value.map {
+          result =>
+            val end = result.docID.lastIndexOf("?")
+            val begin = result.docID.lastIndexOf("/");
+            val subStr = result.docID.substring(begin + 1, end);
+        //    val a = result.docID.split("/")
+          //  val n = a.length - 2
+            Services.files.getFile(subStr) match {
+
               case Some(file) => {
-                se.update(i, (a(n), s.docID, s.proximity, file.filename))
-                ar.update(i, file.filename)
-                Logger.debug("i" + i + " name=" + ar(i) + "se(i)" + se(i)._3)
+                // se.update(i,(a(n),result.docID,result.proximity,file.filename))
+                //Previews..............
+                val previewsFromDB = PreviewDAO.findByFileId(file.id)
+                val previewers = Previewers.findPreviewers
+                //Logger.info("Number of previews " + previews.length);
+                val files = List(file)
+                val previewslist = for (f <- files) yield {
+                  val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+                  }
+                  if (pvf.length > 0) {
+                    (file -> pvf)
+                  } else {
+                    val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
+                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+                    }
+                    (file -> ff)
+                  }
+                }
+                val previews = Map(previewslist: _*)
+                ///Previews ends.........
+                
+                //resultArray += ((subStr, result.docID, result.proximity, file.filename))
+                //resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                 val formatter = new DecimalFormat("#.###")
+               // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                val proxvalue=formatter.format(result.proximity).toDouble
+                resultArray += ((subStr, result.docID, proxvalue, file.filename,previews))
+             
+                //     ar.update(i, file.filename)
+                //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
+                Logger.debug("IndxId="+ indexId+" resultArray=(" + subStr + " , " + result.proximity + ", " + file.filename + ")\n")
                 i = i + 1
               }
               case None => None
 
             }
 
-        }
-        se
+        } // End of similarity map
+        //se
+        (indexId, resultArray)
     }
-
   }
-
+   
   override def onStop() {
     Logger.debug("Shutting down Versus Plugin")
   }

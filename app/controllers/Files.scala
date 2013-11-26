@@ -199,10 +199,11 @@ object Files extends Controller with SecuredController {
 				          if(fileType.startsWith("ERROR: ")){
 				             Logger.error(fileType.substring(7))
 				             InternalServerError(fileType.substring(7))
-				          }			          
-				        }else if(nameOfFile.endsWith(".mov")){
-				        	fileType = "ambiguous/mov";
-			        }
+				          }
+				    }
+//				        }else if(nameOfFile.endsWith(".mov")){
+//				        	fileType = "ambiguous/mov";
+//			        }
 	            
 	            // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
@@ -266,9 +267,8 @@ object Files extends Controller with SecuredController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
@@ -309,9 +309,8 @@ object Files extends Controller with SecuredController {
 	            }
 	          }
 	          case None => {
-	            Ok.stream(Enumerator.fromStream(inputStream))
+	            Ok.chunked(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
@@ -358,10 +357,11 @@ object Files extends Controller with SecuredController {
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
-			          }			          
-			        }else if(nameOfFile.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        }
+			          }
+			    }
+//			        }else if(nameOfFile.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        }
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace("/", ".")
@@ -420,10 +420,11 @@ object Files extends Controller with SecuredController {
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
-			          }			          
-			        }else if(nameOfFile.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        }
+			          }		
+			    }
+//			        }else if(nameOfFile.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        }
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace("/", ".")
@@ -485,10 +486,11 @@ object Files extends Controller with SecuredController {
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
-			          }			          
-			        }else if(nameOfFile.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        }
+			          }
+			    }
+//			        }else if(nameOfFile.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        }
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
@@ -552,10 +554,11 @@ object Files extends Controller with SecuredController {
 						  if(fileType.startsWith("ERROR: ")){
 								Logger.error(fileType.substring(7))
 								InternalServerError(fileType.substring(7))
-								}			          
-						  }else if(nameOfFile.endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
+								}
+					  }
+//						  }else if(nameOfFile.endsWith(".mov")){
+//							  fileType = "ambiguous/mov";
+//						  }
 				  	  
 					  // TODO RK need to replace unknown with the server name
 					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")

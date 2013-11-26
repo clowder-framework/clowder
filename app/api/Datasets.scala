@@ -232,7 +232,7 @@ object Datasets extends ApiController {
     
     request.body.\("tag").asOpt[String].map { tag =>
       Logger.debug("Tagging " + id + " with " + tag)
-      val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.id.toString, created = new Date)
+      val tagObj = Tag(id = tagId, name = tag, userId = userObj.get.identityId.toString, created = new Date)
       Dataset.tag(id, tagObj)
       index(id)
     }
@@ -354,6 +354,7 @@ object Datasets extends ApiController {
         				throw ActivityFound
         			  }  
         			}
+
         	}
         }catch{
           case ActivityFound =>

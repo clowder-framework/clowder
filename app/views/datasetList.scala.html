@@ -4,8 +4,8 @@
 <div class="page-header">
   <h1>Datasets</h1>
 </div>
-<div class="row-fluid">
-	<div class="span12">
+<div class="row">
+	<div class="col-md-12">
 		<table class="table table-bordered table-hover">
 			<thead>
 				<tr>
@@ -30,7 +30,7 @@
 						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
 						<td>@dataset.description</td>
-						<td>@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" height="120" width="120">}</td>
+						<td>@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" width="120">}</td>
 						@if(user.isDefined) {
 							<td><a href="#" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
 						}
