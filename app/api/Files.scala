@@ -254,10 +254,25 @@ object Files extends ApiController {
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-	             
-	            current.plugin[ElasticsearchPlugin].foreach{
-	              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+	            	            
+	            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              
+	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
+	              Logger.debug("xmlmd=" + xmlMd)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		            }
 	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            }
+	            }
+	            
 	            Ok(toJson(Map("id"->id)))   
 	          }
 	          case None => {
@@ -385,6 +400,25 @@ object Files extends ApiController {
               val dtkey = "unknown." + "dataset." + "unknown"
 
               current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, "")) }
+              
+              //for metadata files
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+            	  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+            			  FileDAO.addXMLMetadata(id, xmlToJSON)
+
+            			  val xmlMd = FileDAO.getXMLMetadataJSON(id)
+            			  Logger.debug("xmlmd=" + xmlMd)
+
+            			  current.plugin[ElasticsearchPlugin].foreach{
+            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlMd)))
+            	  		  }
+              }
+              else{
+            	  current.plugin[ElasticsearchPlugin].foreach{
+            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
+            	  }
+              }
+              
 
               Logger.info("Uploading Completed")
 
