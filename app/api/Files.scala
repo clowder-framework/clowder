@@ -862,6 +862,7 @@ object Files extends ApiController {
 			    case Some(text) => {
 			        val comment = new Comment(identity, text, file_id=Some(id))
 			        Comment.save(comment)
+			        index(id)
 			        Ok(comment.id.toString())
 			    }
 			    case None => {
