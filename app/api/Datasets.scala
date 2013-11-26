@@ -232,6 +232,7 @@ object Datasets extends ApiController {
   def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding user metadata to dataset " + id)
       Dataset.addUserMetadata(id, Json.stringify(request.body))
+      index(id)
       Ok(toJson(Map("status" -> "success")))
     }
 
@@ -285,10 +286,13 @@ object Datasets extends ApiController {
         val commentJson = new JSONArray(comments)
 
         Logger.debug("commentStr=" + commentJson.toString())
+        
+        val usrMd = Dataset.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "dataset", id,
-            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd)))
         }
       }
       case None => Logger.error("Dataset not found: " + id)
