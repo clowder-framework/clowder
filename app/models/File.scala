@@ -85,29 +85,29 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 
   // ---------- Tags related code starts ------------------
   // Input validation is done in api.Files, so no need to check again.
-  def addTags(id: String, userIdStr: String, tags: List[String]) {
+  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to file " + id + " : " + tags)
     val file = Services.files.getFile(id).get
+    val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
     tags.foreach(tag => {
-      // Clean up leading, trailing and multiple contiguous white spaces.
-      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
-      val tagList = file.tags.map(_.name)
       // Only add tags with new values.
-      if (!tagList.exists(_ == tagCleaned)) {
-        val tagObj = Tag(id = new ObjectId, name = tagCleaned, userId = userIdStr, created = createdDate)
+      if (!existingTags.contains(tag)) {
+        val tagObj = Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
         dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
   }
 
-  def removeTags(id: String, tags: List[String]) {
-    Logger.debug("Removing tags in file " + id + " : " + tags)
-    tags.foreach(tag => {
-      // Clean up leading, trailing and multiple contiguous white spaces.
-      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
-      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tagCleaned)), false, false, WriteConcern.Safe)
-    })
+  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+    Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+    val file = Services.files.getFile(id).get
+    val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
+    // Only remove existing tags.
+    tags.intersect(existingTags).map { tag =>
+      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+    }
   }
 
   def removeAllTags(id: String) {

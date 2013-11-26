@@ -696,15 +696,15 @@
 	
 					     if (tag !== "" && isTagPresent != true) {
 					     	 console.log("submitting tag " + tag);
-					     	var request = jsRoutes.api.Datasets.tag('@dataset.id').ajax({
-					     		data: JSON.stringify({"tag":tag}),
+					     	var request = jsRoutes.api.Datasets.addTags('@dataset.id').ajax({
+					     		data: JSON.stringify({"tags":[tag]}),
 						       type: 'POST',
 						       contentType: "application/json",
 						     });
 						     
 						     request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);
-						        var url = "../tags/search/" + tag;
+						        var url = "../tags/search?tag=" + tag;
 						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='icon-remove'></i></a></li>").appendTo('#tagList');
 						        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
 						        $newTag.find(".icon-remove").click(removeTag);*/

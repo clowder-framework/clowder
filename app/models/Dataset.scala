@@ -121,37 +121,37 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   }
   */
 
-  def addTags(id: String, userIdStr: String, tags: List[String]) {
+  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
 
     val dataset = Services.datasets.get(id).get
+    val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
     tags.foreach(tag => {
-      // Clean up leading, trailing and multiple contiguous white spaces.
-      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
-      val tagList = dataset.tags.map(_.name)
       // Only add tags with new values.
-      if (!tagList.exists(_ == tagCleaned)) {
-        val tagObj = Tag(id = new ObjectId, name = tagCleaned, userId = userIdStr, created = createdDate)
+      if (!existingTags.contains(tag)) {
+        val tagObj = Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
         dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
   }
 
-  /* Old code to remove a tag BY its ObjectId.  Leave it for a while.  Might be needed by GUI. */
-  def removeTag(id: String, tagId: String) { 
-	 Logger.debug("Removing tag " + tagId )
-     val result = dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId))), false, false, WriteConcern.Safe)
+  /* Old code to remove a tag BY its ObjectId.  Needed in the view file. */
+  def removeTag(id: String, tagId: String) {
+    Logger.debug("Removing tag " + tagId)
+    val result = dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId))), false, false, WriteConcern.Safe)
   }
 
-  def removeTags(id: String, tags: List[String]) {
-    Logger.debug("Removing tags in dataset " + id + " : " + tags)
-    tags.foreach(tag => {
-      // Clean up leading, trailing and multiple contiguous white spaces.
-      val tagCleaned = tag.trim().replaceAll("\\s+", " ")
-      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tagCleaned)), false, false, WriteConcern.Safe)
-    })
+  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+    Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+    val dataset = Services.datasets.get(id).get
+    val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
+    // Only remove existing tags.
+    tags.intersect(existingTags).map { tag =>
+      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+    }
   }
 
   def removeAllTags(id: String) {

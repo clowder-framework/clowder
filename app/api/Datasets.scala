@@ -256,36 +256,7 @@ object Datasets extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
-    Logger.info("Adding tags for dataset with id " + id)
-
-    val userObj = request.user
-    Logger.debug("user id: " + userObj.get.id.id + ", user.firstName: " + userObj.get.firstName
-      + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
-
-    request.body.\("tags").asOpt[List[String]] match {
-      case Some(tags) => {
-        if (ObjectId.isValid(id)) {
-          Services.datasets.get(id) match {
-            case Some(dataset) => {
-              Dataset.addTags(id, userObj.get.id.id, tags)
-              index(id)
-              Ok(Json.obj("status" -> "success"))
-            }
-            case None => {
-              Logger.error("The dataset with id " + id + " is not found.")
-              NotFound(toJson("The dataset with id " + id + " is not found."))
-            }
-          }
-        } else {
-          Logger.error("The given id " + id + " is not a valid ObjectId.")
-          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
-        }
-      }
-      case None => {
-        Logger.error("No \"tags\" specified, request.body: " + request.body.toString)
-        BadRequest(toJson("No \"tags\" specified."))
-      }
-    }
+  	Files.addRemoveTagsHelper("dataset", "add", id, request)
   }
 
   /**
@@ -293,30 +264,7 @@ object Datasets extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
-    Logger.info("Removing tags for dataset with id " + id)
-    request.body.\("tags").asOpt[List[String]] match {
-      case Some(tags) => {
-        if (ObjectId.isValid(id)) {
-          Services.datasets.get(id) match {
-            case Some(dataset) => {
-              Dataset.removeTags(id, tags)
-              Ok(Json.obj("status" -> "success"))
-            }
-            case None => {
-              Logger.error("The dataset with id " + id + " is not found.")
-              NotFound(toJson("The dataset with id " + id + " is not found."))
-            }
-          }
-        } else {
-          Logger.error("The given id " + id + " is not a valid ObjectId.")
-          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
-        }
-      }
-      case None => {
-        Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
-        BadRequest(toJson("No \"tags\" specified."))
-      }
-    }
+  	Files.addRemoveTagsHelper("dataset", "remove", id, request)
   }
 
   /**

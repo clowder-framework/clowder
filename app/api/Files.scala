@@ -24,6 +24,7 @@ import models.Preview
 import models.PreviewDAO
 import models.ThreeDTextureDAO
 import models.Extraction
+import models.SectionDAO
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.iteratee.Enumerator
@@ -45,7 +46,9 @@ import services.Services
  *
  */
 object Files extends ApiController {
-  
+
+  val USERID_ANONYMOUS = "anonymous"
+
   def get(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
 	    Logger.info("GET file with id " + id)    
 	    Services.files.getFile(id) match {
@@ -752,73 +755,172 @@ object Files extends ApiController {
     }
   }
 
-  /**
-   *  REST endpoint: POST: Add tags to a file.
+  /* Helper class and function to check for error conditions.
+   * 
    */
-  def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
-    Logger.info("Adding tags for file with id " + id)
-
+  class TagCheck {
+    var error_str: String = ""
+    var not_found: Boolean = false
+    var userOpt: Option[String] = None
+    var extractorOpt: Option[String] = None
+    var tags: Option[List[String]] = None
+  }
+  /*
+   *  Helper function to check for error conditions.
+   *  Input parameters:
+   *      obj_type: one of the three strings "file", "dataset" or "section"
+   *      id:       the id in the original addTags call
+   *      request:  the request in the original addTags call
+   *      tagCheck: a TagCheck object
+   *  Side effect:
+   *      The tagCheck object is modified to reflect the error checking results:
+   * 
+   *      If error_str == "", then no error is found;
+   *      otherwise, it contains the cause of the error.
+   *      not_found is one of the error conditions, meaning the object with
+   *      the given id is not found in the DB.
+   *      userOpt, extractorOpt and tags are set according to the request's content,
+   *      and will remain None if they are not specified in the request.
+   *      We change userOpt from its default None value, only if the userId
+   *      is not USERID_ANONYMOUS.  The use case for this is the extractors
+   *      posting to the REST API -- they'll use the commKey to post, and the original
+   *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
+   *      record the extractor_id, but omit the userId field, so we leave userOpt as None. 
+   */
+  def checkErrorsForTag(obj_type: String, id: String, request: RequestWithUser[JsValue],
+      tagCheck: TagCheck) = {
     val userObj = request.user
-    Logger.debug("user id: " + userObj.get.id.id + ", user.firstName: " + userObj.get.firstName
+    Logger.debug("checkErrorsForTag: user id: " + userObj.get.id.id + ", user.firstName: " + userObj.get.firstName
       + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
+    val userId = userObj.get.id.id
+    if (USERID_ANONYMOUS == userId) {
+      Logger.debug("checkErrorsForTag: The user id is \"anonymous\".")
+    }
 
-    request.body.\("tags").asOpt[List[String]] match {
-      case Some(tags) => {
-        if (ObjectId.isValid(id)) {
-          Services.files.getFile(id) match {
-            case Some(file) => {
-              FileDAO.addTags(id, userObj.get.id.id, tags)
-              Ok(Json.obj("status" -> "success"))
-            }
-            case None => {
-              Logger.error("The file with id " + id + " is not found.")
-              NotFound(toJson("The file with id " + id + " is not found."))
-            }
-          }
-        } else {
-          Logger.error("The given id " + id + " is not a valid ObjectId.")
-          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    var userOpt: Option[String] = None
+    var extractorOpt: Option[String] = None
+    var error_str = ""
+    var not_found = false
+    var tags = request.body.\("tags").asOpt[List[String]]
+
+    obj_type match {
+      case "file" =>
+      case "dataset" =>
+      case "section" =>
+      case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
+    }
+
+    if (("" == error_str) && (tags.isEmpty)) {
+      error_str = "No \"tags\" specified, request.body: " + request.body.toString
+    }
+    if (("" == error_str) && (!ObjectId.isValid(id))) {
+      error_str = "The given id " + id + " is not a valid ObjectId."
+    }
+    obj_type match {
+      case "file" => not_found = Services.files.getFile(id).isEmpty
+      case "dataset" => not_found = Services.datasets.get(id).isEmpty
+      case "section" => not_found = SectionDAO.findOneById(new ObjectId(id)).isEmpty
+    }
+    if (not_found) {
+      error_str = "The " + obj_type + " with id " + id + " is not found."
+    }
+    if ("" == error_str) {
+      if (USERID_ANONYMOUS == userId) {
+        val eid = request.body.\("extractor_id").asOpt[String]
+        eid match {
+          case Some(extractor_id) => extractorOpt = eid
+          case None => error_str = "No \"extractor_id\" specified, request.body: " + request.body.toString
         }
-      }
-      case None => {
-        Logger.error("No \"tags\" specified, request.body: " + request.body.toString)
-        BadRequest(toJson("No \"tags\" specified."))
+      } else {
+        userOpt = Option(userId)
       }
     }
+    tagCheck.error_str = error_str
+    tagCheck.not_found = not_found
+    tagCheck.userOpt = userOpt
+    tagCheck.extractorOpt = extractorOpt
+    tagCheck.tags = tags
+  }
+  /*
+   *  Helper function to handle adding and removing tags for files/datasets/sections.
+   *  Input parameters:
+   *      obj_type: one of the three strings "file", "dataset" or "section"
+   *      op_type:  one of the two strings "add", "remove"
+   *      id:       the id in the original addTags call
+   *      request:  the request in the original addTags call
+   *  Return type:
+   *      play.api.mvc.SimpleResult[JsValue]
+   *      in the form of Ok, NotFound and BadRequest
+   *      where: Ok contains the JsObject: "status" -> "success", the other two contain a JsString,
+   *      which contains the cause of the error, such as "No 'tags' specified", and
+   *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
+   */
+  def addRemoveTagsHelper(obj_type: String, op_type: String, id: String, request: RequestWithUser[JsValue]) = {
+	op_type match {
+      case "add" => Logger.info("Adding tags for " + obj_type + " with id " + id)
+      case "remove" => Logger.info("Removing tags for " + obj_type + " with id " + id)
+      case _ => Logger.error("Only add/remove is supported in addRemoveTagsHelper().")
+    }
+
+    val tagCheck = new TagCheck
+    checkErrorsForTag(obj_type, id, request, tagCheck)
+
+    val error_str = tagCheck.error_str
+    val not_found = tagCheck.not_found
+    val userOpt = tagCheck.userOpt
+    val extractorOpt = tagCheck.extractorOpt
+    val tags = tagCheck.tags
+
+    // Now the real work: adding/removing the tags.
+    if ("" == error_str) {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
+      (obj_type, op_type) match {
+        case ("file", "add") => FileDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case ("dataset", "add") =>
+          Dataset.addTags(id, userOpt, extractorOpt, tagsCleaned); Datasets.index(id)
+        case ("section", "add") => SectionDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+
+        case ("file", "remove") => FileDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case ("dataset", "remove") => Dataset.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case ("section", "remove") => SectionDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+      }
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(error_str)
+      if (not_found) {
+        NotFound(toJson(error_str))
+      } else {
+        BadRequest(toJson(error_str))
+      }
+    }
+  }
+
+  /**
+   *  REST endpoint: POST: Add tags to a file.
+   *  Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   *  In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
+   *  so will be added.
+   */
+  def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
+  	addRemoveTagsHelper("file", "add", id, request)
   }
 
   /**
    *  REST endpoint: POST: remove tags.
+   *  Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   *  In other words, the same tag names but diff userId or extractor_id are considered as diff tags.
+   *  Current implementation enforces the restriction which only allows the tags to be removed by
+   *  the same user or extractor.
    */
   def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
-    Logger.info("Removing tags for file with id " + id)
-    request.body.\("tags").asOpt[List[String]] match {
-      case Some(tags) => {
-        if (ObjectId.isValid(id)) {
-          Services.files.getFile(id) match {
-            case Some(file) => {
-              FileDAO.removeTags(id, tags)
-              Ok(Json.obj("status" -> "success"))
-            }
-            case None => {
-              Logger.error("The file with id " + id + " is not found.")
-              NotFound(toJson("The file with id " + id + " is not found."))
-            }
-          }
-        } else {
-          Logger.error("The given id " + id + " is not a valid ObjectId.")
-          BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
-        }
-      }
-      case None => {
-        Logger.error("no \"tags\" specified, request.body: " + request.body.toString)
-        BadRequest(toJson("No \"tags\" specified."))
-      }
-    }
+  	addRemoveTagsHelper("file", "remove", id, request)
   }
 
   /**
    *  REST endpoint: POST: remove all tags.
+   *  This is a big hammer -- it does not check the userId or extractor_id and
+   *  forcefully remove all tags for this id.  It is mainly intended for testing. 
    */
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.info("Removing all tags for file with id: " + id)
