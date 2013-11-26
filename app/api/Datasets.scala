@@ -566,6 +566,13 @@ object Datasets extends ApiController {
     
   }
   
-  
+  def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        Ok(toJson(Dataset.getTechnicalMetadataJSON(id)))
+      }
+      case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
+    }
+  }
   
 }
