@@ -375,7 +375,7 @@ object Files extends ApiController {
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
                            
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType)))
+                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
               }
 
               // add file to dataset   
