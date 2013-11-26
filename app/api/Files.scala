@@ -374,13 +374,11 @@ object Files extends ApiController {
 	              
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
                            
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
-              }
-
               // add file to dataset   
               // TODO create a service instead of calling salat directly
               Dataset.addFile(dataset.id.toString, f)
+              
+              index(f.id.toString())
 
               // TODO RK need to replace unknown with the server name and dataset type
               val dtkey = "unknown." + "dataset." + "unknown"
@@ -975,13 +973,12 @@ def index(id: String) {
         Logger.debug("usrmd=" + usrMd)
         
         var fileDsId = ""
-        var fileDsName = ""      
-        val fileDs = Dataset.findOneByFileId(file.id)
-        if(!fileDs.isEmpty){
-          val theFileDs = fileDs.get
-          fileDsId = theFileDs.id.toString()
-          fileDsName = theFileDs.name
-        }
+        var fileDsName = ""
+          
+        for(dataset <- Dataset.findByFileId(file.id)){
+          fileDsId = fileDsId + dataset.id.toString + "  "
+          fileDsName = fileDsName + dataset.name + "  "
+        }  
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "file", id,

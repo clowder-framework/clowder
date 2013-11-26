@@ -134,7 +134,8 @@ object Datasets extends ApiController {
           case Some(file) => {
             val theFile = FileDAO.get(fileId).get
             if(!isInDataset(theFile,dataset)){
-	            Dataset.addFile(dsId, theFile)
+	            Dataset.addFile(dsId, theFile)	            
+	            api.Files.index(fileId)
 	            Logger.info("Adding file to dataset completed")
 	            
 	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
@@ -170,7 +171,8 @@ object Datasets extends ApiController {
             val theFile = FileDAO.get(fileId).get
             if(isInDataset(theFile,dataset)){
 	            //remove file from dataset
-	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)	            
+	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)
+	            api.Files.index(fileId)
 	            Logger.info("Removing file from dataset completed")
 	            
 	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){

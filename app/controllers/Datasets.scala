@@ -338,6 +338,9 @@ object Datasets extends SecuredController {
 			      current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
 			    		  List(("name",dt.name), ("description", dt.description)))}
 		          
+		          //reindex file
+		          api.Files.index(theFile.get.id.toString())
+		          
 		          // TODO RK : need figure out if we can use https
 		          val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
