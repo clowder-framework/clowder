@@ -979,5 +979,25 @@ object Files extends ApiController {
     }   
 
   
+  /**
+   * List datasets satisfying a general metadata search tree.
+   */
+  def searchFilesGeneralMetadata = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { request =>
+      Logger.debug("Searching files' metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = FileDAO.searchAllMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning files list.")
+
+      val list = for (file <- searchQuery) yield jsonFileWithThumbnail(file)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    } 
 	
 }

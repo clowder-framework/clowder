@@ -213,15 +213,9 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
     Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
     
-    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
+    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "all")
     Logger.debug("thequery: "+theQuery.toString)    
     var fileList = dao.find(theQuery).toList
-    
-    theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "metadata")
-    fileList = (fileList ++ dao.find(theQuery).toList).distinct
-    
-    theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "xmlMetadata")
-    fileList = (fileList ++ dao.find(theQuery).toList).distinct
        
     return fileList
   }
@@ -254,22 +248,50 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
         if(keyTrimmed.endsWith("__not")){
         	  actualKey = actualKey.substring(0, actualKey.length()-5) 
           }
-        if(!root.equals(""))
-        	actualKey = root + "." + actualKey 
         
-        if(reqValue.isInstanceOf[String]){ 
-            val currValue = reqValue.asInstanceOf[String]            
-            if(keyTrimmed.endsWith("__not")){
-            	builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  currValue))
-            }
-            else{
-            	builder += MongoDBObject(actualKey -> currValue)
-            }           
-        }else{
-          //recursive
-            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
-            val elemMatch = actualKey $elemMatch currValue
-            builder.add(elemMatch)
+        if(!root.equals("all")){
+        
+	        if(!root.equals(""))
+	        	actualKey = root + "." + actualKey 
+	        
+	        if(reqValue.isInstanceOf[String]){ 
+	            val currValue = reqValue.asInstanceOf[String]            
+	            if(keyTrimmed.endsWith("__not")){
+	            	builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  currValue))
+	            }
+	            else{
+	            	builder += MongoDBObject(actualKey -> currValue)
+	            }           
+	        }else{
+	          //recursive
+	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+	            val elemMatch = actualKey $elemMatch currValue
+	            builder.add(elemMatch)
+	        }
+        }else{          
+          var objectForEach = MongoDBList()
+          val allRoots = Map(1 -> "userMetadata", 2 -> "metadata", 3 -> "xmlMetadata")
+          allRoots.keys.foreach{ i =>
+            var tempActualKey = allRoots(i) + "." + actualKey
+            
+            if(reqValue.isInstanceOf[String]){ 
+	            val currValue = reqValue.asInstanceOf[String]            
+	            if(keyTrimmed.endsWith("__not")){
+	            	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  currValue))
+	            }
+	            else{
+	            	objectForEach += MongoDBObject(tempActualKey -> currValue)
+	            }           
+	        }else{
+	          //recursive
+	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+	            val elemMatch = tempActualKey $elemMatch currValue
+	            objectForEach.add(elemMatch)
+	        }            
+          }
+          
+          builder.add(MongoDBObject("$or" ->  objectForEach))
+          
         }
       }
     }
