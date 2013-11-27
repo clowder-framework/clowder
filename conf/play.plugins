@@ -1,6 +1,7 @@
 9990:services.MongoSalatPlugin
 9991:com.typesafe.plugin.CommonsMailerPlugin
 9992:services.RabbitmqPlugin
+9200:services.ElasticsearchPlugin
 10002:services.MongoDBAuthenticatorStore
 9995:securesocial.core.DefaultIdGenerator
 9996:securesocial.core.providers.utils.DefaultPasswordValidator

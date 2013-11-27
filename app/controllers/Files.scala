@@ -218,8 +218,23 @@ object Files extends Controller with SecuredController {
 	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
 	            val id = f.id.toString
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-	            current.plugin[ElasticsearchPlugin].foreach{
-	              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName","")))
+	            
+	            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              
+	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
+	              Logger.debug("xmlmd=" + xmlMd)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlMd)))
+		            }
+	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName","")))
+		            }
 	            }
 	           
 	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
@@ -377,9 +392,25 @@ object Files extends Controller with SecuredController {
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-            current.plugin[ElasticsearchPlugin].foreach{
-              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
-            }
+            
+            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              
+	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
+	              Logger.debug("xmlmd=" + xmlMd)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		            }
+	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            }
+	            }
+
             // redirect to file page]
             // val query="http://localhost:9000/files/"+id+"/blob"  
            //  var slashindex=query.lastIndexOf('/')
@@ -443,9 +474,26 @@ object Files extends Controller with SecuredController {
             val id = f.id.toString
             val path=f.path
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-            current.plugin[ElasticsearchPlugin].foreach{
-              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
-            }
+            
+            
+            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              
+	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
+	              Logger.debug("xmlmd=" + xmlMd)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		            }
+	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            }
+	            }
+            
             // redirect to file page]
             Logger.debug("Query file id= "+id+ " path= "+path);
              Redirect(routes.Search.findSimilar(f.id.toString))  
@@ -508,9 +556,24 @@ object Files extends Controller with SecuredController {
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             val id = f.id.toString
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-            current.plugin[ElasticsearchPlugin].foreach{
-              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
-           }
+            
+            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              
+	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
+	              Logger.debug("xmlmd=" + xmlMd)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		            }
+	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            }
+	            }
             
            Ok(f.id.toString)
             
@@ -580,7 +643,25 @@ object Files extends Controller with SecuredController {
 //					  		  current.plugin[ElasticsearchPlugin].foreach{
 //					  			  _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
 //					  }
-					  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))}
+					  
+					  
+					  //for metadata files
+					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+						  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+								  FileDAO.addXMLMetadata(id, xmlToJSON)
+
+								  val xmlMd = FileDAO.getXMLMetadataJSON(id)
+								  Logger.debug("xmlmd=" + xmlMd)
+
+								  current.plugin[ElasticsearchPlugin].foreach{
+						  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlMd)))
+						  		  }
+					  }
+					  else{
+						  current.plugin[ElasticsearchPlugin].foreach{
+							  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
+						  }
+					  }
 					  
 					  // add file to dataset
 					  // TODO create a service instead of calling salat directly
