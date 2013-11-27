@@ -790,9 +790,9 @@ object Files extends ApiController {
   def checkErrorsForTag(obj_type: String, id: String, request: RequestWithUser[JsValue],
       tagCheck: TagCheck) = {
     val userObj = request.user
-    Logger.debug("checkErrorsForTag: user id: " + userObj.get.id.id + ", user.firstName: " + userObj.get.firstName
+    Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
       + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
-    val userId = userObj.get.id.id
+    val userId = userObj.get.identityId.userId
     if (USERID_ANONYMOUS == userId) {
       Logger.debug("checkErrorsForTag: The user id is \"anonymous\".")
     }
