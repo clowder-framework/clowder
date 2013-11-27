@@ -977,7 +977,7 @@ object Files extends ApiController {
   def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
     Services.files.getFile(id)  match {
       case Some(file) => {
-        Ok(toJson(FileDAO.getTechnicalMetadataJSON(id)))
+        Ok(FileDAO.getTechnicalMetadataJSON(id))
       }
       case None => {Logger.error("Error finding file" + id); InternalServerError}      
     }

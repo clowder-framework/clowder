@@ -214,3 +214,4 @@ POST	/api/comment/:id					api.Comments.comment(id)
 
 GET   	/api/search                       api.Search.search(query: String ?= "")
 
+
