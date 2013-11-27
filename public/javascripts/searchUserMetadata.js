@@ -274,7 +274,7 @@ $(function() {
 				  }
 				  else if($(this).html() == "Submit"){
 
-					var data = DOMtoJSON(document.getElementById('datasetUserMetadata').children[1]);
+					var data = DOMtoJSON(document.getElementById('queryUserMetadata').children[1]);
 					var request = $.ajax({
 				       type: 'POST',
 				       url: queryIp,
@@ -289,24 +289,48 @@ $(function() {
 					        $('.next').css('visibility','hidden');
 					        searchResultsCount = respJSON.length;
 					        $('#resultTable tbody tr').remove();
-					        for(var i = 0; i < respJSON.length; i++){
-					        	var createdDateArray = respJSON[i].created.split(" ");
-					        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
-					        	var removeCell = "";
-					        	if(window["userDefined"] == true){
-					        		removeCell = "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
-					        	}					        	
-					        	var datasetThumbnail = "";
-					        	if(respJSON[i].thumbnail != "None")
-					        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
-					        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
-					        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
-					        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
-					        								+ "<td>" + createdDate + "</td>"
-					        								+ "<td>" + respJSON[i].description + "</td>"
-					        								+ "<td>" + datasetThumbnail + "</td>"
-					        								+ removeCell + "</tr>");
-					        }
+					        //////
+					        if(searchOn == "datasets"){
+						        for(var i = 0; i < respJSON.length; i++){
+						        	var createdDateArray = respJSON[i].created.split(" ");
+						        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
+						        	var removeCell = "";
+						        	if(window["userDefined"] == true){
+						        		removeCell = "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
+						        	}					        	
+						        	var datasetThumbnail = "";
+						        	if(respJSON[i].thumbnail != "None")
+						        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+						        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+						        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
+						        								+ "<td>" + createdDate + "</td>"
+						        								+ "<td>" + respJSON[i].description + "</td>"
+						        								+ "<td>" + datasetThumbnail + "</td>"
+						        								+ removeCell + "</tr>");
+						        }
+						    }
+					        else if(searchOn == "files"){
+						        for(var i = 0; i < respJSON.length; i++){
+						        	//var createdDateArray = respJSON[i].created.split(" ");
+						        	//var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
+						        	var removeCell = "";
+						        	if(window["userDefined"] == true){
+						        		removeCell = "<td><a href='#!' onclick='removeFile(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
+						        	}					        	
+						        	var fileThumbnail = "";
+						        	if(respJSON[i].thumbnail != "None")
+						        		fileThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+						        							+ "alt='Thumbnail of " + respJSON[i].filename + "' height='120' width='120'>";
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+						        								+ "/files/" + respJSON[i].id + "'>"+ respJSON[i].filename + "</a></td>"
+						        								+ "<td>" + respJSON[i].contentType + "</td>"
+						        								+ "<td>" + respJSON[i].dateCreated + "</td>"
+						        								+ "<td>" + fileThumbnail + "</td>"
+						        								+ removeCell + "</tr>");
+						        }
+						    }
+					        ////
 					        $('#resultTable').show();
 					        
 					        for(var i = 0; i < 10; i++){

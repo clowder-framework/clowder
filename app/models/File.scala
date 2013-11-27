@@ -13,6 +13,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import collection.JavaConverters._
+import scala.collection.JavaConversions._
 import securesocial.core.Identity
 import play.api.Logger
 import java.util.Calendar
@@ -209,5 +210,62 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
   
+  
+  
+  def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
+    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
+    Logger.debug("thequery: "+theQuery.toString)
+    
+    val fileList = dao.find(theQuery).toList
+    return fileList
+  }
+  
+  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
+    Logger.debug("req: "+ requestedMap)
+    var queryMap = MongoDBList()
+    var builder = MongoDBObject()
+    var orFound = false
+    for((reqKey, reqValue) <- requestedMap){
+      val keyTrimmed = reqKey.replaceAll("__[0-9]+$","")
+      
+      if(keyTrimmed.equals("OR")){
+          queryMap.add(builder.result)
+          builder = MongoDBObject()
+          orFound = true
+        }
+      else{
+        var actualKey = keyTrimmed
+        if(keyTrimmed.endsWith("__not")){
+        	  actualKey = actualKey.substring(0, actualKey.length()-5) 
+          }
+        if(!root.equals(""))
+        	actualKey = root + "." + actualKey 
+        
+        if(reqValue.isInstanceOf[String]){ 
+            val currValue = reqValue.asInstanceOf[String]            
+            if(keyTrimmed.endsWith("__not")){
+            	builder += actualKey -> MongoDBObject("$not" ->  currValue)
+            }
+            else{
+            	builder += actualKey -> currValue
+            }           
+        }else{
+          //recursive
+            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+            val elemMatch = actualKey $elemMatch currValue
+            builder = builder ++ elemMatch
+        }
+      }
+    }
+    queryMap.add(builder.result)
+    
+    if(orFound){
+    	return MongoDBObject("$or" ->  queryMap)
+    }
+    else{
+      return builder.result
+    }
+  }
   
 }

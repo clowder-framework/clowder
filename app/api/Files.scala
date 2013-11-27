@@ -49,6 +49,9 @@ import org.json.XML
 
 import Transformation.LidoToCidocConvertion
 
+import jsonutils.JsonUtil
+
+
 /**
  * Json API for files.
  * 
@@ -613,8 +616,16 @@ object Files extends ApiController {
 
   }
   
-    def jsonFile(file: File): JsValue = {
+  def jsonFile(file: File): JsValue = {
         toJson(Map("id"->file.id.toString, "filename"->file.filename, "content-type"->file.contentType, "date-created"->file.uploadDate.toString(), "size"->file.length.toString))
+  }
+  
+  def jsonFileWithThumbnail(file: File): JsValue = {
+    var fileThumbnail = "None"
+    if(!file.thumbnail_id.isEmpty)
+      fileThumbnail = file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)
+    
+        toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType, "dateCreated"->file.uploadDate.toString(), "thumbnail" -> fileThumbnail))
   }
   
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {
@@ -946,7 +957,26 @@ object Files extends ApiController {
   }
   
 
-    
+  /**
+   * List datasets satisfying a user metadata search tree.
+   */
+  def searchFilesUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { request =>
+      Logger.debug("Searching files' user metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = FileDAO.searchUserMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning files list.")
+
+      val list = for (file <- searchQuery) yield jsonFileWithThumbnail(file)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    }   
 
   
 	

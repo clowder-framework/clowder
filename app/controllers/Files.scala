@@ -615,7 +615,10 @@ object Files extends Controller with SecuredController {
     }
   }
 
-
+  def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.fileMetadataSearch()) 
+  }
   
   
   
