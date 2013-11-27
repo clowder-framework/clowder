@@ -210,6 +210,21 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
   
+  def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
+    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    
+    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
+    Logger.debug("thequery: "+theQuery.toString)    
+    var fileList = dao.find(theQuery).toList
+    
+    theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "metadata")
+    fileList = (fileList ++ dao.find(theQuery).toList).distinct
+    
+    theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "xmlMetadata")
+    fileList = (fileList ++ dao.find(theQuery).toList).distinct
+       
+    return fileList
+  }
   
   
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
@@ -224,14 +239,14 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
     Logger.debug("req: "+ requestedMap)
     var queryMap = MongoDBList()
-    var builder = MongoDBObject()
+    var builder = MongoDBList()
     var orFound = false
     for((reqKey, reqValue) <- requestedMap){
       val keyTrimmed = reqKey.replaceAll("__[0-9]+$","")
       
       if(keyTrimmed.equals("OR")){
-          queryMap.add(builder.result)
-          builder = MongoDBObject()
+          queryMap.add(MongoDBObject("$and" ->  builder))
+          builder = MongoDBList()
           orFound = true
         }
       else{
@@ -245,16 +260,16 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
         if(reqValue.isInstanceOf[String]){ 
             val currValue = reqValue.asInstanceOf[String]            
             if(keyTrimmed.endsWith("__not")){
-            	builder += actualKey -> MongoDBObject("$not" ->  currValue)
+            	builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  currValue))
             }
             else{
-            	builder += actualKey -> currValue
+            	builder += MongoDBObject(actualKey -> currValue)
             }           
         }else{
           //recursive
             val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
             val elemMatch = actualKey $elemMatch currValue
-            builder = builder ++ elemMatch
+            builder.add(elemMatch)
         }
       }
     }
@@ -264,7 +279,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     	return MongoDBObject("$or" ->  queryMap)
     }
     else{
-      return builder.result
+      return MongoDBObject("$and" ->  builder)
     }
   }
   

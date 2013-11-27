@@ -176,14 +176,14 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
     Logger.debug("req: "+ requestedMap)
     var queryMap = MongoDBList()
-    var builder = MongoDBObject()
+    var builder = MongoDBList()
     var orFound = false
     for((reqKey, reqValue) <- requestedMap){
       val keyTrimmed = reqKey.replaceAll("__[0-9]+$","")
       
       if(keyTrimmed.equals("OR")){
-          queryMap.add(builder.result)
-          builder = MongoDBObject()
+          queryMap.add(MongoDBObject("$and" ->  builder))
+          builder = MongoDBList()
           orFound = true
         }
       else{
@@ -197,16 +197,16 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
         if(reqValue.isInstanceOf[String]){ 
             val currValue = reqValue.asInstanceOf[String]            
             if(keyTrimmed.endsWith("__not")){
-            	builder += actualKey -> MongoDBObject("$not" ->  currValue)
+            	builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  currValue))
             }
             else{
-            	builder += actualKey -> currValue
+            	builder += MongoDBObject(actualKey -> currValue)
             }           
         }else{
           //recursive
             val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
             val elemMatch = actualKey $elemMatch currValue
-            builder = builder ++ elemMatch
+            builder.add(elemMatch)
         }
       }
     }
@@ -216,7 +216,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     	return MongoDBObject("$or" ->  queryMap)
     }
     else{
-      return builder.result
+      return MongoDBObject("$and" ->  builder)
     }
   }
   
