@@ -359,7 +359,28 @@ object Datasets extends ApiController {
       val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
-    }  
+    }
+  
+  /**
+   * List datasets satisfying a general metadata search tree.
+   */
+  def searchDatasetsGeneralMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
+      Logger.debug("Searching datasets' metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = Dataset.searchAllMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning datasets list.")
+
+      val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    } 
   
   /**
    * Return whether a dataset is currently being processed.

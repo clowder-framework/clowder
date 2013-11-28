@@ -359,6 +359,10 @@ object Datasets extends SecuredController {
     implicit val user = request.user
   	Ok(views.html.metadataSearch()) 
   }
+  def generalMetadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.generalMetadataSearch()) 
+  }
   
   
   

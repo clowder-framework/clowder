@@ -257,7 +257,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 	        if(reqValue.isInstanceOf[String]){ 
 	            val currValue = reqValue.asInstanceOf[String]            
 	            if(keyTrimmed.endsWith("__not")){
-	            	builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  currValue))
+	            	builder += MongoDBObject(actualKey -> MongoDBObject("$ne" ->  currValue))
 	            }
 	            else{
 	            	builder += MongoDBObject(actualKey -> currValue)
@@ -277,7 +277,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
             if(reqValue.isInstanceOf[String]){ 
 	            val currValue = reqValue.asInstanceOf[String]            
 	            if(keyTrimmed.endsWith("__not")){
-	            	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  currValue))
+	            	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
 	            }
 	            else{
 	            	objectForEach += MongoDBObject(tempActualKey -> currValue)

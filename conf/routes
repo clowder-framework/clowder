@@ -34,6 +34,7 @@ GET		/fileThumbnail/:id/blob			  controllers.Files.thumbnail(id)
 GET		/datasets					      controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET     /datasets/new                     controllers.Datasets.newDataset
 GET     /datasets/metadataSearch          controllers.Datasets.metadataSearch
+GET     /datasets/generalMetadataSearch   controllers.Datasets.generalMetadataSearch
 GET		/datasets/:id					  controllers.Datasets.dataset(id)
 GET     /datasets_by_section/:id          controllers.Datasets.datasetBySection(id)
 POST    /dataset/submit                   controllers.Datasets.submit
@@ -162,6 +163,7 @@ GET		/api/collections/:coll_id/getDatasets										api.Datasets.getInCollection
 GET    	/api/datasets					  							api.Datasets.list
 POST    /api/datasets                                           	api.Datasets.createDataset
 POST	/api/datasets/searchusermetadata							api.Datasets.searchDatasetsUserMetadata
+POST	/api/datasets/searchmetadata								api.Datasets.searchDatasetsGeneralMetadata
 GET		/api/datasets/listOutsideCollection/:coll_id				api.Datasets.listOutsideCollection(coll_id)
 POST	/api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound	api.Datasets.detachFile(ds_id,file_id,ignoreNotFound)
 GET		/api/datasets/getRDFURLsForDataset/:id						api.Datasets.getRDFURLsForDataset(id)
