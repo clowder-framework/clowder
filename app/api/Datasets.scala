@@ -134,7 +134,8 @@ object Datasets extends ApiController {
           case Some(file) => {
             val theFile = FileDAO.get(fileId).get
             if(!isInDataset(theFile,dataset)){
-	            Dataset.addFile(dsId, theFile)
+	            Dataset.addFile(dsId, theFile)	            
+	            api.Files.index(fileId)
 	            Logger.info("Adding file to dataset completed")
 	            
 	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
@@ -170,7 +171,8 @@ object Datasets extends ApiController {
             val theFile = FileDAO.get(fileId).get
             if(isInDataset(theFile,dataset)){
 	            //remove file from dataset
-	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)	            
+	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)
+	            api.Files.index(fileId)
 	            Logger.info("Removing file from dataset completed")
 	            
 	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
@@ -226,12 +228,14 @@ object Datasets extends ApiController {
   def addMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding metadata to dataset " + id)
       Dataset.addMetadata(id, Json.stringify(request.body))
+      index(id)
       Ok(toJson(Map("status" -> "success")))
   }
 
   def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding user metadata to dataset " + id)
       Dataset.addUserMetadata(id, Json.stringify(request.body))
+      index(id)
       Ok(toJson(Map("status" -> "success")))
     }
 
@@ -285,10 +289,16 @@ object Datasets extends ApiController {
         val commentJson = new JSONArray(comments)
 
         Logger.debug("commentStr=" + commentJson.toString())
+        
+        val usrMd = Dataset.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
+        
+        val techMd = Dataset.getTechnicalMetadataJSON(id)
+        Logger.debug("techmd=" + techMd)
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "dataset", id,
-            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd)))
         }
       }
       case None => Logger.error("Dataset not found: " + id)
@@ -502,7 +512,6 @@ object Datasets extends ApiController {
     
     val jsonObject = new JSONObject(theJSON)    
     var xml = org.json.XML.toString(jsonObject)
-    xml = xml.replaceAll("__[0-9]+", "")
     
     Logger.debug("thexml: " + xml)
     
@@ -578,6 +587,13 @@ object Datasets extends ApiController {
     
   }
   
-  
+  def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        Ok(Dataset.getTechnicalMetadataJSON(id))
+      }
+      case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
+    }
+  }
   
 }

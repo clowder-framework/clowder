@@ -44,7 +44,8 @@ case class File(
     metadata: List[Map[String, Any]] = List.empty,
 	thumbnail_id: Option[String] = None,
 	isIntermediate: Option[Boolean] = None,
-	userMetadata: Map[String, Any] = Map.empty
+	userMetadata: Map[String, Any] = Map.empty,
+	xmlMetadata: Map[String, Any] = Map.empty
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -116,6 +117,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
   
+  
   def getUserMetadataJSON(id: String): String = {
     dao.collection.findOneByID(new ObjectId(id)) match {
       case None => "{}"
@@ -131,10 +133,47 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
   
+  def getTechnicalMetadataJSON(id: String): String = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+			returnedMetadata
+          }
+          case None => "{}"
+		}
+      }
+    }
+  }
+  
+  def getXMLMetadataJSON(id: String): String = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("xmlMetadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("xmlMetadata").get)
+			returnedMetadata
+          }
+          case None => "{}"
+		}
+      }
+    }
+  }
+
+  
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
+  }
+  
+  def addXMLMetadata(id: String, json: String) {
+    Logger.debug("Adding/modifying XML file metadata to file " + id + " : " + json)
+    val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("xmlMetadata" -> md), false, false, WriteConcern.Safe)
   }
   
 
