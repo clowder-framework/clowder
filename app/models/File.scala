@@ -73,7 +73,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def listOutsideDataset(dataset_id: String): List[File] = {
     Dataset.findOneById(new ObjectId(dataset_id)) match{
         case Some(dataset) => {
-          val list = for (file <- Services.files.listFiles(); if(!isInDataset(file,dataset))) yield file
+          val list = for (file <- Services.files.listFiles(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
           return list
         }
         case None =>{

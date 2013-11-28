@@ -1215,8 +1215,8 @@ function clearConfigTabAnnotations(prNum){
 		  }
 		  else if((e.which == 27 || (e.which == 81 && window["isShiftClicked" + prNum])) && (document.fullscreenElement || 
 			       document.mozFullScreenElement || document.webkitFullscreenElement)){
-			  if(document.activeElement != $("#x3dElement" + prNum + " > canvas").get(0)){
-
+			  if(document.activeElement.tagName.toLowerCase() !=  "canvas"){
+				  console.log(document.activeElement.tagName);
 				  var fullScreenElem;
 				  if(document.mozFullScreenElement){
 					  fullScreenElem = document.mozFullScreenElement;
