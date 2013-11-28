@@ -405,12 +405,12 @@
     					$("#filePrevContainer_" + fileId).before("<div id='previewedFileName_" + fileId + "' class='filenameDiv'><h4>" + $("#filePrevContainer_" + fileId).attr("data-filename")  + "</h4></div>");
     					var followingVisibleFiles = $("#filePrevContainer_" + fileId).nextAll(".filenameDiv");
     					if(followingVisibleFiles.length > 0){
-    						followingVisibleFiles[0].prepend("<hr class='file_separator'></hr>");
+    						followingVisibleFiles[0].before("<hr class='file_separator'></hr>");
     					}
     					else{
     						var previousVisibleFiles = $("#previewedFileName_" + fileId).prevAll(".filenameDiv");
     						if(previousVisibleFiles.length > 0){
-    							$("#previewedFileName_" + fileId).prepend("<hr class='file_separator'></hr>");
+    							$("#previewedFileName_" + fileId).before("<hr class='file_separator'></hr>");
         					}
     					}			
     				}
@@ -464,24 +464,27 @@
     							$('#myTab_'+fileId).attr('style', 'display:none;');
     							
     							var tableLength = $("#datasetFilesTable tbody tr").length;
-						        while(i <= tableLength && $("#datasetFilesTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < respJSON[i].filename)
-						        	i++;
-						        if(i <= tableLength)	    
-							        $("#datasetFilesTable tbody tr:nth-child("+i+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+    							var j = 1;
+							        while(j <= tableLength && $("#datasetFilesTable tbody tr:nth-child("+j+") td:nth-child(1) a").text() < respJSON[i].filename){
+							        	j++;
+							        }
+
+						        if(j <= tableLength)	    
+							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Remove</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        else if(tableLength > 0)
-						        	$("#datasetFilesTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Remove</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        else{
 						        	if($("#datasetFilesTable tbody").length == 0)
 						        		$("#datasetFilesTable").append("<tbody></tbody>");
 						        	$("#datasetFilesTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Remove</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        	}
     						}
@@ -645,6 +648,20 @@
 						        	$("#filesAddSelect").append("<option value='"+fileId+"'>"+fileName+"</option>");
 						        
 						        $("#filesAddSelect").combobox();
+							        var nextHRs = $("#previewedFileName_"+fileId).nextAll("hr");
+							        if(nextHRs.length > 0){
+							        	nextHRs.first().remove();
+							        }
+							        else{
+							        	var prevHRs = $("#previewedFileName_"+fileId).prevAll("hr");
+							        	if(prevHRs.length > 0){
+							        		prevHRs.first().remove();
+								        }
+							        }						        
+						        $("#previewedFileName_"+fileId).remove();
+						        $("#filePrevContainer_"+fileId).remove();
+						        $("#technicalMetadata_"+fileId).remove();						        						        
+						        $("#fileUserMetadata_"+fileId).remove();						        
 							});	
 							request.fail(function (jqXHR, textStatus, errorThrown){
 					    		console.error(
