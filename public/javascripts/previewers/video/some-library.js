@@ -22,7 +22,7 @@
 		  "<param name='autoplay' value='false'>"+
 		  "<param name='controller' value='true'>"+
 		  "<param name='scale' value='tofit'>"+
-		  "<embed type='video/quicktime' alt='No video plugin capable of playing mov videos was found.' src='" + "http://"+Configuration.hostIp+":"+window.location.port+ Configuration.url   +"' height='"+ height +"' width='"+ width +"' autoplay='false' controller='true' scale='tofit'></embed>"+
+		  "<embed type='video/quicktime' alt='No video plugin capable of playing videos was found.' src='" + "http://"+Configuration.hostIp+":"+window.location.port+ Configuration.url   +"' height='"+ height +"' width='"+ width +"' autoplay='false' controller='true' scale='tofit'></embed>"+
 		  "</object>"		  
   );
 
