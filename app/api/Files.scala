@@ -52,6 +52,9 @@ import org.json.XML
 
 import Transformation.LidoToCidocConvertion
 
+import jsonutils.JsonUtil
+
+
 /**
  * Json API for files.
  * 
@@ -260,11 +263,10 @@ object Files extends ApiController {
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              FileDAO.addXMLMetadata(id, xmlToJSON)
 	              
-	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
-	              Logger.debug("xmlmd=" + xmlMd)
+	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
@@ -406,11 +408,10 @@ object Files extends ApiController {
             	  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
             			  FileDAO.addXMLMetadata(id, xmlToJSON)
 
-            			  val xmlMd = FileDAO.getXMLMetadataJSON(id)
-            			  Logger.debug("xmlmd=" + xmlMd)
+            			  Logger.debug("xmlmd=" + xmlToJSON)
 
             			  current.plugin[ElasticsearchPlugin].foreach{
-            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlMd)))
+            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
             	  		  }
               }
               else{
@@ -649,8 +650,16 @@ object Files extends ApiController {
 
   }
   
-    def jsonFile(file: File): JsValue = {
+  def jsonFile(file: File): JsValue = {
         toJson(Map("id"->file.id.toString, "filename"->file.filename, "content-type"->file.contentType, "date-created"->file.uploadDate.toString(), "size"->file.length.toString))
+  }
+  
+  def jsonFileWithThumbnail(file: File): JsValue = {
+    var fileThumbnail = "None"
+    if(!file.thumbnail_id.isEmpty)
+      fileThumbnail = file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)
+    
+        toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType, "dateCreated"->file.uploadDate.toString(), "thumbnail" -> fileThumbnail))
   }
   
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {
@@ -994,7 +1003,51 @@ object Files extends ApiController {
     }
   }
   
-def index(id: String) {
+/**
+   * List datasets satisfying a user metadata search tree.
+   */
+  def searchFilesUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { request =>
+      Logger.debug("Searching files' user metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = FileDAO.searchUserMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning files list.")
+
+      val list = for (file <- searchQuery) yield jsonFileWithThumbnail(file)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    }   
+
+  
+  /**
+   * List datasets satisfying a general metadata search tree.
+   */
+  def searchFilesGeneralMetadata = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { request =>
+      Logger.debug("Searching files' metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = FileDAO.searchAllMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning files list.")
+
+      val list = for (file <- searchQuery) yield jsonFileWithThumbnail(file)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    }
+  
+  
+  def index(id: String) {
     Services.files.getFile(id) match {
       case Some(file) => {
         var tagListBuffer = new ListBuffer[String]()
@@ -1039,8 +1092,5 @@ def index(id: String) {
       case None => Logger.error("File not found: " + id)
     }
   }
-    
-
-  
 	
 }

@@ -288,8 +288,23 @@ object Datasets extends SecuredController {
 						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
 					        }
 					        
-				            //index the file
-				            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+					        //for metadata files
+							  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+								  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+										  FileDAO.addXMLMetadata(f.id.toString, xmlToJSON)
+										  Dataset.addXMLMetadata(dt.id.toString, f.id.toString, xmlToJSON)
+		
+										  Logger.debug("xmlmd=" + xmlToJSON)
+		
+										  current.plugin[ElasticsearchPlugin].foreach{
+								  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString()),("datasetName",dt.name), ("xmlmetadata", xmlToJSON)))
+								  		  }
+							  }
+							  else{
+								  //index the file
+								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+							  }
+
 				            // index dataset
 				            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
 				                List(("name",dt.name), ("description", dt.description)))}
@@ -341,6 +356,8 @@ object Datasets extends SecuredController {
 		          //reindex file
 		          api.Files.index(theFile.get.id.toString())
 		          
+		          Dataset.addXMLMetadata(dt.id.toString, fileId, FileDAO.getXMLMetadataJSON(fileId))
+		          
 		          // TODO RK : need figure out if we can use https
 		          val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
@@ -361,6 +378,10 @@ object Datasets extends SecuredController {
   def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.metadataSearch()) 
+  }
+  def generalMetadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.generalMetadataSearch()) 
   }
   
   

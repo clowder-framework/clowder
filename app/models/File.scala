@@ -13,6 +13,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import collection.JavaConverters._
+import scala.collection.JavaConversions._
 import securesocial.core.Identity
 import play.api.Logger
 import java.util.Calendar
@@ -72,7 +73,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def listOutsideDataset(dataset_id: String): List[File] = {
     Dataset.findOneById(new ObjectId(dataset_id)) match{
         case Some(dataset) => {
-          val list = for (file <- Services.files.listFiles(); if(!isInDataset(file,dataset))) yield file
+          val list = for (file <- Services.files.listFiles(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
           return list
         }
         case None =>{
@@ -248,5 +249,111 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
   
+  def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
+    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    
+    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "all")
+    Logger.debug("thequery: "+theQuery.toString)    
+    var fileList = dao.find(theQuery).toList
+       
+    return fileList
+  }
+  
+  
+  def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
+    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
+    Logger.debug("thequery: "+theQuery.toString)
+    
+    val fileList = dao.find(theQuery).toList
+    return fileList
+  }
+  
+def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
+    Logger.debug("req: "+ requestedMap)
+    var queryMap = MongoDBList()
+    var builder = MongoDBList()
+    var orFound = false
+    for((reqKey, reqValue) <- requestedMap){
+      val keyTrimmed = reqKey.replaceAll("__[0-9]+$","")
+      
+      if(keyTrimmed.equals("OR")){
+          queryMap.add(MongoDBObject("$and" ->  builder))
+          builder = MongoDBList()
+          orFound = true
+        }
+      else{
+        var actualKey = keyTrimmed
+        if(keyTrimmed.endsWith("__not")){
+        	  actualKey = actualKey.substring(0, actualKey.length()-5) 
+          }
+        
+        if(!root.equals("all")){
+        
+	        if(!root.equals(""))
+	        	actualKey = root + "." + actualKey 
+	        
+	        if(reqValue.isInstanceOf[String]){ 
+	            val currValue = reqValue.asInstanceOf[String]            
+	            if(keyTrimmed.endsWith("__not")){
+	            	builder += MongoDBObject(actualKey -> MongoDBObject("$ne" ->  currValue))
+	            }
+	            else{
+	            	builder += MongoDBObject(actualKey -> currValue)
+	            }           
+	        }else{
+	          //recursive	          
+	          if(root.equals("userMetadata")){
+	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+	            val elemMatch = actualKey $elemMatch currValue
+	            builder.add(elemMatch)
+	          }
+	          else{
+	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], actualKey)
+	        	builder += currValue  
+	          }	          
+	        }
+        }else{          
+          var objectForEach = MongoDBList()
+          val allRoots = Map(1 -> "userMetadata", 2 -> "metadata", 3 -> "xmlMetadata")
+          allRoots.keys.foreach{ i =>
+            var tempActualKey = allRoots(i) + "." + actualKey
+            
+            if(reqValue.isInstanceOf[String]){ 
+	            val currValue = reqValue.asInstanceOf[String]            
+	            if(keyTrimmed.endsWith("__not")){
+	            	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
+	            }
+	            else{
+	            	objectForEach += MongoDBObject(tempActualKey -> currValue)
+	            }           
+	        }else{
+	          //recursive	            	            
+	            if(allRoots(i).equals("userMetadata")){
+	                val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+	            	val elemMatch = tempActualKey $elemMatch currValue
+	            	objectForEach.add(elemMatch)
+	            }
+	            else{
+	                val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], tempActualKey)
+	            	objectForEach += currValue 
+	            }	
+	        }            
+          }
+          
+          builder.add(MongoDBObject("$or" ->  objectForEach))
+          
+        }
+      }
+    }
+    queryMap.add(builder.result)
+    
+    if(orFound){
+    	return MongoDBObject("$or" ->  queryMap)
+    }
+    else{
+      return MongoDBObject("$and" ->  builder)
+    }
+  }
   
 }

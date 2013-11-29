@@ -107,6 +107,10 @@ object Datasets extends ApiController {
 		      	   Dataset.insert(d) match {
 		      	     case Some(id) => {
 		      	       import play.api.Play.current
+		      	       api.Files.index(file_id)
+		      	       if(!file.xmlMetadata.isEmpty){
+		      	    	   Dataset.addXMLMetadata(id.toString, file_id, FileDAO.getXMLMetadataJSON(file_id))
+		      	       }		      	       
 		      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
 		      	        			List(("name",d.name), ("description", d.description)))}
 		      	       Ok(toJson(Map("id" -> id.toString)))
@@ -369,7 +373,28 @@ object Datasets extends ApiController {
       val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
-    }  
+    }
+  
+  /**
+   * List datasets satisfying a general metadata search tree.
+   */
+  def searchDatasetsGeneralMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
+      Logger.debug("Searching datasets' metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = Dataset.searchAllMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning datasets list.")
+
+      val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    } 
   
   /**
    * Return whether a dataset is currently being processed.

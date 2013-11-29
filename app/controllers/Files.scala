@@ -224,11 +224,10 @@ object Files extends Controller with SecuredController {
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              FileDAO.addXMLMetadata(id, xmlToJSON)
 	              
-	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
-	              Logger.debug("xmlmd=" + xmlMd)
+	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlMd)))
+		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
@@ -398,11 +397,10 @@ object Files extends Controller with SecuredController {
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              FileDAO.addXMLMetadata(id, xmlToJSON)
 	              
-	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
-	              Logger.debug("xmlmd=" + xmlMd)
+	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
@@ -481,11 +479,10 @@ object Files extends Controller with SecuredController {
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              FileDAO.addXMLMetadata(id, xmlToJSON)
 	              
-	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
-	              Logger.debug("xmlmd=" + xmlMd)
+	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
@@ -562,11 +559,10 @@ object Files extends Controller with SecuredController {
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              FileDAO.addXMLMetadata(id, xmlToJSON)
 	              
-	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
-	              Logger.debug("xmlmd=" + xmlMd)
+	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
@@ -650,11 +646,10 @@ object Files extends Controller with SecuredController {
 						  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 								  FileDAO.addXMLMetadata(id, xmlToJSON)
 
-								  val xmlMd = FileDAO.getXMLMetadataJSON(id)
-								  Logger.debug("xmlmd=" + xmlMd)
+								  Logger.debug("xmlmd=" + xmlToJSON)
 
 								  current.plugin[ElasticsearchPlugin].foreach{
-						  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlMd)))
+						  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
 						  		  }
 					  }
 					  else{
@@ -696,8 +691,14 @@ object Files extends Controller with SecuredController {
     }
   }
 
-
-  
+  def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.fileMetadataSearch()) 
+  }
+  def generalMetadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.fileGeneralMetadataSearch()) 
+  }
   
   
   

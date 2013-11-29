@@ -22,12 +22,9 @@
 		  "<param name='autoplay' value='false'>"+
 		  "<param name='controller' value='true'>"+
 		  "<param name='scale' value='tofit'>"+
-		  "<embed type='video/quicktime' alt='No video plugin capable of playing mov videos was found.' src='" + "http://"+Configuration.hostIp+":"+window.location.port+ Configuration.url   +"' height='"+ height +"' width='"+ width +"' autoplay='false' controller='true' scale='tofit'></embed>"+
+		  "<embed type='video/quicktime' alt='No video plugin capable of playing this video was found.' src='" + "http://"+Configuration.hostIp+":"+window.location.port+ Configuration.url   +"' height='"+ height +"' width='"+ width +"' autoplay='false' controller='true' scale='tofit'></embed>"+
 		  "</object>"		  
   );
 
-  if(navigator.appVersion.indexOf("X11")!=-1 || navigator.appVersion.indexOf("Linux")!=-1)
-	  $(Configuration.tab).append("<br/><p>Note: Quicktime VR panoramas (QTVR) are not viewed properly on Unix-based browsers due to lack of format support." +
-	  							" If the file is a QTVR, you can download it and view it on your desktop.</p>");
   
 }(jQuery, Configuration));
