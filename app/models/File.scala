@@ -269,7 +269,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     return fileList
   }
   
-  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
+def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
     Logger.debug("req: "+ requestedMap)
     var queryMap = MongoDBList()
     var builder = MongoDBList()
@@ -302,10 +302,16 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 	            	builder += MongoDBObject(actualKey -> currValue)
 	            }           
 	        }else{
-	          //recursive
+	          //recursive	          
+	          if(root.equals("userMetadata")){
 	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
 	            val elemMatch = actualKey $elemMatch currValue
 	            builder.add(elemMatch)
+	          }
+	          else{
+	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], actualKey)
+	        	builder += currValue  
+	          }	          
 	        }
         }else{          
           var objectForEach = MongoDBList()
@@ -322,10 +328,16 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 	            	objectForEach += MongoDBObject(tempActualKey -> currValue)
 	            }           
 	        }else{
-	          //recursive
-	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
-	            val elemMatch = tempActualKey $elemMatch currValue
-	            objectForEach.add(elemMatch)
+	          //recursive	            	            
+	            if(allRoots(i).equals("userMetadata")){
+	                val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+	            	val elemMatch = tempActualKey $elemMatch currValue
+	            	objectForEach.add(elemMatch)
+	            }
+	            else{
+	                val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], tempActualKey)
+	            	objectForEach += currValue 
+	            }	
 	        }            
           }
           

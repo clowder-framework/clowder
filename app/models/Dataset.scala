@@ -206,7 +206,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     return dsList
   }
   
-  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
+def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
     Logger.debug("req: "+ requestedMap)
     var queryMap = MongoDBList()
     var builder = MongoDBList()
@@ -239,14 +239,20 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 	            	builder += MongoDBObject(actualKey -> currValue)
 	            }           
 	        }else{
-	          //recursive
+	          //recursive	          
+	          if(root.equals("userMetadata")){
 	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
 	            val elemMatch = actualKey $elemMatch currValue
 	            builder.add(elemMatch)
+	          }
+	          else{
+	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], actualKey)
+	        	builder += currValue  
+	          }	          
 	        }
         }else{          
           var objectForEach = MongoDBList()
-          val allRoots = Map(1 -> "userMetadata", 2 -> "metadata", 3 -> "datasetXMLMetadata.xmlMetadata")
+          val allRoots = Map(1 -> "userMetadata", 2 -> "metadata", 3 -> "datasetXmlMetadata.xmlMetadata")
           allRoots.keys.foreach{ i =>
             var tempActualKey = allRoots(i) + "." + actualKey
             
@@ -259,10 +265,16 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 	            	objectForEach += MongoDBObject(tempActualKey -> currValue)
 	            }           
 	        }else{
-	          //recursive
-	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
-	            val elemMatch = tempActualKey $elemMatch currValue
-	            objectForEach.add(elemMatch)
+	          //recursive	            	            
+	            if(allRoots(i).equals("userMetadata")){
+	                val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+	            	val elemMatch = tempActualKey $elemMatch currValue
+	            	objectForEach.add(elemMatch)
+	            }
+	            else{
+	                val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], tempActualKey)
+	            	objectForEach += currValue 
+	            }	
 	        }            
           }
           

@@ -108,6 +108,9 @@ object Datasets extends ApiController {
 		      	     case Some(id) => {
 		      	       import play.api.Play.current
 		      	       api.Files.index(file_id)
+		      	       if(!file.xmlMetadata.isEmpty){
+		      	    	   Dataset.addXMLMetadata(id.toString, file_id, FileDAO.getXMLMetadataJSON(file_id))
+		      	       }		      	       
 		      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
 		      	        			List(("name",d.name), ("description", d.description)))}
 		      	       Ok(toJson(Map("id" -> id.toString)))
@@ -137,10 +140,8 @@ object Datasets extends ApiController {
             if(!isInDataset(theFile,dataset)){
 	            Dataset.addFile(dsId, theFile)
 	            if(!theFile.xmlMetadata.isEmpty){
-	              
+	              Dataset.addXMLMetadata(dsId, fileId, FileDAO.getXMLMetadataJSON(fileId))
 	            }
-	            
-	            
 	            api.Files.index(fileId)
 	            Logger.info("Adding file to dataset completed")
 	            
