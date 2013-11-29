@@ -20,6 +20,7 @@ import scala.collection.JavaConversions._
 import play.api.libs.json.JsValue
 import securesocial.core.Identity
 import services.Services
+import jsonutils.JsonUtil
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -39,7 +40,8 @@ case class Dataset (
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
   collections: List[String] = List.empty,
-  thumbnail_id: Option[String] = None
+  thumbnail_id: Option[String] = None,
+  datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty
 )
 
 object MustBreak extends Exception { }
@@ -50,6 +52,8 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
   }
+  
+  
     
   def findOneByFileId(file_id: ObjectId): Option[Dataset] = {
     dao.findOne(MongoDBObject("files._id" -> file_id))
@@ -150,12 +154,14 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
           case None => Map.empty
         }
       }
-    }
-    
-    
-   
-  
+    }   
   }
+  
+  def addXMLMetadata(id: String, fileId: String, json: String){
+     Logger.debug("Adding XML metadata to dataset " + id + " from file " + fileId + ": " + json)
+     val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap     
+     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("datasetXmlMetadata" ->  DatasetXMLMetadata.toDBObject(DatasetXMLMetadata(md,fileId))), false, false, WriteConcern.Safe)		      
+   } 
 
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to dataset " + id + " : " + json)
@@ -187,15 +193,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "all")
     Logger.debug("thequery: "+theQuery.toString)    
     var dsList = dao.find(theQuery).toList
-    
-    theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "xmlMetadata")
-    var filesList = FileDAO.find(theQuery).toList
-    for(file <- filesList){
-      var fileDatasets = findByFileId(file.id)
-      dsList = (dsList ++ fileDatasets)
-    }
-    dsList = dsList.distinct
-           
+             
     return dsList
   }
   
@@ -248,7 +246,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 	        }
         }else{          
           var objectForEach = MongoDBList()
-          val allRoots = Map(1 -> "userMetadata", 2 -> "metadata", 3 -> "xmlMetadata")
+          val allRoots = Map(1 -> "userMetadata", 2 -> "metadata", 3 -> "datasetXMLMetadata.xmlMetadata")
           allRoots.keys.foreach{ i =>
             var tempActualKey = allRoots(i) + "." + actualKey
             
