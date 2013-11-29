@@ -263,11 +263,10 @@ object Files extends ApiController {
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              FileDAO.addXMLMetadata(id, xmlToJSON)
 	              
-	              val xmlMd = FileDAO.getXMLMetadataJSON(id)
-	              Logger.debug("xmlmd=" + xmlMd)
+	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlMd)))
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
@@ -409,11 +408,10 @@ object Files extends ApiController {
             	  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
             			  FileDAO.addXMLMetadata(id, xmlToJSON)
 
-            			  val xmlMd = FileDAO.getXMLMetadataJSON(id)
-            			  Logger.debug("xmlmd=" + xmlMd)
+            			  Logger.debug("xmlmd=" + xmlToJSON)
 
             			  current.plugin[ElasticsearchPlugin].foreach{
-            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlMd)))
+            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
             	  		  }
               }
               else{

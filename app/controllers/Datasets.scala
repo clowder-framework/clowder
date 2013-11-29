@@ -288,8 +288,22 @@ object Datasets extends SecuredController {
 						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
 					        }
 					        
-				            //index the file
-				            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+					        //for metadata files
+							  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+								  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+										  FileDAO.addXMLMetadata(f.id.toString, xmlToJSON)
+		
+										  Logger.debug("xmlmd=" + xmlToJSON)
+		
+										  current.plugin[ElasticsearchPlugin].foreach{
+								  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString()),("datasetName",dt.name), ("xmlmetadata", xmlToJSON)))
+								  		  }
+							  }
+							  else{
+								  //index the file
+								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+							  }
+
 				            // index dataset
 				            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
 				                List(("name",dt.name), ("description", dt.description)))}
