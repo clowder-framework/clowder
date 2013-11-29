@@ -292,6 +292,7 @@ object Datasets extends SecuredController {
 							  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 								  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 										  FileDAO.addXMLMetadata(f.id.toString, xmlToJSON)
+										  Dataset.addXMLMetadata(dt.id.toString, f.id.toString, xmlToJSON)
 		
 										  Logger.debug("xmlmd=" + xmlToJSON)
 		
@@ -354,6 +355,8 @@ object Datasets extends SecuredController {
 		          
 		          //reindex file
 		          api.Files.index(theFile.get.id.toString())
+		          
+		          Dataset.addXMLMetadata(dt.id.toString, fileId, FileDAO.getXMLMetadataJSON(fileId))
 		          
 		          // TODO RK : need figure out if we can use https
 		          val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")

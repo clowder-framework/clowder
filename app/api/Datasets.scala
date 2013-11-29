@@ -138,10 +138,7 @@ object Datasets extends ApiController {
           case Some(file) => {
             val theFile = FileDAO.get(fileId).get
             if(!isInDataset(theFile,dataset)){
-	            Dataset.addFile(dsId, theFile)
-	            if(!theFile.xmlMetadata.isEmpty){
-	              Dataset.addXMLMetadata(dsId, fileId, FileDAO.getXMLMetadataJSON(fileId))
-	            }
+	            Dataset.addFile(dsId, theFile)	            
 	            api.Files.index(fileId)
 	            Logger.info("Adding file to dataset completed")
 	            

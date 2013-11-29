@@ -161,6 +161,11 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
      Logger.debug("Adding XML metadata to dataset " + id + " from file " + fileId + ": " + json)
      val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap     
      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("datasetXmlMetadata" ->  DatasetXMLMetadata.toDBObject(DatasetXMLMetadata(md,fileId))), false, false, WriteConcern.Safe)		      
+   }
+  
+  def removeXMLMetadata(id: String, fileId: String){
+     Logger.debug("Removing XML metadata belonging to file " + fileId + " from dataset " + id + ".")
+     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("datasetXmlMetadata" -> MongoDBObject("fileId" -> fileId)), false, false, WriteConcern.Safe)
    } 
 
   def addUserMetadata(id: String, json: String) {
@@ -410,7 +415,10 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
   }
   
   def addFile(datasetId:String, file: File){   
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" ->  FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" ->  FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)
+    if(!file.xmlMetadata.isEmpty){
+	   Dataset.addXMLMetadata(datasetId, file.id.toString, FileDAO.getXMLMetadataJSON(file.id.toString))
+	}
   }
   
   def addCollection(datasetId:String, collectionId: String){   
@@ -420,7 +428,8 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("collections" ->  collectionId), false, false, WriteConcern.Safe)   
   }
   def removeFile(datasetId:String, fileId: String){   
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files" -> MongoDBObject("_id" ->  new ObjectId(fileId))), false, false, WriteConcern.Safe)   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files" -> MongoDBObject("_id" ->  new ObjectId(fileId))), false, false, WriteConcern.Safe)
+    Dataset.removeXMLMetadata(datasetId, fileId)
   }
   
   def newThumbnail(datasetId:String){
