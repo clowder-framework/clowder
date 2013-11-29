@@ -107,6 +107,7 @@ object Datasets extends ApiController {
 		      	   Dataset.insert(d) match {
 		      	     case Some(id) => {
 		      	       import play.api.Play.current
+		      	       api.Files.index(file_id)
 		      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
 		      	        			List(("name",d.name), ("description", d.description)))}
 		      	       Ok(toJson(Map("id" -> id.toString)))
@@ -134,7 +135,12 @@ object Datasets extends ApiController {
           case Some(file) => {
             val theFile = FileDAO.get(fileId).get
             if(!isInDataset(theFile,dataset)){
-	            Dataset.addFile(dsId, theFile)	            
+	            Dataset.addFile(dsId, theFile)
+	            if(!theFile.xmlMetadata.isEmpty){
+	              
+	            }
+	            
+	            
 	            api.Files.index(fileId)
 	            Logger.info("Adding file to dataset completed")
 	            
