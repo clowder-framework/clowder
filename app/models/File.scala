@@ -357,6 +357,9 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
     else if(!builder.isEmpty)  {
       return MongoDBObject("$and" ->  builder)
     }
+    else if(!root.equals("")){
+      return (root $exists true)
+    }
     else{
       return new MongoDBObject()
     }
