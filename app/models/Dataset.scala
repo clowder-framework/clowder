@@ -309,8 +309,11 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
     if(orFound){
     	return MongoDBObject("$or" ->  queryMap)
     }
-    else{
+    else if(!builder.isEmpty)  {
       return MongoDBObject("$and" ->  builder)
+    }
+    else{
+      return new MongoDBObject()
     }
   }
   
