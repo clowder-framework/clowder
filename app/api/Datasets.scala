@@ -180,7 +180,7 @@ object Datasets extends ApiController {
 	            Logger.info("Removing file from dataset completed")
 	            
 	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
-	              if(dataset.thumbnail_id.get.equals(theFile.thumbnail_id.get)){
+	              if(dataset.thumbnail_id.get == theFile.thumbnail_id.get){
 		             Dataset.newThumbnail(dataset.id.toString)
 		          }		                        
 		       }
