@@ -391,19 +391,8 @@ object Files extends ApiController {
 	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
 	              
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
-                           
-              // add file to dataset   
-              // TODO create a service instead of calling salat directly
-              Dataset.addFile(dataset.id.toString, f)
-              
-              index(f.id.toString)
-
-              // TODO RK need to replace unknown with the server name and dataset type
-              val dtkey = "unknown." + "dataset." + "unknown"
-
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, "")) }
-              
-              //for metadata files
+	          
+	          //for metadata files
               if(fileType.equals("application/xml") || fileType.equals("text/xml")){
             	  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
             			  FileDAO.addXMLMetadata(id, xmlToJSON)
@@ -419,7 +408,19 @@ object Files extends ApiController {
             		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
             	  }
               }
-              
+                           
+              // add file to dataset   
+              // TODO create a service instead of calling salat directly
+              val theFile = FileDAO.get(f.id.toString).get
+              Dataset.addFile(dataset.id.toString, theFile)              
+              if(!theFile.xmlMetadata.isEmpty){
+	            	Datasets.index(dataset_id)
+		      	}	
+
+              // TODO RK need to replace unknown with the server name and dataset type
+              val dtkey = "unknown." + "dataset." + "unknown"
+
+              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, "")) }
 
               Logger.info("Uploading Completed")
 

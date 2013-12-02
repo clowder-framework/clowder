@@ -295,21 +295,23 @@ object Datasets extends SecuredController {
 										  Dataset.addXMLMetadata(dt.id.toString, f.id.toString, xmlToJSON)
 		
 										  Logger.debug("xmlmd=" + xmlToJSON)
-		
+										  
+										  //index the file
 										  current.plugin[ElasticsearchPlugin].foreach{
 								  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString()),("datasetName",dt.name), ("xmlmetadata", xmlToJSON)))
 								  		  }
+								  		  // index dataset
+								  		  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
+								  		  List(("name",dt.name), ("description", dt.description), ("xmlmetadata", xmlToJSON)))}
 							  }
 							  else{
 								  //index the file
 								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+								  // index dataset
+								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
+								  List(("name",dt.name), ("description", dt.description)))}
 							  }
 
-				            // index dataset
-				            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
-				                List(("name",dt.name), ("description", dt.description)))}
-		           
-				            
 					    	// TODO RK need to replace unknown with the server name and dataset type		            
 		 			    	val dtkey = "unknown." + "dataset."+ "unknown"
 					        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))}
@@ -343,20 +345,27 @@ object Datasets extends SecuredController {
 		          // add file to dataset 
 		          val theFile = Services.files.getFile(fileId)
 		          if(theFile.isEmpty)
-		            Redirect(routes.Datasets.newDataset()).flashing("error"->"Selected file not found. Maybe it was removed.")
+		            Redirect(routes.Datasets.newDataset()).flashing("error"->"Selected file not found. Maybe it was removed.")		            
+		          val theFileGet = theFile.get  
 		          
-				  val dt = dataset.copy(files = List(theFile.get), author=identity)
+				  val dt = dataset.copy(files = List(theFileGet), author=identity)
 				  // TODO create a service instead of calling salat directly
 			      Dataset.save(dt)
 			      
-			      // index dataset
-			      current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
-			    		  List(("name",dt.name), ("description", dt.description)))}
+		          if(!theFileGet.xmlMetadata.isEmpty){
+		            val xmlToJSON = FileDAO.getXMLMetadataJSON(fileId)
+		            Dataset.addXMLMetadata(dt.id.toString, fileId, xmlToJSON)
+		            // index dataset
+		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
+			        List(("name",dt.name), ("description", dt.description),  ("xmlmetadata", xmlToJSON)))}
+		          }else{
+		            // index dataset
+		        	  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id.toString, 
+			    	   List(("name",dt.name), ("description", dt.description)))}
+		          }
 		          
 		          //reindex file
-		          api.Files.index(theFile.get.id.toString())
-		          
-		          Dataset.addXMLMetadata(dt.id.toString, fileId, FileDAO.getXMLMetadataJSON(fileId))
+		          api.Files.index(theFileGet.id.toString())
 		          
 		          // TODO RK : need figure out if we can use https
 		          val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")

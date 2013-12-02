@@ -205,6 +205,9 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
         	val fileDatasets = Dataset.findByFileId(file.id)
         	for(fileDataset <- fileDatasets){
 	        	Dataset.removeFile(fileDataset.id.toString(), id)
+	        	if(!file.xmlMetadata.isEmpty){
+	            	api.Datasets.index(fileDataset.id.toString())
+		      	}
 	        	if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
 		        	if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
 		        	  Dataset.newThumbnail(fileDataset.id.toString())

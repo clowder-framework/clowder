@@ -660,7 +660,11 @@ object Files extends Controller with SecuredController {
 					  
 					  // add file to dataset
 					  // TODO create a service instead of calling salat directly
-					  Dataset.addFile(dataset.id.toString, f)
+					  val theFile = FileDAO.get(f.id.toString).get
+					  Dataset.addFile(dataset.id.toString, theFile)
+					  if(!theFile.xmlMetadata.isEmpty){
+						  api.Datasets.index(dataset_id)
+					  }
 					  
 					// TODO RK need to replace unknown with the server name and dataset type
  			    	val dtkey = "unknown." + "dataset."+ "unknown"

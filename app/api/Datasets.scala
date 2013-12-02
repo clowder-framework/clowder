@@ -109,10 +109,15 @@ object Datasets extends ApiController {
 		      	       import play.api.Play.current
 		      	       api.Files.index(file_id)
 		      	       if(!file.xmlMetadata.isEmpty){
-		      	    	   Dataset.addXMLMetadata(id.toString, file_id, FileDAO.getXMLMetadataJSON(file_id))
-		      	       }		      	       
-		      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
-		      	        			List(("name",d.name), ("description", d.description)))}
+		      	           val xmlToJSON = FileDAO.getXMLMetadataJSON(file_id)
+		      	    	   Dataset.addXMLMetadata(id.toString, file_id, xmlToJSON)
+		      	    	   current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
+			      	        			List(("name",d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))}
+		      	       }
+		      	       else{
+			      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
+			      	        			List(("name",d.name), ("description", d.description)))}
+		      	        }
 		      	       Ok(toJson(Map("id" -> id.toString)))
 		      	     }
 		      	     case None => Ok(toJson(Map("status" -> "error")))
@@ -140,6 +145,9 @@ object Datasets extends ApiController {
             if(!isInDataset(theFile,dataset)){
 	            Dataset.addFile(dsId, theFile)	            
 	            api.Files.index(fileId)
+	            if(!theFile.xmlMetadata.isEmpty){
+	            	index(dsId)
+		      	}	            
 	            Logger.info("Adding file to dataset completed")
 	            
 	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
@@ -177,6 +185,9 @@ object Datasets extends ApiController {
 	            //remove file from dataset
 	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)
 	            api.Files.index(fileId)
+	            if(!theFile.xmlMetadata.isEmpty){
+	            	index(datasetId)
+		      	}
 	            Logger.info("Removing file from dataset completed")
 	            
 	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
@@ -299,10 +310,13 @@ object Datasets extends ApiController {
         
         val techMd = Dataset.getTechnicalMetadataJSON(id)
         Logger.debug("techmd=" + techMd)
+        
+        val xmlMd = Dataset.getXMLMetadataJSON(id)
+	    Logger.debug("xmlmd=" + xmlMd)
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "dataset", id,
-            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd)))
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
         }
       }
       case None => Logger.error("Dataset not found: " + id)

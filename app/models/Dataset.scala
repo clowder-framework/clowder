@@ -138,6 +138,22 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     }
   }
   
+  def getXMLMetadataJSON(id: String): String = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("datasetXmlMetadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("datasetXmlMetadata").get)
+	    		    	Logger.debug("retmd: "+ returnedMetadata)
+			returnedMetadata
+          }
+          case None => "{}"
+		}
+      }
+    }
+  }
+  
   def addMetadata(id: String, json: String) {
     Logger.debug("Adding metadata to dataset " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
