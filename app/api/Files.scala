@@ -396,7 +396,7 @@ object Files extends ApiController {
               // TODO create a service instead of calling salat directly
               Dataset.addFile(dataset.id.toString, f)
               
-              index(f.id.toString())
+              index(f.id.toString)
 
               // TODO RK need to replace unknown with the server name and dataset type
               val dtkey = "unknown." + "dataset." + "unknown"
@@ -411,12 +411,12 @@ object Files extends ApiController {
             			  Logger.debug("xmlmd=" + xmlToJSON)
 
             			  current.plugin[ElasticsearchPlugin].foreach{
-            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
+            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
             	  		  }
               }
               else{
             	  current.plugin[ElasticsearchPlugin].foreach{
-            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
+            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
             	  }
               }
               
@@ -465,7 +465,7 @@ object Files extends ApiController {
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	             FileDAO.setIntermediate(f.id.toString())
+	             FileDAO.setIntermediate(f.id.toString)
 	             var fileType = f.contentType
 			     if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
@@ -555,7 +555,7 @@ object Files extends ApiController {
             case Some(file) => {
               val theJSON = FileDAO.getUserMetadataJSON(id)
               val fileSep = System.getProperty("file.separator")
-	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString()
+	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
 	          new java.io.File(resultDir).mkdir()
               
               if(!theJSON.replaceAll(" ","").equals("{}")){
@@ -615,7 +615,7 @@ object Files extends ApiController {
           }
         }        
         var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
-        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
+        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
         
         //RDF from export of file community-generated metadata to RDF
         var connectionChars = ""
@@ -904,7 +904,7 @@ object Files extends ApiController {
 			        val comment = new Comment(identity, text, file_id=Some(id))
 			        Comment.save(comment)
 			        index(id)
-			        Ok(comment.id.toString())
+			        Ok(comment.id.toString)
 			    }
 			    case None => {
 			    	Logger.error("no text specified.")

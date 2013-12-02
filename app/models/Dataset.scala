@@ -462,7 +462,7 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
         	Comment.removeComment(comment)
         }  
 	    for(f <- dataset.files){
-	      var notTheDataset = for(currDataset<-findByFileId(f.id) if !dataset.id.toString().equals(currDataset.id.toString())) yield currDataset
+	      var notTheDataset = for(currDataset<-findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
 	      if(notTheDataset.size == 0)
 	    	FileDAO.removeFile(f.id.toString)
 	    }

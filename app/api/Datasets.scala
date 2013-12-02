@@ -181,7 +181,7 @@ object Datasets extends ApiController {
 	            
 	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
 	              if(dataset.thumbnail_id.get.equals(theFile.thumbnail_id.get)){
-		             Dataset.newThumbnail(dataset.id.toString())
+		             Dataset.newThumbnail(dataset.id.toString)
 		          }		                        
 		       }
 	            
@@ -321,7 +321,7 @@ object Datasets extends ApiController {
       Dataset.tag(id, tagObj)
       index(id)
     }
-    Ok(toJson(tagId.toString()))
+    Ok(toJson(tagId.toString))
   }
     
   def removeTag(id: String) = SecuredAction(parse.json,authorization=WithPermission(Permission.DeleteTags)) {implicit request =>
@@ -342,7 +342,7 @@ object Datasets extends ApiController {
 	        val comment = new Comment(identity, text, dataset_id=Some(id))
 	        Comment.save(comment)
 	        index(id)
-	        Ok(comment.id.toString())
+	        Ok(comment.id.toString)
 	      }
 	      case None => {
 	        Logger.error("no text specified.")
@@ -490,7 +490,7 @@ object Datasets extends ApiController {
             case Some(dataset) => {
               val theJSON = Dataset.getUserMetadataJSON(id)
               val fileSep = System.getProperty("file.separator")
-	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString()
+	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
 	          new java.io.File(resultDir).mkdir()
               
               if(!theJSON.replaceAll(" ","").equals("{}")){
@@ -552,7 +552,7 @@ object Datasets extends ApiController {
           }
         }        
         var hostString = "http://" + request.host + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
-        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
+        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
         
         for(file <- dataset.files){
            val filePreviewsList = PreviewDAO.findByFileId(file.id)
@@ -562,7 +562,7 @@ object Datasets extends ApiController {
 	        	   fileRdfPreviewList = fileRdfPreviewList :+ currPreview
 	           }
            }
-           val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString())
+           val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
            list = list ++ filesList
         }
         
