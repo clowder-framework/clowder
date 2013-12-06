@@ -77,9 +77,10 @@
 		<h1>@file.filename</h1>
 	</div>
 	<div class="row">
-		<div class="col-md-2">				
+	<div class="col-md-2">				
 	
 		</div>
+		
 		<div class="col-md-6">
 			<dl class="dl-horizontal">
 				<dt>Author:</dt>
@@ -94,7 +95,7 @@
 		</div>
 		</div>
 		
-		<div class="row">
+	<div class="row">
 		<div class="col-md-12">
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
@@ -411,7 +412,7 @@
 		</div>
 
 	</div>
-	<div class="row" style="margin-top:50px">
+	<div class="row" style="margin-top:50px; margin-left: 490px; width: 750px;">
 		<div class="accordion" id="accordion1">
 			<div class="accordion-group">
 				<div class="accordian-heading">
