@@ -775,7 +775,7 @@ function clearConfigTabAnnotations(prNum){
     
     function updatex3dPosition(prNum){
     	if(window["oldx3dposition" + prNum] != window["thisPreview" + prNum].offset().top){
-    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum] - 280) + "px;");
+    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum] - 80 - window["x3dOffset2" + prNum]) + "px;");
     		window["oldx3dposition" + prNum] = window["thisPreview" + prNum].offset().top;
     	}
     }
@@ -889,7 +889,12 @@ function clearConfigTabAnnotations(prNum){
 	else
       window["x3dOffset" + prNum] = 248;	
 	  x3dMeasureInstructions = "";
-  }
+  }  
+  if(Configuration.calledFrom == "dataset")
+	  window["x3dOffset2" + prNum] = 100;
+  else if(Configuration.calledFrom == "file")
+	  window["x3dOffset2" + prNum] = 200;
+  
 
   $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:560px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>" 
 		  					+ "<tr><td>Ctrl + Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
@@ -907,7 +912,7 @@ function clearConfigTabAnnotations(prNum){
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style=' position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum] - 200) + "px;' >"; 
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style=' position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum] - window["x3dOffset2" + prNum]) + "px;' >"; 
   window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
   window["thisPreview" + prNum] = $(Configuration.tab); 
   //setInterval(function(){updatex3dPosition(prNum);},50);
