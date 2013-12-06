@@ -175,7 +175,7 @@ object Files extends Controller with SecuredController {
 	      request.body.file("File").map { f =>
 	          var nameOfFile = f.filename
 	          var flags = ""
-	          if(nameOfFile.endsWith(".ptm")){
+	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 		          var thirdSeparatorIndex = nameOfFile.indexOf("__")
 	              if(thirdSeparatorIndex >= 0){
 	                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -202,7 +202,7 @@ object Files extends Controller with SecuredController {
 	            else if(showPreviews.equals("None"))
 	                	flags = flags + "+nopreviews"
 	             var fileType = f.contentType
-				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
 				          if(fileType.startsWith("ERROR: ")){
 				             Logger.error(fileType.substring(7))
@@ -353,7 +353,7 @@ object Files extends Controller with SecuredController {
       request.body.file("File").map { f =>
       	var nameOfFile = f.filename
       	var flags = ""
-      	if(nameOfFile.endsWith(".ptm")){
+      	if(nameOfFile.toLowerCase().endsWith(".ptm")){
       			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 	              if(thirdSeparatorIndex >= 0){
 	                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -376,7 +376,7 @@ object Files extends Controller with SecuredController {
             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
              var fileType = f.contentType
-			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
@@ -433,7 +433,7 @@ object Files extends Controller with SecuredController {
       request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
-      	if(nameOfFile.endsWith(".ptm")){
+      	if(nameOfFile.toLowerCase().endsWith(".ptm")){
       			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 	              if(thirdSeparatorIndex >= 0){
 	                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -456,7 +456,7 @@ object Files extends Controller with SecuredController {
             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
             var fileType = f.contentType
-			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
@@ -517,7 +517,7 @@ object Files extends Controller with SecuredController {
       request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
-      	if(nameOfFile.endsWith(".ptm")){
+      	if(nameOfFile.toLowerCase().endsWith(".ptm")){
       			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 	              if(thirdSeparatorIndex >= 0){
 	                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -540,7 +540,7 @@ object Files extends Controller with SecuredController {
             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
              var fileType = f.contentType
-			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
@@ -598,7 +598,7 @@ object Files extends Controller with SecuredController {
 			  request.body.file("File").map { f =>
 			      var nameOfFile = f.filename
 			      var flags = ""
-			      if(nameOfFile.endsWith(".ptm")){
+			      if(nameOfFile.toLowerCase().endsWith(".ptm")){
 			    	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 		              if(thirdSeparatorIndex >= 0){
 		                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -624,7 +624,7 @@ object Files extends Controller with SecuredController {
 	                else if(showPreviews.equals("None"))
 	                	flags = flags + "+nopreviews"
 					  var fileType = f.contentType
-					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
 						  if(fileType.startsWith("ERROR: ")){
 								Logger.error(fileType.substring(7))

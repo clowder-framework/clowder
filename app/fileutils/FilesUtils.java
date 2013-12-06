@@ -29,17 +29,17 @@ public class FilesUtils {
 			
             while (zipEntries.hasMoreElements()) {                            	
                 String fileName = ((ZipEntry)zipEntries.nextElement()).getName();
-                if(fileName.endsWith(".x3d")){
+                if(fileName.toLowerCase().endsWith(".x3d")){
                 	zipFile.close();
                 	mainFileType = "model/x3d-zipped";
                 	return mainFileType;
                 }
-                if(fileName.endsWith(".obj")){
+                if(fileName.toLowerCase().endsWith(".obj")){
                 	zipFile.close();
                 	mainFileType = "model/obj-zipped";
                 	return mainFileType;
                 }
-                if(fileName.endsWith(".sfmdataset")){
+                if(fileName.toLowerCase().endsWith(".sfmdataset")){
                 	zipFile.close();
                 	mainFileType = "model/sfm-zipped";
                 	return mainFileType;

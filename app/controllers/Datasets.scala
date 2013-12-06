@@ -223,7 +223,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 	               case true => {
 	            	    var nameOfFile = f.filename
 			            var flags = ""
-			            if(nameOfFile.endsWith(".ptm")){
+			            if(nameOfFile.toLowerCase().endsWith(".ptm")){
 			              var thirdSeparatorIndex = nameOfFile.indexOf("__")
 			              if(thirdSeparatorIndex >= 0){
 			                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -253,7 +253,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 			                else if(showPreviews.equals("None"))
 			                	flags = flags + "+nopreviews"
 					        var fileType = f.contentType
-					        if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+					        if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 					          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
 					          if(fileType.startsWith("ERROR: ")){
 					             Logger.error(fileType.substring(7))
