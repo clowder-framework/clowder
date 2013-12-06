@@ -39,6 +39,11 @@ public class FilesUtils {
                 	mainFileType = "model/obj-zipped";
                 	return mainFileType;
                 }
+                if(fileName.toLowerCase().endsWith(".lp")){
+                	zipFile.close();
+                	mainFileType = "imageset/ptmimages-zipped";
+                	return mainFileType;
+                }
                 if(fileName.toLowerCase().endsWith(".sfmdataset")){
                 	zipFile.close();
                 	mainFileType = "model/sfm-zipped";
