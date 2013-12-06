@@ -76,11 +76,11 @@
 	<div class="page-header">
 		<h1>@file.filename</h1>
 	</div>
-	<div class="row-fluid">
-		<div class="span2">				
+	<div class="row">
+		<div class="col-md-2">				
 	
 		</div>
-		<div class="span6">
+		<div class="col-md-6">
 			<dl class="dl-horizontal">
 				<dt>Author:</dt>
 				<dd>@file.author.fullName</dd>
@@ -92,10 +92,13 @@
 				<dd>@file.uploadDate</dd>				
 			</dl>
 		</div>
+		</div>
 		
+		<div class="row">
+		<div class="col-md-12">
 		@for((f, pvs) <- previews) {
-			<div class="row-fluid" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
-		    	<div class="span12">
+			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
+		    	<div class="col-md-12">
 				  		<div class="tabbable">
 							<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 								@for(i <- pvs.indices) {
@@ -126,8 +129,8 @@
 			
 			<!-- sections -->
 			@if(f.sections.size > 0) {	
-			  	<div class="row-fluid" style="padding-top: 10px">
-			  	  <div class="span6">
+			  	<div class="row" style="padding-top: 10px">
+			  	  <div class="col-md-6">
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@f.sections.map { s =>
 					  		@if(s.preview.isDefined) {
@@ -149,8 +152,8 @@
 				  </div>
 				</div>
 				  
-				<div class="row-fluid" style="padding-top: 10px">
-				  <div class="span10">
+				<div class="row" style="padding-top: 10px">
+				  <div class="col-md-10">
 				  	<div>
 				  		<h5>Sections</h5>
 						<table class="table">
@@ -252,6 +255,7 @@
 			    </script>
     			}
     		}
+
 			@if(!file.metadata.isEmpty) {
 					<div id='technicalMetadata_@(file.id.toString)'>
 						<button class="tech_md_" type="button">Show file technical metadata</button>
@@ -276,6 +280,9 @@
 					}
 				});				
 				</script>
+				
+			</div>
+    	</div>
 		@if(beingProcessed == true){
     			<div id='beingProcessed' style='display:block;'><h5>File is being processed...</h5></div>  		
     		}else{
@@ -398,11 +405,13 @@
     		</script> 
     		
     		
-		<div class="span4">
-			<a href="@routes.Files.download(id)" class="btn pull-right" target="_blank">Download</a>
+
+		<div class="col-md-4">
+			<a href="@routes.Files.download(id)" class="btn btn-default pull-right" target="_blank">Download</a>
 		</div>
+
 	</div>
-	<div class="row-fluid" style="margin-top:50px">
+	<div class="row" style="margin-top:50px">
 		<div class="accordion" id="accordion1">
 			<div class="accordion-group">
 				<div class="accordian-heading">

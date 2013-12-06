@@ -247,10 +247,11 @@ object Files extends ApiController {
 	            	if(fileType.startsWith("ERROR: ")){
 	            		Logger.error(fileType.substring(7))
 	            		InternalServerError(fileType.substring(7))
-	            	}			          
-	            }else if(nameOfFile.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        }    	
+	            	}	
+	            }
+//	            }else if(nameOfFile.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        }    	
 
 	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 	            		// TODO RK : need figure out if we can use https
@@ -380,10 +381,11 @@ object Files extends ApiController {
 	        	  if(fileType.startsWith("ERROR: ")){
 	        		  Logger.error(fileType.substring(7))
 	        		  InternalServerError(fileType.substring(7))
-				  }			          
-			  }else if(nameOfFile.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        }
+				  }	
+	          }
+//			  }else if(nameOfFile.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        }
 	              
 	          // TODO RK need to replace unknown with the server name
 	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
@@ -473,10 +475,11 @@ object Files extends ApiController {
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
-			          }			          
-			        }else if(f.filename.endsWith(".mov")){
-			        	fileType = "ambiguous/mov";
-			        } 
+			          }
+			     }
+//			        }else if(f.filename.endsWith(".mov")){
+//			        	fileType = "ambiguous/mov";
+//			        } 
 	            
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https

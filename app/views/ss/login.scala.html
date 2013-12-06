@@ -13,7 +13,7 @@
     </div>
 
     @errorMsg.map { msg =>
-        <div class="alert alert-error">
+        <div class="alert alert-danger">
             @Messages(msg)
         </div>
     }
@@ -25,7 +25,7 @@
     }
 
     @request.flash.get("error").map { msg =>
-        <div class="alert alert-error">
+        <div class="alert alert-danger">
             @msg
         </div>
     }

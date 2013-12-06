@@ -308,7 +308,6 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
 
     } //Async
   }
-
   /*
    * 
    * Finds similar images/objects in Multiple index for a given query image/object

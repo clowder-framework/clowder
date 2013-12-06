@@ -207,7 +207,7 @@ object Datasets extends SecuredController {
   /**
    * Upload file.
    */
-  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
     user match {

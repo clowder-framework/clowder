@@ -1,7 +1,10 @@
-
+@(theme: Int)
 @main("Administration") {
 	<div class="page-header">
 		<h1>Administration</h1>
+	</div>
+	<div class="row">
+		<div class="col-md-2">@themes(theme)</div>
 	</div>
 	<div class="row">
 		<div class="col-md-12">
@@ -12,20 +15,23 @@
 	</div>
 	<div id="controlledPhone"></div>
 	<div id="test1"></div>
+	<div class="row">
+		<div class="col-md-2">@themes(theme)</div>
+	</div>
 	<legend> Create an Index</legend>
 	
 	<div class="container-fluid">
         
-      <div class="row-fluid">
+      <div class="row">
       
-       <div class="span12">
-			<div class="span3">
+       <div class="col-md-12">
+			<div class="col-md-3">
 				<h5>Choose an Adapter</h5>
 				<select id="adapterDropDown" onchange="setAdapterState()">
 					<option value="invalid">--Adapter--</option>
 				</select>
 				<div style="text-align: left;">			
-      			 <input id="create" type="submit" class="btn " value="Create" />
+      			 <input id="create" type="submit" class="btn btn-default btn-sm" value="Create" />
       			 </div>
       			 <br>
       			 <br>
@@ -34,21 +40,21 @@
 				
 			</div>		
 				
-		<div class="span3">	
+		<div class="col-md-3">	
 			<h5>Choose an Extractor</h5>
 				<select id="extractor" onchange="setExtractorState()">
 					<option value="invalid">--Extractor--</option>
 				</select>	
 	 		</div>
 	 		
-	 		<div class="span3">
+	 		<div class="col-md-3">
 				<h5>Choose a Measure</h5>
 				<select id="measure" onchange="setMeasureState()">
 					<option value="invalid">--Measure--</option>
 				</select>
 				
 			</div>
-			<div class="span3">
+			<div class="col-md-3">
 				<h5>Choose an Indexer </h5>
 				<select id="indexer" onchange="setIndexerState()">
 					<option value="invalid">--Indexer--</option>
@@ -61,15 +67,15 @@
 <br>
 <br>
 <legend> Build an Index</legend>
-<div class="row-fluid">
-	   <div class="span12">
-	   	<div class="span3">
+<div class="row">
+	   <div class="col-md-12">
+	   	<div class="col-md-3">
 				<h5>Choose an Index </h5>
 				<select id="index" onchange="setIndexState()">
 					<option value="invalid">--Index--</option>
 				</select>
 				<div style="text-align: left;">
-				<input id="build" class="btn" type="submit" value="Build Index">
+				<input id="build" class="btn btn-default btn-sm" type="submit" value="Build Index">
 				</div>
 				<div id="buildIndex"style="text-align: left;">
       			 </div>
@@ -81,10 +87,10 @@
 <br>
 
 <legend> List All Index</legend>
-<div class="row-fluid">
-<div class="span12">
+<div class="row">
+<div class="col-md-12">
 	   <div style="text-align: left;">			
-       <input id="list" type="submit" class="btn" value="List All Indexes" />
+       <input id="list" type="submit" class="btn btn-default btn-sm" value="List All Indexes" />
        </div>
        <div id="list1">
        </div>
@@ -93,15 +99,15 @@
 <br>
 <br>
 <legend> Delete an Index</legend>
-<div class="row-fluid">
-	   <div class="span12">
-	   	<div class="span3">
+<div class="row">
+	   <div class="col-md-12">
+	   	<div class="col-md-3">
 				<h5>Choose an Index </h5>
 				<select id="indexDel" onchange="setIndexDelState()">
 					<option value="invalid">--Index--</option>
 				</select>
 				<div style="text-align: left;">
-				<input id="delete" class="btn" type="submit" value="Delete Index">
+				<input id="delete" class="btn btn-default btn-sm" type="submit" value="Delete Index">
 				</div>
 				<br>
 				<br>
@@ -111,10 +117,10 @@
 	</div>
 </div>
 <br>
-<div class="row-fluid">
-<div class="span12">
+<div class="row">
+<div class="col-md-12">
 	   <div style="text-align: left;">			
-       <input id="deleteAll" type="submit" class="btn btn-danger" value="Delete All" />
+       <input id="deleteAll" type="submit" class="btn btn-default btn-sm btn-danger" value="Delete All" />
        </div>
          <div id="deleteAllIndex"style="text-align: left;">
       </div>
@@ -528,8 +534,11 @@ var listBtn=document.getElementById('list');
 
 var deleteBtn=document.getElementById('delete');
     deleteBtn.onclick=function(evt){
-    
+ 
     	var id=indexselected;
+
+    var id=indexselected;
+
     	console.log("I am inside delete click function");
     	var request=jsRoutes.controllers.Admin.deleteIndex(id).ajax({
    					 type:'DELETE'

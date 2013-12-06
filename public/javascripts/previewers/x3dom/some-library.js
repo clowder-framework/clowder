@@ -143,6 +143,7 @@ function clearConfigTabAnnotations(prNum){
   		        var newAnnotationHeading = document.createElement('h5');
   		        newAnnotationHeading.innerHTML = "Annotation description";
   		        newAnnotationHeading.setAttribute('data-annotation','true');
+  		        newAnnotationHeading.setAttribute('style','font-weight: bold;');
   		        $("#annotFields"+prNum).append(newAnnotationHeading);
 
   		        var newAnnotationDescription = document.createElement('span');
@@ -181,6 +182,7 @@ function clearConfigTabAnnotations(prNum){
         var annotationHeading = document.createElement('h5');
         annotationHeading.innerHTML = "Annotation description";
         annotationHeading.setAttribute('data-annotation','true');
+        annotationHeading.setAttribute('style','font-weight: bold;');
         $("#annotFields"+prNum).append(annotationHeading);  
 
         var annotationDescription = document.createElement('span');
@@ -209,6 +211,7 @@ function clearConfigTabAnnotations(prNum){
   	  var editAnnotationHeading = document.createElement('h5');
   	  editAnnotationHeading.innerHTML = "Edit annotation description";
   	  editAnnotationHeading.setAttribute('data-annotation','true');
+  	  editAnnotationHeading.setAttribute('style','font-weight: bold;');
   	  $("#annotFields"+prNum).append(editAnnotationHeading);
   	  
   	  var editAnnotationTextBox = document.createElement('textarea');
@@ -268,6 +271,7 @@ function clearConfigTabAnnotations(prNum){
   		  		  var newAnnotationHeading = document.createElement('h5');
   		  		  newAnnotationHeading.innerHTML = "Annotation description";
   		  		  newAnnotationHeading.setAttribute('data-annotation','true');
+  		  		  newAnnotationHeading.setAttribute('style','font-weight: bold;');
   		  		  $("#annotFields"+prNum).append(newAnnotationHeading);
   		  		  
   		  		  var newAnnotationDescription = document.createElement('span');
@@ -337,6 +341,7 @@ function clearConfigTabAnnotations(prNum){
     	var newAnnotationHeading = document.createElement('h5');
     	newAnnotationHeading.innerHTML = "Enter annotation description";
     	newAnnotationHeading.setAttribute('data-annotation','true');
+    	newAnnotationHeading.setAttribute('style','font-weight: bold;');
     	$("#annotFields"+prNum).append(newAnnotationHeading);
 
     	var newAnnotationTextBox = document.createElement('textarea');
@@ -450,7 +455,7 @@ function clearConfigTabAnnotations(prNum){
     	resultLine.setAttribute('data-measuring','true');   	
     	if(!(document.fullscreenElement || 
 			       document.mozFullScreenElement || document.webkitFullscreenElement)){
-    		resultLine.setAttribute("style","text-align:center;");
+    		resultLine.setAttribute("style","text-align:center;font-weight: bold;");
     		$("#x3dElementTable" + prNum).after(resultLine);
     	}
     	else{
@@ -770,7 +775,7 @@ function clearConfigTabAnnotations(prNum){
     
     function updatex3dPosition(prNum){
     	if(window["oldx3dposition" + prNum] != window["thisPreview" + prNum].offset().top){
-    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum]) + "px;");
+    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum] - 200) + "px;");
     		window["oldx3dposition" + prNum] = window["thisPreview" + prNum].offset().top;
     	}
     }
@@ -902,7 +907,7 @@ function clearConfigTabAnnotations(prNum){
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style=' position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum]) + "px;' >"; 
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style=' position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum] - 200) + "px;' >"; 
   window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
   window["thisPreview" + prNum] = $(Configuration.tab); 
   //setInterval(function(){updatex3dPosition(prNum);},50);
@@ -1113,7 +1118,7 @@ function clearConfigTabAnnotations(prNum){
 					
 					if($("#measuringvalue"+prNum).length > 0){
 						var theMeasurement = $("#measuringvalue"+prNum)[0];
-						theMeasurement.setAttribute("style","text-align: center; background-color: black; color: white; background: none repeat scroll 0% 0% transparent; max-height: 0%; position: absolute;margin-left: 80%; height:auto; bottom:150px;");						
+						theMeasurement.setAttribute("style","font-weight: bold; text-align: center; background-color: black; color: white; background: none repeat scroll 0% 0% transparent; max-height: 0%; position: absolute;margin-left: 80%; height:auto; bottom:150px;");						
 						thex3d.insertBefore(theMeasurement, theCanvas);
 					}
 					
