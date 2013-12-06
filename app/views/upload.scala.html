@@ -14,7 +14,7 @@
 	      <legend>Select file</legend>
 	      @inputFile(myForm("File"))
 	    </fieldset>
-	    <fieldset id="fileRadioFieldSet">
+	    <fieldset id="fileRadioFieldSet" style="margin-top:10px;">
 	      @inputRadioGroup(
 	          myForm("datasetLevel").copy(value=myForm("datasetLevel").value.orElse(Some("DatasetLevel")) ),
 	          options = options("DatasetLevel"->"Everywhere","FileLevel"->"On file page","None"->"Nowhere"),

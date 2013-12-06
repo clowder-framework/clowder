@@ -30,10 +30,10 @@
 	      @inputText(myForm("name"), '_label -> "Name")
 	      @textarea(myForm("description"), '_label -> "Description")
 	    </fieldset>
-	    <fieldset>
+	    <fieldset  id="fileUploadField">
 	      @inputFile(myForm("file"), '_label -> "Upload file")
 	    </fieldset>
-	    <button id="uploadCLearBtn" style="position: relative; left:0px; top: 0px;" onclick="clearUpload();return false;">Clear</button>
+	    <button id="uploadCLearBtn" style="position: relative;  margin-top:10px; margin-bottom:10px;" onclick="clearUpload();return false;">Clear</button>
 	    <fieldset>
 	      @select(
   			myForm("existingFile"),
