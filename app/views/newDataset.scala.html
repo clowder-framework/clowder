@@ -26,14 +26,14 @@
     }
     
 	  @form(action = routes.Datasets.submit(), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {	 
-	    <fieldset>
+	    <fieldset id="nameDescrFieldSet">
 	      @inputText(myForm("name"), '_label -> "Name")
 	      @textarea(myForm("description"), '_label -> "Description")
 	    </fieldset>
 	    <fieldset>
 	      @inputFile(myForm("file"), '_label -> "Upload file")
 	    </fieldset>
-	    <button id="uploadCLearBtn" style="position: relative; left:180px; top: -17px;" onclick="clearUpload();return false;">Clear</button>
+	    <button id="uploadCLearBtn" style="position: relative; left:0px; top: 0px;" onclick="clearUpload();return false;">Clear</button>
 	    <fieldset>
 	      @select(
   			myForm("existingFile"),
@@ -56,4 +56,12 @@
 	  }
     </div>
   </div>
+  <script>
+  		$('#fileUploadField controls').css('margin-top', '10px');
+  		$('#fileUploadField controls').css('margin-bottom', '10px');
+  		
+  		$('#datasetLevel label').css('top', '0px');
+  		$('#datasetLevel label').css('left', '0px');
+  		$('#datasetLevel label').css('margin-right', '10px');
+  </script> 
 }
