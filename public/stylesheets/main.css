@@ -242,6 +242,8 @@ button.tech_md_ {
 	left:20px;
 }
 
+
+
 #nameDescrFieldSet .control-group .controls textarea{
 	width:208px;
 }
@@ -249,6 +251,36 @@ button.tech_md_ {
 	width:208px;
 	height:30px;
 }
+fieldset #username_field .controls #username{
+	width:208px;
+	height:30px;
+}
+fieldset #password_field .controls #password{
+	width:208px;
+	height:30px;
+}
+fieldset #email_field .controls #email{
+	width:208px;
+	height:30px;
+}
+#firstName_field .controls #firstName{
+	width:208px;
+	height:30px;
+}
+#lastName_field .controls #lastName{
+	width:208px;
+	height:30px;
+}
+#password_password1_field .controls #password_password1{
+	width:208px;
+	height:30px;
+}
+#password_password2_field .controls #password_password2{
+	width:208px;
+	height:30px;
+}
+
+
 
 :-webkit-full-screen x3d {
   width: 100%;
