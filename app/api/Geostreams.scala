@@ -19,60 +19,242 @@ import play.api.libs.ws.WS
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import scala.concurrent.Future
 import services.ElasticsearchPlugin
+import java.sql.Timestamp
+import services.PostgresPlugin
 
 /**
- * Geostreaming endpoints. A geostream is a time and geospatial referenced 
+ * Geostreaming endpoints. A geostream is a time and geospatial referenced
  * sequence of datapoints.
- * 
+ *
  * @author Luigi Marini
  *
  */
-object Geostreams extends Controller with ApiController {
+object Geostreams extends ApiController {
 
-  val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss'Z'")
+  val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssXXX")
+  val pluginNotEnabled = InternalServerError(toJson("Geostreaming not enabled"))
   
-  implicit val rds = (
-    (__ \ 'start_time).read[String] and
-    (__ \ 'end_time).readNullable[String] and
-    (__ \ 'geog \ 'coordinates).read[List[Double]] and
-    (__ \ 'data).json.pick and
-    (__ \ 'stream_id).read[String]
+  implicit val sensors = (
+    (__ \ 'name).read[String] and
+    (__ \ 'type).read[String] and
+    (__ \ 'geometry \ 'coordinates).read[List[Double]] and
+    (__ \ 'properties).read[JsValue]
   ) tupled
   
-  def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateStreams)) { request =>
-      Logger.debug("Creating stream")
-      Ok(toJson("success"))
-  }
+  implicit val streams = (
+    (__ \ 'name).read[String] and
+    (__ \ 'type).read[String] and
+    (__ \ 'geometry \ 'coordinates).read[List[Double]] and
+    (__ \ 'properties).read[JsValue] and
+    (__ \ 'sensor_id).read[String]
+  ) tupled
   
-  def addDatapoint(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDataPoints)) { request =>
-      Logger.info("Adding datapoint: " + request.body)
-      request.body.validate[(String, Option[String], List[Double], JsValue, String)].map{ 
-        case (start_time, end_time, longlat, data, streamId) => 
+  implicit val datapoints = (
+    (__ \ 'start_time).read[String] and
+    (__ \ 'end_time).readNullable[String] and
+    (__ \ 'type).read[String] and
+    (__ \ 'geometry \ 'coordinates).read[List[Double]] and
+    (__ \ 'properties).json.pick and
+    (__ \ 'stream_id).read[String]
+  ) tupled
+
+  def createSensor() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
+      Logger.debug("Creating sensor")
+      request.body.validate[(String, String, List[Double], JsValue)].map {
+        case (name, geoType, longlat, metadata) => {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
-              Logger.info("GEOSTREAM TIME: " + start_time + " " + end_time)
-              val end_date = if (end_time.isDefined) Some(formatter.parse(end_time.get)) else None
-              if (longlat.length == 3) {
-                plugin.add(formatter.parse(start_time), end_date, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId)
-              } else { 
-            	plugin.add(formatter.parse(start_time), end_date, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
-              }
+              plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata))
               Ok(toJson("success"))
             }
-           case None => InternalServerError(toJson("Geostreaming not enabled"))
-      }}.recoverTotal{
-        e => Logger.debug("Error parsing json: " + e); BadRequest("Detected error:"+ JsError.toFlatJson(e))
+            case None => pluginNotEnabled
+          }
+        }
+      }.recoverTotal {
+        e => BadRequest("Detected error:" + JsError.toFlatJson(e))
       }
   }
-  
-  def search(since: Option[String], until: Option[String], geocode: Option[String]) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.SearchStreams)) { request =>
-      Logger.debug("Search " + since + " " + until + " " + geocode)
+
+  def searchSensors(geocode: Option[String]) =
+    Action { request =>
+      Logger.debug("Searching sensors " + geocode)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => Ok(jsonp(Json.prettyPrint(Json.parse(plugin.search(since, until, geocode))), request.request))
-        case None => InternalServerError(toJson("Geostreaming not enabled"))
+        case Some(plugin) => {
+          plugin.searchSensors(geocode) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
       }
     }
   
+  def getSensor(id: String) =
+    Action { request =>
+      Logger.debug("Get sensor " + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getSensor(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  
+  
+  def getSensorStreams(id: String) =
+    Action { request =>
+      Logger.debug("Get sensor streams" + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getSensorStreams(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  
+  def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
+      Logger.info("Creating stream")
+      request.body.validate[(String, String, List[Double], JsValue, String)].map {
+        case (name, geoType, longlat, metadata, sensor_id) => {
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              val id = plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
+              Ok(toJson(Json.obj("status"->"ok","id"->id)))              
+            }
+            case None => pluginNotEnabled
+          }
+        }
+      }.recoverTotal {
+        e => Logger.error(e.toString); BadRequest("Detected error:" + JsError.toFlatJson(e))
+      }
+  }
+
+  def searchStreams(geocode: Option[String]) =
+    Action { request =>
+      Logger.debug("Searching stream " + geocode)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.searchStreams(geocode) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  
+  def getStream(id: String) =
+    Action { request =>
+      Logger.debug("Get stream " + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getStream(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No stream found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  
+  def deleteStream(id: String) = Authenticated {
+    Action(parse.empty) { request =>
+      Logger.debug("Delete stream " + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          if (plugin.deleteStream(id.toInt)) Ok(Json.parse("""{"status":"ok"}"""))
+          else Ok(Json.parse("""{"status":"error"}"""))
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  }
+  
+  def deleteAll() = Authenticated {
+    Action(parse.empty) { request =>
+      Logger.debug("Drop all")
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          if (plugin.dropAll()) Ok(Json.parse("""{"status":"ok"}"""))
+          else Ok(Json.parse("""{"status":"error"}"""))
+        }
+        case None => pluginNotEnabled
+      }
+    }
+  }
+  
+  def counts() =  Action { request =>
+      Logger.debug("Counting entries")
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.counts() match {
+          	case (sensors, streams, datapoints) => Ok(toJson(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints))) 
+          	case _ => Ok(Json.parse("""{"status":"error"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+
+  def addDatapoint() = Authenticated {
+    Action(parse.json) { request =>
+      Logger.info("Adding datapoint: " + request.body)
+      request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
+        case (start_time, end_time, geoType, longlat, data, streamId) =>
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              Logger.info("GEOSTREAM TIME: " + start_time + " " + end_time)
+              val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
+              val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
+              if (longlat.length == 3) {
+                plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId)
+              } else {
+                plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
+              }
+              Ok(toJson("success"))
+            }
+            case None => pluginNotEnabled
+          }
+      }.recoverTotal {
+        e => Logger.debug("Error parsing json: " + e); BadRequest("Detected error:" + JsError.toFlatJson(e))
+      }
+    }
+  }
+
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]) =
+    Action { request =>
+      Logger.debug("Search " + since + " " + until + " " + geocode)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.searchDatapoints(since, until, geocode, stream_id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.toJson("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+
+  def getDatapoint(id: String) =
+    Action { request =>
+      Logger.debug("Get datapoint " + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getDatapoint(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No stream found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+    }
+
   def jsonp(json: String, request: Request[AnyContent]) = {
     request.getQueryString("callback") match {
       case Some(callback) => callback + "(" + json + ");"

@@ -222,9 +222,16 @@ button.tech_md_ {
 	padding: 0 15px;
 }
 
+<<<<<<< HEAD
+#geostreams_map { 
+	height: 600px; 
+}
+
+=======
 .wrapped {
 	padding: 15px 5px;
 }
+>>>>>>> refs/heads/master
 
 .avatar {
 	width: 48px;
