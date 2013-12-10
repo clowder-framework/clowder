@@ -118,6 +118,21 @@ object Geostreams extends ApiController {
       }
     }
   
+  
+  def getSensorStatistics(id: String) =  
+    Action { request =>
+      Logger.debug("Get sensor statistics" + id)
+      current.plugin[PostgresPlugin] match {
+        case Some(plugin) => {
+          plugin.getSensorStatistics(id) match {
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          }
+        }
+        case None => pluginNotEnabled
+      }
+  }
+  
   def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
       Logger.info("Creating stream")
       request.body.validate[(String, String, List[Double], JsValue, String)].map {
