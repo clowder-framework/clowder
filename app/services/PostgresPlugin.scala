@@ -154,7 +154,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else Some(data)
   }
   
-  def getSensorStatistics(id: String): Option[String] = {
+  def getSensorDateRange(id: String): Option[String] = {
     var data = ""
     val query = "SELECT to_json(t) FROM " + 
     			"(SELECT min(datapoints.start_time) As min_start_time, max(datapoints.start_time) As max_start_time FROM " +
@@ -165,7 +165,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     val rs = st.executeQuery()
     while (rs.next()) {
       data += rs.getString(1)
-      Logger.debug("Sensors found: " + data)
+      Logger.debug("Sensor date range: " + data)
     }
     rs.close()
     st.close()
@@ -174,6 +174,28 @@ class PostgresPlugin(application: Application) extends Plugin {
       Logger.debug("Searching NONE")
       None
     } else Some(data)
+  }
+  
+  def getSensorParameters(id: String): Option[String] = {
+    var data = ""
+    val query = "SELECT to_json(unique_values) FROM (SELECT array(SELECT json_object_keys(datapoints.data) As key " +
+                "FROM sensors, streams, datapoints WHERE sensors.gid = ? AND sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid GROUP BY key) As parameters) As unique_values;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Get streams by parameter statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Sensors parameters: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Getting sensors parameters: " + data)
+    if (data == "null") { // FIXME
+      Logger.debug("Searching NONE")
+      None
+    } else Some(data)
+  
   }
 
   def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String): String = {

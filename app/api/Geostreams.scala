@@ -124,10 +124,19 @@ object Geostreams extends ApiController {
       Logger.debug("Get sensor statistics" + id)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.getSensorStatistics(id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+          val dates = plugin.getSensorDateRange(id) match {
+            case Some(d) => d
+            case None => """{}"""
           }
+          val parameters = plugin.getSensorParameters(id) match {
+            case Some(params) => params
+            case None => """{"parameters":[]}"""
+          }
+          val json = Json.obj(
+        		  "range" -> Json.parse(dates),
+        		  "parameters" -> Json.parse(parameters) \ "parameters"
+        		  )
+          Ok(jsonp(Json.prettyPrint(json), request))
         }
         case None => pluginNotEnabled
       }
