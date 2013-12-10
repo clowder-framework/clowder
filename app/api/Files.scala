@@ -5,6 +5,9 @@ package api
 
 import java.io.FileInputStream
 import java.util.Date
+import java.io.BufferedWriter
+import java.io.FileWriter
+import java.io.ByteArrayInputStream
 
 import org.bson.types.ObjectId
 
@@ -39,6 +42,19 @@ import services.ElasticsearchPlugin
 import services.ExtractorMessage
 import services.RabbitmqPlugin
 import services.Services
+import services.FileDumpService
+import services.DumpOfFile
+
+import scala.collection.mutable.ListBuffer
+import scala.util.parsing.json.JSONArray
+
+import org.json.JSONObject
+import org.json.XML
+
+import Transformation.LidoToCidocConvertion
+
+import jsonutils.JsonUtil
+
 
 /**
  * Json API for files.
@@ -183,6 +199,7 @@ object Files extends ApiController {
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
 	      case Some(x) => {
 	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)
+	    		  index(id)
 	      }
 	      case None => {
 	        Logger.error("Error getting file" + id)
@@ -198,13 +215,13 @@ object Files extends ApiController {
   /**
    * Upload file using multipart form enconding.
    */
-    def upload(showPreviews: String="FileLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+    def upload(showPreviews: String="DatasetLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>
 	          var nameOfFile = f.filename
 	          var flags = ""
-	          if(nameOfFile.endsWith(".ptm")){
+	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 		          	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 		              if(thirdSeparatorIndex >= 0){
 		                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -220,11 +237,15 @@ object Files extends ApiController {
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
+	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+	            
 	            val id = f.id.toString
-	            if(showPreviews.equals("None"))
-	              flags = flags + "+nopreviews"
+	            if(showPreviews.equals("FileLevel"))
+	            	flags = flags + "+filelevelshowpreviews"
+	            else if(showPreviews.equals("None"))
+	            	flags = flags + "+nopreviews"
 	            var fileType = f.contentType
-	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
 	            	if(fileType.startsWith("ERROR: ")){
 	            		Logger.error(fileType.substring(7))
@@ -240,10 +261,24 @@ object Files extends ApiController {
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-	             
-	            current.plugin[ElasticsearchPlugin].foreach{
-	              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+	            	            
+	            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              
+	              Logger.debug("xmlmd=" + xmlToJSON)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
+		            }
 	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            }
+	            }
+	            
 	            Ok(toJson(Map("id"->id)))   
 	          }
 	          case None => {
@@ -269,7 +304,7 @@ object Files extends ApiController {
 		      case Some(theFile) => { 
 		          var nameOfFile = theFile.filename
 		          var flags = ""
-		          if(nameOfFile.endsWith(".ptm")){
+		          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 			          	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 			              if(thirdSeparatorIndex >= 0){
 			                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -318,7 +353,7 @@ object Files extends ApiController {
         request.body.file("File").map { f =>
           		var nameOfFile = f.filename
 	            var flags = ""
-	            if(nameOfFile.endsWith(".ptm")){
+	            if(nameOfFile.toLowerCase().endsWith(".ptm")){
 	            	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 		              if(thirdSeparatorIndex >= 0){
 		                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -336,13 +371,15 @@ object Files extends ApiController {
           // submit file for extraction
           file match {
             case Some(f) => {
+              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+              
               val id = f.id.toString
               if(showPreviews.equals("FileLevel"))
 	            flags = flags + "+filelevelshowpreviews"
 	          else if(showPreviews.equals("None"))
 	            flags = flags + "+nopreviews"
 	          var fileType = f.contentType
-	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 	        	  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
 	        	  if(fileType.startsWith("ERROR: ")){
 	        		  Logger.error(fileType.substring(7))
@@ -359,14 +396,31 @@ object Files extends ApiController {
 	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
 	              
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
-                           
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType)))
-              }
+	          
+	          //for metadata files
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+            	  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+            			  FileDAO.addXMLMetadata(id, xmlToJSON)
 
+            			  Logger.debug("xmlmd=" + xmlToJSON)
+
+            			  current.plugin[ElasticsearchPlugin].foreach{
+            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
+            	  		  }
+              }
+              else{
+            	  current.plugin[ElasticsearchPlugin].foreach{
+            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
+            	  }
+              }
+                           
               // add file to dataset   
               // TODO create a service instead of calling salat directly
-              Dataset.addFile(dataset.id.toString, f)
+              val theFile = FileDAO.get(f.id.toString).get
+              Dataset.addFile(dataset.id.toString, theFile)              
+              if(!theFile.xmlMetadata.isEmpty){
+	            	Datasets.index(dataset_id)
+		      	}	
 
               // TODO RK need to replace unknown with the server name and dataset type
               val dtkey = "unknown." + "dataset." + "unknown"
@@ -417,9 +471,9 @@ object Files extends ApiController {
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	             FileDAO.setIntermediate(f.id.toString())
+	             FileDAO.setIntermediate(f.id.toString)
 	             var fileType = f.contentType
-			     if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+			     if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.toLowerCase().endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
@@ -511,8 +565,116 @@ object Files extends ApiController {
     }
   }
   
-    def jsonFile(file: File): JsValue = {
+  def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
+    Services.files.getFile(id) match { 
+            case Some(file) => {
+              val theJSON = FileDAO.getUserMetadataJSON(id)
+              val fileSep = System.getProperty("file.separator")
+	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
+	          new java.io.File(resultDir).mkdir()
+              
+              if(!theJSON.replaceAll(" ","").equals("{}")){
+	              val xmlFile = jsonToXML(theJSON)
+	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+	              xmlFile.delete()
+              }
+              else{
+                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+              }
+              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+              
+              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+            }
+            case None => BadRequest(toJson("File not found " + id))
+    }
+  
+  }
+  
+  def jsonToXML(theJSON: String): java.io.File = {
+    
+    val jsonObject = new JSONObject(theJSON)    
+    var xml = org.json.XML.toString(jsonObject)
+    
+    //Remove spaces from XML tags
+    var currStart = xml.indexOf("<")
+    var currEnd = -1
+    var xmlNoSpaces = ""
+    while(currStart != -1){
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
+      currEnd = xml.indexOf(">", currStart+1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
+      currStart = xml.indexOf("<", currEnd+1)
+    }
+    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
+    
+    val xmlFile = java.io.File.createTempFile("xml",".xml")
+    val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
+    fileWriter.write(xmlNoSpaces)
+    fileWriter.close()
+    
+    return xmlFile    
+  }
+  
+  def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        
+        //RDF from XML of the file itself (for XML metadata-only files)
+        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
+        var rdfPreviewList = List.empty[models.Preview]
+        for(currPreview <- previewsList){
+          if(currPreview.contentType.equals("application/rdf+xml")){
+            rdfPreviewList = rdfPreviewList :+ currPreview
+          }
+        }        
+        var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
+        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
+        
+        //RDF from export of file community-generated metadata to RDF
+        var connectionChars = ""
+        if(hostString.contains("?")){
+          connectionChars = "&mappingNum="
+        }
+        else{
+          connectionChars = "?mappingNum="
+        }
+        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars                
+        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
+        for(i <- 1 to mappingsQuantity){
+          var currHostString = hostString + i
+          list = list :+ Json.toJson(currHostString)
+        }
+
+        val listJson = toJson(list.toList)
+        
+        Ok(listJson) 
+      }
+      case None => {Logger.error("Error getting file" + id); InternalServerError}
+    }
+    
+  }
+  
+  def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) {implicit request =>
+	      Logger.debug("Adding user metadata to file " + id)
+	      val theJSON = Json.stringify(request.body)
+	      FileDAO.addUserMetadata(id, theJSON)
+	      index(id)
+	      Ok(toJson(Map("status" -> "success")))
+
+  }
+  
+  def jsonFile(file: File): JsValue = {
         toJson(Map("id"->file.id.toString, "filename"->file.filename, "content-type"->file.contentType, "date-created"->file.uploadDate.toString(), "size"->file.length.toString))
+  }
+  
+  def jsonFileWithThumbnail(file: File): JsValue = {
+    var fileThumbnail = "None"
+    if(!file.thumbnail_id.isEmpty)
+      fileThumbnail = file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)
+    
+        toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType, "dateCreated"->file.uploadDate.toString(), "thumbnail" -> fileThumbnail))
   }
   
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {
@@ -526,7 +688,7 @@ object Files extends ApiController {
       ).reduce((left:DBObject, right:DBObject) => left ++ right)
     }
   
-  def filePreviewsList(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateFiles)) {  request =>
+  def filePreviewsList(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) {  request =>
 			FileDAO.findOneById(new ObjectId(id)) match {
 			case Some(file) => {
                 val filePreviews = PreviewDAO.findByFileId(file.id);
@@ -611,20 +773,17 @@ object Files extends ApiController {
 	                    FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(file_id)), 
 	                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
 	                        
-	                    Dataset.findOneByFileId(file.id) match {
-	                      case Some(dataset) => {
-	                        if(dataset.thumbnail_id.isEmpty){
+	                    val datasetList = Dataset.findByFileId(file.id)
+	                    for(dataset <- datasetList){
+	                      if(dataset.thumbnail_id.isEmpty){
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
-		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
-		                        
-		                        for(collection <- Collection.listInsideDataset(dataset.id.toString)){
-		                          
-		                        }
+		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)		                        
+//		                        for(collection <- Collection.listInsideDataset(dataset.id.toString)){
+//		                          
+//		                        }
 		                    }
-	                      }
-	                      case None =>
 	                    }
-	                        
+	                    	                        
 	                    Ok(toJson(Map("status"->"success")))
 	                }
 	                case None => BadRequest(toJson("Thumbnail not found"))
@@ -957,7 +1116,8 @@ object Files extends ApiController {
 			    case Some(text) => {
 			        val comment = new Comment(identity, text, file_id=Some(id))
 			        Comment.save(comment)
-			        Ok(comment.id.toString())
+			        index(id)
+			        Ok(comment.id.toString)
 			    }
 			    case None => {
 			    	Logger.error("no text specified.")
@@ -1037,6 +1197,17 @@ object Files extends ApiController {
     }
   }
   
+  
+  def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        Ok(FileDAO.getTechnicalMetadataJSON(id))
+      }
+      case None => {Logger.error("Error finding file" + id); InternalServerError}      
+    }
+  }
+  
+  
   def removeFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteFiles)) { request =>
     Services.files.getFile(id)  match {
       case Some(file) => {
@@ -1047,5 +1218,94 @@ object Files extends ApiController {
     }
   }
   
+/**
+   * List datasets satisfying a user metadata search tree.
+   */
+  def searchFilesUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { request =>
+      Logger.debug("Searching files' user metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = FileDAO.searchUserMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning files list.")
+
+      val list = for (file <- searchQuery) yield jsonFileWithThumbnail(file)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    }   
+
+  
+  /**
+   * List datasets satisfying a general metadata search tree.
+   */
+  def searchFilesGeneralMetadata = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { request =>
+      Logger.debug("Searching files' metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = FileDAO.searchAllMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning files list.")
+
+      val list = for (file <- searchQuery) yield jsonFileWithThumbnail(file)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    }
+  
+  
+  def index(id: String) {
+    Services.files.getFile(id) match {
+      case Some(file) => {
+        var tagListBuffer = new ListBuffer[String]()
+        
+        for (tag <- file.tags){
+          tagListBuffer += tag.name
+        }          
+        
+        val tagsJson = new JSONArray(tagListBuffer.toList)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByFileId(id)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+        
+        val usrMd = FileDAO.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
+        
+        val techMd = FileDAO.getTechnicalMetadataJSON(id)
+        Logger.debug("techmd=" + techMd)
+        
+        val xmlMd = FileDAO.getXMLMetadataJSON(id)
+	    Logger.debug("xmlmd=" + xmlMd)
+        
+        var fileDsId = ""
+        var fileDsName = ""
+          
+        for(dataset <- Dataset.findByFileId(file.id)){
+          fileDsId = fileDsId + dataset.id.toString + "  "
+          fileDsName = fileDsName + dataset.name + "  "
+        }  
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "file", id,
+            List(("filename", file.filename), ("contentType", file.contentType),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+        }
+      }
+      case None => Logger.error("File not found: " + id)
+    }
+  }
 	
 }

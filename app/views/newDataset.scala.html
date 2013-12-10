@@ -1,9 +1,14 @@
-@(myForm: Form[Dataset])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(myForm: Form[Dataset], filesList: List[(String, String)])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @main("Dataset") {
+  <script>
+  	function clearUpload(){
+  		$('#file').val('');
+  	}
+  </script>  
   <div class="page-header">
     <h1>Create New Dataset</h1>
   </div>
@@ -21,12 +26,22 @@
     }
     
 	  @form(action = routes.Datasets.submit(), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {	 
-	    <fieldset>
+	    <fieldset id="nameDescrFieldSet">
 	      @inputText(myForm("name"), '_label -> "Name")
 	      @textarea(myForm("description"), '_label -> "Description")
 	    </fieldset>
+	    <fieldset  id="fileUploadField">
+	      @inputFile(myForm("file"), '_label -> "Upload file")
+	    </fieldset>
+	    <button id="uploadCLearBtn" style="position: relative;  margin-top:10px; margin-bottom:10px;" onclick="clearUpload();return false;">Clear</button>
 	    <fieldset>
-	      @inputFile(myForm("file"), '_label -> "File")
+	      @select(
+  			myForm("existingFile"),
+  			("__nofile" -> "--NONE--") +: filesList.map{ oneFile =>
+    			oneFile._1 -> (oneFile._2)
+  			},
+  			'_label -> "or select an existing file"
+		)
 	    </fieldset>
 	    <fieldset id="datasetRadioFieldSet">
 	      @inputRadioGroup(
@@ -41,4 +56,12 @@
 	  }
     </div>
   </div>
+  <script>
+  		$('#fileUploadField controls').css('margin-top', '10px');
+  		$('#fileUploadField controls').css('margin-bottom', '10px');
+  		
+  		$('#datasetLevel label').css('top', '0px');
+  		$('#datasetLevel label').css('left', '0px');
+  		$('#datasetLevel label').css('margin-right', '10px');
+  </script> 
 }

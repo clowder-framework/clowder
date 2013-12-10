@@ -33,7 +33,7 @@
 					<dt>Uploaded on:</dt>
 					<dd>@file.uploadDate</dd>
 					<dt>Dataset name:</dt>
-					<dd><a href="@(routes.Datasets.dataset(mapdatasetIds.get(file.id.toString).get._1))">@mapdatasetIds.get(file.id.toString).get._2</a></dd>
+					<dd><a href="@(routes.Datasets.dataset(mapdatasetIds.get(file.id.toString).get._1.trim))">@mapdatasetIds.get(file.id.toString).get._2.trim</a></dd>
 				</dl>
 			</div>
 		</div>

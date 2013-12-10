@@ -32,9 +32,22 @@ import models.Collection
 import org.bson.types.ObjectId
 import securesocial.views.html.notAuthorized
 import play.api.Play.current
+import com.mongodb.casbah.Imports._
+import com.mongodb.WriteConcern
 
 import services.Services
 import scala.util.parsing.json.JSONArray
+
+import models.PreviewDAO
+
+import org.json.JSONObject
+import org.json.XML
+import Transformation.LidoToCidocConvertion
+import java.io.BufferedWriter
+import java.io.FileWriter
+import play.api.libs.iteratee.Enumerator
+import java.io.FileInputStream
+import play.api.libs.concurrent.Execution.Implicits._
 
 
 /**
@@ -94,8 +107,17 @@ object Datasets extends ApiController {
 		      	   Dataset.insert(d) match {
 		      	     case Some(id) => {
 		      	       import play.api.Play.current
-		      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
-		      	        			List(("name",d.name), ("description", d.description)))}
+		      	       api.Files.index(file_id)
+		      	       if(!file.xmlMetadata.isEmpty){
+		      	           val xmlToJSON = FileDAO.getXMLMetadataJSON(file_id)
+		      	    	   Dataset.addXMLMetadata(id.toString, file_id, xmlToJSON)
+		      	    	   current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
+			      	        			List(("name",d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))}
+		      	       }
+		      	       else{
+			      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
+			      	        			List(("name",d.name), ("description", d.description)))}
+		      	        }
 		      	       Ok(toJson(Map("id" -> id.toString)))
 		      	     }
 		      	     case None => Ok(toJson(Map("status" -> "error")))
@@ -113,6 +135,101 @@ object Datasets extends ApiController {
       }
 
     }
+    
+  def attachExistingFile(dsId: String, fileId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateDatasets)) { request =>
+    Services.datasets.get(dsId) match {
+      case Some(dataset) => {
+        Services.files.get(fileId) match {
+          case Some(file) => {
+            val theFile = FileDAO.get(fileId).get
+            if(!isInDataset(theFile,dataset)){
+	            Dataset.addFile(dsId, theFile)	            
+	            api.Files.index(fileId)
+	            if(!theFile.xmlMetadata.isEmpty){
+	            	index(dsId)
+		      	}	            
+	            Logger.info("Adding file to dataset completed")
+	            
+	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
+		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
+		                        $set("thumbnail_id" -> theFile.thumbnail_id), false, false, WriteConcern.SAFE)		                        
+		       }
+            }
+            else{
+              Logger.info("File was already in dataset.")
+            }
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => { Logger.error("Error getting file" + fileId); InternalServerError }
+        }        
+      }
+      case None => { Logger.error("Error getting dataset" + dsId); InternalServerError }
+    }  
+  }
+  
+  def isInDataset(file: File, dataset: Dataset): Boolean = {
+    for(dsFile <- dataset.files){
+      if(dsFile.id == file.id)
+        return true
+    }
+    return false
+  }
+  
+  def detachFile(datasetId: String, fileId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateCollections)) { request =>
+    Services.datasets.get(datasetId) match{
+      case Some(dataset) => {
+        Services.files.get(fileId) match {
+          case Some(file) => {
+            val theFile = FileDAO.get(fileId).get
+            if(isInDataset(theFile,dataset)){
+	            //remove file from dataset
+	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)
+	            api.Files.index(fileId)
+	            if(!theFile.xmlMetadata.isEmpty){
+	            	index(datasetId)
+		      	}
+	            Logger.info("Removing file from dataset completed")
+	            
+	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
+	              if(dataset.thumbnail_id.get == theFile.thumbnail_id.get){
+		             Dataset.newThumbnail(dataset.id.toString)
+		          }		                        
+		       }
+	            
+            }
+            else{
+              Logger.info("File was already out of the dataset.")
+            }
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => {
+        	  Ok(toJson(Map("status" -> "success")))
+          }
+        }
+      }
+      case None => {
+        ignoreNotFound match{
+          case "True" =>
+            Ok(toJson(Map("status" -> "success")))
+          case "False" =>
+        	Logger.error("Error getting dataset" + datasetId); InternalServerError
+        }
+      }     
+    }
+  }
+  
+  def getInCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowCollection)) { request =>
+    Collection.findOneById(new ObjectId(collectionId)) match{
+      case Some(collection) => {
+        val list = for (dataset <- Dataset.listInsideCollection(collectionId)) yield jsonDataset(dataset)
+        Ok(toJson(list))
+      }
+      case None => {
+        Logger.error("Error getting collection" + collectionId); InternalServerError
+      }
+    }
+  }
+  
 
   def jsonDataset(dataset: Dataset): JsValue = {
     var datasetThumbnail = "None"
@@ -126,12 +243,14 @@ object Datasets extends ApiController {
   def addMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding metadata to dataset " + id)
       Dataset.addMetadata(id, Json.stringify(request.body))
+      index(id)
       Ok(toJson(Map("status" -> "success")))
   }
 
   def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddDatasetsMetadata)) { request =>
       Logger.debug("Adding user metadata to dataset " + id)
       Dataset.addUserMetadata(id, Json.stringify(request.body))
+      index(id)
       Ok(toJson(Map("status" -> "success")))
     }
 
@@ -185,10 +304,19 @@ object Datasets extends ApiController {
         val commentJson = new JSONArray(comments)
 
         Logger.debug("commentStr=" + commentJson.toString())
+        
+        val usrMd = Dataset.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
+        
+        val techMd = Dataset.getTechnicalMetadataJSON(id)
+        Logger.debug("techmd=" + techMd)
+        
+        val xmlMd = Dataset.getXMLMetadataJSON(id)
+	    Logger.debug("xmlmd=" + xmlMd)
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "dataset", id,
-            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
         }
       }
       case None => Logger.error("Dataset not found: " + id)
@@ -236,7 +364,7 @@ object Datasets extends ApiController {
       Dataset.tag(id, tagObj)
       index(id)
     }
-    Ok(toJson(tagId.toString()))
+    Ok(toJson(tagId.toString))
   }
   */
 
@@ -301,7 +429,7 @@ object Datasets extends ApiController {
 	        val comment = new Comment(identity, text, dataset_id=Some(id))
 	        Comment.save(comment)
 	        index(id)
-	        Ok(comment.id.toString())
+	        Ok(comment.id.toString)
 	      }
 	      case None => {
 	        Logger.error("no text specified.")
@@ -318,21 +446,42 @@ object Datasets extends ApiController {
    */
   def searchDatasetsUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
       Logger.debug("Searching datasets' user metadata for search tree.")
-      var searchTree = JsonUtil.parseJSON(Json.stringify(request.body)).asInstanceOf[java.util.LinkedHashMap[String, Any]]
-      var datasetsSatisfying = List[Dataset]()
-      for (dataset <- Services.datasets.listDatasetsChronoReverse) {
-        if (Dataset.searchUserMetadata(dataset.id.toString(), searchTree)) {
-          datasetsSatisfying = dataset :: datasetsSatisfying
-        }
-      }
-      datasetsSatisfying = datasetsSatisfying.reverse
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = Dataset.searchUserMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
 
       Logger.debug("Search completed. Returning datasets list.")
 
-      val list = for (dataset <- datasetsSatisfying) yield jsonDataset(dataset)
+      val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
     }
+  
+  /**
+   * List datasets satisfying a general metadata search tree.
+   */
+  def searchDatasetsGeneralMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
+      Logger.debug("Searching datasets' metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = Dataset.searchAllMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning datasets list.")
+
+      val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    } 
   
   /**
    * Return whether a dataset is currently being processed.
@@ -423,5 +572,119 @@ object Datasets extends ApiController {
   }
   
   
+  def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) {implicit request =>
+    Services.datasets.get(id) match { 
+            case Some(dataset) => {
+              val theJSON = Dataset.getUserMetadataJSON(id)
+              val fileSep = System.getProperty("file.separator")
+	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
+	          new java.io.File(resultDir).mkdir()
+              
+              if(!theJSON.replaceAll(" ","").equals("{}")){
+	              val xmlFile = jsonToXML(theJSON)	              	              
+	              new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+	              xmlFile.delete()
+              }
+              else{
+                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+              }
+              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+              
+              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+            }
+            case None => BadRequest(toJson("Dataset not found " + id))
+    }
+  
+  }
+  
+  def jsonToXML(theJSON: String): java.io.File = {
+    
+    val jsonObject = new JSONObject(theJSON)    
+    var xml = org.json.XML.toString(jsonObject)
+    
+    Logger.debug("thexml: " + xml)
+    
+    //Remove spaces from XML tags
+    var currStart = xml.indexOf("<")
+    var currEnd = -1
+    var xmlNoSpaces = ""
+    while(currStart != -1){
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
+      currEnd = xml.indexOf(">", currStart+1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
+      currStart = xml.indexOf("<", currEnd+1)
+    }
+    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
+    
+    val xmlFile = java.io.File.createTempFile("xml",".xml")
+    val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
+    fileWriter.write(xmlNoSpaces)
+    fileWriter.close()
+    
+    return xmlFile    
+  }
+  
+  def getRDFURLsForDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        
+        //RDF from XML files in the dataset itself (for XML metadata-only files)
+        val previewsList = PreviewDAO.findByDatasetId(new ObjectId(id))
+        var rdfPreviewList = List.empty[models.Preview]
+        for(currPreview <- previewsList){
+          if(currPreview.contentType.equals("application/rdf+xml")){
+            rdfPreviewList = rdfPreviewList :+ currPreview
+          }
+        }        
+        var hostString = "http://" + request.host + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
+        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
+        
+        for(file <- dataset.files){
+           val filePreviewsList = PreviewDAO.findByFileId(file.id)
+           var fileRdfPreviewList = List.empty[models.Preview]
+           for(currPreview <- filePreviewsList){
+	           if(currPreview.contentType.equals("application/rdf+xml")){
+	        	   fileRdfPreviewList = fileRdfPreviewList :+ currPreview
+	           }
+           }
+           val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
+           list = list ++ filesList
+        }
+        
+        //RDF from export of dataset community-generated metadata to RDF
+        var connectionChars = ""
+		if(hostString.contains("?")){
+			connectionChars = "&mappingNum="
+		}
+		else{
+			connectionChars = "?mappingNum="
+		}        
+        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/") + connectionChars
+        
+        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("datasetsxmltordfmapping.dircount").getOrElse("1"))
+        for(i <- 1 to mappingsQuantity){
+          var currHostString = hostString + i
+          list = list :+ Json.toJson(currHostString)
+        }
+
+        val listJson = toJson(list.toList)
+        
+        Ok(listJson) 
+      }
+      case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+    }
+    
+  }
+  
+  def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        Ok(Dataset.getTechnicalMetadataJSON(id))
+      }
+      case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
+    }
+  }
   
 }

@@ -534,7 +534,11 @@ var listBtn=document.getElementById('list');
 
 var deleteBtn=document.getElementById('delete');
     deleteBtn.onclick=function(evt){
+ 
+    	var id=indexselected;
+
     var id=indexselected;
+
     	console.log("I am inside delete click function");
     	var request=jsRoutes.controllers.Admin.deleteIndex(id).ajax({
    					 type:'DELETE'
