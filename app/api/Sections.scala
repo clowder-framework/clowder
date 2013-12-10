@@ -107,7 +107,7 @@ object Sections extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
-  	Files.addRemoveTagsHelper("section", "add", id, request)
+  	Files.addTagsHelper(TagCheck_Section, id, request)
   }
 
   /**
@@ -115,7 +115,7 @@ object Sections extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type. 
    */
   def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
-  	Files.addRemoveTagsHelper("section", "remove", id, request)
+  	Files.removeTagsHelper(TagCheck_Section, id, request)
   }
 
   /**
