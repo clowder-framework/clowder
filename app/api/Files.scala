@@ -1260,7 +1260,7 @@ object Files extends ApiController {
         var tagListBuffer = new ListBuffer[String]()
         
         for (tag <- file.tags){
-          tagListBuffer += tag
+          tagListBuffer += tag.name
         }          
         
         val tagsJson = new JSONArray(tagListBuffer.toList)
