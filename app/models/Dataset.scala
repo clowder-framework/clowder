@@ -20,6 +20,7 @@ import scala.collection.JavaConversions._
 import play.api.libs.json.JsValue
 import securesocial.core.Identity
 import services.Services
+import jsonutils.JsonUtil
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -39,7 +40,8 @@ case class Dataset (
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
   collections: List[String] = List.empty,
-  thumbnail_id: Option[String] = None
+  thumbnail_id: Option[String] = None,
+  datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty
 )
 
 object MustBreak extends Exception { }
@@ -50,10 +52,32 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
   }
+  
+  
     
   def findOneByFileId(file_id: ObjectId): Option[Dataset] = {
     dao.findOne(MongoDBObject("files._id" -> file_id))
   }
+  
+  def findByFileId(file_id: ObjectId): List[Dataset] = {
+    dao.find(MongoDBObject("files._id" -> file_id)).toList
+  }
+  
+  def findNotContainingFile(file_id: ObjectId): List[Dataset] = {
+        val listContaining = findByFileId(file_id)
+        (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
+  }
+  
+//  def executeRawQuery(theQuery: String): List[Dataset] = {
+//    val thePlugin = current.plugin[MongoSalatPlugin]
+//    if(thePlugin.isEmpty){
+//      throw new RuntimeException("No MongoSalatPlugin")
+//     }
+//    val executionResult = thePlugin.get.source("medici")
+//    
+//    
+//  }
+  
   
   def findByTag(tag: String): List[Dataset] = {
     dao.find(MongoDBObject("tags.name" -> tag)).toList
@@ -82,6 +106,54 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     }
   }
   
+  def getUserMetadataJSON(id: String): String = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("userMetadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)
+	    		    	Logger.debug("retmd: "+ returnedMetadata)
+			returnedMetadata
+          }
+          case None => "{}"
+		}
+      }
+    }
+  }
+  
+  def getTechnicalMetadataJSON(id: String): String = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+	    		    	Logger.debug("retmd: "+ returnedMetadata)
+			returnedMetadata
+          }
+          case None => "{}"
+		}
+      }
+    }
+  }
+  
+  def getXMLMetadataJSON(id: String): String = {
+    dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("datasetXmlMetadata") match{
+          case Some(y)=>{
+	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("datasetXmlMetadata").get)
+	    		    	Logger.debug("retmd: "+ returnedMetadata)
+			returnedMetadata
+          }
+          case None => "{}"
+		}
+      }
+    }
+  }
+  
   def addMetadata(id: String, json: String) {
     Logger.debug("Adding metadata to dataset " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
@@ -98,12 +170,19 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
           case None => Map.empty
         }
       }
-    }
-    
-    
-   
-  
+    }   
   }
+  
+  def addXMLMetadata(id: String, fileId: String, json: String){
+     Logger.debug("Adding XML metadata to dataset " + id + " from file " + fileId + ": " + json)
+     val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap     
+     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("datasetXmlMetadata" ->  DatasetXMLMetadata.toDBObject(DatasetXMLMetadata(md,fileId))), false, false, WriteConcern.Safe)		      
+   }
+  
+  def removeXMLMetadata(id: String, fileId: String){
+     Logger.debug("Removing XML metadata belonging to file " + fileId + " from dataset " + id + ".")
+     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("datasetXmlMetadata" -> MongoDBObject("fileId" -> fileId)), false, false, WriteConcern.Safe)
+   } 
 
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to dataset " + id + " : " + json)
@@ -166,6 +245,121 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     return searchMetadata(id, requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], getUserMetadata(id))
   }
   
+  
+  def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset] = {
+    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    
+    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "all")
+    Logger.debug("thequery: "+theQuery.toString)    
+    var dsList = dao.find(theQuery).toList
+             
+    return dsList
+  }
+  
+  def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset] = {
+    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
+    Logger.debug("thequery: "+theQuery.toString)
+    
+    val dsList = dao.find(theQuery).toList
+    return dsList
+  }
+  
+def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
+    Logger.debug("req: "+ requestedMap)
+    var queryMap = MongoDBList()
+    var builder = MongoDBList()
+    var orFound = false
+    for((reqKey, reqValue) <- requestedMap){
+      val keyTrimmed = reqKey.replaceAll("__[0-9]+$","")
+      
+      if(keyTrimmed.equals("OR")){
+          queryMap.add(MongoDBObject("$and" ->  builder))
+          builder = MongoDBList()
+          orFound = true
+        }
+      else{
+        var actualKey = keyTrimmed
+        if(keyTrimmed.endsWith("__not")){
+        	  actualKey = actualKey.substring(0, actualKey.length()-5) 
+          }
+        
+        if(!root.equals("all")){
+        
+	        if(!root.equals(""))
+	        	actualKey = root + "." + actualKey 
+	        
+	        if(reqValue.isInstanceOf[String]){ 
+	            val currValue = reqValue.asInstanceOf[String]            
+	            if(keyTrimmed.endsWith("__not")){
+	            	builder += MongoDBObject(actualKey -> MongoDBObject("$ne" ->  currValue))
+	            }
+	            else{
+	            	builder += MongoDBObject(actualKey -> currValue)
+	            }           
+	        }else{
+	          //recursive	          
+	          if(root.equals("userMetadata")){
+	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+	            val elemMatch = actualKey $elemMatch currValue
+	            builder.add(elemMatch)
+	          }
+	          else{
+	            val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], actualKey)
+	        	builder += currValue  
+	          }	          
+	        }
+        }else{          
+          var objectForEach = MongoDBList()
+          val allRoots = Map(1 -> "userMetadata", 2 -> "metadata", 3 -> "datasetXmlMetadata.xmlMetadata")
+          allRoots.keys.foreach{ i =>
+            var tempActualKey = allRoots(i) + "." + actualKey
+            
+            if(reqValue.isInstanceOf[String]){ 
+	            val currValue = reqValue.asInstanceOf[String]            
+	            if(keyTrimmed.endsWith("__not")){
+	            	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
+	            }
+	            else{
+	            	objectForEach += MongoDBObject(tempActualKey -> currValue)
+	            }           
+	        }else{
+	          //recursive	            	            
+	            if(allRoots(i).equals("userMetadata")){
+	                val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], "")
+	            	val elemMatch = tempActualKey $elemMatch currValue
+	            	objectForEach.add(elemMatch)
+	            }
+	            else{
+	                val currValue =  searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], tempActualKey)
+	            	objectForEach += currValue 
+	            }	
+	        }            
+          }
+          
+          builder.add(MongoDBObject("$or" ->  objectForEach))
+          
+        }
+      }
+    }
+    queryMap.add(builder.result)
+    
+    if(orFound){
+    	return MongoDBObject("$or" ->  queryMap)
+    }
+    else if(!builder.isEmpty)  {
+      return MongoDBObject("$and" ->  builder)
+    }
+    else if(!root.equals("")){
+      return (root $exists true)
+    }
+    else{
+      return new MongoDBObject()
+    }
+  }
+  
+
+  
   /**
    * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree. 
    */
@@ -174,7 +368,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
       Logger.debug("req: "+ requestedMap);
       Logger.debug("curr: "+ currentMap);
       for((reqKey, reqValue) <- requestedMap){
-        var reqKeyCompare = reqKey.replaceAll("__[0-9]*$","")
+        var reqKeyCompare = reqKey
         if(reqKeyCompare.equals("OR")){
           if(allMatch)
             return true          
@@ -191,25 +385,46 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 	        var matchFound = false
 	        try{
 	        	for((currKey, currValue) <- currentMap){
-	        	    val currKeyCompare = currKey.replaceAll("__[0-9]*$","")
+	        	    val currKeyCompare = currKey
 	        		if(reqKeyCompare.equals(currKeyCompare)){
 	        		  //If search subtree remaining is a string (ie we have reached a leaf), then remaining subtree currently examined is bound to be a string, as the path so far was the same.
 	        		  //Therefore, we do string comparison.
-	        		  if(reqValue.isInstanceOf[String]){
-	        			  if(reqValue.asInstanceOf[String].trim().equals("*") || reqValue.asInstanceOf[String].trim().equalsIgnoreCase(currValue.asInstanceOf[String].trim())){
+	        		  if(reqValue.isInstanceOf[String]){        		    
+	        		    if(currValue.isInstanceOf[com.mongodb.BasicDBList]){
+	        		      for(itemInCurrValue <- currValue.asInstanceOf[com.mongodb.BasicDBList]){
+	        		        if(reqValue.asInstanceOf[String].trim().equals("*") || reqValue.asInstanceOf[String].trim().equalsIgnoreCase(itemInCurrValue.asInstanceOf[String].trim())){
 	        				  matchFound = true
 	        				  throw MustBreak
+	        		        }
+	        		      }
+	        		    }
+	        		    else{
+	        		      if(reqValue.asInstanceOf[String].trim().equals("*") || reqValue.asInstanceOf[String].trim().equalsIgnoreCase(currValue.asInstanceOf[String].trim())){
+	        				  matchFound = true
 	        			  }
+	        		    } 
 	        		  }
 	        		  //If search subtree remaining is not a string (ie we haven't reached a leaf yet), then remaining subtree currently examined is bound to not be a string, as the path so far was the same.
 	        		  //Therefore, we do maps (actually subtrees) comparison.
 	        		  else{
+	        		    if(currValue.isInstanceOf[com.mongodb.BasicDBList]){
+	        		      for(itemInCurrValue <- currValue.asInstanceOf[com.mongodb.BasicDBList]){
+	        		        val currValueMap = itemInCurrValue.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
+	        			    if(searchMetadata(id, reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], currValueMap)){
+	        				  matchFound = true
+	        				  throw MustBreak
+	        			    }
+	        		      }
+	        		    }
+	        		    else{
 	        		      val currValueMap = currValue.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]]
 	        			  if(searchMetadata(id, reqValue.asInstanceOf[java.util.LinkedHashMap[String,Any]], currValueMap)){
 	        				  matchFound = true
-	        				  throw MustBreak
 	        			  }
-	        		  }	
+	        		    } 
+	        		  }
+	        		  
+	        		  throw MustBreak
 	        		}
 	        	}
 	        } catch {case MustBreak => }
@@ -260,7 +475,10 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   }
   
   def addFile(datasetId:String, file: File){   
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" ->  FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" ->  FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)
+    if(!file.xmlMetadata.isEmpty){
+	   Dataset.addXMLMetadata(datasetId, file.id.toString, FileDAO.getXMLMetadataJSON(file.id.toString))
+	}
   }
   
   def addCollection(datasetId:String, collectionId: String){   
@@ -270,7 +488,8 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("collections" ->  collectionId), false, false, WriteConcern.Safe)   
   }
   def removeFile(datasetId:String, fileId: String){   
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files" -> MongoDBObject("_id" ->  new ObjectId(fileId))), false, false, WriteConcern.Safe)   
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files" -> MongoDBObject("_id" ->  new ObjectId(fileId))), false, false, WriteConcern.Safe)
+    Dataset.removeXMLMetadata(datasetId, fileId)
   }
   
   def newThumbnail(datasetId:String){
@@ -302,8 +521,11 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
         for(comment <- Comment.findCommentsByDatasetId(id)){
         	Comment.removeComment(comment)
         }  
-	    for(f <- dataset.files)
-	      FileDAO.removeFile(f.id.toString)
+	    for(f <- dataset.files){
+	      var notTheDataset = for(currDataset<-findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+	      if(notTheDataset.size == 0)
+	    	FileDAO.removeFile(f.id.toString)
+	    }
         Dataset.remove(MongoDBObject("_id" -> dataset.id))        
       }
       case None => 

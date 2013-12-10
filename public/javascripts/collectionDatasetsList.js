@@ -36,7 +36,7 @@
 				 });
 			 }
 	        if(currentFirstAdd > searchResultsCount)
-	        	if($('#addPagerPrev').is(':visible'))
+	        	if($('#addPagerPrev')[0].style.visibility == 'visible')
 	        		$('#addPagerPrev').click();
 	        
 	        if($("#collectionDatasetsTable tbody tr[data-datasetId='" + datasetId + "']").length > 0)
@@ -103,7 +103,7 @@
 	    	  });
 	      }
 	      if(currentFirstDatasets > datasetsInCollectionCount)
-	    	  if($('#datasetsPagerPrev').is(':visible'))
+	    	  if($('#datasetsPagerPrev')[0].style.visibility == 'visible')
 	    		  $('#datasetsPagerPrev').click();
 	    
 	      if($("#addDatasetsTable tbody tr[data-datasetId='" + datasetId + "']").length > 0 || !areRestDatasetsVisible)
@@ -266,7 +266,9 @@
 		        	var datasetThumbnail = "";
 		        	if(respJSON[i].thumbnail != "None")
 		        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
-		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
+		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' width='120'>";
+		        	else
+		        		datasetThumbnail = "No thumbnail available"
 		        	
 		        	$('#addDatasetsTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;' data-datasetId='" + respJSON[i].id + "'><td><a href='#!' "
 		        								+ "onclick='addDataset(\"" + respJSON[i].id + "\",event)' "

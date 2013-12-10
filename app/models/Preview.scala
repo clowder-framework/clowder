@@ -62,6 +62,10 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
     dao.find(MongoDBObject("section_id"->id)).toList
   }
   
+  def findByDatasetId(id: ObjectId): List[Preview] = {
+    dao.find(MongoDBObject("dataset_id"->id)).toList
+  }
+  
     /**
    * Save blob.
    */

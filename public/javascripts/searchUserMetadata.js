@@ -2,33 +2,36 @@ String.prototype.endsWith = function(str)
 {return (this.match(str+"$")==str)}
 
 //CSV file format: Node and whether intermediate node or leaf.
-	var allowedNodes = new Array();	
-	$.ajax({
-	       url: modelIp + '/user_metadata_model_allowedNodes.txt',
-	       async:false,
-		   success: function (data){
-		   		var allowedNodesLines = data.split(/\r\n|\n/);
-				for(var i = 0; i < allowedNodesLines.length; i++){
-					allowedNodes[i] = allowedNodesLines[i].split(',');
-				}
-		   },
-	       dataType: "text"
-	     });
+	var allowedNodes = new Array();
+	if(searchFor == "userMetadata"){
+		$.ajax({
+		       url: modelIp + '/user_metadata_model_allowedNodes.txt',
+		       async:false,
+			   success: function (data){
+			   		var allowedNodesLines = data.split(/\r\n|\n/);
+					for(var i = 0; i < allowedNodesLines.length; i++){
+						allowedNodes[i] = allowedNodesLines[i].split(',');
+					}
+			   },
+		       dataType: "text"
+		     });
+	}
 		 
 	//CSV file format: Node,Child, Minimum child count, Maximum child count.	
-	var allowedChildren = new Array();	
-	$.ajax({
-	       url: modelIp + '/user_metadata_model_allowedRelationships.txt',
-	       async:false,
-		   success: function (data){
-		   		var allowedChildrenLines = data.split(/\r\n|\n/);
-				for(var i = 0; i < allowedChildrenLines.length; i++){
-					allowedChildren[i] = allowedChildrenLines[i].split(',');
-				}
-		   },
-	       dataType: "text"
-	     });
-	
+	var allowedChildren = new Array();
+	if(searchFor == "userMetadata"){
+		$.ajax({
+		       url: modelIp + '/user_metadata_model_allowedRelationships.txt',
+		       async:false,
+			   success: function (data){
+			   		var allowedChildrenLines = data.split(/\r\n|\n/);
+					for(var i = 0; i < allowedChildrenLines.length; i++){
+						allowedChildren[i] = allowedChildrenLines[i].split(',');
+					}
+			   },
+		       dataType: "text"
+		     });
+	}
 				
 	//Counter for DOM node uniqueness.
 	var elementCounter = 1;
@@ -79,9 +82,17 @@ $(function() {
 				  else if($(this).html() == "Add property"){				  
 				  	var newProperty = document.createElement("li");
 					newProperty.classList.add('usr_md_');
-									
-					var newPropertyMenu = document.createElement("select");
+					
+					//
+					var newPropertyMenu;
+					if(searchFor == "userMetadata")
+						newPropertyMenu = document.createElement("select");
+					else{
+						newPropertyMenu = document.createElement("input");
+						newPropertyMenu.setAttribute('type', 'text');
+					}
 					newPropertyMenu.classList.add('usr_md_');
+					//
 					
 					var newPropertyNotBox = document.createElement('input');
 					newPropertyNotBox.classList.add('usr_md_');								   
@@ -91,7 +102,7 @@ $(function() {
 					var newPropertyNotBoxText = document.createElement('span');
 					newPropertyNotBoxText.classList.add('usr_md_');
 					newPropertyNotBoxText.innerHTML = " NOT";
-									
+										
 					var parentNodeType = "";
 					if($(this).parent().is('div')){
 						parentNodeType = "!root!";
@@ -107,7 +118,7 @@ $(function() {
 										parentNodeType = parentNodeType.substring(4);
 																
 						var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
-						if(allowedChildrenForNode.length == 0){
+						if(allowedChildrenForNode.length == 0 && searchFor == "userMetadata"){
 							alert("The metadata model states that this property cannot have subproperties of any kind.");
 							return false;
 						}
@@ -139,7 +150,7 @@ $(function() {
 						}
 					
 						var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
-						if(allowedChildrenForNode.length == 0){
+						if(allowedChildrenForNode.length == 0 && searchFor == "userMetadata"){
 							alert("The metadata model states that this property cannot have subproperties of any kind.");
 							return false;
 						}
@@ -176,12 +187,31 @@ $(function() {
 					newProperty.appendChild(newPropertyNotBox);
 					newProperty.appendChild(newPropertyNotBoxText);
 						
-					var newSelectButton = document.createElement('button'); 	
-					newSelectButton.classList.add('usr_md_');
-					newSelectButton.setAttribute('type','button');		
+					if(searchFor == "userMetadata"){
+						var newSelectButton = document.createElement('button'); 	
+						newSelectButton.classList.add('usr_md_');
+						newSelectButton.setAttribute('type','button');		
+							
+						newSelectButton.innerHTML = 'Select property';
+						newProperty.appendChild(newSelectButton);
+					}
+					else{
+						var newSelectButton = document.createElement('button'); 	
+						newSelectButton.classList.add('usr_md_');
+						newSelectButton.setAttribute('type','button');		
+							
+						newSelectButton.innerHTML = 'Select node';
+						newProperty.appendChild(newSelectButton);
 						
-					newSelectButton.innerHTML = 'Select property';
-					newProperty.appendChild(newSelectButton);	
+						newSelectButton = document.createElement('button'); 	
+						newSelectButton.classList.add('usr_md_');
+						newSelectButton.setAttribute('type','button');		
+							
+						newSelectButton.innerHTML = 'Select leaf';
+						newProperty.appendChild(newSelectButton);
+					}
+					
+					
 				  }
 				  else if($(this).html() == "Select property"){				  	
 				  				
@@ -241,14 +271,75 @@ $(function() {
 						 
 						$(this).parent().get(0).appendChild(newPropertyList);
 						
-						var newDisjunctionButton = document.createElement('button'); 	
-						newDisjunctionButton.classList.add('usr_md_');
-						newDisjunctionButton.setAttribute('type','button');	
-						
-						newDisjunctionButton.innerHTML = 'Add disjunction';
-						$(this).parent().get(0).appendChild(newDisjunctionButton);
+//						var newDisjunctionButton = document.createElement('button'); 	
+//						newDisjunctionButton.classList.add('usr_md_');
+//						newDisjunctionButton.setAttribute('type','button');	
+//						
+//						newDisjunctionButton.innerHTML = 'Add disjunction';
+//						$(this).parent().get(0).appendChild(newDisjunctionButton);
 					}				
-				  }
+				  }				   
+				  else if($(this).html() == "Select node"){				  	
+		  				
+						var selectTag = $(this).parent().children('input')[0];
+						var selectedProperty = selectTag.value;
+						var selectedPropertyType = "Node";				
+
+						var isNot = "";
+						if($(this).parent().children('input').get(1).checked == 1)
+							isNot = "NOT ";
+
+						$(this).parent().children('input').remove();
+						$(this).parent().children('span').remove();
+
+						var newPropertyKey = document.createElement('b');
+
+						newPropertyKey.classList.add('usr_md_');
+						newPropertyKey.innerHTML = isNot + selectedProperty + ":";
+						$(this).parent().get(0).insertBefore(newPropertyKey, $(this).get(0));						
+	   
+							$(this).html("Add property");
+							$(this).next().html('Delete');
+							
+							var newPropertyList = document.createElement('ul');
+							newPropertyList.classList.add('usr_md_');
+							newPropertyList.classList.add('usr_md_search_list');
+							if(isNot == "NOT ")
+								newPropertyList.classList.add('usr_md_search_list_not');
+							 
+							$(this).parent().get(0).appendChild(newPropertyList);								
+					  }
+				  else if($(this).html() == "Select leaf"){				  	
+		  				
+						var selectTag = $(this).parent().children('input')[0];
+						var selectedProperty = selectTag.value;
+						var selectedPropertyType = "String";				
+
+						var isNot = "";
+						if($(this).parent().children('input').get(1).checked == 1)
+							isNot = "NOT ";
+
+						$(this).parent().children('input').remove();
+						$(this).parent().children('span').remove();
+
+						var newPropertyKey = document.createElement('b');
+
+						newPropertyKey.classList.add('usr_md_');
+						newPropertyKey.innerHTML = isNot + selectedProperty + ":";
+						$(this).parent().get(0).insertBefore(newPropertyKey, $(this).prev().get(0));						
+	   
+						
+						var textBox = document.createElement('input');
+						textBox.classList.add('usr_md_');
+									   
+						textBox.setAttribute('type', 'text');
+						textBox.textContent = "";
+						$(this).parent().get(0).insertBefore(textBox, $(this).prev().get(0));
+						
+						$(this).html("Delete");
+						$(this).prev().html("Ok");
+														
+					  }
 				  else if($(this).html() == "Add disjunction"){
 				  	var newDisjunction = document.createElement("li");
 					newDisjunction.classList.add('usr_md_');
@@ -274,7 +365,7 @@ $(function() {
 				  }
 				  else if($(this).html() == "Submit"){
 
-					var data = DOMtoJSON(document.getElementById('datasetUserMetadata').children[1]);
+					var data = DOMtoJSON(document.getElementById('queryUserMetadata').children[1]);
 					var request = $.ajax({
 				       type: 'POST',
 				       url: queryIp,
@@ -289,24 +380,48 @@ $(function() {
 					        $('.next').css('visibility','hidden');
 					        searchResultsCount = respJSON.length;
 					        $('#resultTable tbody tr').remove();
-					        for(var i = 0; i < respJSON.length; i++){
-					        	var createdDateArray = respJSON[i].created.split(" ");
-					        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
-					        	var removeCell = "";
-					        	if(window["userDefined"] == true){
-					        		removeCell = "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
-					        	}					        	
-					        	var datasetThumbnail = "";
-					        	if(respJSON[i].thumbnail != "None")
-					        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
-					        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
-					        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
-					        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
-					        								+ "<td>" + createdDate + "</td>"
-					        								+ "<td>" + respJSON[i].description + "</td>"
-					        								+ "<td>" + datasetThumbnail + "</td>"
-					        								+ removeCell + "</tr>");
-					        }
+					        //////
+					        if(searchOn == "datasets"){
+						        for(var i = 0; i < respJSON.length; i++){
+						        	var createdDateArray = respJSON[i].created.split(" ");
+						        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
+						        	var removeCell = "";
+						        	if(window["userDefined"] == true){
+						        		removeCell = "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
+						        	}					        	
+						        	var datasetThumbnail = "";
+						        	if(respJSON[i].thumbnail != "None")
+						        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+						        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+						        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
+						        								+ "<td>" + createdDate + "</td>"
+						        								+ "<td>" + respJSON[i].description + "</td>"
+						        								+ "<td>" + datasetThumbnail + "</td>"
+						        								+ removeCell + "</tr>");
+						        }
+						    }
+					        else if(searchOn == "files"){
+						        for(var i = 0; i < respJSON.length; i++){
+						        	//var createdDateArray = respJSON[i].created.split(" ");
+						        	//var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
+						        	var removeCell = "";
+						        	if(window["userDefined"] == true){
+						        		removeCell = "<td><a href='#!' onclick='removeFile(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
+						        	}					        	
+						        	var fileThumbnail = "";
+						        	if(respJSON[i].thumbnail != "None")
+						        		fileThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+						        							+ "alt='Thumbnail of " + respJSON[i].filename + "' height='120' width='120'>";
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+						        								+ "/files/" + respJSON[i].id + "'>"+ respJSON[i].filename + "</a></td>"
+						        								+ "<td>" + respJSON[i].contentType + "</td>"
+						        								+ "<td>" + respJSON[i].dateCreated + "</td>"
+						        								+ "<td>" + fileThumbnail + "</td>"
+						        								+ removeCell + "</tr>");
+						        }
+						    }
+					        ////
 					        $('#resultTable').show();
 					        
 					        for(var i = 0; i < 10; i++){
@@ -384,7 +499,7 @@ $(function() {
 							if(key == "OR"){
 								key = key + "__" + elementCounter;
 								elementCounter++;
-								branchData[key] = "";
+								branchData[key] = "dummy";
 							}							
 							else{
 								key = key.substring(0, key.length - 1);

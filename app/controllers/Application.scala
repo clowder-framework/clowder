@@ -72,7 +72,10 @@ object Application extends SecuredController {
         api.routes.javascript.Sections.getTags,
         api.routes.javascript.Sections.addTags,
         api.routes.javascript.Sections.removeTags,
-        api.routes.javascript.Sections.removeAllTags
+        api.routes.javascript.Sections.removeAllTags,
+        api.routes.javascript.Geostreams.searchSensors,
+        api.routes.javascript.Geostreams.getSensorStreams,
+        api.routes.javascript.Geostreams.searchDatapoints
       )
     ).as(JSON) 
   }

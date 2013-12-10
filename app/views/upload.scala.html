@@ -1,4 +1,4 @@
-@(myForm: Form[FileMD])
+@(myForm: Form[FileMD])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -14,9 +14,12 @@
 	      <legend>Select file</legend>
 	      @inputFile(myForm("File"))
 	    </fieldset>
-	    <fieldset id="checkboxFieldSet">
-	      @checkbox(myForm("datasetLevel")
-	      			,'_label -> "Show previews ",'_help -> "", 'checked -> "checked")
+	    <fieldset id="fileRadioFieldSet" style="margin-top:10px;">
+	      @inputRadioGroup(
+	          myForm("datasetLevel").copy(value=myForm("datasetLevel").value.orElse(Some("DatasetLevel")) ),
+	          options = options("DatasetLevel"->"Everywhere","FileLevel"->"On file page","None"->"Nowhere"),
+	          '_label -> "Show file preview(s)",
+	          '_error -> myForm("datasetLevel").error.map(_.withMessage("Select where the preview will be viewable.")))
 	    </fieldset>
         <div class="form-actions">
           <input type="submit" class="btn btn-default" value="Upload"/>
@@ -24,4 +27,9 @@
 	  }
     </div>
   </div>
+  <script>
+  		$('#datasetLevel label').css('top', '0px');
+  		$('#datasetLevel label').css('left', '0px');
+  		$('#datasetLevel label').css('margin-right', '10px');
+  </script> 
 }

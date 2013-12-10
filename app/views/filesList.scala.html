@@ -24,7 +24,10 @@
 						<td><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></td>
 						<td>@(if(file.contentType != null) file.contentType else "N/A")</td>
 						<td>@file.uploadDate</td>
-						<td>@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(file.filename)" width="120">}</td>
+						<td>
+							@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(file.filename)" width="120">}
+							@if(file.thumbnail_id.isEmpty){No thumbnail available}
+						</td>
 						@if(user.isDefined) {
 							<td><a href="#" onclick="removeFile('@(file.id.toString)',event)">Remove</a></td>
 						}
