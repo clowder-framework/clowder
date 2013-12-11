@@ -542,42 +542,44 @@ object Files extends ApiController {
    * Add preview to file.
    */
   def attachPreview(file_id: String, preview_id: String) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { request =>
-    // Now we require the POST data to contain the "extractor_id" field.
-    val extractor_id = request.body.\("extractor_id").asOpt[String]
-    if (!extractor_id.isDefined) {
-      BadRequest(toJson("No \"extractor_id\" specified, request.body: " + request.body.toString))
+    // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
+    val eid = request.body.\("extractor_id").asOpt[String]
+    val extractor_id = if (eid.isDefined) {
+      eid
     } else {
-      request.body match {
-        case JsObject(fields) => {
-          // TODO create a service instead of calling salat directly
-          FileDAO.findOneById(new ObjectId(file_id)) match {
-            case Some(file) => {
-              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
-                case Some(preview) =>
-                  // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
-                  val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-                  PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)),
-                    $set("metadata" -> metadata, "file_id" -> new ObjectId(file_id), "extractor_id" -> extractor_id.get),
-                    false, false, WriteConcern.SAFE)
-                  Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
-                  Ok(toJson(Map("status" -> "success")))
-                case None => BadRequest(toJson("Preview not found"))
-              }
+      Logger.info("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to \"Other\".  request.body: " + request.body.toString)
+      "Other"
+    }
+    request.body match {
+      case JsObject(fields) => {
+        // TODO create a service instead of calling salat directly
+        FileDAO.findOneById(new ObjectId(file_id)) match {
+          case Some(file) => {
+            PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+              case Some(preview) =>
+                // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
+                val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+                PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)),
+                  $set("metadata" -> metadata, "file_id" -> new ObjectId(file_id), "extractor_id" -> extractor_id),
+                  false, false, WriteConcern.SAFE)
+                Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
+                Ok(toJson(Map("status" -> "success")))
+              case None => BadRequest(toJson("Preview not found"))
             }
-            //If file to be previewed is not found, just delete the preview 
-            case None => {
-              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
-                case Some(preview) =>
-                  Logger.debug("File not found. Deleting previews.files " + preview_id)
-                  PreviewDAO.removePreview(preview)
-                  BadRequest(toJson("File not found. Preview deleted."))
-                case None => BadRequest(toJson("Preview not found"))
-              }
+          }
+          //If file to be previewed is not found, just delete the preview 
+          case None => {
+            PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+              case Some(preview) =>
+                Logger.debug("File not found. Deleting previews.files " + preview_id)
+                PreviewDAO.removePreview(preview)
+                BadRequest(toJson("File not found. Preview deleted."))
+              case None => BadRequest(toJson("Preview not found"))
             }
           }
         }
-        case _ => Ok("received something else: " + request.body + '\n')
       }
+      case _ => Ok("received something else: " + request.body + '\n')
     }
   }
   
