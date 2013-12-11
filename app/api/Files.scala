@@ -58,11 +58,27 @@ import jsonutils.JsonUtil
 
 /**
  * Json API for files.
- * 
+ *
  * @author Luigi Marini
  *
  */
+
+// Used in checking error conditions for tags, the checkErrorsForTag(...) method below
+abstract class TagCheckObjType
+case object TagCheck_File extends TagCheckObjType
+case object TagCheck_Dataset extends TagCheckObjType
+case object TagCheck_Section extends TagCheckObjType
+
 object Files extends ApiController {
+
+  // Helper class and function to check for error conditions for tags.
+  class TagCheck {
+    var error_str: String = ""
+    var not_found: Boolean = false
+    var userOpt: Option[String] = None
+    var extractorOpt: Option[String] = None
+    var tags: Option[List[String]] = None
+  }
 
   val USERID_ANONYMOUS = "anonymous"
 
@@ -922,25 +938,14 @@ object Files extends ApiController {
     }
   }
 
-  /* Helper class and function to check for error conditions.
-   * 
-   */
-  class TagCheck {
-    var error_str: String = ""
-    var not_found: Boolean = false
-    var userOpt: Option[String] = None
-    var extractorOpt: Option[String] = None
-    var tags: Option[List[String]] = None
-  }
   /*
    *  Helper function to check for error conditions.
    *  Input parameters:
-   *      obj_type: one of the three strings "file", "dataset" or "section"
+   *      obj_type: one of the three TagCheckObjType's: TagCheck_File, TagCheck_Dataset or TagCheck_Section
    *      id:       the id in the original addTags call
    *      request:  the request in the original addTags call
-   *      tagCheck: a TagCheck object
-   *  Side effect:
-   *      The tagCheck object is modified to reflect the error checking results:
+   *  Returns:
+   *      tagCheck: a TagCheck object, containing the error checking results:
    * 
    *      If error_str == "", then no error is found;
    *      otherwise, it contains the cause of the error.
@@ -954,8 +959,7 @@ object Files extends ApiController {
    *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
    *      record the extractor_id, but omit the userId field, so we leave userOpt as None. 
    */
-  def checkErrorsForTag(obj_type: String, id: String, request: RequestWithUser[JsValue],
-      tagCheck: TagCheck) = {
+  def checkErrorsForTag(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) : TagCheck = {
     val userObj = request.user
     Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
       + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
@@ -968,28 +972,22 @@ object Files extends ApiController {
     var extractorOpt: Option[String] = None
     var error_str = ""
     var not_found = false
-    var tags = request.body.\("tags").asOpt[List[String]]
+    val tags = request.body.\("tags").asOpt[List[String]]
 
-    obj_type match {
-      case "file" =>
-      case "dataset" =>
-      case "section" =>
-      case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
-    }
-
-    if (("" == error_str) && (tags.isEmpty)) {
+    if (tags.isEmpty) {
       error_str = "No \"tags\" specified, request.body: " + request.body.toString
-    }
-    if (("" == error_str) && (!ObjectId.isValid(id))) {
+    } else if (!ObjectId.isValid(id)) {
       error_str = "The given id " + id + " is not a valid ObjectId."
-    }
-    obj_type match {
-      case "file" => not_found = Services.files.getFile(id).isEmpty
-      case "dataset" => not_found = Services.datasets.get(id).isEmpty
-      case "section" => not_found = SectionDAO.findOneById(new ObjectId(id)).isEmpty
-    }
-    if (not_found) {
-      error_str = "The " + obj_type + " with id " + id + " is not found."
+    } else {
+      obj_type match {
+        case TagCheck_File => not_found = Services.files.getFile(id).isEmpty
+        case TagCheck_Dataset => not_found = Services.datasets.get(id).isEmpty
+        case TagCheck_Section => not_found = SectionDAO.findOneById(new ObjectId(id)).isEmpty
+        case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
+      }
+      if (not_found) {
+        error_str = "The " + obj_type + " with id " + id + " is not found."
+      }
     }
     if ("" == error_str) {
       if (USERID_ANONYMOUS == userId) {
@@ -1002,16 +1000,18 @@ object Files extends ApiController {
         userOpt = Option(userId)
       }
     }
+    val tagCheck = new TagCheck
     tagCheck.error_str = error_str
     tagCheck.not_found = not_found
     tagCheck.userOpt = userOpt
     tagCheck.extractorOpt = extractorOpt
     tagCheck.tags = tags
+    tagCheck
   }
   /*
    *  Helper function to handle adding and removing tags for files/datasets/sections.
    *  Input parameters:
-   *      obj_type: one of the three strings "file", "dataset" or "section"
+   *      obj_type: one of the three TagCheckObjType's: TagCheck_File, TagCheck_Dataset or TagCheck_Section
    *      op_type:  one of the two strings "add", "remove"
    *      id:       the id in the original addTags call
    *      request:  the request in the original addTags call
@@ -1022,15 +1022,8 @@ object Files extends ApiController {
    *      which contains the cause of the error, such as "No 'tags' specified", and
    *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
    */
-  def addRemoveTagsHelper(obj_type: String, op_type: String, id: String, request: RequestWithUser[JsValue]) = {
-	op_type match {
-      case "add" => Logger.info("Adding tags for " + obj_type + " with id " + id)
-      case "remove" => Logger.info("Removing tags for " + obj_type + " with id " + id)
-      case _ => Logger.error("Only add/remove is supported in addRemoveTagsHelper().")
-    }
-
-    val tagCheck = new TagCheck
-    checkErrorsForTag(obj_type, id, request, tagCheck)
+  def addTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) = {
+    val tagCheck = checkErrorsForTag(obj_type, id, request)
 
     val error_str = tagCheck.error_str
     val not_found = tagCheck.not_found
@@ -1038,19 +1031,43 @@ object Files extends ApiController {
     val extractorOpt = tagCheck.extractorOpt
     val tags = tagCheck.tags
 
-    // Now the real work: adding/removing the tags.
+    // Now the real work: adding the tags.
     if ("" == error_str) {
       // Clean up leading, trailing and multiple contiguous white spaces.
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
-      (obj_type, op_type) match {
-        case ("file", "add") => FileDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
-        case ("dataset", "add") =>
+      (obj_type) match {
+        case TagCheck_File => FileDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Dataset =>
           Dataset.addTags(id, userOpt, extractorOpt, tagsCleaned); Datasets.index(id)
-        case ("section", "add") => SectionDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => SectionDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+      }
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(error_str)
+      if (not_found) {
+        NotFound(toJson(error_str))
+      } else {
+        BadRequest(toJson(error_str))
+      }
+    }
+  }
+  def removeTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) = {
+    val tagCheck = checkErrorsForTag(obj_type, id, request)
 
-        case ("file", "remove") => FileDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case ("dataset", "remove") => Dataset.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case ("section", "remove") => SectionDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+    val error_str = tagCheck.error_str
+    val not_found = tagCheck.not_found
+    val userOpt = tagCheck.userOpt
+    val extractorOpt = tagCheck.extractorOpt
+    val tags = tagCheck.tags
+
+    // Now the real work: removing the tags.
+    if ("" == error_str) {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
+      (obj_type) match {
+        case TagCheck_File => FileDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Dataset => Dataset.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => SectionDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }
       Ok(Json.obj("status" -> "success"))
     } else {
@@ -1070,7 +1087,7 @@ object Files extends ApiController {
    *  so will be added.
    */
   def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
-  	addRemoveTagsHelper("file", "add", id, request)
+  	addTagsHelper(TagCheck_File, id, request)
   }
 
   /**
@@ -1081,7 +1098,7 @@ object Files extends ApiController {
    *  the same user or extractor.
    */
   def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
-  	addRemoveTagsHelper("file", "remove", id, request)
+  	removeTagsHelper(TagCheck_File, id, request)
   }
 
   /**

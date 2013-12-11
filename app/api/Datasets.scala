@@ -384,7 +384,7 @@ object Datasets extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
-  	Files.addRemoveTagsHelper("dataset", "add", id, request)
+  	Files.addTagsHelper(TagCheck_Dataset, id, request)
   }
 
   /**
@@ -392,7 +392,7 @@ object Datasets extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
-  	Files.addRemoveTagsHelper("dataset", "remove", id, request)
+  	Files.removeTagsHelper(TagCheck_Dataset, id, request)
   }
 
   /**
