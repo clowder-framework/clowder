@@ -148,6 +148,8 @@ POST    /api/files/:id/tags                                     api.Files.addTag
 POST    /api/files/:id/tags/remove                              api.Files.removeTags(id)
 POST    /api/files/:id/tags/remove_all                          api.Files.removeAllTags(id)
 
+GET     /api/files/:id/extract                                  api.Files.extract(id)
+
 POST    /api/files/:id/previews/:p_id     						api.Files.attachPreview(id, p_id)
 GET		/api/files/:id/listpreviews		  						api.Files.filePreviewsList(id)
 GET		/api/files/:id/getPreviews								api.Files.getPreviews(id)

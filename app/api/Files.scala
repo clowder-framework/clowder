@@ -9,6 +9,8 @@ import java.io.BufferedWriter
 import java.io.FileWriter
 import java.io.ByteArrayInputStream
 
+import scala.collection.mutable.MutableList
+
 import org.bson.types.ObjectId
 
 import com.mongodb.WriteConcern
@@ -1127,6 +1129,74 @@ object Files extends ApiController {
     }
   }
   // ---------- Tags related code ends ------------------
+
+  // ---------- Extract (BD-38) related code starts ------------------
+  def extractTags(file: models.File) = {
+    val tags = file.tags
+    // Transform the tag list into a list of ["extractor_id", "values"] items,
+    // where "values" are the list of tag name values.
+    var tagRes = Map[String, MutableList[String]]()
+    tags.filter(_.extractor_id.isDefined).foreach(tag => {
+      val ename = tag.extractor_id.get
+      if (tagRes.contains(ename)) {
+        tagRes.get(ename).get += tag.name
+      } else {
+        tagRes += ((ename, MutableList(tag.name)))
+      }
+    })
+    val jtags = tagRes.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
+    jtags
+  }
+  def extractPreviews(id: String) = {
+    val previews = PreviewDAO.findByFileId(new ObjectId(id));
+    /*
+     * Initial implementation: Flat tree of {"extractor_id", "preview_id", "url", "contentType", ...} items.
+     * 
+    val jpreviews = filePreviews.map(p =>
+      Json.obj("extractor_id" -> p.extractor_id, "preview_id" -> p.id.toString,
+        "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id.toString).toString))
+    jpreviews
+    * 
+    */
+    // Transform the preview list into a list of ["extractor_id", "values"] items,
+    // where "values" are the preview properties, such as "preview_id", "url", and "contentType".
+    var previewRes = Map[String, MutableList[JsValue]]()
+    previews.filter(_.extractor_id.isDefined).foreach(p => {
+      val ename = p.extractor_id.get
+      val jitem = Json.obj("preview_id" -> p.id.toString,
+        "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id.toString).toString)
+      if (previewRes.contains(ename)) {
+        previewRes.get(ename).get += jitem
+      } else {
+        previewRes += ((ename, MutableList(jitem)))
+      }
+    })
+    val jpreviews = previewRes.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
+    jpreviews
+  }
+  def extract(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+    Logger.info("Getting extract info for file with id " + id)
+    if (ObjectId.isValid(id)) {
+      Services.files.getFile(id) match {
+        case Some(file) =>
+          val jtags = extractTags(file)
+          val jpreviews = extractPreviews(id)
+          Logger.debug("jtags: " + jtags.toString)
+          Logger.debug("jpreviews: " + jpreviews.toString)
+          Ok(Json.obj("file_id" -> id, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews))
+        case None => {
+          val error_str = "The file with id " + id + " is not found." 
+          Logger.error(error_str)
+          NotFound(toJson(error_str))
+        }
+      }
+    } else {
+      val error_str ="The given id " + id + " is not a valid ObjectId." 
+      Logger.error(error_str)
+      BadRequest(toJson(error_str))
+    }
+  }
+  // ---------- Extract (BD-38) related code ends ------------------
 
   def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments))  { implicit request =>
 	  request.user match {
