@@ -202,6 +202,10 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("filename" -> newName), false, false, WriteConcern.Safe)
   }
   
+  def setContentType(id: String, newType: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("contentType" -> newType), false, false, WriteConcern.Safe)
+  }
+  
   def removeFile(id: String){
     dao.findOneById(new ObjectId(id)) match{
       case Some(file) => {
