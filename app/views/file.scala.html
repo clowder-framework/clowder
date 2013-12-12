@@ -29,7 +29,7 @@
 		}
 	} 
 
-@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
@@ -43,7 +43,7 @@
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
-			Configuration.wasPTM = "@filename.endsWith(".ptm")";
+			Configuration.wasPTM = "@(filename.endsWith(".ptm") || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "file";
 		}
 		else if("@p._2" === "Oni"){							
@@ -110,7 +110,7 @@
 							<div class="tab-content"  id="previewsContent_@(f.id.toString)">
 								@for(i <- pvs.indices) {
 							  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
-							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename)
+							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename, f.contentType)
 
 								}
 					  			<script type="text/javascript">
@@ -353,7 +353,7 @@
     					Configuration.annotationsEditPath = pv.pv_annotationsEditPath;
     					Configuration.annotationsListPath = pv.pv_annotationsListPath;
     					Configuration.annotationsAttachPath = pv.pv_annotationsAttachPath;
-    					if("@file.filename".endsWith(".ptm"))   					
+    					if("@file.filename".endsWith(".ptm") || "@file.contentType".indexOf("ptmimages") != -1)   					
     						Configuration.wasPTM = 'true';
     					else
     						Configuration.wasPTM = 'false';
