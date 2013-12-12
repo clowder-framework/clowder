@@ -216,6 +216,7 @@ object Files extends Controller with SecuredController {
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 				            	FileDAO.renameFile(f.id.toString, nameOfFile)
 				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
 				          }
 				    }
 				    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -401,6 +402,7 @@ object Files extends Controller with SecuredController {
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 				            	FileDAO.renameFile(f.id.toString, nameOfFile)
 				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -492,6 +494,7 @@ object Files extends Controller with SecuredController {
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 				            	FileDAO.renameFile(f.id.toString, nameOfFile)
 				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -587,6 +590,7 @@ object Files extends Controller with SecuredController {
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 				            	FileDAO.renameFile(f.id.toString, nameOfFile)
 				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -682,6 +686,7 @@ object Files extends Controller with SecuredController {
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 				            	FileDAO.renameFile(f.id.toString, nameOfFile)
 				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
 						  }
 					  }
 					  else if(nameOfFile.toLowerCase().endsWith(".mov")){
