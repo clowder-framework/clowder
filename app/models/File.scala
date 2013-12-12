@@ -198,6 +198,10 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
   }
   
+  def renameFile(id: String, newName: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("filename" -> newName), false, false, WriteConcern.Safe)
+  }
+  
   def removeFile(id: String){
     dao.findOneById(new ObjectId(id)) match{
       case Some(file) => {
