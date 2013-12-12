@@ -1,4 +1,4 @@
-@(theme: Int)
+@(theme: Int)(implicit user: Option[securesocial.core.Identity])
 @main("Administration") {
 	<div class="page-header">
 		<h1>Administration</h1>

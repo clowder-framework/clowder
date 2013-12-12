@@ -40,6 +40,7 @@ object Admin extends SecuredController {
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val themeId = themes.indexOf(getTheme)
     Logger.debug("Theme id " + themeId)
+    implicit val user = request.user
     Ok(views.html.admin(themeId))
   }
 
