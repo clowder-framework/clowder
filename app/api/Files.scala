@@ -234,8 +234,7 @@ object Files extends ApiController {
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-	            
+	            	            
 	            val id = f.id.toString
 	            if(showPreviews.equals("FileLevel"))
 	            	flags = flags + "+filelevelshowpreviews"
@@ -247,11 +246,23 @@ object Files extends ApiController {
 	            	if(fileType.startsWith("ERROR: ")){
 	            		Logger.error(fileType.substring(7))
 	            		InternalServerError(fileType.substring(7))
-	            	}	
+	            	}
+	            	if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+					              if(thirdSeparatorIndex >= 0){
+					                var firstSeparatorIndex = nameOfFile.indexOf("_")
+					                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+					            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+					            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+					            	FileDAO.renameFile(f.id.toString, nameOfFile)
+					              }
+					          }
 	            }
-//	            }else if(nameOfFile.endsWith(".mov")){
-//			        	fileType = "ambiguous/mov";
-//			        }    	
+	            else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
+	            
+	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 
 	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 	            		// TODO RK : need figure out if we can use https
@@ -368,8 +379,7 @@ object Files extends ApiController {
           // submit file for extraction
           file match {
             case Some(f) => {
-              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-              
+                            
               val id = f.id.toString
               if(showPreviews.equals("FileLevel"))
 	            flags = flags + "+filelevelshowpreviews"
@@ -381,12 +391,24 @@ object Files extends ApiController {
 	        	  if(fileType.startsWith("ERROR: ")){
 	        		  Logger.error(fileType.substring(7))
 	        		  InternalServerError(fileType.substring(7))
-				  }	
+				  }
+	        	  if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+					              if(thirdSeparatorIndex >= 0){
+					                var firstSeparatorIndex = nameOfFile.indexOf("_")
+					                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+					            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+					            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+					            	FileDAO.renameFile(f.id.toString, nameOfFile)
+					              }
+					          }
 	          }
-//			  }else if(nameOfFile.endsWith(".mov")){
-//			        	fileType = "ambiguous/mov";
-//			        }
+	          else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
 	              
+              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+              
 	          // TODO RK need to replace unknown with the server name
 	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 	          // TODO RK : need figure out if we can use https
@@ -477,9 +499,9 @@ object Files extends ApiController {
 			             InternalServerError(fileType.substring(7))
 			          }
 			     }
-//			        }else if(f.filename.endsWith(".mov")){
-//			        	fileType = "ambiguous/mov";
-//			        } 
+			     else if(f.filename.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
 	            
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
