@@ -414,7 +414,7 @@
 		</div>
 
 	</div>
-	<div class="row" style="margin-top:50px; margin-left: 12.2%; width: 750px;">
+	<div id="accordionsDiv" class="row" style="margin-top:20px; width: 750px; padding-left:15px;">
 		<div class="accordion" id="accordion1">
 			<div class="accordion-group">
 				<div class="accordian-heading">
@@ -588,4 +588,12 @@
 		
 		
 	</div>
+	<script>
+	    var newOffsetLeft = $("#wrap > .container").offset().left;
+	    var newOffsetTop = $("#accordionsDiv").offset().top;
+	
+	
+		$("#accordionsDiv").offset({ top: newOffsetTop, left: newOffsetLeft })   ;	
+	
+	</script>
 }
