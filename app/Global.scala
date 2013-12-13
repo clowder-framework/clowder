@@ -37,9 +37,11 @@ object Global extends GlobalSettings {
     Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
       MongoDBFileService.removeOldIntermediates()
     }
-    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
-    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
-      models.FileDAO.removeTemporaries()
+    if(play.Play.application().configuration().getString("rdfexporter").equals("on")){
+	    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
+	    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
+	      models.FileDAO.removeTemporaries()
+	    }
     }
     
   }

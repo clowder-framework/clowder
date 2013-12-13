@@ -107,7 +107,9 @@ object Files extends Controller with SecuredController {
         var fileDataset = Dataset.findByFileId(file.id).sortBy(_.name)
         var datasetsOutside = Dataset.findNotContainingFile(file.id).sortBy(_.name)
         
-        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata))
+        val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+        
+        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
       case None => {Logger.error("Error getting file " + id); InternalServerError}
     }

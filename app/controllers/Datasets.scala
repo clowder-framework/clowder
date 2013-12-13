@@ -175,7 +175,9 @@ object Datasets extends SecuredController {
         }
         comments = comments.sortBy(_.posted)
         
-        Ok(views.html.dataset(datasetWithFiles, comments, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside))
+        val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+        
+        Ok(views.html.dataset(datasetWithFiles, comments, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
       }
       case None => {Logger.error("Error getting dataset" + id); InternalServerError}
     }

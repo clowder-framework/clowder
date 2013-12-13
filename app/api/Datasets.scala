@@ -500,7 +500,9 @@ object Datasets extends ApiController {
   
   
   def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) {implicit request =>
-    Services.datasets.get(id) match { 
+    play.Play.application().configuration().getString("rdfexporter") match{
+      case "on" =>{
+        Services.datasets.get(id) match { 
             case Some(dataset) => {
               val theJSON = Dataset.getUserMetadataJSON(id)
               val fileSep = System.getProperty("file.separator")
@@ -522,8 +524,12 @@ object Datasets extends ApiController {
 		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
             }
             case None => BadRequest(toJson("Dataset not found " + id))
+        }
+      }
+      case _ => {
+        Ok("RDF export features not enabled")
+      }      
     }
-  
   }
   
   def jsonToXML(theJSON: String): java.io.File = {
@@ -554,55 +560,61 @@ object Datasets extends ApiController {
   }
   
   def getRDFURLsForDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
-    Services.datasets.get(id)  match {
-      case Some(dataset) => {
-        
-        //RDF from XML files in the dataset itself (for XML metadata-only files)
-        val previewsList = PreviewDAO.findByDatasetId(new ObjectId(id))
-        var rdfPreviewList = List.empty[models.Preview]
-        for(currPreview <- previewsList){
-          if(currPreview.contentType.equals("application/rdf+xml")){
-            rdfPreviewList = rdfPreviewList :+ currPreview
-          }
-        }        
-        var hostString = "http://" + request.host + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
-        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-        
-        for(file <- dataset.files){
-           val filePreviewsList = PreviewDAO.findByFileId(file.id)
-           var fileRdfPreviewList = List.empty[models.Preview]
-           for(currPreview <- filePreviewsList){
-	           if(currPreview.contentType.equals("application/rdf+xml")){
-	        	   fileRdfPreviewList = fileRdfPreviewList :+ currPreview
+    play.Play.application().configuration().getString("rdfexporter") match{
+      case "on" =>{
+	    Services.datasets.get(id)  match {
+	      case Some(dataset) => {
+	        
+	        //RDF from XML files in the dataset itself (for XML metadata-only files)
+	        val previewsList = PreviewDAO.findByDatasetId(new ObjectId(id))
+	        var rdfPreviewList = List.empty[models.Preview]
+	        for(currPreview <- previewsList){
+	          if(currPreview.contentType.equals("application/rdf+xml")){
+	            rdfPreviewList = rdfPreviewList :+ currPreview
+	          }
+	        }        
+	        var hostString = "http://" + request.host + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
+	        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
+	        
+	        for(file <- dataset.files){
+	           val filePreviewsList = PreviewDAO.findByFileId(file.id)
+	           var fileRdfPreviewList = List.empty[models.Preview]
+	           for(currPreview <- filePreviewsList){
+		           if(currPreview.contentType.equals("application/rdf+xml")){
+		        	   fileRdfPreviewList = fileRdfPreviewList :+ currPreview
+		           }
 	           }
-           }
-           val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-           list = list ++ filesList
-        }
-        
-        //RDF from export of dataset community-generated metadata to RDF
-        var connectionChars = ""
-		if(hostString.contains("?")){
-			connectionChars = "&mappingNum="
-		}
-		else{
-			connectionChars = "?mappingNum="
-		}        
-        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/") + connectionChars
-        
-        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("datasetsxmltordfmapping.dircount").getOrElse("1"))
-        for(i <- 1 to mappingsQuantity){
-          var currHostString = hostString + i
-          list = list :+ Json.toJson(currHostString)
-        }
-
-        val listJson = toJson(list.toList)
-        
-        Ok(listJson) 
+	           val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
+	           list = list ++ filesList
+	        }
+	        
+	        //RDF from export of dataset community-generated metadata to RDF
+	        var connectionChars = ""
+			if(hostString.contains("?")){
+				connectionChars = "&mappingNum="
+			}
+			else{
+				connectionChars = "?mappingNum="
+			}        
+	        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/") + connectionChars
+	        
+	        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("datasetsxmltordfmapping.dircount").getOrElse("1"))
+	        for(i <- 1 to mappingsQuantity){
+	          var currHostString = hostString + i
+	          list = list :+ Json.toJson(currHostString)
+	        }
+	
+	        val listJson = toJson(list.toList)
+	        
+	        Ok(listJson) 
+	      }
+	      case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+	    }
       }
-      case None => {Logger.error("Error getting dataset" + id); InternalServerError}
+      case _ => {
+        Ok("RDF export features not enabled")
+      }
     }
-    
   }
   
   def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>

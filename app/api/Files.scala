@@ -579,30 +579,36 @@ object Files extends ApiController {
   }
   
   def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
-    Services.files.getFile(id) match { 
-            case Some(file) => {
-              val theJSON = FileDAO.getUserMetadataJSON(id)
-              val fileSep = System.getProperty("file.separator")
-	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
-	          new java.io.File(resultDir).mkdir()
-              
-              if(!theJSON.replaceAll(" ","").equals("{}")){
-	              val xmlFile = jsonToXML(theJSON)
-	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
-	              xmlFile.delete()
-              }
-              else{
-                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
-              }
-              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
-              
-              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
-            }
-            case None => BadRequest(toJson("File not found " + id))
+    play.Play.application().configuration().getString("rdfexporter") match{
+      case "on" =>{
+	    Services.files.getFile(id) match { 
+	            case Some(file) => {
+	              val theJSON = FileDAO.getUserMetadataJSON(id)
+	              val fileSep = System.getProperty("file.separator")
+		          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
+		          new java.io.File(resultDir).mkdir()
+	              
+	              if(!theJSON.replaceAll(" ","").equals("{}")){
+		              val xmlFile = jsonToXML(theJSON)
+		              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+		              xmlFile.delete()
+	              }
+	              else{
+	                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+	              }
+	              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+	              
+	              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+			            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+			            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+	            }
+	            case None => BadRequest(toJson("File not found " + id))
+	    }
+      }
+      case _ => {
+        Ok("RDF export features not enabled")
+      }
     }
-  
   }
   
   def jsonToXML(theJSON: String): java.io.File = {
@@ -631,42 +637,48 @@ object Files extends ApiController {
   }
   
   def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
-    Services.files.getFile(id)  match {
-      case Some(file) => {
-        
-        //RDF from XML of the file itself (for XML metadata-only files)
-        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
-        var rdfPreviewList = List.empty[models.Preview]
-        for(currPreview <- previewsList){
-          if(currPreview.contentType.equals("application/rdf+xml")){
-            rdfPreviewList = rdfPreviewList :+ currPreview
-          }
-        }        
-        var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
-        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-        
-        //RDF from export of file community-generated metadata to RDF
-        var connectionChars = ""
-        if(hostString.contains("?")){
-          connectionChars = "&mappingNum="
-        }
-        else{
-          connectionChars = "?mappingNum="
-        }
-        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars                
-        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
-        for(i <- 1 to mappingsQuantity){
-          var currHostString = hostString + i
-          list = list :+ Json.toJson(currHostString)
-        }
-
-        val listJson = toJson(list.toList)
-        
-        Ok(listJson) 
+    play.Play.application().configuration().getString("rdfexporter") match{
+      case "on" =>{
+	    Services.files.getFile(id)  match {
+	      case Some(file) => {
+	        
+	        //RDF from XML of the file itself (for XML metadata-only files)
+	        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
+	        var rdfPreviewList = List.empty[models.Preview]
+	        for(currPreview <- previewsList){
+	          if(currPreview.contentType.equals("application/rdf+xml")){
+	            rdfPreviewList = rdfPreviewList :+ currPreview
+	          }
+	        }        
+	        var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
+	        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
+	        
+	        //RDF from export of file community-generated metadata to RDF
+	        var connectionChars = ""
+	        if(hostString.contains("?")){
+	          connectionChars = "&mappingNum="
+	        }
+	        else{
+	          connectionChars = "?mappingNum="
+	        }
+	        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars                
+	        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
+	        for(i <- 1 to mappingsQuantity){
+	          var currHostString = hostString + i
+	          list = list :+ Json.toJson(currHostString)
+	        }
+	
+	        val listJson = toJson(list.toList)
+	        
+	        Ok(listJson) 
+	      }
+	      case None => {Logger.error("Error getting file" + id); InternalServerError}
+	    }
       }
-      case None => {Logger.error("Error getting file" + id); InternalServerError}
+      case _ => {
+        Ok("RDF export features not enabled")
+      }
     }
-    
   }
   
   def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) {implicit request =>

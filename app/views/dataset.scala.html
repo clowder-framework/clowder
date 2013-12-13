@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File])(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity]) 
 
 
 @import helper._
@@ -69,7 +69,7 @@
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
-			Configuration.wasPTM = "@filename.endsWith(".ptm")  || contentType.contains("ptmimages")";
+			Configuration.wasPTM = "@(filename.endsWith(".ptm")  || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "dataset";
 		}
 	</script>
@@ -299,7 +299,7 @@
 					<div id='fileUserMetadata_@(f.id.toString)'>
 							<button class="tech_md_" type="button">Show/edit file community-generated metadata</button>
 							<div style="display:none;">
-									@fileusermetadata(f.id.toString, collection.mutable.Map() ++ f.userMetadata)						
+									@fileusermetadata(f.id.toString, collection.mutable.Map() ++ f.userMetadata, rdfExported)						
 							</div>
 					</div>
 					<script>
@@ -520,7 +520,7 @@
 				      </div> 
 			    </div>
 			    <div class="tab-pane" id="tab2">
-			      @metadata(dataset.id.toString, md, usrmd)
+			      @metadata(dataset.id.toString, md, usrmd, rdfExported)
 			    </div>
 			  </div>
 			</div>	
