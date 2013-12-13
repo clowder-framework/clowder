@@ -357,9 +357,9 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
         }
       }
     }
-    queryMap.add(builder.result)
-    
+
     if(orFound){
+        queryMap.add(MongoDBObject("$and" ->  builder))
     	return MongoDBObject("$or" ->  queryMap)
     }
     else if(!builder.isEmpty)  {
