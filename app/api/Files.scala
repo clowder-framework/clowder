@@ -190,7 +190,7 @@ object Files extends ApiController {
    * Add metadata to file.
    */
   def addMetadata(id: String) =  
-   SecuredAction(authorization=WithPermission(Permission.DownloadFiles)) { request =>
+   SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) { request =>
       Logger.debug("Adding metadata to file " + id)
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
