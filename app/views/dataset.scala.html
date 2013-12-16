@@ -474,19 +474,19 @@
 							        }
 
 						        if(j <= tableLength)	    
-							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        else if(tableLength > 0)
-						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        else{
 						        	if($("#datasetFilesTable tbody").length == 0)
 						        		$("#datasetFilesTable").append("<tbody></tbody>");
-						        	$("#datasetFilesTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody").append("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
