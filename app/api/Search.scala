@@ -11,6 +11,16 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 
+import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.entity.mime.HttpMultipartMode
+import org.apache.http.entity.mime.content.StringBody
+import java.nio.charset.Charset
+import org.apache.http.util.EntityUtils
+import java.io.BufferedReader
+import java.io.InputStreamReader
+
 object Search extends ApiController {
 
   /**
@@ -85,6 +95,35 @@ object Search extends ApiController {
       }
     }
 
+  }
+  
+  
+  def searchSPARQL() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) { implicit request =>
+    
+    val queryUrl = play.api.Play.configuration.getString("rdfSPARQLEndpoint").getOrElse("")
+    queryUrl match{
+      case "" => {
+        Logger.error("RDF SPARQL endpoint not defined.")
+	    InternalServerError("Error searching RDF store.")
+      }
+      case _ => {
+        val queryText = request.body.asText.getOrElse("")
+        val httpclient = new DefaultHttpClient()
+        val httpPost = new HttpPost(queryUrl)
+        val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE)
+        entity.addPart("query", new StringBody(queryText, "text/plain",
+                Charset.forName( "UTF-8" )))
+        httpPost.setEntity(entity)
+        val queryResponse = httpclient.execute(httpPost)
+        Logger.info(queryResponse.getStatusLine().toString())
+        
+        val resultsEntity = queryResponse.getEntity()
+        val resultsString = EntityUtils.toString(resultsEntity)
+        Logger.info("SPARQL query results: " + resultsString)
+        
+        Ok(resultsString)
+      }     
+    }
   }
   
   
