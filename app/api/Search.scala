@@ -100,13 +100,9 @@ object Search extends ApiController {
   
   def searchSPARQL() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) { implicit request =>
     
-    val queryUrl = play.api.Play.configuration.getString("rdfSPARQLEndpoint").getOrElse("")
-    queryUrl match{
-      case "" => {
-        Logger.error("RDF SPARQL endpoint not defined.")
-	    InternalServerError("Error searching RDF store.")
-      }
-      case _ => {
+    play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+      case "yes" => {
+        val queryUrl = play.api.Play.configuration.getString("rdfSPARQLEndpoint").getOrElse("")
         val queryText = request.body.asText.getOrElse("")
         val httpclient = new DefaultHttpClient()
         val httpPost = new HttpPost(queryUrl)
@@ -122,7 +118,11 @@ object Search extends ApiController {
         Logger.info("SPARQL query results: " + resultsString)
         
         Ok(resultsString)
-      }     
+      }
+      case _ => {
+        Logger.error("RDF SPARQL store not used.")
+	    InternalServerError("Error searching RDF store. RDF SPARQL store not used.")
+      }
     }
   }
   
