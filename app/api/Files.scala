@@ -585,7 +585,8 @@ object Files extends ApiController {
 	            case Some(file) => {
 	              val theJSON = FileDAO.getUserMetadataJSON(id)
 	              val fileSep = System.getProperty("file.separator")
-		          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
+	              val tmpDir = System.getProperty("java.io.tmpdir")
+		          var resultDir = tmpDir + fileSep + "medici__rdfdumptemporaryfiles" + fileSep + new ObjectId().toString
 		          new java.io.File(resultDir).mkdir()
 	              
 	              if(!theJSON.replaceAll(" ","").equals("{}")){

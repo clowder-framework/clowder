@@ -247,8 +247,14 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     cal.add(Calendar.MINUTE, -timeDiff)
     val oldDate = cal.getTime()    
     
-    val folder = new java.io.File(play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse(""))
-    val listOfFiles = folder.listFiles()
+    val tmpDir = System.getProperty("java.io.tmpdir")
+    val filesep = System.getProperty("file.separator")
+    val rdfTmpDir = new java.io.File(tmpDir + filesep + "medici__rdfdumptemporaryfiles")
+    if(!rdfTmpDir.exists()){
+      rdfTmpDir.mkdir()
+    }
+
+    val listOfFiles = rdfTmpDir.listFiles()
     for(currFileDir <- listOfFiles){
       val currFile = currFileDir.listFiles()(0)
       val attrs = Files.readAttributes(FileSystems.getDefault().getPath(currFile.getAbsolutePath()),  classOf[BasicFileAttributes])
