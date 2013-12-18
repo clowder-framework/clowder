@@ -102,19 +102,8 @@ object Search extends ApiController {
     
     play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
       case "yes" => {
-        val queryUrl = play.api.Play.configuration.getString("rdfSPARQLEndpoint").getOrElse("")
-        val queryText = request.body.asText.getOrElse("")
-        val httpclient = new DefaultHttpClient()
-        val httpPost = new HttpPost(queryUrl)
-        val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE)
-        entity.addPart("query", new StringBody(queryText, "text/plain",
-                Charset.forName( "UTF-8" )))
-        httpPost.setEntity(entity)
-        val queryResponse = httpclient.execute(httpPost)
-        Logger.info(queryResponse.getStatusLine().toString())
-        
-        val resultsEntity = queryResponse.getEntity()
-        val resultsString = EntityUtils.toString(resultsEntity)
+        val queryText = request.body.asText.getOrElse("")               
+        val resultsString = services.Services.rdfSPARQLService.sparqlSearch(queryText)
         Logger.info("SPARQL query results: " + resultsString)
         
         Ok(resultsString)

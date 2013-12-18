@@ -288,6 +288,13 @@ object Files extends ApiController {
 		            }
 	            }
 	            
+	            //add file to RDF triple store if triple store is used
+	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		             case "yes" => {
+		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+		             }		             
+	             }
+	            
 	            Ok(toJson(Map("id"->id)))   
 	          }
 	          case None => {
@@ -449,6 +456,14 @@ object Files extends ApiController {
               current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, "")) }
 
               Logger.info("Uploading Completed")
+              
+              //add file to RDF triple store if triple store is used
+		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+			             case "yes" => {
+			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+			               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
+			             }		             
+		             }
 
               //sending success message
               Ok(toJson(Map("id" -> id)))

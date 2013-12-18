@@ -118,6 +118,15 @@ object Datasets extends ApiController {
 			      	        current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString, 
 			      	        			List(("name",d.name), ("description", d.description)))}
 		      	        }
+		      	       
+		      	       	 //add file to RDF triple store if triple store is used
+			             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+				             case "yes" => {
+				               services.Services.rdfSPARQLService.addDatasetToGraph(id.toString)
+				               services.Services.rdfSPARQLService.linkFileToDataset(file_id, id.toString)
+				             }		             
+			             }
+		      	       
 		      	       Ok(toJson(Map("id" -> id.toString)))
 		      	     }
 		      	     case None => Ok(toJson(Map("status" -> "error")))
@@ -148,11 +157,20 @@ object Datasets extends ApiController {
 	            if(!theFile.xmlMetadata.isEmpty){
 	            	index(dsId)
 		      	}	            
-	            Logger.info("Adding file to dataset completed")
-	            
+       
 	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
-		                        $set("thumbnail_id" -> theFile.thumbnail_id), false, false, WriteConcern.SAFE)		                        
+		                        $set("thumbnail_id" -> theFile.thumbnail_id), false, false, WriteConcern.SAFE)
+		        
+		        //add file to RDF triple store if triple store is used
+			             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+				             case "yes" => {
+				               services.Services.rdfSPARQLService.linkFileToDataset(fileId, dsId)
+				             }		             
+			             } 
+		         
+		       Logger.info("Adding file to dataset completed")                 
+		                        
 		       }
             }
             else{
