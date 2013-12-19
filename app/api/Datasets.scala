@@ -214,6 +214,19 @@ object Datasets extends ApiController {
 		          }		                        
 		       }
 	            
+	           //remove link between dataset and file from RDF triple store if triple store is used
+		        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+			        case "yes" => {
+			        	val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "")
+			            val fileTriplePart = hostIp +"/api/files/" + fileId
+			            val datasetTriplePart = hostIp +"/api/datasets/" + datasetId
+			        	var removalQuery = "DELETE WHERE { <" + datasetTriplePart + "> ?p <" + fileTriplePart + "> }"
+			        	
+			        	val resultsString = services.Services.rdfSPARQLService.sparqlQuery(removalQuery)
+			        	Logger.info("SPARQL dataset-file link removal query results: " + resultsString)
+			        }		             
+		        } 
+	            
             }
             else{
               Logger.info("File was already out of the dataset.")
@@ -510,6 +523,27 @@ object Datasets extends ApiController {
     Services.datasets.get(id)  match {
       case Some(dataset) => {
         Dataset.removeDataset(id)
+        
+        //remove dataset from RDF triple store if triple store is used
+        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+	        case "yes" => {
+	            val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "")
+	            val datasetTriplePart = hostIp +"/api/datasets/" + id 
+	        	var removalQuery = "DELETE WHERE { <" + datasetTriplePart + "> ?p ?o }"
+	        	for(f <- dataset.files){
+			      var notTheDataset = for(currDataset<- Dataset.findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+			      if(notTheDataset.size == 0){
+			        val fileTriplePart = hostIp +"/api/files/" + f.id.toString
+			        removalQuery = removalQuery + "; DELETE WHERE { <" + fileTriplePart + "> ?p ?o }"
+			      }			    	
+			    }
+	        	
+	        	val resultsString = services.Services.rdfSPARQLService.sparqlQuery(removalQuery)
+	        	Logger.info("SPARQL dataset removal query results: " + resultsString)
+	        }		             
+        }
+        
+        
         Ok(toJson(Map("status"->"success")))
       }
       case None => Ok(toJson(Map("status"->"success")))

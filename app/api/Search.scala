@@ -98,12 +98,12 @@ object Search extends ApiController {
   }
   
   
-  def searchSPARQL() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) { implicit request =>
+  def querySPARQL() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) { implicit request =>
     
     play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
       case "yes" => {
         val queryText = request.body.asText.getOrElse("")               
-        val resultsString = services.Services.rdfSPARQLService.sparqlSearch(queryText)
+        val resultsString = services.Services.rdfSPARQLService.sparqlQuery(queryText)
         Logger.info("SPARQL query results: " + resultsString)
         
         Ok(resultsString)

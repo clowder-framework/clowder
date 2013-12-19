@@ -400,7 +400,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          //link file to dataset in RDF triple store if triple store is used
 				             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 					             case "yes" => {
-					               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dt.id.toString)
+					               services.Services.rdfSPARQLService.linkFileToDataset(fileId, dt.id.toString)
 					             }		             
 				             }
 		          

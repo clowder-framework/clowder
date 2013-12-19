@@ -240,5 +240,5 @@ DELETE  /api/sensors/:id                  api.Sensors.delete(id)
 POST	/api/comment/:id					api.Comments.comment(id)
 
 GET   	/api/search                       api.Search.search(query: String ?= "")
-POST	/api/sparqlquery				  api.Search.searchSPARQL
+POST	/api/sparqlquery				  api.Search.querySPARQL
 

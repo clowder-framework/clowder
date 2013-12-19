@@ -1053,6 +1053,19 @@ object Files extends ApiController {
     Services.files.getFile(id)  match {
       case Some(file) => {
         FileDAO.removeFile(id)
+        
+        //remove file from RDF triple store if triple store is used
+        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+	        case "yes" => {
+	            val fileTriplePart = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") +"/api/files/" + id 
+	        	var removalQuery = "DELETE WHERE { <" + fileTriplePart + "> ?p ?o }; "
+	        	removalQuery = removalQuery + "DELETE WHERE { ?s ?p <" + fileTriplePart + "> }"
+	        	
+	        	val resultsString = services.Services.rdfSPARQLService.sparqlQuery(removalQuery)
+	        	Logger.info("SPARQL file removal query results: " + resultsString)
+	        }		             
+        }
+                
         Ok(toJson(Map("status"->"success")))
       }
       case None => Ok(toJson(Map("status"->"success")))

@@ -7,6 +7,6 @@ abstract class RdfSPARQLService {
   
   def linkFileToDataset(fileId: String, datasetId: String): Null
   
-  def sparqlSearch(queryText: String): String
+  def sparqlQuery(queryText: String): String
   
 }

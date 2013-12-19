@@ -109,7 +109,7 @@ trait FourStore {
 		return null
 	}
   
-  def sparqlSearch(queryText: String): String = {
+  def sparqlQuery(queryText: String): String = {
     
 	    val queryUrl = play.api.Play.configuration.getString("rdfSPARQLEndpoint").getOrElse("")
         val httpclient = new DefaultHttpClient()
