@@ -25,11 +25,11 @@ mongo:
 
 medici:
 - launch sbt inside medici-play folder
--- ./sbt
+-- ./sbt -Dhttp.port=<running port number> "run <running port number>"
 - start application
 -- run
 - connect to server
--- http://localhost:9000/
+-- http://localhost:<running port number>/
 
 Editing code
 
