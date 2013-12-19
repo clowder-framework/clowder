@@ -102,7 +102,8 @@ object Search extends ApiController {
     
     play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
       case "yes" => {
-        val queryText = request.body.asText.getOrElse("")               
+        val queryText = request.body.asFormUrlEncoded.get("query").apply(0)
+        Logger.info("whole msg: " + request.toString)
         val resultsString = services.Services.rdfSPARQLService.sparqlQuery(queryText)
         Logger.info("SPARQL query results: " + resultsString)
         
