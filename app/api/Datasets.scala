@@ -161,17 +161,18 @@ object Datasets extends ApiController {
 	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
 		                        $set("thumbnail_id" -> theFile.thumbnail_id), false, false, WriteConcern.SAFE)
-		        
-		        //add file to RDF triple store if triple store is used
+		        }
+	            
+	            //add file to RDF triple store if triple store is used
 			             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 				             case "yes" => {
 				               services.Services.rdfSPARQLService.linkFileToDataset(fileId, dsId)
 				             }		             
-			             } 
-		         
+			             }
+
 		       Logger.info("Adding file to dataset completed")                 
 		                        
-		       }
+		       
             }
             else{
               Logger.info("File was already in dataset.")
