@@ -161,6 +161,21 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
 
+  def addVersusMetadata(id: String, json: String) {
+
+    Logger.debug("Adding metadata to file " + id)
+    val doc = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
+    FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
+      case Some(x) => {
+        FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
+      }
+      case None => {
+        Logger.error("Error getting file" + id)
+
+      }
+    }
+  }
+
   
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)

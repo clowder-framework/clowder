@@ -27,10 +27,12 @@ import models._
 import fileutils.FilesUtils
 import api.WithPermission
 import api.Permission
+
 import javax.inject.{Singleton, Inject}
 import scala.Some
 import services.ExtractorMessage
 import api.WithPermission
+
 
 /**
  * A dataset is a collection of files and streams.
@@ -204,13 +206,14 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
     user match {
       case Some(identity) => {
         datasetForm.bindFromRequest.fold(
+
           errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
 	      success = dataset => {
           request.body.file("file").map {
             f =>
             //Uploaded file selected
 
-            //Can't have both an uploaded file and a selected existing file
+           //Can't have both an uploaded file and a selected existing file
               request.body.asFormUrlEncoded.get("existingFile").get(0).equals("__nofile") match {
                 case true => {
                   var nameOfFile = f.filename
@@ -321,6 +324,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
                       current.plugin[RabbitmqPlugin].foreach {
                         _.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))
                       }
+                      var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
+				      Logger.debug("Inside File: Extraction Id : "+ extractJobId)
                       // redirect to dataset page
                       Redirect(routes.Datasets.dataset(dt.id.toString))
                       //		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -390,6 +395,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
             }
           }
         }
+
+					    	
 		)
       }
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
