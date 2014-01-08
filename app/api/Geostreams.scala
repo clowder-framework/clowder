@@ -81,8 +81,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchSensors(geocode) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+            case None => Ok(Json.parse("""{"status":"No data found"}""")).as("application/json")
           }
         }
         case None => pluginNotEnabled
@@ -95,8 +95,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getSensor(id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+            case None => Ok(Json.parse("""{"status":"No data found"}""")).as("application/json")
           }
         }
         case None => pluginNotEnabled
@@ -110,8 +110,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getSensorStreams(id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+            case None => Ok(Json.parse("""{"status":"No data found"}""")).as("application/json")
           }
         }
         case None => pluginNotEnabled
@@ -136,14 +136,14 @@ object Geostreams extends ApiController {
         		  "range" -> Json.parse(dates),
         		  "parameters" -> Json.parse(parameters) \ "parameters"
         		  )
-          Ok(jsonp(Json.prettyPrint(json), request))
+          Ok(jsonp(Json.prettyPrint(json), request)).as("application/json")
         }
         case None => pluginNotEnabled
       }
   }
   
   def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
-      Logger.info("Creating stream")
+      Logger.info("Creating stream: " + request.body)
       request.body.validate[(String, String, List[Double], JsValue, String)].map {
         case (name, geoType, longlat, metadata, sensor_id) => {
           current.plugin[PostgresPlugin] match {
@@ -165,8 +165,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchStreams(geocode) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+            case None => Ok(Json.parse("""{"status":"No data found"}""")).as("application/json")
           }
         }
         case None => pluginNotEnabled
@@ -179,8 +179,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getStream(id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
-            case None => Ok(Json.parse("""{"status":"No stream found"}"""))
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+            case None => Ok(Json.parse("""{"status":"No stream found"}""")).as("application/json")
           }
         }
         case None => pluginNotEnabled
@@ -192,8 +192,8 @@ object Geostreams extends ApiController {
       Logger.debug("Delete stream " + id)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          if (plugin.deleteStream(id.toInt)) Ok(Json.parse("""{"status":"ok"}"""))
-          else Ok(Json.parse("""{"status":"error"}"""))
+          if (plugin.deleteStream(id.toInt)) Ok(Json.parse("""{"status":"ok"}""")).as("application/json")
+          else Ok(Json.parse("""{"status":"error"}""")).as("application/json")
         }
         case None => pluginNotEnabled
       }
@@ -205,8 +205,8 @@ object Geostreams extends ApiController {
       Logger.debug("Drop all")
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          if (plugin.dropAll()) Ok(Json.parse("""{"status":"ok"}"""))
-          else Ok(Json.parse("""{"status":"error"}"""))
+          if (plugin.dropAll()) Ok(Json.parse("""{"status":"ok"}""")).as("application/json")
+          else Ok(Json.parse("""{"status":"error"}""")).as("application/json")
         }
         case None => pluginNotEnabled
       }
@@ -218,8 +218,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.counts() match {
-          	case (sensors, streams, datapoints) => Ok(toJson(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints))) 
-          	case _ => Ok(Json.parse("""{"status":"error"}"""))
+          	case (sensors, streams, datapoints) => Ok(toJson(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints))).as("application/json")
+          	case _ => Ok(Json.parse("""{"status":"error"}""")).as("application/json")
           }
         }
         case None => pluginNotEnabled
@@ -257,8 +257,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchDatapoints(since, until, geocode, stream_id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
-            case None => Ok(Json.toJson("""{"status":"No data found"}"""))
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+            case None => Ok(Json.toJson("""{"status":"No data found"}""")).as("application/json")
           }
         }
         case None => pluginNotEnabled
@@ -271,8 +271,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getDatapoint(id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request))
-            case None => Ok(Json.parse("""{"status":"No stream found"}"""))
+            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+            case None => Ok(Json.parse("""{"status":"No stream found"}""")).as("application/json")
           }
         }
         case None => pluginNotEnabled
