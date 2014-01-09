@@ -62,24 +62,22 @@ object Files extends Controller with SecuredController {
     Logger.info("GET file with id " + id)
     Services.files.getFile(id) match {
       case Some(file) => {
-        val previewsFromDB = PreviewDAO.findByFileId(file.id)        
+        val previewsFromDB = PreviewDAO.findByFileId(file.id)
         val previewers = Previewers.findPreviewers
         //Logger.info("Number of previews " + previews.length);
-        val files = List(file)        
-         val previewslist = for(f <- files) yield {
-          val pvf = for(p <- previewers ; pv <- previewsFromDB; if (!f.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {            
+        val previews = {
+          val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-          }        
+          }
           if (pvf.length > 0) {
-            (file -> pvf)
+            Map(file -> pvf)
           } else {
-  	        val ff = for(p <- previewers ; if (!f.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
-  	          (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
-  	        }
-  	        (file -> ff)
+            val ff = for (p <- previewers; if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
+              (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+            }
+            Map(file -> ff)
           }
         }
-        val previews = Map(previewslist:_*)
         val sections = SectionDAO.findByFileId(file.id)
         val sectionsWithPreviews = sections.map { s =>
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
@@ -109,7 +107,11 @@ object Files extends Controller with SecuredController {
         
         Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata))
       }
-      case None => {Logger.error("Error getting file " + id); InternalServerError}
+      case None => {
+        val error_str = "The file with id " + id + " is not found."
+        Logger.error(error_str)
+        NotFound(toJson(error_str))
+        }
     }
   }
   

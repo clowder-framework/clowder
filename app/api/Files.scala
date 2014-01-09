@@ -30,6 +30,7 @@ import models.Extraction
 import models.SectionDAO
 import play.api.Logger
 import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.libs.json.JsValue
@@ -43,7 +44,6 @@ import services.RabbitmqPlugin
 import services.Services
 import services.FileDumpService
 import services.DumpOfFile
-import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
@@ -537,39 +537,49 @@ object Files extends ApiController {
 	         BadRequest(toJson("File not attached."))
 	      }
 	  }
-  
+
   /**
    * Add preview to file.
    */
-  def attachPreview(file_id: String, preview_id: String) = SecuredAction(authorization=WithPermission(Permission.CreateFiles)) {  request =>
-      request.body match {
-        case JsObject(fields) => {
-          // TODO create a service instead of calling salat directly
-          FileDAO.findOneById(new ObjectId(file_id)) match { 
-            case Some(file) => {
-	              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
-	                case Some(preview) =>	                  
-	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-	                    PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), 
-	                        $set("metadata"-> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)      
-	                    Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
-	                    Ok(toJson(Map("status"->"success")))
-	                case None => BadRequest(toJson("Preview not found"))
-	              }
+  def attachPreview(file_id: String, preview_id: String) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { request =>
+    // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
+    val eid = request.body.\("extractor_id").asOpt[String]
+    val extractor_id = if (eid.isDefined) {
+      eid
+    } else {
+      Logger.info("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to \"Other\".  request.body: " + request.body.toString)
+      "Other"
+    }
+    request.body match {
+      case JsObject(fields) => {
+        // TODO create a service instead of calling salat directly
+        FileDAO.findOneById(new ObjectId(file_id)) match {
+          case Some(file) => {
+            PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+              case Some(preview) =>
+                // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
+                val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+                PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)),
+                  $set("metadata" -> metadata, "file_id" -> new ObjectId(file_id), "extractor_id" -> extractor_id),
+                  false, false, WriteConcern.SAFE)
+                Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
+                Ok(toJson(Map("status" -> "success")))
+              case None => BadRequest(toJson("Preview not found"))
             }
-            //If file to be previewed is not found, just delete the preview 
-	        case None => {
-	          PreviewDAO.findOneById(new ObjectId(preview_id)) match {
-	                case Some(preview) =>    
-	                    Logger.debug("File not found. Deleting previews.files " + preview_id)
-	                    PreviewDAO.removePreview(preview)
-	                    BadRequest(toJson("File not found. Preview deleted."))
-	                case None => BadRequest(toJson("Preview not found"))
-	              }	          
-	        }
-	      }
+          }
+          //If file to be previewed is not found, just delete the preview 
+          case None => {
+            PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+              case Some(preview) =>
+                Logger.debug("File not found. Deleting previews.files " + preview_id)
+                PreviewDAO.removePreview(preview)
+                BadRequest(toJson("File not found. Preview deleted."))
+              case None => BadRequest(toJson("Preview not found"))
+            }
+          }
         }
-        case _ => Ok("received something else: " + request.body + '\n')
+      }
+      case _ => Ok("received something else: " + request.body + '\n')
     }
   }
   
@@ -1118,7 +1128,7 @@ object Files extends ApiController {
   }
   // ---------- Tags related code ends ------------------
 
-	def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments))  { implicit request =>
+  def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments))  { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
 		    request.body.\("text").asOpt[String] match {
