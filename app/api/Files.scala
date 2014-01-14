@@ -930,7 +930,7 @@ object Files extends ApiController {
     if (ObjectId.isValid(id)) {
       Services.files.getFile(id) match {
         case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename,
-          "tags" -> Json.toJson(file.tags.map(_.name))))
+          "tags" -> Json.toJson(file.tags.map(_.name).distinct)))
         case None => {
           Logger.error("The file with id " + id + " is not found.")
           NotFound(toJson("The file with id " + id + " is not found."))
@@ -1133,18 +1133,29 @@ object Files extends ApiController {
   // ---------- Extract (BD-38) related code starts ------------------
   def extractTags(file: models.File) = {
     val tags = file.tags
-    // Transform the tag list into a list of ["extractor_id", "values"] items,
+    // Transform the tag list into a list of ["extractor_id" or "userId", "values"] items,
     // where "values" are the list of tag name values.
-    var tagRes = Map[String, MutableList[String]]()
+    var tagResE = Map[String, MutableList[String]]()
     tags.filter(_.extractor_id.isDefined).foreach(tag => {
       val ename = tag.extractor_id.get
-      if (tagRes.contains(ename)) {
-        tagRes.get(ename).get += tag.name
+      if (tagResE.contains(ename)) {
+        tagResE.get(ename).get += tag.name
       } else {
-        tagRes += ((ename, MutableList(tag.name)))
+        tagResE += ((ename, MutableList(tag.name)))
       }
     })
-    val jtags = tagRes.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
+    val jtagsE = tagResE.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
+    var tagResU = Map[String, MutableList[String]]()
+    tags.filter(_.userId.isDefined).foreach(tag => {
+      val ename = tag.userId.get
+      if (tagResU.contains(ename)) {
+        tagResU.get(ename).get += tag.name
+      } else {
+        tagResU += ((ename, MutableList(tag.name)))
+      }
+    })
+    val jtagsU = tagResU.map { case (k, v) => Json.obj("userId" -> k, "values" -> Json.toJson(v)) }
+    val jtags = jtagsE ++ jtagsU
     jtags
   }
   def extractPreviews(id: String) = {
