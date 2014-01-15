@@ -292,7 +292,8 @@ object Files extends ApiController {
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		             case "yes" => {
 		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }		             
+		             }
+		             case _ => {}
 	             }
 	            
 	            Ok(toJson(Map("id"->id)))   
@@ -462,7 +463,8 @@ object Files extends ApiController {
 			             case "yes" => {
 			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
 			               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
-			             }		             
+			             }
+			             case _ => {}
 		             }
 
               //sending success message
@@ -1057,13 +1059,9 @@ object Files extends ApiController {
         //remove file from RDF triple store if triple store is used
         play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 	        case "yes" => {
-	            val fileTriplePart = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") +"/api/files/" + id 
-	        	var removalQuery = "DELETE WHERE { <" + fileTriplePart + "> ?p ?o }; "
-	        	removalQuery = removalQuery + "DELETE WHERE { ?s ?p <" + fileTriplePart + "> }"
-	        	
-	        	val resultsString = services.Services.rdfSPARQLService.sparqlQuery(removalQuery)
-	        	Logger.info("SPARQL file removal query results: " + resultsString)
-	        }		             
+	            Services.rdfSPARQLService.removeFileFromGraph(id)
+	        }
+	        case _ => {}
         }
                 
         Ok(toJson(Map("status"->"success")))

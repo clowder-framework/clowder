@@ -258,7 +258,8 @@ object Files extends Controller with SecuredController {
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		             case "yes" => {
 		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }		             
+		             }
+		             case _ => {}		             
 	             }
 	                        
 	            // redirect to file page]
@@ -447,7 +448,8 @@ object Files extends Controller with SecuredController {
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		             case "yes" => {
 		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }		             
+		             }
+		             case _ => {}
 	             }
 
             // redirect to file page]
@@ -549,7 +551,8 @@ object Files extends Controller with SecuredController {
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		             case "yes" => {
 		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }		             
+		             }
+		             case _ => {}
 	             }
             
             // redirect to file page]
@@ -649,7 +652,8 @@ object Files extends Controller with SecuredController {
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		             case "yes" => {
 		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }		             
+		             }
+		             case _ => {}
 	             }
             
            Ok(f.id.toString)
@@ -770,7 +774,8 @@ object Files extends Controller with SecuredController {
 			             case "yes" => {
 			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
 			               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
-			             }		             
+			             }
+			             case _ => {}
 		             }
 		
 					  // redirect to dataset page

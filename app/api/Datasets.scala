@@ -124,7 +124,8 @@ object Datasets extends ApiController {
 				             case "yes" => {
 				               services.Services.rdfSPARQLService.addDatasetToGraph(id.toString)
 				               services.Services.rdfSPARQLService.linkFileToDataset(file_id, id.toString)
-				             }		             
+				             }
+				             case _ => {}
 			             }
 		      	       
 		      	       Ok(toJson(Map("id" -> id.toString)))
@@ -167,7 +168,8 @@ object Datasets extends ApiController {
 			             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 				             case "yes" => {
 				               services.Services.rdfSPARQLService.linkFileToDataset(fileId, dsId)
-				             }		             
+				             }
+				             case _ => {}
 			             }
 
 		       Logger.info("Adding file to dataset completed")                 
@@ -218,14 +220,9 @@ object Datasets extends ApiController {
 	           //remove link between dataset and file from RDF triple store if triple store is used
 		        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 			        case "yes" => {
-			        	val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "")
-			            val fileTriplePart = hostIp +"/api/files/" + fileId
-			            val datasetTriplePart = hostIp +"/api/datasets/" + datasetId
-			        	var removalQuery = "DELETE WHERE { <" + datasetTriplePart + "> ?p <" + fileTriplePart + "> }"
-			        	
-			        	val resultsString = services.Services.rdfSPARQLService.sparqlQuery(removalQuery)
-			        	Logger.info("SPARQL dataset-file link removal query results: " + resultsString)
-			        }		             
+			        	services.Services.rdfSPARQLService.detachFileFromDataset(fileId, datasetId)
+			        }
+			        case _ => {}
 		        } 
 	            
             }
@@ -523,27 +520,15 @@ object Datasets extends ApiController {
   def deleteDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteDatasets)) { request =>
     Services.datasets.get(id)  match {
       case Some(dataset) => {
-        Dataset.removeDataset(id)
-        
         //remove dataset from RDF triple store if triple store is used
         play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 	        case "yes" => {
-	            val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "")
-	            val datasetTriplePart = hostIp +"/api/datasets/" + id 
-	        	var removalQuery = "DELETE WHERE { <" + datasetTriplePart + "> ?p ?o }"
-	        	for(f <- dataset.files){
-			      var notTheDataset = for(currDataset<- Dataset.findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
-			      if(notTheDataset.size == 0){
-			        val fileTriplePart = hostIp +"/api/files/" + f.id.toString
-			        removalQuery = removalQuery + "; DELETE WHERE { <" + fileTriplePart + "> ?p ?o }"
-			      }			    	
-			    }
-	        	
-	        	val resultsString = services.Services.rdfSPARQLService.sparqlQuery(removalQuery)
-	        	Logger.info("SPARQL dataset removal query results: " + resultsString)
-	        }		             
+	            services.Services.rdfSPARQLService.removeDatasetFromGraph(id)
+	        }
+	        case _ => {}
         }
         
+        Dataset.removeDataset(id)
         
         Ok(toJson(Map("status"->"success")))
       }

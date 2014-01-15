@@ -336,7 +336,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
 					               services.Services.rdfSPARQLService.addDatasetToGraph(dt.id.toString)
 					               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dt.id.toString)
-					             }		             
+					             }
+					             case _ => {}
 				             }
 		 			    	
 				            // redirect to dataset page
@@ -401,7 +402,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 					             case "yes" => {
 					               services.Services.rdfSPARQLService.linkFileToDataset(fileId, dt.id.toString)
-					             }		             
+					             }
+					             case _ => {}
 				             }
 		          
 				  // redirect to dataset page
