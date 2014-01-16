@@ -1,0 +1,170 @@
+@main("Geostreams") {
+
+ <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+ <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
+ <!--[if lte IE 8]>
+     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.ie.css")">
+ <![endif]-->
+<script src="@routes.Assets.at("javascripts/leaflet-src.js")" type="text/javascript"></script>
+
+	<div class="page-header">
+		<h1>Geostreams</h1>
+	</div>
+	<div class="row-fluid">
+		<div class="span10">
+			<div id="geostreams_map"></div>
+		</div>
+		<div class="span2">
+			<h3>Streams</h3>
+			<div id="list_streams"></div>
+		</div>
+	</div>
+	<div class="row-fluid">
+		<div class="span12" style="padding-top:30px">
+			<h3>Datapoints</h3>
+			<pre id="datapoints" class="pre-scrollable"></pre>
+		</div>
+	</div>
+}
+<script language="javascript">
+   $(function() {
+	   var map = L.map('geostreams_map').setView([51.505, -0.09], 13);
+	   
+	   L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	    attribution: 'Map data © OpenStreetMap contributors',
+	    maxZoom: 18
+	   }).addTo(map);
+	   	   
+	   var geojsonMarkerOptions = {
+		    radius: 3,
+		    fillColor: "#ff7800",
+		    color: "#000",
+		    weight: 1,
+		    opacity: 1,
+		    fillOpacity: 0.8
+		};
+
+	   
+	   var request = jsRoutes.api.Geostreams.searchSensors().ajax({
+	       type: 'GET',
+	       contentType: "application/json",
+	       dataType: 'json',
+	     });
+	     
+	     request.done(function (response, textStatus, jqXHR){
+	        console.log("Response " + JSON.stringify(response));
+	        var geojsonLayer = L.geoJson(response, {
+
+		        style: function (feature) {
+			        var color = {fillColor: "#ff7800"};
+			        var type = feature.properties.type;
+		        	switch (type) {
+			            case 'epa':
+			            	color = { fillColor: "#D53E4F"}; 
+				            break;
+			            case 'gsfmp':
+			            	color = { fillColor: "#FC8D59"}; 
+				            break;
+			            case 'letg':
+			            	color = { fillColor: "#99D594"}; 
+				            break;
+			            case 'usgs':
+			            	color = { fillColor: "#3288BD"}; 
+				            break;
+				        default: color = {fillColor: "#ff7800"};
+	                }
+	                return color;
+			    },
+			    
+			    pointToLayer: function (feature, latlng) {
+			        return L.circleMarker(latlng, geojsonMarkerOptions);
+			    },
+			    
+			    onEachFeature: function (feature, layer) {
+			        layer.bindPopup(createPopup(feature, layer));
+			    }
+			    
+			}).addTo(map);
+ 			map.fitBounds(geojsonLayer.getBounds());
+	     });
+	  
+	     request.fail(function (jqXHR, textStatus, errorThrown){
+	        console.error(
+	            "The following error occured: "+
+	            textStatus, errorThrown  
+	        );
+	     });
+
+	     function createPopup(feature, layer) {
+			    var div = document.createElement('div');
+		    	var link = document.createElement('a');
+		    	link.innerHTML = "Streams";
+		    	link.href = "#";
+		    	link.onclick = function() {
+				    listStreams(feature.id);
+				};
+				var info = document.createElement('div');
+				info.innerHTML = 'Station: ' + feature.properties.popupContent + '<br>Source: ' + feature.properties.type;
+				div.appendChild(info);
+				div.appendChild(link);
+				return div;
+	     }
+
+	     function listStreams(sensor_id) {
+	  	   var request = jsRoutes.api.Geostreams.getSensorStreams(sensor_id).ajax({
+		       type: 'GET',
+		       contentType: "application/json",
+		       dataType: 'json',
+		     });
+
+		  	 request.done(function (response, textStatus, jqXHR){
+			  	 console.log('Got streams for sensor');
+			  	 console.log(response);
+			  	$('#list_streams').empty();
+			  	for (var i = 0; i < response.length; i++) {
+			  		var stream_id = response[i]['stream_id'];
+			  		var link = document.createElement('a');
+			    	link.href = "#";
+			    	link.innerHTML = stream_id;
+			    	link.onclick = function() {
+					   listDatapoints(stream_id);
+					};
+			  	 $('#list_streams').append(link);
+			  	 $('#list_streams').append(document.createElement('br'));
+			  	}
+		  	 });
+
+	     	request.fail(function (jqXHR, textStatus, errorThrown){
+		        console.error(
+		            "The following error occured: "+
+		            textStatus, errorThrown  
+		        );
+		     });
+		     
+	     }
+
+
+	     function listDatapoints(stream_id) {
+		     console.log("clicked on " + stream_id);
+		  	   var request = $.ajax({
+			  	   url: 'http://localhost:9000/api/geostreams/datapoints?stream_id=' + stream_id,
+			       type: 'GET',
+			       contentType: "application/json",
+			       dataType: 'json',
+			     });
+
+		  	 request.done(function (response, textStatus, jqXHR){
+			  	console.log('Got datapoints for stream');
+			  	$('#datapoints').empty();
+			  	$('#datapoints').append(JSON.stringify(response, null, '   '));
+		  	 });
+
+		     	request.fail(function (jqXHR, textStatus, errorThrown){
+			        console.error(
+			            "The following error occured: "+
+			            textStatus, errorThrown  
+			        );
+			     });
+	     }
+   });
+</script>

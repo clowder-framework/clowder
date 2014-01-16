@@ -222,6 +222,10 @@ button.tech_md_ {
 	padding: 0 15px;
 }
 
+#geostreams_map { 
+	height: 600px; 
+}
+
 .wrapped {
 	padding: 15px 5px;
 }
@@ -242,10 +246,51 @@ button.tech_md_ {
 	left:20px;
 }
 
+
+
+#nameDescrFieldSet .control-group .controls textarea{
+	width:208px;
+}
+#nameDescrFieldSet .control-group .controls input[type='text']{
+	width:208px;
+	height:30px;
+}
+fieldset #username_field .controls #username{
+	width:208px;
+	height:30px;
+}
+fieldset #password_field .controls #password{
+	width:208px;
+	height:30px;
+}
+fieldset #email_field .controls #email{
+	width:208px;
+	height:30px;
+}
+#firstName_field .controls #firstName{
+	width:208px;
+	height:30px;
+}
+#lastName_field .controls #lastName{
+	width:208px;
+	height:30px;
+}
+#password_password1_field .controls #password_password1{
+	width:208px;
+	height:30px;
+}
+#password_password2_field .controls #password_password2{
+	width:208px;
+	height:30px;
+}
+
+
+
 :-webkit-full-screen x3d {
   width: 100%;
   height: 100%;
 }
+
 
 .mmd-img {
 	width: 80px;
@@ -261,4 +306,18 @@ button.tech_md_ {
 
 .inner-item img {
     margin: 0 auto;
+}
+
+.accordion{
+	margin-bottom: 20px;
+}
+
+textarea:focus, input[type='text']:focus{
+	border-color: rgb(102, 175, 233);
+	outline: 0px none;
+	box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset, 0px 0px 8px rgba(102, 175, 233, 0.6);
+	
+}
+textarea, input[type='text']{
+	transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
 }

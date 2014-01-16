@@ -1,12 +1,9 @@
 package api
 
-import controllers.SecuredController
-import play.api.mvc.Controller
 import models.Collection
 import play.api.Logger
 import org.bson.types.ObjectId
 import play.api.libs.json.JsValue
-import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 import models.Dataset
 import javax.inject.{ Singleton, Inject }

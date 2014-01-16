@@ -6,40 +6,41 @@
 						["Node3","String2", "0", "*"]];*/
 					
 	//CSV file format: Node and whether intermediate node or leaf.
-	var allowedNodes = new Array();	
+	
+	window["allowedNodes"+topId] = new Array();	
 	$.ajax({
-	       url: modelIp + '/user_metadata_model_allowedNodes.txt',
+	       url: window["modelIp"+topId] + '/user_metadata_model_allowedNodes.txt',
 	       async:false,
 		   success: function (data){
 		   		var allowedNodesLines = data.split(/\r\n|\n/);
 				for(var i = 0; i < allowedNodesLines.length; i++){
-					allowedNodes[i] = allowedNodesLines[i].split(',');
+					window["allowedNodes"+topId][i] = allowedNodesLines[i].split(',');
 				}
 		   },
 	       dataType: "text"
 	     });
 		 
 	//CSV file format: Node,Child, Minimum child count, Maximum child count.	
-	var allowedChildren = new Array();	
+	window["allowedChildren"+topId] = new Array();	
 	$.ajax({
-	       url: modelIp + '/user_metadata_model_allowedRelationships.txt',
+	       url: window["modelIp"+topId] + '/user_metadata_model_allowedRelationships.txt',
 	       async:false,
 		   success: function (data){
 		   		var allowedChildrenLines = data.split(/\r\n|\n/);
 				for(var i = 0; i < allowedChildrenLines.length; i++){
-					allowedChildren[i] = allowedChildrenLines[i].split(',');
+					window["allowedChildren"+topId][i] = allowedChildrenLines[i].split(',');
 				}
 		   },
 	       dataType: "text"
 	     });
 	
 				
-	//Counter for DOM node uniqueness.
-	var elementCounter = 1;
-
+	if(typeof usrmdFuncsAlreadyLoaded === "undefined")
 	$(function() {
 		
 		$('body').on('click','.usr_md_,.usr_md_submit',function(e){
+			var topId = $(this).closest("div").get(0).getAttribute('id');
+						
 			if($(this).is('button')){				
 				   if($(this).html() == "Modify"){			  
 					var textBox = document.createElement('input');
@@ -81,7 +82,7 @@
 						parentNodeTypeText = $(this).parent().children('b').get(0).textContent;
 						parentNodeType = parentNodeTypeText.substring(0, parentNodeTypeText.length - 1);
 					}					
-					var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
+					var allowedChildrenForNode = window["allowedChildren"+topId].filter(function (a) {return a[0] == parentNodeType;});
 					if(allowedChildrenForNode.length == 0){
 						alert("The metadata model states that this property cannot have subproperties of any kind.");
 						return false;
@@ -115,11 +116,11 @@
 					var selectedProperty = selectTag.options[selectTag.selectedIndex].value;
 					var selectedPropertyType = "Node";				
 					for(var i = 0; ; i++){
-						if(allowedNodes[i][0] == selectedProperty){
-							selectedPropertyType = allowedNodes[i][1];
+						if(window["allowedNodes"+topId][i][0] == selectedProperty){
+							selectedPropertyType = window["allowedNodes"+topId][i][1];
 							break;
 						}
-					} 
+					}  
 
 					$(this).parent().children('select').remove();
 
@@ -159,19 +160,19 @@
 						 
 						$(this).parent().get(0).appendChild(newPropertyList);
 					}				
-				  }
+				  }      
 				  else if($(this).html() == "Submit"){
-				  	var restrictionViolations = validateCardinalitiesToModel(document.getElementById('datasetUserMetadata').children[1]);
+				  	var restrictionViolations = validateCardinalitiesToModel(document.getElementById(topId).children[1]);
 					if(restrictionViolations != ''){
 						alert('Institution metadata model violation(s): ' + restrictionViolations + ' Metadata not added.');
 						return false;
 					}
 					
-					var data = DOMtoJSON(document.getElementById('datasetUserMetadata').children[1]);
+					var data = DOMtoJSON(document.getElementById(topId).children[1]);
 					
 					var request = $.ajax({
 				       type: 'POST',
-				       url: uploadIp,
+				       url:  window["uploadIp"+topId],
 				       data: JSON.stringify(data),
 				       contentType: "application/json",
 				     });
@@ -190,7 +191,10 @@
 		     			});
 					 
 					 
-				  }	
+				  }
+				  else if($(this).html() == "Get as RDF"){
+					  window.location = window["rdfIp"+topId];
+				  }
 				  
 				  return false;
 			}
@@ -213,12 +217,21 @@
 					if(childrenProperties[i].children[0].tagName.toLowerCase() == 'select')
 						continue;	
 					var key = childrenProperties[i].children[0].innerHTML;
-					key = key.substring(0, key.length - 1) + "__" + elementCounter;
-					elementCounter++;
-					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
-						branchData[key] = childrenProperties[i].children[1].innerHTML;  
+					key = key.substring(0, key.length - 1);
+					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){						
+						if(key in branchData){							
+							branchData[key].push(childrenProperties[i].children[1].innerHTML);
+						}
+						else{	
+							branchData[key] = new Array(childrenProperties[i].children[1].innerHTML);
+						}  
 					}else if(childrenProperties[i].children[1].tagName.toLowerCase() == 'button'){
-						branchData[key] = DOMtoJSON(childrenProperties[i].children[3]);
+						if(key in branchData){
+							branchData[key].push(DOMtoJSON(childrenProperties[i].children[3]));
+						}
+						else{
+							branchData[key] = new Array(DOMtoJSON(childrenProperties[i].children[3]));
+						}				
 					}
 				}
 				return branchData;
@@ -237,7 +250,7 @@
 				branchRootNodeTypeText = branchRootNode.parentElement.children[0].innerHTML;
 				branchRootNodeType = branchRootNodeTypeText.substring(0, branchRootNodeTypeText.length - 1);
 			}
-			var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == branchRootNodeType;});
+			var allowedChildrenForNode = window["allowedChildren"+topId].filter(function (a) {return a[0] == branchRootNodeType;});
 			
 			for (var i = 0; i < allowedChildrenForNode.length; i++){
 				var propertyInstancesCount = 0;
@@ -281,3 +294,5 @@
 	   }
 	   	   	  
 	 });
+	
+	usrmdFuncsAlreadyLoaded = true;

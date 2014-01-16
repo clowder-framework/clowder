@@ -230,7 +230,7 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
   }
 
   //GET the query image from the URL and compare within the database and show the result
-
+  
 def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
 
     Async {

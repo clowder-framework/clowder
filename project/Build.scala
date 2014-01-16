@@ -18,13 +18,20 @@ object ApplicationBuild extends Build {
     "com.wordnik" %% "swagger-play2" % "1.2.6-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.reflections" % "reflections" % "0.9.9-RC1",
     "com.google.code.findbugs" % "jsr305" % "2.0.1",
+    "org.openrdf.sesame" % "sesame-rio-api" % "2.7.8",
+    "org.openrdf.sesame" % "sesame-model" % "2.7.8",
+    "org.openrdf.sesame" % "sesame-rio-n3" % "2.7.8",
+    "org.openrdf.sesame" % "sesame-rio-ntriples" % "2.7.8",
+    "org.openrdf.sesame" % "sesame-rio-rdfxml" % "2.7.8",
+    "org.openrdf.sesame" % "sesame-rio-trig" % "2.7.8",
+    "org.openrdf.sesame" % "sesame-rio-trix" % "2.7.8",
+    "org.openrdf.sesame" % "sesame-rio-turtle" % "2.7.8",
     "com.google.inject" % "guice" % "3.0",
     "com.google.inject.extensions" % "guice-assistedinject" % "3.0",
     "com.netflix.astyanax" % "astyanax-core" % "1.56.43",
     "com.netflix.astyanax" % "astyanax-thrift" % "1.56.43",
     "com.netflix.astyanax" % "astyanax-cassandra" % "1.56.43",
     "com.netflix.astyanax" % "astyanax-recipes" % "1.56.43"
-  //      "org.scalaj" %% "scalaj-collection" % "1.2"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 

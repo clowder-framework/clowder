@@ -39,6 +39,7 @@ case class Preview (
 	contentType: String,
 	annotations: List[ThreeDAnnotation] = List.empty,
 	length: Long,
+	extractor_id: Option[String] = None,
 	iipURL: Option[String] = None,
 	iipImage: Option[String] = None,
 	iipKey: Option[String] = None		
@@ -60,6 +61,10 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
   
   def findBySectionId(id: ObjectId): List[Preview] = {
     dao.find(MongoDBObject("section_id"->id)).toList
+  }
+  
+  def findByDatasetId(id: ObjectId): List[Preview] = {
+    dao.find(MongoDBObject("dataset_id"->id)).toList
   }
   
     /**

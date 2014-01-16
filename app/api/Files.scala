@@ -5,26 +5,19 @@ package api
 
 import java.io.FileInputStream
 import java.util.Date
+import java.io.BufferedWriter
+import java.io.FileWriter
+import java.io.ByteArrayInputStream
 
 import org.bson.types.ObjectId
 
 import com.mongodb.WriteConcern
 import com.mongodb.casbah.Imports._
 
-import controllers.SecuredController
-import controllers.Previewers
-import fileutils.FilesUtils
-import models.Comment
-import models.Dataset
-import models.File
 import models.FileDAO
-import models.GeometryDAO
-import models.Preview
-import models.PreviewDAO
-import models.ThreeDTextureDAO
-import models.Extraction
 import play.api.Logger
 import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.libs.json.JsValue
@@ -39,14 +32,42 @@ import javax.inject.{ Singleton, Inject }
 import services.{ FileService, DatasetService, QueryService }
 import play.api.libs.concurrent.Execution.Implicits._
 
+import scala.collection.mutable.ListBuffer
+import scala.util.parsing.json.JSONArray
+
+import org.json.JSONObject
+import org.json.XML
+
+import Transformation.LidoToCidocConvertion
+
+import jsonutils.JsonUtil
+
+
+// Used in checking error conditions for tags, the checkErrorsForTag(...) method below
+abstract class TagCheckObjType
+case object TagCheck_File extends TagCheckObjType
+case object TagCheck_Dataset extends TagCheckObjType
+case object TagCheck_Section extends TagCheckObjType
+  
 /**
  * Json API for files.
- * 
+ *
  * @author Luigi Marini
  *
  */
 @Singleton
 class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService)  extends ApiController {
+
+  // Helper class and function to check for error conditions for tags.
+  class TagCheck {
+    var error_str: String = ""
+    var not_found: Boolean = false
+    var userOpt: Option[String] = None
+    var extractorOpt: Option[String] = None
+    var tags: Option[List[String]] = None
+  }
+
+  val USERID_ANONYMOUS = "anonymous"
   
   def get(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
 	    Logger.info("GET file with id " + id)    
@@ -83,7 +104,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
    */
   def download(id: String) = 
 	    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DownloadFiles)) { request =>
-//		  Action(parse.anyContent) { request =>
+
 		    files.get(id) match {
 		      case Some((inputStream, filename, contentType, contentLength)) => {
 		        
@@ -125,11 +146,14 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 		      }
 		    }
 	    }
-    
-  /// /******Download query used by Versus**********/
+
+  /**
+   * 
+   * Download query used by Versus
+   * 
+   */
   def downloadquery(id: String) = 
 	    SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DownloadFiles)) { request =>
-//		  Action(parse.anyContent) { request =>
 		    queries.get(id) match {
 		      case Some((inputStream, filename, contentType, contentLength)) => {
 		        
@@ -174,33 +198,36 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   /**
    * Add metadata to file.
    */
-  def addMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.DownloadFiles)) { request =>
-    Logger.debug("Adding metadata to file " + id)
-    val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
-    FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
-	  case Some(x) => {
-	    FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)
-	    Logger.debug("Updating previews.files " + id + " with " + doc)
-	    Ok(toJson("success"))
-	  }
-	  case None => {
-	    Logger.error("Error getting file" + id)
-		NotFound
-	  }
+  def addMetadata(id: String) =  
+   SecuredAction(authorization=WithPermission(Permission.DownloadFiles)) { request =>
+      Logger.debug("Adding metadata to file " + id)
+     val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
+     FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
+	      case Some(x) => {
+	    		  FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)
+	    		  index(id)
+	      }
+	      case None => {
+	        Logger.error("Error getting file" + id)
+		    NotFound
+	      }
+      } 
+            
+	 Logger.debug("Updating previews.files " + id + " with " + doc)
+	 Ok(toJson("success"))
     }
-  }
   
   
   /**
    * Upload file using multipart form enconding.
    */
-    def upload(showPreviews: String="FileLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+    def upload(showPreviews: String="DatasetLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>        
 	          var nameOfFile = f.filename
 	          var flags = ""
-	          if(nameOfFile.endsWith(".ptm")){
+	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 		          	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 		              if(thirdSeparatorIndex >= 0){
 		                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -216,11 +243,15 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
+	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+	            
 	            val id = f.id.toString
-	            if(showPreviews.equals("None"))
-	              flags = flags + "+nopreviews"
+	            if(showPreviews.equals("FileLevel"))
+	            	flags = flags + "+filelevelshowpreviews"
+	            else if(showPreviews.equals("None"))
+	            	flags = flags + "+nopreviews"
 	            var fileType = f.contentType
-	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
@@ -233,10 +264,24 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-	             
-	            current.plugin[ElasticsearchPlugin].foreach{
-	              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+	            	            
+	            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              
+	              Logger.debug("xmlmd=" + xmlToJSON)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
+		            }
 	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            }
+	            }
+	            
 	            Ok(toJson(Map("id"->id)))   
 	          }
 	          case None => {
@@ -261,7 +306,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 		      case Some(theFile) => { 
 		          var nameOfFile = theFile.filename
 		          var flags = ""
-		          if(nameOfFile.endsWith(".ptm")){
+		          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 			          	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 			              if(thirdSeparatorIndex >= 0){
 			                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -285,9 +330,6 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	
 		            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, theFile.length.toString, "", flags))}
 		             
-//		            current.plugin[ElasticsearchPlugin].foreach{
-//		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", theFile.contentType)))
-//		            }
 		            Ok(toJson(Map("id"->id)))   
 		          
 		        }
@@ -310,7 +352,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         request.body.file("File").map { f =>
           		var nameOfFile = f.filename
 	            var flags = ""
-	            if(nameOfFile.endsWith(".ptm")){
+	            if(nameOfFile.toLowerCase().endsWith(".ptm")){
 	            	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 		              if(thirdSeparatorIndex >= 0){
 		                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -328,12 +370,14 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
           // submit file for extraction
           file match {
             case Some(f) => {
+              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+              
               val id = f.id.toString
               if(showPreviews.equals("FileLevel"))
 	            flags = flags + "+filelevelshowpreviews"
 	          else if(showPreviews.equals("None"))
 	            flags = flags + "+nopreviews"
-              var fileType = f.contentType
+	          var fileType = f.contentType
 	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
 	        	  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
 						  if(fileType.startsWith("ERROR: ")){
@@ -348,14 +392,31 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
               val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
 	              
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
-                           
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType)))
-              }
+	          
+	          //for metadata files
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+            	  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+            			  FileDAO.addXMLMetadata(id, xmlToJSON)
 
+            			  Logger.debug("xmlmd=" + xmlToJSON)
+
+            			  current.plugin[ElasticsearchPlugin].foreach{
+            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
+            	  		  }
+              }
+              else{
+            	  current.plugin[ElasticsearchPlugin].foreach{
+            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
+            	  }
+              }
+                           
               // add file to dataset   
               // TODO create a service instead of calling salat directly
-              Dataset.addFile(dataset.id.toString, f)
+              val theFile = FileDAO.get(f.id.toString).get
+              Dataset.addFile(dataset.id.toString, theFile)              
+              if(!theFile.xmlMetadata.isEmpty){
+	            	Datasets.index(dataset_id)
+		      	}	
 
               // TODO RK need to replace unknown with the server name and dataset type
               val dtkey = "unknown." + "dataset." + "unknown"
@@ -373,9 +434,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
             }
           }
 
-          //Ok(views.html.multimediasearch())
         }.getOrElse {
-          BadRequest("File not attached.")
+          BadRequest(toJson("File not attached."))
         }
       } 
         case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
@@ -406,9 +466,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	             FileDAO.setIntermediate(f.id.toString())
+	             FileDAO.setIntermediate(f.id.toString)
 	             var fileType = f.contentType
-			     if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.endsWith(".zip")){
+			     if(fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.toLowerCase().endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")			          
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
@@ -452,45 +512,163 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	      }.getOrElse {
 	         BadRequest(toJson("File not attached."))
 	      }
-  }
+	  }
   
   /**
    * Add preview to file.
    */
-  def attachPreview(file_id: String, preview_id: String) = SecuredAction(authorization=WithPermission(Permission.CreateFiles)) {  request =>
-      request.body match {
-        case JsObject(fields) => {
-          // TODO create a service instead of calling salat directly
-          FileDAO.findOneById(new ObjectId(file_id)) match { 
-            case Some(file) => {
-	              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
-	                case Some(preview) =>
-	                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-	                    PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)), 
-	                        $set("metadata"-> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)      
-	                    Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
-	                    Ok(toJson(Map("status"->"success")))
-	                case None => BadRequest(toJson("Preview not found"))
-	              }
+  def attachPreview(file_id: String, preview_id: String) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { request =>
+    // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
+    val eid = request.body.\("extractor_id").asOpt[String]
+    val extractor_id = if (eid.isDefined) {
+      eid
+    } else {
+      Logger.info("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to \"Other\".  request.body: " + request.body.toString)
+      "Other"
+    }
+    request.body match {
+      case JsObject(fields) => {
+        // TODO create a service instead of calling salat directly
+        FileDAO.findOneById(new ObjectId(file_id)) match {
+          case Some(file) => {
+            PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+              case Some(preview) =>
+                // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
+                val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+                PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)),
+                  $set("metadata" -> metadata, "file_id" -> new ObjectId(file_id), "extractor_id" -> extractor_id),
+                  false, false, WriteConcern.SAFE)
+                Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
+                Ok(toJson(Map("status" -> "success")))
+              case None => BadRequest(toJson("Preview not found"))
             }
-            //If file to be previewed is not found, just delete the preview 
-	        case None => {
-	          PreviewDAO.findOneById(new ObjectId(preview_id)) match {
-	                case Some(preview) =>    
-	                    Logger.debug("File not found. Deleting previews.files " + preview_id)
-	                    PreviewDAO.removePreview(preview)
-	                    BadRequest(toJson("File not found. Preview deleted."))
-	                case None => BadRequest(toJson("Preview not found"))
-	              }	          
-	        }
-	      }
+          }
+          //If file to be previewed is not found, just delete the preview 
+          case None => {
+            PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+              case Some(preview) =>
+                Logger.debug("File not found. Deleting previews.files " + preview_id)
+                PreviewDAO.removePreview(preview)
+                BadRequest(toJson("File not found. Preview deleted."))
+              case None => BadRequest(toJson("Preview not found"))
+            }
+          }
         }
-        case _ => Ok("received something else: " + request.body + '\n')
+      }
+      case _ => Ok("received something else: " + request.body + '\n')
     }
   }
   
-    def jsonFile(file: File): JsValue = {
+  def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
+    Services.files.getFile(id) match { 
+            case Some(file) => {
+              val theJSON = FileDAO.getUserMetadataJSON(id)
+              val fileSep = System.getProperty("file.separator")
+	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
+	          new java.io.File(resultDir).mkdir()
+              
+              if(!theJSON.replaceAll(" ","").equals("{}")){
+	              val xmlFile = jsonToXML(theJSON)
+	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+	              xmlFile.delete()
+              }
+              else{
+                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+              }
+              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+              
+              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+            }
+            case None => BadRequest(toJson("File not found " + id))
+    }
+  
+  }
+  
+  def jsonToXML(theJSON: String): java.io.File = {
+    
+    val jsonObject = new JSONObject(theJSON)    
+    var xml = org.json.XML.toString(jsonObject)
+    
+    //Remove spaces from XML tags
+    var currStart = xml.indexOf("<")
+    var currEnd = -1
+    var xmlNoSpaces = ""
+    while(currStart != -1){
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
+      currEnd = xml.indexOf(">", currStart+1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
+      currStart = xml.indexOf("<", currEnd+1)
+    }
+    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
+    
+    val xmlFile = java.io.File.createTempFile("xml",".xml")
+    val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
+    fileWriter.write(xmlNoSpaces)
+    fileWriter.close()
+    
+    return xmlFile    
+  }
+  
+  def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        
+        //RDF from XML of the file itself (for XML metadata-only files)
+        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
+        var rdfPreviewList = List.empty[models.Preview]
+        for(currPreview <- previewsList){
+          if(currPreview.contentType.equals("application/rdf+xml")){
+            rdfPreviewList = rdfPreviewList :+ currPreview
+          }
+        }        
+        var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
+        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
+        
+        //RDF from export of file community-generated metadata to RDF
+        var connectionChars = ""
+        if(hostString.contains("?")){
+          connectionChars = "&mappingNum="
+        }
+        else{
+          connectionChars = "?mappingNum="
+        }
+        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars                
+        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
+        for(i <- 1 to mappingsQuantity){
+          var currHostString = hostString + i
+          list = list :+ Json.toJson(currHostString)
+        }
+
+        val listJson = toJson(list.toList)
+        
+        Ok(listJson) 
+      }
+      case None => {Logger.error("Error getting file" + id); InternalServerError}
+    }
+    
+  }
+  
+  def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) {implicit request =>
+	      Logger.debug("Adding user metadata to file " + id)
+	      val theJSON = Json.stringify(request.body)
+	      FileDAO.addUserMetadata(id, theJSON)
+	      index(id)
+	      Ok(toJson(Map("status" -> "success")))
+
+  }
+  
+  def jsonFile(file: File): JsValue = {
         toJson(Map("id"->file.id.toString, "filename"->file.filename, "content-type"->file.contentType, "date-created"->file.uploadDate.toString(), "size"->file.length.toString))
+  }
+  
+  def jsonFileWithThumbnail(file: File): JsValue = {
+    var fileThumbnail = "None"
+    if(!file.thumbnail_id.isEmpty)
+      fileThumbnail = file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)
+    
+        toJson(Map("id"->file.id.toString, "filename"->file.filename, "contentType"->file.contentType, "dateCreated"->file.uploadDate.toString(), "thumbnail" -> fileThumbnail))
   }
   
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {
@@ -504,7 +682,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
       ).reduce((left:DBObject, right:DBObject) => left ++ right)
   }
   
-  def filePreviewsList(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateFiles)) {  request =>
+  def filePreviewsList(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) {  request =>
 			FileDAO.findOneById(new ObjectId(id)) match {
 			case Some(file) => {
                 val filePreviews = PreviewDAO.findByFileId(file.id);
@@ -526,9 +704,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     }   
   }
    
-    /**
-   * Add 3D geometry file to file.
-   */
+  /**
+  *  Add 3D geometry file to file.
+  */
   def attachGeometry(file_id: String, geometry_id: String) = SecuredAction(authorization=WithPermission(Permission.CreateFiles)) {  request =>
       request.body match {
         case JsObject(fields) => {
@@ -589,16 +767,14 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	                    FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(file_id)), 
 	                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
 	                        
-	                    Dataset.findOneByFileId(file.id) match {
-	                      case Some(dataset) => {
-	                        if(dataset.thumbnail_id.isEmpty){
+	                    val datasetList = Dataset.findByFileId(file.id)
+	                    for(dataset <- datasetList){
+	                      if(dataset.thumbnail_id.isEmpty){
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
-		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
+		                        $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)		                        
 		                    }
-	                      }
-	                      case None =>
 	                    }
-	                        
+	                    	                        
 	                    Ok(toJson(Map("status"->"success")))
 	                }
 	                case None => BadRequest(toJson("Thumbnail not found"))
@@ -712,36 +888,239 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         case None => Logger.error("Texture file not found"); InternalServerError
       }
     }
-   
-    def tag(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateTags)) { implicit request =>
-	    request.body.\("tag").asOpt[String] match {
-		    case Some(tag) => {
-		    	FileDAO.tag(id, tag)
-		    	Ok
-		    }
-		    case None => {
-		    	Logger.error("no tag specified.")
-		    	BadRequest
-		    }
-	    }
+
+  // ---------- Tags related code starts ------------------
+  /**
+   *  REST endpoint: GET: get the tag data associated with this file.
+   */
+  def getTags(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+    Logger.info("Getting tags for file with id " + id)
+    /* Found in testing: given an invalid ObjectId, a runtime exception
+     * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.getFile().
+     * So check it first.
+     */
+    if (ObjectId.isValid(id)) {
+      Services.files.getFile(id) match {
+        case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename,
+          "tags" -> Json.toJson(file.tags.map(_.name))))
+        case None => {
+          Logger.error("The file with id " + id + " is not found.")
+          NotFound(toJson("The file with id " + id + " is not found."))
+        }
+      }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
+  }
+
+  /*
+   *  Helper function to check for error conditions.
+   *  Input parameters:
+   *      obj_type: one of the three TagCheckObjType's: TagCheck_File, TagCheck_Dataset or TagCheck_Section
+   *      id:       the id in the original addTags call
+   *      request:  the request in the original addTags call
+   *  Returns:
+   *      tagCheck: a TagCheck object, containing the error checking results:
+   * 
+   *      If error_str == "", then no error is found;
+   *      otherwise, it contains the cause of the error.
+   *      not_found is one of the error conditions, meaning the object with
+   *      the given id is not found in the DB.
+   *      userOpt, extractorOpt and tags are set according to the request's content,
+   *      and will remain None if they are not specified in the request.
+   *      We change userOpt from its default None value, only if the userId
+   *      is not USERID_ANONYMOUS.  The use case for this is the extractors
+   *      posting to the REST API -- they'll use the commKey to post, and the original
+   *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
+   *      record the extractor_id, but omit the userId field, so we leave userOpt as None. 
+   */
+  def checkErrorsForTag(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) : TagCheck = {
+    val userObj = request.user
+    Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
+      + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
+    val userId = userObj.get.identityId.userId
+    if (USERID_ANONYMOUS == userId) {
+      Logger.debug("checkErrorsForTag: The user id is \"anonymous\".")
     }
 
-   def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments))  { implicit request =>
+    var userOpt: Option[String] = None
+    var extractorOpt: Option[String] = None
+    var error_str = ""
+    var not_found = false
+    val tags = request.body.\("tags").asOpt[List[String]]
+
+    if (tags.isEmpty) {
+      error_str = "No \"tags\" specified, request.body: " + request.body.toString
+    } else if (!ObjectId.isValid(id)) {
+      error_str = "The given id " + id + " is not a valid ObjectId."
+    } else {
+      obj_type match {
+        case TagCheck_File => not_found = Services.files.getFile(id).isEmpty
+        case TagCheck_Dataset => not_found = Services.datasets.get(id).isEmpty
+        case TagCheck_Section => not_found = SectionDAO.findOneById(new ObjectId(id)).isEmpty
+        case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
+      }
+      if (not_found) {
+        error_str = "The " + obj_type + " with id " + id + " is not found."
+      }
+    }
+    if ("" == error_str) {
+      if (USERID_ANONYMOUS == userId) {
+        val eid = request.body.\("extractor_id").asOpt[String]
+        eid match {
+          case Some(extractor_id) => extractorOpt = eid
+          case None => error_str = "No \"extractor_id\" specified, request.body: " + request.body.toString
+        }
+      } else {
+        userOpt = Option(userId)
+      }
+    }
+    val tagCheck = new TagCheck
+    tagCheck.error_str = error_str
+    tagCheck.not_found = not_found
+    tagCheck.userOpt = userOpt
+    tagCheck.extractorOpt = extractorOpt
+    tagCheck.tags = tags
+    tagCheck
+  }
+  /*
+   *  Helper function to handle adding and removing tags for files/datasets/sections.
+   *  Input parameters:
+   *      obj_type: one of the three TagCheckObjType's: TagCheck_File, TagCheck_Dataset or TagCheck_Section
+   *      op_type:  one of the two strings "add", "remove"
+   *      id:       the id in the original addTags call
+   *      request:  the request in the original addTags call
+   *  Return type:
+   *      play.api.mvc.SimpleResult[JsValue]
+   *      in the form of Ok, NotFound and BadRequest
+   *      where: Ok contains the JsObject: "status" -> "success", the other two contain a JsString,
+   *      which contains the cause of the error, such as "No 'tags' specified", and
+   *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
+   */
+  def addTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) = {
+    val tagCheck = checkErrorsForTag(obj_type, id, request)
+
+    val error_str = tagCheck.error_str
+    val not_found = tagCheck.not_found
+    val userOpt = tagCheck.userOpt
+    val extractorOpt = tagCheck.extractorOpt
+    val tags = tagCheck.tags
+
+    // Now the real work: adding the tags.
+    if ("" == error_str) {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
+      (obj_type) match {
+        case TagCheck_File => FileDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Dataset =>
+          Dataset.addTags(id, userOpt, extractorOpt, tagsCleaned); Datasets.index(id)
+        case TagCheck_Section => SectionDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+      }
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(error_str)
+      if (not_found) {
+        NotFound(toJson(error_str))
+      } else {
+        BadRequest(toJson(error_str))
+      }
+    }
+  }
+  def removeTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) = {
+    val tagCheck = checkErrorsForTag(obj_type, id, request)
+
+    val error_str = tagCheck.error_str
+    val not_found = tagCheck.not_found
+    val userOpt = tagCheck.userOpt
+    val extractorOpt = tagCheck.extractorOpt
+    val tags = tagCheck.tags
+
+    // Now the real work: removing the tags.
+    if ("" == error_str) {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
+      (obj_type) match {
+        case TagCheck_File => FileDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Dataset => Dataset.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => SectionDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+      }
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(error_str)
+      if (not_found) {
+        NotFound(toJson(error_str))
+      } else {
+        BadRequest(toJson(error_str))
+      }
+    }
+  }
+
+  /**
+   *  REST endpoint: POST: Add tags to a file.
+   *  Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   *  In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
+   *  so will be added.
+   */
+  def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
+  	addTagsHelper(TagCheck_File, id, request)
+  }
+
+  /**
+   *  REST endpoint: POST: remove tags.
+   *  Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   *  In other words, the same tag names but diff userId or extractor_id are considered as diff tags.
+   *  Current implementation enforces the restriction which only allows the tags to be removed by
+   *  the same user or extractor.
+   */
+  def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
+  	removeTagsHelper(TagCheck_File, id, request)
+  }
+
+  /**
+   *  REST endpoint: POST: remove all tags.
+   *  This is a big hammer -- it does not check the userId or extractor_id and
+   *  forcefully remove all tags for this id.  It is mainly intended for testing. 
+   */
+  def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
+    Logger.info("Removing all tags for file with id: " + id)
+    if (ObjectId.isValid(id)) {
+      Services.files.getFile(id) match {
+        case Some(file) => {
+          FileDAO.removeAllTags(id)
+          Ok(Json.obj("status" -> "success"))
+        }
+        case None => {
+          Logger.error("The file with id " + id + " is not found.")
+          NotFound(toJson("The file with id " + id + " is not found."))
+        }
+      }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
+  }
+  // ---------- Tags related code ends ------------------
+
+  def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments))  { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
 		    request.body.\("text").asOpt[String] match {
 			    case Some(text) => {
 			        val comment = new Comment(identity, text, file_id=Some(id))
 			        Comment.save(comment)
-			        Ok(comment.id.toString())
+			        index(id)
+			        Ok(comment.id.toString)
 			    }
 			    case None => {
 			    	Logger.error("no text specified.")
-			    	BadRequest
+			    	BadRequest(toJson("no text specified."))
 			    }
 		    }
 	    }
-	    case None => BadRequest
+	    case None =>
+	      Logger.error(("No user identity found in the request, request body: " + request.body))
+	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
 	  }
   }
 	
@@ -807,7 +1186,18 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
       case None => {Logger.error("Error getting file" + id); InternalServerError}
     }
   }
-	
+  
+  
+  def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        Ok(FileDAO.getTechnicalMetadataJSON(id))
+      }
+      case None => {Logger.error("Error finding file" + id); InternalServerError}      
+    }
+  }
+  
+  
   def removeFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteFiles)) { request =>
     files.getFile(id)  match {
       case Some(file) => {
@@ -818,5 +1208,94 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     }
   }
   
+/**
+   * List datasets satisfying a user metadata search tree.
+   */
+  def searchFilesUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { request =>
+      Logger.debug("Searching files' user metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = FileDAO.searchUserMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning files list.")
+
+      val list = for (file <- searchQuery) yield jsonFileWithThumbnail(file)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    }   
+
+  
+  /**
+   * List datasets satisfying a general metadata search tree.
+   */
+  def searchFilesGeneralMetadata = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { request =>
+      Logger.debug("Searching files' metadata for search tree.")
+      
+      var searchJSON = Json.stringify(request.body)
+      Logger.debug("thejsson: "+searchJSON)
+      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+      
+      var searchQuery = FileDAO.searchAllMetadataFormulateQuery(searchTree)
+      
+      //searchQuery = searchQuery.reverse
+
+      Logger.debug("Search completed. Returning files list.")
+
+      val list = for (file <- searchQuery) yield jsonFileWithThumbnail(file)
+      Logger.debug("thelist: " + toJson(list))
+      Ok(toJson(list))
+    }
+  
+  
+  def index(id: String) {
+    Services.files.getFile(id) match {
+      case Some(file) => {
+        var tagListBuffer = new ListBuffer[String]()
+        
+        for (tag <- file.tags){
+          tagListBuffer += tag.name
+        }          
+        
+        val tagsJson = new JSONArray(tagListBuffer.toList)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByFileId(id)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+        
+        val usrMd = FileDAO.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
+        
+        val techMd = FileDAO.getTechnicalMetadataJSON(id)
+        Logger.debug("techmd=" + techMd)
+        
+        val xmlMd = FileDAO.getXMLMetadataJSON(id)
+	    Logger.debug("xmlmd=" + xmlMd)
+        
+        var fileDsId = ""
+        var fileDsName = ""
+          
+        for(dataset <- Dataset.findByFileId(file.id)){
+          fileDsId = fileDsId + dataset.id.toString + "  "
+          fileDsName = fileDsName + dataset.name + "  "
+        }  
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "file", id,
+            List(("filename", file.filename), ("contentType", file.contentType),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+        }
+      }
+      case None => Logger.error("File not found: " + id)
+    }
+  }
 	
 }

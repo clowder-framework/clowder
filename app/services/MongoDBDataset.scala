@@ -66,7 +66,6 @@ trait MongoDBDataset {
     }
   }
   
-    
   /**
    * List all datasets inside a collection.
    */
