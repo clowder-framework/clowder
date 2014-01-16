@@ -385,7 +385,7 @@ object Datasets extends ApiController {
 					services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected)
 					resultFileConnected.delete()
 					
-					services.Services.rdfSPARQLService.addFileToGraph(id, "rdfCommunityGraphName")
+					services.Services.rdfSPARQLService.addDatasetToGraph(id, "rdfCommunityGraphName")
 					
 					Dataset.setUserMetadataWasModified(id, false)
 	            }

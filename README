@@ -43,5 +43,3 @@ make medici ready for eclipse
 further notes:
 -- In order for the RDF storage and querying features to work, 4store has to be installed
    http://4store.org/
-   as well as curl
-   http://curl.haxx.se/
