@@ -41,7 +41,8 @@ case class Dataset (
   userMetadata: Map[String, Any] = Map.empty,
   collections: List[String] = List.empty,
   thumbnail_id: Option[String] = None,
-  datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty
+  datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
+  userMetadataWasModified: Option[Boolean] = None
 )
 
 object MustBreak extends Exception { }
@@ -198,6 +199,14 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   def removeTag(id: String, tagId: String) { 
 	 Logger.debug("Removing tag " + tagId )
      val result = dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId))), false, false, WriteConcern.Safe)
+  }
+  
+  def setUserMetadataWasModified(id: String, wasModified: Boolean){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+  }
+  
+  def findMetadataChangedDatasets(): List[Dataset] = {    
+    dao.find(MongoDBObject("userMetadataWasModified" -> true)).toList   
   }
   
   /**

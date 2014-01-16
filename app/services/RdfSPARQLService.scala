@@ -15,6 +15,7 @@ abstract class RdfSPARQLService {
   def detachFileFromDataset(fileId: String, datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null
   
   def removeFileMetadata(fileId: String, selectedGraph:String = "rdfCommunityGraphName") : Null
+  def removeDatasetMetadata(datasetId: String, selectedGraph:String = "rdfCommunityGraphName") : Null
   
   def addFromFile(fileId: String, tempFile: java.io.File, selectedGraph:String = "rdfCommunityGraphName") : Null
   

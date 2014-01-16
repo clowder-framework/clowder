@@ -49,6 +49,7 @@ object Global extends GlobalSettings {
 	    timeInterval = play.Play.application().configuration().getInt("rdfRepoUpdate.updateEvery")
 	    Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
 	      api.Files.modifyRDFOfMetadataChangedFiles()
+	      api.Datasets.modifyRDFOfMetadataChangedDatasets()
 	    }
     }
     

@@ -189,23 +189,7 @@ trait FourStore {
 				    }                
 	        
 	        //Then, delete the dataset itself
-	        var httpPost = new HttpPost(queryUrl)
-	        var urlParameters = new ArrayList[NameValuePair]() 
-	        var updateQuery = "DELETE { <http://" + hostIp +"/api/datasets/" + datasetId
-	        updateQuery = updateQuery + "> ?p ?o } WHERE { <http://" + hostIp +"/api/datasets/" + datasetId
-	        updateQuery = updateQuery + "> ?p ?o }"
-	        if(!graphName.equals("")){
-	        	updateQuery = "WITH <" + graphName + "> " + updateQuery
-	        }
-	        Logger.debug("the query: "+updateQuery)
-		    urlParameters.add(new BasicNameValuePair("update", updateQuery))                
-	        httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
-	        
-	        var queryResponse = httpclient.execute(httpPost)
-	        Logger.info(queryResponse.getStatusLine().toString())
-	        var resultsEntity = queryResponse.getEntity()
-	        var resultsString = EntityUtils.toString(resultsEntity)        
-	        Logger.debug("the results: "+resultsString)
+	        removeDatasetMetadata(datasetId, selectedGraph)
           }
         }
 
@@ -239,8 +223,36 @@ trait FourStore {
         var resultsString = EntityUtils.toString(resultsEntity)        
         Logger.debug("the results: "+resultsString)
         
-		return null
+		return null   
+  }
+  
+  def removeDatasetMetadata(datasetId: String, selectedGraph:String = "rdfCommunityGraphName") : Null = {
     
+		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("")  + "/update/"
+        val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
+        val httpclient = new DefaultHttpClient()
+        val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
+        
+        
+        var httpPost = new HttpPost(queryUrl)               
+        var urlParameters = new ArrayList[NameValuePair]()        
+        var updateQuery = "DELETE { <http://" + hostIp +"/api/datasets/" + datasetId
+        updateQuery = updateQuery + "> ?p ?o } WHERE { <http://" + hostIp +"/api/datasets/" + datasetId
+        updateQuery = updateQuery + "> ?p ?o }"
+        if(!graphName.equals("")){
+          updateQuery = "WITH <" + graphName + "> " + updateQuery
+        }
+        Logger.debug("the query: "+updateQuery)
+        urlParameters.add(new BasicNameValuePair("update", updateQuery))
+        httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
+        
+        var queryResponse = httpclient.execute(httpPost)
+        Logger.info(queryResponse.getStatusLine().toString())
+        var resultsEntity = queryResponse.getEntity()
+        var resultsString = EntityUtils.toString(resultsEntity)        
+        Logger.debug("the results: "+resultsString)
+        
+		return null   
   }
   
 //  def uploadToGraph(rdfFile: java.io.File): Null = {
