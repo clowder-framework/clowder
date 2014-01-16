@@ -714,11 +714,20 @@ object Files extends ApiController {
 	      index(id)	      
 	      play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		      case "yes" => {
-		    	  modifyRDFUserMetadata(id)
+		          FileDAO.setUserMetadataWasModified(id, true)
+		    	  //modifyRDFUserMetadata(id)
 		      }
 		      case _ => {}
 	      }
+
 	      Ok(toJson(Map("status" -> "success")))
+  }
+  
+  def modifyRDFOfMetadataChangedFiles(){    
+    val changedFiles = FileDAO.findMetadataChangedFiles()
+    for(changedFile <- changedFiles){
+      modifyRDFUserMetadata(changedFile.id.toString)
+    }
   }
   
   def modifyRDFUserMetadata(id: String, mappingNumber: String="1") = {
@@ -805,6 +814,8 @@ object Files extends ApiController {
 					resultFileConnected.delete()
 					
 					services.Services.rdfSPARQLService.addFileToGraph(id, "rdfCommunityGraphName")
+					
+					FileDAO.setUserMetadataWasModified(id, false)
 	            }
 	            case None => {}
 	 }
