@@ -23,17 +23,21 @@ import org.bson.types.ObjectId
 
 trait FourStore {
 
-  def addFileToGraph(fileId: String): Null = {
+  def addFileToGraph(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
     	
-		val queryUrl = play.api.Play.configuration.getString("rdfUploadEndpoint").getOrElse("")
+		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
+		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
         val httpclient = new DefaultHttpClient()
         val httpPost = new HttpPost(queryUrl)
                 
         val urlParameters = new ArrayList[NameValuePair]()
-        var updateQuery = "INSERT DATA { <http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port") +"/api/files/" + fileId
-        updateQuery = updateQuery + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#E31_Document> }"
+        var updateQuery = "<http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port") +"/api/files/" + fileId
+        updateQuery = updateQuery + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#E31_Document> ."        
+        
         Logger.debug("the query: "+updateQuery)
-	    urlParameters.add(new BasicNameValuePair("update", updateQuery))
+	    urlParameters.add(new BasicNameValuePair("data", updateQuery))
+	    urlParameters.add(new BasicNameValuePair("graph", graphName))
+	    urlParameters.add(new BasicNameValuePair("mime-type", "application/x-turtle"))
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
@@ -47,17 +51,21 @@ trait FourStore {
         return null	
   }
   
-  def addDatasetToGraph(datasetId: String): Null = {
+  def addDatasetToGraph(datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
     
-		val queryUrl = play.api.Play.configuration.getString("rdfUploadEndpoint").getOrElse("")
+		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
+		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
         val httpclient = new DefaultHttpClient()
         val httpPost = new HttpPost(queryUrl)
                 
         val urlParameters = new ArrayList[NameValuePair]()
-        var updateQuery = "INSERT DATA { <http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port") +"/api/datasets/" + datasetId
-        updateQuery = updateQuery + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#E31_Document> }"
+        var updateQuery = "<http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port") +"/api/datasets/" + datasetId
+        updateQuery = updateQuery + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#E31_Document> ."
+        
         Logger.debug("the query: "+updateQuery)
-	    urlParameters.add(new BasicNameValuePair("update", updateQuery))
+	    urlParameters.add(new BasicNameValuePair("data", updateQuery))
+	    urlParameters.add(new BasicNameValuePair("graph", graphName))
+	    urlParameters.add(new BasicNameValuePair("mime-type", "application/x-turtle"))
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
@@ -71,18 +79,22 @@ trait FourStore {
 		return null
   }
   
-  def linkFileToDataset(fileId: String, datasetId: String): Null = {
+  def linkFileToDataset(fileId: String, datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
     
-		val queryUrl = play.api.Play.configuration.getString("rdfUploadEndpoint").getOrElse("")
+		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
+		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
         val httpclient = new DefaultHttpClient()
         val httpPost = new HttpPost(queryUrl)
                 
         val urlParameters = new ArrayList[NameValuePair]()
         val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
-        var updateQuery = "INSERT DATA { <http://" + hostIp +"/api/datasets/" + datasetId
-        updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://"+ hostIp +"/api/files/" + fileId + "> }"
+        var updateQuery = "<http://" + hostIp +"/api/datasets/" + datasetId
+        updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://"+ hostIp +"/api/files/" + fileId + "> ."
+        
         Logger.debug("the query: "+updateQuery)
-	    urlParameters.add(new BasicNameValuePair("update", updateQuery))
+	    urlParameters.add(new BasicNameValuePair("data", updateQuery))
+	    urlParameters.add(new BasicNameValuePair("graph", graphName))
+	    urlParameters.add(new BasicNameValuePair("mime-type", "application/x-turtle"))
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
@@ -96,50 +108,40 @@ trait FourStore {
 		return null
   }
   
-  def removeFileFromGraph(fileId: String): Null = {
+  def removeFileFromGraph(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
     
-        val queryUrl = play.api.Play.configuration.getString("rdfUploadEndpoint").getOrElse("")
+        val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("")  + "/update/"
+        val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
         val httpclient = new DefaultHttpClient()
         val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
-        
-        
-        var httpPost = new HttpPost(queryUrl)               
-        var urlParameters = new ArrayList[NameValuePair]()        
-        var updateQuery = "DELETE { <http://" + hostIp +"/api/files/" + fileId
-        updateQuery = updateQuery + "> ?p ?o } WHERE { <http://" + hostIp +"/api/files/" + fileId
-        updateQuery = updateQuery + "> ?p ?o }"
-        Logger.debug("the query: "+updateQuery)
-        urlParameters.add(new BasicNameValuePair("update", updateQuery))
-        httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
-        
-        var queryResponse = httpclient.execute(httpPost)
-        Logger.info(queryResponse.getStatusLine().toString())
-        var resultsEntity = queryResponse.getEntity()
-        var resultsString = EntityUtils.toString(resultsEntity)        
-        Logger.debug("the results: "+resultsString)
-        
-        
-        httpPost = new HttpPost(queryUrl)
-        urlParameters = new ArrayList[NameValuePair]() 
-        updateQuery = "DELETE { ?s ?p <http://" + hostIp +"/api/files/" + fileId + "> }"
+               
+        removeFileMetadata(fileId, selectedGraph)
+                
+        val httpPost = new HttpPost(queryUrl)
+        val urlParameters = new ArrayList[NameValuePair]() 
+        var updateQuery = "DELETE { ?s ?p <http://" + hostIp +"/api/files/" + fileId + "> }"
         updateQuery = updateQuery + "WHERE { ?s ?p <http://" + hostIp +"/api/files/" + fileId + "> }"
+        if(!graphName.equals("")){
+          updateQuery = "WITH <" + graphName + "> " + updateQuery
+        }
         Logger.debug("the query: "+updateQuery)
 	    urlParameters.add(new BasicNameValuePair("update", updateQuery))                
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         
-        queryResponse = httpclient.execute(httpPost)
+        val queryResponse = httpclient.execute(httpPost)
         Logger.info(queryResponse.getStatusLine().toString())
-        resultsEntity = queryResponse.getEntity()
-        resultsString = EntityUtils.toString(resultsEntity)        
+        val resultsEntity = queryResponse.getEntity()
+        val resultsString = EntityUtils.toString(resultsEntity)        
         Logger.debug("the results: "+resultsString)
 
 		return null
     
   }
   
-  def detachFileFromDataset(fileId: String, datasetId: String): Null = {
+  def detachFileFromDataset(fileId: String, datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
     
-		val queryUrl = play.api.Play.configuration.getString("rdfUploadEndpoint").getOrElse("")
+		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/update/"
+		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
         val httpclient = new DefaultHttpClient()
         val httpPost = new HttpPost(queryUrl)
                 
@@ -149,6 +151,9 @@ trait FourStore {
         updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://"+ hostIp +"/api/files/" + fileId + "> }"
         updateQuery = updateQuery + "WHERE { <http://" + hostIp +"/api/datasets/" + datasetId
         updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://"+ hostIp +"/api/files/" + fileId + "> }"
+        if(!graphName.equals("")){
+          updateQuery = "WITH <" + graphName + "> " + updateQuery
+        }
         Logger.debug("the query: "+updateQuery)
 	    urlParameters.add(new BasicNameValuePair("update", updateQuery))
                 
@@ -165,9 +170,10 @@ trait FourStore {
     
   }
   
-  def removeDatasetFromGraph(datasetId: String): Null = {
+  def removeDatasetFromGraph(datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
     
-        val queryUrl = play.api.Play.configuration.getString("rdfUploadEndpoint").getOrElse("")
+        val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/update/"
+        val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
         val httpclient = new DefaultHttpClient()
         val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
         
@@ -178,7 +184,7 @@ trait FourStore {
 	            for(f <- dataset.files){
 				      var notTheDataset = for(currDataset<- Dataset.findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
 				      if(notTheDataset.size == 0){				        
-				        removeFileFromGraph(f.id.toString)
+				        removeFileFromGraph(f.id.toString, selectedGraph)
 				      }			    	
 				    }                
 	        
@@ -188,6 +194,9 @@ trait FourStore {
 	        var updateQuery = "DELETE { <http://" + hostIp +"/api/datasets/" + datasetId
 	        updateQuery = updateQuery + "> ?p ?o } WHERE { <http://" + hostIp +"/api/datasets/" + datasetId
 	        updateQuery = updateQuery + "> ?p ?o }"
+	        if(!graphName.equals("")){
+	        	updateQuery = "WITH <" + graphName + "> " + updateQuery
+	        }
 	        Logger.debug("the query: "+updateQuery)
 		    urlParameters.add(new BasicNameValuePair("update", updateQuery))                
 	        httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
@@ -200,6 +209,36 @@ trait FourStore {
           }
         }
 
+		return null
+    
+  }
+  
+  def removeFileMetadata(fileId: String, selectedGraph:String = "rdfCommunityGraphName") : Null = {
+    
+		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("")  + "/update/"
+        val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
+        val httpclient = new DefaultHttpClient()
+        val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
+        
+        
+        var httpPost = new HttpPost(queryUrl)               
+        var urlParameters = new ArrayList[NameValuePair]()        
+        var updateQuery = "DELETE { <http://" + hostIp +"/api/files/" + fileId
+        updateQuery = updateQuery + "> ?p ?o } WHERE { <http://" + hostIp +"/api/files/" + fileId
+        updateQuery = updateQuery + "> ?p ?o }"
+        if(!graphName.equals("")){
+          updateQuery = "WITH <" + graphName + "> " + updateQuery
+        }
+        Logger.debug("the query: "+updateQuery)
+        urlParameters.add(new BasicNameValuePair("update", updateQuery))
+        httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
+        
+        var queryResponse = httpclient.execute(httpPost)
+        Logger.info(queryResponse.getStatusLine().toString())
+        var resultsEntity = queryResponse.getEntity()
+        var resultsString = EntityUtils.toString(resultsEntity)        
+        Logger.debug("the results: "+resultsString)
+        
 		return null
     
   }
@@ -235,7 +274,7 @@ trait FourStore {
   
   def sparqlQuery(queryText: String): String = {
     
-	    val queryUrl = play.api.Play.configuration.getString("rdfSPARQLEndpoint").getOrElse("")
+	    val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/sparql/"
         val httpclient = new DefaultHttpClient()
 	    Logger.info("query text: "+ queryText)
         val httpPost = new HttpPost(queryUrl)
@@ -252,5 +291,40 @@ trait FourStore {
     
         return resultsString
   }
+  
+  def addFromFile(fileId: String, tempFile: java.io.File, selectedGraph:String = "rdfCommunityGraphName") : Null = {
+    
+    val r = Runtime.getRuntime()
+    var tempDir = System.getProperty("java.io.tmpdir")
+    if (new Character(tempDir.charAt(tempDir.length()-1)).toString().equals(System.getProperty("file.separator")) == false){
+	    	tempDir = tempDir + System.getProperty("file.separator")
+	    }
+    
+    val rdfEndpoint = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data"
+    var rdfGraphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
+    if(!rdfGraphName.equals("")){
+      rdfGraphName = "/" + rdfGraphName
+    }
+
+    val cmd = "curl -T " + "\"" +  tempDir +  tempFile.getName() + "\" \"" + rdfEndpoint + rdfGraphName + "\"" 	    
+    val p = r.exec(cmd)		
+    val outputGobbler = new util.StreamGobblerReturnsNotUploaded(p.getInputStream(), "INFO")
+    val errorGobbler = new util.StreamGobblerReturnsNotUploaded(p.getErrorStream(),"ERROR")
+    outputGobbler.start()
+    errorGobbler.start()
+    try {
+    	p.waitFor()
+    } catch {case ex: InterruptedException => Logger.error(ex.getMessage())}
+    if(outputGobbler.wasSuccessful() || errorGobbler.wasSuccessful()){
+	    	Logger.info("RDF uploaded to RDF store.")
+	    }
+	    else{
+	    	Logger.error("Could not upload RDF to RDF store.")
+	    }
+    
+    return null
+  }
+  
+  
   
 }
