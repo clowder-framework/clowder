@@ -2,6 +2,8 @@ package services
 
 import java.io.BufferedWriter
 import java.io.FileWriter
+import java.io.FileInputStream
+import java.net.URLEncoder
 import play.Logger
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpPost
@@ -306,34 +308,32 @@ trait FourStore {
   
   def addFromFile(fileId: String, tempFile: java.io.File, selectedGraph:String = "rdfCommunityGraphName") : Null = {
     
-    val r = Runtime.getRuntime()
-    var tempDir = System.getProperty("java.io.tmpdir")
-    if (new Character(tempDir.charAt(tempDir.length()-1)).toString().equals(System.getProperty("file.separator")) == false){
-	    	tempDir = tempDir + System.getProperty("file.separator")
-	    }
-    
-    val rdfEndpoint = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data"
-    var rdfGraphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
-    if(!rdfGraphName.equals("")){
-      rdfGraphName = "/" + rdfGraphName
-    }
+        val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
+		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
+        val httpclient = new DefaultHttpClient()
+        val httpPost = new HttpPost(queryUrl)
+                
+        val urlParameters = new ArrayList[NameValuePair]()
+        
+        val fis = new FileInputStream(tempFile)
+        val data = new Array[Byte] (tempFile.length().asInstanceOf[Int])
+        fis.read(data)
+        fis.close()
+          
+        var updateQuery = new String(data, "UTF-8")       
+        
+	    urlParameters.add(new BasicNameValuePair("data", updateQuery))
+	    urlParameters.add(new BasicNameValuePair("graph", graphName))
+                
+        httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
+        val queryResponse = httpclient.execute(httpPost)
+        Logger.info(queryResponse.getStatusLine().toString())
+        
+        val resultsEntity = queryResponse.getEntity()
+        val resultsString = EntityUtils.toString(resultsEntity)
+        
+        Logger.debug("the results: "+resultsString)
 
-    val cmd = "curl -T " + "\"" +  tempDir +  tempFile.getName() + "\" \"" + rdfEndpoint + rdfGraphName + "\"" 	    
-    val p = r.exec(cmd)		
-    val outputGobbler = new util.StreamGobblerReturnsNotUploaded(p.getInputStream(), "INFO")
-    val errorGobbler = new util.StreamGobblerReturnsNotUploaded(p.getErrorStream(),"ERROR")
-    outputGobbler.start()
-    errorGobbler.start()
-    try {
-    	p.waitFor()
-    } catch {case ex: InterruptedException => Logger.error(ex.getMessage())}
-    if(outputGobbler.wasSuccessful() || errorGobbler.wasSuccessful()){
-	    	Logger.info("RDF uploaded to RDF store.")
-	    }
-	    else{
-	    	Logger.error("Could not upload RDF to RDF store.")
-	    }
-    
     return null
   }
   
