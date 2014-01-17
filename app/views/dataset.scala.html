@@ -294,6 +294,28 @@
 						});				
 					</script>
 				}
+				@if(!f.xmlMetadata.isEmpty) {
+					<div id='xmlMetadata_@(f.id.toString)'>
+						<button class="tech_md_" type="button">Show XML-uploaded metadata</button>
+						<div style="display:none;">
+						<ul>								
+								@printLevel(f.xmlMetadata)
+						</ul>
+						</div>
+					</div>
+					<script>
+						$("#xmlMetadata_@(f.id.toString) > button").on('click',function(){
+							if($("#xmlMetadata_@(f.id.toString) > div").attr('style') == 'display:none;'){
+								$("#xmlMetadata_@(f.id.toString) > div").attr('style', 'display:block;');
+								$("#xmlMetadata_@(f.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
+							}
+							else{
+								$("#xmlMetadata_@(f.id.toString) > div").attr('style', 'display:none;');
+								$("#xmlMetadata_@(f.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
+							}
+						});	
+					</script>
+				}
 				
 				
 					<div id='fileUserMetadata_@(f.id.toString)'>
