@@ -282,7 +282,7 @@ object Datasets extends ApiController {
       play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		      case "yes" => {
 		          Dataset.setUserMetadataWasModified(id, true)
-		    	  modifyRDFUserMetadata(id)
+		    	  //modifyRDFUserMetadata(id)
 		      }
 		      case _ => {}
 	      }

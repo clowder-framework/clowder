@@ -717,7 +717,7 @@ object Files extends ApiController {
 	      play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		      case "yes" => {
 		          FileDAO.setUserMetadataWasModified(id, true)
-		    	  modifyRDFUserMetadata(id)
+		    	  //modifyRDFUserMetadata(id)
 		      }
 		      case _ => {}
 	      }
