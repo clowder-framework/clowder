@@ -3,22 +3,14 @@
 	<div class="page-header">
 		<h1>Administration</h1>
 	</div>
+	
+	<legend>Select a Theme</legend>
+	
 	<div class="row">
 		<div class="col-md-2">@themes(theme)</div>
 	</div>
-	<div class="row">
-		<div class="col-md-12">
-			<a href="" class="btn btn-default btn-sm">Re-index Files</a>
-			<a href="" class="btn btn-default btn-sm" id="testButton">Test</a>
-			<a href="" class="btn btn-default btn-sm" id="secureTestButton">Secure Test</a>
-		</div>
-	</div>
-	<div id="controlledPhone"></div>
-	<div id="test1"></div>
-	<div class="row">
-		<div class="col-md-2">@themes(theme)</div>
-	</div>
-	<legend> Create an Index</legend>
+	
+	<legend>Create an Index</legend>
 	
 	<div class="container-fluid">
         
@@ -534,7 +526,11 @@ var listBtn=document.getElementById('list');
 
 var deleteBtn=document.getElementById('delete');
     deleteBtn.onclick=function(evt){
+ 
+    	var id=indexselected;
+
     var id=indexselected;
+
     	console.log("I am inside delete click function");
     	var request=jsRoutes.controllers.Admin.deleteIndex(id).ajax({
    					 type:'DELETE'

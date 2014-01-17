@@ -3,6 +3,7 @@
  */
 package services
 import models.Dataset
+import models.Collection
 
 /**
  * Generic dataset service.
@@ -31,6 +32,7 @@ abstract class DatasetService {
    * List datasets before a specified date.
    */
   def listDatasetsBefore(date: String, limit: Int): List[Dataset]
+  
   
   /**
    * Get dataset.

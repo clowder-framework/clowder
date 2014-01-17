@@ -33,9 +33,13 @@ object Global extends GlobalSettings {
     }
     
     //Delete garbage files (ie past intermediate extractor results files) from DB
-    val timeInterval = play.Play.application().configuration().getInt("intermediateCleanup.checkEvery")
+    var timeInterval = play.Play.application().configuration().getInt("intermediateCleanup.checkEvery")
     Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
       MongoDBFileService.removeOldIntermediates()
+    }
+    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
+    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
+      models.FileDAO.removeTemporaries()
     }
     
   }

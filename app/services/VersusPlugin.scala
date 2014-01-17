@@ -131,6 +131,7 @@ class VersusPlugin(application: Application) extends Plugin {
 
     val createIndexUrl = host + "/index";
     Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
+    Logger.debug("theurl: "+createIndexUrl);
     val response = WS.url(createIndexUrl).post(Map("Adapter" -> Seq(adapter), "Extractor" -> Seq(extractor), "Measure" -> Seq(measure), "Indexer" -> Seq(indexer))).map {
       res =>
         //Logger.debug("res.body="+res.body)

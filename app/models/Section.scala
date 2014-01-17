@@ -3,6 +3,7 @@
  */
 package models
 
+import java.util.Date
 import org.bson.types.ObjectId
 import services.MongoSalatPlugin
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -28,7 +29,7 @@ case class Section (
     endTime: Option[Int] = None, // in seconds
     area: Option[Rectangle] = None,
     preview: Option[Preview] = None,
-    tags: List[String] = List.empty
+    tags: List[Tag] = List.empty
 )
 
 case class Rectangle (
@@ -51,10 +52,42 @@ object SectionDAO extends ModelCompanion[Section, ObjectId] {
   def findByFileId(id: ObjectId): List[Section] = {
     dao.find(MongoDBObject("file_id"->id)).sort(MongoDBObject("startTime"->1)).toList
   }
-
-  def tag(id: String, tag: String) { 
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  
+  def findByTag(tag: String): List[Section] = {
+    dao.find(MongoDBObject("tags.name" -> tag)).toList
   }
+
+  // ---------- Tags related code starts ------------------
+  // Input validation is done in api.Files, so no need to check again.
+  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+    Logger.debug("Adding tags to section " + id + " : " + tags)
+    val section = SectionDAO.findOneById(new ObjectId(id)).get
+    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val createdDate = new Date
+    tags.foreach(tag => {
+      // Only add tags with new values.
+      if (!existingTags.contains(tag)) {
+        val tagObj = Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+      }
+    })
+  }
+
+  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+    Logger.debug("Removing tags in section " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+    val section = SectionDAO.findOneById(new ObjectId(id)).get
+    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
+    // Only remove existing tags.
+    tags.intersect(existingTags).map { tag =>
+      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeAllTags(id: String) {
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+  }
+  // ---------- Tags related code ends ------------------
 
   def comment(id: String, comment: Comment) {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
