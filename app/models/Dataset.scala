@@ -8,7 +8,7 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
-import services.MongoSalatPlugin
+import services.{ElasticsearchPlugin, MongoSalatPlugin}
 import java.util.Date
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
@@ -19,7 +19,10 @@ import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import play.api.libs.json.JsValue
 import securesocial.core.Identity
-import services.Services
+import scala.collection.mutable.ListBuffer
+import scala.util.parsing.json.JSONArray
+import jsonutils.JsonUtil
+
 /**
  * A dataset is a collection of files, and streams.
  * 
@@ -51,9 +54,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
   }
-  
-  
-    
+
   def findOneByFileId(file_id: ObjectId): Option[Dataset] = {
     dao.findOne(MongoDBObject("files._id" -> file_id))
   }
@@ -66,17 +67,6 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
         val listContaining = findByFileId(file_id)
         (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
   }
-  
-//  def executeRawQuery(theQuery: String): List[Dataset] = {
-//    val thePlugin = current.plugin[MongoSalatPlugin]
-//    if(thePlugin.isEmpty){
-//      throw new RuntimeException("No MongoSalatPlugin")
-//     }
-//    val executionResult = thePlugin.get.source("medici")
-//    
-//    
-//  }
-  
   
   def findByTag(tag: String): List[Dataset] = {
     dao.find(MongoDBObject("tags.name" -> tag)).toList
@@ -170,7 +160,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   
   def addXMLMetadata(id: String, fileId: String, json: String){
      Logger.debug("Adding XML metadata to dataset " + id + " from file " + fileId + ": " + json)
-     val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap     
+     val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap
      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("datasetXmlMetadata" ->  DatasetXMLMetadata.toDBObject(DatasetXMLMetadata(md,fileId))), false, false, WriteConcern.Safe)		      
    }
   
@@ -185,21 +175,11 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
-  // ---------- Tags related code ends ------------------
-  // Input validation is done in api.Files, so no need to check again.
-  /* Commented out.  Old code to add one tag. */
-  /*
-  def tag(id: String, tag: Tag) { 
-    // TODO: Need to check for the owner of the dataset before adding tag
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" ->  Tag.toDBObject(tag)), false, false, WriteConcern.Safe)
-  }
-  */
-
   def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
 
-    val dataset = Services.datasets.get(id).get
+    val dataset = findOneById(new ObjectId(id)).get
     val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
     tags.foreach(tag => {
@@ -219,7 +199,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
 
   def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
-    val dataset = Services.datasets.get(id).get
+    val dataset = findOneById(new ObjectId(id)).get
     val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
@@ -489,6 +469,44 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
       }
       case None => 
     }      
+  }
+
+  def index(id: String) {
+    findOneById(new ObjectId(id)) match {
+      case Some(dataset) => {
+        var tagListBuffer = new ListBuffer[String]()
+
+        for (tag <- dataset.tags){
+          tagListBuffer += tag.name
+        }
+
+        val tagsJson = new JSONArray(tagListBuffer.toList)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByDatasetId(id,false)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+
+        val usrMd = Dataset.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
+
+        val techMd = Dataset.getTechnicalMetadataJSON(id)
+        Logger.debug("techmd=" + techMd)
+
+        val xmlMd = Dataset.getXMLMetadataJSON(id)
+        Logger.debug("xmlmd=" + xmlMd)
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "dataset", id,
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
+        }
+      }
+      case None => Logger.error("Dataset not found: " + id)
+    }
   }
   
 }

@@ -18,6 +18,7 @@ object Tags extends SecuredController {
     val datasets = Dataset.findByTag(tagCleaned)
     val files    = FileDAO.findByTag(tagCleaned)
     val sections = SectionDAO.findByTag(tagCleaned)
-    Ok(views.html.searchByTag(tag, datasets, files, sections))
+    val sectionsWithFiles = for (s <- sections; f <- FileDAO.get(s.file_id.toString)) yield (s, f)
+    Ok(views.html.searchByTag(tag, datasets, files, sectionsWithFiles))
   }
 }

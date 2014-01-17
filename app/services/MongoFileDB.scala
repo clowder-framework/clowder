@@ -1,22 +1,25 @@
 package services
 
 import java.io.InputStream
-import models.File
+import models._
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import org.bson.types.ObjectId
 import com.mongodb.DBObject
-import models.SocialUserDAO
-import play.Logger
 import play.api.Play.current
 import com.mongodb.casbah.gridfs.JodaGridFSDBFile
-import models.FileDAO
 import java.text.SimpleDateFormat
 import securesocial.core.Identity
 import com.novus.salat._
 import com.novus.salat.global._
 import java.util.Date
 import java.util.Calendar
+import scala.collection.mutable.ListBuffer
+import scala.util.parsing.json.JSONArray
+import play.api.Logger
+import scala.util.parsing.json.JSONArray
+import scala.Some
+import models.File
 
 /**
  * Access file metedata from MongoDB.
@@ -105,14 +108,50 @@ trait MongoFileDB {
     
     Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
   }
-  
-  def removeOldIntermediates(){
-    val cal = Calendar.getInstance()
-    val timeDiff = play.Play.application().configuration().getInt("intermediateCleanup.removeAfter")
-    cal.add(Calendar.HOUR, -timeDiff)
-    val oldDate = cal.getTime()    
-    val fileList = FileDAO.find($and("isIntermediate" $eq true, "uploadDate" $lt oldDate)).toList
-    for(removeFile <- fileList)
-      FileDAO.removeFile(removeFile.id.toString())
+
+  def index(id: String) {
+    getFile(id) match {
+      case Some(file) => {
+        var tagListBuffer = new ListBuffer[String]()
+
+        for (tag <- file.tags){
+          tagListBuffer += tag.name
+        }
+
+        val tagsJson = new JSONArray(tagListBuffer.toList)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for(comment <- Comment.findCommentsByFileId(id)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+
+        val usrMd = FileDAO.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
+
+        val techMd = FileDAO.getTechnicalMetadataJSON(id)
+        Logger.debug("techmd=" + techMd)
+
+        val xmlMd = FileDAO.getXMLMetadataJSON(id)
+        Logger.debug("xmlmd=" + xmlMd)
+
+        var fileDsId = ""
+        var fileDsName = ""
+
+        for(dataset <- Dataset.findByFileId(file.id)){
+          fileDsId = fileDsId + dataset.id.toString + "  "
+          fileDsName = fileDsName + dataset.name + "  "
+        }
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "file", id,
+            List(("filename", file.filename), ("contentType", file.contentType),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+        }
+      }
+      case None => Logger.error("File not found: " + id)
+    }
   }
 }

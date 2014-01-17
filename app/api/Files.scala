@@ -14,7 +14,7 @@ import org.bson.types.ObjectId
 import com.mongodb.WriteConcern
 import com.mongodb.casbah.Imports._
 
-import models.FileDAO
+import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -23,13 +23,9 @@ import play.api.libs.json._
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
 import play.api.libs.json.Json._
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import services.ElasticsearchPlugin
-import services.ExtractorMessage
-import services.RabbitmqPlugin
+import play.api.mvc.{SimpleResult, Action, Controller}
+import services._
 import javax.inject.{ Singleton, Inject }
-import services.{ FileService, DatasetService, QueryService }
 import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.collection.mutable.ListBuffer
@@ -41,13 +37,23 @@ import org.json.XML
 import Transformation.LidoToCidocConvertion
 
 import jsonutils.JsonUtil
-
-
-// Used in checking error conditions for tags, the checkErrorsForTag(...) method below
-abstract class TagCheckObjType
-case object TagCheck_File extends TagCheckObjType
-case object TagCheck_Dataset extends TagCheckObjType
-case object TagCheck_Section extends TagCheckObjType
+import play.api.libs.json.JsString
+import scala.Some
+import services.ExtractorMessage
+import scala.util.parsing.json.JSONArray
+import api.RequestWithUser
+import api.WithPermission
+import play.api.libs.json.JsObject
+import fileutils.FilesUtils
+import play.api.libs.json.JsString
+import scala.Some
+import services.DumpOfFile
+import services.ExtractorMessage
+import scala.util.parsing.json.JSONArray
+import api.RequestWithUser
+import api.WithPermission
+import play.api.libs.json.JsObject
+import controllers.Previewers
   
 /**
  * Json API for files.
@@ -55,19 +61,7 @@ case object TagCheck_Section extends TagCheckObjType
  * @author Luigi Marini
  *
  */
-@Singleton
-class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService)  extends ApiController {
-
-  // Helper class and function to check for error conditions for tags.
-  class TagCheck {
-    var error_str: String = ""
-    var not_found: Boolean = false
-    var userOpt: Option[String] = None
-    var extractorOpt: Option[String] = None
-    var tags: Option[List[String]] = None
-  }
-
-  val USERID_ANONYMOUS = "anonymous"
+class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, tags: TagService)  extends ApiController {
   
   def get(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
 	    Logger.info("GET file with id " + id)    
@@ -252,7 +246,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	            	flags = flags + "+nopreviews"
 	            var fileType = f.contentType
 	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
-	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
+	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
@@ -415,7 +409,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
               val theFile = FileDAO.get(f.id.toString).get
               Dataset.addFile(dataset.id.toString, theFile)              
               if(!theFile.xmlMetadata.isEmpty){
-	            	Datasets.index(dataset_id)
+	            	Dataset.index(dataset_id)
 		      	}	
 
               // TODO RK need to replace unknown with the server name and dataset type
@@ -560,7 +554,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   }
   
   def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
-    Services.files.getFile(id) match { 
+    files.getFile(id) match {
             case Some(file) => {
               val theJSON = FileDAO.getUserMetadataJSON(id)
               val fileSep = System.getProperty("file.separator")
@@ -612,7 +606,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   }
   
   def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
-    Services.files.getFile(id)  match {
+    files.getFile(id)  match {
       case Some(file) => {
         
         //RDF from XML of the file itself (for XML metadata-only files)
@@ -900,7 +894,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
      * So check it first.
      */
     if (ObjectId.isValid(id)) {
-      Services.files.getFile(id) match {
+      files.getFile(id) match {
         case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename,
           "tags" -> Json.toJson(file.tags.map(_.name))))
         case None => {
@@ -915,76 +909,6 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   }
 
   /*
-   *  Helper function to check for error conditions.
-   *  Input parameters:
-   *      obj_type: one of the three TagCheckObjType's: TagCheck_File, TagCheck_Dataset or TagCheck_Section
-   *      id:       the id in the original addTags call
-   *      request:  the request in the original addTags call
-   *  Returns:
-   *      tagCheck: a TagCheck object, containing the error checking results:
-   * 
-   *      If error_str == "", then no error is found;
-   *      otherwise, it contains the cause of the error.
-   *      not_found is one of the error conditions, meaning the object with
-   *      the given id is not found in the DB.
-   *      userOpt, extractorOpt and tags are set according to the request's content,
-   *      and will remain None if they are not specified in the request.
-   *      We change userOpt from its default None value, only if the userId
-   *      is not USERID_ANONYMOUS.  The use case for this is the extractors
-   *      posting to the REST API -- they'll use the commKey to post, and the original
-   *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
-   *      record the extractor_id, but omit the userId field, so we leave userOpt as None. 
-   */
-  def checkErrorsForTag(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) : TagCheck = {
-    val userObj = request.user
-    Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
-      + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
-    val userId = userObj.get.identityId.userId
-    if (USERID_ANONYMOUS == userId) {
-      Logger.debug("checkErrorsForTag: The user id is \"anonymous\".")
-    }
-
-    var userOpt: Option[String] = None
-    var extractorOpt: Option[String] = None
-    var error_str = ""
-    var not_found = false
-    val tags = request.body.\("tags").asOpt[List[String]]
-
-    if (tags.isEmpty) {
-      error_str = "No \"tags\" specified, request.body: " + request.body.toString
-    } else if (!ObjectId.isValid(id)) {
-      error_str = "The given id " + id + " is not a valid ObjectId."
-    } else {
-      obj_type match {
-        case TagCheck_File => not_found = Services.files.getFile(id).isEmpty
-        case TagCheck_Dataset => not_found = Services.datasets.get(id).isEmpty
-        case TagCheck_Section => not_found = SectionDAO.findOneById(new ObjectId(id)).isEmpty
-        case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
-      }
-      if (not_found) {
-        error_str = "The " + obj_type + " with id " + id + " is not found."
-      }
-    }
-    if ("" == error_str) {
-      if (USERID_ANONYMOUS == userId) {
-        val eid = request.body.\("extractor_id").asOpt[String]
-        eid match {
-          case Some(extractor_id) => extractorOpt = eid
-          case None => error_str = "No \"extractor_id\" specified, request.body: " + request.body.toString
-        }
-      } else {
-        userOpt = Option(userId)
-      }
-    }
-    val tagCheck = new TagCheck
-    tagCheck.error_str = error_str
-    tagCheck.not_found = not_found
-    tagCheck.userOpt = userOpt
-    tagCheck.extractorOpt = extractorOpt
-    tagCheck.tags = tags
-    tagCheck
-  }
-  /*
    *  Helper function to handle adding and removing tags for files/datasets/sections.
    *  Input parameters:
    *      obj_type: one of the three TagCheckObjType's: TagCheck_File, TagCheck_Dataset or TagCheck_Section
@@ -998,25 +922,12 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
    *      which contains the cause of the error, such as "No 'tags' specified", and
    *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
    */
-  def addTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) = {
-    val tagCheck = checkErrorsForTag(obj_type, id, request)
+  def addTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]): SimpleResult = {
 
-    val error_str = tagCheck.error_str
-    val not_found = tagCheck.not_found
-    val userOpt = tagCheck.userOpt
-    val extractorOpt = tagCheck.extractorOpt
-    val tags = tagCheck.tags
+    val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
 
     // Now the real work: adding the tags.
     if ("" == error_str) {
-      // Clean up leading, trailing and multiple contiguous white spaces.
-      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
-      (obj_type) match {
-        case TagCheck_File => FileDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Dataset =>
-          Dataset.addTags(id, userOpt, extractorOpt, tagsCleaned); Datasets.index(id)
-        case TagCheck_Section => SectionDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
-      }
       Ok(Json.obj("status" -> "success"))
     } else {
       Logger.error(error_str)
@@ -1027,24 +938,12 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
       }
     }
   }
-  def removeTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) = {
-    val tagCheck = checkErrorsForTag(obj_type, id, request)
 
-    val error_str = tagCheck.error_str
-    val not_found = tagCheck.not_found
-    val userOpt = tagCheck.userOpt
-    val extractorOpt = tagCheck.extractorOpt
-    val tags = tagCheck.tags
+  def removeTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]): SimpleResult = {
 
-    // Now the real work: removing the tags.
+    val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
+
     if ("" == error_str) {
-      // Clean up leading, trailing and multiple contiguous white spaces.
-      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
-      (obj_type) match {
-        case TagCheck_File => FileDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Dataset => Dataset.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Section => SectionDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-      }
       Ok(Json.obj("status" -> "success"))
     } else {
       Logger.error(error_str)
@@ -1085,7 +984,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.info("Removing all tags for file with id: " + id)
     if (ObjectId.isValid(id)) {
-      Services.files.getFile(id) match {
+      files.getFile(id) match {
         case Some(file) => {
           FileDAO.removeAllTags(id)
           Ok(Json.obj("status" -> "success"))
@@ -1163,7 +1062,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     files.getFile(id)  match {
       case Some(file) => {
         
-        val previewsFromDB = PreviewDAO.findByFileId(file.id)        
+        val previewsFromDB = PreviewDAO.findByFileId(file.id)
         val previewers = Previewers.findPreviewers
         //Logger.info("Number of previews " + previews.length);
         val files = List(file)        
@@ -1189,7 +1088,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   
   
   def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
-    Services.files.getFile(id)  match {
+    files.getFile(id)  match {
       case Some(file) => {
         Ok(FileDAO.getTechnicalMetadataJSON(id))
       }
@@ -1253,7 +1152,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   
   
   def index(id: String) {
-    Services.files.getFile(id) match {
+    files.getFile(id) match {
       case Some(file) => {
         var tagListBuffer = new ListBuffer[String]()
         

@@ -20,7 +20,6 @@ import java.util.Calendar
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileSystems
-import services.Services
 
 /**
  * Uploaded files.
@@ -72,11 +71,11 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def listOutsideDataset(dataset_id: String): List[File] = {
     Dataset.findOneById(new ObjectId(dataset_id)) match{
         case Some(dataset) => {
-          val list = for (file <- Services.files.listFiles(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
-          return list
+          val list = for (file <- findAll(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
+          return list.toList
         }
         case None =>{
-          return Services.files.listFiles()	 	  
+          return findAll.toList
         } 
       }
   }
@@ -188,7 +187,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   // Input validation is done in api.Files, so no need to check again.
   def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to file " + id + " : " + tags)
-    val file = Services.files.getFile(id).get
+    val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
     tags.foreach(tag => {
@@ -202,7 +201,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 
   def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
-    val file = Services.files.getFile(id).get
+    val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
@@ -232,7 +231,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
         	for(fileDataset <- fileDatasets){
 	        	Dataset.removeFile(fileDataset.id.toString(), id)
 	        	if(!file.xmlMetadata.isEmpty){
-	            	api.Datasets.index(fileDataset.id.toString())
+	            	Dataset.index(fileDataset.id.toString())
 		      	}
 	        	if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
 		        	if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
@@ -389,6 +388,16 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
     else{
       return new MongoDBObject()
     }
+  }
+
+  def removeOldIntermediates(){
+    val cal = Calendar.getInstance()
+    val timeDiff = play.Play.application().configuration().getInt("intermediateCleanup.removeAfter")
+    cal.add(Calendar.HOUR, -timeDiff)
+    val oldDate = cal.getTime()
+    val fileList = FileDAO.find($and("isIntermediate" $eq true, "uploadDate" $lt oldDate)).toList
+    for(removeFile <- fileList)
+      FileDAO.removeFile(removeFile.id.toString())
   }
   
 }

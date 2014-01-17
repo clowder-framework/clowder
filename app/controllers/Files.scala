@@ -34,13 +34,13 @@ import fileutils.FilesUtils
 import models.Extraction
 import api.WithPermission
 import api.Permission
+import javax.inject.Inject
 
 /**
  * Manage files.
  *
  * @author Luigi Marini
  */
-@Singleton
 class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService) extends SecuredController {
 
   /**
@@ -185,7 +185,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
 	        // store file       
-	        val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
 	        val uploadedFile = f
 	//        Thread.sleep(1000)
 	        file match {
@@ -360,9 +360,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         // store file       
         // TODO is this still used? if so replace null with user
         Logger.info("uploadSelect")
-        val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, null)
+        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, null)
         val uploadedFile = f
-//        Thread.sleep(1000)
         file match {
           case Some(f) => {
             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
@@ -436,7 +435,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         
         // store file       
         Logger.info("uploadSelectQuery")
-         val file = Services.queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
+         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
          val uploadedFile = f
 //        Thread.sleep(1000)
         
@@ -515,7 +514,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         // store file       
       //  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         Logger.info("uploadDragDrop")
-        val file = Services.queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
+        val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
 //        Thread.sleep(1000)
         file match {
@@ -645,7 +644,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 					  val theFile = FileDAO.get(f.id.toString).get
 					  Dataset.addFile(dataset.id.toString, theFile)
 					  if(!theFile.xmlMetadata.isEmpty){
-						  api.Datasets.index(dataset_id)
+						  Dataset.index(dataset_id)
 					  }
 					  
 					// TODO RK need to replace unknown with the server name and dataset type

@@ -51,6 +51,6 @@ abstract class FileService {
    * Store file metadata.
    */
   def storeFileMD(id: String, filename: String, contentType: Option[String], author: Identity): Option[File]
-  
-  def removeOldIntermediates()
+
+  def index(id: String)
 }

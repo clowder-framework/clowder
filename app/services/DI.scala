@@ -31,6 +31,7 @@ class ProdModule extends AbstractModule {
     bind(classOf[FileService]).to(classOf[MongoDBFileService])
     bind(classOf[QueryService]).to(classOf[QueryServiceFileSystemDB])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
+    bind(classOf[TagService]).to(classOf[MongoDBTagService])
   }
 }
 
@@ -43,5 +44,6 @@ class DevModule extends AbstractModule {
     bind(classOf[FileService]).to(classOf[MongoDBFileService])
     bind(classOf[QueryService]).to(classOf[QueryServiceFileSystemDB])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
+    bind(classOf[TagService]).to(classOf[MongoDBTagService])
   }
 }

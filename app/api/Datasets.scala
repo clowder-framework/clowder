@@ -6,29 +6,22 @@ package api
 import java.util.Date
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
-import models.Comment
-import models.Dataset
+import models._
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import play.api.libs.json.Json.toJson
+import play.api.libs.json.Json._
 import jsonutils.JsonUtil
 import scala.collection.mutable.ListBuffer
-import models.FileDAO
-import models.Extraction
-import services.ElasticsearchPlugin
+import services._
 import controllers.Previewers
-import models.File
 import play.api.libs.json.JsString
-import models.Collection
 import org.bson.types.ObjectId
 import play.api.Play.current
 import javax.inject.{ Singleton, Inject }
-import services.DatasetService
 import com.mongodb.casbah.Imports._
 import com.mongodb.WriteConcern
 import scala.util.parsing.json.JSONArray
-import models.PreviewDAO
 import org.json.JSONObject
 import Transformation.LidoToCidocConvertion
 import java.io.BufferedWriter
@@ -36,6 +29,21 @@ import java.io.FileWriter
 import play.api.libs.iteratee.Enumerator
 import java.io.FileInputStream
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.JsString
+import scala.Some
+import api.RequestWithUser
+import api.WithPermission
+import models.File
+import play.api.libs.json.JsString
+import scala.Some
+import api.RequestWithUser
+import api.WithPermission
+import models.File
+import play.api.libs.json.JsString
+import scala.Some
+import api.RequestWithUser
+import api.WithPermission
+import models.File
 
 
 /**
@@ -48,7 +56,7 @@ object ActivityFound extends Exception {}
 
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "Maniputate datasets")
 @Singleton
-class Datasets @Inject() (datasets: DatasetService) extends ApiController {
+class Datasets @Inject() (datasets: DatasetService, files: FileService) extends ApiController {
 
   /**
    * List all datasets.
@@ -96,7 +104,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
 		      	   Dataset.insert(d) match {
 		      	     case Some(id) => {
                        import play.api.Play.current
-                       api.Files.index(file_id)
+                       files.index(file_id)
                        if(!file.xmlMetadata.isEmpty){
                          val xmlToJSON = FileDAO.getXMLMetadataJSON(file_id)
                          Dataset.addXMLMetadata(id.toString, file_id, xmlToJSON)
@@ -114,18 +122,16 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
       	        case None => BadRequest(toJson("Bad file_id = " + file_id))
       	      }
       	   }.getOrElse {
-      		BadRequest(toJson("Missing parameter [file_id]"))
-      	  }
+      		  BadRequest(toJson("Missing parameter [file_id]"))
+      	   }
       	  }.getOrElse {
       		BadRequest(toJson("Missing parameter [description]"))
       	  }
-      }.getOrElse {
-        BadRequest(toJson("Missing parameter [description]"))
-      }
     }.getOrElse {
       BadRequest(toJson("Missing parameter [name]"))
     }
-    
+  }
+
   def attachExistingFile(dsId: String, fileId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateDatasets)) { request =>
     datasets.get(dsId) match {
       case Some(dataset) => {
@@ -134,7 +140,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
             val theFile = FileDAO.get(fileId).get
             if(!isInDataset(theFile,dataset)){
 	            Dataset.addFile(dsId, theFile)	            
-	            api.Files.index(fileId)
+	            files.index(fileId)
 	            if(!theFile.xmlMetadata.isEmpty){
 	            	index(dsId)
 		      	}	            
@@ -174,7 +180,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
             if(isInDataset(theFile,dataset)){
 	            //remove file from dataset
 	            Dataset.removeFile(dataset.id.toString, theFile.id.toString)
-	            api.Files.index(fileId)
+	            files.index(fileId)
 	            if(!theFile.xmlMetadata.isEmpty){
 	            	index(datasetId)
 		      	}
@@ -211,7 +217,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
   def getInCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowCollection)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
-        val list = for (dataset <- Dataset.listInsideCollection(collectionId)) yield jsonDataset(dataset)
+        val list = for (dataset <- datasets.listInsideCollection(collectionId)) yield jsonDataset(dataset)
         Ok(toJson(list))
       }
       case None => {
@@ -272,41 +278,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
   }
 
   def index(id: String) {
-    datasets.get(id) match {
-      case Some(dataset) => {
-        var tagListBuffer = new ListBuffer[String]()
-        
-        for (tag <- dataset.tags){
-          tagListBuffer += tag.name
-        }          
-        
-        val tagsJson = new JSONArray(tagListBuffer.toList)
-
-        Logger.debug("tagStr=" + tagsJson);
-
-        val comments = for(comment <- Comment.findCommentsByDatasetId(id,false)) yield {
-          comment.text
-      }
-        val commentJson = new JSONArray(comments)
-
-        Logger.debug("commentStr=" + commentJson.toString())
-        
-        val usrMd = Dataset.getUserMetadataJSON(id)
-        Logger.debug("usrmd=" + usrMd)
-        
-        val techMd = Dataset.getTechnicalMetadataJSON(id)
-        Logger.debug("techmd=" + techMd)
-        
-        val xmlMd = Dataset.getXMLMetadataJSON(id)
-	    Logger.debug("xmlmd=" + xmlMd)
-
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", "dataset", id,
-            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
-        }
-      }
-      case None => Logger.error("Dataset not found: " + id)
-    }
+    Dataset.index(id)
   }
 
   // ---------- Tags related code starts ------------------
@@ -351,7 +323,7 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
-    Files.addTagsHelper(TagCheck_Dataset, id, request)
+    addTagsHelper(TagCheck_Dataset, id, request)
   }
 
   /**
@@ -359,7 +331,162 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
-    Files.removeTagsHelper(TagCheck_Dataset, id, request)
+    removeTagsHelper(TagCheck_Dataset, id, request)
+  }
+
+  /*
+ *  Helper function to handle adding and removing tags for files/datasets/sections.
+ *  Input parameters:
+ *      obj_type: one of the three TagCheckObjType's: TagCheck_File, TagCheck_Dataset or TagCheck_Section
+ *      op_type:  one of the two strings "add", "remove"
+ *      id:       the id in the original addTags call
+ *      request:  the request in the original addTags call
+ *  Return type:
+ *      play.api.mvc.SimpleResult[JsValue]
+ *      in the form of Ok, NotFound and BadRequest
+ *      where: Ok contains the JsObject: "status" -> "success", the other two contain a JsString,
+ *      which contains the cause of the error, such as "No 'tags' specified", and
+ *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
+ */
+  def addTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) = {
+    val tagCheck = checkErrorsForTag(obj_type, id, request)
+
+    val error_str = tagCheck.error_str
+    val not_found = tagCheck.not_found
+    val userOpt = tagCheck.userOpt
+    val extractorOpt = tagCheck.extractorOpt
+    val tags = tagCheck.tags
+
+    // Now the real work: adding the tags.
+    if ("" == error_str) {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
+      (obj_type) match {
+        case TagCheck_File => FileDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Dataset =>
+          Dataset.addTags(id, userOpt, extractorOpt, tagsCleaned); Dataset.index(id)
+        case TagCheck_Section => SectionDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+      }
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(error_str)
+      if (not_found) {
+        NotFound(toJson(error_str))
+      } else {
+        BadRequest(toJson(error_str))
+      }
+    }
+  }
+
+  def removeTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) = {
+    val tagCheck = checkErrorsForTag(obj_type, id, request)
+
+    val error_str = tagCheck.error_str
+    val not_found = tagCheck.not_found
+    val userOpt = tagCheck.userOpt
+    val extractorOpt = tagCheck.extractorOpt
+    val tags = tagCheck.tags
+
+    // Now the real work: removing the tags.
+    if ("" == error_str) {
+      // Clean up leading, trailing and multiple contiguous white spaces.
+      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
+      (obj_type) match {
+        case TagCheck_File => FileDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Dataset => Dataset.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => SectionDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+      }
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(error_str)
+      if (not_found) {
+        NotFound(toJson(error_str))
+      } else {
+        BadRequest(toJson(error_str))
+      }
+    }
+  }
+
+  // TODO: move helper methods to standalone service
+  val USERID_ANONYMOUS = "anonymous"
+  // Helper class and function to check for error conditions for tags.
+  class TagCheck {
+    var error_str: String = ""
+    var not_found: Boolean = false
+    var userOpt: Option[String] = None
+    var extractorOpt: Option[String] = None
+    var tags: Option[List[String]] = None
+  }
+
+ /*
+ *  Helper function to check for error conditions.
+ *  Input parameters:
+ *      obj_type: one of the three TagCheckObjType's: TagCheck_File, TagCheck_Dataset or TagCheck_Section
+ *      id:       the id in the original addTags call
+ *      request:  the request in the original addTags call
+ *  Returns:
+ *      tagCheck: a TagCheck object, containing the error checking results:
+ *
+ *      If error_str == "", then no error is found;
+ *      otherwise, it contains the cause of the error.
+ *      not_found is one of the error conditions, meaning the object with
+ *      the given id is not found in the DB.
+ *      userOpt, extractorOpt and tags are set according to the request's content,
+ *      and will remain None if they are not specified in the request.
+ *      We change userOpt from its default None value, only if the userId
+ *      is not USERID_ANONYMOUS.  The use case for this is the extractors
+ *      posting to the REST API -- they'll use the commKey to post, and the original
+ *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
+ *      record the extractor_id, but omit the userId field, so we leave userOpt as None.
+ */
+  def checkErrorsForTag(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) : TagCheck = {
+    val userObj = request.user
+    Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
+      + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
+    val userId = userObj.get.identityId.userId
+    if (USERID_ANONYMOUS == userId) {
+      Logger.debug("checkErrorsForTag: The user id is \"anonymous\".")
+    }
+
+    var userOpt: Option[String] = None
+    var extractorOpt: Option[String] = None
+    var error_str = ""
+    var not_found = false
+    val tags = request.body.\("tags").asOpt[List[String]]
+
+    if (tags.isEmpty) {
+      error_str = "No \"tags\" specified, request.body: " + request.body.toString
+    } else if (!ObjectId.isValid(id)) {
+      error_str = "The given id " + id + " is not a valid ObjectId."
+    } else {
+      obj_type match {
+        case TagCheck_File => not_found = files.getFile(id).isEmpty
+        case TagCheck_Dataset => not_found = datasets.get(id).isEmpty
+        case TagCheck_Section => not_found = SectionDAO.findOneById(new ObjectId(id)).isEmpty
+        case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
+      }
+      if (not_found) {
+        error_str = "The " + obj_type + " with id " + id + " is not found."
+      }
+    }
+    if ("" == error_str) {
+      if (USERID_ANONYMOUS == userId) {
+        val eid = request.body.\("extractor_id").asOpt[String]
+        eid match {
+          case Some(extractor_id) => extractorOpt = eid
+          case None => error_str = "No \"extractor_id\" specified, request.body: " + request.body.toString
+        }
+      } else {
+        userOpt = Option(userId)
+      }
+    }
+    val tagCheck = new TagCheck
+    tagCheck.error_str = error_str
+    tagCheck.not_found = not_found
+    tagCheck.userOpt = userOpt
+    tagCheck.extractorOpt = extractorOpt
+    tagCheck.tags = tags
+    tagCheck
   }
 
   /**
@@ -411,38 +538,23 @@ class Datasets @Inject() (datasets: DatasetService) extends ApiController {
   /**
    * List datasets satisfying a user metadata search tree.
    */
-  def searchDatasetsUserMetadata = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { request =>
-    Logger.debug("Searching datasets' user metadata for search tree.")
-    var searchTree = JsonUtil.parseJSON(Json.stringify(request.body)).asInstanceOf[java.util.LinkedHashMap[String, Any]]
-    var datasetsSatisfying = List[Dataset]()
-    for (dataset <- datasets.listDatasetsChronoReverse) {
-      if (Dataset.searchUserMetadata(dataset.id.toString(), searchTree)) {
-        datasetsSatisfying = dataset :: datasetsSatisfying
-      }
-    }
-    datasetsSatisfying = datasetsSatisfying.reverse
   def searchDatasetsUserMetadata = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { request =>
-      Logger.debug("Searching datasets' user metadata for search tree.")
-      
-      var searchJSON = Json.stringify(request.body)
-      Logger.debug("thejsson: "+searchJSON)
-      var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
-      
-      var searchQuery = Dataset.searchUserMetadataFormulateQuery(searchTree)
-      
-      //searchQuery = searchQuery.reverse
+    Logger.debug("Searching datasets' user metadata for search tree.")
+
+    var searchJSON = Json.stringify(request.body)
+    Logger.debug("thejsson: "+searchJSON)
+    var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
+
+    var searchQuery = Dataset.searchUserMetadataFormulateQuery(searchTree)
+
+    //searchQuery = searchQuery.reverse
 
     Logger.debug("Search completed. Returning datasets list.")
 
-    val list = for (dataset <- datasetsSatisfying) yield jsonDataset(dataset)
+    val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
     Logger.debug("thelist: " + toJson(list))
     Ok(toJson(list))
   }
-
-      val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
-      Logger.debug("thelist: " + toJson(list))
-      Ok(toJson(list))
-    }
   
   /**
    * List datasets satisfying a general metadata search tree.
