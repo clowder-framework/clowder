@@ -526,17 +526,17 @@
 								        	i++;
 								        if(i <= tableLength)	        
 									        $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
 									        		);
 								        else if(tableLength > 0)
 								        	$("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
 									        		);
 								        else{
 								        	if($("#datasTable tbody").length == 0)
 								        		$("#datasTable").append("<tbody></tbody>");
 								        	$("#datasTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
 									        		);
 								        	}
 									});	
