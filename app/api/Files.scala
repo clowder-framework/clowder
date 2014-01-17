@@ -289,20 +289,20 @@ object Files extends ApiController {
 	              current.plugin[ElasticsearchPlugin].foreach{
 		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
 		            }
-	            }
-	            else{
-		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
-		            }
-	            }
-	            
-	            //add file to RDF triple store if triple store is used
+	              
+	              //add file to RDF triple store if triple store is used
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		             case "yes" => {
 		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
 		             }
 		             case _ => {}
 	             }
+	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            }
+	            }
 	            
 	            Ok(toJson(Map("id"->id)))   
 	          }
@@ -467,6 +467,7 @@ object Files extends ApiController {
               Logger.info("Uploading Completed")
               
               //add file to RDF triple store if triple store is used
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 			             case "yes" => {
 			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
@@ -474,6 +475,7 @@ object Files extends ApiController {
 			             }
 			             case _ => {}
 		             }
+              }
 
               //sending success message
               Ok(toJson(Map("id" -> id)))
@@ -715,7 +717,7 @@ object Files extends ApiController {
 	      play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		      case "yes" => {
 		          FileDAO.setUserMetadataWasModified(id, true)
-		    	  //modifyRDFUserMetadata(id)
+		    	  modifyRDFUserMetadata(id)
 		      }
 		      case _ => {}
 	      }
@@ -731,7 +733,7 @@ object Files extends ApiController {
   }
   
   def modifyRDFUserMetadata(id: String, mappingNumber: String="1") = {
-    services.Services.rdfSPARQLService.removeFileMetadata(id)
+    services.Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
     Services.files.getFile(id) match { 
 	            case Some(file) => {
 	              val theJSON = FileDAO.getUserMetadataJSON(id)
@@ -810,7 +812,7 @@ object Files extends ApiController {
 					}
 					fileWriter.close()
 	              
-					services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected)
+					services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected, "file")
 					resultFileConnected.delete()
 					
 					services.Services.rdfSPARQLService.addFileToGraph(id, "rdfCommunityGraphName")
@@ -1168,14 +1170,18 @@ object Files extends ApiController {
     Services.files.getFile(id)  match {
       case Some(file) => {
         FileDAO.removeFile(id)
-        
+        Logger.debug(file.filename)
         //remove file from RDF triple store if triple store is used
-        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-	        case "yes" => {
-	            Services.rdfSPARQLService.removeFileFromGraph(id)
+	        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		        case "yes" => {
+		          if(file.filename.endsWith(".xml")){
+		            Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfXMLGraphName")
+		          }
+		            Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
+		        }
+		        case _ => {}
 	        }
-	        case _ => {}
-        }
+        
                 
         Ok(toJson(Map("status"->"success")))
       }
