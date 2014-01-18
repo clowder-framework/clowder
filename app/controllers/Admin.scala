@@ -214,7 +214,10 @@ object Admin extends SecuredController {
             for {
               indexList <- indexListResponse
             } yield {
-              Ok(indexList.json)
+              if(indexList==null)
+                Ok("No Index")
+                else
+                 Ok(indexList.json)
             }
 
           } //case some
