@@ -208,16 +208,21 @@ object Admin extends SecuredController {
         current.plugin[VersusPlugin] match {
 
           case Some(plugin) => {
-
+           Logger.debug("::::Inside getIndexes()::::")
             var indexListResponse = plugin.getIndexes()
 
             for {
               indexList <- indexListResponse
             } yield {
-              if(indexList==null)
+             if(indexList.body.isEmpty())
+              { 
+                Logger.debug(":::::::::::No:indexList.json")
                 Ok("No Index")
-                else
-                 Ok(indexList.json)
+                
+              }
+                else{
+                  Ok(indexList.json)
+                }
             }
 
           } //case some
