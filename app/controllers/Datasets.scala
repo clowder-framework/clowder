@@ -206,7 +206,6 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
     user match {
       case Some(identity) => {
         datasetForm.bindFromRequest.fold(
-
           errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
 	      success = dataset => {
           request.body.file("file").map {
@@ -389,14 +388,14 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
                 current.plugin[RabbitmqPlugin].foreach {
                   _.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))
                 }
+                var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
+				            Logger.debug("Inside Dataset: Extraction Id : "+ extractJobId)
                 // redirect to dataset page
                 Redirect(routes.Datasets.dataset(dt.id.toString))
               }
             }
           }
         }
-
-					    	
 		)
       }
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")

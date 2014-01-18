@@ -230,10 +230,11 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	            }
 	            
 	          var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
-	             Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
+	          
+	          Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
 	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-	             //current.plugin[VersusPlugin].foreach{_.build()}
+	            
 	              
 	                        
 	            // redirect to file page]

@@ -450,6 +450,7 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
 
             files.getFile(id) match {
               case Some(file) => {
+                //Ok(views.html.contentbasedSearchResultsVideo3(keysArray, file.filename, id, yFinal.size, yFinal))
                 Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {

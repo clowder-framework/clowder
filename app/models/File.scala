@@ -21,6 +21,13 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileSystems
 
+import scala.util.parsing.json.JSON
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsArray
+
+
 /**
  * Uploaded files.
  * 
@@ -160,14 +167,84 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
       }
     }
   }
+  
 
-  def addVersusMetadata(id: String, json: String) {
-
-    Logger.debug("Adding metadata to file " + id)
-    val doc = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
+//add versus descriptors to the metadata 
+  
+def addVersusMetadata(id: String, json: JsValue) {
+   
+  Logger.debug("Adding metadata to file " + id+" : "+json)
+   // Logger.debug("Parsed Json:   "+ com.mongodb.util.JSON.parse(json))
+   // val doc = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
+  
+    var jsonlist=json.as[List[JsObject]] // read json as list of JSON objects
+    
+   var addmd= jsonlist.map{
+     list=> 
+       Logger.debug("extraction_id="+list\("extraction_id"))
+         Logger.debug("adapter_name="+ list\("adapter_name"))
+         Logger.debug("extractor_name="+ list\("extractor_name"))
+         Logger.debug("descriptor="+list\("descriptor"))
+         (list\("extraction_id"),list\("adapter_name"),list\("extractor_name"),list\("descriptor"))
+  }  // to access into the list of json objects and convert as list of tuples
+    
+   
+    val doc=com.mongodb.util.JSON.parse(json.toString)
+      
     FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
       case Some(x) => {
-        FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
+         
+         x.getAs[DBObject]("metadata") match {
+              case None=>{
+                Logger.debug("No metadata field found: Adding meta data field")
+                FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata.versus_descriptors" ->doc), false, false, WriteConcern.Safe)  
+              
+              }
+              case Some(map)=> {
+                
+                Logger.debug("metadata found ")
+                
+                val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+	    		Logger.debug("retmd: "+ returnedMetadata)
+	    		
+	    		val retmd=Json.toJson(returnedMetadata)
+	    		var ksize=map.keySet().size()
+	    		Logger.debug("Contains Keys versus descriptors: "+map.containsKey("versus_descriptors"))
+	    		
+	    		//Logger.debug("Key Set Length: "+map.keySet().size().toString)
+	    		//Logger.debug("Key Set map : "+map.keySet().toString)
+	    			    			    		
+	    		//Logger.debug("Map Versus Descriptors: "+Json.parse(returnedMetadata) \("versus_descriptors_0"))
+	    		
+	    		val listd=Json.parse(returnedMetadata) \("versus_descriptors")
+	    		
+	    	var mdList=	listd.as[List[JsObject]].map{
+                  md=>	Logger.debug("extraction_id="+md\("extraction_id"))
+                		Logger.debug("adapter_name="+ md\("adapter_name"))
+                		Logger.debug("extractor_name="+ md\("extractor_name"))
+                		Logger.debug("descriptor="+md\("descriptor"))
+                		(md\("extraction_id"),md\("adapter_name"),md\("extractor_name"),md\("descriptor"))
+                }
+                
+                val versusmd=mdList++addmd
+               
+                  var versusmdList=for((id,a,e,d)<-versusmd) yield
+                       Json.obj("extraction_id"->id,"adapter_name"->a,"extractor_name"->e,"descriptor"->d)
+                  
+                val jobj=Json.obj("versus_descriptors"->getJsonArray(versusmdList))
+                
+                Logger.debug("versus mdList:  "+jobj)
+	    		
+                //map+= ("versus_descriptors_"+ksize.toString->doc)
+               	//var union=for{z<-map} yield {z}
+	    		
+	    		//val union = map.asInstanceOf[DBObject] ++ MongoDBObject("versus"->doc)
+                
+                FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> com.mongodb.util.JSON.parse(jobj.toString)), false, false, WriteConcern.Safe)
+                               
+              }
+            }
+           
       }
       case None => {
         Logger.error("Error getting file" + id)
@@ -176,7 +253,12 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     }
   }
 
-  
+//convert list of JsObject to JsArray
+def getJsonArray(list: List[JsObject]): JsArray = {
+    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
+  }
+
+
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]

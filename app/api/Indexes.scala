@@ -19,6 +19,7 @@ import models.PreviewDAO
 import play.api.Play.current
 import services.RabbitmqPlugin
 import services.ExtractorMessage
+import services.VersusPlugin
 
 /**
  * Index data.
@@ -44,6 +45,8 @@ object Indexes extends Controller with ApiController {
 	            val id = p.id.toString
 	            current.plugin[RabbitmqPlugin].foreach{
 	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, "", ""))}
+	            var fileType = p.contentType
+	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id,fileType) }
 	            Ok(toJson("success"))
       	      case None => BadRequest(toJson("Missing parameter [preview_id]"))
             }

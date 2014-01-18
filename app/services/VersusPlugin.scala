@@ -36,7 +36,7 @@ import controllers.routes
 import java.text.DecimalFormat
 import scala.collection.mutable.ArrayBuffer
 import models.FileDAO
-
+import scala.collection.mutable.HashMap
 /** 
  * Versus Plugin
  * 
@@ -51,6 +51,7 @@ class VersusPlugin(application:Application) extends Plugin{
     Logger.debug("Starting Versus Plugin")
   }
   
+
 
   def extract(fileid: String): scala.concurrent.Future[play.api.libs.ws.Response] = {
 
@@ -70,8 +71,14 @@ class VersusPlugin(application:Application) extends Plugin{
           response =>
             // Logger.debug("RESPONSE FROM EXTRACT****:" +response.body)
             files.getFile(fileid) match {
+
               case Some(file) => {
-                FileDAO.addVersusMetadata(fileid, response.json.toString)
+              //  FileDAO.addVersusMetadata(fileid, response.json.toString)
+               
+                val list=response.json\("versus_descriptors")
+                
+                FileDAO.addVersusMetadata(fileid,list)
+               
                 Logger.debug("GET META DATA:*****")
                 FileDAO.getMetadata(fileid).map {
                   md =>
@@ -96,6 +103,7 @@ class VersusPlugin(application:Application) extends Plugin{
     }
     adapterList
   }
+  
   def getExtractors(): scala.concurrent.Future[play.api.libs.ws.Response] = {
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
@@ -106,6 +114,7 @@ class VersusPlugin(application:Application) extends Plugin{
     }
     extractorList
   }
+  
   def getMeasures(): scala.concurrent.Future[play.api.libs.ws.Response] = {
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
@@ -116,6 +125,7 @@ class VersusPlugin(application:Application) extends Plugin{
     }
     measureList
   }
+  
   def getIndexers(): scala.concurrent.Future[play.api.libs.ws.Response] = {
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
@@ -222,6 +232,51 @@ class VersusPlugin(application:Application) extends Plugin{
     }
 
   }
+  def indexPreview(id: String, fileType: String) {
+
+    val configuration = play.api.Play.configuration
+    val client = configuration.getString("versus.client").getOrElse("")
+    val indexId = configuration.getString("versus.index").getOrElse("")
+
+    val urlf = client + "/api/previews/" + id + "?key=" + configuration.getString("commKey").get
+    val host = configuration.getString("versus.host").getOrElse("")
+
+    var indexurl = host + "/index/" + indexId + "/add"
+    Logger.debug("VersusPlugin: index method indexurl: " + indexurl);
+    val indexList = getIndexes()
+    var k = 0
+    indexList.map {
+      response =>
+        //Logger.debug("response.body=" + response.body)
+        val json: JsValue = Json.parse(response.body)
+        Logger.debug("index(): json=" + json);
+        val list = json.as[Seq[models.IndexList.IndexList]]
+        val len = list.length
+        val indexes = new Array[(String, String)](len)
+
+        list.map {
+          index =>
+            Logger.debug("indexID=" + index.indexID + " MIMEType=" + index.MIMEtype + " fileType=" + fileType);
+            indexes.update(k, (index.indexID, index.MIMEtype))
+            val typeA = fileType.split("/")
+            val typeB = index.MIMEtype.split("/")
+            // if (fileType.equals(index.MIMEtype)) {
+            if (typeA(0).equals(typeB(0)) || typeB(0).equals("*")) {
+              indexurl = host + "/index/" + index.indexID + "/add"
+              WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map {
+                res =>
+                  Logger.debug("response from Adding file to Index " + index.indexID + "= " + res.body)
+
+              } //WS map end
+            } //if fileType end
+        }
+
+    }
+
+  }
+  
+  
+  
   def buildIndex(indexId: String): scala.concurrent.Future[play.api.libs.ws.Response] = {
     val configuration = play.api.Play.configuration
     //val indexId=configuration.getString("versus.index").getOrElse("")
@@ -237,6 +292,7 @@ class VersusPlugin(application:Application) extends Plugin{
 
     buildResponse
   }
+  
 
   def queryIndex(id: String, indxId: String): scala.concurrent.Future[(String, scala.collection.mutable.ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])] = {
     val configuration = play.api.Play.configuration
@@ -260,21 +316,53 @@ class VersusPlugin(application:Application) extends Plugin{
         // val ar = new Array[String](len)
         val se = new Array[(String, String, Double, String)](len)
 
+       //var resultArray = new ArrayBuffer[(String, String, Double, String)]()
+       var resultArray = new ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]()
+       import scala.collection.immutable.Map
+        var pre= new HashMap[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]]
+        var i = 0
+        similarity_value.map {
+          result =>
+            val end = result.docID.lastIndexOf("?")
+            val begin = result.docID.lastIndexOf("/");
+            val subStr = result.docID.substring(begin + 1, end);
+            Logger.debug("subStr="+ subStr)
+            //    val a = result.docID.split("/")
+            //  val n = a.length - 2
+            
+          //-----  
+            
+          /*  PreviewDAO.getBlob(subStr) match{
+              case Some(b)=>{
+                Logger.debug("Preview id : "+ subStr+" filename : "+b._2)
+                //   val previewsFromDB = PreviewDAO.findByFileId(file.id)
+                val previewers = Previewers.findPreviewers
+                //Logger.info("Number of previews " + previews.length);
+              
+                val previews=pre
+                ///Previews ends.........
 
-        //var resultArray = new ArrayBuffer[(String, String, Double, String)]()
+                //resultArray += ((subStr, result.docID, result.proximity, file.filename))
+                //resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                val formatter = new DecimalFormat("#.###")
+                // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                val proxvalue = formatter.format(result.proximity).toDouble
+                resultArray += ((subStr, result.docID, proxvalue, b._2, previews))
 
-        var resultArray = new ArrayBuffer[(String, String, Double, String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]()
-		        var i=0
-		        similarity_value.map{
-		        	 result=>
-		        	   val end=result.docID.lastIndexOf("?")
-		        	   val begin=result.docID.lastIndexOf("/");
-		        	   val subStr=result.docID.substring(begin+1, end);
-        //    val a = result.docID.split("/")
-          //  val n = a.length - 2
-		        	  files.getFile(subStr) match{
-		        	     
-		        	  case Some(file)=>{
+                //     ar.update(i, file.filename)
+                //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
+                Logger.debug("IndxId=" + indexId + " resultArray=(" + subStr + " , " + result.proximity + ", " + b._2 + ")\n")
+                i = i + 1
+              }
+                
+              
+                
+              case None=>None
+            }*/
+            
+          //-----------------------  
+            files.getFile(subStr) match {
+               	  case Some(file)=>{
 		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
 
                 //Previews..............
@@ -396,6 +484,7 @@ class VersusPlugin(application:Application) extends Plugin{
               case None => None
 
             }
+            
 
 
         } // End of similarity map
