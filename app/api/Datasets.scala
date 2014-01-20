@@ -626,5 +626,21 @@ object Datasets extends ApiController {
       case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
     }
   }
+  def getXMLMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        Ok(Dataset.getXMLMetadataJSON(id))
+      }
+      case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
+    }
+  }
+  def getUserMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
+    Services.datasets.get(id)  match {
+      case Some(dataset) => {
+        Ok(Dataset.getUserMetadataJSON(id))
+      }
+      case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
+    }
+  }
   
 }

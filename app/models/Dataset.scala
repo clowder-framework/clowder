@@ -144,7 +144,8 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
       case Some(x) => {
         x.getAs[DBObject]("datasetXmlMetadata") match{
           case Some(y)=>{
-	    	val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("datasetXmlMetadata").get)
+	    	var returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("datasetXmlMetadata").get)
+	    	returnedMetadata = returnedMetadata.replaceAll("\"_typeHint\"[ ]*:[ ]*\"models.DatasetXMLMetadata\"[ ]*,",  ""  )
 	    		    	Logger.debug("retmd: "+ returnedMetadata)
 			returnedMetadata
           }

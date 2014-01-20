@@ -1031,6 +1031,22 @@ object Files extends ApiController {
       }
       case None => {Logger.error("Error finding file" + id); InternalServerError}      
     }
+  }  
+  def getXMLMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        Ok(FileDAO.getXMLMetadataJSON(id))
+      }
+      case None => {Logger.error("Error finding file" + id); InternalServerError}      
+    }
+  }
+  def getUserMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    Services.files.getFile(id)  match {
+      case Some(file) => {
+        Ok(FileDAO.getUserMetadataJSON(id))
+      }
+      case None => {Logger.error("Error finding file" + id); InternalServerError}      
+    }
   }
   
   
