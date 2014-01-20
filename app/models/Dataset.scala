@@ -258,6 +258,14 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     return dsList
   }
   
+  def setUserMetadataWasModified(id: String, wasModified: Boolean){
+	  dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+  }
+  
+  def findMetadataChangedDatasets(): List[Dataset] = {
+		  dao.find(MongoDBObject("userMetadataWasModified" -> true)).toList
+  }
+  
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset] = {
     Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
     var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
