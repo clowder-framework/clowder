@@ -1,30 +1,16 @@
-/**
- * Geostreaming test.
- *
- * @author Luigi Marini
- *
- */
 import org.specs2.mutable._
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.libs.ws.WS
 import play.api.Logger
 
-class GeostreamsSpec extends Specification {
-
-  val myPublicAddress = "localhost"
-
-  "The 'Hello world' string" should {
-    "contain 11 characters" in {
-      "Hello world" must have size (11)
-    }
-    "start with 'Hello'" in {
-      "Hello world" must startWith("Hello")
-    }
-    "end with 'world'" in {
-      "Hello world" must endWith("world")
-    }
-  }
+/**
+ * Geostreaming test.
+ *
+ * @author Luigi Marini
+ *
+ */
+class GeostreamsSpec extends PlaySpecification {
 
   "search sensors" in new WithServer {
     val sensors = await(WS.url("http://localhost:19001/api/geostreams/sensors").get())

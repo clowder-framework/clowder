@@ -22,7 +22,6 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileSystems
 import services.Services
 
-
 /**
  * Uploaded files.
  * 
@@ -40,7 +39,7 @@ case class File(
     showPreviews: String = "DatasetLevel",
     sections: List[Section] = List.empty,
     previews: List[Preview] = List.empty,
-    tags: List[String] = List.empty,
+    tags: List[Tag] = List.empty,
     metadata: List[Map[String, Any]] = List.empty,
 	thumbnail_id: Option[String] = None,
 	isIntermediate: Option[Boolean] = None,
@@ -179,17 +178,44 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   
 
   def findByTag(tag: String): List[File] = {
-    dao.find(MongoDBObject("tags" -> tag)).toList
+    dao.find(MongoDBObject("tags.name" -> tag)).toList
   }
   
   def findIntermediates(): List[File] = {
     dao.find(MongoDBObject("isIntermediate" -> true)).toList
   }
 
- 
-  def tag(id: String, tag: String) { 
-    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),  $addToSet("tags" -> tag), false, false, WriteConcern.Safe)
+  // ---------- Tags related code starts ------------------
+  // Input validation is done in api.Files, so no need to check again.
+  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+    Logger.debug("Adding tags to file " + id + " : " + tags)
+    val file = Services.files.getFile(id).get
+    val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val createdDate = new Date
+    tags.foreach(tag => {
+      // Only add tags with new values.
+      if (!existingTags.contains(tag)) {
+        val tagObj = Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+      }
+    })
   }
+
+  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+    Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+    val file = Services.files.getFile(id).get
+    val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
+    // Only remove existing tags.
+    tags.intersect(existingTags).map { tag =>
+      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeAllTags(id: String) {
+    dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+  }
+  // ---------- Tags related code ends ------------------
 
   def comment(id: String, comment: Comment) {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)

@@ -18,8 +18,9 @@ import services.MongoSalatPlugin
 case class Tag (
   
   id: ObjectId = new ObjectId,
-  name: String = "N/A",
-  userId: String,
+  name: String,
+  userId: Option[String],
+  extractor_id: Option[String],
   created: Date
 )
 
@@ -29,6 +30,5 @@ object Tag extends ModelCompanion[Tag, ObjectId]{
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Tag, ObjectId](collection = x.collection("tags")) {}
   }
-  
-  
+
 }

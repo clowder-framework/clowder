@@ -825,11 +825,11 @@
 					}
   				    @dataset.files.map { file =>
 						@file.tags.map { tag =>
-						  <li><a href="@routes.Tags.search(tag)">@tag [File]</a></li>
+						  <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
 						}
 				    	@file.sections.map { section =>
 							@section.tags.map { tag =>
-							  <li><a href="@routes.Tags.search(tag)">@tag [Section]</a></li>
+							  <li><a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a></li>
 							}
 						}
 				   }
@@ -907,16 +907,16 @@
 	
 					     if (tag !== "" && isTagPresent != true) {
 					     	 console.log("submitting tag " + tag);
-					     	var request = jsRoutes.api.Datasets.tag('@dataset.id').ajax({
-					     		data: JSON.stringify({"tag":tag}),
+					     	var request = jsRoutes.api.Datasets.addTags('@dataset.id').ajax({
+					     		data: JSON.stringify({"tags":[tag]}),
 						       type: 'POST',
 						       contentType: "application/json",
 						     });
 						     
 						     request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);
-						        var url = "../tags/search/" + tag;
-					        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
+						        var url = "../tags/search?tag=" + tag;
+						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
 						        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
      						$newTag.find(".glyphicon-remove").click(removeTag);*/     						
 						        $newTag.hover(removeIconMouseIn,removeIconMouseOut);

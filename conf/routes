@@ -46,7 +46,7 @@ POST	/collection/submit				  controllers.Collections.submit
 GET		/collection/:id					  controllers.Collections.collection(id)	
 
 # Tags
-GET     /tags/search/:tag		          controllers.Tags.search(tag)
+GET     /tags/search                      controllers.Tags.search(tag)
 
 # Authentication
 GET     /loginTest                        controllers.Authentication.login
@@ -144,7 +144,12 @@ GET     /api/files/:id/technicalmetadatajson           			api.Files.getTechnical
 GET     /api/files/:id/xmlmetadatajson           				api.Files.getXMLMetadataJSON(id)
 GET     /api/files/:id/usermetadatajson           				api.Files.getUserMetadataJSON(id)
 POST    /api/files/:id/comment									api.Files.comment(id)
-POST    /api/files/:id/tag										api.Files.tag(id)
+
+GET     /api/files/:id/tags                                     api.Files.getTags(id)
+POST    /api/files/:id/tags                                     api.Files.addTags(id)
+POST    /api/files/:id/tags/remove                              api.Files.removeTags(id)
+POST    /api/files/:id/tags/remove_all                          api.Files.removeAllTags(id)
+
 POST    /api/files/:id/previews/:p_id     						api.Files.attachPreview(id, p_id)
 GET		/api/files/:id/listpreviews		  						api.Files.filePreviewsList(id)
 GET		/api/files/:id/getPreviews								api.Files.getPreviews(id)
@@ -180,8 +185,13 @@ GET     /api/datasets/:id/xmlmetadatajson           				api.Datasets.getXMLMetad
 GET     /api/datasets/:id/usermetadatajson           				api.Datasets.getUserMetadataJSON(id)
 GET 	/api/datasets/:id/listFiles		 							api.Datasets.datasetFilesList(id)
 POST    /api/datasets/:id/comment									api.Datasets.comment(id)
-POST    /api/datasets/:id/tag										api.Datasets.tag(id)
+
 POST 	/api/datasets/:id/removeTag 								api.Datasets.removeTag(id)
+GET     /api/datasets/:id/tags                                  api.Datasets.getTags(id)
+POST    /api/datasets/:id/tags                                  api.Datasets.addTags(id)
+POST    /api/datasets/:id/tags/remove                           api.Datasets.removeTags(id)
+POST    /api/datasets/:id/tags/remove_all                       api.Datasets.removeAllTags(id)
+
 GET		/api/datasets/:id/isBeingProcessed							api.Datasets.isBeingProcessed(id)
 GET		/api/datasets/:id/getPreviews								api.Datasets.getPreviews(id)
 POST	/api/datasets/:ds_id/files/:file_id							api.Datasets.attachExistingFile(ds_id,file_id)
@@ -202,10 +212,14 @@ POST    /api/previews                     											api.Previews.upload(iipKey:
 POST    /api/indexes                      api.Indexes.index
 POST    /api/indexes/features             api.Indexes.features
 
-POST    /api/sections                     api.Sections.add
-GET     /api/sections/:id                 api.Sections.get(id)
-POST    /api/sections/:id/tags            api.Sections.tag(id)
-POST    /api/sections/:id/comments        api.Sections.comment(id)
+POST    /api/sections                                           api.Sections.add
+GET     /api/sections/:id                                       api.Sections.get(id)
+POST    /api/sections/:id/comments                              api.Sections.comment(id)
+
+GET     /api/sections/:id/tags                                  api.Sections.getTags(id)
+POST    /api/sections/:id/tags                                  api.Sections.addTags(id)
+POST    /api/sections/:id/tags/remove                           api.Sections.removeTags(id)
+POST    /api/sections/:id/tags/remove_all                       api.Sections.removeAllTags(id)
 
 # geostreaming
 

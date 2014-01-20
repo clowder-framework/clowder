@@ -8,6 +8,7 @@ import models.Dataset
 import play.api.mvc.Action
 import models.File
 import models.FileDAO
+import models.SectionDAO
 import api.WithPermission
 import api.Permission
 import services.ElasticsearchPlugin
@@ -21,10 +22,14 @@ import scala.util.parsing.json.JSONArray
  */
 object Tags extends SecuredController {
 
-  def search(tag: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
-    val datasets = Dataset.findByTag(tag)
-    val files = FileDAO.findByTag(tag)
-//    Logger.debug("Search by tag " + tag + " returned " + datasets.length)
-    Ok(views.html.searchByTag(tag, datasets, files))
+  def search(tag: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+    // Clean up leading, trailing and multiple contiguous white spaces.
+    val tagCleaned = tag.trim().replaceAll("\\s+", " ")
+
+    val datasets = Dataset.findByTag(tagCleaned)
+    val files    = FileDAO.findByTag(tagCleaned)
+    val sections = SectionDAO.findByTag(tagCleaned)
+    //    Logger.debug("Search by tag " + tag + " returned " + datasets.length)
+    Ok(views.html.searchByTag(tag, datasets, files, sections))
   }
 }

@@ -458,6 +458,35 @@ object Datasets extends ApiController {
     }
   }
 
+  // ---------- Tags related code starts ------------------
+  /**
+   *  REST endpoint: GET: get the tag data associated with this section.
+   *  Returns a JSON object of multiple fields.
+   *  One returned field is "tags", containing a list of string values.
+   */
+  @ApiOperation(value = "Get the tags associated with this dataset", notes = "Returns a JSON object of multiple fields", responseClass = "None", httpMethod = "GET")
+  def getTags(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+    Logger.info("Getting tags for dataset with id " + id)
+    /* Found in testing: given an invalid ObjectId, a runtime exception
+     * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
+     */
+    if (ObjectId.isValid(id)) {
+      Services.datasets.get(id) match {
+        case Some(dataset) =>
+          Ok(Json.obj("id" -> dataset.id.toString, "name" -> dataset.name, "tags" -> Json.toJson(dataset.tags.map(_.name))))
+        case None => {
+          Logger.error("The dataset with id " + id + " is not found.")
+          NotFound(toJson("The dataset with id " + id + " is not found."))
+        }
+      }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
+  }
+
+  /* Commented out.  Old code to add one tag. */
+  /*
   def tag(id: String) = SecuredAction(parse.json, authorization = WithPermission(Permission.CreateTags)) { implicit request =>
     Logger.debug("Tagging " + request.body)
     
@@ -472,17 +501,61 @@ object Datasets extends ApiController {
     }
     Ok(toJson(tagId.toString))
   }
-    
-  def removeTag(id: String) = SecuredAction(parse.json,authorization=WithPermission(Permission.DeleteTags)) {implicit request =>
+  */
+
+  /* Old code to remove a tag BY its ObjectId.  Leave it for a while.  Might be needed by GUI. */
+  def removeTag(id: String) = SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.debug("Removing tag " + request.body)
-    
+
     request.body.\("tagId").asOpt[String].map { tagId =>
-		  Logger.debug("Removing " + tagId + " from "+ id)
-		  Dataset.removeTag(id, tagId)
-		}
-      Ok(toJson(""))    
+      Logger.debug("Removing " + tagId + " from " + id)
+      Dataset.removeTag(id, tagId)
+    }
+    Ok(toJson(""))
   }
 
+  /**
+   *  REST endpoint: POST: Add tags to a dataset.
+   *  Requires that the request body contains a "tags" field of List[String] type.
+   */
+  def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
+  	Files.addTagsHelper(TagCheck_Dataset, id, request)
+  }
+
+  /**
+   *  REST endpoint: POST: remove tags.
+   *  Requires that the request body contains a "tags" field of List[String] type.
+   */
+  def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
+  	Files.removeTagsHelper(TagCheck_Dataset, id, request)
+  }
+
+  /**
+   *  REST endpoint: POST: remove all tags.
+   */
+  def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
+    Logger.info("Removing all tags for dataset with id: " + id)
+    if (ObjectId.isValid(id)) {
+      Services.datasets.get(id) match {
+        case Some(dataset) => {
+          Dataset.removeAllTags(id)
+          Ok(Json.obj("status" -> "success"))
+        }
+        case None => {
+          Logger.error("The dataset with id " + id + " is not found.")
+          NotFound(toJson("The dataset with id " + id + " is not found."))
+        }
+      }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
+  }
+  // ---------- Tags related code ends ------------------
+  
+  
+  
+  
   def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments)) { implicit request =>
     request.user match {
       case Some(identity) => {
