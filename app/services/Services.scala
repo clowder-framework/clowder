@@ -14,4 +14,5 @@ object Services {
   val datasets: DatasetService = MongoDBDatasetService
   val collections: CollectionService = MongoDBCollectionService
   val queries: QueryService=QueryServiceFileSystemDB
+  val rdfSPARQLService: RdfSPARQLService = FourStoreService 
 }

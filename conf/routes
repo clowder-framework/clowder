@@ -185,6 +185,7 @@ POST 	/api/datasets/:id/removeTag 								api.Datasets.removeTag(id)
 GET		/api/datasets/:id/isBeingProcessed							api.Datasets.isBeingProcessed(id)
 GET		/api/datasets/:id/getPreviews								api.Datasets.getPreviews(id)
 POST	/api/datasets/:ds_id/files/:file_id							api.Datasets.attachExistingFile(ds_id,file_id)
+GET 	/api/datasets/:id				 							api.Datasets.datasetFilesList(id)
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					api.Previews.downloadPreview(preview_id, datasetid)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			api.Files.downloadByDatasetAndFilename(dataset_id, filename, preview_id)
@@ -243,5 +244,5 @@ DELETE  /api/sensors/:id                  api.Sensors.delete(id)
 POST	/api/comment/:id					api.Comments.comment(id)
 
 GET   	/api/search                       api.Search.search(query: String ?= "")
-
+POST	/api/sparqlquery				  api.Search.querySPARQL
 

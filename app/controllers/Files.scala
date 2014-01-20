@@ -253,7 +253,16 @@ object Files extends Controller with SecuredController {
 	           
 	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 	             //current.plugin[VersusPlugin].foreach{_.build()}
-	              
+	             
+	             //add file to RDF triple store if triple store is used
+	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+			             case "yes" => {
+			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+			             }
+			             case _ => {}		             
+		             }
+	             }
 	                        
 	            // redirect to file page]
 	            Redirect(routes.Files.file(f.id.toString))  
@@ -436,6 +445,16 @@ object Files extends Controller with SecuredController {
 		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
 		            }
 	            }
+	            
+	            //add file to RDF triple store if triple store is used
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		             case "yes" => {
+		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+		             }
+		             case _ => {}
+	             }
+	            }
 
             // redirect to file page]
             // val query="http://localhost:9000/files/"+id+"/blob"  
@@ -531,6 +550,16 @@ object Files extends Controller with SecuredController {
 		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
 		            }
 	            }
+	            
+	            //add file to RDF triple store if triple store is used
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		             case "yes" => {
+		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+		             }
+		             case _ => {}
+	             }
+	            }
             
             // redirect to file page]
             Logger.debug("Query file id= "+id+ " path= "+path);
@@ -623,6 +652,16 @@ object Files extends Controller with SecuredController {
 		            current.plugin[ElasticsearchPlugin].foreach{
 		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
 		            }
+	            }
+	            
+	            //add file to RDF triple store if triple store is used
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		             case "yes" => {
+		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+		             }
+		             case _ => {}
+	             }
 	            }
             
            Ok(f.id.toString)
@@ -737,6 +776,17 @@ object Files extends Controller with SecuredController {
  			    	val dtkey = "unknown." + "dataset."+ "unknown"
 			    	
 			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, ""))}
+ 			    	
+ 			    	//add file to RDF triple store if triple store is used
+ 			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+			             case "yes" => {
+			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+			               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
+			             }
+			             case _ => {}
+		             }
+ 			    	}
 		
 					  // redirect to dataset page
 					  Logger.info("Uploading Completed")

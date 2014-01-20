@@ -329,6 +329,18 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					    	// TODO RK need to replace unknown with the server name and dataset type		            
 		 			    	val dtkey = "unknown." + "dataset."+ "unknown"
 					        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))}
+		 			    	
+		 			    	//add file to RDF triple store if triple store is used
+		 			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+					             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+						             case "yes" => {
+						               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+						               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dt.id.toString)
+						             }
+						             case _ => {}
+					             }
+				             }
+		 			    	
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id.toString))
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -386,6 +398,17 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
 						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))}
+		          
+		          //link file to dataset in RDF triple store if triple store is used
+		          if(theFileGet.filename.endsWith(".xml")){
+				             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+					             case "yes" => {
+					               services.Services.rdfSPARQLService.linkFileToDataset(fileId, dt.id.toString)
+					             }
+					             case _ => {}
+				             }
+				   }
+		          
 				  // redirect to dataset page
 				  Redirect(routes.Datasets.dataset(dt.id.toString)) 
 	            }	            

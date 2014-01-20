@@ -11,6 +11,16 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 
+import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.entity.mime.HttpMultipartMode
+import org.apache.http.entity.mime.content.StringBody
+import java.nio.charset.Charset
+import org.apache.http.util.EntityUtils
+import java.io.BufferedReader
+import java.io.InputStreamReader
+
 object Search extends ApiController {
 
   /**
@@ -85,6 +95,25 @@ object Search extends ApiController {
       }
     }
 
+  }
+  
+  
+  def querySPARQL() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) { implicit request =>
+    
+    play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+      case "yes" => {
+        val queryText = request.body.asFormUrlEncoded.get("query").apply(0)
+        Logger.info("whole msg: " + request.toString)
+        val resultsString = services.Services.rdfSPARQLService.sparqlQuery(queryText)
+        Logger.info("SPARQL query results: " + resultsString)
+        
+        Ok(resultsString)
+      }
+      case _ => {
+        Logger.error("RDF SPARQL store not used.")
+	    InternalServerError("Error searching RDF store. RDF SPARQL store not used.")
+      }
+    }
   }
   
   

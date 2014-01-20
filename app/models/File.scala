@@ -45,7 +45,8 @@ case class File(
 	thumbnail_id: Option[String] = None,
 	isIntermediate: Option[Boolean] = None,
 	userMetadata: Map[String, Any] = Map.empty,
-	xmlMetadata: Map[String, Any] = Map.empty
+	xmlMetadata: Map[String, Any] = Map.empty,
+	userMetadataWasModified: Option[Boolean] = None
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -206,6 +207,10 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("contentType" -> newType), false, false, WriteConcern.Safe)
   }
   
+  def setUserMetadataWasModified(id: String, wasModified: Boolean){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+  }
+  
   def removeFile(id: String){
     dao.findOneById(new ObjectId(id)) match{
       case Some(file) => {
@@ -264,6 +269,10 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     	  currFileDir.delete()
         }
     }
+  }
+  
+  def findMetadataChangedFiles(): List[File] = {    
+    dao.find(MongoDBObject("userMetadataWasModified" -> true)).toList   
   }
   
   def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
@@ -378,5 +387,9 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
       return new MongoDBObject()
     }
   }
+
+   
+
+
   
 }

@@ -37,10 +37,19 @@ object Global extends GlobalSettings {
     Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
       MongoDBFileService.removeOldIntermediates()
     }
+    //Clean temporary RDF files if RDF exporter is activated
     if(play.Play.application().configuration().getString("rdfexporter").equals("on")){
 	    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
 	    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
 	      models.FileDAO.removeTemporaries()
+	    }
+    }
+    //Update RDF of community-generated metadata of files and datasets if use of external RDF store is enabled
+    if(play.Play.application().configuration().getString("userdfSPARQLStore").equals("yes")){
+	    timeInterval = play.Play.application().configuration().getInt("rdfRepoUpdate.updateEvery")
+	    Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
+	      api.Files.modifyRDFOfMetadataChangedFiles()
+	      api.Datasets.modifyRDFOfMetadataChangedDatasets()
 	    }
     }
     
