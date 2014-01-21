@@ -144,6 +144,7 @@ GET     /api/files/:id/technicalmetadatajson           			api.Files.getTechnical
 GET     /api/files/:id/xmlmetadatajson           				api.Files.getXMLMetadataJSON(id)
 GET     /api/files/:id/usermetadatajson           				api.Files.getUserMetadataJSON(id)
 POST    /api/files/:id/comment									api.Files.comment(id)
+POST    /api/files/:id/setNotesHTML								api.Files.setNotesHTML(id)
 
 GET     /api/files/:id/tags                                     api.Files.getTags(id)
 POST    /api/files/:id/tags                                     api.Files.addTags(id)

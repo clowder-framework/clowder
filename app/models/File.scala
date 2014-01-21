@@ -45,7 +45,8 @@ case class File(
 	isIntermediate: Option[Boolean] = None,
 	userMetadata: Map[String, Any] = Map.empty,
 	xmlMetadata: Map[String, Any] = Map.empty,
-	userMetadataWasModified: Option[Boolean] = None
+	userMetadataWasModified: Option[Boolean] = None,
+	notesHTML: Option[String] = None 
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -236,6 +237,11 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def setUserMetadataWasModified(id: String, wasModified: Boolean){
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
   }
+  
+  def setNotesHTML(id: String, notesHTML: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
+  }
+  
   
   def removeFile(id: String){
     dao.findOneById(new ObjectId(id)) match{
