@@ -216,7 +216,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
       case Some(identity) => {
         datasetForm.bindFromRequest.fold(
           errors => BadRequest(views.html.newDataset(errors, for(file <- Services.files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
-	      dataset => {
+	      dataset => {	           
 	           request.body.file("file").map { f =>
 	             //Uploaded file selected
 	             
@@ -293,9 +293,9 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					        }
 					        
 					        // add file to dataset 
-					        val dt = dataset.copy(files = List(f), author=identity)
+					        val dt = dataset.copy(files = List(f), author=identity)					        
 					        // TODO create a service instead of calling salat directly
-				            Dataset.save(dt)
+				            Dataset.save(dt)				            
 				            
 				            if(fileType.equals("multi/files-zipped")){
 						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, flags))}

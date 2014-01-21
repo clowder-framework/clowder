@@ -396,7 +396,7 @@ $(function() {
 						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
 						        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
 						        								+ "<td>" + createdDate + "</td>"
-						        								+ "<td>" + respJSON[i].description + "</td>"
+						        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 						        								+ "<td>" + datasetThumbnail + "</td>"
 						        								+ removeCell + "</tr>");
 						        }

@@ -29,7 +29,7 @@
 					<tr>
 						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
-						<td>@dataset.description</td>
+						<td style="white-space:pre-line">@dataset.description</td>
 						<td>
 							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
