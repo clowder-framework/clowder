@@ -388,8 +388,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
                 current.plugin[RabbitmqPlugin].foreach {
                   _.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))
                 }
-               // var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
-			//	            Logger.debug("Inside Dataset: Extraction Id : "+ extractJobId)
+               
                 // redirect to dataset page
                 Redirect(routes.Datasets.dataset(dt.id.toString))
               }
