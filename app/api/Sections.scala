@@ -13,7 +13,10 @@ import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
 import models.Comment
 import java.util.Date
-import services.Services
+import services._
+import javax.inject.{Inject, Singleton}
+import api.WithPermission
+import scala.Some
 
 /**
  * Files sections.
@@ -21,7 +24,8 @@ import services.Services
  * @author Luigi Marini
  *
  */
-object Sections extends ApiController {
+@Singleton
+class Sections @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, tags: TagService)  extends ApiController {
 
   /**
    *  REST endpoint: POST: Add a section.
@@ -37,7 +41,7 @@ object Sections extends ApiController {
          * So check it first.
          */
         if (ObjectId.isValid(file_id)) {
-          Services.files.getFile(file_id) match {
+          files.getFile(file_id) match {
             case Some(file) =>
               val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
               doc.getAs[String]("file_id").map(id => doc.put("file_id", new ObjectId(id)))
@@ -107,7 +111,19 @@ object Sections extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type.
    */
   def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) { implicit request =>
-  	Files.addTagsHelper(TagCheck_Section, id, request)
+    val (not_found, error_str) = tags.addTagsHelper(TagCheck_Section, id, request)
+
+    // Now the real work: adding the tags.
+    if ("" == error_str) {
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(error_str)
+      if (not_found) {
+        NotFound(toJson(error_str))
+      } else {
+        BadRequest(toJson(error_str))
+      }
+    }
   }
 
   /**
@@ -115,7 +131,18 @@ object Sections extends ApiController {
    *  Requires that the request body contains a "tags" field of List[String] type. 
    */
   def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
-  	Files.removeTagsHelper(TagCheck_Section, id, request)
+    val (not_found, error_str) = tags.removeTagsHelper(TagCheck_Section, id, request)
+
+    if ("" == error_str) {
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(error_str)
+      if (not_found) {
+        NotFound(toJson(error_str))
+      } else {
+        BadRequest(toJson(error_str))
+      }
+    }
   }
 
   /**

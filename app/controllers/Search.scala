@@ -5,7 +5,6 @@ import services.ElasticsearchPlugin
 import services.VersusPlugin
 import play.Logger
 import scala.collection.JavaConversions.mapAsScalaMap
-import services.Services
 import sys.process._
 import java.net.URL
 import java.io.File
@@ -49,7 +48,8 @@ import scala.collection.mutable.ArrayBuffer
 import models.Dataset
 import api.WithPermission
 import api.Permission
-
+import services.{ CollectionService, DatasetService, FileService, QueryService}
+import javax.inject.{ Singleton, Inject }
 import scala.concurrent.Future
 
 /**
@@ -57,23 +57,22 @@ import scala.concurrent.Future
  *
  * @author Luigi Marini
  */
-object Search extends SecuredController {
+class Search @Inject() (datasets: DatasetService, files: FileService, 
+    collections: CollectionService, queries: QueryService) extends SecuredController {
 
   /**
    * Search results.
    */
-  def search(query: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def search(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         Logger.debug("Searching for: " + query)
-        var files = ListBuffer.empty[models.File]
-        var datasets = ListBuffer.empty[models.Dataset]
-        var mapdatasetIds = new scala.collection.mutable.HashMap[String, (String, String)]
+        var fileList = ListBuffer.empty[models.File]
+        var datasetList = ListBuffer.empty[models.Dataset]
+        var mapdatasetIds= new scala.collection.mutable.HashMap[String,(String,String)]
         if (query != "") {
           import play.api.Play.current
-          
           val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query) }
-          
           result match {
             case Some(searchResponse) => {
               for (hit <- searchResponse.getHits().getHits()) {
@@ -83,30 +82,30 @@ object Search extends SecuredController {
                   Logger.info(value.getName + " = " + value.getValue())
                 }
                 if (hit.getType() == "file") {
-                  Services.files.getFile(hit.getId()) match {
-                    case Some(file) => {
+                  files.getFile(hit.getId()) match {
+                    case Some(file) =>{
                       Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                       Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
                       //Logger.debug("Search result found file " + hit.getId()); files += file
-                      mapdatasetIds.put(hit.getId(), (hit.getSource().get("datasetId").toString(), hit.getSource.get("datasetName").toString))
-                      files += file
+                       mapdatasetIds.put(hit.getId(), (hit.getSource().get("datasetId").toString(),hit.getSource.get("datasetName").toString))
+                      fileList += file
                     }
                     case None => Logger.debug("File not found " + hit.getId())
                   }
                 } else if (hit.getType() == "dataset") {
-                  Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
-                  Logger.debug("DATASETS:Dataset.id=" + hit.getId());
+                Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
+                  Logger.debug("DATASETS:Dataset.id="+hit.getId());
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
-                  Services.datasets.get(hit.getId()) match {
+                   datasets.get(hit.getId()) match {
                     case Some(dataset) =>
-                      Logger.debug("Search result found dataset" + hit.getId()); datasets += dataset
+                      Logger.debug("Search result found dataset" + hit.getId()); datasetList += dataset
                     case None => {
                       Logger.debug("Dataset not found " + hit.getId())
-                      Redirect(routes.Datasets.dataset(hit.getId))
-                    }
+                  	Redirect(routes.Datasets.dataset(hit.getId)) 
+                  }
                   }
                 }
-                Ok(views.html.searchResults(query, files.toArray, datasets.toArray, mapdatasetIds))
+                Ok(views.html.searchResults(query, fileList.toArray, datasetList.toArray,mapdatasetIds))
               }
             }
             case None => {
@@ -114,7 +113,7 @@ object Search extends SecuredController {
             }
           }
         }
-        Ok(views.html.searchResults(query, files.toArray, datasets.toArray, mapdatasetIds))
+        Ok(views.html.searchResults(query, fileList.toArray, datasetList.toArray,mapdatasetIds))
       }
       case None => {
         Logger.debug("Search plugin not enabled")
@@ -124,7 +123,7 @@ object Search extends SecuredController {
 
   }
 
-  def multimediasearch() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def multimediasearch() = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Starting multimedia search interface")
     Ok(views.html.multimediasearch())
     //Ok("Sucessful")
@@ -133,7 +132,7 @@ object Search extends SecuredController {
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def searchMultimediaIndex(section_id: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching multimedia index")
     // TODO handle multiple previews found
     val preview = PreviewDAO.findBySectionId(new ObjectId(section_id))(0)
@@ -218,12 +217,12 @@ object Search extends SecuredController {
     }
   }
 
-  def advanced() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def advanced() = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Starting Advanced Search interface")
     Ok(views.html.advancedsearch())
   }
 
-  def SearchByText(query: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def SearchByText(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching for" + query)
 
     //Ok(views.html.searchTextResults(query))
@@ -231,10 +230,10 @@ object Search extends SecuredController {
   }
 
   //GET the query image from the URL and compare within the database and show the result
+  
 def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
 
     Async {
-
       current.plugin[VersusPlugin] match {
 
         case Some(plugin) => {
@@ -292,20 +291,18 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
             /*Services.queries.getFile(id) match {
               case Some(file) => {
                 Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
-              }
+          }
               case None => {
                 Ok(id + " not found")
               }
             }*/
           }
 
-        } //case some
-
+        } // case some
         case None => {
           Future(Ok("No Versus Service"))
         }
       } //match
-
     } //Async
   }
   /*
@@ -313,85 +310,88 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
    * Finds similar images/objects in Multiple index for a given query image/object
    * 
    * */
-  def findSimilar(id: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-
-    Async {
-
-      current.plugin[VersusPlugin] match {
-
-        case Some(plugin) => {
-
-          var indexListResponse = plugin.getIndexes()
-
-          var indexSeqFuture = for {
-            list <- indexListResponse
-
-            listIn = list.json.as[Seq[models.IndexList.IndexList]]
-
-            indexSeqT = listIn.map {
-              ind => (ind.indexID, ind.MIMEtype, ind.ex, ind.me, ind.indxr)
-            }
-          } yield {
-            indexSeqT
-          }
-
-          var finalR = for {
-            indexSeq <- indexSeqFuture
-          } yield {
-            var resultSeqFuture = indexSeq.map {
-              index =>
+  def findSimilar(id:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+ 
+   Async{ 
+      
+    	current.plugin[VersusPlugin] match {
+     
+        case Some(plugin)=>{
+        	 
+        	 var indexListResponse=plugin.getIndexes()
+        	 
+        	 var indexSeqFuture= for {
+        		 list<-indexListResponse
+        		
+        		 listIn=list.json.as[Seq[models.IndexList.IndexList]]
+        		 
+        		 indexSeqT=listIn.map{
+        		  		    ind=>(ind.indexID,ind.MIMEtype,ind.ex,ind.me,ind.indxr)
+        		  		 }
+        		} yield {
+        	       indexSeqT
+        		 }
+        	         
+           var finalR=for{
+            		indexSeq<-indexSeqFuture
+            		} yield {
+            				var resultSeqFuture=indexSeq.map{
+            						index=>
                 var u = for {
-                  indexResult <- plugin.queryIndex(id, index._1)
-                } yield {
+            							indexResult<-plugin.queryIndex(id, index._1)
+            							} yield {
                   (indexResult, index._3, index._4, index._5)
-                }
-                u
-            } //end of indexSeq.map
-
-            var hashResult = for {
-              result <- scala.concurrent.Future.sequence(resultSeqFuture)
-            } yield {
+            							}
+            							u
+            					  }//end of indexSeq.map
+              
+            			
+                        var hashResult=for{
+                        	   				result<-scala.concurrent.Future.sequence(resultSeqFuture)
+                        	   		   } yield {
               val t = result.toArray
               
               var hm = new scala.collection.mutable.HashMap[String, (String, String, String, ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
-              for (k <- 0 to t.length - 1) {
+                        	   				for(k<-0 to t.length-1){
                 hm.put(t(k)._1._1, (t(k)._2, t(k)._3, t(k)._4, t(k)._1._2))
-              }
-              hm
-            }
-
-            hashResult
-          } //End yield- outer for 
-
-          for {
-            xFinal <- finalR
-            yFinal <- xFinal
+                        	   				}
+                        	   				
+                        	   				hm
+                        	   		   }
+            	   			
+                        	   		
+                        hashResult	   		
+            		}//End yield- outer for 
+            		
+		                			for{
+		                				xFinal<-finalR
+		                				yFinal<-xFinal
           } yield {
-            val keys = yFinal.keySet
-            var keysArray = new ArrayBuffer[String]
-            keys.copyToBuffer(keysArray)
-
-            Services.queries.getFile(id) match {
-              case Some(file) => {
+		                			  val keys=yFinal.keySet
+		                			  var keysArray=new ArrayBuffer[String]
+		                			  keys.copyToBuffer(keysArray)
+		                			  
+            queries.getFile(id) match {
+		                			  	case Some(file)=>{ 
                 Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
-              }
-              case None => {
-                Ok(id + " not found")
-              }
-            }
-          }
-
+		                			  	}
+		                			  	case None=>{
+		                			  			Ok(id +" not found")
+		                			  			}
+		                			  }
+		                			}
+              
         } //case some
-
+                    
         case None => {
           Future(Ok("No Versus Service"))
         }
       } //match
-
+            
     } //Async
   }
 
-  /*Find similar images/objects in Multiple index for an image in the Medici repository*/
+ /*Find similar images/objects in Multiple index for an image in the Medici repository*/
   def findSimilarFile(id: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     Async {
 
@@ -448,8 +448,9 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
             var keysArray = new ArrayBuffer[String]
             keys.copyToBuffer(keysArray)
 
-            Services.files.getFile(id) match {
+            files.getFile(id) match {
               case Some(file) => {
+                //Ok(views.html.contentbasedSearchResultsVideo3(keysArray, file.filename, id, yFinal.size, yFinal))
                 Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {
@@ -471,7 +472,7 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
 
   def Filterby(id: String) = TODO
 
-  def uploadquery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def uploadquery() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     request.body.file("picture").map { picture =>
       import java.io.File
       val filename = picture.filename

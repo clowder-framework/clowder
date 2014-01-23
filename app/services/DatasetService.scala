@@ -38,4 +38,19 @@ abstract class DatasetService {
    * Get dataset.
    */
   def get(id: String): Option[Dataset]
+  
+  /**
+   * 
+   */
+  def listInsideCollection(collectionId: String) : List[Dataset]
+  
+  /**
+   * 
+   */
+  def isInCollection(dataset: Dataset, collection: Collection): Boolean
+  
+  /**
+   * 
+   */
+  def getFileId(datasetId: String, filename: String): Option[String]
 }

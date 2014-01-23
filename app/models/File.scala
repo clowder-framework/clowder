@@ -20,7 +20,13 @@ import java.util.Calendar
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileSystems
-import services.Services
+
+import scala.util.parsing.json.JSON
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsArray
+
 
 /**
  * Uploaded files.
@@ -72,11 +78,11 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   def listOutsideDataset(dataset_id: String): List[File] = {
     Dataset.findOneById(new ObjectId(dataset_id)) match{
         case Some(dataset) => {
-          val list = for (file <- Services.files.listFiles(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
-          return list
+          val list = for (file <- findAll(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
+          return list.toList
         }
         case None =>{
-          return Services.files.listFiles()	 	  
+          return findAll.toList
         } 
       }
   }
@@ -163,6 +169,91 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   }
 
   
+  /* add versus descriptors to the metadata
+   * 
+   * Reads descriptors received from versus( in the response body)  as list of JSON objects 
+   * Each JSON object has four fields <extraction_id,adapter_name,extractor_name,descriptor>
+   * Parse each json object based on the field/key name and obtain the values and combine them as a tuple  
+   * Obtain the existing versus descriptors in the "metadata" as list of tuples (extraction_id,adapter_name,extractor_name,descriptor)
+   * merge with the tuples obtained from descriptors received from versus
+   * write it back to the versus_descriptors field of "metadata" to monoDB
+   *
+   *  */
+
+  def addVersusMetadata(id: String, json: JsValue) {
+
+    Logger.debug("Adding metadata to file " + id + " : " + json)
+
+    var jsonlist = json.as[List[JsObject]] // read json as list of JSON objects
+
+    var addmd = jsonlist.map {
+      list =>
+        Logger.debug("extraction_id=" + list \ ("extraction_id"))
+        Logger.debug("adapter_name=" + list \ ("adapter_name"))
+        Logger.debug("extractor_name=" + list \ ("extractor_name"))
+        Logger.debug("descriptor=" + list \ ("descriptor"))
+        (list \ ("extraction_id"), list \ ("adapter_name"), list \ ("extractor_name"), list \ ("descriptor"))
+    } /* to access into the list of json objects and convert as list of tuples*/
+
+    val doc = com.mongodb.util.JSON.parse(json.toString)
+
+    FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
+      case Some(x) => {
+
+        x.getAs[DBObject]("metadata") match {
+          case None => {
+            Logger.debug("No metadata field found: Adding meta data field")
+            FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata.versus_descriptors" -> doc), false, false, WriteConcern.Safe)
+
+          }
+          case Some(map) => {
+
+            Logger.debug("metadata found ")
+
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+            Logger.debug("retmd: " + returnedMetadata)
+
+            val retmd = Json.toJson(returnedMetadata)
+            var ksize = map.keySet().size()
+            Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
+            val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
+
+            var mdList = listd.as[List[JsObject]].map {
+              md =>
+                Logger.debug("extraction_id=" + md \ ("extraction_id"))
+                Logger.debug("adapter_name=" + md \ ("adapter_name"))
+                Logger.debug("extractor_name=" + md \ ("extractor_name"))
+                Logger.debug("descriptor=" + md \ ("descriptor"))
+                (md \ ("extraction_id"), md \ ("adapter_name"), md \ ("extractor_name"), md \ ("descriptor"))
+            }
+
+            val versusmd = mdList ++ addmd
+
+            var versusmdList = for ((id, a, e, d) <- versusmd) yield Json.obj("extraction_id" -> id, "adapter_name" -> a, "extractor_name" -> e, "descriptor" -> d)
+
+            val jobj = Json.obj("versus_descriptors" -> getJsonArray(versusmdList))
+
+            Logger.debug("versus mdList:  " + jobj)
+            
+            FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> com.mongodb.util.JSON.parse(jobj.toString)), false, false, WriteConcern.Safe)
+
+          }
+        }
+
+      }
+      case None => {
+        Logger.error("Error getting file" + id)
+
+      }
+    }
+  }
+
+/*convert list of JsObject to JsArray*/
+def getJsonArray(list: List[JsObject]): JsArray = {
+    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
+  }
+
+
   def addUserMetadata(id: String, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
@@ -188,7 +279,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   // Input validation is done in api.Files, so no need to check again.
   def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to file " + id + " : " + tags)
-    val file = Services.files.getFile(id).get
+    val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
     tags.foreach(tag => {
@@ -202,7 +293,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 
   def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
-    val file = Services.files.getFile(id).get
+    val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
@@ -232,7 +323,7 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
         	for(fileDataset <- fileDatasets){
 	        	Dataset.removeFile(fileDataset.id.toString(), id)
 	        	if(!file.xmlMetadata.isEmpty){
-	            	api.Datasets.index(fileDataset.id.toString())
+	            	Dataset.index(fileDataset.id.toString())
 		      	}
 	        	if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
 		        	if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
@@ -389,6 +480,16 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
     else{
       return new MongoDBObject()
     }
+  }
+
+  def removeOldIntermediates(){
+    val cal = Calendar.getInstance()
+    val timeDiff = play.Play.application().configuration().getInt("intermediateCleanup.removeAfter")
+    cal.add(Calendar.HOUR, -timeDiff)
+    val oldDate = cal.getTime()
+    val fileList = FileDAO.find($and("isIntermediate" $eq true, "uploadDate" $lt oldDate)).toList
+    for(removeFile <- fileList)
+      FileDAO.removeFile(removeFile.id.toString())
   }
   
 }
