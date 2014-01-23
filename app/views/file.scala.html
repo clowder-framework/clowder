@@ -465,9 +465,7 @@
 						data-parent="#accordion5" href="#collapseFive">Notes</a>
 				</div>
 				<div id="collapseFive" class="accordion-body in collapse">
-			      	@if(user.isDefined) {
 			      		@notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id.toString).toString, file.notesHTML.getOrElse(""))
-			      	}
 				</div>
 			</div>
 		</div>
