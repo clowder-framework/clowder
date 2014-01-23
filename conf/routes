@@ -149,16 +149,16 @@ POST    /api/files/:id/tags/remove                              @api.Files.remov
 POST    /api/files/:id/tags/remove_all                          @api.Files.removeAllTags(id)
 
 
-GET     /api/files/:id/extract                                  api.Files.extract(id)
+GET     /api/files/:id/extract                                  @api.Files.extract(id)
 
-POST    /api/files/:id/previews/:p_id     						api.Files.attachPreview(id, p_id)
-GET		/api/files/:id/listpreviews		  						api.Files.filePreviewsList(id)
-GET		/api/files/:id/getPreviews								api.Files.getPreviews(id)
-GET		/api/files/:id/isBeingProcessed							api.Files.isBeingProcessed(id)
-#GET		/api/files/:three_d_file_id/:filename					api.Files.getGeometry(three_d_file_id,filename)
-GET		/api/files/:three_d_file_id/:filename					api.Files.getTexture(three_d_file_id,filename)
-GET     /api/files/:id                    						api.Files.download(id)
-GET     /api/queries/:id				                       api.Files.downloadquery(id)	
+POST    /api/files/:id/previews/:p_id     						@api.Files.attachPreview(id, p_id)
+GET		/api/files/:id/listpreviews		  						@api.Files.filePreviewsList(id)
+GET		/api/files/:id/getPreviews								@api.Files.getPreviews(id)
+GET		/api/files/:id/isBeingProcessed							@api.Files.isBeingProcessed(id)
+#GET		/api/files/:three_d_file_id/:filename					@api.Files.getGeometry(three_d_file_id,filename)
+GET		/api/files/:three_d_file_id/:filename					@api.Files.getTexture(three_d_file_id,filename)
+GET     /api/files/:id                    						@api.Files.download(id)
+GET     /api/queries/:id				                       @api.Files.downloadquery(id)	
 
 
 # DANGER

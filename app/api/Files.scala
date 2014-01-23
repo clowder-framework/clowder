@@ -1061,7 +1061,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   def extract(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     Logger.info("Getting extract info for file with id " + id)
     if (ObjectId.isValid(id)) {
-      Services.files.getFile(id) match {
+     files.getFile(id) match {
         case Some(file) =>
           val jtags = extractTags(file)
           val jpreviews = extractPreviews(id)
