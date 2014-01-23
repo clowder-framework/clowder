@@ -175,7 +175,7 @@ object Files extends Controller with SecuredController {
   def upload() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
     user match {
-      case Some(identity) => {
+      case Some(identity) => { 
 	      request.body.file("File").map { f =>
 	          var nameOfFile = f.filename
 	          var flags = ""

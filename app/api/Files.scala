@@ -238,7 +238,7 @@ object Files extends ApiController {
   /**
    * Upload file using multipart form enconding.
    */
-    def upload(showPreviews: String="DatasetLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
+    def upload(showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>
@@ -256,7 +256,16 @@ object Files extends ApiController {
 	        
 	        Logger.debug("Uploading file " + nameOfFile)
 	        // store file
-	        val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
+	        var realUser = user
+	          if(!originalZipFile.equals("")){
+	             FileDAO.findOneById(new ObjectId(originalZipFile)) match{
+	               case Some(originalFile) => {
+	                 realUser = originalFile.author
+	               }
+	               case None => {}
+	             }
+	         } 	        
+	        val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -388,10 +397,10 @@ object Files extends ApiController {
   /**
    * Upload a file to a specific dataset
    */
-  def uploadToDataset(dataset_id: String, showPreviews: String="DatasetLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploadToDataset(dataset_id: String, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
     request.user match {
-        case Some(user) => {
-    Services.datasets.get(dataset_id) match {
+        case Some(user) => {          
+    Services.datasets.get(dataset_id) match {      
       case Some(dataset) => {
         request.body.file("File").map { f =>
           		var nameOfFile = f.filename
@@ -406,9 +415,18 @@ object Files extends ApiController {
 		              }
 	            }
           
-          Logger.debug("Uploading file " + nameOfFile)
+          Logger.debug("Uploading file " + nameOfFile)         
           // store file
-          val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
+          var realUser = user
+          if(!originalZipFile.equals("")){
+             FileDAO.findOneById(new ObjectId(originalZipFile)) match{
+               case Some(originalFile) => {
+                 realUser = originalFile.author
+               }
+               case None => {}
+             }
+         }          
+          val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
           val uploadedFile = f         
           
           // submit file for extraction
