@@ -1031,6 +1031,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     val jtags = jtagsE ++ jtagsU
     jtags
   }
+  
   def extractPreviews(id: String) = {
     val previews = PreviewDAO.findByFileId(new ObjectId(id));
     /*
@@ -1058,6 +1059,51 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     val jpreviews = previewRes.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
     jpreviews
   }
+  
+  def extractVersusDescriptors(id:String): JsValue= {
+    
+    FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
+      case Some(x) => {
+
+        x.getAs[DBObject]("metadata") match {
+          case None => {
+            Logger.debug("No metadata field found: Adding meta data field")
+            Json.obj("Message"->("No metadata for file"+id))
+          }
+          case Some(map) => {
+
+            Logger.debug("metadata found ")
+
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+            Logger.debug("retmd: " + returnedMetadata)
+
+            val retmd = Json.toJson(returnedMetadata)
+            Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
+            if(map.containsKey("versus_descriptors")){
+             val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
+             listd
+            }
+            else
+            Json.obj(""->"")
+           
+          }
+        }
+
+      }
+      case None => {
+        Logger.error("Error getting file" + id)
+        Json.obj("Error in File"->id)
+
+      }
+    }
+  }
+  
+  /*convert list of JsObject to JsArray*/
+def getJsonArray(list: List[JsObject]): JsArray = {
+    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
+  }
+
+  
   def extract(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     Logger.info("Getting extract info for file with id " + id)
     if (ObjectId.isValid(id)) {
@@ -1065,9 +1111,10 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         case Some(file) =>
           val jtags = extractTags(file)
           val jpreviews = extractPreviews(id)
+          val vdescriptors=extractVersusDescriptors(id)
           Logger.debug("jtags: " + jtags.toString)
           Logger.debug("jpreviews: " + jpreviews.toString)
-          Ok(Json.obj("file_id" -> id, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews))
+          Ok(Json.obj("file_id" -> id, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors"->vdescriptors))
         case None => {
           val error_str = "The file with id " + id + " is not found." 
           Logger.error(error_str)
