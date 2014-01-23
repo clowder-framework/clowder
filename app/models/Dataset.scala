@@ -42,7 +42,8 @@ case class Dataset (
   collections: List[String] = List.empty,
   thumbnail_id: Option[String] = None,
   datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
-  userMetadataWasModified: Option[Boolean] = None
+  userMetadataWasModified: Option[Boolean] = None,
+  notesHTML: Option[String] = None 
 )
 
 object MustBreak extends Exception { }
@@ -540,6 +541,10 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
       }
       case None => 
     }      
+  }
+  
+  def setNotesHTML(id: String, notesHTML: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
   
 }

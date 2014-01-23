@@ -1,7 +1,7 @@
 @(id: String, posturl: String, currentHTML: String)(implicit user: Option[securesocial.core.Identity])
 
 
-	<form class="form-inline">
+	<form class="form-inline" style="margin-top:20px;">
 		<div id="noteContainer_@id" style="display:block;">
 		  @Html(currentHTML)
 		</div>

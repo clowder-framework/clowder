@@ -186,6 +186,7 @@ GET     /api/datasets/:id/xmlmetadatajson           				api.Datasets.getXMLMetad
 GET     /api/datasets/:id/usermetadatajson           				api.Datasets.getUserMetadataJSON(id)
 GET 	/api/datasets/:id/listFiles		 							api.Datasets.datasetFilesList(id)
 POST    /api/datasets/:id/comment									api.Datasets.comment(id)
+POST    /api/datasets/:id/setNotesHTML								api.Datasets.setNotesHTML(id)
 
 POST 	/api/datasets/:id/removeTag 								api.Datasets.removeTag(id)
 GET     /api/datasets/:id/tags                                  api.Datasets.getTags(id)
