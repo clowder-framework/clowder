@@ -374,7 +374,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		            Redirect(routes.Datasets.newDataset()).flashing("error"->"Selected file not found. Maybe it was removed.")		            
 		          val theFileGet = theFile.get  
 		          
-				  val dt = dataset.copy(files = List(theFileGet), author=identity)
+				  val dt = dataset.copy(files = List(theFileGet), author=identity, thumbnail_id=theFileGet.thumbnail_id)
 				  // TODO create a service instead of calling salat directly
 			      Dataset.save(dt)
 			      
@@ -398,7 +398,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
 						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))}
-		          
+
 		          //link file to dataset in RDF triple store if triple store is used
 		          if(theFileGet.filename.endsWith(".xml")){
 				             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
