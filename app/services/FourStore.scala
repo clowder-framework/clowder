@@ -184,7 +184,7 @@ trait FourStore {
   def removeDatasetFromGraphs(datasetId: String): Null = {
           
         //First, delete all RDF links having to do with files belonging only to the dataset to be deleted, as those files will be deleted together with the dataset
-        Services.datasets.get(datasetId) match{
+         Dataset.findOneById(new ObjectId(datasetId)) match{
           case Some(dataset)=> {
                 var filesString = "" 
 	            for(f <- dataset.files){

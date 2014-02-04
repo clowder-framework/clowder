@@ -38,4 +38,13 @@ abstract class CollectionService {
    */
   def get(id: String): Option[Collection]
   
+  /**
+   * 
+   */
+  def listInsideDataset(datasetId: String): List[Collection]
+  
+  /**
+   * 
+   */
+  def listOutsideDataset(datasetId: String): List[Collection]
 }

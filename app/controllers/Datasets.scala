@@ -4,7 +4,6 @@
 package controllers
 
 import play.api.mvc.Controller
-import services.Services
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.data.Form
@@ -12,13 +11,11 @@ import play.api.data.Forms._
 import views.html.defaultpages.error
 import java.io.FileInputStream
 import play.api.Play.current
-import services.RabbitmqPlugin
-import services.ElasticsearchPlugin
+import services._
 import java.io.File
 import org.bson.types.ObjectId
 import java.util.Date
 import java.util.TimeZone
-import services.ExtractorMessage
 import securesocial.core.SecureSocial
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
@@ -30,8 +27,12 @@ import models._
 import fileutils.FilesUtils
 import api.WithPermission
 import api.Permission
-import services.DumpOfFile
-import services.FileDumpService
+
+import javax.inject.{Singleton, Inject}
+import scala.Some
+import services.ExtractorMessage
+import api.WithPermission
+
 
 /**
  * A dataset is a collection of files and streams.
@@ -39,11 +40,9 @@ import services.FileDumpService
  * @author Luigi Marini
  *
  */
+class Datasets @Inject() (datasets: DatasetService, files: FileService, collections: CollectionService) extends SecuredController {
 
 object ActivityFound extends Exception { }
-
-object Datasets extends SecuredController {
-
    
   /**
    * New dataset form.
@@ -59,7 +58,7 @@ object Datasets extends SecuredController {
    
   def newDataset()  = SecuredAction(authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
-    val filesList = for(file <- Services.files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename)
+    val filesList = for(file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename)
   	Ok(views.html.newDataset(datasetForm, filesList)).flashing("error"->"Please select ONE file (upload new or existing)") 
   }
    
@@ -72,11 +71,11 @@ object Datasets extends SecuredController {
     if (when != "") direction = when
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     var prev, next = ""
-    var datasets = List.empty[models.Dataset]
+    var datasetList = List.empty[models.Dataset]
     if (direction == "b") {
-	    datasets = Services.datasets.listDatasetsBefore(date, limit)
+	    datasetList = datasets.listDatasetsBefore(date, limit)
     } else if (direction == "a") {
-    	datasets = Services.datasets.listDatasetsAfter(date, limit)
+    	datasetList = datasets.listDatasetsAfter(date, limit)
     } else {
       badRequest
     }
@@ -87,23 +86,20 @@ object Datasets extends SecuredController {
     var firstPage = false
     var lastPage = false
     if (latest.size == 1) {
-    	firstPage = datasets.exists(_.id == latest(0).id)
-    	lastPage = datasets.exists(_.id == first(0).id)
+    	firstPage = datasetList.exists(_.id == latest(0).id)
+    	lastPage = datasetList.exists(_.id == first(0).id)
     	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
     	Logger.debug("first " + first(0).id + " last page " + lastPage )
     }
-    if (datasets.size > 0) {  
+    if (datasetList.size > 0) {  
       if (date != "" && !firstPage) { // show prev button
-    	prev = formatter.format(datasets.head.created)
+    	prev = formatter.format(datasetList.head.created)
       }
       if (!lastPage) { // show next button
-    	next = formatter.format(datasets.last.created)
+    	next = formatter.format(datasetList.last.created)
       }
     }
-    
-    
-    
-    Ok(views.html.datasetList(datasets, prev, next, limit))
+    Ok(views.html.datasetList(datasetList, prev, next, limit))
   }
   
  
@@ -114,7 +110,7 @@ object Datasets extends SecuredController {
   def dataset(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowDataset)) { implicit request =>
     implicit val user = request.user    
     Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
-    Services.datasets.get(id)  match {
+    datasets.get(id)  match {
       case Some(dataset) => {
         val files = dataset.files map { f =>{
         		FileDAO.get(f.id.toString).get
@@ -125,12 +121,9 @@ object Datasets extends SecuredController {
         var isActivity = false
         try{
         	for(f <- files){
-        		Extraction.findIfBeingProcessed(f.id) match{
+        		Extraction.findIfBeingProcessed(f.id) match {
         			case false => 
-        			case true => { 
-        				isActivity = true
-        				throw ActivityFound
-        			  }       
+        			case true => isActivity = true; throw ActivityFound  
         		}
         	}
         }catch{
@@ -140,10 +133,10 @@ object Datasets extends SecuredController {
         
         val datasetWithFiles = dataset.copy(files = files)
         val previewers = Previewers.findPreviewers
-        val previewslist = for(f <- datasetWithFiles.files) yield {          
+        val previewslist = for(f <- datasetWithFiles.files) yield {
           val pvf = for(p <- previewers ; pv <- f.previews; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield { 
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-          }         
+          }        
           if (pvf.length > 0) {
             (f -> pvf)
           } else {
@@ -215,7 +208,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
     user match {
       case Some(identity) => {
         datasetForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.newDataset(errors, for(file <- Services.files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
+          errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
 	      dataset => {
 	           request.body.file("file").map { f =>
 	             //Uploaded file selected
@@ -240,7 +233,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				        // store file
 				        Logger.info("Adding file" + identity)
 				        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
-					    val file = Services.files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+					    val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
 					    Logger.debug("Uploaded file id is " + file.get.id)
 					    Logger.debug("Uploaded file type is " + f.contentType)
 					    
@@ -341,6 +334,9 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					             }
 				             }
 		 			    	
+		 			    	var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(id)} 
+		 			    	Logger.debug("Inside File: Extraction Id : "+ extractJobId)
+		 			    	
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id.toString))
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -369,7 +365,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 	              //Existing file selected	          
 	          
 		          // add file to dataset 
-		          val theFile = Services.files.getFile(fileId)
+		          val theFile = files.getFile(fileId)
 		          if(theFile.isEmpty)
 		            Redirect(routes.Datasets.newDataset()).flashing("error"->"Selected file not found. Maybe it was removed.")		            
 		          val theFileGet = theFile.get  
@@ -391,7 +387,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          }
 		          
 		          //reindex file
-		          api.Files.index(theFileGet.id.toString())
+		          files.index(theFileGet.id.toString())
 		          
 		          // TODO RK : need figure out if we can use https
 		          val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")

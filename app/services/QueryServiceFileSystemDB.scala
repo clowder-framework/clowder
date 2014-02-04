@@ -1,4 +1,4 @@
 package services
 
-object QueryServiceFileSystemDB extends QueryService with QueryFSDB {
+class QueryServiceFileSystemDB extends QueryService with QueryFSDB {
 }

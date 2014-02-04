@@ -1,26 +1,25 @@
 @main("Geostreams") {
 
- <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
  <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
  <!--[if lte IE 8]>
      <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.ie.css")">
  <![endif]-->
-<script src="@routes.Assets.at("javascripts/leaflet-src.js")" type="text/javascript"></script>
+ <script src="@routes.Assets.at("javascripts/leaflet-src.js")" type="text/javascript"></script>
 
 	<div class="page-header">
 		<h1>Geostreams</h1>
 	</div>
-	<div class="row-fluid">
-		<div class="span10">
+	<div class="row">
+		<div class="col-md-10">
 			<div id="geostreams_map"></div>
 		</div>
-		<div class="span2">
+		<div class="col-md-2">
 			<h3>Streams</h3>
 			<div id="list_streams"></div>
 		</div>
 	</div>
-	<div class="row-fluid">
-		<div class="span12" style="padding-top:30px">
+	<div class="row">
+		<div class="col-md-12" style="padding-top:30px">
 			<h3>Datapoints</h3>
 			<pre id="datapoints" class="pre-scrollable"></pre>
 		</div>
@@ -31,7 +30,7 @@
 	   var map = L.map('geostreams_map').setView([51.505, -0.09], 13);
 	   
 	   L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-	    attribution: 'Map data © OpenStreetMap contributors',
+	    attribution: 'Map data OpenStreetMap contributors',
 	    maxZoom: 18
 	   }).addTo(map);
 	   	   
@@ -52,7 +51,7 @@
 	     });
 	     
 	     request.done(function (response, textStatus, jqXHR){
-	        console.log("Response " + JSON.stringify(response));
+	        console.log("Sensors found " + response.length);
 	        var geojsonLayer = L.geoJson(response, {
 
 		        style: function (feature) {
@@ -143,7 +142,6 @@
 		     
 	     }
 
-
 	     function listDatapoints(stream_id) {
 		     console.log("clicked on " + stream_id);
 		  	   var request = $.ajax({
@@ -159,12 +157,12 @@
 			  	$('#datapoints').append(JSON.stringify(response, null, '   '));
 		  	 });
 
-		     	request.fail(function (jqXHR, textStatus, errorThrown){
-			        console.error(
-			            "The following error occured: "+
-			            textStatus, errorThrown  
-			        );
-			     });
+	     	 request.fail(function (jqXHR, textStatus, errorThrown){
+		        console.error(
+		            "The following error occured: "+
+		            textStatus, errorThrown  
+		        );
+		     });
 	     }
    });
 </script>
