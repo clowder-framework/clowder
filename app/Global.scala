@@ -7,8 +7,6 @@ import play.libs.Akka
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import controllers.DatasetsRDFUpdate
-import controllers.FilesRDFUpdate
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
@@ -42,14 +40,6 @@ object Global extends GlobalSettings {
 	    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
 	    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
 	      models.FileDAO.removeTemporaries()
-	    }
-    }
-  //Update RDF of community-generated metadata of files and datasets if use of external RDF store is enabled
-    if(play.Play.application().configuration().getString("userdfSPARQLStore").equals("yes")){
-	    timeInterval = play.Play.application().configuration().getInt("rdfRepoUpdate.updateEvery")
-	    Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
-	      FilesRDFUpdate.modifyRDFOfMetadataChangedFiles()
-	      DatasetsRDFUpdate.modifyRDFOfMetadataChangedDatasets()
 	    }
     }
     
