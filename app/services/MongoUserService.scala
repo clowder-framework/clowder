@@ -57,7 +57,12 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    */
   def save(user: Identity): Identity = {
     Logger.trace("Saving user " + user)
-    SocialUserDAO.save(user)
+    val query = MongoDBObject("identityId.userId"->user.identityId.userId, "identityId.providerId"->user.identityId.providerId)
+    SocialUserDAO.findOne(query) match {
+      case Some(user) => SocialUserDAO.update(query, user, true, false, WriteConcern.Normal)
+      case None => SocialUserDAO.save(user)
+    }
+
     user
   }
 
