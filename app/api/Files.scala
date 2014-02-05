@@ -5,8 +5,11 @@ package api
 
 import java.io.FileInputStream
 import java.util.Date
+import java.util.ArrayList
 import java.io.BufferedWriter
+import java.io.BufferedReader
 import java.io.FileWriter
+import java.io.FileReader
 import java.io.ByteArrayInputStream
 
 import scala.collection.mutable.MutableList
@@ -27,7 +30,6 @@ import play.api.libs.json.Json._
 import play.api.mvc.{SimpleResult, Action, Controller}
 import services._
 import javax.inject.{ Singleton, Inject }
-import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
@@ -38,21 +40,23 @@ import org.json.XML
 import Transformation.LidoToCidocConvertion
 
 import jsonutils.JsonUtil
+
+import org.apache.commons.io.FileUtils
+
 import play.api.libs.json.JsString
 import scala.Some
 import services.ExtractorMessage
-import scala.util.parsing.json.JSONArray
 import api.RequestWithUser
 import api.WithPermission
 import play.api.libs.json.JsObject
 import fileutils.FilesUtils
-import play.api.libs.json.JsString
-import scala.Some
 import services.DumpOfFile
+
 import services.ExtractorMessage
 import scala.util.parsing.json.JSONArray
 import api.RequestWithUser
 import api.WithPermission
+
 import controllers.Previewers
 import scala.concurrent.Future
  
@@ -64,6 +68,9 @@ import scala.util.control._
  * @author Luigi Marini
  *
  */
+
+object MustBreak extends Exception { }
+
 class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, tags: TagService)  extends ApiController {
   
   def get(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
@@ -193,7 +200,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
    * Add metadata to file.
    */
   def addMetadata(id: String) =  
-   SecuredAction(authorization=WithPermission(Permission.DownloadFiles)) { request =>
+   SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) { request =>
       Logger.debug("Adding metadata to file " + id)
      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
      FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
@@ -348,8 +355,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-	            
+	            	            
 	            val id = f.id.toString
 	            if(showPreviews.equals("FileLevel"))
 	            	flags = flags + "+filelevelshowpreviews"
@@ -357,13 +363,29 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	            	flags = flags + "+nopreviews"
 	            var fileType = f.contentType
 	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
-	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
-			          if(fileType.startsWith("ERROR: ")){
-			             Logger.error(fileType.substring(7))
-			             InternalServerError(fileType.substring(7))
-			          }			          
-			        }    	
+	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
+	            	if(fileType.startsWith("ERROR: ")){
+	            		Logger.error(fileType.substring(7))
+	            		InternalServerError(fileType.substring(7))
+	            	}
+	            	if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+					              if(thirdSeparatorIndex >= 0){
+					                var firstSeparatorIndex = nameOfFile.indexOf("_")
+					                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+					            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+					            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+					            	FileDAO.renameFile(f.id.toString, nameOfFile)
+					              }
+					        	  FileDAO.setContentType(f.id.toString, fileType)
+					          }
+	            }
+	            else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
 	            
+	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+
 	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
@@ -380,6 +402,14 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	              current.plugin[ElasticsearchPlugin].foreach{
 		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
 		            }
+	              
+	              //add file to RDF triple store if triple store is used
+	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		             case "yes" => {
+		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+		             }
+		             case _ => {}
+	             }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
@@ -475,8 +505,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
           // submit file for extraction
           file match {
             case Some(f) => {
-              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-              
+                            
               val id = f.id.toString
               if(showPreviews.equals("FileLevel"))
 	            flags = flags + "+filelevelshowpreviews"
@@ -485,16 +514,33 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	          var fileType = f.contentType
 	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
 	        	  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
-						  if(fileType.startsWith("ERROR: ")){
-								Logger.error(fileType.substring(7))
-								InternalServerError(fileType.substring(7))
-								}			          
+
+	        	  if(fileType.startsWith("ERROR: ")){
+	        		  Logger.error(fileType.substring(7))
+	        		  InternalServerError(fileType.substring(7))
+				  }
+	        	  if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+					              if(thirdSeparatorIndex >= 0){
+					                var firstSeparatorIndex = nameOfFile.indexOf("_")
+					                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+					            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+					            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+					            	FileDAO.renameFile(f.id.toString, nameOfFile)
+					              }
+					        	  FileDAO.setContentType(f.id.toString, fileType)
+					          }
+	          }
+	          else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
 						  }
+	              
+              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
               
-              // TODO RK need to replace unknown with the server name
-              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-              // TODO RK : need figure out if we can use https
-              val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
+	          // TODO RK need to replace unknown with the server name
+	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+	          // TODO RK : need figure out if we can use https
+	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
 	              
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
 	          
@@ -529,6 +575,17 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
               current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, "")) }
 
               Logger.info("Uploading Completed")
+              
+              //add file to RDF triple store if triple store is used
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+			             case "yes" => {
+			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+			               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
+			             }
+			             case _ => {}
+		             }
+              }
 
               //sending success message
               Ok(toJson(Map("id" -> id)))
@@ -578,8 +635,11 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 			          if(fileType.startsWith("ERROR: ")){
 			             Logger.error(fileType.substring(7))
 			             InternalServerError(fileType.substring(7))
-			          }			          
-			        } 
+			          }
+			     }
+			     else if(f.filename.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
 	            
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
@@ -665,30 +725,37 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   }
   
   def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
-    files.getFile(id) match {
-            case Some(file) => {
-              val theJSON = FileDAO.getUserMetadataJSON(id)
-              val fileSep = System.getProperty("file.separator")
-	          var resultDir = play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse("") + fileSep + new ObjectId().toString
-	          new java.io.File(resultDir).mkdir()
-              
-              if(!theJSON.replaceAll(" ","").equals("{}")){
-	              val xmlFile = jsonToXML(theJSON)
-	              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
-	              xmlFile.delete()
-              }
-              else{
-                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
-              }
-              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
-              
-              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
-            }
-            case None => BadRequest(toJson("File not found " + id))
+    play.Play.application().configuration().getString("rdfexporter") match{
+      case "on" =>{
+	    files.getFile(id) match { 
+	            case Some(file) => {
+	              val theJSON = FileDAO.getUserMetadataJSON(id)
+	              val fileSep = System.getProperty("file.separator")
+	              val tmpDir = System.getProperty("java.io.tmpdir")
+		          var resultDir = tmpDir + fileSep + "medici__rdfdumptemporaryfiles" + fileSep + new ObjectId().toString
+		          new java.io.File(resultDir).mkdirs()
+	              
+	              if(!theJSON.replaceAll(" ","").equals("{}")){
+		              val xmlFile = jsonToXML(theJSON)
+		              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+		              xmlFile.delete()
+	              }
+	              else{
+	                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+	              }
+	              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+	              
+	              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+			            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+			            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+	            }
+	            case None => BadRequest(toJson("File not found " + id))
+	    }
+      }
+      case _ => {
+        Ok("RDF export features not enabled")
+      }
     }
-  
   }
   
   def jsonToXML(theJSON: String): java.io.File = {
@@ -717,51 +784,64 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   }
   
   def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
-    files.getFile(id)  match {
-      case Some(file) => {
-        
-        //RDF from XML of the file itself (for XML metadata-only files)
-        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
-        var rdfPreviewList = List.empty[models.Preview]
-        for(currPreview <- previewsList){
-          if(currPreview.contentType.equals("application/rdf+xml")){
-            rdfPreviewList = rdfPreviewList :+ currPreview
-          }
-        }        
-        var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
-        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-        
-        //RDF from export of file community-generated metadata to RDF
-        var connectionChars = ""
-        if(hostString.contains("?")){
-          connectionChars = "&mappingNum="
-        }
-        else{
-          connectionChars = "?mappingNum="
-        }
-        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars                
-        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
-        for(i <- 1 to mappingsQuantity){
-          var currHostString = hostString + i
-          list = list :+ Json.toJson(currHostString)
-        }
-
-        val listJson = toJson(list.toList)
-        
-        Ok(listJson) 
+    play.Play.application().configuration().getString("rdfexporter") match{
+      case "on" =>{
+	    files.getFile(id)  match {
+	      case Some(file) => {
+	        
+	        //RDF from XML of the file itself (for XML metadata-only files)
+	        val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
+	        var rdfPreviewList = List.empty[models.Preview]
+	        for(currPreview <- previewsList){
+	          if(currPreview.contentType.equals("application/rdf+xml")){
+	            rdfPreviewList = rdfPreviewList :+ currPreview
+	          }
+	        }        
+	        var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
+	        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
+	        
+	        //RDF from export of file community-generated metadata to RDF
+	        var connectionChars = ""
+	        if(hostString.contains("?")){
+	          connectionChars = "&mappingNum="
+	        }
+	        else{
+	          connectionChars = "?mappingNum="
+	        }
+	        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars                
+	        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
+	        for(i <- 1 to mappingsQuantity){
+	          var currHostString = hostString + i
+	          list = list :+ Json.toJson(currHostString)
+	        }
+	
+	        val listJson = toJson(list.toList)
+	        
+	        Ok(listJson) 
+	      }
+	      case None => {Logger.error("Error getting file" + id); InternalServerError}
+	    }
       }
-      case None => {Logger.error("Error getting file" + id); InternalServerError}
+      case _ => {
+        Ok("RDF export features not enabled")
+      }
     }
-    
   }
   
   def addUserMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.AddFilesMetadata)) {implicit request =>
 	      Logger.debug("Adding user metadata to file " + id)
 	      val theJSON = Json.stringify(request.body)
 	      FileDAO.addUserMetadata(id, theJSON)
-	      index(id)
-	      Ok(toJson(Map("status" -> "success")))
+	      index(id)	      
+	      play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		      case "yes" => {
+		          FileDAO.setUserMetadataWasModified(id, true)
+		    	  //modifyRDFUserMetadata(id)
+		      }
+		      case _ => {}
+	      }
 
+	      Ok(toJson(Map("status" -> "success")))
   }
   
   def jsonFile(file: File): JsValue = {
@@ -1565,6 +1645,19 @@ def checkExtractorsStatus(id: String) = SecuredAction(parse.anyContent, authoriz
     files.getFile(id)  match {
       case Some(file) => {
         FileDAO.removeFile(id)
+        Logger.debug(file.filename)
+        //remove file from RDF triple store if triple store is used
+	        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		        case "yes" => {
+		          if(file.filename.endsWith(".xml")){
+		            Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfXMLGraphName")
+		          }
+		            Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
+		        }
+		        case _ => {}
+	        }
+        
+                
         Ok(toJson(Map("status"->"success")))
       }
       case None => Ok(toJson(Map("status"->"success")))

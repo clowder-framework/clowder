@@ -50,7 +50,8 @@ case class File(
 	thumbnail_id: Option[String] = None,
 	isIntermediate: Option[Boolean] = None,
 	userMetadata: Map[String, Any] = Map.empty,
-	xmlMetadata: Map[String, Any] = Map.empty
+	xmlMetadata: Map[String, Any] = Map.empty,
+	userMetadataWasModified: Option[Boolean] = None
 )
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -315,6 +316,18 @@ def getJsonArray(list: List[JsObject]): JsArray = {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
   }
   
+  def renameFile(id: String, newName: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("filename" -> newName), false, false, WriteConcern.Safe)
+  }
+  
+  def setContentType(id: String, newType: String){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("contentType" -> newType), false, false, WriteConcern.Safe)
+  }
+  
+  def setUserMetadataWasModified(id: String, wasModified: Boolean){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+  }
+  
   def removeFile(id: String){
     dao.findOneById(new ObjectId(id)) match{
       case Some(file) => {
@@ -356,8 +369,14 @@ def getJsonArray(list: List[JsObject]): JsArray = {
     cal.add(Calendar.MINUTE, -timeDiff)
     val oldDate = cal.getTime()    
     
-    val folder = new java.io.File(play.api.Play.configuration.getString("rdfdumptemporary.dir").getOrElse(""))
-    val listOfFiles = folder.listFiles()
+    val tmpDir = System.getProperty("java.io.tmpdir")
+    val filesep = System.getProperty("file.separator")
+    val rdfTmpDir = new java.io.File(tmpDir + filesep + "medici__rdfdumptemporaryfiles")
+    if(!rdfTmpDir.exists()){
+      rdfTmpDir.mkdir()
+    }
+
+    val listOfFiles = rdfTmpDir.listFiles()
     for(currFileDir <- listOfFiles){
       val currFile = currFileDir.listFiles()(0)
       val attrs = Files.readAttributes(FileSystems.getDefault().getPath(currFile.getAbsolutePath()),  classOf[BasicFileAttributes])
@@ -367,6 +386,10 @@ def getJsonArray(list: List[JsObject]): JsArray = {
     	  currFileDir.delete()
         }
     }
+  }
+  
+  def findMetadataChangedFiles(): List[File] = {    
+    dao.find(MongoDBObject("userMetadataWasModified" -> true)).toList   
   }
   
   def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
@@ -466,9 +489,9 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
         }
       }
     }
-    queryMap.add(builder.result)
-    
+
     if(orFound){
+        queryMap.add(MongoDBObject("$and" ->  builder))
     	return MongoDBObject("$or" ->  queryMap)
     }
     else if(!builder.isEmpty)  {

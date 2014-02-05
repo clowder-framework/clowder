@@ -1,4 +1,4 @@
-@(dataset_id: String, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any])(implicit user: Option[securesocial.core.Identity]) 
+@(dataset_id: String, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity]) 
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
@@ -58,7 +58,9 @@
 		<button class="usr_md_" type="button">Add property</button>
 		@printLevelUserMetadata(userMetadata)
 		<button class="usr_md_submit btn" type="button">Submit</button>
-		<button class="usr_md_submit btn rdfbtn" type="button">Get as RDF</button>
+		@if(rdfExported){
+			<button class="usr_md_submit btn rdfbtn" type="button">Get as RDF</button>
+		}
 	</div>		
 </form>
 <script language="javascript">

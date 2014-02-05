@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File])(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], beingProcessed: Boolean, collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity]) 
 
 
 @import helper._
@@ -55,7 +55,7 @@
 		</ul>
 	}
 
-@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
@@ -69,7 +69,7 @@
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
-			Configuration.wasPTM = "@filename.endsWith(".ptm")";
+			Configuration.wasPTM = "@(filename.endsWith(".ptm")  || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "dataset";
 		}
 	</script>
@@ -119,7 +119,7 @@
 							<div class="tab-content" id="previewsContent_@(f.id.toString)">
 								@for(i <- pvs.indices) {
 							  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
-							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename)
+							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename, f.contentType)
 
 								}
 					  			<script type="text/javascript">
@@ -299,7 +299,7 @@
 					<div id='fileUserMetadata_@(f.id.toString)'>
 							<button class="tech_md_" type="button">Show/edit file community-generated metadata</button>
 							<div style="display:none;">
-									@fileusermetadata(f.id.toString, collection.mutable.Map() ++ f.userMetadata)						
+									@fileusermetadata(f.id.toString, collection.mutable.Map() ++ f.userMetadata, rdfExported)						
 							</div>
 					</div>
 					<script>
@@ -391,6 +391,7 @@
     						Configuration.wasPTM = 'true';
     					else
     						Configuration.wasPTM = 'false';
+    					Configuration.calledFrom = "dataset";
     				}
     				////
     				
@@ -473,19 +474,19 @@
 							        }
 
 						        if(j <= tableLength)	    
-							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        else if(tableLength > 0)
-						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        else{
 						        	if($("#datasetFilesTable tbody").length == 0)
 						        		$("#datasetFilesTable").append("<tbody></tbody>");
-						        	$("#datasetFilesTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody").append("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
@@ -519,7 +520,7 @@
 				      </div> 
 			    </div>
 			    <div class="tab-pane" id="tab2">
-			      @metadata(dataset.id.toString, md, usrmd)
+			      @metadata(dataset.id.toString, md, usrmd, rdfExported)
 			    </div>
 			  </div>
 			</div>	

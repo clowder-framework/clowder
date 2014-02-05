@@ -35,9 +35,12 @@ object Global extends GlobalSettings {
     Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
       models.FileDAO.removeOldIntermediates()
     }
-    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
-    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
-      models.FileDAO.removeTemporaries()
+  //Clean temporary RDF files if RDF exporter is activated
+    if(play.Play.application().configuration().getString("rdfexporter").equals("on")){
+	    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
+	    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
+	      models.FileDAO.removeTemporaries()
+	    }
     }
     
   }

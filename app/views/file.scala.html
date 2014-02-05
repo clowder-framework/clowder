@@ -1,4 +1,4 @@
-@(file: models.File, id: String, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean, fileDataset: List[models.Dataset], datasetsOutside: List[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any])(implicit user: Option[securesocial.core.Identity])
+@(file: models.File, id: String, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean, fileDataset: List[models.Dataset], datasetsOutside: List[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
@@ -29,7 +29,7 @@
 		}
 	} 
 
-@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
@@ -43,7 +43,7 @@
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
-			Configuration.wasPTM = "@filename.endsWith(".ptm")";
+			Configuration.wasPTM = "@(filename.endsWith(".ptm") || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "file";
 		}
 		else if("@p._2" === "Oni"){							
@@ -110,7 +110,7 @@
 							<div class="tab-content"  id="previewsContent_@(f.id.toString)">
 								@for(i <- pvs.indices) {
 							  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
-							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename)
+							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename, f.contentType)
 
 								}
 					  			<script type="text/javascript">
@@ -353,10 +353,11 @@
     					Configuration.annotationsEditPath = pv.pv_annotationsEditPath;
     					Configuration.annotationsListPath = pv.pv_annotationsListPath;
     					Configuration.annotationsAttachPath = pv.pv_annotationsAttachPath;
-    					if("@file.filename".endsWith(".ptm"))   					
+    					if("@file.filename".endsWith(".ptm") || "@file.contentType".indexOf("ptmimages") != -1)   					
     						Configuration.wasPTM = 'true';
     					else
     						Configuration.wasPTM = 'false';
+    					Configuration.calledFrom = "file";
     				}
     				////
     				
@@ -413,7 +414,7 @@
 		</div>
 
 	</div>
-	<div class="row" style="margin-top:50px; margin-left: 12.2%; width: 750px;">
+	<div id="accordionsDiv" class="row" style="margin-top:20px; width: 750px; padding-left:15px;">
 		<div class="accordion" id="accordion1">
 			<div class="accordion-group">
 				<div class="accordian-heading">
@@ -468,7 +469,7 @@
 							data-parent="#accordion3" href="#collapseThree">Community-generated metadata</a>
 					</div>
 					<div id="collapseThree" class="accordion-body in collapse">
-				      	@fileusermetadata(id, usrmd)
+				      	@fileusermetadata(id, usrmd, rdfExported)
 					</div>
 				</div>
 			</div>
@@ -587,4 +588,12 @@
 		
 		
 	</div>
+	<script>
+	    var newOffsetLeft = $("#wrap > .container").offset().left;
+	    var newOffsetTop = $("#accordionsDiv").offset().top;
+	
+	
+		$("#accordionsDiv").offset({ top: newOffsetTop, left: newOffsetLeft })   ;	
+	
+	</script>
 }

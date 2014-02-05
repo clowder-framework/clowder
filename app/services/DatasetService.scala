@@ -53,4 +53,8 @@ abstract class DatasetService {
    * 
    */
   def getFileId(datasetId: String, filename: String): Option[String]
+  
+  def modifyRDFOfMetadataChangedDatasets()
+  
+  def modifyRDFUserMetadata(id: String, mappingNumber: String="1")
 }

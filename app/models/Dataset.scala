@@ -43,7 +43,8 @@ case class Dataset (
   userMetadata: Map[String, Any] = Map.empty,
   collections: List[String] = List.empty,
   thumbnail_id: Option[String] = None,
-  datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty
+  datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
+  userMetadataWasModified: Option[Boolean] = None
 )
 
 object MustBreak extends Exception { }
@@ -196,6 +197,15 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     Logger.debug("Removing tag " + tagId)
     val result = dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId))), false, false, WriteConcern.Safe)
   }
+  
+  def setUserMetadataWasModified(id: String, wasModified: Boolean){
+    dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+  }
+  
+  def findMetadataChangedDatasets(): List[Dataset] = {    
+    dao.find(MongoDBObject("userMetadataWasModified" -> true)).toList   
+  }
+  
 
   def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
@@ -317,9 +327,9 @@ def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,An
         }
       }
     }
-    queryMap.add(builder.result)
-    
+        
     if(orFound){
+        queryMap.add(MongoDBObject("$and" ->  builder))
     	return MongoDBObject("$or" ->  queryMap)
     }
     else if(!builder.isEmpty)  {

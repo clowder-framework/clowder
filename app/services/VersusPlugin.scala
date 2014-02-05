@@ -50,7 +50,9 @@ class VersusPlugin(application:Application) extends Plugin{
   val files: FileService =  DI.injector.getInstance(classOf[FileService])
   
   override def onStart() {
-      Logger.debug("Starting Versus Plugin")
+
+    Logger.debug("Starting Versus Plugin")
+
   }
   
 /*

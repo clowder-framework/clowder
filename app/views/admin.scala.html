@@ -1,4 +1,4 @@
-@(theme: Int)
+@(theme: Int)(implicit user: Option[securesocial.core.Identity])
 @main("Administration") {
 	<div class="page-header">
 		<h1>Administration</h1>
@@ -39,7 +39,7 @@
 				</select>	
 	 		</div>
 	 		
-	 		<div class="col-md-3">
+	 		<div class="col-md-3" style="margin-right:5px;">
 				<h5>Choose a Measure</h5>
 				<select id="measure" onchange="setMeasureState()">
 					<option value="invalid">--Measure--</option>

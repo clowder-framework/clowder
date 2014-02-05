@@ -68,4 +68,9 @@ class CassandraDataset extends DatasetService {
   def getFileId(datasetId: String, filename: String): Option[String] = {
     None
   }
+  
+  def modifyRDFOfMetadataChangedDatasets(){}
+  
+  def modifyRDFUserMetadata(id: String, mappingNumber: String="1") = {}
+  
 }

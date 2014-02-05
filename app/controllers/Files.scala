@@ -101,7 +101,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         var fileDataset = Dataset.findByFileId(file.id).sortBy(_.name)
         var datasetsOutside = Dataset.findNotContainingFile(file.id).sortBy(_.name)
         
-        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata))
+        val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+        
+        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."
@@ -306,8 +308,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	//        Thread.sleep(1000)
 	        file match {
 	          case Some(f) => {
-		        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-	            
+
 	            if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"
 	            else if(showPreviews.equals("None"))
@@ -315,17 +316,34 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	             var fileType = f.contentType
 				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
-                if (fileType.startsWith("ERROR: ")) {
-                  Logger.error(fileType.substring(7))
-                  InternalServerError(fileType.substring(7))
-                }
-              }
+				          if(fileType.startsWith("ERROR: ")){
+				             Logger.error(fileType.substring(7))
+				             InternalServerError(fileType.substring(7))
+				          }
+				          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+				              if(thirdSeparatorIndex >= 0){
+				                var firstSeparatorIndex = nameOfFile.indexOf("_")
+				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
+				          }
+				    }
+				    else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
+	            
+	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+	            
+	            // TODO RK need to replace unknown with the server name
+	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
+	            // TODO RK : need figure out if we can use https
+	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+	            val id = f.id.toString
 
-              // TODO RK need to replace unknown with the server name
-              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-              // TODO RK : need figure out if we can use https
-              val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-              val id = f.id.toString
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 	            
 	            //for metadata files
@@ -350,8 +368,17 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	          Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
 	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-	            
-	              
+	             //current.plugin[VersusPlugin].foreach{_.build()}
+	             
+	             //add file to RDF triple store if triple store is used
+	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+			             case "yes" => {
+			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+			             }
+			             case _ => {}		             
+		             }
+	             }
 	                        
 	            // redirect to file page]
 	            Redirect(routes.Files.file(f.id.toString))
@@ -484,23 +511,38 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
         val uploadedFile = f
         file match {
           case Some(f) => {
-            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-            
+                        
              var fileType = f.contentType
 			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
-            if (fileType.startsWith("ERROR: ")) {
-              Logger.error(fileType.substring(7))
-              InternalServerError(fileType.substring(7))
-            }
-          }
-
-          // TODO RK need to replace unknown with the server name
-          val key = "unknown." + "file." + fileType.replace("/", ".")
-          // TODO RK : need figure out if we can use https
-          val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-          val id = f.id.toString
-          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }
+			          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+				              if(thirdSeparatorIndex >= 0){
+				                var firstSeparatorIndex = nameOfFile.indexOf("_")
+				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
+				      }
+			    }
+			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
+             
+             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+            
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ fileType.replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val id = f.id.toString
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
             
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -517,6 +559,16 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            current.plugin[ElasticsearchPlugin].foreach{
 		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
 		            }
+	            }
+	            
+	            //add file to RDF triple store if triple store is used
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		             case "yes" => {
+		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+		             }
+		             case _ => {}
+	             }
 	            }
 
             // redirect to file page]
@@ -561,24 +613,40 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
         
         file match {
           case Some(f) => {
-            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-            
+                       
             var fileType = f.contentType
 			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
-            if (fileType.startsWith("ERROR: ")) {
-              Logger.error(fileType.substring(7))
-              InternalServerError(fileType.substring(7))
-            }
-          }
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }
+			          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+				              if(thirdSeparatorIndex >= 0){
+				                var firstSeparatorIndex = nameOfFile.indexOf("_")
+				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
+				      }
+			    }
+			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
+            
+            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+            
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ fileType.replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            
+            val id = f.id.toString
+            val path=f.path
 
-          // TODO RK need to replace unknown with the server name
-          val key = "unknown." + "file." + fileType.replace("/", ".")
-          // TODO RK : need figure out if we can use https
-          val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-
-          val id = f.id.toString
-          val path = f.path
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
             
             
@@ -597,6 +665,16 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            current.plugin[ElasticsearchPlugin].foreach{
 		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
 		            }
+	            }
+	            
+	            //add file to RDF triple store if triple store is used
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		             case "yes" => {
+		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+		             }
+		             case _ => {}
+	             }
 	            }
             
             // redirect to file page]
@@ -639,22 +717,38 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 //        Thread.sleep(1000)
         file match {
           case Some(f) => {
-            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-            
+                       
              var fileType = f.contentType
 			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
-            if (fileType.startsWith("ERROR: ")) {
-              Logger.error(fileType.substring(7))
-              InternalServerError(fileType.substring(7))
-            }
-          }
+			          if(fileType.startsWith("ERROR: ")){
+			             Logger.error(fileType.substring(7))
+			             InternalServerError(fileType.substring(7))
+			          }
+			          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+				              if(thirdSeparatorIndex >= 0){
+				                var firstSeparatorIndex = nameOfFile.indexOf("_")
+				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
+				      }
+			    }
+			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
+             
+             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+            
+            // TODO RK need to replace unknown with the server name
+            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
+            // TODO RK : need figure out if we can use https
+            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val id = f.id.toString
 
-          // TODO RK need to replace unknown with the server name
-          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-          // TODO RK : need figure out if we can use https
-          val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-          val id = f.id.toString
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
             
             //for metadata files
@@ -672,6 +766,16 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            current.plugin[ElasticsearchPlugin].foreach{
 		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
 		            }
+	            }
+	            
+	            //add file to RDF triple store if triple store is used
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+		             case "yes" => {
+		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+		             }
+		             case _ => {}
+	             }
 	            }
             
            Ok(f.id.toString)
@@ -716,8 +820,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				  // submit file for extraction			
 				  file match {
 				  case Some(f) => {
-				    current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-				    
+				    				    
 	                if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"
 	                else if(showPreviews.equals("None"))
@@ -725,17 +828,34 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 					  var fileType = f.contentType
 					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
 						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
-                    if (fileType.startsWith("ERROR: ")) {
-                      Logger.error(fileType.substring(7))
-                      InternalServerError(fileType.substring(7))
-                    }
-                  }
+						  if(fileType.startsWith("ERROR: ")){
+								Logger.error(fileType.substring(7))
+								InternalServerError(fileType.substring(7))
+								}
+						  if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+				              if(thirdSeparatorIndex >= 0){
+				                var firstSeparatorIndex = nameOfFile.indexOf("_")
+				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				              }
+				              FileDAO.setContentType(f.id.toString, fileType)
+						  }
+					  }
+					  else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
+	                
+	                current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+				  	  
+					  // TODO RK need to replace unknown with the server name
+					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
+							  // TODO RK : need figure out if we can use https
+							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+							  val id = f.id.toString
 
-                  // TODO RK need to replace unknown with the server name
-                  val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  // TODO RK : need figure out if we can use https
-                  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
-                  val id = f.id.toString
 							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
 //					  		  current.plugin[ElasticsearchPlugin].foreach{
 //					  			  _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
@@ -771,6 +891,17 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
  			    	val dtkey = "unknown." + "dataset."+ "unknown"
 			    	
 			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, ""))}
+ 			    	
+ 			    	//add file to RDF triple store if triple store is used
+ 			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+			             case "yes" => {
+			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
+			               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
+			             }
+			             case _ => {}
+		             }
+ 			    	}
 		
 					  // redirect to dataset page
 					  Logger.info("Uploading Completed")
