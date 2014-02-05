@@ -24,7 +24,6 @@ import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
-import play.api.libs.json.Json._
 import play.api.mvc.{SimpleResult, Action, Controller}
 import services._
 import javax.inject.{ Singleton, Inject }
@@ -54,9 +53,11 @@ import services.ExtractorMessage
 import scala.util.parsing.json.JSONArray
 import api.RequestWithUser
 import api.WithPermission
-import play.api.libs.json.JsObject
 import controllers.Previewers
-  
+import scala.concurrent.Future
+ 
+import scala.util.control._
+
 /**
  * Json API for files.
  *
@@ -87,10 +88,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         case Some(id) => { 
           Redirect(routes.Files.download(id)) 
         }
-        case None => {
-          InternalServerError
-      }
-      case None => { Logger.error("Error getting dataset" + datasetId); InternalServerError }
+       case None => { Logger.error("Error getting dataset" + datasetId); InternalServerError }
     }  
   }
   
@@ -212,11 +210,122 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	 Logger.debug("Updating previews.files " + id + " with " + doc)
 	 Ok(toJson("success"))
     }
+
+ /***
+  * For DTS service use case: suppose a user posts a file to the extraction api, no extractors are avaliable. Now she checks the status 
+  * for the extractor if it up. If yes, she may again wants to submit the file for extraction again. Since she has already uploaded
+  * it, this time will just uses the file id to submit the request again.
+  * This api takes file id and notify the user that the request has been sent for processing.
+  * This may change depending on our our design on DTS extraction service. 
+  * 
+  */
+  def submitAextraction(id:String)=SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)){ implicit request =>
+    current.plugin[RabbitmqPlugin] match {
+        case Some(plugin) => {
+          if (ObjectId.isValid(id)) {
+            files.getFile(id) match {
+              case Some(file) => {
+                val fileType=file.contentType
+                val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+                val host = "http://" + request.host
+                current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, file.length.toString, "", "")) }
+                Ok("Sent for Extraction. check the status")
+              }
+              case None=>
+                Logger.error("Could not retrieve file that was just saved.")
+              InternalServerError("Error uploading file")
+            }//file match
+          } // if Object id
+          else{
+            BadRequest("Not valid id")
+          }
+        } //case plugin  
+        case None=>{
+          BadRequest("No Service")
+        }
+    }//plugin match         
+   }
   
   
   /**
+   * Uploads file for extraction and returns a file id ; It does not index the file. 
+   * This is very similar to upload(). 
+   * Needs to be decided on the semantics of upload for DTS extraction service and its difference to upload file to Medici for curation and storage.   
+   * This may change accordingly.
+   */
+
+  def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+    request.user match {
+      case Some(user) => {
+        request.body.file("File").map { f =>
+          var nameOfFile = f.filename
+          var flags = ""
+          if (nameOfFile.toLowerCase().endsWith(".ptm")) {
+            var thirdSeparatorIndex = nameOfFile.indexOf("__")
+            if (thirdSeparatorIndex >= 0) {
+              var firstSeparatorIndex = nameOfFile.indexOf("_")
+              var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+              flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+              nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+            }
+          }
+
+          Logger.debug("Uploading file " + nameOfFile)
+          // store file
+          val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, null)
+          val uploadedFile = f
+          file match {
+            case Some(f) => {
+              current.plugin[FileDumpService].foreach { _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile)) }
+
+              val id = f.id.toString
+
+              var fileType = f.contentType
+              if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
+                fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
+                if (fileType.startsWith("ERROR: ")) {
+                  Logger.error(fileType.substring(7))
+                  InternalServerError(fileType.substring(7))
+                }
+              }
+
+              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+              // TODO RK : need figure out if we can use https
+              Logger.debug("request.hosts=" + request.host)
+              Logger.debug("request.path=" + request.path)
+              val host = "http://" + request.host
+              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags)) }
+
+              //for metadata files
+              if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+                val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+                FileDAO.addXMLMetadata(id, xmlToJSON)
+
+                Logger.debug("xmlmd=" + xmlToJSON)
+
+              }
+
+              Ok(toJson(Map("id" -> id)))
+            }
+            case None => {
+              Logger.error("Could not retrieve file that was just saved.")
+              InternalServerError("Error uploading file")
+            }
+          }
+        }.getOrElse {
+          BadRequest(toJson("File not attached."))
+        }
+      }
+
+      case None => BadRequest(toJson("Not authorized."))
+    }
+
+  }
+   
+  /**
    * Upload file using multipart form enconding.
    */
+  
     def upload(showPreviews: String="DatasetLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) {  implicit request =>
       request.user match {
         case Some(user) => {
@@ -1004,6 +1113,11 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   // ---------- Tags related code ends ------------------
 
   // ---------- Extract (BD-38) related code starts ------------------
+  /**
+   * Returns extracted lists of tags for a file
+   * 
+   */
+  
   def extractTags(file: models.File) = {
     val tags = file.tags
     // Transform the tag list into a list of ["extractor_id" or "userId", "values"] items,
@@ -1032,6 +1146,10 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     jtags
   }
   
+  /**
+   * Returns Previews extracted so far for a file
+   * 
+   */
   def extractPreviews(id: String) = {
     val previews = PreviewDAO.findByFileId(new ObjectId(id));
     /*
@@ -1060,6 +1178,11 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     jpreviews
   }
   
+  /**
+   * Returns Versus Descriptors from metadata field for a file
+   * 
+   */
+  
   def extractVersusDescriptors(id:String): JsValue= {
     
     FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
@@ -1077,8 +1200,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
             val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
             Logger.debug("retmd: " + returnedMetadata)
 
-            val retmd = Json.toJson(returnedMetadata)
-            Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
+            val retmd = toJson(returnedMetadata)
+            //Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
             if(map.containsKey("versus_descriptors")){
              val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
              listd
@@ -1103,7 +1226,218 @@ def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
 
+
+/**
+ * For a given file id, checks for the status of all extractors processing that file.
+ * REST endpoint  GET /api/extraction/:id/status 
+ * input: file id
+ * returns: a list of status of all extractors responsible for extractions on the file and the final status of extraction job
+ * Async is going to deprecreate is subsequent version of Play Framework. So need to change SecuredAction class to be able use the Action.async
+ */
+
+def checkExtractorsStatus(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+    Async {
+      current.plugin[RabbitmqPlugin] match {
+
+        case Some(plugin) => {
+          files.getFile(id) match {
+            case Some(file) => {
+              
+              var isActivity = "false"
+              Extraction.findIfBeingProcessed(file.id) match {
+                case false =>
+                case true => isActivity = "true"
+              }
+              
+              val l = Extraction.getExtractorList(file.id) map {
+                elist => (elist._1, elist._2)
+              }
+
+              var blist = plugin.getBindings()
+
+              for {
+                rkeyResponse <- blist
+              } yield {
+                val rkeyjson = rkeyResponse.json
+                val rkeyjsonlist = rkeyjson.as[List[JsObject]]
+                val rkeylist = rkeyjsonlist.map {
+                  rk =>
+                    Logger.debug("Routing Key : " + rk \ "routing_key")
+                    (rk \ "routing_key").toString
+                }
+                
+                if (isActivity.equals("true")) {
+                 // Logger.debug("***************Processing :l.size= " + l.size.toString)
+                  l += "Status" -> "Processing"
+
+                 // Logger.debug(l.toString)
+                  Ok(toJson(l.toMap))
+                } else {
+                  val ct = file.contentType
+                  val mt = ct.split("/")
+                  for (m <- mt)
+                    Logger.debug("m= " + m)
+                
+                  var flag = false
+                  if (l.size == 0) {
+                    
+                    val rkl = rkeylist.toArray
+                    
+                    for (s <- rkl) {
+                                            
+                      var x = s.split("\\.")
+                      //Logger.debug("after split x0=" + x(0) + "  x1=" + x(1))
+
+                      if (x.length > 2) { // based on the routing key obtained from rabbitmq server
+                        
+                        if (x(2).equals(mt(0)) && !flag) {
+                          Logger.debug("x(2)" + x(2) + "  mt(0): " + mt(0))
+                          l += "Status" -> "Required Extractor is either busy or not currently running"
+                          flag = true
+                         
+                        }
+                      }
+                    } //end of for rkl
+                    
+                    if (flag == false)
+                      l += "Status" -> "No Extractor Available. Request is not Queued"
+
+                  } else {
+                    l += "Status" -> "Done"
+                  }
+                  Logger.debug("l.toString : " + l.toString)
+                  Ok(toJson(l.toMap))
+                }
+
+              } //end of yield
+
+            } //end of some file
+            case None => {
+              Future(Ok("no file"))
+            }
+          } //end of match file
+        }
+
+        case None => {
+          Future(Ok("No Rabbitmq Service"))
+        }
+      }
+    } //Async ends
+  }
+
+  /**
+   * fetch the extracted metadata for the file
+   * REST end-point: GET /api/extraction/:id/value
+   * input: file id
+   * Returns status of the extraction request and  metadata extracted so far   
+   * 
+   */
+
+  def fetch(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+    Async {
+      current.plugin[RabbitmqPlugin] match {
+
+        case Some(plugin) => {
+          if (ObjectId.isValid(id)) {
+            files.getFile(id) match {
+              case Some(file) => {
+                Logger.info("Getting extract info for file with id " + id)
+                
+                var isActivity = "false"
+                Extraction.findIfBeingProcessed(file.id) match {
+                  case false =>
+                  case true => isActivity = "true"
+                }
+                val l = Extraction.getExtractorList(file.id) map {
+                  elist => (elist._1, elist._2)
+                }
+
+                var blist = plugin.getBindings()
+
+                for {
+                  rkeyResponse <- blist
+                } yield {
+                  val rkeyjson = rkeyResponse.json
+                  val rkeyjsonlist = rkeyjson.as[List[JsObject]]
+                  val rkeylist = rkeyjsonlist.map {
+                    rk =>
+                      Logger.debug("Routing Key : " + rk \ "routing_key")
+                      (rk \ "routing_key").toString
+                  }
+                  var status = ""
+                  if (isActivity.equals("true")) {
+                     status = "Processing"
+
+                  } else {
+                    val ct = file.contentType
+                    val mt = ct.split("/")
+                    for (m <- mt)
+                      Logger.debug("m= " + m)
+
+                    var flag = false
+                    if (l.size == 0) {
+                      Logger.debug("Inside If")
+                      val rkl = rkeylist.toArray
+                      
+                      for (s <- rkl) {
+                        var x = s.split("\\.")
+                        if (x.length > 2) {
+                          if (x(2).equals(mt(0)) && !flag) {
+                            Logger.debug("x(2)" + x(2) + "  mt(0): " + mt(0))
+                            status = "Required Extractor is either busy or is not currently running. Try after some time."
+                            flag = true
+                             
+                          }
+                        }
+                      }
+                      
+                      if (flag == false)
+                        status = "No Extractor Available. Request is not queued."
+
+                    } else {
+                      status = "Done"
+                    }
+                    
+                  } //end of outer else
+                  
+                  val jtags = extractTags(file)
+                  val jpreviews = extractPreviews(id)
+                  val vdescriptors = extractVersusDescriptors(id)
+                  Logger.debug("jtags: " + jtags.toString)
+                  Logger.debug("jpreviews: " + jpreviews.toString)
+                  
+                  Ok(Json.obj("file_id" -> id, "filename" -> file.filename, "Status" -> status, "tags" -> jtags, "previews" -> jpreviews, "versus descriptors" -> vdescriptors))
+                } //end of yield
+
+              } //end of some file
+              case None => {
+                val error_str = "The file with id " + id + " is not found."
+                Logger.error(error_str)
+                Future(NotFound(toJson(error_str)))
+              }
+            } //end of match file
+          } else {
+            val error_str = "The given id " + id + " is not a valid ObjectId."
+            Logger.error(error_str)
+            Future(BadRequest(Json.toJson(error_str)))
+          }
+
+        }
+
+        case None => {
+          Future(Ok("No Rabbitmq Service"))
+        }
+      }
+    } //Async 
+  }
   
+  
+ /**
+  * REST endpoint: GET  api/files/:id/extract 
+  * Returns metadata extracted so far for a file with id
+  * 
+  */
+    
   def extract(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     Logger.info("Getting extract info for file with id " + id)
     if (ObjectId.isValid(id)) {
@@ -1127,6 +1461,8 @@ def getJsonArray(list: List[JsObject]): JsArray = {
       BadRequest(toJson(error_str))
     }
   }
+  
+  
   // ---------- Extract (BD-38) related code ends ------------------
 
   def comment(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateComments))  { implicit request =>

@@ -21,6 +21,17 @@ import akka.routing.SmallestMailboxRouter
 import models.Extraction
 import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
+import com.rabbitmq.client.ReturnListener
+import scala.concurrent.Future
+import play.api.libs.ws.WS
+import play.api.libs.ws.Response
+import play.api.libs.json._
+import com.ning.http.client.Realm.AuthScheme
+import scala.util.parsing.json.JSON
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsArray
    
 /**
  * Rabbitmq service.
@@ -29,7 +40,7 @@ import org.bson.types.ObjectId
  *
  */
 class RabbitmqPlugin(application: Application) extends Plugin {
-
+val files: FileService =  DI.injector.getInstance(classOf[FileService])
   var extractQueue: Option[ActorRef] = None
   
   override def onStart() {
@@ -51,7 +62,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       val connection: Connection = factory.newConnection()
       val channel = connection.createChannel()
       val replyQueueName = channel.queueDeclare().getQueue()
-      Logger.info("Reply queue name: " + replyQueueName)
+      Logger.debug("Reply queue name: " + replyQueueName)
       // extraction queue
       channel.exchangeDeclare(exchange, "topic", true)
       extractQueue =  Some(Akka.system.actorOf(Props(new SendingActor(channel = channel, exchange = exchange, replyQueueName = replyQueueName))))
@@ -69,6 +80,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 	      "event_filter", // tagging the consumer is important if you want to stop it later
 	      new MsgConsumer(channel, event_filter)
 	    )
+	   
     } catch {
       case ioe: java.io.IOException => Logger.error("Error connecting to rabbitmq broker " + ioe.toString)
       case _:Throwable => Logger.error("Unknown error connecting to rabbitmq broker ")
@@ -90,6 +102,21 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       case None => Logger.warn("Could not send message over RabbitMQ")
     }
   }
+  
+/**
+ * Get the binding lists (lists of routing keys) from the rabbitmq server 
+ */
+  
+  def getBindings(): Future[Response] = {
+    val configuration = play.api.Play.configuration
+    val rUrl = "http://localhost:15672/api/bindings"
+
+    val bindingList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
+
+    bindingList
+
+  }
+
 }
 
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
@@ -148,7 +175,7 @@ class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(ch
 
       target ! body_text
       channel.basicAck(delivery_tag, false)
-
+      
   }
  
 }

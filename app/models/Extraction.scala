@@ -44,4 +44,19 @@ object Extraction extends ModelCompanion[Extraction, ObjectId] {
 	return extractorsArray.values.exists(_ != "DONE.")  
   }
   
+  /**
+   * Returns list of extractors and their corresponding status for a specified file
+   */
+  def getExtractorList(fileId:ObjectId):collection.mutable.Map[String,String] ={
+  
+    val allOfFile = dao.find(MongoDBObject("file_id" -> fileId)).toList
+	var extractorsArray:collection.mutable.Map[String,String] = collection.mutable.Map()
+	for(currentExtraction <- allOfFile){
+	    extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
+	}
+  return extractorsArray
+  
 }
+  
+}
+

@@ -50,7 +50,7 @@ class VersusPlugin(application:Application) extends Plugin{
   val files: FileService =  DI.injector.getInstance(classOf[FileService])
   
   override def onStart() {
-    Logger.debug("Starting Versus Plugin")
+      Logger.debug("Starting Versus Plugin")
   }
   
 /*
@@ -71,6 +71,7 @@ class VersusPlugin(application:Application) extends Plugin{
         Logger.debug("Extract Job ID=" + res.body)
 
         val desResponse = WS.url(extractUrl + "/" + res.body).withHeaders("Accept" -> "application/json").get()
+        
         desResponse.map {
           response =>
             // Logger.debug("RESPONSE FROM EXTRACT****:" +response.body)

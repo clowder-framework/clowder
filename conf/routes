@@ -16,8 +16,10 @@ GET      /users/view/:id                                                     con
 GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET		/files/new					      @controllers.Files.uploadFile
 
+#This may not require; will change in subsequent version
 GET     /extract                          @controllers.Files.extractFile
 POST    /extract                          @controllers.Files.uploadExtract()
+#End
 
 GET     /files/metadataSearch          	  @controllers.Files.metadataSearch
 GET     /files/generalMetadataSearch      @controllers.Files.generalMetadataSearch
@@ -154,6 +156,13 @@ POST    /api/files/:id/tags/remove_all                          @api.Files.remov
 
 
 GET     /api/files/:id/extract                                  @api.Files.extract(id)
+
+#This may change depending on our discussion on identifying the details of extraction in DTS service
+POST    /api/extraction                                         @api.Files.uploadExtract()
+GET     /api/extraction/:id/status                              @api.Files.checkExtractorsStatus(id)
+POST    /api/extraction/:id                                     @api.Files.submitAextraction(id)
+GET     /api/extraction/:id/value                               @api.Files.fetch(id)
+# End of change segment
 
 
 POST    /api/files/:id/previews/:p_id     						@api.Files.attachPreview(id, p_id)
