@@ -1,11 +1,10 @@
 package models
 
-import services.MongoSalatPlugin
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import MongoContext.context
 import play.api.Play.current
-import com.mongodb.casbah.commons.MongoDBObject
+import services.mongodb.MongoSalatPlugin
 
 case class DatasetXMLMetadata (
 

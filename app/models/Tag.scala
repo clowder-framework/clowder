@@ -9,7 +9,7 @@ import com.novus.salat.dao.SalatDAO
 
 import MongoContext.context
 import play.api.Play.current
-import services.MongoSalatPlugin
+import services.mongodb.MongoSalatPlugin
 
 /**
  * Add and remove tags

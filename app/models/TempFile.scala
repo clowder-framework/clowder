@@ -5,8 +5,8 @@ import org.bson.types.ObjectId
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
-import services.MongoSalatPlugin
 import com.mongodb.casbah.commons.MongoDBObject
+import services.mongodb.MongoSalatPlugin
 
 case class TempFile(
 	id: ObjectId = new ObjectId, 

@@ -1,7 +1,6 @@
 package api
 
 import play.api.mvc.Controller
-import play.api.mvc.Action
 import java.io.FileInputStream
 import play.api.libs.json.Json._
 import play.api.Logger

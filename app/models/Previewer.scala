@@ -2,8 +2,6 @@
  *
  */
 package models
-import org.bson.types.ObjectId
-import java.util.Date
 
 /**
  * Previewers.

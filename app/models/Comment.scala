@@ -1,26 +1,17 @@
 package models
 
-import java.util.Date
 import org.bson.types.ObjectId
+import com.novus.salat.dao.ModelCompanion
+import MongoContext.context
+import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
-import services.MongoSalatPlugin
 import com.mongodb.casbah.commons.MongoDBObject
-import securesocial.core.Identity
-import scala.util.Random
-import java.util.Date
-import org.bson.types.ObjectId
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import services.MongoSalatPlugin
-import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
-import collection.JavaConverters._
 import securesocial.core.Identity
 import com.novus.salat.annotations.raw.Ignore
+import services.mongodb.MongoSalatPlugin
 
 /**
  * Comment

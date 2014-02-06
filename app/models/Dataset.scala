@@ -3,25 +3,22 @@
  */
 package models
 
-import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
-import services.{ElasticsearchPlugin, MongoSalatPlugin}
+import services.ElasticsearchPlugin
 import java.util.Date
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
-import play.api.libs.json.Json
 import play.api.Logger
-import scala.Mutable
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
-import play.api.libs.json.JsValue
 import securesocial.core.Identity
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import jsonutils.JsonUtil
+import services.mongodb.MongoSalatPlugin
 
 /**
  * A dataset is a collection of files, and streams.

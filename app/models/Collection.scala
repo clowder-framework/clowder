@@ -1,15 +1,14 @@
 package models
 
-import org.bson.types.ObjectId
 import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import services.MongoSalatPlugin
 import com.mongodb.casbah.Imports._
 import MongoContext.context
 import play.api.Play.current
 import services.DI
 import services.DatasetService
 import services.CollectionService
+import services.mongodb.MongoSalatPlugin
 
 case class Collection (
   id: ObjectId = new ObjectId,
@@ -24,8 +23,7 @@ object Collection extends ModelCompanion[Collection, ObjectId]{
 
   val datasets: DatasetService =  DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService =  DI.injector.getInstance(classOf[CollectionService])
-  
-   // TODO RK handle exception for instance if we switch to other DB
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[Collection, ObjectId](collection = x.collection("collections")) {}

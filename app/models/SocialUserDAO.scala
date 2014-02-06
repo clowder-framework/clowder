@@ -1,12 +1,11 @@
 package models
 
 import org.bson.types.ObjectId
-import com.mongodb.casbah.Imports.MongoDBObject
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import securesocial.core.Identity
-import services.MongoSalatPlugin
+import services.mongodb.MongoSalatPlugin
 
 
 object SocialUserDAO extends ModelCompanion[Identity, ObjectId] {

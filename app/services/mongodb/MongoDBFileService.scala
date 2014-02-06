@@ -1,4 +1,6 @@
-package services
+package services.mongodb
+
+import services.FileService
 
 /**
  * Use mongo for both metadata and blobs.

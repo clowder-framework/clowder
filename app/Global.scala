@@ -7,6 +7,7 @@ import play.libs.Akka
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
+import services.mongodb.MongoSalatPlugin
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.

@@ -5,7 +5,7 @@ import org.bson.types.ObjectId
 import play.Logger
 import java.util.Date
 import play.api.Play.current
-import javax.inject.{ Singleton, Inject }
+import javax.inject.Inject
 import services.DatasetService
 import services.ElasticsearchPlugin
 

@@ -4,11 +4,9 @@
 package models
 
 import java.util.Date
-import org.bson.types.ObjectId
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
-import services.MongoSalatPlugin
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
@@ -21,11 +19,11 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileSystems
 
-import scala.util.parsing.json.JSON
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsArray
+import services.mongodb.MongoSalatPlugin
 
 
 /**

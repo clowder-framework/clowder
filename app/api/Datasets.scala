@@ -4,7 +4,6 @@
 package api
 
 import java.util.Date
-import java.util.ArrayList
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import models._
@@ -13,42 +12,24 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import jsonutils.JsonUtil
-import scala.collection.mutable.ListBuffer
 import services._
 import controllers.Previewers
-import play.api.libs.json.JsString
 import org.bson.types.ObjectId
 import play.api.Play.current
 import javax.inject.{ Singleton, Inject }
 import com.mongodb.casbah.Imports._
 import com.mongodb.WriteConcern
-import scala.util.parsing.json.JSONArray
 import org.json.JSONObject
 import Transformation.LidoToCidocConvertion
 import java.io.BufferedWriter
-import java.io.BufferedReader
 import java.io.FileWriter
-import java.io.FileReader
 import play.api.libs.iteratee.Enumerator
 import java.io.FileInputStream
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.JsString
 import scala.Some
-import api.RequestWithUser
-import api.WithPermission
-import models.File
-import play.api.libs.json.JsString
-import scala.Some
-import api.RequestWithUser
-import api.WithPermission
-import models.File
-import play.api.libs.json.JsString
-import scala.Some
-import api.RequestWithUser
-import api.WithPermission
 import models.File
 
-import org.apache.commons.io.FileUtils
 
 /**
  * Dataset API.

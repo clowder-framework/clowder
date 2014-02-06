@@ -1,11 +1,10 @@
-package services
+package services.mongodb
 
 import java.io.InputStream
 import play.Logger
 import play.api.Play.current
 import org.bson.types.ObjectId
 import models.SocialUserDAO
-import models.FileDAO
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFS
 import models.File

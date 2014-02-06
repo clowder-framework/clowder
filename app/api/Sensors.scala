@@ -4,7 +4,6 @@
 package api
 
 import play.api.mvc.Controller
-import play.api.mvc.Action
 import play.api.Play.current
 import services.PostgresPlugin
 

@@ -2,7 +2,6 @@ package models
 import play.api.libs.json.JsValue
 import play.api.libs.json.Reads
 import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsResult
 
 object IndexList {
 

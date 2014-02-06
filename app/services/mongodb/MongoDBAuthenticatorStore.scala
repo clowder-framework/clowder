@@ -1,13 +1,11 @@
 /**
  *
  */
-package services
+package services.mongodb
 
 import play.api.Application
 import securesocial.core.AuthenticatorStore
-import play.api.Play.current
 import models.AuthenticatorDAO
-import org.bson.types.ObjectId
 import securesocial.core.Authenticator
 import play.api.Logger
 

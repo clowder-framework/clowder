@@ -4,13 +4,12 @@
 package models
 
 import org.bson.types.ObjectId
-import com.novus.salat.annotations.raw.Key
 import java.util.Date
 import com.novus.salat.dao.ModelCompanion
-import services.MongoSalatPlugin
 import MongoContext.context
 import play.api.Play.current
 import com.novus.salat.dao.SalatDAO
+import services.mongodb.MongoSalatPlugin
 
 /**
  * A stream is a sequence of objects with potentially no beginning and no end.

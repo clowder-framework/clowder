@@ -1,22 +1,16 @@
-package services
+package services.mongodb
 
 import securesocial.core.UserServicePlugin
 import securesocial.core.IdentityId
 import play.api.{Application, Logger}
 import securesocial.core.providers.Token
 import com.mongodb.casbah.Imports._
-import models.User
-import securesocial.core.SocialUser
-import securesocial.core.AuthenticationMethod
-import securesocial.core.providers.UsernamePasswordProvider
 import models.SocialUserDAO
 import models.TokenDAO
 import models.{Token => MongoToken}
 import securesocial.core.Identity
-import com.mongodb.casbah.commons.conversions.scala.{RegisterJodaTimeConversionHelpers, DeregisterJodaTimeConversionHelpers}
-import com.mongodb.casbah.commons.conversions.scala.RegisterConversionHelpers
+import com.mongodb.casbah.commons.conversions.scala.DeregisterJodaTimeConversionHelpers
 import org.joda.time.DateTime
-import java.util.UUID
 
 /**
  * SecureSocial implementation using MongoDB.

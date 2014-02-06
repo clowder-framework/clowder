@@ -1,8 +1,8 @@
 /**
  *
  */
-package services
-import org.bson.types.ObjectId
+package services.mongodb
+
 import models.Collection
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._

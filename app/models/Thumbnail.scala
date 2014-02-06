@@ -1,6 +1,5 @@
 package models
 
-import services.MongoSalatPlugin
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import MongoContext.context
@@ -8,6 +7,7 @@ import play.api.Play.current
 import java.io.InputStream
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.commons.MongoDBObject
+import services.mongodb.MongoSalatPlugin
 
 case class Thumbnail (    
 	id: ObjectId = new ObjectId,

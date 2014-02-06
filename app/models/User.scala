@@ -7,7 +7,7 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.novus.salat.annotations.Key
 import MongoContext.context
 import play.api.Play.current
-import services.MongoSalatPlugin
+import services.mongodb.MongoSalatPlugin
 
 case class User (
   id: ObjectId = new ObjectId,
@@ -23,7 +23,6 @@ case class User (
 
 object User extends ModelCompanion[User, ObjectId] {
 
-  // TODO RK handle exception for instance if we switch to other DB
   val dao = current.plugin[MongoSalatPlugin] match {
     case None    => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) =>  new SalatDAO[User, ObjectId](collection = x.collection("users")) {}

@@ -1,10 +1,11 @@
 /**
  *
  */
-package services
+package services.cassandra
 
 import models.Dataset
 import models.Collection
+import services.DatasetService
 
 /**
  * Store datasets in Cassandra.

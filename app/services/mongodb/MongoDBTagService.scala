@@ -1,14 +1,13 @@
-package services
+package services.mongodb
 
-import api.RequestWithUser
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.JsValue
 import play.api.Logger
 import org.bson.types.ObjectId
 import models.{Dataset, FileDAO, SectionDAO}
-import play.api.libs.json.Json._
-import scala.Some
 import javax.inject.Inject
-import play.api.mvc.SimpleResult
+import services._
+import api.RequestWithUser
+import scala.Some
 
 /**
  * Created by lmarini on 1/17/14.

@@ -4,15 +4,11 @@
 package api
 
 import play.api.mvc.Controller
-import play.api.mvc.Action
 import play.api.libs.json.JsObject
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
 import models.MultimediaFeaturesDAO
 import play.api.Logger
-import play.api.libs.json.Json
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsNumber
 import models.Feature
 import models.MultimediaFeatures
 import models.PreviewDAO

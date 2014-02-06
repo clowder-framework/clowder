@@ -3,22 +3,15 @@
  */
 package api
 
-import play.api.mvc.Controller
 import play.api.mvc.Action
 import play.api.mvc.Request
 import play.api.mvc.AnyContent
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
-import java.util.Date
 import play.api.Play.current
-import services.PostgresPlugin
 import java.text.SimpleDateFormat
 import play.api.Logger
-import play.api.libs.ws.WS
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import scala.concurrent.Future
-import services.ElasticsearchPlugin
 import java.sql.Timestamp
 import services.PostgresPlugin
 

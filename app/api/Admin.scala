@@ -4,11 +4,10 @@
 package api
 
 import play.api.mvc.Controller
-import play.api.mvc.Action
 import play.api.Play.current
-import services.MongoSalatPlugin
 import play.api.Logger
 import play.api.libs.json.Json.toJson
+import services.mongodb.MongoSalatPlugin
 
 /**
  * Admin endpoints for JSON API.

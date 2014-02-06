@@ -13,6 +13,7 @@ import org.bson.types.ObjectId
 import java.io.File
 import com.mongodb.casbah.commons.MongoDBObject
 import securesocial.core.Identity
+import services.mongodb.MongoFileDB
 
 /**
  * Store blobs on the file system.

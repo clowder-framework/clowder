@@ -1,7 +1,8 @@
 /**
  *
  */
-package services
+package services.mongodb
+
 import models.Dataset
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
@@ -19,6 +20,7 @@ import java.io.FileWriter
 import java.io.FileInputStream
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
+import services.{DI, CollectionService}
 
 /**
  * Implementation of DatasetService using Mongodb.

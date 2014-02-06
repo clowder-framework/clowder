@@ -4,13 +4,8 @@
 package api
 
 import java.io.FileInputStream
-import java.util.Date
-import java.util.ArrayList
 import java.io.BufferedWriter
-import java.io.BufferedReader
 import java.io.FileWriter
-import java.io.FileReader
-import java.io.ByteArrayInputStream
 
 import org.bson.types.ObjectId
 
@@ -25,27 +20,23 @@ import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
-import play.api.mvc.{SimpleResult, Action, Controller}
+import play.api.mvc.SimpleResult
 import services._
-import javax.inject.{ Singleton, Inject }
+import javax.inject.Inject
 
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 
 import org.json.JSONObject
-import org.json.XML
 
 import Transformation.LidoToCidocConvertion
 
 import jsonutils.JsonUtil
 
-import org.apache.commons.io.FileUtils
 
 import play.api.libs.json.JsString
 import scala.Some
 import services.ExtractorMessage
-import api.RequestWithUser
-import api.WithPermission
 import play.api.libs.json.JsObject
 import fileutils.FilesUtils
 import services.DumpOfFile

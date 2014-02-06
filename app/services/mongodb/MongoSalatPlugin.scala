@@ -1,13 +1,6 @@
-package services
+package services.mongodb
 
 import play.api.{ Plugin, Logger, Application, Configuration }
-import com.typesafe.config.ConfigFactory
-import com.rabbitmq.client.ConnectionFactory
-import com.rabbitmq.client.Connection
-import com.rabbitmq.client.Channel
-import play.libs.Akka
-import akka.actor.Props
-import akka.actor.Actor
 import com.mongodb.casbah.MongoURI
 import com.mongodb.casbah.MongoConnection
 import play.api.Mode

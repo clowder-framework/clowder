@@ -1,25 +1,14 @@
-package services
+package services.mongodb
 
-import java.io.InputStream
 import models._
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import org.bson.types.ObjectId
-import com.mongodb.DBObject
 import play.api.Play.current
-import com.mongodb.casbah.gridfs.JodaGridFSDBFile
 import java.text.SimpleDateFormat
 import securesocial.core.Identity
-import com.novus.salat._
-import com.novus.salat.global._
-import java.util.Date
-import java.util.Calendar
 import scala.collection.mutable.ListBuffer
-import scala.util.parsing.json.JSONArray
 import play.api.Logger
-import scala.util.parsing.json.JSONArray
-import scala.Some
-import models.File
 import Transformation.LidoToCidocConvertion
 import java.util.ArrayList
 import java.io.BufferedReader
@@ -29,6 +18,10 @@ import java.io.FileWriter
 import java.io.FileInputStream
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
+import services.ElasticsearchPlugin
+import scala.Some
+import scala.util.parsing.json.JSONArray
+import models.File
 
 /**
  * Access file metedata from MongoDB.

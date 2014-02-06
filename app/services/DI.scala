@@ -3,13 +3,15 @@
  */
 package services
 
-
 import play.api.Play.current
 import play.api.Play
 import com.google.inject.Guice
 import com.google.inject.AbstractModule
+import services.mongodb.{MongoDBTagService, MongoDBCollectionService, MongoDBDatasetService, MongoDBFileService}
 
 /**
+ * Guice module configuration.
+ *
  * @author Luigi Marini
  *
  */

@@ -4,19 +4,17 @@
 package models
 
 import com.novus.salat.dao.ModelCompanion
-import services.MongoSalatPlugin
 import com.novus.salat.dao.SalatDAO
 import securesocial.core.Authenticator
-import org.bson.types.ObjectId
 import play.api.Play.current
-import MongoContext.context
 import securesocial.core.IdentityId
 import java.util.Date
 import play.api.Logger
-import com.novus.salat._
 import com.novus.salat.global._
 import com.mongodb.casbah.Imports._
 import org.joda.time.DateTime
+import services.mongodb.MongoSalatPlugin
+import MongoContext.context
 
 /**
  * Track securesocial authenticated users in MongoDB.
@@ -32,7 +30,7 @@ case class LocalAuthenticator(
   expirationDate: Date)
 
 object AuthenticatorDAO extends ModelCompanion[LocalAuthenticator, ObjectId] {
-  // TODO RK handle exception for instance if we switch to other DB
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[LocalAuthenticator, ObjectId](collection = x.collection("social.authenticator")) {}

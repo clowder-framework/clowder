@@ -1,7 +1,9 @@
 /**
  *
  */
-package services
+package services.mongodb
+
+import services.CollectionService
 
 /**
  * Use Mongodb to store collections.

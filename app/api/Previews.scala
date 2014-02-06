@@ -3,23 +3,18 @@
  */
 package api
 
-import play.api.mvc.Controller
-import play.api.mvc.Action
 import play.api.Logger
 import models.PreviewDAO
 import java.io.FileInputStream
-import play.api.libs.json.Json._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
-import play.api.libs.json.Json
 import play.api.libs.json.JsObject
 import models.TileDAO
 import com.mongodb.WriteConcern
 import models.ThreeDAnnotation
 import play.api.libs.json.JsValue
-import controllers.SecuredController
 import play.api.libs.concurrent.Execution.Implicits._
 import java.io.BufferedReader
 import java.io.FileReader
