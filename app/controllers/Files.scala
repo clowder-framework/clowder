@@ -343,7 +343,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
 	            val id = f.id.toString
-
+                
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 	            
 	            //for metadata files
@@ -363,9 +363,9 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            }
 	            }
 	            
-	          var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
+	          //var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
 	          
-	          Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
+	         // Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
 	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 	             //current.plugin[VersusPlugin].foreach{_.build()}

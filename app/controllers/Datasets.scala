@@ -334,8 +334,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					             }
 				             }
 		 			    	
-		 			    	var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(id)} 
-		 			    	Logger.debug("Inside File: Extraction Id : "+ extractJobId)
+		 			    	//var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(id)} 
+		 			    	//Logger.debug("Inside File: Extraction Id : "+ extractJobId)
 		 			    	
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id.toString))

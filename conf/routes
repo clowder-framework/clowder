@@ -145,6 +145,7 @@ GET		/api/files/rdfUserMetadata/:id							@api.Files.getRDFUserMetadata(id, mapp
 POST	/api/files/:fileId/remove								@api.Files.removeFile(fileId)
 GET     /api/files/:id/metadata           						@api.Files.get(id)
 POST    /api/files/:id/metadata           						@api.Files.addMetadata(id)
+POST    /api/files/:id/versusmetadata                           @api.Files.addVersusMetadata(id) 
 POST    /api/files/:id/usermetadata	  							@api.Files.addUserMetadata(id)
 GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnicalMetadataJSON(id)
 POST    /api/files/:id/comment									@api.Files.comment(id)

@@ -218,6 +218,33 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	 Ok(toJson("success"))
     }
 
+  /**
+   * Add Versus metadata to file: use by Versus Extractor
+   * REST enpoint:POST api/Files/:id/versusmetadata
+   */
+  def addVersusMetadata(id: String) =
+    SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) { request =>
+
+      files.getFile(id) match {
+        case Some(file) => {
+          val list = request.body \ ("versus_descriptors")
+
+          FileDAO.addVersusMetadata(id, list)
+
+          Logger.debug("GET META DATA:*****")
+          FileDAO.getMetadata(id).map {
+            md =>
+              Logger.debug(":::" + md._2.toString)
+          }
+          Ok("Added Versus Descriptor")
+        }
+        case None => {
+          Logger.error("Error in getting file " + id)
+          NotFound
+        }
+      }
+
+    }
  /***
   * For DTS service use case: suppose a user posts a file to the extraction api, no extractors are avaliable. Now she checks the status 
   * for the extractor if it up. If yes, she may again wants to submit the file for extraction again. Since she has already uploaded
@@ -301,6 +328,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
               Logger.debug("request.hosts=" + request.host)
               Logger.debug("request.path=" + request.path)
               val host = "http://" + request.host
+              Logger.debug("hosts=" + request.host)
+              //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
               current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags)) }
 
               //for metadata files
@@ -389,7 +418,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
-
+                Logger.debug("host= "+host)
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 	            	            
 	            //for metadata files
@@ -1476,6 +1505,7 @@ def checkExtractorsStatus(id: String) = SecuredAction(parse.anyContent, authoriz
 
                     } else {
                       status = "Done"
+                        
                     }
                     
                   } //end of outer else
