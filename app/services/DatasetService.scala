@@ -4,6 +4,8 @@
 package services
 import models.Dataset
 import models.Collection
+import play.api.libs.json.JsValue
+import scala.util.Try
 
 /**
  * Generic dataset service.
@@ -11,7 +13,7 @@ import models.Collection
  * @author Luigi Marini
  *
  */
-abstract class DatasetService {
+trait DatasetService {
   
   /**
    * List all datasets in the system.
@@ -33,11 +35,15 @@ abstract class DatasetService {
    */
   def listDatasetsBefore(date: String, limit: Int): List[Dataset]
   
-  
   /**
    * Get dataset.
    */
   def get(id: String): Option[Dataset]
+
+  /**
+   * Insert dataset.
+   */
+  def insert(dataset: Dataset): Option[String]
   
   /**
    * 
@@ -53,7 +59,18 @@ abstract class DatasetService {
    * 
    */
   def getFileId(datasetId: String, filename: String): Option[String]
-  
+
+  /**
+   * Get JSON representation.
+   */
+  def toJSON(dataset: Dataset): JsValue
+
+  /**
+   * Check if dataset belongs to a collection.
+   */
+  def isInCollection(datasetId: String, collectionId: String): Boolean
+
+
   def modifyRDFOfMetadataChangedDatasets()
   
   def modifyRDFUserMetadata(id: String, mappingNumber: String="1")

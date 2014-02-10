@@ -280,7 +280,21 @@ trait MongoFileDB {
     
     return xmlFile    
   }
-  
+
+  def getXMLMetadataJSON(id: String): String = {
+    FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("xmlMetadata") match{
+          case Some(y)=>{
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("xmlMetadata").get)
+            returnedMetadata
+          }
+          case None => "{}"
+        }
+      }
+    }
+  }
   
   
 }

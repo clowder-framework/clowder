@@ -16,6 +16,7 @@ import com.mongodb.casbah.gridfs.GridFS
  *
  */
 class MongoSalatPlugin(app: Application) extends Plugin {
+
   case class MongoSource(uri: MongoURI) {
     var conn : MongoConnection = null;
     lazy val db = open.getDB(uri.database.getOrElse("medici"))
@@ -117,5 +118,22 @@ class MongoSalatPlugin(app: Application) extends Plugin {
    * @return A GridFS
    */
   def gridFS(bucketName: String = "fs", sourceName:String = "default"): GridFS = GridFS(source(sourceName).db, bucketName)
+
+  def dropAllData() {
+    sources.values.map { source =>
+      Logger.debug("**DANGER** Deleting data collections **DANGER**")
+      source.collection("collections").drop()
+      source.collection("datasets").drop()
+      source.collection("previews.chunks").drop()
+      source.collection("previews.files").drop()
+      source.collection("sections").drop()
+      source.collection("uploads.chunks").drop()
+      source.collection("uploads.files").drop()
+      source.collection("uploadquery").drop()
+      source.collection("extractions").drop()
+      source.collection("streams").drop()
+      Logger.debug("**DANGER** Data deleted **DANGER**")
+    }
+  }
 
 }

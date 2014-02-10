@@ -6,6 +6,7 @@ package services.cassandra
 import models.Dataset
 import models.Collection
 import services.DatasetService
+import play.api.libs.json.{JsNull, JsValue}
 
 /**
  * Store datasets in Cassandra.
@@ -48,7 +49,9 @@ class CassandraDataset extends DatasetService {
   def get(id: String): Option[Dataset] = {
     None
   }
-  
+
+  def insert(dataset: Dataset): Option[String] = None
+
   /**
    * 
    */
@@ -62,12 +65,17 @@ class CassandraDataset extends DatasetService {
   def isInCollection(dataset: Dataset, collection: Collection): Boolean  = {
     false
   }
-  
-  /**
-   * 
-   */
+
   def getFileId(datasetId: String, filename: String): Option[String] = {
     None
+  }
+
+  def toJSON(dataset: Dataset): JsValue = {
+    JsNull
+  }
+
+  def isInCollection(datasetId: String, collectionId: String): Boolean = {
+    return false
   }
   
   def modifyRDFOfMetadataChangedDatasets(){}

@@ -12,7 +12,6 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import jsonutils.JsonUtil
-import services._
 import controllers.Previewers
 import org.bson.types.ObjectId
 import play.api.Play.current
@@ -29,6 +28,13 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.JsString
 import scala.Some
 import models.File
+import services._
+import play.api.libs.json.JsString
+import scala.Some
+import api.RequestWithUser
+import api.WithPermission
+import models.File
+import scala.util.Try
 
 
 /**
@@ -47,32 +53,27 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
    * List all datasets.
    */
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListDatasets)) { request =>
-    val list = for (dataset <- datasets.listDatasets()) yield jsonDataset(dataset)
+    val list = datasets.listDatasets.map(datasets.toJSON(_))
     Ok(toJson(list))
   }
 
   /**
    * List all datasets outside a collection.
    */
-  def listOutsideCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListDatasets)) { request =>
+  def listOutsideCollection(collectionId: String) = SecuredAction(parse.anyContent,
+                            authorization = WithPermission(Permission.ListDatasets)) { request =>
+
     Collection.findOneById(new ObjectId(collectionId)) match {
       case Some(collection) => {
-        val list = for (dataset <- datasets.listDatasetsChronoReverse; if (!isInCollection(dataset, collection))) yield jsonDataset(dataset)
+        val list = for (dataset <- datasets.listDatasetsChronoReverse; if (!datasets.isInCollection(dataset, collection)))
+                   yield datasets.toJSON(dataset)
         Ok(toJson(list))
       }
       case None => {
-        val list = for (dataset <- datasets.listDatasetsChronoReverse) yield jsonDataset(dataset)
+        val list = datasets.listDatasetsChronoReverse.map(datasets.toJSON(_))
         Ok(toJson(list))
       }
     }
-  }
-
-  def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
-    for (collDataset <- collection.datasets) {
-      if (collDataset.id == dataset.id)
-        return true
-    }
-    return false
   }
 
   /**
@@ -83,15 +84,15 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
       (request.body \ "name").asOpt[String].map { name =>
       	  (request.body \ "description").asOpt[String].map { description =>
       	    (request.body \ "file_id").asOpt[String].map { file_id =>
-      	      FileDAO.get(file_id) match {
+      	      files.getFile(file_id) match {
       	        case Some(file) =>
       	           val d = Dataset(name=name,description=description, created=new Date(), files=List(file), author=request.user.get)
-		      	   Dataset.insert(d) match {
-		      	     case Some(id) => {
+		      	       datasets.insert(d) match {
+		      	         case Some(id) => {
                        import play.api.Play.current
                        files.index(file_id)
                        if(!file.xmlMetadata.isEmpty){
-                         val xmlToJSON = FileDAO.getXMLMetadataJSON(file_id)
+                         val xmlToJSON = files.getXMLMetadataJSON(file_id)
                          Dataset.addXMLMetadata(id.toString, file_id, xmlToJSON)
                          current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id.toString,
                            List(("name",d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))}
@@ -225,21 +226,13 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
   def getInCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowCollection)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
-        val list = for (dataset <- datasets.listInsideCollection(collectionId)) yield jsonDataset(dataset)
+        val list = for (dataset <- datasets.listInsideCollection(collectionId)) yield datasets.toJSON(dataset)
         Ok(toJson(list))
       }
       case None => {
         Logger.error("Error getting collection" + collectionId); InternalServerError
       }
     }
-  }
-
-  def jsonDataset(dataset: Dataset): JsValue = {
-    var datasetThumbnail = "None"
-    if(!dataset.thumbnail_id.isEmpty)
-      datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
-    
-    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description, "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
@@ -568,7 +561,7 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
 
     Logger.debug("Search completed. Returning datasets list.")
 
-    val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
+    val list = for (dataset <- searchQuery) yield datasets.toJSON(dataset)
     Logger.debug("thelist: " + toJson(list))
     Ok(toJson(list))
   }
@@ -589,7 +582,7 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
 
       Logger.debug("Search completed. Returning datasets list.")
 
-      val list = for (dataset <- searchQuery) yield jsonDataset(dataset)
+      val list = for (dataset <- searchQuery) yield datasets.toJSON(dataset)
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
     } 

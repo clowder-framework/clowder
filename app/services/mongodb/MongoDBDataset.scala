@@ -21,6 +21,9 @@ import java.io.FileInputStream
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
 import services.{DI, CollectionService}
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json._
+import scala.Some
 
 /**
  * Implementation of DatasetService using Mongodb.
@@ -30,7 +33,7 @@ import services.{DI, CollectionService}
  */
 
 object MustBreak extends Exception { }
-
+@deprecated
 trait MongoDBDataset {
   
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
@@ -251,7 +254,19 @@ trait MongoDBDataset {
     
     return xmlFile    
   }
-  
+
+  def toJSON(dataset: Dataset): JsValue = {
+    var datasetThumbnail = "None"
+    if(!dataset.thumbnail_id.isEmpty)
+      datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
+
+    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description,
+      "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail))
+  }
+
+  def isInCollection(datasetId: String, collectionId: String): Boolean = {
+    return false
+  }
   
   
 }

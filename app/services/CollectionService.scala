@@ -4,6 +4,7 @@
 package services
 
 import models.Collection
+import scala.util.Try
 
 /**
  * Generic collection service.
@@ -11,7 +12,7 @@ import models.Collection
  * @author Constantinos Sophocleous
  *
  */
-abstract class CollectionService {
+trait CollectionService {
 
    /**
    * List all collections in the system.
@@ -47,4 +48,21 @@ abstract class CollectionService {
    * 
    */
   def listOutsideDataset(datasetId: String): List[Collection]
+
+  /**
+   * Add datataset to collection
+   */
+  def addDataset(collectionId: String, datasetId: String): Try[Unit]
+
+  /**
+   * Remove dataset from collection
+   */
+  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String): Try[Unit]
+
+  /**
+   * Delete collection and any reference of it
+   */
+  def delete(collectionId: String): Try[Unit]
+
+  def deleteAll()
 }

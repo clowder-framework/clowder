@@ -9,6 +9,7 @@ import com.mongodb.casbah.Imports._
 import java.text.SimpleDateFormat
 import play.api.Logger
 import models.Dataset
+import scala.util.{Failure, Success, Try}
 
 /**
  * Implementation of DatasetService using Mongodb.
@@ -16,6 +17,7 @@ import models.Dataset
  * @author Constantinos Sophocleous
  *
  */
+@deprecated
 trait MongoDBCollection {
   
   /**
@@ -109,5 +111,9 @@ trait MongoDBCollection {
         return true
     }
     return false
+  }
+
+  def deleteAll() {
+    Collection.remove(MongoDBObject())
   }
 }

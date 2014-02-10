@@ -7,6 +7,10 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
 import com.mongodb.casbah.gridfs.JodaGridFSDBFile
 import securesocial.core.Identity
+import org.bson.types.ObjectId
+import com.mongodb.casbah.Imports._
+import scala.Some
+import models.File
 
 /**
  * Generic file service to store blobs of files and metadata about them.
@@ -53,6 +57,9 @@ abstract class FileService {
   def storeFileMD(id: String, filename: String, contentType: Option[String], author: Identity): Option[File]
 
   def index(id: String)
+
+  // TODO return JsValue
+  def getXMLMetadataJSON(id: String): String
   
   def modifyRDFOfMetadataChangedFiles()
   
