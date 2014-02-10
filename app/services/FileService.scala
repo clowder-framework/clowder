@@ -51,4 +51,10 @@ abstract class FileService {
    * Store file metadata.
    */
   def storeFileMD(id: String, filename: String, contentType: Option[String], author: Identity): Option[File]
+
+  def index(id: String)
+  
+  def modifyRDFOfMetadataChangedFiles()
+  
+  def modifyRDFUserMetadata(id: String, mappingNumber: String="1")
 }

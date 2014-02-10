@@ -153,6 +153,50 @@ class PostgresPlugin(application: Application) extends Plugin {
       None
     } else Some(data)
   }
+  
+  def getSensorDateRange(id: String): Option[String] = {
+    var data = ""
+    val query = "SELECT to_json(t) FROM " + 
+    			"(SELECT min(datapoints.start_time) As min_start_time, max(datapoints.start_time) As max_start_time FROM " +
+    			"sensors, streams, datapoints WHERE sensors.gid = ? AND sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid) As t;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Get streams by sensor statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Sensor date range: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Getting sensors statistics: " + data)
+    if (data == "null") { // FIXME
+      Logger.debug("Searching NONE")
+      None
+    } else Some(data)
+  }
+  
+  def getSensorParameters(id: String): Option[String] = {
+    var data = ""
+    val query = "SELECT to_json(unique_values) FROM (SELECT array(SELECT json_object_keys(datapoints.data) As key " +
+                "FROM sensors, streams, datapoints WHERE sensors.gid = ? AND sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid GROUP BY key) As parameters) As unique_values;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Get streams by parameter statement: " + st)
+    val rs = st.executeQuery()
+    while (rs.next()) {
+      data += rs.getString(1)
+      Logger.debug("Sensors parameters: " + data)
+    }
+    rs.close()
+    st.close()
+    Logger.debug("Getting sensors parameters: " + data)
+    if (data == "null") { // FIXME
+      Logger.debug("Searching NONE")
+      None
+    } else Some(data)
+  
+  }
 
   def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String): String = {
     val ps = conn.prepareStatement("INSERT INTO streams(name, geog, created, metadata, sensor_id) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), ?, CAST(? AS json), ?);", Statement.RETURN_GENERATED_KEYS)

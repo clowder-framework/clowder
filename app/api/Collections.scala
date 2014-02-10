@@ -1,24 +1,28 @@
 package api
 
-import controllers.SecuredController
-import play.api.mvc.Controller
 import models.Collection
 import play.api.Logger
-import services.Services
 import org.bson.types.ObjectId
 import play.api.libs.json.JsValue
-import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 import models.Dataset
+import javax.inject.{ Singleton, Inject }
+import services.DatasetService
 import com.mongodb.casbah.commons.MongoDBObject
+import services.CollectionService
 
-object Collections extends ApiController {
-  
-  
+/**
+ * Manipulate collections.
+ * 
+ * @author Constantinos Sophocleous
+ */
+@Singleton
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService) extends ApiController {
+
   def attachDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateCollections)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
-        Services.datasets.get(datasetId) match {
+        datasets.get(datasetId) match {
           case Some(dataset) => {
             if(!isInCollection(dataset,collection)){
 	            // add dataset to collection  
@@ -49,7 +53,7 @@ object Collections extends ApiController {
   def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.CreateCollections)) { request =>
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
-        Services.datasets.get(datasetId) match {
+        datasets.get(datasetId) match {
           case Some(dataset) => {
             if(isInCollection(dataset,collection)){
 	            // remove dataset from collection  
@@ -105,9 +109,9 @@ object Collections extends ApiController {
       }       
     }    
   }
-  
+
   def listCollections() = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListCollections)) { request =>
-    val list = for (collection <- Services.collections.listCollections()) yield jsonCollection(collection)
+    val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
       Ok(toJson(list))    
   }
   
