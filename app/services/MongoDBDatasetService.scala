@@ -9,5 +9,5 @@ package services
  * @author Luigi Marini
  *
  */
-object MongoDBDatasetService extends DatasetService with MongoDBDataset {
+class MongoDBDatasetService extends DatasetService with MongoDBDataset {
 }

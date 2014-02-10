@@ -9,7 +9,7 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     "com.novus" %% "salat" % "1.9.2" exclude("org.scala-stm", "scala-stm_2.10.0"),
-    "securesocial" %% "securesocial" % "master-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "com.rabbitmq" % "amqp-client" % "3.0.0",
     "org.elasticsearch" % "elasticsearch" % "0.90.2",
     "com.spatial4j" % "spatial4j" % "0.3",
@@ -25,7 +25,13 @@ object ApplicationBuild extends Build {
     "org.openrdf.sesame" % "sesame-rio-rdfxml" % "2.7.8",
     "org.openrdf.sesame" % "sesame-rio-trig" % "2.7.8",
     "org.openrdf.sesame" % "sesame-rio-trix" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-turtle" % "2.7.8"
+    "org.openrdf.sesame" % "sesame-rio-turtle" % "2.7.8",
+    "com.google.inject" % "guice" % "3.0",
+    "com.google.inject.extensions" % "guice-assistedinject" % "3.0",
+    "com.netflix.astyanax" % "astyanax-core" % "1.56.43",
+    "com.netflix.astyanax" % "astyanax-thrift" % "1.56.43",
+    "com.netflix.astyanax" % "astyanax-cassandra" % "1.56.43",
+    "com.netflix.astyanax" % "astyanax-recipes" % "1.56.43"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 

@@ -6,5 +6,5 @@ package services
  * @author Luigi Marini
  *
  */
-object MongoDBFileService extends FileService with MongoFileDB with GridFSDB {
+class MongoDBFileService extends FileService with MongoFileDB with GridFSDB {
 }

@@ -10,7 +10,6 @@ import services.MongoSalatPlugin
 import com.mongodb.casbah.Imports._
 import MongoContext.context
 import play.api.Play.current
-import services.Services
 import play.api.Logger
 
 /**
