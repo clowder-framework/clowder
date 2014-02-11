@@ -92,6 +92,7 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
     }
   }
   
+  
   def getUserMetadataJSON(id: String): String = {
     dao.collection.findOneByID(new ObjectId(id)) match {
       case None => "{}"
