@@ -4,6 +4,7 @@ import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
+import models.AppConfiguration
 
  /**
   * A request that adds the User for the current call
@@ -69,6 +70,7 @@ case class WithPermission(permission: Permission) extends Authorization {
 	def isAuthorized(user: Identity): Boolean = {
 		// order is important
 		(user, permission) match {
+		  		  
 		  // anybody can list/show
 		  case (_, Public)               => true
 		  case (_, ListCollections)      => true
@@ -93,6 +95,15 @@ case class WithPermission(permission: Permission) extends Authorization {
 		  
 		  // all other permissions require authenticated user
 		  case (null, _)                 => false
+		  case(_, Permission.Admin) =>{
+		    if(!user.email.isEmpty)
+		    	if(AppConfiguration.adminExists(user.email.get))
+		    	  true
+		    	else
+		    	  false  
+		    else	  
+		    	false	  
+		  }
 		  case (_, _)                    => true
 		}
 	}

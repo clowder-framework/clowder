@@ -29,6 +29,10 @@ object Global extends GlobalSettings {
         source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
       }
     }
+        
+    //Add permanent admins to app if not already included
+    for(initialAdmin <- play.Play.application().configuration().getString("initialAdmins").split(","))
+    	models.AppConfiguration.addAdmin(initialAdmin)
     
     //Delete garbage files (ie past intermediate extractor results files) from DB
     var timeInterval = play.Play.application().configuration().getInt("intermediateCleanup.checkEvery")

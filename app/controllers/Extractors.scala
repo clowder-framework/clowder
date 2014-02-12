@@ -21,6 +21,7 @@ import api.Permission
 object Extractors extends Controller with SecuredController {
 
   def extractions = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
     Ok(views.html.extractions(Extraction.findAll.toList))
   }
   

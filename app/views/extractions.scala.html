@@ -1,4 +1,4 @@
-@(extractions: List[models.Extraction])
+@(extractions: List[models.Extraction])(implicit user: Option[securesocial.core.Identity])
 
 @main("Extractions") {
 	<div class="page-header">

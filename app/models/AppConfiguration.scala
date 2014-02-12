@@ -21,7 +21,8 @@ import play.api.Logger
 case class AppConfiguration(
   id: ObjectId = new ObjectId,
   name: String = "default",
-  theme: String = "bootstrap/bootstrap.css")
+  theme: String = "bootstrap/bootstrap.css",
+  admins: List[String] = List.empty)
 
 object AppConfiguration extends ModelCompanion[AppConfiguration, ObjectId] {
   // TODO RK handle exception for instance if we switch to other DB
@@ -50,4 +51,16 @@ object AppConfiguration extends ModelCompanion[AppConfiguration, ObjectId] {
     }
     
   }
+  
+  def addAdmin(newAdminEmail: String) {
+    AppConfiguration.update(MongoDBObject("name" -> "default"), $addToSet("admins" ->  newAdminEmail), false, false, WriteConcern.Safe)
+  }
+  def removeAdmin(adminEmail: String) {
+    AppConfiguration.update(MongoDBObject("name" -> "default"), $pull("admins" ->  adminEmail), false, false, WriteConcern.Safe)
+  }
+  
+  def adminExists(adminEmail: String): Boolean =  {
+    !dao.findOne(MongoDBObject("admins" -> adminEmail)).isEmpty
+  }
+  
 }

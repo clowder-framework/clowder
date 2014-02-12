@@ -25,6 +25,9 @@ import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
 
+import play.api.data.Form
+import play.api.data.Forms._
+
 /**
  * Administration pages.
  *
@@ -339,4 +342,46 @@ object Admin extends SecuredController {
       case None => themes(0)
     }
   }
+  
+  val adminForm = Form(
+  single(
+    "email" -> email
+  )verifying("Admin already exists.", fields => fields match {
+     		case adminMail => !AppConfiguration.adminExists(adminMail)
+     	})
+)
+  
+  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.newAdmin(adminForm))
+  }
+  
+  def submitNew() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+    
+        adminForm.bindFromRequest.fold(
+          errors => BadRequest(views.html.newAdmin(errors)),
+	      newAdmin => {
+	    	  		AppConfiguration.addAdmin(newAdmin)		            
+		            Redirect(routes.Application.index)
+			      } 
+	)
+  }
+  
+  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+    
+    AppConfiguration.getDefault match{
+      case Some(conf) =>{
+        Ok(views.html.listAdmins(conf.admins))
+      }
+      case None => {
+        Logger.error("Error getting application configuration!"); InternalServerError
+      }
+      
+    }
+  
+  }
+  
+  
 }

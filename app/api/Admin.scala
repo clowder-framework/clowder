@@ -9,6 +9,7 @@ import play.api.Play.current
 import services.MongoSalatPlugin
 import play.api.Logger
 import play.api.libs.json.Json.toJson
+import models.AppConfiguration
 
 /**
  * Admin endpoints for JSON API.
@@ -41,4 +42,29 @@ object Admin extends Controller with ApiController {
     }
     Ok(toJson("done"))
   }
+  
+  
+  def removeAdmin = SecuredAction(authorization=WithPermission(Permission.Admin)) { request =>    
+      Logger.debug("Removing admin")
+      
+      (request.body \ "email").asOpt[String].map { email =>        
+      	    AppConfiguration.adminExists(email) match {
+      	      case true => {
+      	        Logger.debug("Removing admin with email " + email)     	        
+      	        AppConfiguration.removeAdmin(email)	
+      	        
+      	        Ok(toJson(Map("status" -> "success")))
+      	      }
+      	      case false => {
+      	    	  Logger.info("Identified admin does not exist.")
+      	    	  Ok(toJson(Map("status" -> "notmodified")))
+      	      }
+      	    }      	          
+      }.getOrElse {
+        BadRequest(toJson("Missing parameter [email]"))
+      }      
+  }
+  
+  
 }
+
