@@ -51,6 +51,9 @@ import fileutils.FilesUtils
 import services.DumpOfFile
 
 import controllers.Previewers
+
+import java.io.BufferedInputStream
+import javax.imageio.ImageIO
   
 /**
  * Json API for files.
@@ -945,6 +948,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
       ThreeDTextureDAO.findTexture(new ObjectId(three_d_file_id), filename) match {
         case Some(texture) => {
           
+          
           ThreeDTextureDAO.getBlob(texture.id.toString()) match {
             
             case Some((inputStream, filename, contentType, contentLength)) => {
@@ -975,7 +979,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	          case None => {
 	            Ok.stream(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
-	            	.withHeaders(CONTENT_LENGTH -> contentLength.toString)
+	            	//.withHeaders(CONTENT_LENGTH -> contentLength.toString)
 	            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
       
 	          }
