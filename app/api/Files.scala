@@ -977,6 +977,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	            }
 	          }
 	          case None => {
+	            //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!
 	            Ok.stream(Enumerator.fromStream(inputStream))
 	            	.withHeaders(CONTENT_TYPE -> contentType)
 	            	//.withHeaders(CONTENT_LENGTH -> contentLength.toString)
