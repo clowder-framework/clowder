@@ -31,6 +31,7 @@ object Global extends GlobalSettings {
     }
         
     //Add permanent admins to app if not already included
+    models.AppConfiguration.getDefault()
     for(initialAdmin <- play.Play.application().configuration().getString("initialAdmins").split(","))
     	models.AppConfiguration.addAdmin(initialAdmin)
     

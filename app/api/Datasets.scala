@@ -120,6 +120,8 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
                            List(("name",d.name), ("description", d.description)))}
                        }
                        Ok(toJson(Map("id" -> id.toString)))
+                       current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",id.toString, name)}
+                       Ok(toJson(Map("id" -> id.toString)))
 		      	     }
 		      	     case None => Ok(toJson(Map("status" -> "error")))
 		      	   }
@@ -701,6 +703,8 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
         
         Dataset.removeDataset(id)
         
+        Ok(toJson(Map("status"->"success")))
+        current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","removed",dataset.id.toString, dataset.name)}
         Ok(toJson(Map("status"->"success")))
       }
       case None => Ok(toJson(Map("status"->"success")))

@@ -349,6 +349,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				            Dataset.save(dt)
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id.toString))
+				            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",dt.id.toString, dt.name)}
+				            Redirect(routes.Datasets.dataset(dt.id.toString))				            
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
 					    }   	                 
@@ -406,7 +408,9 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				   }
 		          
 				  // redirect to dataset page
-				  Redirect(routes.Datasets.dataset(dt.id.toString)) 
+				  Redirect(routes.Datasets.dataset(dt.id.toString))
+				  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",dt.id.toString, dt.name)}
+				  Redirect(routes.Datasets.dataset(dt.id.toString)) 				  
 	            }	            
 	          }  
 	        }

@@ -81,6 +81,5 @@ class MailerPlugin (application: Application) extends Plugin {
       return true
   }
   
-  
-  
+
 }

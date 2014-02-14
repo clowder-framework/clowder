@@ -20,6 +20,7 @@ import api.WithPermission
 import api.Permission
 import javax.inject.{ Singleton, Inject }
 import services.{ DatasetService, CollectionService }
+import services.AdminsNotifierPlugin
 
 object ThumbnailFound extends Exception { }
 
@@ -125,6 +126,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 //		                List(("name",dt.name), ("description", dt.description)))}
 
 		            // redirect to collection page
+		            Redirect(routes.Collections.collection(collection.id.toString))
+		            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Collection","added",collection.id.toString,collection.name)}
 		            Redirect(routes.Collections.collection(collection.id.toString))
 			      } 
 	)

@@ -320,7 +320,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 		            }
 	            }
 	            
-	            Ok(toJson(Map("id"->id)))   
+	            Ok(toJson(Map("id"->id)))
+	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",id, nameOfFile)}
+	            Ok(toJson(Map("id"->id)))
 	          }
 	          case None => {
 	            Logger.error("Could not retrieve file that was just saved.")
@@ -464,12 +466,12 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
             			  Logger.debug("xmlmd=" + xmlToJSON)
 
             			  current.plugin[ElasticsearchPlugin].foreach{
-            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
+            		  		_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
             	  		  }
               }
               else{
             	  current.plugin[ElasticsearchPlugin].foreach{
-            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
+            		  _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
             	  }
               }
                            
@@ -500,6 +502,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
               }
 
               //sending success message
+              Ok(toJson(Map("id" -> id)))
+              current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",id, nameOfFile)}
               Ok(toJson(Map("id" -> id)))
             }
             case None => {
@@ -1220,7 +1224,6 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     files.getFile(id)  match {
       case Some(file) => {
         FileDAO.removeFile(id)
-        Logger.debug(file.filename)
         //remove file from RDF triple store if triple store is used
 	        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		        case "yes" => {
@@ -1233,6 +1236,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	        }
         
                 
+        Ok(toJson(Map("status"->"success")))
+        current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","removed",id, file.filename)}
         Ok(toJson(Map("status"->"success")))
       }
       case None => Ok(toJson(Map("status"->"success")))

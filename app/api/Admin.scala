@@ -10,6 +10,7 @@ import services.MongoSalatPlugin
 import play.api.Logger
 import play.api.libs.json.Json.toJson
 import models.AppConfiguration
+import services._
 
 /**
  * Admin endpoints for JSON API.
@@ -64,7 +65,6 @@ object Admin extends Controller with ApiController {
         BadRequest(toJson("Missing parameter [email]"))
       }      
   }
-  
-  
+
 }
 

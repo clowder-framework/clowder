@@ -265,7 +265,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	             }
 	                        
 	            // redirect to file page]
-	            Redirect(routes.Files.file(f.id.toString))  
+	            Redirect(routes.Files.file(f.id.toString))
+	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",f.id.toString, nameOfFile)}
+	            Redirect(routes.Files.file(f.id.toString))
 	         }
 	         case None => {
 	           Logger.error("Could not retrieve file that was just saved.")
@@ -281,6 +283,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     }
   }
 
+  ////////////////////////////////////////////////
+  
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
