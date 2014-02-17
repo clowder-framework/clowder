@@ -3,8 +3,8 @@
  */
 package services.mongodb
 
-import services.{DI, CollectionService, DatasetService}
-import models.{Collection, Dataset}
+import services.{ElasticsearchPlugin, CollectionService, DatasetService}
+import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import play.api.Logger
@@ -15,9 +15,21 @@ import org.apache.commons.io.FileUtils
 import org.json.JSONObject
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
-import scala.Some
 import javax.inject.{Singleton, Inject}
 import com.mongodb.casbah.Imports._
+import scala.Some
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.util.JSON
+import jsonutils.JsonUtil
+import scala.Some
+import models.File
+import com.mongodb.casbah.Imports._
+import scala.collection.mutable.ListBuffer
+import scala.util.parsing.json.JSONArray
+import play.api.Play._
+import scala.Some
+import scala.util.parsing.json.JSONArray
+import models.File
 
 /**
  * Use Mongodb to store datasets.
@@ -274,5 +286,205 @@ class MongoDBDatasetService  @Inject() (collections: CollectionService)  extends
       }
     }
   }
+
+  def addMetadata(id: String, json: String) {
+    Logger.debug(s"Adding metadata to dataset $id : $json")
+    val md = JSON.parse(json).asInstanceOf[DBObject]
+    Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("metadata" -> 1)) match {
+      case None => {
+        Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> md), false, false, WriteConcern.Safe)
+      }
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match {
+          case Some(map) => {
+            val union = map.asInstanceOf[DBObject] ++ md
+            Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> union), false, false, WriteConcern.Safe)
+          }
+          case None => Map.empty
+        }
+      }
+    }
+  }
+
+  def addXMLMetadata(id: String, fileId: String, json: String) {
+    Logger.debug(s"Adding XML metadata to dataset $id from file $fileId : $json")
+    import scala.collection.JavaConversions._
+    val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap
+    Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("datasetXmlMetadata" -> DatasetXMLMetadata.toDBObject(DatasetXMLMetadata(md, fileId))), false, false, WriteConcern.Safe)
+  }
+
+  def addUserMetadata(id: String, json: String) {
+    Logger.debug(s"Adding/modifying user metadata to dataset $id : $json")
+    val md = JSON.parse(json).asInstanceOf[DBObject]
+    Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
+  }
+
+  def addFile(datasetId: String, file: File) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" ->  FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)
+    if(!file.xmlMetadata.isEmpty){
+      Dataset.addXMLMetadata(datasetId, file.id.toString, FileDAO.getXMLMetadataJSON(file.id.toString))
+    }
+  }
+
+  def removeFile(datasetId: String, fileId: String) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files" ->
+      MongoDBObject("_id" -> new ObjectId(fileId))), false, false, WriteConcern.Safe)
+    Dataset.removeXMLMetadata(datasetId, fileId)
+  }
+
+  def updateThumbnail(datasetId: String, thumbnailId: String) {
+    Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(datasetId)),
+      $set("thumbnail_id" -> new ObjectId(thumbnailId)), false, false, WriteConcern.Safe)
+  }
+
+  def createThumbnail(datasetId: String) {
+    Dataset.findOneById(new ObjectId(datasetId)) match {
+      case Some(dataset) => {
+        val files = dataset.files map {
+          f => FileDAO.get(f.id.toString).getOrElse(None)
+        }
+        for (file <- files) {
+          if (file.isInstanceOf[models.File]) {
+            val theFile = file.asInstanceOf[models.File]
+            if (!theFile.thumbnail_id.isEmpty) {
+              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+              return
+            }
+          }
+        }
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+      }
+      case None => Logger.debug(s"Dataset $datasetId not found")
+    }
+  }
+
+  def selectNewThumbnailFromFiles(datasetId: String) {
+    Dataset.findOneById(new ObjectId(datasetId)) match {
+      case Some(dataset) => {
+        // TODO cleanup
+        val files = dataset.files.map(f => FileDAO.get(f.id.toString).getOrElse(None))
+        for (file <- files) {
+          if (file.isInstanceOf[File]) {
+            val theFile = file.asInstanceOf[File]
+            if (!theFile.thumbnail_id.isEmpty) {
+              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+              return
+            }
+          }
+        }
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+      }
+      case None => Logger.debug("No dataset found with id " + datasetId)
+    }
+  }
+
+  def index(id: String) {
+    Dataset.findOneById(new ObjectId(id)) match {
+      case Some(dataset) => {
+        var tagListBuffer = new ListBuffer[String]()
+
+        for (tag <- dataset.tags) {
+          tagListBuffer += tag.name
+        }
+
+        val tagsJson = new JSONArray(tagListBuffer.toList)
+
+        Logger.debug("tagStr=" + tagsJson);
+
+        val comments = for (comment <- Comment.findCommentsByDatasetId(id, false)) yield {
+          comment.text
+        }
+        val commentJson = new JSONArray(comments)
+
+        Logger.debug("commentStr=" + commentJson.toString())
+
+        val usrMd = Dataset.getUserMetadataJSON(id)
+        Logger.debug("usrmd=" + usrMd)
+
+        val techMd = Dataset.getTechnicalMetadataJSON(id)
+        Logger.debug("techmd=" + techMd)
+
+        val xmlMd = Dataset.getXMLMetadataJSON(id)
+        Logger.debug("xmlmd=" + xmlMd)
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "dataset", id,
+            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+        }
+      }
+      case None => Logger.error("Dataset not found: " + id)
+    }
+  }
+
+  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+    Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+    val dataset = Dataset.findOneById(new ObjectId(id)).get
+    val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
+    // Only remove existing tags.
+    tags.intersect(existingTags).map {
+      tag =>
+        Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeAllTags(id: String) {
+    Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+  }
+
+  def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset] = {
+    Logger.debug("top: " + requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String, Any]].toString())
+    var theQuery = Dataset.searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String, Any]], "userMetadata")
+    Logger.debug("thequery: " + theQuery.toString)
+
+    val dsList = Dataset.dao.find(theQuery).toList
+    return dsList
+  }
+
+  def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset] = {
+    Logger.debug("top: " + requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String, Any]].toString())
+
+    var theQuery = Dataset.searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String, Any]], "all")
+    Logger.debug("thequery: " + theQuery.toString)
+    var dsList = Dataset.dao.find(theQuery).toList
+
+    return dsList
+  }
+
+  def removeDataset(id: String) {
+    Dataset.dao.findOneById(new ObjectId(id)) match {
+      case Some(dataset) => {
+        for (collection <- Collection.listInsideDataset(id))
+          Collection.removeDataset(collection.id.toString, dataset)
+        for (comment <- Comment.findCommentsByDatasetId(id)) {
+          Comment.removeComment(comment)
+        }
+        for (f <- dataset.files) {
+          var notTheDataset = for (currDataset <- Dataset.findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          if (notTheDataset.size == 0)
+            FileDAO.removeFile(f.id.toString)
+        }
+        Dataset.remove(MongoDBObject("_id" -> dataset.id))
+      }
+      case None => Logger.debug(s"Dataset $id not found")
+    }
+  }
+
+  def getUserMetadataJSON(id: String): String = {
+    Dataset.dao.collection.findOneByID(new ObjectId(id)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("userMetadata") match {
+          case Some(y) => {
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)
+            Logger.debug("retmd: " + returnedMetadata)
+            returnedMetadata
+          }
+          case None => "{}"
+        }
+      }
+    }
+  }
+
 
 }

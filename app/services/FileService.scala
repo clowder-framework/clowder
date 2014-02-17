@@ -2,7 +2,7 @@ package services
 
 
 import java.io.InputStream
-import models.File
+import models.{Dataset, File}
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
 import com.mongodb.casbah.gridfs.JodaGridFSDBFile
@@ -10,7 +10,8 @@ import securesocial.core.Identity
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import scala.Some
-import models.File
+import play.api.Logger
+import com.mongodb.casbah.WriteConcern
 
 /**
  * Generic file service to store blobs of files and metadata about them.
@@ -64,4 +65,8 @@ abstract class FileService {
   def modifyRDFOfMetadataChangedFiles()
   
   def modifyRDFUserMetadata(id: String, mappingNumber: String="1")
+
+  def isInDataset(file: File, dataset: Dataset): Boolean
+
+  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
 }

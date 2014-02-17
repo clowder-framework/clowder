@@ -7,7 +7,7 @@ import play.api.Play.current
 import play.api.Play
 import com.google.inject.Guice
 import com.google.inject.AbstractModule
-import services.mongodb.{MongoDBTagService, MongoDBCollectionService, MongoDBDatasetService, MongoDBFileService}
+import services.mongodb._
 
 /**
  * Guice module configuration.
@@ -34,6 +34,9 @@ class ProdModule extends AbstractModule {
     bind(classOf[QueryService]).to(classOf[QueryServiceFileSystemDB])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
+    bind(classOf[SectionService]).to(classOf[MongoDBSectionService])
+    bind(classOf[CommentService]).to(classOf[MongoDBCommentService])
+    bind(classOf[PreviewService]).to(classOf[MongoDBPreviewService])
   }
 }
 
@@ -47,5 +50,8 @@ class DevModule extends AbstractModule {
     bind(classOf[QueryService]).to(classOf[QueryServiceFileSystemDB])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
+    bind(classOf[SectionService]).to(classOf[MongoDBSectionService])
+    bind(classOf[CommentService]).to(classOf[MongoDBCommentService])
+    bind(classOf[PreviewService]).to(classOf[MongoDBPreviewService])
   }
 }

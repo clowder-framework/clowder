@@ -165,7 +165,7 @@ GET     /api-docs.json/datasets           controllers.ApiHelpController.getResou
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id,ds_id)
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id,ds_id,ignoreNotFound)
 POST	/api/collections/:coll_id/remove											@api.Collections.removeCollection(coll_id)
-GET		/api/collections/:coll_id/getDatasets										@api.Datasets.getInCollection(coll_id)
+GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id)
 
 GET    	/api/datasets					  							@api.Datasets.list
 POST    /api/datasets                                           	@api.Datasets.createDataset

@@ -22,6 +22,7 @@ import services.ElasticsearchPlugin
 import scala.Some
 import scala.util.parsing.json.JSONArray
 import models.File
+import com.mongodb.casbah.WriteConcern
 
 /**
  * Access file metedata from MongoDB.
@@ -293,6 +294,25 @@ trait MongoFileDB {
           case None => "{}"
         }
       }
+    }
+  }
+
+  def isInDataset(file: File, dataset: Dataset): Boolean = {
+    for(dsFile <- dataset.files){
+      if(dsFile.id == file.id)
+        return true
+    }
+    return false
+  }
+
+  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+    Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+    val file = FileDAO.get(id).get
+    val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
+    // Only remove existing tags.
+    tags.intersect(existingTags).map { tag =>
+      FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
     }
   }
   
