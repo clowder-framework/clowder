@@ -51,7 +51,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
-    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
     var prev, next = ""
     var collectionList = List.empty[models.Collection]
     if (direction == "b") {

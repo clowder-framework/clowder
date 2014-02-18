@@ -56,7 +56,7 @@ trait MongoDBDataset {
     if (date == "") {
       Dataset.findAll.sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
       Dataset.find("created" $lt sinceDate).sort(order).limit(limit).toList
     }
@@ -71,7 +71,7 @@ trait MongoDBDataset {
       Dataset.findAll.sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("created"-> 1)
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
       var datasetList = Dataset.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
       datasetList = datasetList.filter(_ != datasetList.last)

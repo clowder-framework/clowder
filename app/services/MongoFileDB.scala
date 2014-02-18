@@ -53,7 +53,7 @@ trait MongoFileDB {
     if (date == "") {
       FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $lt sinceDate)).sort(order).limit(limit).toList
     }
@@ -68,7 +68,7 @@ trait MongoFileDB {
       FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("uploadDate"-> 1) 
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
       var fileList = FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit + 1).toList.reverse
       fileList = fileList.filter(_ != fileList.last)
