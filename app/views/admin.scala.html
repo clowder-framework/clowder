@@ -1,4 +1,4 @@
-@(theme: Int)(implicit user: Option[securesocial.core.Identity])
+@(theme: Int, appAppearance: models.AppAppearance)(implicit user: Option[securesocial.core.Identity])
 @main("Administration") {
 	<div class="page-header">
 		<h1>Administration</h1>
@@ -9,6 +9,57 @@
 	<div class="row">
 		<div class="col-md-2">@themes(theme)</div>
 	</div>
+	
+	<legend>Select a display name for the application and a welcoming message</legend>
+	
+	<div class="row">
+		<div class="col-md-2">
+			<form role="form-horizontal">
+			  <div class="form-group">
+			    <label for="displayNameField">Display name</label>
+			    <input id="displayNameField" name="displayNameField" type="text" value="@(appAppearance.displayedName)"></input>
+			    <span id="displayNameField_error" style="display:none;">Must have a display name</span>
+			    <br /><br />
+			    <label for="welcomingField">Welcoming message</label>
+				<textarea name="welcomingField" id="welcomingField" style="width:300%;">@(appAppearance.welcomeMessage)</textarea>
+				<br /><br />
+				<button class="btn btn-default" onclick="return submitAppearance();">Submit</button>	
+			  </div>
+			</form>			
+		</div>
+	</div>
+	<script language="javascript">
+		function submitAppearance(){
+			var displayName = $("#displayNameField").val().trim();
+			var welcomeMessage = $("#welcomingField").val().trim();
+			
+			if(displayName == ""){
+				$("#displayNameField_error").css("display","inline");
+				return false;
+			}else{
+				$("#displayNameField_error").css("display","none");
+			}
+			
+			console.log("Display name: "+displayName);
+			console.log("Welcoming message: "+welcomeMessage);
+			
+			var request = $.ajax({
+				url:  "@api.routes.Admin.submitAppearance",
+				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage}),
+				type: "POST",
+				contentType: "application/json",
+	     	});
+			request.done(function (response, textStatus, jqXHR){ 
+				console.log("Response: " + response);
+				alert("Done");
+			});
+			request.fail(function (jqXHR, textStatus, errorThrown){
+				console.error("The following error occured: " + textStatus, errorThrown);
+				alert("The application appearance was not updated due to : " + errorThrown);
+			});						
+			return false;			
+		}
+	</script>
 	
 	<legend>Create an Index</legend>
 	

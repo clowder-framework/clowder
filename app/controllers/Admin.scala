@@ -16,6 +16,7 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
 import models.AppConfiguration
+import models.AppAppearance
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.Logger
@@ -43,8 +44,9 @@ object Admin extends SecuredController {
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val themeId = themes.indexOf(getTheme)
     Logger.debug("Theme id " + themeId)
+    val appAppearance = AppAppearance.getDefault.get
     implicit val user = request.user
-    Ok(views.html.admin(themeId))
+    Ok(views.html.admin(themeId, appAppearance))
   }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
@@ -379,9 +381,7 @@ object Admin extends SecuredController {
         Logger.error("Error getting application configuration!"); InternalServerError
       }
       
-    }
-  
+    }  
   }
-  
   
 }

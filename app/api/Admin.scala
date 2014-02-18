@@ -11,6 +11,7 @@ import play.api.Logger
 import play.api.libs.json.Json.toJson
 import models.AppConfiguration
 import services._
+import models.AppAppearance
 
 /**
  * Admin endpoints for JSON API.
@@ -64,6 +65,27 @@ object Admin extends Controller with ApiController {
       }.getOrElse {
         BadRequest(toJson("Missing parameter [email]"))
       }      
+  }
+  
+  
+  def submitAppearance = SecuredAction(parse.json, authorization=WithPermission(Permission.Admin)) { request =>  
+    
+    (request.body \ "displayName").asOpt[String] match {
+      case Some(displayName) =>{
+        AppAppearance.setDisplayedName(displayName)
+        (request.body \ "welcomeMessage").asOpt[String] match {
+          case Some(welcomeMessage)=>{
+            AppAppearance.setWelcomeMessage(welcomeMessage)
+          }
+          case None=>{}         
+        }
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None =>{
+        Logger.error("Missing parameter [displayName].")
+    	BadRequest(toJson("Missing parameter [displayName]"))
+      }      
+    }  
   }
 
 }

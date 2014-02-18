@@ -8,6 +8,7 @@ import api.WithPermission
 import api.Permission
 import models.FileDAO
 import com.mongodb.casbah.commons.MongoDBObject
+import models.AppAppearance
 
 /**
  * Main application controller.
@@ -21,8 +22,10 @@ object Application extends SecuredController {
    */
   def index = SecuredAction() { request =>
   	implicit val user = request.user
+  	AppAppearance.getDefault.get.displayedName
   	val latestFiles = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(5).toList
-    Ok(views.html.index(latestFiles))
+  	val appAppearance = AppAppearance.getDefault.get
+    Ok(views.html.index(latestFiles, appAppearance.displayedName, appAppearance.welcomeMessage))
   }
   
   /**

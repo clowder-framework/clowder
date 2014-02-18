@@ -167,6 +167,7 @@ GET     /api/queries/:id				                       @api.Files.downloadquery(id)
 GET     /api/delete-data                    					api.Admin.deleteAllData
 
 POST	/api/remove-admin										api.Admin.removeAdmin
+POST	/api/changeAppearance									api.Admin.submitAppearance
 
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 

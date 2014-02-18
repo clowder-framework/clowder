@@ -289,6 +289,11 @@ fieldset #email_field .controls #email{
 	height:30px;
 }
 
+#displayNameField{
+	width:208px;
+	height:30px;
+}
+
 
 
 :-webkit-full-screen x3d {
