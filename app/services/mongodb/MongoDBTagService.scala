@@ -125,8 +125,10 @@ class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService,
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
       (obj_type) match {
         case TagCheck_File => files.addTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Dataset =>
-          Dataset.addTags(id, userOpt, extractorOpt, tagsCleaned); Dataset.index(id)
+        case TagCheck_Dataset => {
+          datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
+          datasets.index(id)
+        }
         case TagCheck_Section => SectionDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
       }
     }
@@ -147,8 +149,8 @@ class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService,
       // Clean up leading, trailing and multiple contiguous white spaces.
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
       (obj_type) match {
-        case TagCheck_File => FileDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Dataset => Dataset.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Dataset => datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Section => SectionDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }
     }

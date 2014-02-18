@@ -127,7 +127,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
               // add dataset to collection
               Collection.addDataset(collection.id.toString, dataset)
               //add collection to dataset
-              Dataset.addCollection(dataset.id.toString, collection.id.toString)
+              datasets.addCollection(dataset.id.toString, collection.id.toString)
               Logger.info("Adding dataset to collection completed")
             }
             else{
@@ -157,7 +157,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
               // remove dataset from collection
               Collection.removeDataset(collection.id.toString, dataset)
               //remove collection from dataset
-              Dataset.removeCollection(dataset.id.toString, collection.id.toString)
+              datasets.removeCollection(dataset.id.toString, collection.id.toString)
               Logger.info("Removing dataset from collection completed")
             }
             else{
@@ -192,7 +192,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
       case Some(collection) => {
         for(dataset <- collection.datasets){
           //remove collection from dataset
-          Dataset.removeCollection(dataset.id.toString, collection.id.toString)
+          datasets.removeCollection(dataset.id.toString, collection.id.toString)
         }
         Collection.remove(MongoDBObject("_id" -> collection.id))
         Success

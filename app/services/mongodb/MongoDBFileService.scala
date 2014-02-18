@@ -19,13 +19,15 @@ import java.nio.file.{FileSystems, Files}
 import java.nio.file.attribute.BasicFileAttributes
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
-import play.api.Logger
 import play.api.libs.json.JsArray
 import scala.Some
 import scala.util.parsing.json.JSONArray
 import models.File
 import play.api.libs.json.JsObject
 import javax.inject.{Inject, Singleton}
+import com.mongodb.casbah.WriteConcern
+import play.api.Logger
+import com.mongodb.casbah.gridfs.GridFS
 
 
 /**
@@ -35,7 +37,7 @@ import javax.inject.{Inject, Singleton}
  *
  */
 @Singleton
-class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileService with GridFSDB {
+class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileService {
 
   /**
    * List all files.
@@ -108,6 +110,56 @@ class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileServi
     //    }
 
     Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
+  }
+
+  /**
+   * Save blob.
+   */
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
+    val files = current.plugin[MongoSalatPlugin] match {
+      case None    => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(x) =>  x.gridFS("uploads")
+    }
+
+    // required to avoid race condition on save
+    files.db.setWriteConcern(WriteConcern.Safe)
+
+    val mongoFile = files.createFile(inputStream)
+    Logger.debug("Uploading file " + filename)
+    mongoFile.filename = filename
+    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
+    if (ct == play.api.http.ContentTypes.BINARY) {
+      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+    }
+    mongoFile.contentType = ct
+    mongoFile.put("showPreviews", showPreviews)
+    mongoFile.put("author", SocialUserDAO.toDBObject(author))
+    mongoFile.save
+    val oid = mongoFile.getAs[ObjectId]("_id").get
+
+    // FIXME Figure out why SalatDAO has a race condition with gridfs
+    //    Logger.debug("FILE ID " + oid)
+    //    val file = FileDAO.findOne(MongoDBObject("_id" -> oid))
+    //    file match {
+    //      case Some(id) => Logger.debug("FILE FOUND")
+    //      case None => Logger.error("NO FILE!!!!!!")
+    //    }
+
+    Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
+  }
+
+  /**
+   * Get blob.
+   */
+  def getBytes(id: String): Option[(InputStream, String, String, Long)] = {
+    val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+      case Some(file) => Some(file.inputStream,
+        file.getAs[String]("filename").getOrElse("unknown-name"),
+        file.getAs[String]("contentType").getOrElse("unknown"),
+        file.getAs[Long]("length").getOrElse(0))
+      case None => None
+    }
   }
 
   def index(id: String) {
@@ -315,7 +367,7 @@ class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileServi
   }
 
   def get(id: String): Option[File] = {
-    get(id) match {
+    FileDAO.findOneById(new ObjectId(id)) match {
       case Some(file) => {
         val previews = PreviewDAO.findByFileId(file.id)
         val sections = SectionDAO.findByFileId(file.id)
@@ -583,7 +635,7 @@ class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileServi
           if(!file.thumbnail_id.isEmpty)
             Thumbnail.remove(MongoDBObject("_id" -> file.thumbnail_id.get))
         }
-        remove(MongoDBObject("_id" -> file.id))
+        FileDAO.remove(MongoDBObject("_id" -> file.id))
       }
       case None =>
     }

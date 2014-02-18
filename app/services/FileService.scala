@@ -13,7 +13,7 @@ import play.api.libs.json.{JsObject, JsArray, JsValue}
  * @author Luigi Marini
  *
  */
-abstract class FileService {
+trait FileService {
   /**
    * Save a file from an input stream.
    */

@@ -28,6 +28,9 @@ import org.bson.types.ObjectId
 
 trait FourStore {
 
+
+  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+
   def addFileToGraph(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
     	
 		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
@@ -188,7 +191,7 @@ trait FourStore {
           case Some(dataset)=> {
                 var filesString = "" 
 	            for(f <- dataset.files){
-				      var notTheDataset = for(currDataset<- Dataset.findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+				      var notTheDataset = for(currDataset<- datasets.findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
 				      if(notTheDataset.size == 0){
 				        if(f.filename.endsWith(".xml")){
 				        	removeFileFromGraphs(f.id.toString, "rdfXMLGraphName")

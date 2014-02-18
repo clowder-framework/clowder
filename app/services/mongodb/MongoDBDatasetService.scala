@@ -3,7 +3,7 @@
  */
 package services.mongodb
 
-import services.{ElasticsearchPlugin, CollectionService, DatasetService}
+import services.{FileService, ElasticsearchPlugin, CollectionService, DatasetService}
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
@@ -35,7 +35,7 @@ import scala.collection.JavaConversions._
  *
  */
 @Singleton
-class MongoDBDatasetService  @Inject() (collections: CollectionService)  extends DatasetService {
+class MongoDBDatasetService  @Inject() (collections: CollectionService, files: FileService) extends DatasetService {
 
   /**
    * List all datasets in the system.
@@ -299,10 +299,10 @@ class MongoDBDatasetService  @Inject() (collections: CollectionService)  extends
   def createThumbnail(datasetId: String) {
     Dataset.findOneById(new ObjectId(datasetId)) match {
       case Some(dataset) => {
-        val files = dataset.files map {
+        val filesInDataset = dataset.files map {
           f => files.get(f.id.toString).getOrElse(None)
         }
-        for (file <- files) {
+        for (file <- filesInDataset) {
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
             if (!theFile.thumbnail_id.isEmpty) {
@@ -321,8 +321,8 @@ class MongoDBDatasetService  @Inject() (collections: CollectionService)  extends
     Dataset.findOneById(new ObjectId(datasetId)) match {
       case Some(dataset) => {
         // TODO cleanup
-        val files = dataset.files.map(f => files.get(f.id.toString).getOrElse(None))
-        for (file <- files) {
+        val filesInDataset = dataset.files.map(f => files.get(f.id.toString).getOrElse(None))
+        for (file <- filesInDataset) {
           if (file.isInstanceOf[File]) {
             val theFile = file.asInstanceOf[File]
             if (!theFile.thumbnail_id.isEmpty) {
@@ -704,7 +704,7 @@ class MongoDBDatasetService  @Inject() (collections: CollectionService)  extends
   def addFile(datasetId: String, file: File) {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" -> FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)
     if (!file.xmlMetadata.isEmpty) {
-      addXMLMetadata(datasetId, file.id.toString, FileDAO.getXMLMetadataJSON(file.id.toString))
+      addXMLMetadata(datasetId, file.id.toString, getXMLMetadataJSON(file.id.toString))
     }
   }
 
@@ -724,14 +724,14 @@ class MongoDBDatasetService  @Inject() (collections: CollectionService)  extends
   def newThumbnail(datasetId: String) {
     Dataset.findOneById(new ObjectId(datasetId)) match {
       case Some(dataset) => {
-        val files = dataset.files map {
+        val filesInDataset = dataset.files map {
           f => {
             files.get(f.id.toString).getOrElse {
               None
             }
           }
         }
-        for (file <- files) {
+        for (file <- filesInDataset) {
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
             if (!theFile.thumbnail_id.isEmpty) {
