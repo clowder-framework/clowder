@@ -485,6 +485,4 @@ class MongoDBDatasetService  @Inject() (collections: CollectionService)  extends
       }
     }
   }
-
-
 }

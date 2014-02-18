@@ -33,11 +33,11 @@ class Sections @Inject() (files: FileService, datasets: DatasetService, queries:
     request.body.\("file_id").asOpt[String] match {
       case Some(file_id) => {
         /* Found in testing: given an invalid ObjectId, a runtime exception
-         * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.getFile().
+         * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.get().
          * So check it first.
          */
         if (ObjectId.isValid(file_id)) {
-          files.getFile(file_id) match {
+          files.get(file_id) match {
             case Some(file) =>
               val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
               doc.getAs[String]("file_id").map(id => doc.put("file_id", new ObjectId(id)))

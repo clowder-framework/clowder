@@ -1,5 +1,4 @@
-package services
-
+package services.filesystem
 
 import java.io.InputStream
 import play.api.Play
@@ -53,7 +52,7 @@ trait FileSystemDB {
   /**
    * Get the bytes of a file from Mongo and the file name.
    */
-  def get(id: String): Option[(InputStream, String, String, Long)] = {
+  def getBytes(id: String): Option[(InputStream, String, String, Long)] = {
     Play.current.configuration.getString("files.path") match {
       case Some(path) => {
         val files = JodaGridFS(FileDAO.dao.collection.db, "uploads")

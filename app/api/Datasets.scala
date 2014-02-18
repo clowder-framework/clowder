@@ -30,15 +30,12 @@ import scala.Some
 import models.File
 import play.api.Play.configuration
 
-
 /**
  * Dataset API.
  *
  * @author Luigi Marini
  *
  */
-object ActivityFound extends Exception {}
-
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
 class Datasets @Inject()(datasets: DatasetService, files: FileService, collections: CollectionService,
@@ -85,7 +82,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
             description =>
               (request.body \ "file_id").asOpt[String].map {
                 file_id =>
-                  files.getFile(file_id) match {
+                  files.get(file_id) match {
                     case Some(file) =>
                       val d = Dataset(name = name, description = description, created = new Date(), files = List(file), author = request.user.get)
                       datasets.insert(d) match {
@@ -121,7 +118,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
     request =>
       datasets.get(dsId) match {
         case Some(dataset) => {
-          files.getFile(fileId) match {
+          files.get(fileId) match {
             case Some(file) => {
               if (!files.isInDataset(file, dataset)) {
                 datasets.addFile(dsId, file)
@@ -154,7 +151,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
     request =>
       datasets.get(datasetId) match {
         case Some(dataset) => {
-          files.getFile(fileId) match {
+          files.get(fileId) match {
             case Some(file) => {
               if (files.isInDataset(file, dataset)) {
                 //remove file from dataset
@@ -442,7 +439,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
       error_str = "The given id " + id + " is not a valid ObjectId."
     } else {
       obj_type match {
-        case TagCheck_File => not_found = files.getFile(id).isEmpty
+        case TagCheck_File => not_found = files.get(id).isEmpty
         case TagCheck_Dataset => not_found = datasets.get(id).isEmpty
         case TagCheck_Section => not_found = sections.get(id).isEmpty
         case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
@@ -577,7 +574,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
           try {
             for (f <- files) {
               Extraction.findIfBeingProcessed(f.id) match {
-                case false => Logger.debug(s"Extraction of file $f.id is not being processed")
+                case false =>
                 case true => {
                   isActivity = "true"
                   throw ActivityFound
@@ -621,7 +618,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
     request =>
       datasets.get(id) match {
         case Some(dataset) => {
-          val innerFiles = dataset.files map {f => files.getFile(f.id.toString).get}
+          val innerFiles = dataset.files map {f => files.get(f.id.toString).get}
           val datasetWithFiles = dataset.copy(files = innerFiles)
           val previewers = Previewers.findPreviewers
           val previewslist = for (f <- datasetWithFiles.files; if (f.showPreviews.equals("DatasetLevel"))) yield {
@@ -787,3 +784,5 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
   }
 
 }
+
+object ActivityFound extends Exception {}

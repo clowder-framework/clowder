@@ -36,7 +36,7 @@ class Search @Inject() (files: FileService, datasets: DatasetService)  extends A
                   Logger.info(value.getName + " = " + value.getValue())
                 }
                 if (hit.getType() == "file") {
-                  files.getFile(hit.getId()) match {
+                  files.get(hit.getId()) match {
                     case Some(file) => {
                       Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                       Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))

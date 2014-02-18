@@ -67,7 +67,7 @@ class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService,
       error_str = "The given id " + id + " is not a valid ObjectId."
     } else {
       obj_type match {
-        case TagCheck_File => not_found = files.getFile(id).isEmpty
+        case TagCheck_File => not_found = files.get(id).isEmpty
         case TagCheck_Dataset => not_found = datasets.get(id).isEmpty
         case TagCheck_Section => not_found = SectionDAO.findOneById(new ObjectId(id)).isEmpty
         case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."

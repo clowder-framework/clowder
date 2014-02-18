@@ -74,7 +74,7 @@ class VersusPlugin(application:Application) extends Plugin{
         desResponse.map {
           response =>
             // Logger.debug("RESPONSE FROM EXTRACT****:" +response.body)
-            files.getFile(fileid) match {
+            files.get(fileid) match {
 
               case Some(file) => {
               //  FileDAO.addVersusMetadata(fileid, response.json.toString)
@@ -392,7 +392,7 @@ class VersusPlugin(application:Application) extends Plugin{
             }*/
             
           //-----------------------  
-            files.getFile(subStr) match {
+            files.get(subStr) match {
                	  case Some(file)=>{
 		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
 
@@ -478,7 +478,7 @@ class VersusPlugin(application:Application) extends Plugin{
             val subStr = result.docID.substring(begin + 1, end);
         //    val a = result.docID.split("/")
           //  val n = a.length - 2
-            files.getFile(subStr) match {
+            files.get(subStr) match {
 		        	  case Some(file)=>{
 
        
@@ -567,7 +567,7 @@ class VersusPlugin(application:Application) extends Plugin{
 
         //    val a = result.docID.split("/")
           //  val n = a.length - 2
-            files.getFile(subStr) match {
+            files.get(subStr) match {
               case Some(file) => {
                 // se.update(i,(a(n),result.docID,result.proximity,file.filename))
                 //Previews..............

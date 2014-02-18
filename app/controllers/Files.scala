@@ -58,7 +58,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   def file(id: String) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     implicit val user = request.user
     Logger.info("GET file with id " + id)
-    files.getFile(id) match {
+    files.get(id) match {
       case Some(file) => {
         val previewsFromDB = PreviewDAO.findByFileId(file.id)
         val previewers = Previewers.findPreviewers
@@ -285,7 +285,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
   def download(id: String) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>
-    files.get(id) match {
+    files.getBytes(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
           case Some(value) => {

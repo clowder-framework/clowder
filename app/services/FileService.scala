@@ -2,16 +2,10 @@ package services
 
 
 import java.io.InputStream
-import models.{Dataset, File}
-import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.DBObject
-import com.mongodb.casbah.gridfs.JodaGridFSDBFile
+import models.{Dataset, File, Comment}
 import securesocial.core.Identity
-import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
-import scala.Some
-import play.api.Logger
-import com.mongodb.casbah.WriteConcern
+import play.api.libs.json.{JsObject, JsArray, JsValue}
 
 /**
  * Generic file service to store blobs of files and metadata about them.
@@ -20,7 +14,6 @@ import com.mongodb.casbah.WriteConcern
  *
  */
 abstract class FileService {
-  
   /**
    * Save a file from an input stream.
    */
@@ -30,7 +23,7 @@ abstract class FileService {
    * Get the input stream of a file given a file id.
    * Returns input stream, file name, content type, content length.
    */
-  def get(id: String): Option[(InputStream, String, String, Long)]
+  def getBytes(id: String): Option[(InputStream, String, String, Long)]
   
   /**
    * List all files in the system.
@@ -50,7 +43,7 @@ abstract class FileService {
   /**
    * Get file metadata.
    */
-  def getFile(id: String): Option[File]
+  def get(id: String): Option[File]
   
   /**
    * Store file metadata.
@@ -69,4 +62,53 @@ abstract class FileService {
   def isInDataset(file: File, dataset: Dataset): Boolean
 
   def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
+
+  def addMetadata(fileId: String, metadata: JsValue)
+
+  def listOutsideDataset(dataset_id: String): List[File]
+
+  def getMetadata(id: String): scala.collection.immutable.Map[String,Any]
+
+  def getUserMetadata(id: String): scala.collection.mutable.Map[String,Any]
+
+  def getUserMetadataJSON(id: String): String
+
+  def getTechnicalMetadataJSON(id: String): String
+
+  def addVersusMetadata(id: String, json: JsValue)
+
+  def getJsonArray(list: List[JsObject]): JsArray
+
+  def addUserMetadata(id: String, json: String)
+
+  def addXMLMetadata(id: String, json: String)
+
+  def findByTag(tag: String): List[File]
+
+  def findIntermediates(): List[File]
+
+  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
+
+  def removeAllTags(id: String)
+
+  def comment(id: String, comment: Comment)
+
+  def setIntermediate(id: String)
+
+  def renameFile(id: String, newName: String)
+  def setContentType(id: String, newType: String)
+
+  def setUserMetadataWasModified(id: String, wasModified: Boolean)
+
+  def removeFile(id: String)
+
+  def removeTemporaries()
+
+  def findMetadataChangedFiles(): List[File]
+
+  def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File]
+
+  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject
+
+  def removeOldIntermediates()
 }

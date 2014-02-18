@@ -82,7 +82,7 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
                   Logger.info(value.getName + " = " + value.getValue())
                 }
                 if (hit.getType() == "file") {
-                  files.getFile(hit.getId()) match {
+                  files.get(hit.getId()) match {
                     case Some(file) =>{
                       Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                       Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
@@ -448,9 +448,8 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
             var keysArray = new ArrayBuffer[String]
             keys.copyToBuffer(keysArray)
 
-            files.getFile(id) match {
+            files.get(id) match {
               case Some(file) => {
-                //Ok(views.html.contentbasedSearchResultsVideo3(keysArray, file.filename, id, yFinal.size, yFinal))
                 Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
               }
               case None => {

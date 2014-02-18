@@ -1,6 +1,7 @@
 package services.mongodb
 
-import services.{FileSystemDB, FileService}
+import services.FileService
+import services.filesystem.FileSystemDB
 
 /**
  * Use mongo for metadata and the filesystem for blobs.
@@ -8,5 +9,6 @@ import services.{FileSystemDB, FileService}
  * @author Luigi Marini
  *
  */
+@deprecated
 object MongoDBFileSystemFileService extends FileService with MongoFileDB with FileSystemDB {
 }

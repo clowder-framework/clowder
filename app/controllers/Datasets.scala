@@ -365,7 +365,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 	              //Existing file selected	          
 	          
 		          // add file to dataset 
-		          val theFile = files.getFile(fileId)
+		          val theFile = files.get(fileId)
 		          if(theFile.isEmpty)
 		            Redirect(routes.Datasets.newDataset()).flashing("error"->"Selected file not found. Maybe it was removed.")		            
 		          val theFileGet = theFile.get  
