@@ -52,6 +52,11 @@ abstract class FileService {
 
   def index(id: String)
 
+  /**
+   * Update thumbnail used to represent this dataset.
+   */
+  def updateThumbnail(fileId: String, thumbnailId: String)
+
   // TODO return JsValue
   def getXMLMetadataJSON(id: String): String
   
@@ -105,6 +110,8 @@ abstract class FileService {
   def removeTemporaries()
 
   def findMetadataChangedFiles(): List[File]
+
+  def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[File]
 
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File]
 

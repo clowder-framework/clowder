@@ -124,7 +124,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
                 datasets.addFile(dsId, file)
                 files.index(fileId)
                 if (!file.xmlMetadata.isEmpty)
-                  Dataset.index(dsId)
+                  datasets.index(dsId)
 
                 if (dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty)
                   datasets.updateThumbnail(dataset.id.toString, file.thumbnail_id.toString)
@@ -158,7 +158,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
                 datasets.removeFile(dataset.id.toString, file.id.toString)
                 files.index(fileId)
                 if (!file.xmlMetadata.isEmpty)
-                  Dataset.index(datasetId)
+                  datasets.index(datasetId)
 
                 if (!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty) {
                   if (dataset.thumbnail_id.get == file.thumbnail_id.get) {
@@ -212,9 +212,9 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
     request =>
       Logger.debug(s"Adding user metadata to dataset $id")
       datasets.addUserMetadata(id, Json.stringify(request.body))
-      Dataset.index(id)
+      datasets.index(id)
       configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-        case "yes" => Dataset.setUserMetadataWasModified(id, true)
+        case "yes" => datasets.setUserMetadataWasModified(id, true)
         case _ => Logger.debug("userdfSPARQLStore not enabled")
       }
       Ok(toJson(Map("status" -> "success")))
@@ -287,7 +287,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
       request.body.\("tagId").asOpt[String].map {
         tagId =>
           Logger.debug(s"Removing $tagId from $id.")
-          Dataset.removeTag(id, tagId)
+          datasets.removeTag(id, tagId)
       }
       Ok(toJson(""))
   }
@@ -338,10 +338,10 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
       // Clean up leading, trailing and multiple contiguous white spaces.
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
       (obj_type) match {
-        case TagCheck_File => FileDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_File => files.addTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => {
-          Dataset.addTags(id, userOpt, extractorOpt, tagsCleaned)
-          Dataset.index(id)
+          datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
+          datasets.index(id)
         }
         case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
       }
@@ -568,11 +568,11 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
     request =>
       datasets.get(id) match {
         case Some(dataset) => {
-          val files = dataset.files map {f => FileDAO.get(f.id.toString).get}
+          val filesInDataset = dataset.files map {f => files.get(f.id.toString).get}
 
           var isActivity = "false"
           try {
-            for (f <- files) {
+            for (f <- filesInDataset) {
               Extraction.findIfBeingProcessed(f.id) match {
                 case false =>
                 case true => {
@@ -778,7 +778,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
   def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
     request =>
       datasets.get(id) match {
-        case Some(dataset) => Ok(Dataset.getTechnicalMetadataJSON(id))
+        case Some(dataset) => Ok(datasets.getTechnicalMetadataJSON(id))
         case None => Logger.error("Error finding dataset" + id); InternalServerError
       }
   }

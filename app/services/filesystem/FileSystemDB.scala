@@ -12,7 +12,7 @@ import org.bson.types.ObjectId
 import java.io.File
 import com.mongodb.casbah.commons.MongoDBObject
 import securesocial.core.Identity
-import services.mongodb.MongoFileDB
+import services.mongodb.MongoDBFileService
 
 /**
  * Store blobs on the file system.
@@ -21,7 +21,7 @@ import services.mongodb.MongoFileDB
  *
  */
 trait FileSystemDB {
-  this: MongoFileDB =>
+  this: MongoDBFileService =>
 
   /**
    * Save a file to the file system and store metadata about it in Mongo.

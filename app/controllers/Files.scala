@@ -89,7 +89,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 		  case true => isActivity = true
         }
         
-        val userMetadata = FileDAO.getUserMetadata(file.id.toString)
+        val userMetadata = files.getUserMetadata(file.id.toString)
         Logger.debug("User metadata: " + userMetadata.toString)
         
         var comments = Comment.findCommentsByFileId(id)
@@ -98,8 +98,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         }
         comments = comments.sortBy(_.posted)
         
-        var fileDataset = Dataset.findByFileId(file.id).sortBy(_.name)
-        var datasetsOutside = Dataset.findNotContainingFile(file.id).sortBy(_.name)
+        var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
+        var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
         
         val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
         
@@ -211,9 +211,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id.toString, nameOfFile)
 				              }
-				              FileDAO.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id.toString, fileType)
 				          }
 				    }
 				    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -233,7 +233,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              files.addXMLMetadata(id, xmlToJSON)
 	              
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
@@ -410,9 +410,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id.toString, nameOfFile)
 				              }
-				              FileDAO.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id.toString, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -431,7 +431,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              files.addXMLMetadata(id, xmlToJSON)
 	              
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
@@ -512,9 +512,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id.toString, nameOfFile)
 				              }
-				              FileDAO.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id.toString, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -537,7 +537,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              files.addXMLMetadata(id, xmlToJSON)
 	              
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
@@ -616,9 +616,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id.toString, nameOfFile)
 				              }
-				              FileDAO.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id.toString, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -638,7 +638,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              files.addXMLMetadata(id, xmlToJSON)
 	              
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
@@ -723,9 +723,9 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	FileDAO.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id.toString, nameOfFile)
 				              }
-				              FileDAO.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id.toString, fileType)
 						  }
 					  }
 					  else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -749,7 +749,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 					  //for metadata files
 					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 						  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-								  FileDAO.addXMLMetadata(id, xmlToJSON)
+								  files.addXMLMetadata(id, xmlToJSON)
 
 								  Logger.debug("xmlmd=" + xmlToJSON)
 
@@ -765,10 +765,10 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 					  
 					  // add file to dataset
 					  // TODO create a service instead of calling salat directly
-					  val theFile = FileDAO.get(f.id.toString).get
-					  Dataset.addFile(dataset.id.toString, theFile)
+					  val theFile = files.get(f.id.toString).get
+					  datasets.addFile(dataset.id.toString, theFile)
 					  if(!theFile.xmlMetadata.isEmpty){
-						  Dataset.index(dataset_id)
+						  datasets.index(dataset_id)
 					  }
 					  
 					// TODO RK need to replace unknown with the server name and dataset type

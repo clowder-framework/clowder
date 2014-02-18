@@ -5,20 +5,23 @@ import models.FileDAO
 import models.SectionDAO
 import api.WithPermission
 import api.Permission
+import services.{FileService, DatasetService}
+import javax.inject.Inject
+
 /**
  * Tagging.
  * 
  * @author Luigi Marini
  */
-object Tags extends SecuredController {
+class Tags @Inject()(datasets: DatasetService, files: FileService) extends SecuredController {
 
   def search(tag: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     // Clean up leading, trailing and multiple contiguous white spaces.
     val tagCleaned = tag.trim().replaceAll("\\s+", " ")
-    val datasets = Dataset.findByTag(tagCleaned)
-    val files    = FileDAO.findByTag(tagCleaned)
+    val taggedDatasets = datasets.findByTag(tagCleaned)
+    val taggedFiles    = files.findByTag(tagCleaned)
     val sections = SectionDAO.findByTag(tagCleaned)
-    val sectionsWithFiles = for (s <- sections; f <- FileDAO.get(s.file_id.toString)) yield (s, f)
-    Ok(views.html.searchByTag(tag, datasets, files, sectionsWithFiles))
+    val sectionsWithFiles = for (s <- sections; f <- files.get(s.file_id.toString)) yield (s, f)
+    Ok(views.html.searchByTag(tag, taggedDatasets, taggedFiles, sectionsWithFiles))
   }
 }

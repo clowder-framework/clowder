@@ -81,10 +81,10 @@ class VersusPlugin(application:Application) extends Plugin{
                
                 val list=response.json\("versus_descriptors")
                 
-                FileDAO.addVersusMetadata(fileid,list)
+                files.addVersusMetadata(fileid,list)
                
                 Logger.debug("GET META DATA:*****")
-                FileDAO.getMetadata(fileid).map {
+                files.getMetadata(fileid).map {
                   md =>
                     Logger.debug(":::" + md._2.toString)
                 }

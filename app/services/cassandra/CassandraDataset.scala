@@ -104,6 +104,8 @@ class CassandraDataset extends DatasetService {
 
   def index(id: String) {}
 
+  def removeTag(id: String, tagId: String) {}
+
   def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
 
   def removeAllTags(id: String) {}
@@ -115,4 +117,50 @@ class CassandraDataset extends DatasetService {
   def removeDataset(id: String) {}
 
   def getUserMetadataJSON(id: String): String = ""
+
+  def findOneByFileId(file_id: ObjectId) = None
+
+  def findByFileId(file_id: ObjectId) = List.empty
+
+  def findNotContainingFile(file_id: ObjectId) = List.empty
+
+  def findByTag(tag: String) = List.empty
+
+  def getMetadata(id: String) = Map.empty
+
+  def getUserMetadata(id: String) = scala.collection.mutable.Map.empty
+
+  def getTechnicalMetadataJSON(id: String) = ""
+
+  def getXMLMetadataJSON(id: String) = ""
+
+  def removeXMLMetadata(id: String, fileId: String) {}
+
+  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
+
+  def setUserMetadataWasModified(id: String, wasModified: Boolean) {}
+
+  def findMetadataChangedDatasets() = List.empty
+
+  /**
+   * Check recursively whether a dataset's user-input metadata match a requested search tree.
+   */
+  def searchUserMetadata(id: String, requestedMetadataQuery: Any) = false
+
+  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String, Any], root: String) = MongoDBObject()
+
+  /**
+   * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree.
+   */
+  def searchMetadata(id: String, requestedMap: java.util.LinkedHashMap[String, Any], currentMap: scala.collection.mutable.Map[String, Any]) = false
+
+  def addCollection(datasetId: String, collectionId: String) {}
+
+  def removeCollection(datasetId: String, collectionId: String) {}
+
+  def newThumbnail(datasetId: String) {}
+
+  def update(dataset: Dataset) {}
+
+
 }

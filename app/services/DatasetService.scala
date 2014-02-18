@@ -112,6 +112,8 @@ trait DatasetService {
 
   def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
 
+  def removeTag(id: String, tagId: String)
+
   def removeAllTags(id: String)
 
   def getUserMetadataJSON(id: String): String
@@ -121,4 +123,47 @@ trait DatasetService {
   def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset]
 
   def removeDataset(id: String)
+
+  def findOneByFileId(file_id: ObjectId): Option[Dataset]
+
+  def findByFileId(file_id: ObjectId): List[Dataset]
+
+  def findNotContainingFile(file_id: ObjectId): List[Dataset]
+  def findByTag(tag: String): List[Dataset]
+
+  def getMetadata(id: String): Map[String, Any]
+
+  def getUserMetadata(id: String): scala.collection.mutable.Map[String, Any]
+
+  def getTechnicalMetadataJSON(id: String): String
+
+  def getXMLMetadataJSON(id: String): String
+
+  def removeXMLMetadata(id: String, fileId: String)
+
+  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
+
+  def setUserMetadataWasModified(id: String, wasModified: Boolean)
+
+  def findMetadataChangedDatasets(): List[Dataset]
+
+  /**
+   * Check recursively whether a dataset's user-input metadata match a requested search tree.
+   */
+  def searchUserMetadata(id: String, requestedMetadataQuery: Any): Boolean
+
+  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String, Any], root: String): MongoDBObject
+
+  /**
+   * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree.
+   */
+  def searchMetadata(id: String, requestedMap: java.util.LinkedHashMap[String, Any], currentMap: scala.collection.mutable.Map[String, Any]): Boolean
+
+  def addCollection(datasetId: String, collectionId: String)
+
+  def removeCollection(datasetId: String, collectionId: String)
+
+  def newThumbnail(datasetId: String)
+
+  def update(dataset: Dataset)
 }

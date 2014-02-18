@@ -90,7 +90,6 @@ object Indexes extends Controller with ApiController {
             }
             val doc = MultimediaFeatures(section_id = Some(new ObjectId(section_id)), features = features)
             MultimediaFeaturesDAO.save(doc)
-//            Logger.debug("Features created: " + doc)
             Ok(toJson(Map("id"->doc.id.toString)))
           }
         }

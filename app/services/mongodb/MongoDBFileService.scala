@@ -1,17 +1,15 @@
 package services.mongodb
 
-import services.{ElasticsearchPlugin, FileService}
+import services.{DatasetService, ElasticsearchPlugin, FileService}
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
-import play.api.Play
 import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.TypeImports.ObjectId
 import securesocial.core.Identity
 import play.api.Play._
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
-import java.util.{UUID, Calendar, Date, ArrayList}
+import java.util.{Calendar, Date, ArrayList}
 import java.io._
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
@@ -22,12 +20,13 @@ import java.nio.file.attribute.BasicFileAttributes
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import play.api.Logger
+import play.api.libs.json.JsArray
 import scala.Some
 import scala.util.parsing.json.JSONArray
-import play.api.libs.json.JsArray
 import models.File
 import play.api.libs.json.JsObject
-import com.mongodb.casbah.gridfs.JodaGridFS
+import javax.inject.{Inject, Singleton}
+
 
 /**
  * Use mongo for both metadata and blobs.
@@ -35,7 +34,8 @@ import com.mongodb.casbah.gridfs.JodaGridFS
  * @author Luigi Marini
  *
  */
-class MongoDBFileService extends FileService with GridFSDB {
+@Singleton
+class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileService with GridFSDB {
 
   /**
    * List all files.
@@ -130,19 +130,19 @@ class MongoDBFileService extends FileService with GridFSDB {
 
         Logger.debug("commentStr=" + commentJson.toString())
 
-        val usrMd = FileDAO.getUserMetadataJSON(id)
+        val usrMd = getUserMetadataJSON(id)
         Logger.debug("usrmd=" + usrMd)
 
-        val techMd = FileDAO.getTechnicalMetadataJSON(id)
+        val techMd = getTechnicalMetadataJSON(id)
         Logger.debug("techmd=" + techMd)
 
-        val xmlMd = FileDAO.getXMLMetadataJSON(id)
+        val xmlMd = getXMLMetadataJSON(id)
         Logger.debug("xmlmd=" + xmlMd)
 
         var fileDsId = ""
         var fileDsName = ""
 
-        for (dataset <- Dataset.findByFileId(file.id)) {
+        for (dataset <- datasets.findByFileId(file.id)) {
           fileDsId = fileDsId + dataset.id.toString + "  "
           fileDsName = fileDsName + dataset.name + "  "
         }
@@ -157,7 +157,7 @@ class MongoDBFileService extends FileService with GridFSDB {
   }
 
   def modifyRDFOfMetadataChangedFiles() {
-    val changedFiles = FileDAO.findMetadataChangedFiles()
+    val changedFiles = findMetadataChangedFiles()
     for (changedFile <- changedFiles) {
       modifyRDFUserMetadata(changedFile.id.toString)
     }
@@ -168,7 +168,7 @@ class MongoDBFileService extends FileService with GridFSDB {
     services.Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
     get(id) match {
       case Some(file) => {
-        val theJSON = FileDAO.getUserMetadataJSON(id)
+        val theJSON = getUserMetadataJSON(id)
         val fileSep = System.getProperty("file.separator")
         val tmpDir = System.getProperty("java.io.tmpdir")
         var resultDir = tmpDir + fileSep + "medici__rdfuploadtemporaryfiles" + fileSep + new ObjectId().toString
@@ -251,7 +251,7 @@ class MongoDBFileService extends FileService with GridFSDB {
 
         services.Services.rdfSPARQLService.addFileToGraph(id, "rdfCommunityGraphName")
 
-        FileDAO.setUserMetadataWasModified(id, false)
+        setUserMetadataWasModified(id, false)
       }
       case None => {}
     }
@@ -299,7 +299,7 @@ class MongoDBFileService extends FileService with GridFSDB {
 
   def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
-    val file = FileDAO.get(id).get
+    val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
@@ -315,7 +315,7 @@ class MongoDBFileService extends FileService with GridFSDB {
   }
 
   def get(id: String): Option[File] = {
-    FileDAO.findOneById(new ObjectId(id)) match {
+    get(id) match {
       case Some(file) => {
         val previews = PreviewDAO.findByFileId(file.id)
         val sections = SectionDAO.findByFileId(file.id)
@@ -330,7 +330,7 @@ class MongoDBFileService extends FileService with GridFSDB {
   }
 
   def listOutsideDataset(dataset_id: String): List[File] = {
-    Dataset.findOneById(new ObjectId(dataset_id)) match{
+    datasets.get(dataset_id) match{
       case Some(dataset) => {
         val list = for (file <- FileDAO.findAll(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
         return list.toList
@@ -555,18 +555,18 @@ class MongoDBFileService extends FileService with GridFSDB {
   }
 
   def removeFile(id: String){
-    FileDAO.findOneById(new ObjectId(id)) match{
+    get(id) match{
       case Some(file) => {
         if(file.isIntermediate.isEmpty){
-          val fileDatasets = Dataset.findByFileId(file.id)
+          val fileDatasets = datasets.findByFileId(file.id)
           for(fileDataset <- fileDatasets){
-            Dataset.removeFile(fileDataset.id.toString(), id)
+            datasets.removeFile(fileDataset.id.toString(), id)
             if(!file.xmlMetadata.isEmpty){
-              Dataset.index(fileDataset.id.toString())
+              datasets.index(fileDataset.id.toString())
             }
             if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
               if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
-                Dataset.newThumbnail(fileDataset.id.toString())
+                datasets.newThumbnail(fileDataset.id.toString())
           }
           for(section <- SectionDAO.findByFileId(file.id)){
             SectionDAO.removeSection(section)
@@ -583,7 +583,7 @@ class MongoDBFileService extends FileService with GridFSDB {
           if(!file.thumbnail_id.isEmpty)
             Thumbnail.remove(MongoDBObject("_id" -> file.thumbnail_id.get))
         }
-        FileDAO.remove(MongoDBObject("_id" -> file.id))
+        remove(MongoDBObject("_id" -> file.id))
       }
       case None =>
     }
@@ -732,8 +732,16 @@ class MongoDBFileService extends FileService with GridFSDB {
     cal.add(Calendar.HOUR, -timeDiff)
     val oldDate = cal.getTime()
     val fileList = FileDAO.find($and("isIntermediate" $eq true, "uploadDate" $lt oldDate)).toList
-    for(removeFile <- fileList)
-      FileDAO.removeFile(removeFile.id.toString())
+    for(file <- fileList)
+      removeFile(file.id.toString())
+  }
+
+  /**
+   * Update thumbnail used to represent this dataset.
+   */
+  def updateThumbnail(fileId: String, thumbnailId: String) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId)),
+      $set("thumbnail_id" -> new ObjectId(thumbnailId)), false, false, WriteConcern.Safe)
   }
 
 }

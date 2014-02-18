@@ -43,6 +43,7 @@ import models.Preview
 import play.api.mvc.SimpleResult
 import models.File
 import play.api.libs.json.JsObject
+import play.api.Play.configuration
 
 /**
  * Json API for files.
@@ -58,7 +59,8 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
       files.get(id) match {
         case Some(file) => Ok(jsonFile(file))
         case None => {
-          Logger.error("Error getting file" + id); InternalServerError
+          Logger.error("Error getting file" + id);
+          InternalServerError
         }
       }
   }
@@ -186,7 +188,6 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
         val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
         files.get(id) match {
           case Some(x) => {
-//            FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("metadata" -> doc), false, false, WriteConcern.SAFE)
             files.addMetadata(id, request.body)
             index(id)
           }
@@ -245,9 +246,9 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
                         var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
                         flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
                         nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                        FileDAO.renameFile(f.id.toString, nameOfFile)
+                        files.renameFile(f.id.toString, nameOfFile)
                       }
-                      FileDAO.setContentType(f.id.toString, fileType)
+                      files.setContentType(f.id.toString, fileType)
                     }
                   }
                   else if (nameOfFile.toLowerCase().endsWith(".mov")) {
@@ -269,7 +270,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
                   //for metadata files
                   if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                     val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                    FileDAO.addXMLMetadata(id, xmlToJSON)
+                    files.addXMLMetadata(id, xmlToJSON)
 
                     Logger.debug("xmlmd=" + xmlToJSON)
 
@@ -278,7 +279,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
                     }
 
                     //add file to RDF triple store if triple store is used
-                    play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+                    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                       case "yes" => {
                         services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
                       }
@@ -312,7 +313,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
    */
   def sendJob(file_id: String, fileType: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-      FileDAO.get(file_id) match {
+      files.get(file_id) match {
         case Some(theFile) => {
           var nameOfFile = theFile.filename
           var flags = ""
@@ -404,9 +405,9 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
                             var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
                             flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
                             nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                            FileDAO.renameFile(f.id.toString, nameOfFile)
+                            files.renameFile(f.id.toString, nameOfFile)
                           }
-                          FileDAO.setContentType(f.id.toString, fileType)
+                          files.setContentType(f.id.toString, fileType)
                         }
                       }
                       else if (nameOfFile.toLowerCase().endsWith(".mov")) {
@@ -429,7 +430,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
                       //for metadata files
                       if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                         val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                        FileDAO.addXMLMetadata(id, xmlToJSON)
+                        files.addXMLMetadata(id, xmlToJSON)
 
                         Logger.debug("xmlmd=" + xmlToJSON)
 
@@ -445,10 +446,10 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
 
                       // add file to dataset
                       // TODO create a service instead of calling salat directly
-                      val theFile = FileDAO.get(f.id.toString).get
-                      Dataset.addFile(dataset.id.toString, theFile)
+                      val theFile = files.get(f.id.toString).get
+                      datasets.addFile(dataset.id.toString, theFile)
                       if (!theFile.xmlMetadata.isEmpty) {
-                        Dataset.index(dataset_id)
+                        datasets.index(dataset_id)
                       }
 
                       // TODO RK need to replace unknown with the server name and dataset type
@@ -462,7 +463,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
 
                       //add file to RDF triple store if triple store is used
                       if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+                        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                           case "yes" => {
                             services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
                             services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
@@ -485,7 +486,8 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
               }
             }
             case None => {
-              Logger.error("Error getting dataset" + dataset_id); InternalServerError
+              Logger.error("Error getting dataset" + dataset_id);
+              InternalServerError
             }
           }
         }
@@ -516,7 +518,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
               val uploadedFile = f
               file match {
                 case Some(f) => {
-                  FileDAO.setIntermediate(f.id.toString)
+                  files.setIntermediate(f.id.toString)
                   var fileType = f.contentType
                   if (fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.toLowerCase().endsWith(".zip")) {
                     fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")
@@ -587,7 +589,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
       request.body match {
         case JsObject(fields) => {
           // TODO create a service instead of calling salat directly
-          FileDAO.findOneById(new ObjectId(file_id)) match {
+          files.get(file_id) match {
             case Some(file) => {
               PreviewDAO.findOneById(new ObjectId(preview_id)) match {
                 case Some(preview) =>
@@ -623,7 +625,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
         case "on" => {
           files.get(id) match {
             case Some(file) => {
-              val theJSON = FileDAO.getUserMetadataJSON(id)
+              val theJSON = files.getUserMetadataJSON(id)
               val fileSep = System.getProperty("file.separator")
               val tmpDir = System.getProperty("java.io.tmpdir")
               var resultDir = tmpDir + fileSep + "medici__rdfdumptemporaryfiles" + fileSep + new ObjectId().toString
@@ -631,7 +633,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
 
               if (!theJSON.replaceAll(" ", "").equals("{}")) {
                 val xmlFile = jsonToXML(theJSON)
-                new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
+                new LidoToCidocConvertion(configuration.getString("filesxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
                 xmlFile.delete()
               }
               else {
@@ -704,7 +706,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
                 connectionChars = "?mappingNum="
               }
               hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars
-              val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
+              val mappingsQuantity = Integer.parseInt(configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
               for (i <- 1 to mappingsQuantity) {
                 var currHostString = hostString + i
                 list = list :+ Json.toJson(currHostString)
@@ -715,7 +717,8 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
               Ok(listJson)
             }
             case None => {
-              Logger.error("Error getting file" + id); InternalServerError
+              Logger.error("Error getting file" + id);
+              InternalServerError
             }
           }
         }
@@ -729,12 +732,11 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
     implicit request =>
       Logger.debug("Adding user metadata to file " + id)
       val theJSON = Json.stringify(request.body)
-      FileDAO.addUserMetadata(id, theJSON)
+      files.addUserMetadata(id, theJSON)
       index(id)
-      play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+      configuration.getString("userdfSPARQLStore").getOrElse("no") match {
         case "yes" => {
-          FileDAO.setUserMetadataWasModified(id, true)
-          //modifyRDFUserMetadata(id)
+          files.setUserMetadataWasModified(id, true)
         }
         case _ => {}
       }
@@ -767,14 +769,15 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
 
   def filePreviewsList(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     request =>
-      FileDAO.findOneById(new ObjectId(id)) match {
+      files.get(id) match {
         case Some(file) => {
           val filePreviews = PreviewDAO.findByFileId(file.id);
           val list = for (prv <- filePreviews) yield jsonPreview(prv)
           Ok(toJson(list))
         }
         case None => {
-          Logger.error("Error getting file" + id); InternalServerError
+          Logger.error("Error getting file" + id);
+          InternalServerError
         }
       }
   }
@@ -798,7 +801,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
       request.body match {
         case JsObject(fields) => {
           // TODO create a service instead of calling salat directly
-          FileDAO.findOneById(new ObjectId(file_id)) match {
+          files.get(file_id) match {
             case Some(file) => {
               GeometryDAO.findOneById(new ObjectId(geometry_id)) match {
                 case Some(geometry) =>
@@ -825,7 +828,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
       request.body match {
         case JsObject(fields) => {
           // TODO create a service instead of calling salat directly
-          FileDAO.findOneById(new ObjectId(file_id)) match {
+          files.get((file_id)) match {
             case Some(file) => {
               ThreeDTextureDAO.findOneById(new ObjectId(texture_id)) match {
                 case Some(texture) =>
@@ -849,18 +852,15 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
   def attachThumbnail(file_id: String, thumbnail_id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
     // TODO create a service instead of calling salat directly
-      FileDAO.findOneById(new ObjectId(file_id)) match {
+      files.get(file_id) match {
         case Some(file) => {
           models.Thumbnail.findOneById(new ObjectId(thumbnail_id)) match {
             case Some(thumbnail) => {
-              FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(file_id)),
-                $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
-
-              val datasetList = Dataset.findByFileId(file.id)
+              files.updateThumbnail(file_id, thumbnail_id)
+              val datasetList = datasets.findByFileId(file.id)
               for (dataset <- datasetList) {
                 if (dataset.thumbnail_id.isEmpty) {
-                  Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id),
-                    $set("thumbnail_id" -> new ObjectId(thumbnail_id)), false, false, WriteConcern.SAFE)
+                  datasets.updateThumbnail(dataset.id.toString, thumbnail_id)
                 }
               }
 
@@ -1089,7 +1089,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
       if (ObjectId.isValid(id)) {
         files.get(id) match {
           case Some(file) => {
-            FileDAO.removeAllTags(id)
+            files.removeAllTags(id)
             Ok(Json.obj("status" -> "success"))
           }
           case None => {
@@ -1144,7 +1144,8 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
           Ok(toJson(Map("isBeingProcessed" -> isActivity)))
         }
         case None => {
-          Logger.error("Error getting file" + id); InternalServerError
+          Logger.error("Error getting file" + id);
+          InternalServerError
         }
       }
   }
@@ -1195,33 +1196,33 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
           Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
         }
         case None => {
-          Logger.error("Error getting file" + id); InternalServerError
+          Logger.error("Error getting file" + id);
+          InternalServerError
         }
       }
   }
-
 
   def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
     request =>
       files.get(id) match {
         case Some(file) => {
-          Ok(FileDAO.getTechnicalMetadataJSON(id))
+          Ok(files.getTechnicalMetadataJSON(id))
         }
         case None => {
-          Logger.error("Error finding file" + id); InternalServerError
+          Logger.error("Error finding file" + id);
+          InternalServerError
         }
       }
   }
-
 
   def removeFile(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteFiles)) {
     request =>
       files.get(id) match {
         case Some(file) => {
-          FileDAO.removeFile(id)
+          files.removeFile(id)
           Logger.debug(file.filename)
           //remove file from RDF triple store if triple store is used
-          play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
             case "yes" => {
               if (file.filename.endsWith(".xml")) {
                 Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfXMLGraphName")
@@ -1230,8 +1231,6 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
             }
             case _ => {}
           }
-
-
           Ok(toJson(Map("status" -> "success")))
         }
         case None => Ok(toJson(Map("status" -> "success")))
@@ -1249,7 +1248,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
       Logger.debug("thejsson: " + searchJSON)
       var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
 
-      var searchQuery = FileDAO.searchUserMetadataFormulateQuery(searchTree)
+      var searchQuery = files.searchUserMetadataFormulateQuery(searchTree)
 
       //searchQuery = searchQuery.reverse
 
@@ -1272,7 +1271,7 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
       Logger.debug("thejsson: " + searchJSON)
       var searchTree = JsonUtil.parseJSON(searchJSON).asInstanceOf[java.util.LinkedHashMap[String, Any]]
 
-      var searchQuery = FileDAO.searchAllMetadataFormulateQuery(searchTree)
+      var searchQuery = files.searchAllMetadataFormulateQuery(searchTree)
 
       //searchQuery = searchQuery.reverse
 
@@ -1304,19 +1303,19 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
 
         Logger.debug("commentStr=" + commentJson.toString())
 
-        val usrMd = FileDAO.getUserMetadataJSON(id)
+        val usrMd = files.getUserMetadataJSON(id)
         Logger.debug("usrmd=" + usrMd)
 
-        val techMd = FileDAO.getTechnicalMetadataJSON(id)
+        val techMd = files.getTechnicalMetadataJSON(id)
         Logger.debug("techmd=" + techMd)
 
-        val xmlMd = FileDAO.getXMLMetadataJSON(id)
+        val xmlMd = files.getXMLMetadataJSON(id)
         Logger.debug("xmlmd=" + xmlMd)
 
         var fileDsId = ""
         var fileDsName = ""
 
-        for (dataset <- Dataset.findByFileId(file.id)) {
+        for (dataset <- datasets.findByFileId(file.id)) {
           fileDsId = fileDsId + dataset.id.toString + "  "
           fileDsName = fileDsName + dataset.name + "  "
         }

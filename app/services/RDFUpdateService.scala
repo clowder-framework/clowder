@@ -49,7 +49,7 @@ class RDFUpdateService (application: Application) extends Plugin {
   
   
    def modifyRDFOfMetadataChangedFiles(){    
-    val changedFiles = FileDAO.findMetadataChangedFiles()
+    val changedFiles = files.findMetadataChangedFiles()
     for(changedFile <- changedFiles){
       modifyRDFUserMetadataFiles(changedFile.id.toString)
     }
@@ -66,9 +66,9 @@ class RDFUpdateService (application: Application) extends Plugin {
   
 def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
     services.Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
-    FileDAO.findOneById(new ObjectId(id)) match { 
+    files.findOneById(new ObjectId(id)) match {
 	            case Some(file) => {
-	              val theJSON = FileDAO.getUserMetadataJSON(id)
+	              val theJSON = files.getUserMetadataJSON(id)
 	              val fileSep = System.getProperty("file.separator")
 	              val tmpDir = System.getProperty("java.io.tmpdir")
 		          var resultDir = tmpDir + fileSep + "medici__rdfuploadtemporaryfiles" + fileSep + new ObjectId().toString
@@ -149,7 +149,7 @@ def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
 					
 					services.Services.rdfSPARQLService.addFileToGraph(id, "rdfCommunityGraphName")
 					
-					FileDAO.setUserMetadataWasModified(id, false)
+					files.setUserMetadataWasModified(id, false)
 	            }
 	            case None => {}
 	 }
