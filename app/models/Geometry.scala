@@ -21,8 +21,7 @@ case class ThreeDGeometry(
   filename: Option[String] = None,
   contentType: String,
   level: Option[String],
-  length: Long
-)
+  length: Long)
 
 object GeometryDAO extends ModelCompanion[ThreeDGeometry, ObjectId] {
 

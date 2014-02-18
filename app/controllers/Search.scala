@@ -1,5 +1,5 @@
 package controllers
-//import play.api.Logger
+
 import play.api.mvc._
 import services.ElasticsearchPlugin
 import services.VersusPlugin
@@ -34,8 +34,7 @@ import java.io.FileInputStream
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import scala.collection.mutable.ArrayBuffer
-import models.Result
-import models.SimilarityResult
+import models.VersusSimilarityResult
 import play.api.libs.json.Reads
 import play.api.libs.json.JsArray
 import models.TempFileDAO
@@ -243,7 +242,7 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
           var indexSeqFuture = for {
             list <- indexListResponse
 
-            listIn = list.json.as[Seq[models.IndexList.IndexList]]
+            listIn = list.json.as[Seq[models.VersusIndexList.VersusIndexList]]
 
             indexSeqT = listIn.map {
               ind => (ind.indexID, ind.MIMEtype, ind.ex, ind.me, ind.indxr)
@@ -323,7 +322,7 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
         	 var indexSeqFuture= for {
         		 list<-indexListResponse
         		
-        		 listIn=list.json.as[Seq[models.IndexList.IndexList]]
+        		 listIn=list.json.as[Seq[models.VersusIndexList.VersusIndexList]]
         		 
         		 indexSeqT=listIn.map{
         		  		    ind=>(ind.indexID,ind.MIMEtype,ind.ex,ind.me,ind.indxr)
@@ -404,7 +403,7 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
           var indexSeqFuture = for {
             list <- indexListResponse
 
-            listIn = list.json.as[Seq[models.IndexList.IndexList]]
+            listIn = list.json.as[Seq[models.VersusIndexList.VersusIndexList]]
 
             indexSeqT = listIn.map {
               ind => (ind.indexID, ind.MIMEtype, ind.ex, ind.me, ind.indxr)

@@ -6,18 +6,18 @@ import MongoContext.context
 import play.api.Play.current
 import services.mongodb.MongoSalatPlugin
 
-case class DatasetXMLMetadata (
-
+/**
+ * Dataset XML metadata.
+ *
+ * @author Constantinos Sophocleous
+ */
+case class DatasetXMLMetadata(
   xmlMetadata: Map[String, Any] = Map.empty,
-  fileId: String
-  
-)
+  fileId: String)
 
 object DatasetXMLMetadata extends ModelCompanion[DatasetXMLMetadata, ObjectId] {
-  
   val dao = current.plugin[MongoSalatPlugin] match {
-    case None    => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) =>  new SalatDAO[DatasetXMLMetadata, ObjectId](collection = x.collection("datasetxmlmetadata")) {}
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[DatasetXMLMetadata, ObjectId](collection = x.collection("datasetxmlmetadata")) {}
   }
-  
 }

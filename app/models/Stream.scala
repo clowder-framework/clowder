@@ -13,8 +13,10 @@ import services.mongodb.MongoSalatPlugin
 
 /**
  * A stream is a sequence of objects with potentially no beginning and no end.
- * @author Luigi Marini
+ * This is currently not being used and is being replaced by the PostGIS Geotemporal API.
+ * The case classes could be updated and used for the Geotemporal API.
  *
+ * @author Luigi Marini
  */
 case class Stream(
   id: ObjectId = new ObjectId,
@@ -34,13 +36,11 @@ case class Datapoint(
   time: Option[Date], location: Option[Geometry],
   data: Option[Map[String, String]],
   source: Option[String])
-  
-  
+
 object Stream extends ModelCompanion[Stream, ObjectId] {
-  // TODO RK handle exception for instance if we switch to other DB
   val dao = current.plugin[MongoSalatPlugin] match {
-    case None    => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) =>  new SalatDAO[Stream, ObjectId](collection = x.collection("streams")) {}
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Stream, ObjectId](collection = x.collection("streams")) {}
   }
 }
   

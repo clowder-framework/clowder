@@ -3,7 +3,7 @@
  */
 package models
 
-import com.novus.salat.dao.{ ModelCompanion, SalatDAO }
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import MongoContext.context
 import play.api.Play.current
@@ -28,7 +28,7 @@ object AppConfiguration extends ModelCompanion[AppConfiguration, ObjectId] {
     case Some(x) => new SalatDAO[AppConfiguration, ObjectId](collection = x.collection("app.configuration")) {}
 
   }
-  
+
   def getDefault(): Option[AppConfiguration] = {
     dao.findOne(MongoDBObject("name" -> "default")) match {
       case Some(conf) => Some(conf)
@@ -39,13 +39,13 @@ object AppConfiguration extends ModelCompanion[AppConfiguration, ObjectId] {
       }
     }
   }
-  
+
   def setTheme(theme: String) {
     Logger.debug("Setting theme to " + theme)
     getDefault match {
-      case Some(conf) => AppConfiguration.update(MongoDBObject("name" -> "default"), $set("theme" ->  theme), false, false, WriteConcern.Safe)
+      case Some(conf) => AppConfiguration.update(MongoDBObject("name" -> "default"), $set("theme" -> theme), false, false, WriteConcern.Safe)
       case None => {}
     }
-    
+
   }
 }

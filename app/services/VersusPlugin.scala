@@ -239,7 +239,7 @@ class VersusPlugin(application:Application) extends Plugin{
         //Logger.debug("response.body=" + response.body)
         val json: JsValue = Json.parse(response.body)
         Logger.debug("index(): json=" + json);
-        val list = json.as[Seq[models.IndexList.IndexList]]
+        val list = json.as[Seq[models.VersusIndexList.VersusIndexList]]
         val len = list.length
         val indexes = new Array[(String, String)](len)
 
@@ -286,7 +286,7 @@ class VersusPlugin(application:Application) extends Plugin{
         //Logger.debug("response.body=" + response.body)
         val json: JsValue = Json.parse(response.body)
         Logger.debug("index(): json=" + json);
-        val list = json.as[Seq[models.IndexList.IndexList]]
+        val list = json.as[Seq[models.VersusIndexList.VersusIndexList]]
         val len = list.length
         val indexes = new Array[(String, String)](len)
 
@@ -350,7 +350,7 @@ class VersusPlugin(application:Application) extends Plugin{
     resultFuture.map {
       response =>
         val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
+        val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
 
         val len = similarity_value.length
         // val ar = new Array[String](len)
@@ -462,7 +462,7 @@ class VersusPlugin(application:Application) extends Plugin{
         resultFuture.map{
       response =>
         val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
+        val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
 
         val len = similarity_value.length
         // val ar = new Array[String](len)
@@ -550,7 +550,7 @@ class VersusPlugin(application:Application) extends Plugin{
     resultFuture.map {
       response =>
         val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
+        val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
 
         val len = similarity_value.length
         // val ar = new Array[String](len)

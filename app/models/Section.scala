@@ -15,42 +15,38 @@ import services.mongodb.MongoSalatPlugin
 
 /**
  * A portion of a file.
- * 
+ *
  * @author Luigi Marini
  *
  */
-case class Section (
-    id: ObjectId = new ObjectId,
-    file_id: ObjectId = new ObjectId,
-    order: Int = -1,
-    startTime: Option[Int] = None, // in seconds
-    endTime: Option[Int] = None, // in seconds
-    area: Option[Rectangle] = None,
-    preview: Option[Preview] = None,
-    tags: List[Tag] = List.empty
-)
+case class Section(
+  id: ObjectId = new ObjectId,
+  file_id: ObjectId = new ObjectId,
+  order: Int = -1,
+  startTime: Option[Int] = None, // in seconds
+  endTime: Option[Int] = None, // in seconds
+  area: Option[Rectangle] = None,
+  preview: Option[Preview] = None,
+  tags: List[Tag] = List.empty)
 
-case class Rectangle (
-    x: Double,
-    y: Double,
-    w: Double,
-    h: Double
-    
-   
-) {
+case class Rectangle(
+  x: Double,
+  y: Double,
+  w: Double,
+  h: Double) {
   override def toString() = f"[ $x%.3f, $y%.3f, $w%.3f, $h%.3f ]"
 }
-    
+
 object SectionDAO extends ModelCompanion[Section, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
-    case None    => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) =>  new SalatDAO[Section, ObjectId](collection = x.collection("sections")) {}
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Section, ObjectId](collection = x.collection("sections")) {}
   }
-  
+
   def findByFileId(id: ObjectId): List[Section] = {
-    dao.find(MongoDBObject("file_id"->id)).sort(MongoDBObject("startTime"->1)).toList
+    dao.find(MongoDBObject("file_id" -> id)).sort(MongoDBObject("startTime" -> 1)).toList
   }
-  
+
   def findByTag(tag: String): List[Section] = {
     dao.find(MongoDBObject("tags.name" -> tag)).toList
   }
@@ -77,30 +73,31 @@ object SectionDAO extends ModelCompanion[Section, ObjectId] {
     val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
-    tags.intersect(existingTags).map { tag =>
-      dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+    tags.intersect(existingTags).map {
+      tag =>
+        dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
     }
   }
 
   def removeAllTags(id: String) {
     dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List()), false, false, WriteConcern.Safe)
   }
+
   // ---------- Tags related code ends ------------------
 
   def comment(id: String, comment: Comment) {
     dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
-  
-  def removeSection(s: Section){
-    for(preview <- PreviewDAO.findBySectionId(s.id)){
-          PreviewDAO.removePreview(preview)
-        }
-    for(comment <- Comment.findCommentsBySectionId(s.id.toString())){
-          Comment.removeComment(comment)
-        }
-    SectionDAO.remove(MongoDBObject("_id" -> s.id))    
+
+  def removeSection(s: Section) {
+    for (preview <- PreviewDAO.findBySectionId(s.id)) {
+      PreviewDAO.removePreview(preview)
+    }
+    for (comment <- Comment.findCommentsBySectionId(s.id.toString())) {
+      Comment.removeComment(comment)
+    }
+    SectionDAO.remove(MongoDBObject("_id" -> s.id))
   }
-  
-  
-  
+
+
 }

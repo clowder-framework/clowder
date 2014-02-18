@@ -7,11 +7,15 @@ import play.api.Play.current
 import securesocial.core.Identity
 import services.mongodb.MongoSalatPlugin
 
-
+/**
+ * Used to store securesocial users in MongoDB.
+ *
+ * @author Luigi Marini
+ */
 object SocialUserDAO extends ModelCompanion[Identity, ObjectId] {
   // TODO RK handle exception for instance if we switch to other DB
   val dao = current.plugin[MongoSalatPlugin] match {
-    case None    => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) =>  new SalatDAO[Identity, ObjectId](collection = x.collection("social.users")) {}
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Identity, ObjectId](collection = x.collection("social.users")) {}
   }
 }
