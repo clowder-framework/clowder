@@ -1,9 +1,6 @@
-/**
- *
- */
 package services
 
-import models.Collection
+import models.{Dataset, Collection}
 import scala.util.Try
 
 /**
@@ -38,16 +35,6 @@ trait CollectionService {
    * Get collection.
    */
   def get(id: String): Option[Collection]
-  
-  /**
-   * 
-   */
-  def listInsideDataset(datasetId: String): List[Collection]
-  
-  /**
-   * 
-   */
-  def listOutsideDataset(datasetId: String): List[Collection]
 
   /**
    * Add datataset to collection
@@ -57,7 +44,7 @@ trait CollectionService {
   /**
    * Remove dataset from collection
    */
-  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String): Try[Unit]
+  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: Boolean = true): Try[Unit]
 
   /**
    * Delete collection and any reference of it
@@ -65,4 +52,20 @@ trait CollectionService {
   def delete(collectionId: String): Try[Unit]
 
   def deleteAll()
+
+  def findOneByDatasetId(datasetId: String): Option[Collection]
+
+  /**
+   * List all collections outside a dataset.
+   */
+  def listOutsideDataset(datasetId: String): List[Collection]
+
+  /**
+   * List all collections inside a dataset.
+   */
+  def listInsideDataset(datasetId: String): List[Collection]
+
+
+  def isInDataset(dataset: Dataset, collection: Collection): Boolean
+
 }

@@ -16,6 +16,9 @@ import play.api.libs.json.Json._
 import scala.util.Failure
 import scala.Some
 import scala.util.Success
+import scala.util.Failure
+import scala.Some
+import scala.util.Success
 
 /**
  * Use Mongodb to store collections.
@@ -125,7 +128,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
           case Some(dataset) => {
             if(!isInCollection(dataset,collection)){
               // add dataset to collection
-              Collection.addDataset(collection.id.toString, dataset)
+              addDataset(collection.id.toString, dataset.id.toString)
               //add collection to dataset
               datasets.addCollection(dataset.id.toString, collection.id.toString)
               Logger.info("Adding dataset to collection completed")
@@ -148,14 +151,14 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
     }
   }
 
-  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String) = Try {
+  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: Boolean = true) = Try {
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
         datasets.get(datasetId) match {
           case Some(dataset) => {
             if(isInCollection(dataset,collection)){
               // remove dataset from collection
-              Collection.removeDataset(collection.id.toString, dataset)
+              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId)), $addToSet("datasets" -> Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)
               //remove collection from dataset
               datasets.removeCollection(dataset.id.toString, collection.id.toString)
               Logger.info("Removing dataset from collection completed")
@@ -170,8 +173,8 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
       }
       case None => {
         ignoreNotFound match{
-          case "True" => Success
-          case "False" =>
+          case true => Success
+          case true =>
             Logger.error("Error getting collection" + collectionId)
             Failure
         }
@@ -203,5 +206,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
 
   def deleteAll() {
     Collection.remove(MongoDBObject())
+  }
+
+  def findOneByDatasetId(datasetId: String): Option[Collection] = {
+    Collection.findOne(MongoDBObject("datasets._id" -> new ObjectId(datasetId)))
   }
 }

@@ -6,7 +6,7 @@ import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
 import services.DatasetService
 import services.CollectionService
-import scala.util.{Success, Failure}
+import scala.util.{Try, Success, Failure}
 
 /**
  * Manipulate collections.
@@ -28,7 +28,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent,
                     authorization=WithPermission(Permission.CreateCollections)) { request =>
 
-    collections.removeDataset(collectionId, datasetId, ignoreNotFound) match {
+    collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
     }
