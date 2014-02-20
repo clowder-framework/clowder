@@ -11,6 +11,7 @@ GET      /users                                                              con
 GET      /users/by-country/:country                                          controllers.Users.listByCountry(country)
 GET      /users/create/:username                                             controllers.Users.create(username)
 GET      /users/view/:id                                                     controllers.Users.view(id)
+POST	 /users/registerThroughAdmins										 controllers.Users.handleStartSignUp
 
 # Files
 GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)

@@ -1,0 +1,13 @@
+@(token: String, userEmail: String)(implicit request: RequestHeader)
+@import securesocial.core.IdentityProvider
+<html>
+<body>
+<p style="font-style:italic;">To admin: Forward the following registration completion email to @userEmail if this person and email are trusted.</p>
+
+<p>Hello,</p>
+
+<p>Please follow this
+    <a href="@securesocial.core.providers.utils.RoutesHelper.signUp(token).absoluteURL(IdentityProvider.sslEnabled)">link</a> to complete your registration.
+</p>
+</body>
+</html>
