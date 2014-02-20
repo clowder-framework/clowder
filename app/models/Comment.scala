@@ -30,49 +30,8 @@ case class Comment(
   @Ignore replies: List[Comment] = List.empty)
 
 object Comment extends ModelCompanion[Comment, ObjectId] {
-  // TODO RK handle exception for instance if we switch to other DB
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Comment, ObjectId](collection = x.collection("comments")) {}
   }
-
-  def findCommentsByCommentId(id: String): List[Comment] = {
-    dao.find(MongoDBObject("comment_id" -> id)).map {
-      comment =>
-        comment.copy(replies = findCommentsByCommentId(comment.id.toString))
-    }.toList
-  }
-
-  def findCommentsByDatasetId(id: String, asTree: Boolean = true): List[Comment] = {
-    if (asTree) {
-      dao.find(("comment_id" $exists false) ++ ("dataset_id" -> id)).map {
-        comment =>
-          comment.copy(replies = findCommentsByCommentId(comment.id.toString))
-      }.toList
-    } else {
-      dao.find(MongoDBObject("dataset_id" -> id)).toList
-    }
-  }
-
-  def findCommentsByFileId(id: String): List[Comment] = {
-    dao.find(("comment_id" $exists false) ++ ("file_id" -> id)).map {
-      comment =>
-        comment.copy(replies = findCommentsByCommentId(comment.id.toString))
-    }.toList
-  }
-
-  def findCommentsBySectionId(id: String): List[Comment] = {
-    dao.find(("comment_id" $exists false) ++ ("section_id" -> id)).map {
-      comment =>
-        comment.copy(replies = findCommentsByCommentId(comment.id.toString))
-    }.toList
-  }
-
-  def removeComment(c: Comment) {
-    for (reply <- findCommentsByCommentId(c.id.toString())) {
-      Comment.removeComment(reply)
-    }
-    Comment.remove(MongoDBObject("_id" -> c.id))
-  }
-
 }

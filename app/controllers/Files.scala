@@ -41,7 +41,12 @@ import javax.inject.Inject
  *
  * @author Luigi Marini
  */
-class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService) extends SecuredController {
+class Files @Inject() (
+  files: FileService,
+  datasets: DatasetService,
+  queries: QueryService,
+  comments: CommentService,
+  sections: SectionService) extends SecuredController {
 
   /**
    * Upload form.
@@ -76,8 +81,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
             Map(file -> ff)
           }
         }
-        val sections = SectionDAO.findByFileId(file.id)
-        val sectionsWithPreviews = sections.map { s =>
+        val sectionsByFile = sections.findByFileId(file.id.toString)
+        val sectionsWithPreviews = sectionsByFile.map { s =>
           val p = PreviewDAO.findOne(MongoDBObject("section_id" -> s.id))
           s.copy(preview = p)
         }
@@ -92,18 +97,18 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
         val userMetadata = files.getUserMetadata(file.id.toString)
         Logger.debug("User metadata: " + userMetadata.toString)
         
-        var comments = Comment.findCommentsByFileId(id)
-        sections.map { section =>
-          comments ++= Comment.findCommentsBySectionId(section.id.toString())
+        var commentsByFile = comments.findCommentsByFileId(id)
+        sectionsByFile.map { section =>
+          commentsByFile ++= comments.findCommentsBySectionId(section.id.toString())
         }
-        comments = comments.sortBy(_.posted)
+        commentsByFile = commentsByFile.sortBy(_.posted)
         
         var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
         var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
         
         val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
         
-        Ok(views.html.file(file, id, comments, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
+        Ok(views.html.file(file, id, commentsByFile, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."

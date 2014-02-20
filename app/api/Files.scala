@@ -51,7 +51,12 @@ import play.api.Play.configuration
  * @author Luigi Marini
  *
  */
-class Files @Inject()(files: FileService, datasets: DatasetService, queries: QueryService, tags: TagService) extends ApiController {
+class Files @Inject()(
+  files: FileService,
+  datasets: DatasetService,
+  queries: QueryService,
+  tags: TagService,
+  comments: CommentService) extends ApiController {
 
   def get(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
@@ -1296,10 +1301,9 @@ class Files @Inject()(files: FileService, datasets: DatasetService, queries: Que
 
         Logger.debug("tagStr=" + tagsJson);
 
-        val comments = for (comment <- Comment.findCommentsByFileId(id)) yield {
-          comment.text
-        }
-        val commentJson = new JSONArray(comments)
+        val commentsByFile = for (comment <- comments.findCommentsByFileId(id)) yield comment.text
+
+        val commentJson = new JSONArray(commentsByFile)
 
         Logger.debug("commentStr=" + commentJson.toString())
 

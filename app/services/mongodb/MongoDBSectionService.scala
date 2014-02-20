@@ -3,16 +3,18 @@ package services.mongodb
 import services.SectionService
 import play.api.Logger
 import java.util.Date
-import models.{Section, SectionDAO, Tag}
+import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
+import models.Section
+import services.CommentService
 
 /**
  * Created by lmarini on 2/17/14.
  */
 @Singleton
-class MongoDBSectionService extends SectionService {
+class MongoDBSectionService @Inject() (comments: CommentService) extends SectionService {
 
   def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to section " + id + " : " + tags)
@@ -41,5 +43,31 @@ class MongoDBSectionService extends SectionService {
 
   def get(id: String): Option[Section] = {
     SectionDAO.findOneById(new ObjectId(id))
+  }
+
+  def findByFileId(id: String): List[Section] = {
+    SectionDAO.find(MongoDBObject("file_id" -> new ObjectId(id))).sort(MongoDBObject("startTime" -> 1)).toList
+  }
+
+  def findByTag(tag: String): List[Section] = {
+    SectionDAO.find(MongoDBObject("tags.name" -> tag)).toList
+  }
+
+  def removeAllTags(id: String) {
+    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+  }
+
+  def comment(id: String, comment: Comment) {
+    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+  }
+
+  def removeSection(s: Section) {
+    for (preview <- PreviewDAO.findBySectionId(s.id)) {
+      PreviewDAO.removePreview(preview)
+    }
+    for (comment <- comments.findCommentsBySectionId(s.id.toString())) {
+      comments.removeComment(comment)
+    }
+    SectionDAO.remove(MongoDBObject("_id" -> s.id))
   }
 }

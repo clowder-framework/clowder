@@ -12,7 +12,7 @@ import scala.Some
 /**
  * Created by lmarini on 1/17/14.
  */
-class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService, queries: QueryService) extends TagService {
+class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, sections: SectionService) extends TagService {
 
   val USERID_ANONYMOUS = "anonymous"
 
@@ -129,7 +129,7 @@ class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService,
           datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
           datasets.index(id)
         }
-        case TagCheck_Section => SectionDAO.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
       }
     }
     (not_found, error_str)
@@ -151,7 +151,7 @@ class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService,
       (obj_type) match {
         case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Section => SectionDAO.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }
     }
     (not_found, error_str)

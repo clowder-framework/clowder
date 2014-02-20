@@ -21,7 +21,12 @@ import scala.Some
  *
  */
 @Singleton
-class Sections @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, tags: TagService)  extends ApiController {
+class Sections @Inject() (
+  files: FileService,
+  datasets: DatasetService,
+  queries: QueryService,
+  tags: TagService,
+  sections: SectionService)  extends ApiController {
 
   /**
    *  REST endpoint: POST: Add a section.
@@ -149,7 +154,7 @@ class Sections @Inject() (files: FileService, datasets: DatasetService, queries:
     if (ObjectId.isValid(id)) {
       SectionDAO.findOneById(new ObjectId(id)) match {
         case Some(section) => {
-          SectionDAO.removeAllTags(id)
+          sections.removeAllTags(id)
           Ok(Json.obj("status" -> "success"))
         }
         case None => {

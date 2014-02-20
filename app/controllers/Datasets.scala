@@ -30,7 +30,12 @@ import api.WithPermission
  * @author Luigi Marini
  *
  */
-class Datasets @Inject()(datasets: DatasetService, files: FileService, collections: CollectionService) extends SecuredController {
+class Datasets @Inject()(
+  datasets: DatasetService,
+  files: FileService,
+  collections: CollectionService,
+  comments: CommentService,
+  sections: SectionService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -150,20 +155,19 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
           val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
           val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
 
-          var comments = Comment.findCommentsByDatasetId(id)
+          var commentsByDataset = comments.findCommentsByDatasetId(id)
           filesInDataset.map {
             file =>
-              comments ++= Comment.findCommentsByFileId(file.id.toString())
-              SectionDAO.findByFileId(file.id).map {
-                section =>
-                  comments ++= Comment.findCommentsBySectionId(section.id.toString())
+              commentsByDataset ++= comments.findCommentsByFileId(file.id.toString())
+              sections.findByFileId(file.id.toString).map { section =>
+                commentsByDataset ++= comments.findCommentsBySectionId(section.id.toString())
               }
           }
-          comments = comments.sortBy(_.posted)
+          commentsByDataset = commentsByDataset.sortBy(_.posted)
 
           val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
 
-          Ok(views.html.dataset(datasetWithFiles, comments, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError

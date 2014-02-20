@@ -30,6 +30,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   var node: Node = null
   var client: TransportClient = null
+  val comments: CommentService =  DI.injector.getInstance(classOf[CommentService])
 
   override def onStart() {
     val configuration = application.configuration
@@ -93,10 +94,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
         Logger.debug("tagStr=" + tagsJson);
 
-        val comments = for (comment <- Comment.findCommentsByDatasetId(dataset.id.toString, false)) yield {
+        val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(dataset.id.toString, false)) yield {
           comment.text
         }
-        val commentJson = new JSONArray(comments)
+        val commentJson = new JSONArray(commentsByDataset)
 
         Logger.debug("commentStr=" + commentJson.toString())
 

@@ -3,7 +3,7 @@
  */
 package services.mongodb
 
-import services.{FileService, ElasticsearchPlugin, CollectionService, DatasetService}
+import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
@@ -27,6 +27,9 @@ import scala.util.parsing.json.JSONArray
 import models.File
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
+import scala.Some
+import scala.util.parsing.json.JSONArray
+import models.File
 
 /**
  * Use Mongodb to store datasets.
@@ -35,7 +38,7 @@ import scala.collection.JavaConversions._
  *
  */
 @Singleton
-class MongoDBDatasetService  @Inject() (collections: CollectionService, files: FileService) extends DatasetService {
+class MongoDBDatasetService @Inject() (collections: CollectionService, files: FileService, comments: CommentService) extends DatasetService {
 
   /**
    * List all datasets in the system.
@@ -751,8 +754,8 @@ class MongoDBDatasetService  @Inject() (collections: CollectionService, files: F
       case Some(dataset) => {
         for (collection <- collections.listInsideDataset(id))
           collections.removeDataset(collection.id.toString, dataset.id.toString)
-        for (comment <- Comment.findCommentsByDatasetId(id)) {
-          Comment.removeComment(comment)
+        for (comment <- comments.findCommentsByDatasetId(id)) {
+          comments.removeComment(comment)
         }
         for (f <- dataset.files) {
           var notTheDataset = for (currDataset <- findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
@@ -778,10 +781,10 @@ class MongoDBDatasetService  @Inject() (collections: CollectionService, files: F
 
         Logger.debug("tagStr=" + tagsJson);
 
-        val comments = for (comment <- Comment.findCommentsByDatasetId(id, false)) yield {
+        val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(id, false)) yield {
           comment.text
         }
-        val commentJson = new JSONArray(comments)
+        val commentJson = new JSONArray(commentsByDataset)
 
         Logger.debug("commentStr=" + commentJson.toString())
 

@@ -1,6 +1,6 @@
 package services.mongodb
 
-import services.{DatasetService, ElasticsearchPlugin, FileService}
+import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
@@ -28,6 +28,11 @@ import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.WriteConcern
 import play.api.Logger
 import com.mongodb.casbah.gridfs.GridFS
+import scala.Some
+import scala.util.parsing.json.JSONArray
+import play.api.libs.json.JsArray
+import models.File
+import play.api.libs.json.JsObject
 
 
 /**
@@ -37,7 +42,7 @@ import com.mongodb.casbah.gridfs.GridFS
  *
  */
 @Singleton
-class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileService {
+class MongoDBFileService @Inject() (datasets: DatasetService, sections: SectionService, comments: CommentService)  extends FileService {
 
   /**
    * List all files.
@@ -175,10 +180,10 @@ class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileServi
 
         Logger.debug("tagStr=" + tagsJson);
 
-        val comments = for (comment <- Comment.findCommentsByFileId(id)) yield {
+        val commentsByFile = for (comment <- comments.findCommentsByFileId(id)) yield {
           comment.text
         }
-        val commentJson = new JSONArray(comments)
+        val commentJson = new JSONArray(commentsByFile)
 
         Logger.debug("commentStr=" + commentJson.toString())
 
@@ -370,8 +375,8 @@ class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileServi
     FileDAO.findOneById(new ObjectId(id)) match {
       case Some(file) => {
         val previews = PreviewDAO.findByFileId(file.id)
-        val sections = SectionDAO.findByFileId(file.id)
-        val sectionsWithPreviews = sections.map { s =>
+        val sectionsByFile = sections.findByFileId(file.id.toString)
+        val sectionsWithPreviews = sectionsByFile.map { s =>
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
         }
@@ -620,14 +625,14 @@ class MongoDBFileService @Inject() (datasets: DatasetService)  extends FileServi
               if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
                 datasets.newThumbnail(fileDataset.id.toString())
           }
-          for(section <- SectionDAO.findByFileId(file.id)){
-            SectionDAO.removeSection(section)
+          for(section <- sections.findByFileId(file.id.toString)){
+            sections.removeSection(section)
           }
           for(preview <- PreviewDAO.findByFileId(file.id)){
             PreviewDAO.removePreview(preview)
           }
-          for(comment <- Comment.findCommentsByFileId(id)){
-            Comment.removeComment(comment)
+          for(comment <- comments.findCommentsByFileId(id)){
+            comments.removeComment(comment)
           }
           for(texture <- ThreeDTextureDAO.findTexturesByFileId(file.id)){
             ThreeDTextureDAO.remove(MongoDBObject("_id" -> texture.id))
