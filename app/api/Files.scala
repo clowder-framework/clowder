@@ -57,7 +57,8 @@ class Files @Inject()(
   queries: QueryService,
   tags: TagService,
   comments: CommentService,
-  extractions: ExtractionService) extends ApiController {
+  extractions: ExtractionService,
+  previews: PreviewService) extends ApiController {
 
   def get(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
@@ -572,7 +573,7 @@ class Files @Inject()(
         f =>
           Logger.debug("Uploading file " + f.filename)
           // store file
-          val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+          val id = previews.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
           Ok(toJson(Map("id" -> id)))
       }.getOrElse {
         BadRequest(toJson("File not attached."))
@@ -614,7 +615,7 @@ class Files @Inject()(
               PreviewDAO.findOneById(new ObjectId(preview_id)) match {
                 case Some(preview) =>
                   Logger.debug("File not found. Deleting previews.files " + preview_id)
-                  PreviewDAO.removePreview(preview)
+                  previews.removePreview(preview)
                   BadRequest(toJson("File not found. Preview deleted."))
                 case None => BadRequest(toJson("Preview not found"))
               }
@@ -693,7 +694,7 @@ class Files @Inject()(
             case Some(file) => {
 
               //RDF from XML of the file itself (for XML metadata-only files)
-              val previewsList = PreviewDAO.findByFileId(new ObjectId(id))
+              val previewsList = previews.findByFileId(id)
               var rdfPreviewList = List.empty[models.Preview]
               for (currPreview <- previewsList) {
                 if (currPreview.contentType.equals("application/rdf+xml")) {
@@ -777,7 +778,7 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-          val filePreviews = PreviewDAO.findByFileId(file.id);
+          val filePreviews = previews.findByFileId(file.id.toString);
           val list = for (prv <- filePreviews) yield jsonPreview(prv)
           Ok(toJson(list))
         }
@@ -1181,7 +1182,7 @@ class Files @Inject()(
       files.get(id) match {
         case Some(file) => {
 
-          val previewsFromDB = PreviewDAO.findByFileId(file.id)
+          val previewsFromDB = previews.findByFileId(file.id.toString)
           val previewers = Previewers.findPreviewers
           //Logger.info("Number of previews " + previews.length);
           val files = List(file)

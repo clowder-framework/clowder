@@ -42,7 +42,11 @@ import play.api.libs.json.JsObject
  *
  */
 @Singleton
-class MongoDBFileService @Inject() (datasets: DatasetService, sections: SectionService, comments: CommentService)  extends FileService {
+class MongoDBFileService @Inject() (
+  datasets: DatasetService,
+  sections: SectionService,
+  comments: CommentService,
+  previews: PreviewService) extends FileService {
 
   /**
    * List all files.
@@ -374,13 +378,13 @@ class MongoDBFileService @Inject() (datasets: DatasetService, sections: SectionS
   def get(id: String): Option[File] = {
     FileDAO.findOneById(new ObjectId(id)) match {
       case Some(file) => {
-        val previews = PreviewDAO.findByFileId(file.id)
+        val previewsByFile = previews.findByFileId(file.id.toString)
         val sectionsByFile = sections.findByFileId(file.id.toString)
         val sectionsWithPreviews = sectionsByFile.map { s =>
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
         }
-        Some(file.copy(sections = sectionsWithPreviews, previews = previews))
+        Some(file.copy(sections = sectionsWithPreviews, previews = previewsByFile))
       }
       case None => None
     }
@@ -628,8 +632,8 @@ class MongoDBFileService @Inject() (datasets: DatasetService, sections: SectionS
           for(section <- sections.findByFileId(file.id.toString)){
             sections.removeSection(section)
           }
-          for(preview <- PreviewDAO.findByFileId(file.id)){
-            PreviewDAO.removePreview(preview)
+          for(preview <- previews.findByFileId(file.id.toString)){
+            previews.removePreview(preview)
           }
           for(comment <- comments.findCommentsByFileId(id)){
             comments.removeComment(comment)

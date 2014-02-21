@@ -47,7 +47,8 @@ class Files @Inject() (
   queries: QueryService,
   comments: CommentService,
   sections: SectionService,
-  extractions: ExtractionService) extends SecuredController {
+  extractions: ExtractionService,
+  previews: PreviewService) extends SecuredController {
 
   /**
    * Upload form.
@@ -66,10 +67,9 @@ class Files @Inject() (
     Logger.info("GET file with id " + id)
     files.get(id) match {
       case Some(file) => {
-        val previewsFromDB = PreviewDAO.findByFileId(file.id)
+        val previewsFromDB = previews.findByFileId(file.id.toString)
         val previewers = Previewers.findPreviewers
-        //Logger.info("Number of previews " + previews.length);
-        val previews = {
+        val previewsWithPreviewer = {
           val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
           }
@@ -109,7 +109,7 @@ class Files @Inject() (
         
         val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
         
-        Ok(views.html.file(file, id, commentsByFile, previews, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
+        Ok(views.html.file(file, id, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."

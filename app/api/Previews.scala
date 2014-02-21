@@ -1,6 +1,3 @@
-/**
- *
- */
 package api
 
 import play.api.Logger
@@ -18,6 +15,8 @@ import play.api.libs.json.JsValue
 import play.api.libs.concurrent.Execution.Implicits._
 import java.io.BufferedReader
 import java.io.FileReader
+import javax.inject.{Inject, Singleton}
+import services.{PreviewService, DatasetService, FileService}
 
 /**
  * Files and datasets previews.
@@ -25,7 +24,8 @@ import java.io.FileReader
  * @author Luigi Marini
  *
  */
-object Previews extends ApiController {
+@Singleton
+class Previews @Inject()(previews: PreviewService) extends ApiController {
 
   def downloadPreview(id:String, datasetid:String) =
     SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request =>
@@ -37,7 +37,7 @@ object Previews extends ApiController {
    */
   def download(id:String) =
     SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request =>
-	    PreviewDAO.getBlob(id) match {
+	    previews.getBlob(id) match {
 	   
 	      case Some((inputStream, filename, contentType, contentLength)) => {
     	    request.headers.get(RANGE) match {
@@ -85,7 +85,7 @@ object Previews extends ApiController {
       request.body.file("File").map { f =>        
         Logger.debug("Uploading file " + f.filename)
         // store file
-        val id = PreviewDAO.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val id = previews.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         // for IIP server references, store the IIP URL, key and filename on the IIP server for possible later deletion of the previewed file
 	        if(f.filename.endsWith(".imageurl")){
 	          val iipRefReader = new BufferedReader(new FileReader(f.ref.file));
@@ -101,8 +101,8 @@ object Previews extends ApiController {
 	          val iipImage = imageLine.substring(imageLine.lastIndexOf("/")+1)
 	          
 	          iipRefReader.close()
-	          
-	          PreviewDAO.setIIPReferences(id, iipURL, iipImage, iipKey)  
+
+            previews.setIIPReferences(id, iipURL, iipImage, iipKey)
 	        }
         Ok(toJson(Map("id"->id)))   
       }.getOrElse {
@@ -154,15 +154,13 @@ object Previews extends ApiController {
 	    SecuredAction(authorization=WithPermission(Permission.CreateFiles)) { request =>
 	      request.body match {
 	        case JsObject(fields) => {
-	          // TODO create a service instead of calling salat directly
-	          PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
+            previews.get(preview_id) match {
 	            case Some(preview) => {
 		              TileDAO.findOneById(new ObjectId(tile_id)) match {
 		                case Some(tile) =>
 		                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
 		                    TileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(tile_id)), 
 		                        $set("metadata"-> metadata, "preview_id" -> new ObjectId(preview_id), "level"->level), false, false, WriteConcern.SAFE)
-	//	                    Logger.debug("Updating tiles.files " + tile_id + " with " + metadata)
 		                    Ok(toJson(Map("status"->"success")))
 		                case None => BadRequest(toJson("Tile not found"))
 		              }
@@ -243,7 +241,7 @@ object Previews extends ApiController {
           PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
             case Some(preview) => {
             	val annotation = ThreeDAnnotation(x_coord, y_coord, z_coord, description)
-            	PreviewDAO.annotation(preview_id, annotation)             
+              previews.annotation(preview_id, annotation)
             	Ok(toJson(Map("status"->"success")))
             }
 	        case None => BadRequest(toJson("Preview not found " + preview_id))
@@ -261,9 +259,9 @@ object Previews extends ApiController {
 	      // TODO create a service instead of calling salat directly
           PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
             case Some(preview) => {
-            	PreviewDAO.findAnnotation(preview_id, x_coord, y_coord, z_coord) match{
+              previews.findAnnotation(preview_id, x_coord, y_coord, z_coord) match{
             	  case Some(annotation) => {
-            		PreviewDAO.updateAnnotation(preview_id, annotation.id.toString(), description)
+                  previews.updateAnnotation(preview_id, annotation.id.toString(), description)
             	    Ok(toJson(Map("status"->"success")))
             	  }
             	  case None => Ok(toJson(Map("status"->"success"))) //What the user sees locally must not change if an annotation is deleted after the user loads the dataset
@@ -280,7 +278,7 @@ object Previews extends ApiController {
 	      // TODO create a service instead of calling salat directly
           PreviewDAO.findOneById(new ObjectId(preview_id)) match { 
             case Some(preview) => {
-            	val annotationsOfPreview = PreviewDAO.listAnnotations(preview_id)
+            	val annotationsOfPreview = previews.listAnnotations(preview_id)
             	val list = for (annotation <- annotationsOfPreview) yield jsonAnnotation(annotation)           	
             	Logger.debug("thelist: " + toJson(list))
 	      	  	Ok(toJson(list))

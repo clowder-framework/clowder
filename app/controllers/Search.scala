@@ -1,8 +1,7 @@
 package controllers
 
 import play.api.mvc._
-import services.ElasticsearchPlugin
-import services.VersusPlugin
+import services._
 import play.Logger
 import scala.collection.JavaConversions.mapAsScalaMap
 import sys.process._
@@ -47,17 +46,23 @@ import scala.collection.mutable.ArrayBuffer
 import models.Dataset
 import api.WithPermission
 import api.Permission
-import services.{ CollectionService, DatasetService, FileService, QueryService}
 import javax.inject.{ Singleton, Inject }
 import scala.concurrent.Future
+import scala.Some
+import api.WithPermission
+import util.SearchResult
 
 /**
  * Text search.
  *
  * @author Luigi Marini
  */
-class Search @Inject() (datasets: DatasetService, files: FileService, 
-    collections: CollectionService, queries: QueryService) extends SecuredController {
+class Search @Inject() (
+  datasets: DatasetService,
+  files: FileService,
+  collections: CollectionService,
+  queries: QueryService,
+  previews: PreviewService) extends SecuredController {
 
   /**
    * Search results.
@@ -134,7 +139,7 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
   def searchMultimediaIndex(section_id: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching multimedia index")
     // TODO handle multiple previews found
-    val preview = PreviewDAO.findBySectionId(new ObjectId(section_id))(0)
+    val preview = previews.findBySectionId(section_id)(0)
     MultimediaFeaturesDAO.findOne(MongoDBObject("section_id" -> new ObjectId(section_id))) match {
       case Some(feature) => {
         // setup priority queues
@@ -199,10 +204,10 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
             val list = new ListBuffer[SearchResult]
             while (queue.size > 0) {
               val element = queue.pop()
-              val previews = PreviewDAO.findBySectionId(new ObjectId(element.section_id))
-              if (previews.size == 1) {
-                Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previews(0).id.toString)
-                list.prepend(SearchResult(element.section_id, element.distance, Some(previews(0).id.toString)))
+              val previewsBySection = previews.findBySectionId(element.section_id.toString)
+              if (previewsBySection.size == 1) {
+                Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previewsBySection(0).id.toString)
+                list.prepend(SearchResult(element.section_id, element.distance, Some(previewsBySection(0).id.toString)))
               } else {
                 Logger.error("Found more/less than one preview " + preview)
               }

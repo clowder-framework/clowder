@@ -1,6 +1,5 @@
 package services
 
-import org.bson.types.ObjectId
 import models.{ThreeDAnnotation, Preview}
 import java.io.InputStream
 
@@ -9,13 +8,15 @@ import java.io.InputStream
  */
 trait PreviewService {
 
+  def get(previewId: String): Option[Preview]
+
   def setIIPReferences(id: String, iipURL: String, iipImage: String, iipKey: String)
 
-  def findByFileId(id: ObjectId): List[Preview]
+  def findByFileId(id: String): List[Preview]
 
-  def findBySectionId(id: ObjectId): List[Preview]
+  def findBySectionId(id: String): List[Preview]
 
-  def findByDatasetId(id: ObjectId): List[Preview]
+  def findByDatasetId(id: String): List[Preview]
 
   /**
    * Save blob.

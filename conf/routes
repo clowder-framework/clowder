@@ -192,17 +192,17 @@ POST    /api/datasets/:id/tags                                  @api.Datasets.ad
 POST    /api/datasets/:id/tags/remove                           @api.Datasets.removeTags(id)
 POST    /api/datasets/:id/tags/remove_all                       @api.Datasets.removeAllTags(id)
 
-GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					api.Previews.downloadPreview(preview_id, datasetid)
+GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					@api.Previews.downloadPreview(preview_id, datasetid)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			@api.Files.downloadByDatasetAndFilename(dataset_id, filename, preview_id)
-GET		/api/previews/:dzi_id_dir/:level/:filename									api.Previews.getTile(dzi_id_dir, level, filename)
-POST    /api/previews/:dzi_id/tiles/:tile_id/:level     							api.Previews.attachTile(dzi_id, tile_id, level)
-POST    /api/previews/:id/metadata        											api.Previews.uploadMetadata(id)
-GET     /api/previews/:id/metadata        											api.Previews.getMetadata(id)
-POST    /api/previews/:id/annotationAdd        									    api.Previews.attachAnnotation(id)
-POST    /api/previews/:id/annotationEdit        									api.Previews.editAnnotation(id)
-GET     /api/previews/:id/annotationsList        									api.Previews.listAnnotations(id)
-GET     /api/previews/:id                 											api.Previews.download(id)
-POST    /api/previews                     											api.Previews.upload(iipKey: String ?= "")
+GET		/api/previews/:dzi_id_dir/:level/:filename									@api.Previews.getTile(dzi_id_dir, level, filename)
+POST    /api/previews/:dzi_id/tiles/:tile_id/:level     							@api.Previews.attachTile(dzi_id, tile_id, level)
+POST    /api/previews/:id/metadata        											@api.Previews.uploadMetadata(id)
+GET     /api/previews/:id/metadata        											@api.Previews.getMetadata(id)
+POST    /api/previews/:id/annotationAdd        									    @api.Previews.attachAnnotation(id)
+POST    /api/previews/:id/annotationEdit        									@api.Previews.editAnnotation(id)
+GET     /api/previews/:id/annotationsList        									@api.Previews.listAnnotations(id)
+GET     /api/previews/:id                 											@api.Previews.download(id)
+POST    /api/previews                     											@api.Previews.upload(iipKey: String ?= "")
 
 POST     /api/indexes                                                        api.Indexes.index
 POST     /api/indexes/features                                               api.Indexes.features

@@ -735,7 +735,7 @@ class Datasets @Inject()(
             case Some(dataset) => {
 
               //RDF from XML files in the dataset itself (for XML metadata-only files)
-              val previewsList = previews.findByDatasetId(new ObjectId(id))
+              val previewsList = previews.findByDatasetId(id)
               var rdfPreviewList = List.empty[models.Preview]
               for (currPreview <- previewsList) {
                 if (currPreview.contentType.equals("application/rdf+xml")) {
@@ -746,7 +746,7 @@ class Datasets @Inject()(
               var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
 
               for (file <- dataset.files) {
-                val filePreviewsList = previews.findByFileId(file.id)
+                val filePreviewsList = previews.findByFileId(file.id.toString)
                 var fileRdfPreviewList = List.empty[models.Preview]
                 for (currPreview <- filePreviewsList) {
                   if (currPreview.contentType.equals("application/rdf+xml")) {

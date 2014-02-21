@@ -22,20 +22,24 @@ import com.mongodb.casbah.WriteConcern
  */
 class MongoDBPreviewService extends PreviewService {
 
-  def setIIPReferences(id: String, iipURL: String, iipImage: String, iipKey: String){
+  def get(previewId: String): Option[Preview] = {
+    PreviewDAO.findOneById(new ObjectId(previewId))
+  }
+
+  def setIIPReferences(id: String, iipURL: String, iipImage: String, iipKey: String) {
     PreviewDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
   }
 
-  def findByFileId(id: ObjectId): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("file_id"->id)).toList
+  def findByFileId(id: String): List[Preview] = {
+    PreviewDAO.dao.find(MongoDBObject("file_id"-> new ObjectId(id))).toList
   }
 
-  def findBySectionId(id: ObjectId): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("section_id"->id)).toList
+  def findBySectionId(id: String): List[Preview] = {
+    PreviewDAO.dao.find(MongoDBObject("section_id"-> new ObjectId(id))).toList
   }
 
-  def findByDatasetId(id: ObjectId): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("dataset_id"->id)).toList
+  def findByDatasetId(id: String): List[Preview] = {
+    PreviewDAO.dao.find(MongoDBObject("dataset_id"-> new ObjectId(id))).toList
   }
 
   /**

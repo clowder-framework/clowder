@@ -48,6 +48,7 @@ import scala.collection.immutable.Map
 class VersusPlugin(application:Application) extends Plugin{
   
   val files: FileService =  DI.injector.getInstance(classOf[FileService])
+  val previews: PreviewService =  DI.injector.getInstance(classOf[PreviewService])
   
   override def onStart() {
     Logger.debug("Starting Versus Plugin")
@@ -397,7 +398,7 @@ class VersusPlugin(application:Application) extends Plugin{
 		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
 
                 //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
+                val previewsFromDB = previews.findByFileId(file.id.toString)
                 val previewers = Previewers.findPreviewers
                 //Logger.info("Number of previews " + previews.length);
                 val files = List(file)
@@ -414,7 +415,7 @@ class VersusPlugin(application:Application) extends Plugin{
                     (file -> ff)
                   }
                 }
-                val previews = Map(previewslist: _*)
+                val filteredPreviews = Map(previewslist: _*)
                 ///Previews ends.........
 
                 //resultArray += ((subStr, result.docID, result.proximity, file.filename))
@@ -422,7 +423,7 @@ class VersusPlugin(application:Application) extends Plugin{
                 val formatter = new DecimalFormat("#.###")
                 // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
 
                 //     ar.update(i, file.filename)
 
@@ -484,7 +485,7 @@ class VersusPlugin(application:Application) extends Plugin{
        
                 // se.update(i,(a(n),result.docID,result.proximity,file.filename))
                 //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
+                val previewsFromDB = previews.findByFileId(file.id.toString)
                 val previewers = Previewers.findPreviewers
                 //Logger.info("Number of previews " + previews.length);
                 val files = List(file)
@@ -501,14 +502,14 @@ class VersusPlugin(application:Application) extends Plugin{
                     (file -> ff)
                   }
                 }
-                val previews = Map(previewslist: _*)
+                val filteredPreviews = Map(previewslist: _*)
                 ///Previews ends.........
 
                 //resultArray += ((subStr, result.docID, result.proximity, file.filename))
                 val formatter = new DecimalFormat("#.###")
                 // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
 
                 //     ar.update(i, file.filename)
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
@@ -571,7 +572,7 @@ class VersusPlugin(application:Application) extends Plugin{
               case Some(file) => {
                 // se.update(i,(a(n),result.docID,result.proximity,file.filename))
                 //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
+                val previewsFromDB = previews.findByFileId(file.id.toString)
                 val previewers = Previewers.findPreviewers
                 //Logger.info("Number of previews " + previews.length);
                 val files = List(file)
@@ -588,7 +589,7 @@ class VersusPlugin(application:Application) extends Plugin{
                     (file -> ff)
                   }
                 }
-                val previews = Map(previewslist: _*)
+                val filteredPreviews = Map(previewslist: _*)
                 ///Previews ends.........
 
                 //resultArray += ((subStr, result.docID, result.proximity, file.filename))
@@ -596,7 +597,7 @@ class VersusPlugin(application:Application) extends Plugin{
                 val formatter = new DecimalFormat("#.###")
                 // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
 
                 //     ar.update(i, file.filename)
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)

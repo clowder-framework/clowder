@@ -1,6 +1,6 @@
 package services.mongodb
 
-import services.SectionService
+import services.{PreviewService, SectionService, CommentService}
 import play.api.Logger
 import java.util.Date
 import models._
@@ -8,13 +8,12 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import javax.inject.{Inject, Singleton}
 import models.Section
-import services.CommentService
 
 /**
  * Created by lmarini on 2/17/14.
  */
 @Singleton
-class MongoDBSectionService @Inject() (comments: CommentService) extends SectionService {
+class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService) extends SectionService {
 
   def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to section " + id + " : " + tags)
@@ -62,8 +61,8 @@ class MongoDBSectionService @Inject() (comments: CommentService) extends Section
   }
 
   def removeSection(s: Section) {
-    for (preview <- PreviewDAO.findBySectionId(s.id)) {
-      PreviewDAO.removePreview(preview)
+    for (preview <- previews.findBySectionId(s.id.toString)) {
+      previews.removePreview(preview)
     }
     for (comment <- comments.findCommentsBySectionId(s.id.toString())) {
       comments.removeComment(comment)
