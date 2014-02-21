@@ -31,6 +31,7 @@ object Permission extends Enumeration {
 		SearchDatasets,
 		AddDatasetsMetadata,
 		ShowDatasetsMetadata,
+		ShowTags,
 		CreateTags,
 		DeleteTags,
 		CreateComments,
@@ -88,6 +89,7 @@ case class WithPermission(permission: Permission) extends Authorization {
 		  case (_, ListSensors)          => true
 		  case (_, GetSensors)           => true
 		  case (_, SearchSensors)        => true
+		  case (_, ShowTags)        	 => true
 		  
 		  // FIXME: required by ShowDataset if preview uses original file
 		  // FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
