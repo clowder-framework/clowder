@@ -10,7 +10,6 @@ package models
  *
  */
 case class Metadata(
-                     key: String,
-                     value: String,
-                     predicate: Option[String]
-                     )
+  key: String,
+  value: String,
+  predicate: Option[String])

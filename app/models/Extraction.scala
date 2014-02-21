@@ -27,19 +27,8 @@ case class Extraction(
   end: Option[Date])
 
 object Extraction extends ModelCompanion[Extraction, ObjectId] {
-  // TODO RK handle exception for instance if we switch to other DB
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Extraction, ObjectId](collection = x.collection("extractions")) {}
   }
-
-  def findIfBeingProcessed(fileId: ObjectId): Boolean = {
-    val allOfFile = dao.find(MongoDBObject("file_id" -> fileId)).toList
-    var extractorsArray: collection.mutable.Map[String, String] = collection.mutable.Map()
-    for (currentExtraction <- allOfFile) {
-      extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
-    }
-    return extractorsArray.values.exists(_ != "DONE.")
-  }
-
 }

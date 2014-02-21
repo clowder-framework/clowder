@@ -46,7 +46,8 @@ class Files @Inject() (
   datasets: DatasetService,
   queries: QueryService,
   comments: CommentService,
-  sections: SectionService) extends SecuredController {
+  sections: SectionService,
+  extractions: ExtractionService) extends SecuredController {
 
   /**
    * Upload form.
@@ -89,9 +90,9 @@ class Files @Inject() (
 
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
-        Extraction.findIfBeingProcessed(file.id) match{
-		  case false => 
-		  case true => isActivity = true
+        extractions.findIfBeingProcessed(file.id.toString) match {
+		      case false =>
+		      case true => isActivity = true
         }
         
         val userMetadata = files.getUserMetadata(file.id.toString)

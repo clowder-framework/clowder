@@ -35,7 +35,8 @@ class Datasets @Inject()(
   files: FileService,
   collections: CollectionService,
   comments: CommentService,
-  sections: SectionService) extends SecuredController {
+  sections: SectionService,
+  extractions: ExtractionService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -117,7 +118,7 @@ class Datasets @Inject()(
           var isActivity = false
           try {
             for (f <- filesInDataset) {
-              Extraction.findIfBeingProcessed(f.id) match {
+              extractions.findIfBeingProcessed(f.id.toString) match {
                 case false =>
                 case true => isActivity = true; throw ActivityFound
               }

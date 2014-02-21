@@ -38,8 +38,14 @@ import play.api.Play.configuration
  */
 @Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
-class Datasets @Inject()(datasets: DatasetService, files: FileService, collections: CollectionService,
-                         sections: SectionService, comments: CommentService, previews: PreviewService) extends ApiController {
+class Datasets @Inject()(
+  datasets: DatasetService,
+  files: FileService,
+  collections: CollectionService,
+  sections: SectionService,
+  comments: CommentService,
+  previews: PreviewService,
+  extractions: ExtractionService) extends ApiController {
 
   /**
    * List all datasets.
@@ -573,7 +579,7 @@ class Datasets @Inject()(datasets: DatasetService, files: FileService, collectio
           var isActivity = "false"
           try {
             for (f <- filesInDataset) {
-              Extraction.findIfBeingProcessed(f.id) match {
+              extractions.findIfBeingProcessed(f.id.toString) match {
                 case false =>
                 case true => {
                   isActivity = "true"

@@ -38,6 +38,7 @@ class ProdModule extends AbstractModule {
     bind(classOf[CommentService]).to(classOf[MongoDBCommentService])
     bind(classOf[PreviewService]).to(classOf[MongoDBPreviewService])
     bind(classOf[AppConfigurationService]).to(classOf[MongoDBAppConfigurationService])
+    bind(classOf[ExtractionService]).to(classOf[MongoDBExtractionService])
   }
 }
 
@@ -55,5 +56,6 @@ class DevModule extends AbstractModule {
     bind(classOf[CommentService]).to(classOf[MongoDBCommentService])
     bind(classOf[PreviewService]).to(classOf[MongoDBPreviewService])
     bind(classOf[AppConfigurationService]).to(classOf[MongoDBAppConfigurationService])
+    bind(classOf[ExtractionService]).to(classOf[MongoDBExtractionService])
   }
 }

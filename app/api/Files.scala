@@ -56,7 +56,8 @@ class Files @Inject()(
   datasets: DatasetService,
   queries: QueryService,
   tags: TagService,
-  comments: CommentService) extends ApiController {
+  comments: CommentService,
+  extractions: ExtractionService) extends ApiController {
 
   def get(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
@@ -1142,7 +1143,7 @@ class Files @Inject()(
       files.get(id) match {
         case Some(file) => {
           var isActivity = "false"
-          Extraction.findIfBeingProcessed(file.id) match {
+          extractions.findIfBeingProcessed(file.id.toString) match {
             case false =>
             case true => isActivity = "true"
           }
