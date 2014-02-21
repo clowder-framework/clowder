@@ -11,7 +11,7 @@ import securesocial.core.SecureSocial
 import api.ApiController
 import api.WithPermission
 import api.Permission
-import services.VersusPlugin
+import services.{AppConfigurationService, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
@@ -24,6 +24,7 @@ import scala.concurrent._
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
+import javax.inject.{Inject, Singleton}
 
 /**
  * Administration pages.
@@ -31,7 +32,8 @@ import play.api.libs.concurrent.Promise
  * @author Luigi Marini
  *
  */
-object Admin extends SecuredController {
+@Singleton
+class Admin @Inject() (appConfiguration: AppConfigurationService) extends SecuredController {
 
   private val themes = "bootstrap/bootstrap.css" ::
     "bootstrap-amelia.min.css" ::
@@ -323,7 +325,7 @@ object Admin extends SecuredController {
   def setTheme() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { implicit request =>
     request.body.\("theme").asOpt[Int] match {
       case Some(theme) => {
-        AppConfiguration.setTheme(themes(theme))
+        appConfiguration.setTheme(themes(theme))
         Ok("""{"status":"ok"}""").as(JSON)
       }
       case None => {
@@ -333,10 +335,5 @@ object Admin extends SecuredController {
     }
   }
 
-  def getTheme(): String = {
-    AppConfiguration.getDefault match {
-      case Some(appConf) => Logger.debug("Theme" + appConf.theme); appConf.theme
-      case None => themes(0)
-    }
-  }
+  def getTheme(): String = appConfiguration.getTheme()
 }

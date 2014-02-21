@@ -10,7 +10,6 @@ import play.api.Play.current
 import securesocial.core.IdentityId
 import java.util.Date
 import play.api.Logger
-import com.novus.salat.global._
 import com.mongodb.casbah.Imports._
 import org.joda.time.DateTime
 import services.mongodb.MongoSalatPlugin

@@ -1,7 +1,7 @@
 package models
 
 import com.novus.salat.{TypeHintFrequency, StringTypeHintStrategy, Context}
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 
 /**
@@ -11,15 +11,13 @@ import play.api.Play.current
  */
 object MongoContext {
 
-  implicit val context = {
-    val context = new Context {
+  implicit val context = new Context {
+      Logger.debug("Loading custom mongodb context")
       val name = "global"
       override val typeHintStrategy = StringTypeHintStrategy(when = TypeHintFrequency.Always,
         typeHint = "_typeHint")
-
+      registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
+      registerClassLoader(Play.classloader)
+      registerCustomTransformer(UUIDTransformer)
     }
-    context.registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
-    context.registerClassLoader(Play.classloader)
-    context
-  }
 }

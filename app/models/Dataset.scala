@@ -1,6 +1,3 @@
-/**
- *
- */
 package models
 
 import com.mongodb.casbah.Imports._
