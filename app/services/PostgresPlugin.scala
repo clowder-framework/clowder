@@ -354,7 +354,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     counts
   }
   
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]): Option[String] = {
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], source: List[String], attributes: List[String]): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
@@ -378,6 +378,12 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
       query += "ST_MakePoint(?, ?)])), geog)"
     }
+    // attributes
+    if (!attributes.isEmpty) for (x <- 0 until attributes.size) {
+     query += " AND "
+     query += "? = ANY(SELECT json_object_keys(datapoints.data))"
+    }
+    //stream
     if (stream_id.isDefined) query += "stream_id = ?"
     query += " order by start_time asc) As t;"
     val st = conn.prepareStatement(query)
@@ -407,6 +413,12 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i + 2, parts(0).toDouble)
       i += 2
     }
+    if (!attributes.isEmpty) {
+      for (x <- 0 until attributes.size) {
+      i = i + 1
+      st.setString(i, attributes(x))
+      }
+    }
     if (stream_id.isDefined) {
       i = i + 1
       st.setInt(i, stream_id.get.toInt)
@@ -419,7 +431,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     rs.close()
     st.close()
-    Logger.debug("Searching datapoints result: " + data)
+    Logger.trace("Searching datapoints result: " + data)
     if (data == "null") None // FIXME
     else Some(data)
   }
@@ -450,6 +462,6 @@ class PostgresPlugin(application: Application) extends Plugin {
 
   def test() {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
-    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None))
+    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, List.empty, List.empty))
   }
 }

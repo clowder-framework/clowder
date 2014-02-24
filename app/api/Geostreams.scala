@@ -251,12 +251,12 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sources: List[String], attributes: List[String]) =
     Action { request =>
-      Logger.debug("Search " + since + " " + until + " " + geocode)
+      Logger.debug("Search " + since + " " + until + " " + geocode + " " + sources + " " + attributes)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchDatapoints(since, until, geocode, stream_id) match {
+          plugin.searchDatapoints(since, until, geocode, stream_id, sources, attributes) match {
             case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
             case None => Ok(Json.toJson("""{"status":"No data found"}""")).as("application/json")
           }
