@@ -11,7 +11,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFS
 import services.mongodb.MongoSalatPlugin
 
-trait QueryFSDB{
+trait QueryFSDB {
 
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[TempFile] = {
     val files = current.plugin[MongoSalatPlugin] match {

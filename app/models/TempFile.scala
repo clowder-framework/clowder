@@ -5,7 +5,6 @@ import org.bson.types.ObjectId
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
-import com.mongodb.casbah.commons.MongoDBObject
 import services.mongodb.MongoSalatPlugin
 
 /**
@@ -25,16 +24,5 @@ object TempFileDAO extends ModelCompanion[TempFile, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[TempFile, ObjectId](collection = x.collection("uploadquery.files")) {}
-  }
-
-  def get(query_id: String): Option[TempFile] = {
-    dao.findOneById(new ObjectId(query_id))
-    match {
-      case Some(file) => {
-        val f = dao.findOne(MongoDBObject(" id" -> query_id))
-        f
-      }
-      case None => None
-    }
   }
 }

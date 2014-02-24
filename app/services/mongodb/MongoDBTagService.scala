@@ -3,7 +3,7 @@ package services.mongodb
 import play.api.libs.json.JsValue
 import play.api.Logger
 import org.bson.types.ObjectId
-import models.{Dataset, FileDAO, SectionDAO}
+import models.SectionDAO
 import javax.inject.Inject
 import services._
 import api.RequestWithUser

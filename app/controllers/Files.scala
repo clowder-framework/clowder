@@ -499,7 +499,6 @@ class Files @Inject() (
         Logger.info("uploadSelectQuery")
          val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
          val uploadedFile = f
-//        Thread.sleep(1000)
         
         file match {
           case Some(f) => {

@@ -5,18 +5,46 @@ import securesocial.core.IdentityId
 import play.api.{Application, Logger}
 import securesocial.core.providers.Token
 import com.mongodb.casbah.Imports._
-import models.SocialUserDAO
-import models.TokenDAO
-import models.{Token => MongoToken}
+import models.{MongoContext, SocialUserDAO}
 import securesocial.core.Identity
 import com.mongodb.casbah.commons.conversions.scala.DeregisterJodaTimeConversionHelpers
 import org.joda.time.DateTime
+import java.util.Date
+import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import org.bson.types.ObjectId
+import com.mongodb.casbah.commons.TypeImports.ObjectId
+import play.api.Play._
+import securesocial.core.IdentityId
+import scala.Some
+import MongoContext.context
 
 /**
  * SecureSocial implementation using MongoDB.
  * 
  * @author Luigi Marini
  */
+case class MongoToken(
+  id: Object,
+  uuid: String,
+  email: String,
+  creationTime: Date,
+  expirationTime: Date,
+  isSignUp: Boolean) {
+  def isExpired = expirationTime.before(new Date)
+}
+
+object TokenDAO extends ModelCompanion[MongoToken, ObjectId] {
+
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[MongoToken, ObjectId](collection = x.collection("social.token")) {}
+  }
+
+  def findByUUID(uuid: String): Option[MongoToken] = {
+    dao.findOne(MongoDBObject("uuid" -> uuid))
+  }
+}
+
 class MongoUserService(application: Application) extends UserServicePlugin(application) {
   /**
    * Finds a SocialUser that maches the specified id

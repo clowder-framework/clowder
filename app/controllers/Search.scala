@@ -36,7 +36,6 @@ import scala.collection.mutable.ArrayBuffer
 import models.VersusSimilarityResult
 import play.api.libs.json.Reads
 import play.api.libs.json.JsArray
-import models.TempFileDAO
 import com.mongodb.DBCollection
 import play.api.Play.current
 import play.api.libs.concurrent._
