@@ -116,7 +116,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         collectionForm.bindFromRequest.fold(
           errors => BadRequest(views.html.newCollection(errors)),
 	      collection => {
-		        Logger.debug("Saving dataset " + collection.name)
+		        Logger.debug("Saving collection " + collection.name)
 		        		     
 			        // TODO create a service instead of calling salat directly
 		            Collection.save(collection)

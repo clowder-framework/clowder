@@ -154,6 +154,18 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
 	            if(dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
 		                        Dataset.dao.collection.update(MongoDBObject("_id" -> dataset.id), 
 		                        $set("thumbnail_id" -> theFile.thumbnail_id), false, false, WriteConcern.SAFE)
+		                        
+		                        for(collectionId <- dataset.collections){
+		                          Collection.findOneByID(new ObjectId(collectionId)) match{
+		                            case Some(collection) =>{
+		                            	if(collection.thumbnail_id.isEmpty){
+		                            		Collection.dao.collection.update(MongoDBObject("_id" -> collection.id), 
+		                            				$set("thumbnail_id" -> theFile.thumbnail_id), false, false, WriteConcern.SAFE)
+		                            	}
+		                            }
+		                            case None=>{}
+		                          }
+		                        }
 		        }
 	            
 	            //add file to RDF triple store if triple store is used
@@ -208,6 +220,19 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
 	            if(!dataset.thumbnail_id.isEmpty && !theFile.thumbnail_id.isEmpty){
 	              if(dataset.thumbnail_id.get == theFile.thumbnail_id.get){
 		             Dataset.newThumbnail(dataset.id.toString)
+		             
+		             			for(collectionId <- dataset.collections){
+		                          Collection.findOneByID(new ObjectId(collectionId)) match{
+		                            case Some(collection) =>{		                              
+		                            	if(!collection.thumbnail_id.isEmpty){
+		                            		if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+		                            			Collection.newThumbnail(collection.id.toString)
+		                            		}		                        
+		                            	}
+		                            }
+		                            case None=>{}
+		                          }
+		                        }
 		          }		                        
 		       }
 	            
