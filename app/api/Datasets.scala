@@ -738,120 +738,38 @@ class Datasets @Inject() (datasets: DatasetService, files: FileService) extends 
   
   
   def getRDFUserMetadata(id: String, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) {implicit request =>
-    play.Play.application().configuration().getString("rdfexporter") match{
-      case "on" =>{
-        datasets.get(id) match { 
-            case Some(dataset) => {
-              val theJSON = Dataset.getUserMetadataJSON(id)
-              val fileSep = System.getProperty("file.separator")
-              val tmpDir = System.getProperty("java.io.tmpdir")
-	          var resultDir = tmpDir + fileSep + "medici__rdfdumptemporaryfiles" + fileSep + new ObjectId().toString
-	          new java.io.File(resultDir).mkdir()
-              
-              if(!theJSON.replaceAll(" ","").equals("{}")){
-	              val xmlFile = jsonToXML(theJSON)	              	              
-	              new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
-	              xmlFile.delete()
-              }
-              else{
-                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
-              }
-              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
-              
-              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-		            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-		            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
-            }
-            case None => BadRequest(toJson("Dataset not found " + id))
+    
+    current.plugin[RDFExportService].isDefined match{
+      case true => {
+        current.plugin[RDFExportService].get.getRDFUserMetadataDataset(id, mappingNumber) match{
+          case Some(resultFile) =>{
+            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+			            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+			            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+          }
+          case None => BadRequest(toJson("Dataset not found " + id))
         }
       }
-      case _ => {
-        Ok("RDF export features not enabled")
+      case false=>{
+        Ok("RDF export plugin not enabled")
       }      
     }
-  }
-  
-  def jsonToXML(theJSON: String): java.io.File = {
     
-    val jsonObject = new JSONObject(theJSON)    
-    var xml = org.json.XML.toString(jsonObject)
-    
-    Logger.debug("thexml: " + xml)
-    
-    //Remove spaces from XML tags
-    var currStart = xml.indexOf("<")
-    var currEnd = -1
-    var xmlNoSpaces = ""
-    while(currStart != -1){
-      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
-      currEnd = xml.indexOf(">", currStart+1)
-      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
-      currStart = xml.indexOf("<", currEnd+1)
-    }
-    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
-    
-    val xmlFile = java.io.File.createTempFile("xml",".xml")
-    val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
-    fileWriter.write(xmlNoSpaces)
-    fileWriter.close()
-    
-    return xmlFile    
   }
   
   def getRDFURLsForDataset(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
-    play.Play.application().configuration().getString("rdfexporter") match{
-      case "on" =>{
-	    datasets.get(id)   match {
-	      case Some(dataset) => {
-	        
-	        //RDF from XML files in the dataset itself (for XML metadata-only files)
-	        val previewsList = PreviewDAO.findByDatasetId(new ObjectId(id))
-	        var rdfPreviewList = List.empty[models.Preview]
-	        for(currPreview <- previewsList){
-	          if(currPreview.contentType.equals("application/rdf+xml")){
-	            rdfPreviewList = rdfPreviewList :+ currPreview
-	          }
-	        }        
-	        var hostString = "http://" + request.host + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
-	        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-	        
-	        for(file <- dataset.files){
-	           val filePreviewsList = PreviewDAO.findByFileId(file.id)
-	           var fileRdfPreviewList = List.empty[models.Preview]
-	           for(currPreview <- filePreviewsList){
-		           if(currPreview.contentType.equals("application/rdf+xml")){
-		        	   fileRdfPreviewList = fileRdfPreviewList :+ currPreview
-		           }
-	           }
-	           val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-	           list = list ++ filesList
-	        }
-	        
-	        //RDF from export of dataset community-generated metadata to RDF
-	        var connectionChars = ""
-			if(hostString.contains("?")){
-				connectionChars = "&mappingNum="
-			}
-			else{
-				connectionChars = "?mappingNum="
-			}        
-	        hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/") + connectionChars
-	        
-	        val mappingsQuantity = Integer.parseInt(play.api.Play.configuration.getString("datasetsxmltordfmapping.dircount").getOrElse("1"))
-	        for(i <- 1 to mappingsQuantity){
-	          var currHostString = hostString + i
-	          list = list :+ Json.toJson(currHostString)
-	        }
-	
-	        val listJson = toJson(list.toList)
-	        
+
+    current.plugin[RDFExportService].isDefined match{
+      case true =>{
+	    current.plugin[RDFExportService].get.getRDFURLsForDataset(id)  match {
+	      case Some(listJson) => {
 	        Ok(listJson) 
 	      }
 	      case None => {Logger.error("Error getting dataset" + id); InternalServerError}
 	    }
       }
-      case _ => {
-        Ok("RDF export features not enabled")
+      case false => {
+        Ok("RDF export plugin not enabled")
       }
     }
   }
