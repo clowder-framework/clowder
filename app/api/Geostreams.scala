@@ -251,13 +251,19 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], format: String) =
     Action { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchDatapoints(since, until, geocode, stream_id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+            case Some(d) => {
+              if (format == "csv") {
+                Ok(jsonToCSV(Json.parse(d))).as("text/csv")
+              } else {
+                Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+              }
+            }
             case None => Ok(Json.toJson("""{"status":"No data found"}""")).as("application/json")
           }
         }
@@ -284,5 +290,67 @@ object Geostreams extends ApiController {
       case Some(callback) => callback + "(" + json + ");"
       case None => json
     }
+  }
+
+  def jsonToCSV(data: JsValue) = {
+    val values = data.as[List[JsObject]]
+    val header = values(0)
+    
+    var row = None
+    var result = ""
+    result += printHeader(header, "") + "\n"
+    for(row <- values)
+    	result += printRow(header, row) + "\n"
+    result
+  }
+  
+  def printHeader(header: JsObject, prefix: String):String = {
+    var result = ""
+    header.fields.foreach(f => f._2 match {
+      case x: JsArray => result += "," + printHeader(x, printKey(prefix, f._1))
+      case x: JsObject => result += "," + printHeader(x, printKey(prefix, f._1))
+      case _ => result += ",\"" + printKey(prefix, f._1) + "\""
+    })
+    result.substring(1)
+  }
+
+  def printHeader(header: JsArray, prefix: String):String = {
+    var result = ""
+    header.value.indices.foreach(i => header(i) match {
+    	case x: JsArray => result += "," + printHeader(x, printKey(prefix, i))
+        case x: JsObject => result += "," + printHeader(x, printKey(prefix, i))
+        case _ => result += ",\"" + printKey(prefix, i) + "\""
+    })
+    result.substring(1)
+  }
+  
+  def printKey(prefix: String, key: Any) = {
+    if (prefix == "")
+       key.toString
+     else
+       prefix.+(" -> ").+(key.toString)
+  }
+
+  def printRow(header: JsObject, row: JsObject) : String = {
+    var result = ""
+    header.fields.foreach(f => 
+      (f._2, row.\(f._1)) match {
+        case (x: JsArray, y: JsArray) => result += "," + printRow(x, y)
+        case (x: JsObject, y: JsObject) => result += "," +printRow(x, y)
+        case (x, y) => result += "," + y.toString
+      }
+    )
+    result.substring(1)
+  }
+
+  def printRow(header: JsArray, row: JsArray) : String  = {
+    var result = ""
+    header.value.indices.foreach(i => (header(i), row(i)) match {
+        case (x: JsArray, y: JsArray) => result += "," + printRow(x, y)
+        case (x: JsObject, y: JsObject) => result += "," + printRow(x, y)
+        case (_: JsString, y: JsString) => result += ",\"" + y.toString + "\""
+        case (x, y) => result += "," + y.toString
+    })
+    result.substring(1)
   }
 }
