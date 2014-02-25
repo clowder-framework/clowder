@@ -67,6 +67,21 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
     dao.find(MongoDBObject("dataset_id"->id)).toList
   }
   
+  /**
+   * Returns file id for the preview with given id.
+   *
+   */
+  def findFileId(id: String): Option[String] = {		  
+	dao.findOneById(new ObjectId(id)) match{
+		  case Some(preview) => {			 
+			  return preview.file_id
+		  }
+		  case None => {			 
+			  return None
+		  }
+	}
+  }
+
     /**
    * Save blob.
    */

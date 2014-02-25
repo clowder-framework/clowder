@@ -1,5 +1,11 @@
 package services
 
+import models.PreviewFilesSearchResult
+import models.PreviewDAO
+import models.FileMD
+import models.FileDAO
+import models.File
+import models.Dataset
 import play.api.{ Plugin, Logger, Application }
 import java.util.Date
 import play.api.libs.json.Json
@@ -8,7 +14,6 @@ import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
 import java.io._
-import models.FileMD
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
@@ -21,7 +26,6 @@ import com.mongodb.casbah.gridfs.GridFS
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import java.util.Date
-import models.File
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
@@ -31,12 +35,11 @@ import play.libs.Akka
 import akka.actor.Props
 import akka.actor.Actor
 import akka.actor.ActorRef
-import models.PreviewDAO
 import controllers.Previewers
 import controllers.routes
 import java.text.DecimalFormat
 import scala.collection.mutable.ArrayBuffer
-import models.FileDAO
+import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashMap
 import scala.collection.immutable.Map
 /** 
@@ -171,6 +174,25 @@ class VersusPlugin(application:Application) extends Plugin{
     indexList
   }
   
+  /* 
+   * Get all indexes from Versus web server as an array of Index
+   * 
+   */
+  def getIndexesAsFutureList(): Future[List[models.Index.Index]]= {    
+   val configuration = play.api.Play.configuration
+    val host = configuration.getString("versus.host").getOrElse("")
+    val indexurl = host + "/index"
+   
+    val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
+        
+    indexList.map {
+      response =>       
+        val json: JsValue = Json.parse(response.body)       
+        val seqOfIndexes = json.as[Seq[models.Index.Index]]           
+        seqOfIndexes.toList
+    } 
+  }
+  
 /*
  * Sends a request to Versus to delete an index based on its id
  */
@@ -217,7 +239,9 @@ class VersusPlugin(application:Application) extends Plugin{
     }
     response
   }
-
+  
+  
+        
   /*
    * Sends a request to index a file based on its type
    * Currently, it only supports images
@@ -331,287 +355,268 @@ class VersusPlugin(application:Application) extends Plugin{
     buildResponse
   }
   
-/*
- * sends a query  for an index in Versus
- */
-  def queryIndex(id: String, indxId: String): Future[(String, scala.collection.mutable.ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])] = {
+  
+  
+  //def queryIndexForURL(imageURL: String, indexId: String): Future[(String,  List[PreviewFilesSearchResult])] = {
+def queryIndexForURL(imageURL: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
+
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
-
-    val indexId = indxId
-    val query = client + "/api/queries/" + id + "?key=" + configuration.getString("commKey").get
 
     val host = configuration.getString("versus.host").getOrElse("")
 
     var queryurl = host + "/index/" + indexId + "/query"
 
-    val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(query)))
-
-    resultFuture.map {
-      response =>
-        val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
-
-        val len = similarity_value.length
-        // val ar = new Array[String](len)
-        val se = new Array[(String, String, Double, String)](len)
-
-       //var resultArray = new ArrayBuffer[(String, String, Double, String)]()
-       var resultArray = new ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]()
-       
-        var pre= new HashMap[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]]
-        var i = 0
-        similarity_value.map {
-          result =>
-            val end = result.docID.lastIndexOf("?")
-            val begin = result.docID.lastIndexOf("/");
-            val subStr = result.docID.substring(begin + 1, end);
-            Logger.debug("subStr="+ subStr)
-            //    val a = result.docID.split("/")
-            //  val n = a.length - 2
-            
-          //-----  
-           // This code is for testing query for frames from a video
-           //TODO: Improve this code  
-          /*  PreviewDAO.getBlob(subStr) match{
-              case Some(b)=>{
-                Logger.debug("Preview id : "+ subStr+" filename : "+b._2)
-                         
-                val previews=pre
-               
-                val formatter = new DecimalFormat("#.###")
-                  val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, b._2, previews))
-                Logger.debug("IndxId=" + indexId + " resultArray=(" + subStr + " , " + result.proximity + ", " + b._2 + ")\n")
-                i = i + 1
-              }
-                
-              
-                
-              case None=>None
-            }*/
-            
-          //-----------------------  
-            files.getFile(subStr) match {
-               	  case Some(file)=>{
-		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
-
-                //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
-                val previewers = Previewers.findPreviewers
-                //Logger.info("Number of previews " + previews.length);
-                val files = List(file)
-                val previewslist = for (f <- files) yield {
-                  val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-                  }
-                  if (pvf.length > 0) {
-                    (file -> pvf)
-                  } else {
-                    val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
-                    }
-                    (file -> ff)
-                  }
-                }
-                val previews = Map(previewslist: _*)
-                ///Previews ends.........
-
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename))
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
-                val formatter = new DecimalFormat("#.###")
-                // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
-                val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
-
-                //     ar.update(i, file.filename)
-
-                //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
-                Logger.debug("IndxId=" + indexId + " resultArray=(" + subStr + " , " + result.proximity + ", " + file.filename + ")\n")
-                i = i + 1
-              }
-              case None => None
-
-            }
-
-        } // End of similarity map
-        //se
-        (indexId, resultArray)
-    }
+    //val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(query)))
+    //queryIndex(imageURL, queryurl, imageURL)
+    queryIndex(queryurl, imageURL) 
   }
-
-  /*
-   * Sends an query (a file from the medici database) to Versus
-   */
   
-  //Query index for a file from  the database 
-  def queryIndexFile(id: String, indxId: String): Future[(String, scala.collection.mutable.ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])] = {
+  
+  //def queryIndexForFile(inputFileId: String, indexId: String): Future[(String,  List[PreviewFilesSearchResult])] = {
+  def queryIndexForFile(inputFileId: String, indexId: String): Future[ List[PreviewFilesSearchResult]] = {
     val configuration = play.api.Play.configuration
-
-    val client = configuration.getString("versus.client").getOrElse("")
-
-    val indexId = indxId
-
-    val query = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get
-    val host=configuration.getString("versus.host").getOrElse("")
-   
-    var queryurl = host + "/index/" + indexId + "/query"
+    val client = configuration.getString("versus.client").getOrElse("")    
+    val imageFileURL = client + "/api/queries/" + inputFileId + "?key=" + configuration.getString("commKey").get
+    //
+    //imageFileURL = http://localhost:9000/api/queries/52f3da24e4b0f9ce279eb9d6?key=r1ek3rs
+    // calls @api.Files.downloadquery(id)
+    //      
+    val host = configuration.getString("versus.host").getOrElse("")
+    var queryIndexUrl = host + "/index/" + indexId + "/query"   
+    //
+    //queryIndexUrl = http://localhost:8080/api/v1/index/b9a4b265-f517-423a-bcc2-27e23a8eab13/query
+    //    
+    val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
     
-        val resultFuture: Future[Response]= WS.url(queryurl).post(Map("infile" -> Seq(query)))
-               
-        resultFuture.map{
-      response =>
-        val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
-
-        val len = similarity_value.length
-        // val ar = new Array[String](len)
-        val se = new Array[(String, String, Double, String)](len)
-		        
-        //var resultArray = new ArrayBuffer[(String, String, Double, String)]()
-        var resultArray = new ArrayBuffer[(String, String, Double, String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]()
-		var i=0
-        similarity_value.map {
-          result =>
-            val end = result.docID.lastIndexOf("?")
-            val begin = result.docID.lastIndexOf("/");
-            val subStr = result.docID.substring(begin + 1, end);
-        //    val a = result.docID.split("/")
-          //  val n = a.length - 2
-            files.getFile(subStr) match {
-		        	  case Some(file)=>{
-
-       
-                // se.update(i,(a(n),result.docID,result.proximity,file.filename))
-                //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
-                val previewers = Previewers.findPreviewers
-                //Logger.info("Number of previews " + previews.length);
-                val files = List(file)
-                val previewslist = for (f <- files) yield {
-                  val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-                  }
-                  if (pvf.length > 0) {
-                    (file -> pvf)
-                  } else {
-                    val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
-                    }
-                    (file -> ff)
-                  }
-                }
-                val previews = Map(previewslist: _*)
-                ///Previews ends.........
-
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename))
-                val formatter = new DecimalFormat("#.###")
-                // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
-                val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
-
-                //     ar.update(i, file.filename)
-                //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
-
-                Logger.debug("IndxId=" + indexId + " resultArray=(" + subStr + " , " + result.proximity + ", " + file.filename + ")\n")
-                i = i + 1
-              }
-              case None => None
-
-            }
-            
-
-
-        } // End of similarity map
-        //se
-        (indexId, resultArray)
-
-    }
-  }
-
-  /*
-   * Sends an url of an image as a query to Versus
-   */
-  def queryURL(url: String, indxId: String): Future[(String, ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])] = {
-
-    val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
-
-    val indexId = indxId
-
-    // val query = client + "/api/queries/" + indxId + "?key=letmein"
-    val query = url
-    val host = configuration.getString("versus.host").getOrElse("")
-
-    var queryurl = host + "/index/" + indexId + "/query"
-
-    val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(query)))
-
-    resultFuture.map {
-      response =>
-        val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
-
-        val len = similarity_value.length
-        // val ar = new Array[String](len)
-        val se = new Array[(String, String, Double, String)](len)
-
-        //var resultArray = new ArrayBuffer[(String, String, Double, String)]()
-        var resultArray = new ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]()
-        var i = 0
-        similarity_value.map {
-          result =>
-            val end = result.docID.lastIndexOf("?")
-            val begin = result.docID.lastIndexOf("/");
-            val subStr = result.docID.substring(begin + 1, end);
-
-        //    val a = result.docID.split("/")
-          //  val n = a.length - 2
-            files.getFile(subStr) match {
-              case Some(file) => {
-                // se.update(i,(a(n),result.docID,result.proximity,file.filename))
-                //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
-                val previewers = Previewers.findPreviewers
-                //Logger.info("Number of previews " + previews.length);
-                val files = List(file)
-                val previewslist = for (f <- files) yield {
-                  val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
-                  }
-                  if (pvf.length > 0) {
-                    (file -> pvf)
-                  } else {
-                    val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
-                    }
-                    (file -> ff)
-                  }
-                }
-                val previews = Map(previewslist: _*)
-                ///Previews ends.........
-
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename))
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
-                val formatter = new DecimalFormat("#.###")
-                // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
-                val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
-
-                //     ar.update(i, file.filename)
-                //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
-                Logger.debug("IndxId=" + indexId + " resultArray=(" + subStr + " , " + result.proximity + ", " + file.filename + ")\n")
-                i = i + 1
-              }
-              case None => None
-
-     }
+    queryIndex(queryIndexUrl, queryStr)   
+    //queryIndex(inputFileId, queryIndexUrl, queryStr)   
+   }
   
-        } // End of similarity map
-        //se
-        (indexId, resultArray)
-    }
+  
+   /*
+ * sends a query to an index in Versus
+ * input: imageId - id of the image file (on Medici) to query against an existing index(on Versus)
+ * indexId - id of the indexer against which to query the image
+ * 
+ * returns: String - the same imageId 
+ * list of preview search results: search results will be sorted by proximity to the given image.
+ * 
+ * Note the the index might contain both "previews", i.e. video file previews(image files extracted 
+ * from a video file) 
+ * and "files", i.e. files that were uploaded as images originally
+ * THe list of results will contain both "previews" and "files" sorted by their proximity to the
+ * given image. 
+ */    
+  def queryIndexForImage(imageId: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
+  //def queryIndexForImage(imageId: String, indexId: String): Future[(String,  List[PreviewFilesSearchResult])] = {
+    val configuration = play.api.Play.configuration
+    val client = configuration.getString("versus.client").getOrElse("")    
+    val imageFileURL = client + "/api/queries/" + imageId + "?key=" + configuration.getString("commKey").get
+    //
+    //imageFileURL = http://localhost:9000/api/queries/52f3da24e4b0f9ce279eb9d6?key=r1ek3rs
+    //         
+    val host = configuration.getString("versus.host").getOrElse("")
+    var queryIndexUrl = host + "/index/" + indexId + "/query"
+    
+    queryIndex( queryIndexUrl, imageFileURL)       
   }
+  
+  
+  /*
+ * Sends a query to an index in Versus
+ * input: 
+ * 		imageId - id of the image file to query against an indexer
+ * 		indexId - id of the indexer against which to query the image
+ * 
+ * returns: 
+ * 		list of preview search results: search results will be sorted by proximity to the given image.
+ * 
+ * Note the the indexer might contain both "previews", i.e. video file previews(image files extracted from a video file) 
+ * and "files", i.e. files that were uploaded as images originally
+ * the list will contain both previews 
+ * 
+ * THe list of results will contain both "previews" and "files" sorted by their proximity to the
+ * given image.
+ *  */     
+   
+  def queryIndex( queryIndexUrl: String, inputFileURL: String): Future[ List[PreviewFilesSearchResult]] = {
+	    
+     //
+     //queryIndexUrl = http://localhost:8080/api/v1/index/a885bad2-f463-496f-a881-c01ebd4c31f1/query
+     //will call IndexResource -> queryindex on Versus side
+     //
+     
+    //
+	//When querying for an image - download it from uploadquery.files collection on medici side:
+	//inputFileURL = http://localhost:9000/api/queries/52f3da24e4b0f9ce279eb9d6?key=r1ek3rs
+	//
+	//When querying for a file from the db - download it from uploads.files coll on medici side:
+	//inputFileURL = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
+	//  
+     
+    val responseFuture: Future[Response] = WS.url(queryIndexUrl).post(Map("infile"->Seq(inputFileURL)))   
+    //mapping Future[Response] to Future[List[PreviewFilesSearchResult]]    
+    //val listOfResults: Future[List[PreviewFilesSearchResult]] = responseFuture.map {
+    responseFuture.map {      
+      response =>
+    
+        Logger.debug("500 response.body = " + response.body)        
+        val json: JsValue = Json.parse(response.body)
+        val similarity_value = json.as[Seq[models.Result.Result]]
+        //        //case class Result( val docID :String, val proximity :Double)	
+        //result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
+        //or
+        //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs    
+        //        
+        var resultList = new ListBuffer[PreviewFilesSearchResult]
+                            
+        similarity_value.map {          
+          result =>
+                  Logger.debug("452 result = " + result)
+            
+            //result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
+            //or
+            //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs
+            //        
+            //parse docID to get preivew id or file id - string between '/' and '?'
+            val end = result.docID.lastIndexOf("?")
+            val begin = result.docID.lastIndexOf("/");                       
+            val result_id = result.docID.substring(begin + 1, end);
+          
+            //
+            //check if this is a file or a preview
+            //
+            val isFile = result.docID.contains("files")
+            val isPreview = result.docID.contains("previews")
+           // Logger.debug("478 isFile = " + isFile + "... isPreview = " + isPreview)           
+            
+                      
+            if (isPreview){ 
+              PreviewDAO.getBlob(result_id) match{                            	
+                case Some (blob)=>{   
+              
+              	//  val (fis, filename, cont, len) = blob
+              	  val filename =blob._2
+              	   //use helper method to get the results
+              		val oneResult = getPrevSearchResult(result_id, filename, result)           
+              		resultList += oneResult                        	
+              		}                                   	
+              case None=>None              
+              }
+            }//end of if (isPreview){    
+            
+        if (isFile) {
+              files.getFile(result_id) match {               	  
+                case Some (file)=>{  
+              
+               	    //val thid = file.thumbnail_id
+               	   
+               	    //use helper method to get the results
+               	    val oneResult = getFileSeachResult(result_id, file, result)
+               	    resultList += oneResult                    	                  	  
+               	    }               	  
+              case None => {
+               		  //None                
+               		  Logger.debug("515 could not find file with this id " + result_id)
+               	  }            	
+              }
+              }//end of if (isFile)        
+        } // End of similarity map            
+        
+       
+        resultList.toList
+    } 
+   
+    }
+    
+  
+    /*
+    * Helper method. Called from queryIndex    
+    */
+   def getFileSeachResult(result_id:String, file:models.File, result:models.Result.Result):PreviewFilesSearchResult={    	         
+		        	   //=== find list of datasets ids
+         	
+		  		//this file can belong to none or one or more  datsets
+		  					var dataset_id_list = Dataset.findByFileId(file.id).map{
+               		  		  dataset=>dataset.id.toString()               		  		  
+               		  		}
+  
+                //Previews..............
+               //
+                //TODO: do we need previews value??
+                //
+                val pre= new HashMap[models.File, 
+                             Array[(java.lang.String, String, String, String, 
+                                 java.lang.String, String, Long)]]      
+                val previews=pre.toMap
+                ///Previews ends.........
+              
+                val formatter = new DecimalFormat("#.###")
+                // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+                val proxvalue = formatter.format(result.proximity).toDouble               
+                  
+                var thumbn_id =""
+                  file.thumbnail_id match {               
+                	case Some(thumb_id) => {
+                	  Logger.debug("615 file.thumbnail_id = " + thumb_id)
+                	  thumbn_id = thumb_id.toString
+                		//thumbnail_id = id.toString()
+                	}
+                	case None=>{}                  
+                }
+                val oneResult = new PreviewFilesSearchResult("file", result_id, result.docID, 
+                		proxvalue, file.filename, previews, dataset_id_list.toList, thumbn_id)
+                
+                oneResult                
+   }
+   
+   /*
+    * Helper method. Called from queryIndex
+    */
+   def getPrevSearchResult(result_id:String, filename:String, result:models.Result.Result):PreviewFilesSearchResult={
+    
+                Logger.debug("479 Found a preview with id = " + result_id)
+                                
+                //
+                //TODO: do we need previews value??
+                //
+                val pre= new HashMap[models.File, 
+                             Array[(java.lang.String, String, String, String, 
+                                 java.lang.String, String, Long)]]      
+                val previews=pre.toMap
+               
+                Logger.debug("previews = " + previews)
+                //val formatter = new DecimalFormat("#.###")
+                val formatter = new DecimalFormat("0.##########E0")
+                
+                val proxvalue = formatter.format(result.proximity).toDouble
+                
+                Logger.debug("411 proximity = " + result.proximity + ",proxvalue = " + proxvalue )
+               
+                //=== find dataset id
+                val file_id = PreviewDAO.findFileId(result_id)//.getOrElse("0")		                     
+                val file_id_str = file_id.getOrElse("0")		          		            
+                  
+                Logger.debug("626 file_id = " + file_id)
+                Logger.debug("626 file_id_str = " + file_id_str)
+                
+                //find list of datasets ids. This preview belongs to a file
+                //(video file has several previews),
+                //and this file can belong to 0 or 1 or more datasets
+                var dataset_id_list=new ListBuffer[String]
+                for(dataset <- Dataset.findByFileId(new ObjectId(file_id_str))){		               
+                	dataset_id_list+= dataset.id.toString()		             
+            	}                         
+               Logger.debug("746 previews datast_id_list = " +dataset_id_list )
+                //thumbnail_id is only used for files. this needs to be improved.!!
+                val thumbnail_id=""
+                  val file = models.File
+               var oneResult = new PreviewFilesSearchResult("preview", result_id,result.docID, 
+                   proxvalue, filename, previews, dataset_id_list.toList, "")   
+                
+               oneResult   
+   }
 
 
   override def onStop() {

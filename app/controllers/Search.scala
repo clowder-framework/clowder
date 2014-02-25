@@ -229,8 +229,138 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
     Ok("")
   }
 
-  //GET the query image from the URL and compare within the database and show the result
   
+  /*
+   * GET the query image from the URL and compare within the database and show the result   */
+  def searchbyURL(queryURL: String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+   	Async{         
+   	  current.plugin[VersusPlugin] match {    		
+    	case Some(plugin)=>{      	  
+    		val futureFutureListResults = for {
+    			indexList<-plugin.getIndexesAsFutureList()
+    		} yield { 	      				
+    			val resultListOfFutures=indexList.map{
+    				index=>    
+    				  plugin.queryIndexForURL(queryURL, index.id).map{
+    				    queryResult=>
+    				      (index, queryResult)
+    				  }    								  
+    			}  	
+    			//convert list of futures into a Future[list]
+    			scala.concurrent.Future.sequence(resultListOfFutures)
+           	}//End yield- outer for    	           
+    		for{
+    			futureListResults<-futureFutureListResults
+    			listOfResults<-futureListResults   			    		
+    		} yield {
+    		   Ok(views.html.contentbasedSearchResultsVideo3(queryURL, listOfResults))     		
+    		}              
+        } //case some
+                    
+        case None => {
+          Future(Ok("No Versus Service"))
+        }
+      } //match            
+    } //Async
+  }  	
+  
+  
+  
+   /*
+   * 
+   * Finds similar images/objects in Multiple index for a given query image/object
+   * 
+   * */
+  def findSimilar(imageID:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  	
+   Async{ 
+     
+    current.plugin[VersusPlugin] match {    		
+    	case Some(plugin)=>{     	  
+        	
+    		val futureFutureListResults = for {    	  
+    			indexList<-plugin.getIndexesAsFutureList()
+    		} yield { 	      				
+    			val resultListOfFutures=indexList.map{
+    				index=>    
+    				  plugin.queryIndexForImage(imageID, index.id).map{
+    				    queryResult=>
+    				      (index, queryResult)
+    				  }    								  
+    			}  	
+    			//convert list of futures into a Future[list]
+    			scala.concurrent.Future.sequence(resultListOfFutures)
+    			
+           	}//End yield- outer for    		
+    		
+    		for{
+    			futureListResults<-futureFutureListResults
+    			listOfResults<-futureListResults      		
+    		} yield {    			
+    			queries.getFile(imageID) match {
+            		case Some(file)=>{              
+            		  Ok(views.html.contentbasedSearchResultsVideo3(file.filename, listOfResults))              
+            		}
+            		case None=>{
+            		  Ok("Image with id " +imageID +" not found")
+            		}
+    			}
+    		}            
+        } //case some plugin
+                    
+        case None => {
+          Future(Ok("No Versus Service"))
+        }
+      } //match            
+    } //Async
+  }
+  
+  
+  //
+  //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
+  // also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
+  def findSimilarFile(imageID:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+   	 Async{     
+     
+    current.plugin[VersusPlugin] match {    		
+    	case Some(plugin)=>{      	  
+    		val futureFutureListResults = for {
+    			indexList<-plugin.getIndexesAsFutureList()
+    		} yield { 	      				
+    			val resultListOfFutures=indexList.map{
+    				index=>    
+    				  plugin.queryIndexForFile(imageID, index.id).map{
+    				    queryResult=>
+    				      (index, queryResult)
+    				  }    								  
+    			}  	
+    			//convert list of futures into a Future[list]
+    			scala.concurrent.Future.sequence(resultListOfFutures)
+           	}//End yield- outer for    	
+    		
+    		for{
+    			futureListResults<-futureFutureListResults
+    			listOfResults<-futureListResults      		
+    		} yield {        
+    			files.getFile(imageID) match {
+            		case Some(file)=>{              
+            		  Ok(views.html.contentbasedSearchResultsVideo3(file.filename, listOfResults))              
+            		}
+            		case None=>{
+            			Ok(imageID +" not found")
+            		}
+    			}
+    		}              
+        } //case some plugin                    
+        case None => {
+          Future(Ok("No Versus Service"))
+        }
+      } //match            
+    } //Async
+  }
+  
+  //GET the query image from the URL and compare within the database and show the result
+ /* 
 def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
 
     Async {
@@ -304,13 +434,15 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
         }
       } //match
     } //Async
-  }
+  }*/
+  
+  
   /*
    * 
    * Finds similar images/objects in Multiple index for a given query image/object
    * 
    * */
-  def findSimilar(id:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  /*def findSimilar(id:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
  
    Async{ 
       
@@ -390,9 +522,9 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
             
     } //Async
   }
-
+*/
  /*Find similar images/objects in Multiple index for an image in the Medici repository*/
-  def findSimilarFile(id: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  /*def findSimilarFile(id: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     Async {
 
       current.plugin[VersusPlugin] match {
@@ -468,7 +600,7 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
 
     } //Async
 
-  }
+  }*/
 
   def Filterby(id: String) = TODO
 
