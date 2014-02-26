@@ -168,7 +168,7 @@ object ActivityFound extends Exception { }
         }
         comments = comments.sortBy(_.posted)
         
-        val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         
         Ok(views.html.dataset(datasetWithFiles, comments, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
       }
