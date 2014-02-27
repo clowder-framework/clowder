@@ -1,7 +1,7 @@
 package services.mongodb
 
 import services.AppConfigurationService
-import models.{MongoContext, AppConfiguration}
+import models.AppConfiguration
 import scala.Some
 import play.api.Logger
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}

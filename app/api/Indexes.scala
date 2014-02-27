@@ -1,16 +1,16 @@
 package api
 
 import play.api.mvc.Controller
-import play.api.libs.json.JsObject
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
-import play.api.Logger
-import models.Feature
-import models.MultimediaFeatures
-import models.PreviewDAO
 import play.api.Play.current
-import services.{MultimediaQueryService, RabbitmqPlugin, ExtractorMessage, VersusPlugin}
+import services._
 import javax.inject.Inject
+import services.ExtractorMessage
+import models.MultimediaFeatures
+import models.Feature
+import play.api.libs.json.JsObject
+import scala.Some
 
 /**
  * Index data.
@@ -19,7 +19,7 @@ import javax.inject.Inject
  *
  */
 @Inject
-class Indexes @Inject() (multimediaSearch: MultimediaQueryService) extends Controller with ApiController {
+class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: PreviewService) extends Controller with ApiController {
 
   /**
    * Submit section, preview, file for indexing.
@@ -27,7 +27,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService) extends Contr
   def index() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
-      	    PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+            previews.get(preview_id) match {
       	      case Some(p) =>
 	      	    // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")

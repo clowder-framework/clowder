@@ -1,7 +1,7 @@
 package services.mongodb
 
 import services.ExtractionService
-import models.{MongoContext, Extraction}
+import models.Extraction
 import org.bson.types.ObjectId
 import play.api.Play.current
 import com.novus.salat.dao.ModelCompanion

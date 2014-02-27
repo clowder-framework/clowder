@@ -9,12 +9,9 @@ import play.api.data.Forms._
 import play.api.libs.iteratee._
 import services._
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Input.Empty
-import models.PreviewDAO
 import models.Thumbnail
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
-import com.mongodb.casbah.commons.MongoDBObject
 import play.api.libs.json.Json._
 import fileutils.FilesUtils
 import api.WithPermission
@@ -71,8 +68,8 @@ class Files @Inject() (
         }
         val sectionsByFile = sections.findByFileId(file.id.toString)
         val sectionsWithPreviews = sectionsByFile.map { s =>
-          val p = PreviewDAO.findOne(MongoDBObject("section_id" -> s.id))
-          s.copy(preview = p)
+          val p = previews.findBySectionId(s.id.toString)
+          s.copy(preview = Some(p(0)))
         }
 
         //Search whether file is currently being processed by extractor(s)

@@ -7,6 +7,7 @@ import org.bson.types.ObjectId
 import com.novus.salat.dao.ModelCompanion
 import com.novus.salat.dao.SalatDAO
 
+import services.mongodb.{MongoContext, MongoSalatPlugin}
 import MongoContext.context
 import play.api.Play.current
 import services.mongodb.MongoSalatPlugin

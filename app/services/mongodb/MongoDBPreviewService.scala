@@ -1,10 +1,8 @@
 package services.mongodb
 
-import services.PreviewService
+import services.{FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.Imports._
 import java.io.{InputStreamReader, BufferedReader, InputStream}
-import play.api.Play._
 import play.api.Logger
 import com.mongodb.casbah.gridfs.GridFS
 import models._
@@ -14,13 +12,23 @@ import org.apache.http.entity.mime.{HttpMultipartMode, MultipartEntity}
 import org.apache.http.entity.mime.content.StringBody
 import java.nio.charset.Charset
 import org.apache.http.util.EntityUtils
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
+import play.api.Play.current
+import com.mongodb.casbah.Imports._
+import play.api.libs.json.JsValue
+import javax.inject.{Inject, Singleton}
+import models.Preview
 import scala.Some
+import play.api.libs.json.JsObject
+import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 
 /**
  * Created by lmarini on 2/17/14.
  */
-class MongoDBPreviewService extends PreviewService {
+@Singleton
+class MongoDBPreviewService @Inject()(files: FileService) extends PreviewService {
 
   def get(previewId: String): Option[Preview] = {
     PreviewDAO.findOneById(new ObjectId(previewId))
@@ -31,15 +39,15 @@ class MongoDBPreviewService extends PreviewService {
   }
 
   def findByFileId(id: String): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("file_id"-> new ObjectId(id))).toList
+    PreviewDAO.dao.find(MongoDBObject("file_id" -> new ObjectId(id))).toList
   }
 
   def findBySectionId(id: String): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("section_id"-> new ObjectId(id))).toList
+    PreviewDAO.dao.find(MongoDBObject("section_id" -> new ObjectId(id))).toList
   }
 
   def findByDatasetId(id: String): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("dataset_id"-> new ObjectId(id))).toList
+    PreviewDAO.dao.find(MongoDBObject("dataset_id" -> new ObjectId(id))).toList
   }
 
   /**
@@ -47,8 +55,8 @@ class MongoDBPreviewService extends PreviewService {
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
     val files = current.plugin[MongoSalatPlugin] match {
-      case None    => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) =>  x.gridFS("previews")
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(x) => x.gridFS("previews")
     }
     val mongoFile = files.createFile(inputStream)
     Logger.debug("Uploading file " + filename)
@@ -84,10 +92,10 @@ class MongoDBPreviewService extends PreviewService {
   }
 
   def findAnnotation(preview_id: String, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation] = {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match{
+    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match {
       case Some(preview) => {
-        for(annotation <- preview.annotations){
-          if(annotation.x_coord.equals(x_coord) && annotation.y_coord.equals(y_coord) && annotation.z_coord.equals(z_coord))
+        for (annotation <- preview.annotations) {
+          if (annotation.x_coord.equals(x_coord) && annotation.y_coord.equals(y_coord) && annotation.z_coord.equals(z_coord))
             return Option(annotation)
         }
         return None
@@ -96,13 +104,13 @@ class MongoDBPreviewService extends PreviewService {
     }
   }
 
-  def updateAnnotation(preview_id: String, annotation_id: String, description: String){
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match{
+  def updateAnnotation(preview_id: String, annotation_id: String, description: String) {
+    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match {
       case Some(preview) => {
         //var newAnnotations = List.empty[ThreeDAnnotation]
-        for(annotation <- preview.annotations){
-          if(annotation.id.toString().equals(annotation_id)){
-            PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id), "annotations._id" -> annotation.id) , $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
+        for (annotation <- preview.annotations) {
+          if (annotation.id.toString().equals(annotation_id)) {
+            PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id), "annotations._id" -> annotation.id), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
             return
           }
         }
@@ -114,7 +122,7 @@ class MongoDBPreviewService extends PreviewService {
 
 
   def listAnnotations(preview_id: String): List[ThreeDAnnotation] = {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match{
+    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match {
       case Some(preview) => {
         return preview.annotations
       }
@@ -122,19 +130,19 @@ class MongoDBPreviewService extends PreviewService {
     }
   }
 
-  def removePreview(p: Preview){
-    for(tile <- TileDAO.findByPreviewId(p.id)){
+  def removePreview(p: Preview) {
+    for (tile <- TileDAO.findByPreviewId(p.id)) {
       TileDAO.remove(MongoDBObject("_id" -> tile.id))
     }
     // for IIP server references, also delete the files being referenced on the IIP server they reside
-    if(!p.iipURL.isEmpty){
+    if (!p.iipURL.isEmpty) {
       val httpclient = new DefaultHttpClient()
-      val httpPost = new HttpPost(p.iipURL.get+"/deleteFile.php")
+      val httpPost = new HttpPost(p.iipURL.get + "/deleteFile.php")
       val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE)
       entity.addPart("key", new StringBody(p.iipKey.get, "text/plain",
-        Charset.forName( "UTF-8" )))
+        Charset.forName("UTF-8")))
       entity.addPart("file", new StringBody(p.iipImage.get, "text/plain",
-        Charset.forName( "UTF-8" )))
+        Charset.forName("UTF-8")))
       httpPost.setEntity(entity)
       val imageUploadResponse = httpclient.execute(httpPost)
       Logger.info(imageUploadResponse.getStatusLine().toString())
@@ -143,36 +151,69 @@ class MongoDBPreviewService extends PreviewService {
       Logger.info("IIP server: " + EntityUtils.toString(dirEntity))
     }
 
-    if(!p.filename.isEmpty)
+    if (!p.filename.isEmpty)
     // for oni previews, read the ONI frame references from the preview file and remove them
-      if(p.filename.get.endsWith(".oniv")){
+      if (p.filename.get.endsWith(".oniv")) {
         val theFile = getBlob(p.id.toString())
         val frameRefReader = new BufferedReader(new InputStreamReader(theFile.get._1))
         var fileData = new StringBuilder()
         var currLine = frameRefReader.readLine()
-        while(currLine != null) {
+        while (currLine != null) {
           fileData.append(currLine)
           currLine = frameRefReader.readLine()
         }
         frameRefReader.close()
-        val frames = fileData.toString().split(",",-1)
+        val frames = fileData.toString().split(",", -1)
         var i = 0
-        for(i <- 0 to frames.length - 2){
+        for (i <- 0 to frames.length - 2) {
           PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(frames(i))))
         }
         //same for PTM file map references
-      }else if(p.filename.get.endsWith(".ptmmaps")){
+      } else if (p.filename.get.endsWith(".ptmmaps")) {
         val theFile = getBlob(p.id.toString())
         val frameRefReader = new BufferedReader(new InputStreamReader(theFile.get._1))
         var currLine = frameRefReader.readLine()
-        while(currLine != null) {
-          if(!currLine.equals(""))
-            PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(currLine.substring(currLine.indexOf(": ")+2))))
+        while (currLine != null) {
+          if (!currLine.equals(""))
+            PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(currLine.substring(currLine.indexOf(": ") + 2))))
           currLine = frameRefReader.readLine()
         }
         frameRefReader.close()
       }
 
     PreviewDAO.remove(MongoDBObject("_id" -> p.id))
+  }
+
+  def attachToFile(previewId: String, fileId: String, extractorId: String, json: JsValue) {
+    json match {
+      case JsObject(fields) => {
+        // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
+        val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId)),
+          $set("metadata" -> metadata, "file_id" -> new ObjectId(fileId), "extractor_id" -> extractorId),
+          false, false, WriteConcern.Safe)
+        Logger.debug("Updating previews.files " + previewId + " with " + metadata)
+      }
+      case _ => Logger.error(s"Received something else: $json")
+    }
+  }
+
+  def updateMetadata(previewId: String, json: JsValue) {
+    json match {
+      case JsObject(fields) => {
+        val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId)),
+          $set("metadata" -> metadata, "section_id" -> new ObjectId(metadata("section_id").asInstanceOf[String])), false, false, WriteConcern.Safe)
+        Logger.debug("Updating previews.files " + previewId + " with " + metadata)
+      }
+      case _ => Logger.error("Expected a JSObject")
+    }
+  }
+}
+
+object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Preview, ObjectId](collection = x.collection("previews.files")) {}
   }
 }

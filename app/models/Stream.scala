@@ -6,7 +6,7 @@ package models
 import org.bson.types.ObjectId
 import java.util.Date
 import com.novus.salat.dao.ModelCompanion
-import MongoContext.context
+import services.mongodb.MongoContext.context
 import play.api.Play.current
 import com.novus.salat.dao.SalatDAO
 import services.mongodb.MongoSalatPlugin

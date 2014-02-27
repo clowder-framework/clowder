@@ -13,7 +13,6 @@ import play.api.Play._
 import securesocial.core.IdentityId
 import scala.Some
 import org.joda.time.DateTime
-import models.MongoContext
 import MongoContext.context
 
 /**

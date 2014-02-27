@@ -1,7 +1,7 @@
 package services.mongodb
 
 import services.TempFileService
-import models.{MongoContext, TempFile}
+import models.TempFile
 import javax.inject.Singleton
 import org.bson.types.ObjectId
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}

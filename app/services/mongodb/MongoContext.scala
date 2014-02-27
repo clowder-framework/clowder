@@ -1,8 +1,9 @@
-package models
+package services.mongodb
 
 import com.novus.salat.{TypeHintFrequency, StringTypeHintStrategy, Context}
 import play.api.{Logger, Play}
 import play.api.Play.current
+import models.UUIDTransformer
 
 /**
  * Salat context configuration.

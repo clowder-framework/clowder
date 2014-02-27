@@ -2,6 +2,7 @@ package models
 
 import org.bson.types.ObjectId
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.{MongoContext, MongoSalatPlugin}
 import MongoContext.context
 import play.api.Play.current
 import java.util.Date

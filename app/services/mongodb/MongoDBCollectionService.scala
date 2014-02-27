@@ -3,7 +3,7 @@
  */
 package services.mongodb
 
-import models.{Collection, MongoContext, Dataset}
+import models.{Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import play.api.Logger

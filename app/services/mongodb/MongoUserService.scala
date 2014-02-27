@@ -1,17 +1,13 @@
 package services.mongodb
 
 import securesocial.core.UserServicePlugin
-import securesocial.core.IdentityId
 import play.api.{Application, Logger}
 import securesocial.core.providers.Token
 import com.mongodb.casbah.Imports._
-import models.{MongoContext, SocialUserDAO}
 import securesocial.core.Identity
-import com.mongodb.casbah.commons.conversions.scala.DeregisterJodaTimeConversionHelpers
 import org.joda.time.DateTime
 import java.util.Date
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import play.api.Play._
 import securesocial.core.IdentityId

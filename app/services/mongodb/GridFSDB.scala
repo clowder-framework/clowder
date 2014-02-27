@@ -4,7 +4,6 @@ import java.io.InputStream
 import play.Logger
 import play.api.Play.current
 import org.bson.types.ObjectId
-import models.SocialUserDAO
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFS
 import models.File
@@ -43,15 +42,6 @@ trait GridFSDB {
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
-    
-    // FIXME Figure out why SalatDAO has a race condition with gridfs
-//    Logger.debug("FILE ID " + oid)
-//    val file = FileDAO.findOne(MongoDBObject("_id" -> oid))
-//    file match {
-//      case Some(id) => Logger.debug("FILE FOUND")
-//      case None => Logger.error("NO FILE!!!!!!")
-//    }
-    
     Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
   }
 

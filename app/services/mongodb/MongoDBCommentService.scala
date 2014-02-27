@@ -1,6 +1,6 @@
 package services.mongodb
 
-import models.{MongoContext, Comment}
+import models.Comment
 import services.CommentService
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context

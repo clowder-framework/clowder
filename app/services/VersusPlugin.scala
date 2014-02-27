@@ -1,37 +1,23 @@
 package services
 
 import play.api.{ Plugin, Logger, Application }
-import java.util.Date
 import play.api.libs.json.Json
-import play.api.Play.current
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
-import play.api.libs.concurrent.Promise
 import java.io._
-import models.FileMD
 import play.api.Logger
 import play.api.Play.current
-import play.api.data.Form
 import play.api.data.Forms._
-import play.api.mvc._
-import services._
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Input.{El, EOF, Empty}
+import play.api.libs.iteratee.Input.Empty
 import com.mongodb.casbah.gridfs.GridFS
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import java.util.Date
 import models.File
-import org.bson.types.ObjectId
-import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
-import scala.concurrent.{future, blocking, Future, Await}
-import scala.concurrent.ExecutionContext.Implicits.global
-import play.libs.Akka
-import akka.actor.Props
+import scala.concurrent.{blocking, Future, Await}
 import akka.actor.Actor
 import akka.actor.ActorRef
-import models.PreviewDAO
 import controllers.Previewers
 import controllers.routes
 import java.text.DecimalFormat

@@ -2,6 +2,7 @@ package services
 
 import models.{ThreeDAnnotation, Preview}
 import java.io.InputStream
+import play.api.libs.json.JsValue
 
 /**
  * Created by lmarini on 2/17/14.
@@ -41,4 +42,8 @@ trait PreviewService {
   def listAnnotations(preview_id: String): List[ThreeDAnnotation]
 
   def removePreview(p: Preview)
+
+  def attachToFile(previewId: String, fileId: String, extractorId: String, json: JsValue)
+
+  def updateMetadata(previewId: String, json: JsValue)
 }

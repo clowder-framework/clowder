@@ -1,14 +1,6 @@
 package models
 
-import java.util.Date
-import com.novus.salat.dao.ModelCompanion
-import MongoContext.context
-import play.api.Play.current
-import play.api.Logger
-import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
-import services.mongodb.MongoSalatPlugin
 
 /**
  * A portion of a file.

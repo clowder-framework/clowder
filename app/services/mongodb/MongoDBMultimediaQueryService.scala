@@ -1,6 +1,5 @@
 package services.mongodb
 
-import models.{MongoContext, SocialUserDAO}
 import java.io.InputStream
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._

@@ -598,21 +598,17 @@ class Files @Inject()(
           // TODO create a service instead of calling salat directly
           files.get(file_id) match {
             case Some(file) => {
-              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+              previews.get(preview_id) match {
                 case Some(preview) =>
                   // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
-                  val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-                  PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(preview_id)),
-                    $set("metadata" -> metadata, "file_id" -> new ObjectId(file_id), "extractor_id" -> extractor_id),
-                    false, false, WriteConcern.SAFE)
-                  Logger.debug("Updating previews.files " + preview_id + " with " + metadata)
+                  previews.attachToFile(preview_id, file_id, eid.getOrElse("Other"), request.body)
                   Ok(toJson(Map("status" -> "success")))
                 case None => BadRequest(toJson("Preview not found"))
               }
             }
             //If file to be previewed is not found, just delete the preview
             case None => {
-              PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+              previews.get(preview_id) match {
                 case Some(preview) =>
                   Logger.debug("File not found. Deleting previews.files " + preview_id)
                   previews.removePreview(preview)

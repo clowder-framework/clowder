@@ -2,12 +2,12 @@ package models
 
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
+import services.mongodb.{SocialUserDAO, MongoContext, MongoSalatPlugin}
 import MongoContext.context
 import play.api.Play.current
 import java.io.InputStream
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.commons.MongoDBObject
-import services.mongodb.MongoSalatPlugin
 
 /**
  * Pyramid tiles of images for Seadragon.
@@ -16,13 +16,12 @@ import services.mongodb.MongoSalatPlugin
  *
  */
 case class Tile(
-                 id: ObjectId = new ObjectId,
-                 preview_id: Option[String] = None,
-                 filename: Option[String] = None,
-                 contentType: String,
-                 level: Option[String],
-                 length: Long
-                 )
+  id: ObjectId = new ObjectId,
+  preview_id: Option[String] = None,
+  filename: Option[String] = None,
+  contentType: String,
+  level: Option[String],
+  length: Long)
 
 object TileDAO extends ModelCompanion[Tile, ObjectId] {
 
