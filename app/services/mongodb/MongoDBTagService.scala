@@ -2,16 +2,21 @@ package services.mongodb
 
 import play.api.libs.json.JsValue
 import play.api.Logger
-import org.bson.types.ObjectId
 import javax.inject.Inject
 import services._
 import api.RequestWithUser
 import scala.Some
+import org.bson.types.ObjectId
+import com.novus.salat.dao.ModelCompanion
+import com.novus.salat.dao.SalatDAO
+import MongoContext.context
+import play.api.Play.current
+import models.Tag
 
 /**
  * Created by lmarini on 1/17/14.
  */
-class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService, queries: MultimediaQueryService, sections: SectionService) extends TagService {
+class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, queries: MultimediaQueryService, sections: SectionService) extends TagService {
 
   val USERID_ANONYMOUS = "anonymous"
 
@@ -45,7 +50,7 @@ class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService,
    *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
    *      record the extractor_id, but omit the userId field, so we leave userOpt as None.
    */
-  def checkErrorsForTag(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]) : TagCheck = {
+  def checkErrorsForTag(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]): TagCheck = {
     val userObj = request.user
     Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
       + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
@@ -156,4 +161,11 @@ class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService,
     (not_found, error_str)
   }
 
+}
+
+object Tag extends ModelCompanion[Tag, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Tag, ObjectId](collection = x.collection("tags")) {}
+  }
 }

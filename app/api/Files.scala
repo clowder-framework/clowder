@@ -60,7 +60,8 @@ class Files @Inject()(
   extractions: ExtractionService,
   previews: PreviewService,
   threeD: ThreeDService,
-  sqarql: RdfSPARQLService) extends ApiController {
+  sqarql: RdfSPARQLService,
+  thumbnails: ThumbnailService) extends ApiController {
 
   def get(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
@@ -852,7 +853,7 @@ class Files @Inject()(
     // TODO create a service instead of calling salat directly
       files.get(file_id) match {
         case Some(file) => {
-          models.Thumbnail.findOneById(new ObjectId(thumbnail_id)) match {
+          thumbnails.get(thumbnail_id) match {
             case Some(thumbnail) => {
               files.updateThumbnail(file_id, thumbnail_id)
               val datasetList = datasets.findByFileId(file.id)

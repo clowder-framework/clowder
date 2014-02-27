@@ -4,12 +4,9 @@ import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
-import com.mongodb.casbah.Imports._
-import securesocial.core.Identity
-import play.api.Play._
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
-import java.util.{Calendar, Date, ArrayList}
+import java.util.{Calendar, ArrayList}
 import java.io._
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
@@ -19,11 +16,6 @@ import java.nio.file.{FileSystems, Files}
 import java.nio.file.attribute.BasicFileAttributes
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
-import play.api.libs.json.JsArray
-import scala.Some
-import scala.util.parsing.json.JSONArray
-import models.File
-import play.api.libs.json.JsObject
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.WriteConcern
 import play.api.Logger
@@ -55,6 +47,8 @@ class MongoDBFileService @Inject() (
   previews: PreviewService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService) extends FileService {
+
+  object MustBreak extends Exception {}
 
   /**
    * List all files.
@@ -613,7 +607,7 @@ class MongoDBFileService @Inject() (
     tags.foreach(tag => {
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
-        val tagObj = Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        val tagObj = models.Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
         FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })

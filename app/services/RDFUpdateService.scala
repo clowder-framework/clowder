@@ -30,6 +30,8 @@ class RDFUpdateService(application: Application) extends Plugin {
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val sparql: RdfSPARQLService = DI.injector.getInstance(classOf[RdfSPARQLService])
 
+  object MustBreak extends Exception {}
+
   override def onStart() {
     Logger.debug("Starting RDF updater Plugin")
 

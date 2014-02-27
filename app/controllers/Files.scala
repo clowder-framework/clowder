@@ -32,7 +32,8 @@ class Files @Inject() (
   extractions: ExtractionService,
   previews: PreviewService,
   threeD: ThreeDService,
-  sparql: RdfSPARQLService) extends SecuredController {
+  sparql: RdfSPARQLService,
+  thumbnails: ThumbnailService) extends SecuredController {
 
   /**
    * Upload form.
@@ -315,7 +316,7 @@ class Files @Inject() (
   }
 
   def thumbnail(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>    
-    Thumbnail.getBlob(id) match {
+    thumbnails.getBlob(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
 	          case Some(value) => {

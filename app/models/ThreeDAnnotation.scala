@@ -1,11 +1,6 @@
 package models
 
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import services.mongodb.{MongoContext, MongoSalatPlugin}
-import MongoContext.context
-import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import services.mongodb.MongoSalatPlugin
 
 /**
  * 3D textures for x3dom generated from obj models.

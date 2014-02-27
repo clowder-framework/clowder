@@ -240,10 +240,10 @@ GET     /api/geostreams/counts            api.Geostreams.counts
 GET     /geostreams                       controllers.Geostreams.browse
 
 
-POST	/api/tiles						  api.ZoomIt.uploadTile
+POST	/api/tiles						  @api.ZoomIt.uploadTile
 POST	/api/geometries					  @api.Geometry.uploadGeometry
 POST	/api/3dTextures					  @api.ThreeDTexture.uploadTexture
-POST    /api/fileThumbnail                api.Thumbnail.uploadThumbnail
+POST    /api/fileThumbnail                @api.Thumbnail.uploadThumbnail
 
 GET      /api/sensors                                                        api.Sensors.list
 POST     /api/sensors                                                        api.Sensors.add

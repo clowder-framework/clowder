@@ -27,6 +27,4 @@ case class Dataset(
   datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
   userMetadataWasModified: Option[Boolean] = None)
 
-object MustBreak extends Exception {}
-
 

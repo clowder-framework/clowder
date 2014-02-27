@@ -7,7 +7,6 @@ import play.api.libs.json.Json._
 import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
 import play.api.libs.json.JsObject
-import models.TileDAO
 import com.mongodb.WriteConcern
 import models.ThreeDAnnotation
 import play.api.libs.json.JsValue
@@ -15,7 +14,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import java.io.BufferedReader
 import java.io.FileReader
 import javax.inject.{Inject, Singleton}
-import services.PreviewService
+import services.{TileService, PreviewService}
 
 /**
  * Files and datasets previews.
@@ -24,7 +23,7 @@ import services.PreviewService
  *
  */
 @Singleton
-class Previews @Inject()(previews: PreviewService) extends ApiController {
+class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
 
   def downloadPreview(id: String, datasetid: String) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
@@ -161,12 +160,11 @@ class Previews @Inject()(previews: PreviewService) extends ApiController {
           case JsObject(fields) => {
             previews.get(preview_id) match {
               case Some(preview) => {
-                TileDAO.findOneById(new ObjectId(tile_id)) match {
-                  case Some(tile) =>
-                    val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-                    TileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(tile_id)),
-                      $set("metadata" -> metadata, "preview_id" -> new ObjectId(preview_id), "level" -> level), false, false, WriteConcern.SAFE)
+                tiles.get(tile_id) match {
+                  case Some(tile) => {
+                    tiles.updateMetadata(tile_id, preview_id, level, request.body)
                     Ok(toJson(Map("status" -> "success")))
+                  }
                   case None => BadRequest(toJson("Tile not found"))
                 }
               }
@@ -185,10 +183,10 @@ class Previews @Inject()(previews: PreviewService) extends ApiController {
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
         val dzi_id = dzi_id_dir.replaceAll("_files", "")
-        TileDAO.findTile(new ObjectId(dzi_id), filename, level) match {
+        tiles.findTile(dzi_id, filename, level) match {
           case Some(tile) => {
 
-            TileDAO.getBlob(tile.id.toString()) match {
+            tiles.getBlob(tile.id.toString()) match {
 
               case Some((inputStream, filename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {

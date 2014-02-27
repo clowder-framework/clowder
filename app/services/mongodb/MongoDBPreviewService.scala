@@ -1,6 +1,6 @@
 package services.mongodb
 
-import services.{FileService, PreviewService}
+import services.{TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.io.{InputStreamReader, BufferedReader, InputStream}
 import play.api.Logger
@@ -28,7 +28,7 @@ import com.mongodb.casbah.WriteConcern
  * Created by lmarini on 2/17/14.
  */
 @Singleton
-class MongoDBPreviewService @Inject()(files: FileService) extends PreviewService {
+class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) extends PreviewService {
 
   def get(previewId: String): Option[Preview] = {
     PreviewDAO.findOneById(new ObjectId(previewId))
@@ -131,7 +131,7 @@ class MongoDBPreviewService @Inject()(files: FileService) extends PreviewService
   }
 
   def removePreview(p: Preview) {
-    for (tile <- TileDAO.findByPreviewId(p.id)) {
+    for (tile <- tiles.get(p.id.toString)) {
       TileDAO.remove(MongoDBObject("_id" -> tile.id))
     }
     // for IIP server references, also delete the files being referenced on the IIP server they reside

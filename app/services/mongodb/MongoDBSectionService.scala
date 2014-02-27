@@ -1,7 +1,7 @@
 package services.mongodb
 
 import services.{PreviewService, SectionService, CommentService}
-import models._
+import models.{Tag, Comment}
 import javax.inject.{Inject, Singleton}
 import models.Section
 import java.util.Date
@@ -28,7 +28,7 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     tags.foreach(tag => {
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
-        val tagObj = Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
         SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })

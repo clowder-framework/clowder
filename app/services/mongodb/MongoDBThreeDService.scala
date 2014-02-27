@@ -1,27 +1,10 @@
 package services.mongodb
 
 import services.ThreeDService
-import org.bson.types.ObjectId
-import com.mongodb.casbah.commons.MongoDBObject
-import java.io.InputStream
-import play.api.Play._
-import scala.Some
-import com.mongodb.casbah.gridfs.GridFS
 import models._
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import java.io.InputStream
-import com.mongodb.casbah.gridfs.GridFS
-import com.mongodb.casbah.commons.MongoDBObject
-import services.mongodb.MongoSalatPlugin
 import com.mongodb.casbah.Imports._
-import scala.Some
 import com.mongodb.WriteConcern
 import play.api.libs.json.JsValue
-import scala.Some
-import models.ThreeDTexture
-import scala.Some
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import MongoContext.context
@@ -29,10 +12,6 @@ import play.api.Play.current
 import java.io.InputStream
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.commons.MongoDBObject
-import services.mongodb.MongoSalatPlugin
-import models.ThreeDGeometry
-import models.ThreeDTexture
-import scala.Some
 import models.ThreeDGeometry
 import models.ThreeDTexture
 import scala.Some

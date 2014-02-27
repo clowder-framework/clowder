@@ -44,6 +44,8 @@ class MongoDBDatasetService @Inject() (
   comments: CommentService,
   sparql: RdfSPARQLService) extends DatasetService {
 
+  object MustBreak extends Exception {}
+
   /**
    * List all datasets in the system.
    */
@@ -490,7 +492,7 @@ class MongoDBDatasetService @Inject() (
     tags.foreach(tag => {
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
-        val tagObj = Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        val tagObj = models.Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
         Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })

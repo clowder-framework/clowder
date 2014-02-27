@@ -1,6 +1,3 @@
-/**
- *
- */
 package services
 
 import play.api.Play.current
@@ -43,6 +40,8 @@ class ProdModule extends AbstractModule {
     bind(classOf[TempFileService]).to(classOf[MongoDBTempFileService])
     bind(classOf[ThreeDService]).to(classOf[MongoDBThreeDService])
     bind(classOf[RdfSPARQLService]).to(classOf[FourStoreRdfSPARQLService])
+    bind(classOf[ThumbnailService]).to(classOf[MongoDBThumbnailService])
+    bind(classOf[TileService]).to(classOf[MongoDBTileService])
   }
 }
 
@@ -64,5 +63,7 @@ class DevModule extends AbstractModule {
     bind(classOf[TempFileService]).to(classOf[MongoDBTempFileService])
     bind(classOf[ThreeDService]).to(classOf[MongoDBThreeDService])
     bind(classOf[RdfSPARQLService]).to(classOf[FourStoreRdfSPARQLService])
+    bind(classOf[ThumbnailService]).to(classOf[MongoDBThumbnailService])
+    bind(classOf[TileService]).to(classOf[MongoDBTileService])
   }
 }
