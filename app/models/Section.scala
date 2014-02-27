@@ -1,10 +1,7 @@
-/**
- *
- */
 package models
 
 import java.util.Date
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import com.novus.salat.dao.ModelCompanion
 import MongoContext.context
 import play.api.Play.current
 import play.api.Logger
@@ -35,11 +32,4 @@ case class Rectangle(
   w: Double,
   h: Double) {
   override def toString() = f"[ $x%.3f, $y%.3f, $w%.3f, $h%.3f ]"
-}
-
-object SectionDAO extends ModelCompanion[Section, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Section, ObjectId](collection = x.collection("sections")) {}
-  }
 }

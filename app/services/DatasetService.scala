@@ -49,6 +49,16 @@ trait DatasetService {
    * Insert dataset.
    */
   def insert(dataset: Dataset): Option[String]
+
+  /**
+   * Lastest dataset in chronological order.
+   */
+  def latest(): Option[Dataset]
+
+  /**
+   * First dataset in chronological order.
+   */
+  def first(): Option[Dataset]
   
   /**
    * 
@@ -129,6 +139,7 @@ trait DatasetService {
   def findByFileId(file_id: ObjectId): List[Dataset]
 
   def findNotContainingFile(file_id: ObjectId): List[Dataset]
+
   def findByTag(tag: String): List[Dataset]
 
   def getMetadata(id: String): Map[String, Any]

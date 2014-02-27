@@ -2,10 +2,11 @@ package services
 
 
 import java.io.InputStream
-import models.TempFile
+import models.{MultimediaFeatures, TempFile}
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
 import com.mongodb.casbah.gridfs.JodaGridFSDBFile
+import play.api.libs.json.JsObject
 
 /**
  * Generic file service to store blobs of files and metadata about them.
@@ -13,7 +14,7 @@ import com.mongodb.casbah.gridfs.JodaGridFSDBFile
  * @author Luigi Marini
  *
  */
-abstract class QueryService {
+abstract class MultimediaQueryService {
   
   /**
    * Save a file from an input stream.
@@ -41,4 +42,12 @@ abstract class QueryService {
    * Store file metadata.
    */
   def storeFileMD(id: String, filename: String, contentType: Option[String]): Option[TempFile]
+
+  def findFeatureBySection(sectionId: String): Option[MultimediaFeatures]
+
+  def updateFeatures(multimediaFeature: MultimediaFeatures, sectionId: String, features: List[JsObject])
+
+  def insert(multimediaFeature: MultimediaFeatures)
+
+  def listAll(): List[MultimediaFeatures]
 }

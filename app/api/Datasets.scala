@@ -45,7 +45,8 @@ class Datasets @Inject()(
   sections: SectionService,
   comments: CommentService,
   previews: PreviewService,
-  extractions: ExtractionService) extends ApiController {
+  extractions: ExtractionService,
+  rdfsparql: RdfSPARQLService) extends ApiController {
 
   /**
    * List all datasets.
@@ -63,7 +64,7 @@ class Datasets @Inject()(
     authorization = WithPermission(Permission.ListDatasets)) {
     request =>
 
-      Collection.findOneById(new ObjectId(collectionId)) match {
+      collections.get(collectionId) match {
         case Some(collection) => {
           val list = for (dataset <- datasets.listDatasetsChronoReverse; if (!datasets.isInCollection(dataset, collection)))
           yield datasets.toJSON(dataset)
@@ -138,7 +139,7 @@ class Datasets @Inject()(
                 //add file to RDF triple store if triple store is used
                 if (file.filename.endsWith(".xml")) {
                   configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                    case "yes" => services.Services.rdfSPARQLService.linkFileToDataset(fileId, dsId)
+                    case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
                     case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
                   }
                 }
@@ -174,7 +175,7 @@ class Datasets @Inject()(
                 //remove link between dataset and file from RDF triple store if triple store is used
                 if (file.filename.endsWith(".xml")) {
                   configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                    case "yes" => services.Services.rdfSPARQLService.detachFileFromDataset(fileId, datasetId)
+                    case "yes" => rdfsparql.detachFileFromDataset(fileId, datasetId)
                     case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
                   }
                 }
@@ -654,9 +655,7 @@ class Datasets @Inject()(
         case Some(dataset) => {
           //remove dataset from RDF triple store if triple store is used
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-            case "yes" => {
-              services.Services.rdfSPARQLService.removeDatasetFromGraphs(id)
-            }
+            case "yes" => rdfsparql.removeDatasetFromGraphs(id)
             case _ => Logger.debug("userdfSPARQLStore not enabled")
           }
           datasets.removeDataset(id)

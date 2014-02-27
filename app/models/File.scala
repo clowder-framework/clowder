@@ -1,13 +1,9 @@
 package models
 
 import java.util.Date
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
 import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
 
-import services.mongodb.MongoSalatPlugin
 
 /**
  * Uploaded files.
@@ -34,9 +30,4 @@ case class File(
   xmlMetadata: Map[String, Any] = Map.empty,
   userMetadataWasModified: Option[Boolean] = None)
 
-object FileDAO extends ModelCompanion[File, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
-  }
-}
+

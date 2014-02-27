@@ -7,31 +7,16 @@ import play.api.Play.current
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.iteratee._
-import play.api.mvc._
 import services._
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.concurrent.Promise
-import play.api.libs.iteratee.Input.{ El, EOF, Empty }
-import com.mongodb.casbah.gridfs.GridFS
+import play.api.libs.iteratee.Input.Empty
 import models.PreviewDAO
-import models.SectionDAO
 import models.Thumbnail
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import com.mongodb.casbah.commons.MongoDBObject
-import models.FileDAO
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import models.Comment
-import java.util.Date
-import models.File
-import models.Dataset
-import org.bson.types.ObjectId
-import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
-import play.api.libs.ws.WS
 import fileutils.FilesUtils
-import models.Extraction
 import api.WithPermission
 import api.Permission
 import javax.inject.Inject
@@ -44,11 +29,13 @@ import javax.inject.Inject
 class Files @Inject() (
   files: FileService,
   datasets: DatasetService,
-  queries: QueryService,
+  queries: MultimediaQueryService,
   comments: CommentService,
   sections: SectionService,
   extractions: ExtractionService,
-  previews: PreviewService) extends SecuredController {
+  previews: PreviewService,
+  threeD: ThreeDService,
+  sparql: RdfSPARQLService) extends SecuredController {
 
   /**
    * Upload form.
@@ -137,16 +124,16 @@ class Files @Inject() (
       badRequest
     }
     // latest object
-    val latest = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
+    val latest = files.latest()
     // first object
-    val first = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
+    val first = files.first()
     var firstPage = false
     var lastPage = false
     if (latest.size == 1) {
-      firstPage = fileList.exists(_.id == latest(0).id)
-      lastPage = fileList.exists(_.id == first(0).id)
-      Logger.debug("latest " + latest(0).id + " first page " + firstPage)
-      Logger.debug("first " + first(0).id + " last page " + lastPage)
+      firstPage = fileList.exists(_.id == latest.get.id)
+      lastPage = fileList.exists(_.id == first.get.id)
+      Logger.debug("latest " + latest.get.id + " first page " + firstPage)
+      Logger.debug("first " + first.get.id + " last page " + lastPage)
     }
 
     if (fileList.size > 0) {
@@ -263,9 +250,7 @@ class Files @Inject() (
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-			             case "yes" => {
-			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-			             }
+			             case "yes" => sparql.addFileToGraph(f.id.toString)
 			             case _ => {}		             
 		             }
 	             }
@@ -454,9 +439,7 @@ class Files @Inject() (
 	            //add file to RDF triple store if triple store is used
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => {
-		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }
+		             case "yes" => sparql.addFileToGraph(f.id.toString)
 		             case _ => {}
 	             }
 	            }
@@ -559,9 +542,7 @@ class Files @Inject() (
 	            //add file to RDF triple store if triple store is used
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => {
-		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }
+		             case "yes" => sparql.addFileToGraph(f.id.toString)
 		             case _ => {}
 	             }
 	            }
@@ -660,9 +641,7 @@ class Files @Inject() (
 	            //add file to RDF triple store if triple store is used
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => {
-		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }
+		             case "yes" => sparql.addFileToGraph(f.id.toString)
 		             case _ => {}
 	             }
 	            }
@@ -785,8 +764,8 @@ class Files @Inject() (
  			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 			             case "yes" => {
-			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-			               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
+                     sparql.addFileToGraph(f.id.toString)
+                     sparql.linkFileToDataset(f.id.toString, dataset_id)
 			             }
 			             case _ => {}
 		             }

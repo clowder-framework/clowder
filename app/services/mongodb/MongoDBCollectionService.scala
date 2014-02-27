@@ -3,22 +3,22 @@
  */
 package services.mongodb
 
-import models.Collection
+import models.{Collection, MongoContext, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.Imports._
 import java.text.SimpleDateFormat
 import play.api.Logger
-import models.Dataset
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 import services.{DatasetService, CollectionService}
 import javax.inject.{Singleton, Inject}
-import play.api.libs.json.Json._
 import scala.util.Failure
 import scala.Some
 import scala.util.Success
-import scala.util.Failure
-import scala.Some
-import scala.util.Success
+
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import com.mongodb.casbah.Imports._
+import MongoContext.context
+import play.api.Play.current
+
 
 /**
  * Use Mongodb to store collections.
@@ -79,6 +79,26 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
    */
   def get(id: String): Option[Collection] = {
     Collection.findOneById(new ObjectId(id))
+  }
+
+  def latest(): Option[Collection] = {
+    val results = Collection.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+    if (results.size > 0)
+      Some(results(0))
+    else
+      None
+  }
+
+  def first(): Option[Collection] = {
+    val results = Collection.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+    if (results.size > 0)
+      Some(results(0))
+    else
+      None
+  }
+
+  def insert(collection: Collection) {
+    Collection.save(collection)
   }
 
   /**
@@ -210,5 +230,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
 
   def findOneByDatasetId(datasetId: String): Option[Collection] = {
     Collection.findOne(MongoDBObject("datasets._id" -> new ObjectId(datasetId)))
+  }
+}
+
+object Collection extends ModelCompanion[Collection, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Collection, ObjectId](collection = x.collection("collections")) {}
   }
 }

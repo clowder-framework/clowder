@@ -9,7 +9,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import play.api.Logger
 import Transformation.LidoToCidocConvertion
-import java.util.{Date, ArrayList}
+import java.util.ArrayList
 import java.io._
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
@@ -19,17 +19,17 @@ import javax.inject.{Singleton, Inject}
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.util.JSON
 import jsonutils.JsonUtil
-import com.mongodb.casbah.Imports._
 import scala.collection.mutable.ListBuffer
-import play.api.Play._
-import scala.Some
-import scala.util.parsing.json.JSONArray
-import models.File
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import scala.Some
 import scala.util.parsing.json.JSONArray
 import models.File
+import com.mongodb.casbah.Imports._
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
+import play.api.Play.current
+import java.util.Date
 
 /**
  * Use Mongodb to store datasets.
@@ -38,7 +38,11 @@ import models.File
  *
  */
 @Singleton
-class MongoDBDatasetService @Inject() (collections: CollectionService, files: FileService, comments: CommentService) extends DatasetService {
+class MongoDBDatasetService @Inject() (
+  collections: CollectionService,
+  files: FileService,
+  comments: CommentService,
+  sparql: RdfSPARQLService) extends DatasetService {
 
   /**
    * List all datasets in the system.
@@ -115,6 +119,22 @@ class MongoDBDatasetService @Inject() (collections: CollectionService, files: Fi
     Dataset.findOneById(new ObjectId(id))
   }
 
+  def latest(): Option[Dataset] = {
+    val results = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+    if (results.size > 0)
+      Some(results(0))
+    else
+      None
+  }
+
+  def first(): Option[Dataset] = {
+    val results = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+    if (results.size > 0)
+      Some(results(0))
+    else
+      None
+  }
+
   /**
    * Updated dataset.
    */
@@ -151,7 +171,7 @@ class MongoDBDatasetService @Inject() (collections: CollectionService, files: Fi
   }
 
   def modifyRDFUserMetadata(id: String, mappingNumber: String="1") = {
-    services.Services.rdfSPARQLService.removeDatasetFromUserGraphs(id)
+    sparql.removeDatasetFromUserGraphs(id)
     get(id) match {
       case Some(dataset) => {
         import play.api.Play.current
@@ -231,10 +251,10 @@ class MongoDBDatasetService @Inject() (collections: CollectionService, files: Fi
         }
         fileWriter.close()
 
-        services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected, "dataset")
+        sparql.addFromFile(id, resultFileConnected, "dataset")
         resultFileConnected.delete()
 
-        services.Services.rdfSPARQLService.addDatasetToGraph(id, "rdfCommunityGraphName")
+        sparql.addDatasetToGraph(id, "rdfCommunityGraphName")
 
         setUserMetadataWasModified(id, false)
       }
@@ -446,7 +466,7 @@ class MongoDBDatasetService @Inject() (collections: CollectionService, files: Fi
   def addXMLMetadata(id: String, fileId: String, json: String) {
     Logger.debug("Adding XML metadata to dataset " + id + " from file " + fileId + ": " + json)
     val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("datasetXmlMetadata" -> DatasetXMLMetadata.toDBObject(DatasetXMLMetadata(md, fileId))), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("datasetXmlMetadata" -> DatasetXMLMetadata.toDBObject(models.DatasetXMLMetadata(md, fileId))), false, false, WriteConcern.Safe)
   }
 
   def removeXMLMetadata(id: String, fileId: String) {
@@ -805,7 +825,18 @@ class MongoDBDatasetService @Inject() (collections: CollectionService, files: Fi
       case None => Logger.error("Dataset not found: " + id)
     }
   }
+}
 
+object Dataset extends ModelCompanion[Dataset, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
+  }
+}
 
-
+object DatasetXMLMetadata extends ModelCompanion[DatasetXMLMetadata, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[DatasetXMLMetadata, ObjectId](collection = x.collection("datasetxmlmetadata")) {}
+  }
 }

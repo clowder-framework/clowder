@@ -1,11 +1,7 @@
-/**
- *
- */
 package api
 
 import play.api.libs.json.Json
 import play.api.Logger
-import models.SectionDAO
 import play.api.libs.json.Json._
 import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
@@ -24,9 +20,10 @@ import scala.Some
 class Sections @Inject() (
   files: FileService,
   datasets: DatasetService,
-  queries: QueryService,
+  queries: MultimediaQueryService,
   tags: TagService,
-  sections: SectionService)  extends ApiController {
+  sections: SectionService,
+  comments: CommentService)  extends ApiController {
 
   /**
    *  REST endpoint: POST: Add a section.
@@ -44,12 +41,8 @@ class Sections @Inject() (
         if (ObjectId.isValid(file_id)) {
           files.get(file_id) match {
             case Some(file) =>
-              val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
-              doc.getAs[String]("file_id").map(id => doc.put("file_id", new ObjectId(id)))
-              doc.put("_id", new ObjectId)
-              Logger.debug("Adding a section: " + doc)
-              SectionDAO.dao.collection.save(doc)
-              Ok(Json.obj("id" -> doc.getAs[ObjectId]("_id").get.toString))
+              val id = sections.insert(request.body)
+              Ok(Json.obj("id" -> id))
             case None => {
               Logger.error("The file_id " + file_id + " is not found, request body: " + request.body);
               NotFound(toJson("The file_id " + file_id + " is not found."))
@@ -72,7 +65,7 @@ class Sections @Inject() (
    */
   def get(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetSections)) { implicit request =>
     Logger.info("Getting info for section with id " + id)
-    SectionDAO.findOneById(new ObjectId(id)) match {
+    sections.get(id) match {
       case Some(section) =>
         Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
           "startTime" -> section.startTime.getOrElse(-1).toString, "tags" -> Json.toJson(section.tags.map(_.name))))
@@ -92,7 +85,7 @@ class Sections @Inject() (
      * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
      */
     if (ObjectId.isValid(id)) {
-      SectionDAO.findOneById(new ObjectId(id)) match {
+      sections.get(id) match {
         case Some(section) =>
           Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
             "tags" -> Json.toJson(section.tags.map(_.name))))
@@ -152,7 +145,7 @@ class Sections @Inject() (
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.info("Removing all tags for section with id: " + id)
     if (ObjectId.isValid(id)) {
-      SectionDAO.findOneById(new ObjectId(id)) match {
+      sections.get(id) match {
         case Some(section) => {
           sections.removeAllTags(id)
           Ok(Json.obj("status" -> "success"))
@@ -175,7 +168,7 @@ class Sections @Inject() (
 		    request.body.\("text").asOpt[String] match {
 			    case Some(text) => {
 			        val comment = new Comment(identity, text, section_id=Some(id))
-			        Comment.save(comment)
+			        comments.insert(comment)
 			        Ok(comment.id.toString())
 			    }
 			    case None => {

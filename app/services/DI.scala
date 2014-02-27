@@ -8,6 +8,7 @@ import play.api.Play
 import com.google.inject.Guice
 import com.google.inject.AbstractModule
 import services.mongodb._
+import services.fourstore.FourStoreRdfSPARQLService
 
 /**
  * Guice module configuration.
@@ -31,7 +32,7 @@ class ProdModule extends AbstractModule {
   protected def configure() {
     bind(classOf[DatasetService]).to(classOf[MongoDBDatasetService])
     bind(classOf[FileService]).to(classOf[MongoDBFileService])
-    bind(classOf[QueryService]).to(classOf[QueryServiceFileSystemDB])
+    bind(classOf[MultimediaQueryService]).to(classOf[MongoDBMultimediaQueryService])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
     bind(classOf[SectionService]).to(classOf[MongoDBSectionService])
@@ -40,6 +41,8 @@ class ProdModule extends AbstractModule {
     bind(classOf[AppConfigurationService]).to(classOf[MongoDBAppConfigurationService])
     bind(classOf[ExtractionService]).to(classOf[MongoDBExtractionService])
     bind(classOf[TempFileService]).to(classOf[MongoDBTempFileService])
+    bind(classOf[ThreeDService]).to(classOf[MongoDBThreeDService])
+    bind(classOf[RdfSPARQLService]).to(classOf[FourStoreRdfSPARQLService])
   }
 }
 
@@ -50,7 +53,7 @@ class DevModule extends AbstractModule {
   protected def configure() {
     bind(classOf[DatasetService]).to(classOf[MongoDBDatasetService])
     bind(classOf[FileService]).to(classOf[MongoDBFileService])
-    bind(classOf[QueryService]).to(classOf[QueryServiceFileSystemDB])
+    bind(classOf[MultimediaQueryService]).to(classOf[MongoDBMultimediaQueryService])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
     bind(classOf[SectionService]).to(classOf[MongoDBSectionService])
@@ -59,5 +62,7 @@ class DevModule extends AbstractModule {
     bind(classOf[AppConfigurationService]).to(classOf[MongoDBAppConfigurationService])
     bind(classOf[ExtractionService]).to(classOf[MongoDBExtractionService])
     bind(classOf[TempFileService]).to(classOf[MongoDBTempFileService])
+    bind(classOf[ThreeDService]).to(classOf[MongoDBThreeDService])
+    bind(classOf[RdfSPARQLService]).to(classOf[FourStoreRdfSPARQLService])
   }
 }

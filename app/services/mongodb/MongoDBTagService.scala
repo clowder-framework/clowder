@@ -3,7 +3,6 @@ package services.mongodb
 import play.api.libs.json.JsValue
 import play.api.Logger
 import org.bson.types.ObjectId
-import models.SectionDAO
 import javax.inject.Inject
 import services._
 import api.RequestWithUser
@@ -12,7 +11,7 @@ import scala.Some
 /**
  * Created by lmarini on 1/17/14.
  */
-class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, sections: SectionService) extends TagService {
+class MongoDBTagService @Inject() (files: FileService, datasets: DatasetService, queries: MultimediaQueryService, sections: SectionService) extends TagService {
 
   val USERID_ANONYMOUS = "anonymous"
 

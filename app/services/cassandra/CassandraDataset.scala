@@ -54,6 +54,16 @@ class CassandraDataset extends DatasetService {
     None
   }
 
+  /**
+   * Lastest dataset in chronological order.
+   */
+  def latest(): Option[Dataset] = None
+
+  /**
+   * First dataset in chronological order.
+   */
+  def first(): Option[Dataset] = None
+
   def insert(dataset: Dataset): Option[String] = None
 
   /**

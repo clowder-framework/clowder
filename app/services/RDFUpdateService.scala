@@ -28,6 +28,7 @@ class RDFUpdateService(application: Application) extends Plugin {
 
   val files: FileService = DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  val sparql: RdfSPARQLService = DI.injector.getInstance(classOf[RdfSPARQLService])
 
   override def onStart() {
     Logger.debug("Starting RDF updater Plugin")
@@ -64,7 +65,7 @@ class RDFUpdateService(application: Application) extends Plugin {
 
 
   def modifyRDFUserMetadataFiles(id: String, mappingNumber: String = "1") = {
-    services.Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
+    sparql.removeFileFromGraphs(id, "rdfCommunityGraphName")
     files.get(id) match {
       case Some(file) => {
         val theJSON = files.getUserMetadataJSON(id)
@@ -145,10 +146,10 @@ class RDFUpdateService(application: Application) extends Plugin {
         }
         fileWriter.close()
 
-        services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected, "file")
+        sparql.addFromFile(id, resultFileConnected, "file")
         resultFileConnected.delete()
 
-        services.Services.rdfSPARQLService.addFileToGraph(id, "rdfCommunityGraphName")
+        sparql.addFileToGraph(id, "rdfCommunityGraphName")
 
         files.setUserMetadataWasModified(id, false)
       }
@@ -158,7 +159,7 @@ class RDFUpdateService(application: Application) extends Plugin {
 
 
   def modifyRDFUserMetadataDatasets(id: String, mappingNumber: String = "1") = {
-    services.Services.rdfSPARQLService.removeDatasetFromUserGraphs(id)
+    sparql.removeDatasetFromUserGraphs(id)
     datasets.get(id) match {
       case Some(dataset) => {
         val theJSON = datasets.getUserMetadataJSON(id)
@@ -239,10 +240,10 @@ class RDFUpdateService(application: Application) extends Plugin {
         }
         fileWriter.close()
 
-        services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected, "dataset")
+        sparql.addFromFile(id, resultFileConnected, "dataset")
         resultFileConnected.delete()
 
-        services.Services.rdfSPARQLService.addDatasetToGraph(id, "rdfCommunityGraphName")
+        sparql.addDatasetToGraph(id, "rdfCommunityGraphName")
 
         datasets.setUserMetadataWasModified(id, false)
       }

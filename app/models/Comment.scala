@@ -1,14 +1,9 @@
 package models
 
 import java.util.Date
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
 import com.novus.salat.annotations.raw.Ignore
-import services.mongodb.MongoSalatPlugin
 
 /**
  * Comment
@@ -29,9 +24,3 @@ case class Comment(
   id: ObjectId = new ObjectId,
   @Ignore replies: List[Comment] = List.empty)
 
-object Comment extends ModelCompanion[Comment, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Comment, ObjectId](collection = x.collection("comments")) {}
-  }
-}

@@ -54,11 +54,13 @@ import play.api.Play.configuration
 class Files @Inject()(
   files: FileService,
   datasets: DatasetService,
-  queries: QueryService,
+  queries: MultimediaQueryService,
   tags: TagService,
   comments: CommentService,
   extractions: ExtractionService,
-  previews: PreviewService) extends ApiController {
+  previews: PreviewService,
+  threeD: ThreeDService,
+  sqarql: RdfSPARQLService) extends ApiController {
 
   def get(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
@@ -287,9 +289,7 @@ class Files @Inject()(
 
                     //add file to RDF triple store if triple store is used
                     configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                      case "yes" => {
-                        services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-                      }
+                      case "yes" => sqarql.addFileToGraph(f.id.toString)
                       case _ => {}
                     }
                   }
@@ -472,8 +472,8 @@ class Files @Inject()(
                       if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                         configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                           case "yes" => {
-                            services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-                            services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
+                            sqarql.addFileToGraph(f.id.toString)
+                            sqarql.linkFileToDataset(f.id.toString, dataset_id)
                           }
                           case _ => {}
                         }
@@ -807,14 +807,11 @@ class Files @Inject()(
     request =>
       request.body match {
         case JsObject(fields) => {
-          // TODO create a service instead of calling salat directly
           files.get(file_id) match {
             case Some(file) => {
-              GeometryDAO.findOneById(new ObjectId(geometry_id)) match {
+              threeD.getGeometry(geometry_id) match {
                 case Some(geometry) =>
-                  val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-                  GeometryDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(geometry_id)),
-                    $set("metadata" -> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)
+                  threeD.updateGeometry(file_id, geometry_id, fields)
                   Ok(toJson(Map("status" -> "success")))
                 case None => BadRequest(toJson("Geometry file not found"))
               }
@@ -834,15 +831,13 @@ class Files @Inject()(
     request =>
       request.body match {
         case JsObject(fields) => {
-          // TODO create a service instead of calling salat directly
           files.get((file_id)) match {
             case Some(file) => {
-              ThreeDTextureDAO.findOneById(new ObjectId(texture_id)) match {
-                case Some(texture) =>
-                  val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-                  ThreeDTextureDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(texture_id)),
-                    $set("metadata" -> metadata, "file_id" -> new ObjectId(file_id)), false, false, WriteConcern.SAFE)
+              threeD.getTexture(texture_id) match {
+                case Some(texture) => {
+                  threeD.updateTexture(file_id, texture_id, fields)
                   Ok(toJson(Map("status" -> "success")))
+                }
                 case None => BadRequest(toJson("Texture file not found"))
               }
             }
@@ -886,10 +881,10 @@ class Files @Inject()(
   def getGeometry(three_d_file_id: String, filename: String) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
-        GeometryDAO.findGeometry(new ObjectId(three_d_file_id), filename) match {
+        threeD.findGeometry(three_d_file_id, filename) match {
           case Some(geometry) => {
 
-            GeometryDAO.getBlob(geometry.id.toString()) match {
+            threeD.getGeometryBlob(geometry.id.toString) match {
 
               case Some((inputStream, filename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {
@@ -940,10 +935,10 @@ class Files @Inject()(
   def getTexture(three_d_file_id: String, filename: String) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
-        ThreeDTextureDAO.findTexture(new ObjectId(three_d_file_id), filename) match {
+        threeD.findTexture(three_d_file_id, filename) match {
           case Some(texture) => {
 
-            ThreeDTextureDAO.getBlob(texture.id.toString()) match {
+            threeD.getBlob(texture.id.toString()) match {
 
               case Some((inputStream, filename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {
@@ -1119,7 +1114,7 @@ class Files @Inject()(
           request.body.\("text").asOpt[String] match {
             case Some(text) => {
               val comment = new Comment(identity, text, file_id = Some(id))
-              Comment.save(comment)
+              comments.insert(comment)
               index(id)
               Ok(comment.id.toString)
             }
@@ -1232,9 +1227,9 @@ class Files @Inject()(
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
             case "yes" => {
               if (file.filename.endsWith(".xml")) {
-                Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfXMLGraphName")
+                sqarql.removeFileFromGraphs(id, "rdfXMLGraphName")
               }
-              Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
+              sqarql.removeFileFromGraphs(id, "rdfCommunityGraphName")
             }
             case _ => {}
           }

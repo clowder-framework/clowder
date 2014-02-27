@@ -17,10 +17,3 @@ case class ThreeDAnnotation(
   z_coord: String,
   description: String = "",
   id: ObjectId = new ObjectId)
-
-object ThreeDAnnotation extends ModelCompanion[ThreeDAnnotation, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ThreeDAnnotation, ObjectId](collection = x.collection("previews.files.annotations")) {}
-  }
-}

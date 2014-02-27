@@ -1,10 +1,13 @@
 package services.mongodb
 
 import services.AppConfigurationService
-import com.mongodb.casbah.Imports._
+import models.{MongoContext, AppConfiguration}
 import scala.Some
-import models.AppConfiguration
 import play.api.Logger
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import com.mongodb.casbah.Imports._
+import MongoContext.context
+import play.api.Play.current
 
 /**
  * Created by lmarini on 2/21/14.
@@ -15,7 +18,7 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
     AppConfiguration.findOne(MongoDBObject("name" -> "default")) match {
       case Some(conf) => Some(conf)
       case None => {
-        val default = AppConfiguration()
+        val default = models.AppConfiguration()
         AppConfiguration.save(default)
         Some(default)
       }
@@ -35,5 +38,12 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
       case Some(appConf) => Logger.debug("Theme" + appConf.theme); appConf.theme
       case None => themes(0)
     }
+  }
+}
+
+object AppConfiguration extends ModelCompanion[AppConfiguration, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[AppConfiguration, ObjectId](collection = x.collection("app.configuration")) {}
   }
 }

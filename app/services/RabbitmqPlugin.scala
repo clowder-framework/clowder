@@ -21,7 +21,7 @@ import akka.routing.SmallestMailboxRouter
 import models.Extraction
 import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
-   
+
 /**
  * Rabbitmq service.
  *
@@ -31,7 +31,7 @@ import org.bson.types.ObjectId
 class RabbitmqPlugin(application: Application) extends Plugin {
 
   var extractQueue: Option[ActorRef] = None
-  
+
   override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
     
@@ -165,8 +165,8 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
             val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             val startDate = formatter.parse(start.get)
             Logger.info("Status start: " + startDate)
-            Extraction.insert(Extraction(new ObjectId(), file_id, extractor_id, status, Some(startDate), None))
-          
+            val extractions: ExtractionService =  DI.injector.getInstance(classOf[ExtractionService])
+            extractions.insert(Extraction(new ObjectId(), file_id, extractor_id, status, Some(startDate), None))
    }
 }
 

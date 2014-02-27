@@ -36,7 +36,8 @@ class Datasets @Inject()(
   collections: CollectionService,
   comments: CommentService,
   sections: SectionService,
-  extractions: ExtractionService) extends SecuredController {
+  extractions: ExtractionService,
+  sparql: RdfSPARQLService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -78,16 +79,16 @@ class Datasets @Inject()(
         badRequest
       }
       // latest object
-      val latest = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+      val latest = datasets.latest()
       // first object
-      val first = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+      val first = datasets.first()
       var firstPage = false
       var lastPage = false
       if (latest.size == 1) {
-        firstPage = datasetList.exists(_.id == latest(0).id)
-        lastPage = datasetList.exists(_.id == first(0).id)
-        Logger.debug("latest " + latest(0).id + " first page " + firstPage)
-        Logger.debug("first " + first(0).id + " last page " + lastPage)
+        firstPage = datasetList.exists(_.id == latest.get.id)
+        lastPage = datasetList.exists(_.id == first.get.id)
+        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
+        Logger.debug("first " + first.get.id + " last page " + lastPage)
       }
       if (datasetList.size > 0) {
         if (date != "" && !firstPage) {
@@ -181,7 +182,7 @@ class Datasets @Inject()(
    */
   def datasetBySection(section_id: String) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
     request =>
-      SectionDAO.findOneById(new ObjectId(section_id)) match {
+      sections.get(section_id) match {
         case Some(section) => {
           datasets.findOneByFileId(section.file_id) match {
             case Some(dataset) => Redirect(routes.Datasets.dataset(dataset.id.toString))
@@ -341,8 +342,8 @@ class Datasets @Inject()(
                           if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                               case "yes" => {
-                                services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-                                services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dt.id.toString)
+                                sparql.addFileToGraph(f.id.toString)
+                                sparql.linkFileToDataset(f.id.toString, dt.id.toString)
                               }
                               case _ => {}
                             }
@@ -416,9 +417,7 @@ class Datasets @Inject()(
                     //link file to dataset in RDF triple store if triple store is used
                     if (theFileGet.filename.endsWith(".xml")) {
                       play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                        case "yes" => {
-                          services.Services.rdfSPARQLService.linkFileToDataset(fileId, dt.id.toString)
-                        }
+                        case "yes" => sparql.linkFileToDataset(fileId, dt.id.toString)
                         case _ => {}
                       }
                     }

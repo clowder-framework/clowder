@@ -1,21 +1,16 @@
-/**
- *
- */
 package api
 
 import play.api.mvc.Controller
 import play.api.libs.json.JsObject
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
-import models.MultimediaFeaturesDAO
 import play.api.Logger
 import models.Feature
 import models.MultimediaFeatures
 import models.PreviewDAO
 import play.api.Play.current
-import services.RabbitmqPlugin
-import services.ExtractorMessage
-import services.VersusPlugin
+import services.{MultimediaQueryService, RabbitmqPlugin, ExtractorMessage, VersusPlugin}
+import javax.inject.Inject
 
 /**
  * Index data.
@@ -23,13 +18,13 @@ import services.VersusPlugin
  * @author Luigi Marini
  *
  */
-object Indexes extends Controller with ApiController {
+@Inject
+class Indexes @Inject() (multimediaSearch: MultimediaQueryService) extends Controller with ApiController {
 
   /**
    * Submit section, preview, file for indexing.
    */
   def index() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
-//      Logger.debug("Add feature to multimedia index " + request.body)
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
       	    PreviewDAO.findOneById(new ObjectId(preview_id)) match {
@@ -60,28 +55,11 @@ object Indexes extends Controller with ApiController {
    */
   def features() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
-        MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"->new ObjectId(section_id))) match {
-          case Some(mFeatures) => {
-            val builder = MongoDBObject.newBuilder
-            builder += "section_id" -> new ObjectId(section_id)
+        multimediaSearch.findFeatureBySection(section_id) match {
+          case Some(multimediaFeature) => {
             val features = (request.body \ "features").as[List[JsObject]]
-            val listBuilder = MongoDBList.newBuilder
-            features.map {f =>
-            	val featureBuilder = MongoDBObject.newBuilder
-                featureBuilder += "representation" -> (f \ "representation").as[String]
-                featureBuilder += "descriptor" -> (f \ "descriptor").as[List[Double]]
-                listBuilder += featureBuilder.result
-            }
-            mFeatures.features.map {f =>
-            	val featureBuilder = MongoDBObject.newBuilder
-                featureBuilder += "representation" -> f.representation
-                featureBuilder += "descriptor" -> f.descriptor
-                listBuilder += featureBuilder.result
-            }
-            builder += "features" -> listBuilder.result
-            Logger.debug("Features doc " + mFeatures.id + " updated")
-            MultimediaFeaturesDAO.update(MongoDBObject("_id" -> mFeatures.id), builder.result, false, false, WriteConcern.Safe)
-            Ok(toJson(Map("id"->mFeatures.id.toString)))
+            multimediaSearch.updateFeatures(multimediaFeature, section_id, features)
+            Ok(toJson(Map("id"->multimediaFeature.id.toString)))
           }
           case None => {
             val jsFeatures = (request.body \ "features").as[List[JsObject]]
@@ -89,7 +67,7 @@ object Indexes extends Controller with ApiController {
             	Feature((f \ "representation").as[String], (f \ "descriptor").as[List[Double]])
             }
             val doc = MultimediaFeatures(section_id = Some(new ObjectId(section_id)), features = features)
-            MultimediaFeaturesDAO.save(doc)
+            multimediaSearch.insert(doc)
             Ok(toJson(Map("id"->doc.id.toString)))
           }
         }

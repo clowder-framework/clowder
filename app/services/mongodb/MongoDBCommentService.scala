@@ -1,9 +1,11 @@
 package services.mongodb
 
-import models.Comment
+import models.{MongoContext, Comment}
 import services.CommentService
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
+import play.api.Play.current
 import com.mongodb.casbah.commons.MongoDBObject
-import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 
 /**
@@ -52,5 +54,13 @@ class MongoDBCommentService extends CommentService {
       removeComment(reply)
     }
     Comment.remove(MongoDBObject("_id" -> c.id))
+  }
+}
+
+
+object Comment extends ModelCompanion[Comment, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Comment, ObjectId](collection = x.collection("comments")) {}
   }
 }

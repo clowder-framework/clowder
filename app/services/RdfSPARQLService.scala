@@ -1,11 +1,13 @@
 package services
 
-abstract class RdfSPARQLService {
+trait RdfSPARQLService {
 
-  def addFileToGraph(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null  
+  def addFileToGraph(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null
+
   def addDatasetToGraph(datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null
   
   def removeFileFromGraphs(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null
+
   def removeDatasetFromGraphs(datasetId: String): Null
   
   def linkFileToDataset(fileId: String, datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null

@@ -61,16 +61,16 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       badRequest
     }
     // latest object
-    val latest = Collection.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+    val latest = collections.latest()
     // first object
-    val first = Collection.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+    val first = collections.first()
     var firstPage = false
     var lastPage = false
     if (latest.size == 1) {
-    	firstPage = collectionList.exists(_.id == latest(0).id)
-    	lastPage = collectionList.exists(_.id == first(0).id)
-    	Logger.debug("latest " + latest(0).id + " first page " + firstPage )
-    	Logger.debug("first " + first(0).id + " last page " + lastPage )
+    	firstPage = collectionList.exists(_.id == latest.get.id)
+    	lastPage = collectionList.exists(_.id == first.get.id)
+    	Logger.debug("latest " + latest.get.id + " first page " + firstPage )
+    	Logger.debug("first " + first.get.id + " last page " + lastPage )
     }
     if (collectionList.size > 0) {  
       if (date != "" && !firstPage) { // show prev button
@@ -114,20 +114,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     
         collectionForm.bindFromRequest.fold(
           errors => BadRequest(views.html.newCollection(errors)),
-	      collection => {
+	        collection => {
 		        Logger.debug("Saving dataset " + collection.name)
-		        		     
-			        // TODO create a service instead of calling salat directly
-		            Collection.save(collection)
-		            
-		            // index collection
-//		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", id, 
-//		                List(("name",dt.name), ("description", dt.description)))}
-
-		            // redirect to collection page
-		            Redirect(routes.Collections.collection(collection.id.toString))
-			      } 
-	)
+		        collections.insert(collection)
+		        Redirect(routes.Collections.collection(collection.id.toString))
+			    })
   }
   
    /**

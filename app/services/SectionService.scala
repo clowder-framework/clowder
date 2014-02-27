@@ -1,6 +1,7 @@
 package services
 
 import models.{Section, Comment}
+import play.api.libs.json.JsValue
 
 /**
  * Created by lmarini on 2/17/14.
@@ -22,4 +23,6 @@ trait SectionService {
   def comment(id: String, comment: Comment)
 
   def removeSection(s: Section)
+
+  def insert(json: JsValue): String
 }

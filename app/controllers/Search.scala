@@ -1,51 +1,18 @@
 package controllers
 
-import play.api.mvc._
 import services._
 import play.Logger
 import scala.collection.JavaConversions.mapAsScalaMap
-import sys.process._
-import java.net.URL
-import java.io.File
-import scala.io.Source
-import java.io._
-import play.api.libs.ws.WS
-import models.SectionDAO
-import org.bson.types.ObjectId
-import models.PreviewDAO
-import models.MultimediaFeatures
-import models.MultimediaFeaturesDAO
-import com.mongodb.casbah.commons.MongoDBObject
 import edu.illinois.ncsa.isda.lsva.ImageMeasures
 import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
-import scala.collection.mutable.LinkedList
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListBuffer
 import util.DistancePriorityQueue
-import util.DistancePriorityQueue
-import org.elasticsearch.action.search.SearchRequest
-import util.SearchResult
-import util.DistancePriorityQueue
-import play.api.libs.ws.WS
-import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import java.io.FileInputStream
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import scala.collection.mutable.ArrayBuffer
-import models.VersusSimilarityResult
-import play.api.libs.json.Reads
-import play.api.libs.json.JsArray
-import com.mongodb.DBCollection
 import play.api.Play.current
-import play.api.libs.concurrent._
-import scala.concurrent.{ future, blocking, Future, Await }
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.ArrayBuffer
-import models.Dataset
-import api.WithPermission
 import api.Permission
-import javax.inject.{ Singleton, Inject }
+import javax.inject.Inject
 import scala.concurrent.Future
 import scala.Some
 import api.WithPermission
@@ -60,7 +27,7 @@ class Search @Inject() (
   datasets: DatasetService,
   files: FileService,
   collections: CollectionService,
-  queries: QueryService,
+  queries: MultimediaQueryService,
   previews: PreviewService) extends SecuredController {
 
   /**
@@ -129,7 +96,6 @@ class Search @Inject() (
   def multimediasearch() = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Starting multimedia search interface")
     Ok(views.html.multimediasearch())
-    //Ok("Sucessful")
   }
 
   /**
@@ -139,7 +105,7 @@ class Search @Inject() (
     Logger.debug("Searching multimedia index")
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
-    MultimediaFeaturesDAO.findOne(MongoDBObject("section_id" -> new ObjectId(section_id))) match {
+    queries.findFeatureBySection(section_id) match {
       case Some(feature) => {
         // setup priority queues
         val queues = new HashMap[String, DistancePriorityQueue]
@@ -149,7 +115,7 @@ class Search @Inject() (
         // push into priority queues
         feature.features.map { f =>
           Logger.debug("Computing " + f.representation)
-          MultimediaFeaturesDAO.find(MongoDBObject()).toList.map { mf =>
+          queries.listAll().map { mf =>
             Logger.trace("Found multimedia features " + mf.id + " for section " + section_id)
             mf.features.find(_.representation == f.representation) match {
               case Some(fd) => {
@@ -169,33 +135,6 @@ class Search @Inject() (
             }
           }
         }
-        //        // grab first 10 items from priority queues
-        //        val items = new HashMap[String, ListBuffer[SearchResult]]
-        //        for(i <- 1 to 10) {
-        //          Logger.debug("test")
-        //          queues.foreach { case (k,v) =>
-        //            
-        //            if (items.contains(k)) {
-        //              if (v.size > 0) items(k) += v.pop
-        //            } else {
-        //              items += k -> (new ListBuffer() += v.pop)
-        //            }: Unit // TODO fixed in scala 2.10 https://issues.scala-lang.org/browse/SI-4938
-        //          }
-        //           Logger.debug("test")
-        //        }
-
-        //        val queuesWithPreviews = queues map {case (key, queue) =>
-        //          val newQueue = new DistancePriorityQueue(queue.size())
-        //          while (queue.size > 0) {
-        //            val element = queue.pop()
-        //            val previews = PreviewDAO.findBySectionId(new ObjectId(element.id))
-        //            if (previews.size == 1) {
-        //              newQueue.add(SearchResult(element.id, element.distance, Some(previews(0).id.toString)))
-        //            } else {
-        //              Logger.error("Found more/less than one preview " + preview)
-        //            }
-        //          }
-        //        }
 
         val items = new HashMap[String, ListBuffer[SearchResult]]
         queues map {
@@ -227,14 +166,12 @@ class Search @Inject() (
 
   def SearchByText(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching for" + query)
-
-    //Ok(views.html.searchTextResults(query))
     Ok("")
   }
 
   //GET the query image from the URL and compare within the database and show the result
   
-def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
 
     Async {
       current.plugin[VersusPlugin] match {
@@ -477,8 +414,6 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
   def uploadquery() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     request.body.file("picture").map { picture =>
       import java.io.File
-      val filename = picture.filename
-      val contentType = picture.contentType
       picture.ref.moveTo(new File("/tmp/picture"))
       Ok("File uploaded")
     }.getOrElse {
@@ -486,17 +421,4 @@ def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission
         "error" -> "Missing file")
     }
   }
-  /*Action(parse.multipartFormData) { request =>
-  request.body.file("picture").map { picture =>
-    import java.io.File
-    val filename = picture.filename 
-    val contentType = picture.contentType
-    picture.ref.moveTo(new File("/tmp/picture"))
-    Ok("File uploaded")
-  }.getOrElse {
-    Redirect(routes.Application.index).flashing(
-      "error" -> "Missing file"
-    )
-  }
-}*/
 }

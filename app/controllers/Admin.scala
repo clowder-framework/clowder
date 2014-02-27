@@ -186,13 +186,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
             val indexer = (request.body \ "indexer").as[String]
             Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
             var reply = plugin.createIndex(adapter, extractor, measure, indexer)
-            //Logger.debug("REPLY FROM Versus: "+reply)
-            for {
-              response <- reply
-            } yield {
-              response
-              Ok(response.body)
-            }
+            for (response <- reply) yield Ok(response.body)
           } //case some
 
           case None => {

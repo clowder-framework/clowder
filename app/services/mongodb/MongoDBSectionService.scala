@@ -1,12 +1,18 @@
 package services.mongodb
 
 import services.{PreviewService, SectionService, CommentService}
-import play.api.Logger
-import java.util.Date
 import models._
-import com.mongodb.casbah.Imports._
 import javax.inject.{Inject, Singleton}
 import models.Section
+import java.util.Date
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
+import play.api.Play.current
+import play.api.Logger
+import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.Imports._
+import play.api.libs.json.{JsValue, Json}
 
 /**
  * Created by lmarini on 2/17/14.
@@ -67,5 +73,22 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
       comments.removeComment(comment)
     }
     SectionDAO.remove(MongoDBObject("_id" -> s.id))
+  }
+
+  def insert(json: JsValue): String = {
+    val id = new ObjectId
+    val doc = com.mongodb.util.JSON.parse(Json.stringify(json)).asInstanceOf[DBObject]
+    doc.getAs[String]("file_id").map(id => doc.put("file_id", new ObjectId(id)))
+    doc.put("_id", id)
+    Logger.debug("Adding a section: " + doc)
+    SectionDAO.dao.collection.save(doc)
+    id.toString
+  }
+}
+
+object SectionDAO extends ModelCompanion[Section, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Section, ObjectId](collection = x.collection("sections")) {}
   }
 }

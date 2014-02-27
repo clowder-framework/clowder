@@ -1,12 +1,8 @@
 package models
 
 import com.mongodb.casbah.Imports._
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
 import java.util.Date
 import securesocial.core.Identity
-import services.mongodb.MongoSalatPlugin
 
 /**
  * A dataset is a collection of files, and streams.
@@ -33,9 +29,4 @@ case class Dataset(
 
 object MustBreak extends Exception {}
 
-object Dataset extends ModelCompanion[Dataset, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
-  }
-}
+

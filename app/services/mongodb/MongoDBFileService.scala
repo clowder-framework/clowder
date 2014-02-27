@@ -33,6 +33,12 @@ import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
 import models.File
 import play.api.libs.json.JsObject
+import java.util.Date
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
+import play.api.Play.current
+import com.mongodb.casbah.Imports._
+import securesocial.core.Identity
 
 
 /**
@@ -46,7 +52,9 @@ class MongoDBFileService @Inject() (
   datasets: DatasetService,
   sections: SectionService,
   comments: CommentService,
-  previews: PreviewService) extends FileService {
+  previews: PreviewService,
+  threeD: ThreeDService,
+  sparql: RdfSPARQLService) extends FileService {
 
   /**
    * List all files.
@@ -85,6 +93,27 @@ class MongoDBFileService @Inject() (
       fileList
     }
   }
+
+  def latest(): Option[File] = {
+    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+    if (results.size > 0)
+      Some(results(0))
+    else
+      None
+  }
+
+  def latest(i: Int): List[File] = {
+    FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(i).toList
+  }
+
+  def first(): Option[File] = {
+    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+    if (results.size > 0)
+      Some(results(0))
+    else
+      None
+  }
+
 
   /**
    * Store file metadata.
@@ -226,7 +255,7 @@ class MongoDBFileService @Inject() (
 
 
   def modifyRDFUserMetadata(id: String, mappingNumber: String = "1") = {
-    services.Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
+    sparql.removeFileFromGraphs(id, "rdfCommunityGraphName")
     get(id) match {
       case Some(file) => {
         val theJSON = getUserMetadataJSON(id)
@@ -307,10 +336,10 @@ class MongoDBFileService @Inject() (
         }
         fileWriter.close()
 
-        services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected, "file")
+        sparql.addFromFile(id, resultFileConnected, "file")
         resultFileConnected.delete()
 
-        services.Services.rdfSPARQLService.addFileToGraph(id, "rdfCommunityGraphName")
+        sparql.addFileToGraph(id, "rdfCommunityGraphName")
 
         setUserMetadataWasModified(id, false)
       }
@@ -638,7 +667,7 @@ class MongoDBFileService @Inject() (
           for(comment <- comments.findCommentsByFileId(id)){
             comments.removeComment(comment)
           }
-          for(texture <- ThreeDTextureDAO.findTexturesByFileId(file.id)){
+          for(texture <- threeD.findTexturesByFileId(file.id.toString)){
             ThreeDTextureDAO.remove(MongoDBObject("_id" -> texture.id))
           }
           if(!file.thumbnail_id.isEmpty)
@@ -805,4 +834,11 @@ class MongoDBFileService @Inject() (
       $set("thumbnail_id" -> new ObjectId(thumbnailId)), false, false, WriteConcern.Safe)
   }
 
+}
+
+object FileDAO extends ModelCompanion[File, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
+  }
 }

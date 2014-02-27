@@ -44,6 +44,21 @@ trait FileService {
    * Get file metadata.
    */
   def get(id: String): Option[File]
+
+  /**
+   * Lastest file in chronological order.
+   */
+  def latest(): Option[File]
+
+  /**
+   * Lastest x files in chronological order.
+   */
+  def latest(i: Int): List[File]
+
+  /**
+   * First file in chronological order.
+   */
+  def first(): Option[File]
   
   /**
    * Store file metadata.

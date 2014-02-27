@@ -1,35 +1,21 @@
-package services
+package services.fourstore
 
-import java.io.BufferedWriter
-import java.io.FileWriter
 import java.io.FileInputStream
-import java.net.URLEncoder
 import play.Logger
-import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpPost
-import org.apache.http.client.methods.HttpPut
 import org.apache.http.client.methods.HttpDelete
-import org.apache.http.entity.mime.HttpMultipartMode
-import org.apache.http.entity.mime.MultipartEntity
-import org.apache.http.entity.mime.content.FileBody
-import org.apache.http.entity.FileEntity
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.util.EntityUtils
-import org.apache.http.entity.mime.content.StringBody
-import java.nio.charset.Charset
 import play.api.Play.current
 import java.util.ArrayList
 import org.apache.http.NameValuePair
 import org.apache.http.message.BasicNameValuePair
 import org.apache.http.client.entity.UrlEncodedFormEntity
-import play.api.Configuration
-import models.Dataset
-import org.bson.types.ObjectId
+import services.{RdfSPARQLService, DI, DatasetService}
+import javax.inject.{Inject, Singleton}
 
-trait FourStore {
-
-
-  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+@Singleton
+class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends RdfSPARQLService {
 
   def addFileToGraph(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
     	
@@ -187,7 +173,7 @@ trait FourStore {
   def removeDatasetFromGraphs(datasetId: String): Null = {
           
         //First, delete all RDF links having to do with files belonging only to the dataset to be deleted, as those files will be deleted together with the dataset
-         Dataset.findOneById(new ObjectId(datasetId)) match{
+         datasets.get(datasetId) match{
           case Some(dataset)=> {
                 var filesString = "" 
 	            for(f <- dataset.files){

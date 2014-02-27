@@ -1,8 +1,5 @@
 package controllers
 
-import models.Dataset
-import models.FileDAO
-import models.SectionDAO
 import api.WithPermission
 import api.Permission
 import services.{SectionService, FileService, DatasetService}

@@ -1,27 +1,23 @@
 package controllers
 
 import play.api.Routes
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import api.Sections
-import api.WithPermission
-import api.Permission
-import models.FileDAO
-import com.mongodb.casbah.commons.MongoDBObject
+import javax.inject.{Singleton, Inject}
+import services.FileService
 
 /**
  * Main application controller.
  * 
  * @author Luigi Marini
  */
-object Application extends SecuredController {
+@Singleton
+class Application  @Inject() (files: FileService) extends SecuredController {
   
   /**
    * Main page.
    */
   def index = SecuredAction() { request =>
   	implicit val user = request.user
-  	val latestFiles = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(5).toList
+  	val latestFiles = files.latest(5)
     Ok(views.html.index(latestFiles))
   }
   

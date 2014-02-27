@@ -1,17 +1,21 @@
-package services
+package services.mongodb
 
-import models.TempFile
+import models.{MongoContext, SocialUserDAO}
 import java.io.InputStream
-import play.api.Play.current
-import play.Logger
-import models.TempFileDAO
 import com.mongodb.casbah.commons.MongoDBObject
-import models.SocialUserDAO
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFS
-import services.mongodb.MongoSalatPlugin
+import services.MultimediaQueryService
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import MongoContext.context
+import play.api.Play.current
+import models.TempFile
+import models.MultimediaFeatures
+import scala.Some
+import play.api.libs.json.JsObject
+import play.api.Logger
 
-trait QueryFSDB {
+class MongoDBMultimediaQueryService extends MultimediaQueryService {
 
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[TempFile] = {
     val files = current.plugin[MongoSalatPlugin] match {
@@ -96,4 +100,43 @@ def getFile(id: String): Option[TempFile] = {
     
   }
 
+  def findFeatureBySection(sectionId: String): Option[MultimediaFeatures] = {
+    MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"->new ObjectId(sectionId)))
+  }
+
+  def updateFeatures(multimediaFeature: MultimediaFeatures, sectionId: String, features: List[JsObject]) {
+    val builder = MongoDBObject.newBuilder
+    builder += "section_id" -> new ObjectId(sectionId)
+    val listBuilder = MongoDBList.newBuilder
+    features.map {f =>
+      val featureBuilder = MongoDBObject.newBuilder
+      featureBuilder += "representation" -> (f \ "representation").as[String]
+      featureBuilder += "descriptor" -> (f \ "descriptor").as[List[Double]]
+      listBuilder += featureBuilder.result
+    }
+    multimediaFeature.features.map {f =>
+      val featureBuilder = MongoDBObject.newBuilder
+      featureBuilder += "representation" -> f.representation
+      featureBuilder += "descriptor" -> f.descriptor
+      listBuilder += featureBuilder.result
+    }
+    builder += "features" -> listBuilder.result
+    Logger.debug("Features doc " + multimediaFeature.id + " updated")
+    MultimediaFeaturesDAO.update(MongoDBObject("_id" -> multimediaFeature.id), builder.result, false, false, WriteConcern.Safe)
+  }
+
+  def insert(multimediaFeature: MultimediaFeatures) {
+    MultimediaFeaturesDAO.save(multimediaFeature)
+  }
+
+  def listAll(): List[MultimediaFeatures] = {
+    MultimediaFeaturesDAO.find(MongoDBObject()).toList
+  }
+}
+
+object MultimediaFeaturesDAO extends ModelCompanion[MultimediaFeatures, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[MultimediaFeatures, ObjectId](collection = x.collection("multimedia.features")) {}
+  }
 }

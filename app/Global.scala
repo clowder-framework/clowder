@@ -1,6 +1,4 @@
 import com.mongodb.casbah.Imports._
-import models.{UUID, Foo}
-import org.bson.types.ObjectId
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.api.Play.current

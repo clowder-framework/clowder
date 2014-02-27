@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-GET      /                                                                   controllers.Application.index
+GET      /                                                                   @controllers.Application.index
 
 
 # Users
@@ -74,7 +74,7 @@ GET      /assets/img/glyphicons-halflings.png                                con
 GET      /assets/*file                                                       controllers.Assets.at(path="/public", file)
 
 # test json
-GET      /test                                                               controllers.Application.testJson
+GET      /test                                                               @controllers.Application.testJson
 
 ## SecureSocial ##
 
@@ -114,11 +114,11 @@ POST  	/admin/index/:id/build                                               @con
 DELETE  /admin/index/:id/delete                                              @controllers.Admin.deleteIndex(id:String)
 DELETE 	/admin/index/deleteAll		                                         @controllers.Admin.deleteAllIndexes
 
-GET     /admin/extractions                                                   controllers.Extractors.extractions
+GET     /admin/extractions                                                   @controllers.Extractors.listAllExtractions
 POST    /admin/theme                                                         @controllers.Admin.setTheme
 
 # Javascript Endpoints
-GET      /javascriptRoutes                                                   controllers.Application.javascriptRoutes
+GET      /javascriptRoutes                                                   @controllers.Application.javascriptRoutes
 
 # API documentation using Swagger
 GET      /api-docs.json                                                      controllers.ApiHelpController.getResources
@@ -204,8 +204,8 @@ GET     /api/previews/:id/annotationsList        									@api.Previews.listAnno
 GET     /api/previews/:id                 											@api.Previews.download(id)
 POST    /api/previews                     											@api.Previews.upload(iipKey: String ?= "")
 
-POST     /api/indexes                                                        api.Indexes.index
-POST     /api/indexes/features                                               api.Indexes.features
+POST     /api/indexes                                                        @api.Indexes.index
+POST     /api/indexes/features                                               @api.Indexes.features
 
 POST    /api/sections                                           @api.Sections.add
 GET     /api/sections/:id                                       @api.Sections.get(id)
@@ -241,8 +241,8 @@ GET     /geostreams                       controllers.Geostreams.browse
 
 
 POST	/api/tiles						  api.ZoomIt.uploadTile
-POST	/api/geometries					  api.Geometry.uploadGeometry
-POST	/api/3dTextures					  api.ThreeDTexture.uploadTexture
+POST	/api/geometries					  @api.Geometry.uploadGeometry
+POST	/api/3dTextures					  @api.ThreeDTexture.uploadTexture
 POST    /api/fileThumbnail                api.Thumbnail.uploadThumbnail
 
 GET      /api/sensors                                                        api.Sensors.list

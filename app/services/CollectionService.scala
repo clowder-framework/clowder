@@ -37,6 +37,21 @@ trait CollectionService {
   def get(id: String): Option[Collection]
 
   /**
+   * Lastest collection in chronological order.
+   */
+  def latest(): Option[Collection]
+
+  /**
+   * First collection in chronological order.
+   */
+  def first(): Option[Collection]
+
+  /**
+   * Create collection.
+   */
+  def insert(collection: Collection)
+
+  /**
    * Add datataset to collection
    */
   def addDataset(collectionId: String, datasetId: String): Try[Unit]

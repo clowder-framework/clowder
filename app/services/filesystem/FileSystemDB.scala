@@ -7,12 +7,11 @@ import play.Logger
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import com.mongodb.casbah.gridfs.JodaGridFS
-import models.FileDAO
 import org.bson.types.ObjectId
 import java.io.File
 import com.mongodb.casbah.commons.MongoDBObject
 import securesocial.core.Identity
-import services.mongodb.MongoDBFileService
+import services.mongodb.{FileDAO, MongoDBFileService}
 
 /**
  * Store blobs on the file system.

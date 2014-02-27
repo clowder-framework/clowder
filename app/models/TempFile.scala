@@ -20,9 +20,4 @@ case class TempFile(
   contentType: String,
   length: Long = 0)
 
-object TempFileDAO extends ModelCompanion[TempFile, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[TempFile, ObjectId](collection = x.collection("uploadquery.files")) {}
-  }
-}
+

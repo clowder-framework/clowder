@@ -1,9 +1,8 @@
-/**
- *
- */
 package models
 
 /**
+ * Used for uploading of files.
+ *
  * @author Luigi Marini
  *
  */

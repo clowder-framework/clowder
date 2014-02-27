@@ -1,6 +1,6 @@
 package api
 
-import services.{DatasetService, FileService, ElasticsearchPlugin}
+import services.{RdfSPARQLService, DatasetService, FileService, ElasticsearchPlugin}
 import play.Logger
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions.mapAsScalaMap
@@ -11,7 +11,7 @@ import play.api.Play.current
 import play.api.Play.configuration
 
 @Singleton
-class Search @Inject()(files: FileService, datasets: DatasetService) extends ApiController {
+class Search @Inject()(files: FileService, datasets: DatasetService, sparql: RdfSPARQLService) extends ApiController {
   /**
    * Search results.
    */
@@ -79,7 +79,7 @@ class Search @Inject()(files: FileService, datasets: DatasetService) extends Api
         case "yes" => {
           val queryText = request.body.asFormUrlEncoded.get("query").apply(0)
           Logger.info("whole msg: " + request.toString)
-          val resultsString = services.Services.rdfSPARQLService.sparqlQuery(queryText)
+          val resultsString = sparql.sparqlQuery(queryText)
           Logger.info("SPARQL query results: " + resultsString)
           Ok(resultsString)
         }
