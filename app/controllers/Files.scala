@@ -1,7 +1,7 @@
 package controllers
 
 import java.io._
-import models.FileMD
+import models.{UUID, FileMD, Thumbnail}
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
@@ -9,7 +9,6 @@ import play.api.data.Forms._
 import play.api.libs.iteratee._
 import services._
 import play.api.libs.concurrent.Execution.Implicits._
-import models.Thumbnail
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import play.api.libs.json.Json._
@@ -316,7 +315,7 @@ class Files @Inject() (
   }
 
   def thumbnail(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>    
-    thumbnails.getBlob(id) match {
+    thumbnails.getBlob(UUID(id)) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
 	          case Some(value) => {

@@ -8,7 +8,7 @@ import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.commons.MongoDBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import services.ThumbnailService
-import models.Thumbnail
+import models.{UUID, Thumbnail}
 import MongoContext.context
 
 /**
@@ -16,8 +16,8 @@ import MongoContext.context
  */
 class MongoDBThumbnailService extends ThumbnailService {
 
-  def get(thumbnailId: String): Option[Thumbnail] = {
-    Thumbnail.findOneById(new ObjectId(thumbnailId))
+  def get(thumbnailId: UUID): Option[Thumbnail] = {
+    Thumbnail.findOneById(new ObjectId(thumbnailId.stringify))
   }
 
   /**
@@ -29,7 +29,6 @@ class MongoDBThumbnailService extends ThumbnailService {
       case Some(x) => x.gridFS("thumbnails")
     }
     val mongoFile = files.createFile(inputStream)
-    //    Logger.debug("Uploading file " + filename)
     mongoFile.filename = filename
     var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
     if (ct == play.api.http.ContentTypes.BINARY) {
@@ -43,9 +42,9 @@ class MongoDBThumbnailService extends ThumbnailService {
   /**
    * Get blob.
    */
-  def getBlob(id: String): Option[(InputStream, String, String, Long)] = {
+  def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "thumbnails")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream,
         file.getAs[String]("filename").getOrElse("unknown-name"),
         file.getAs[String]("contentType").getOrElse("unknown"),

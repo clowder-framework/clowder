@@ -850,10 +850,9 @@ class Files @Inject()(
    */
   def attachThumbnail(file_id: String, thumbnail_id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-    // TODO create a service instead of calling salat directly
       files.get(file_id) match {
         case Some(file) => {
-          thumbnails.get(thumbnail_id) match {
+          thumbnails.get(UUID(thumbnail_id)) match {
             case Some(thumbnail) => {
               files.updateThumbnail(file_id, thumbnail_id)
               val datasetList = datasets.findByFileId(file.id)
