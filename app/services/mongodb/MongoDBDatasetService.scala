@@ -771,8 +771,8 @@ class MongoDBDatasetService @Inject() (
   def removeDataset(id: String) {
     Dataset.findOneById(new ObjectId(id)) match {
       case Some(dataset) => {
-        for (collection <- collections.listInsideDataset(id))
-          collections.removeDataset(collection.id.toString, dataset.id.toString)
+        for (collection <- collections.listInsideDataset(UUID(id)))
+          collections.removeDataset(collection.id, UUID(dataset.id.toString))
         for (comment <- comments.findCommentsByDatasetId(id)) {
           comments.removeComment(comment)
         }

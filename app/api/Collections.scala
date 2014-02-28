@@ -1,6 +1,6 @@
 package api
 
-import models.Collection
+import models.{UUID, Collection}
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
@@ -19,7 +19,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def attachDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent,
                     authorization=WithPermission(Permission.CreateCollections)) { request =>
 
-    collections.addDataset(collectionId: String, datasetId: String) match {
+    collections.addDataset(UUID(collectionId), UUID(datasetId)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
     }
@@ -28,7 +28,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent,
                     authorization=WithPermission(Permission.CreateCollections)) { request =>
 
-    collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
+    collections.removeDataset(UUID(collectionId), UUID(datasetId), Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
     }
@@ -36,7 +36,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   
   def removeCollection(collectionId: String) = SecuredAction(parse.anyContent,
                        authorization=WithPermission(Permission.DeleteCollections)) { request =>
-    collections.delete(collectionId)
+    collections.delete(UUID(collectionId))
     Ok(toJson(Map("status" -> "success")))
   }
 

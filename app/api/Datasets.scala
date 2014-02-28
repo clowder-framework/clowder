@@ -64,7 +64,7 @@ class Datasets @Inject()(
     authorization = WithPermission(Permission.ListDatasets)) {
     request =>
 
-      collections.get(collectionId) match {
+      collections.get(UUID(collectionId)) match {
         case Some(collection) => {
           val list = for (dataset <- datasets.listDatasetsChronoReverse; if (!datasets.isInCollection(dataset, collection)))
           yield datasets.toJSON(dataset)
@@ -197,7 +197,7 @@ class Datasets @Inject()(
 
   def listInCollection(collectionId: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection)) {
     request =>
-      collections.get(collectionId) match {
+      collections.get(UUID(collectionId)) match {
         case Some(collection) => {
           val list = for (dataset <- datasets.listInsideCollection(collectionId)) yield datasets.toJSON(dataset)
           Ok(toJson(list))

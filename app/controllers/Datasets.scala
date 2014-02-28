@@ -153,8 +153,8 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
-          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
+          val collectionsOutside = collections.listOutsideDataset(UUID(id)).sortBy(_.name)
+          val collectionsInside = collections.listInsideDataset(UUID(id)).sortBy(_.name)
           val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
 
           var commentsByDataset = comments.findCommentsByDatasetId(id)
