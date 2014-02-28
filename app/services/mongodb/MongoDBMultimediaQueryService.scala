@@ -8,8 +8,7 @@ import services.MultimediaQueryService
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
-import models.TempFile
-import models.MultimediaFeatures
+import models.{UUID, TempFile, MultimediaFeatures}
 import scala.Some
 import play.api.libs.json.JsObject
 import play.api.Logger
@@ -35,7 +34,7 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
     mongoFile.contentType = ct
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
-    Some(TempFile(oid, None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
+    Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
   }
   
   
@@ -95,7 +94,7 @@ def getFile(id: String): Option[TempFile] = {
     val oid = mongoFile.getAs[ObjectId]("_id").get ///getting object id
     //mongoFile._id
     Logger.debug("StoreMD id="+ oid)
-     Some(TempFile(oid, None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
+     Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
     
   }
 

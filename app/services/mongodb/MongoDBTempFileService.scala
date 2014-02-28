@@ -1,7 +1,7 @@
 package services.mongodb
 
 import services.TempFileService
-import models.TempFile
+import models.{UUID, TempFile}
 import javax.inject.Singleton
 import org.bson.types.ObjectId
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -14,8 +14,8 @@ import play.api.Play.current
 @Singleton
 class MongoDBTempFileService extends TempFileService {
 
-  def get(query_id: String): Option[TempFile] = {
-    TempFileDAO.findOneById(new ObjectId(query_id))
+  def get(query_id: UUID): Option[TempFile] = {
+    TempFileDAO.findOneById(new ObjectId(query_id.stringify))
   }
 }
 

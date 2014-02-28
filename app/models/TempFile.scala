@@ -9,7 +9,7 @@ import org.bson.types.ObjectId
  * TODO change name of collection to be more generic so it can be reused in other places?
  */
 case class TempFile(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   path: Option[String] = None,
   filename: String,
   uploadDate: Date,
