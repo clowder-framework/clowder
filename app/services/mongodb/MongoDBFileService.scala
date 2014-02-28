@@ -607,7 +607,7 @@ class MongoDBFileService @Inject() (
     tags.foreach(tag => {
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
-        val tagObj = models.Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
         FileDAO.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })

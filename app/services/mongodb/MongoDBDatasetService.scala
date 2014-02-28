@@ -489,7 +489,7 @@ class MongoDBDatasetService @Inject() (
     tags.foreach(tag => {
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
-        val tagObj = models.Tag(id = new ObjectId, name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
         Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
@@ -826,7 +826,7 @@ class MongoDBDatasetService @Inject() (
   }
 }
 
-object Dataset extends ModelCompanion[Dataset, ObjectId] {
+object  Dataset extends ModelCompanion[Dataset, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
