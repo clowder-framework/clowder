@@ -806,9 +806,9 @@ class Files @Inject()(
         case JsObject(fields) => {
           files.get(file_id) match {
             case Some(file) => {
-              threeD.getGeometry(geometry_id) match {
+              threeD.getGeometry(UUID(geometry_id)) match {
                 case Some(geometry) =>
-                  threeD.updateGeometry(file_id, geometry_id, fields)
+                  threeD.updateGeometry(UUID(file_id), UUID(geometry_id), fields)
                   Ok(toJson(Map("status" -> "success")))
                 case None => BadRequest(toJson("Geometry file not found"))
               }
@@ -830,9 +830,9 @@ class Files @Inject()(
         case JsObject(fields) => {
           files.get((file_id)) match {
             case Some(file) => {
-              threeD.getTexture(texture_id) match {
+              threeD.getTexture(UUID(texture_id)) match {
                 case Some(texture) => {
-                  threeD.updateTexture(file_id, texture_id, fields)
+                  threeD.updateTexture(UUID(file_id), UUID(texture_id), fields)
                   Ok(toJson(Map("status" -> "success")))
                 }
                 case None => BadRequest(toJson("Texture file not found"))
@@ -877,10 +877,10 @@ class Files @Inject()(
   def getGeometry(three_d_file_id: String, filename: String) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
-        threeD.findGeometry(three_d_file_id, filename) match {
+        threeD.findGeometry(UUID(three_d_file_id), filename) match {
           case Some(geometry) => {
 
-            threeD.getGeometryBlob(geometry.id.toString) match {
+            threeD.getGeometryBlob(UUID(geometry.id.toString)) match {
 
               case Some((inputStream, filename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {
@@ -931,10 +931,10 @@ class Files @Inject()(
   def getTexture(three_d_file_id: String, filename: String) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
-        threeD.findTexture(three_d_file_id, filename) match {
+        threeD.findTexture(UUID(three_d_file_id), filename) match {
           case Some(texture) => {
 
-            threeD.getBlob(texture.id.toString()) match {
+            threeD.getBlob(UUID(texture.id.toString)) match {
 
               case Some((inputStream, filename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {

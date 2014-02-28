@@ -21,33 +21,33 @@ import scala.Some
  */
 class MongoDBThreeDService extends ThreeDService {
 
-  def getTexture(textureId: String): Option[ThreeDTexture] ={
-    ThreeDTextureDAO.findOneById(new ObjectId(textureId))
+  def getTexture(textureId: UUID): Option[ThreeDTexture] ={
+    ThreeDTextureDAO.findOneById(new ObjectId(textureId.stringify))
   }
 
-  def findTexture(fileId: String, filename: String): Option[ThreeDTexture] = {
+  def findTexture(fileId: UUID, filename: String): Option[ThreeDTexture] = {
     try {
-      val theTexture = ThreeDTextureDAO.find(MongoDBObject("file_id" -> new ObjectId(fileId), "filename" -> filename)).toList.head
+      val theTexture = ThreeDTextureDAO.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify), "filename" -> filename)).toList.head
       return Option(theTexture)
     } catch {
       case e: NoSuchElementException => return None
     }
   }
 
-  def findTexturesByFileId(fileId: String): List[ThreeDTexture] = {
-    ThreeDTextureDAO.find(MongoDBObject("file_id" -> new ObjectId(fileId))).toList
+  def findTexturesByFileId(fileId: UUID): List[ThreeDTexture] = {
+    ThreeDTextureDAO.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
   }
 
-  def updateTexture(fileId: String, textureId: String, fields: Seq[(String, JsValue)]) {
+  def updateTexture(fileId: UUID, textureId: UUID, fields: Seq[(String, JsValue)]) {
     val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-    ThreeDTextureDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(textureId)),
-      $set("metadata" -> metadata, "file_id" -> new ObjectId(fileId)), false, false, WriteConcern.SAFE)
+    ThreeDTextureDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(textureId.stringify)),
+      $set("metadata" -> metadata, "file_id" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.SAFE)
   }
 
-  def updateGeometry(fileId: String, geometryId: String, fields: Seq[(String, JsValue)]) {
+  def updateGeometry(fileId: UUID, geometryId: UUID, fields: Seq[(String, JsValue)]) {
     val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-    GeometryDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(geometryId)),
-      $set("metadata" -> metadata, "file_id" -> new ObjectId(fileId)), false, false, WriteConcern.SAFE)
+    GeometryDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(geometryId.stringify)),
+      $set("metadata" -> metadata, "file_id" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.SAFE)
   }
 
   /**
@@ -70,9 +70,9 @@ class MongoDBThreeDService extends ThreeDService {
   /**
    * Get blob.
    */
-  def getBlob(id: String): Option[(InputStream, String, String, Long)] = {
+  def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "textures")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream,
         file.getAs[String]("filename").getOrElse("unknown-name"),
         file.getAs[String]("contentType").getOrElse("unknown"),
@@ -81,9 +81,9 @@ class MongoDBThreeDService extends ThreeDService {
     }
   }
 
-  def findGeometry(fileId: String, filename: String): Option[ThreeDGeometry] = {
+  def findGeometry(fileId: UUID, filename: String): Option[ThreeDGeometry] = {
     try {
-      val theGeometry = GeometryDAO.find(MongoDBObject("file_id" -> new ObjectId(fileId), "filename" -> filename)).toList.head
+      val theGeometry = GeometryDAO.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify), "filename" -> filename)).toList.head
       return Option(theGeometry)
     } catch {
       case e: NoSuchElementException => return None
@@ -106,16 +106,16 @@ class MongoDBThreeDService extends ThreeDService {
     mongoFile.getAs[ObjectId]("_id").get.toString
   }
 
-  def getGeometry(id: String): Option[ThreeDGeometry] = {
-    GeometryDAO.findOneById(new ObjectId(id))
+  def getGeometry(id: UUID): Option[ThreeDGeometry] = {
+    GeometryDAO.findOneById(new ObjectId(id.stringify))
   }
 
   /**
    * Get blob.
    */
-  def getGeometryBlob(id: String): Option[(InputStream, String, String, Long)] = {
+  def getGeometryBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "geometries")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream,
         file.getAs[String]("filename").getOrElse("unknown-name"),
         file.getAs[String]("contentType").getOrElse("unknown"),

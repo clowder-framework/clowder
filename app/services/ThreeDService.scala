@@ -1,6 +1,6 @@
 package services
 
-import models.{ThreeDGeometry, ThreeDTexture}
+import models.{UUID, ThreeDGeometry, ThreeDTexture}
 import java.io.InputStream
 import play.api.libs.json.JsValue
 
@@ -9,25 +9,25 @@ import play.api.libs.json.JsValue
  */
 trait ThreeDService {
 
-  def getTexture(textureId: String): Option[ThreeDTexture]
+  def getTexture(textureId: UUID): Option[ThreeDTexture]
 
-  def findTexture(fileId: String, filename: String): Option[ThreeDTexture]
+  def findTexture(fileId: UUID, filename: String): Option[ThreeDTexture]
 
-  def findTexturesByFileId(fileId: String): List[ThreeDTexture]
+  def findTexturesByFileId(fileId: UUID): List[ThreeDTexture]
 
-  def updateTexture(fileId: String, textureId: String, fields: Seq[(String, JsValue)])
+  def updateTexture(fileId: UUID, textureId: UUID, fields: Seq[(String, JsValue)])
 
-  def updateGeometry(fileId: String, geometryId: String, fields: Seq[(String, JsValue)])
+  def updateGeometry(fileId: UUID, geometryId: UUID, fields: Seq[(String, JsValue)])
 
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String
 
-  def getBlob(id: String): Option[(InputStream, String, String, Long)]
+  def getBlob(id: UUID): Option[(InputStream, String, String, Long)]
 
-  def findGeometry(fileId: String, filename: String): Option[ThreeDGeometry]
+  def findGeometry(fileId: UUID, filename: String): Option[ThreeDGeometry]
 
-  def getGeometry(id: String): Option[ThreeDGeometry]
+  def getGeometry(id: UUID): Option[ThreeDGeometry]
 
   def saveGeometry(inputStream: InputStream, filename: String, contentType: Option[String]): String
 
-  def getGeometryBlob(id: String): Option[(InputStream, String, String, Long)]
+  def getGeometryBlob(id: UUID): Option[(InputStream, String, String, Long)]
 }

@@ -12,4 +12,4 @@ case class ThreeDAnnotation(
   y_coord: String,
   z_coord: String,
   description: String = "",
-  id: ObjectId = new ObjectId)
+  id: UUID = UUID.generate)

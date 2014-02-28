@@ -8,7 +8,7 @@ import org.bson.types.ObjectId
  * @author Constantinos Sophocleous
  */
 case class ThreeDTexture(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   file_id: Option[String] = None,
   filename: Option[String] = None,
   contentType: String,
