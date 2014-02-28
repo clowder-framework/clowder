@@ -402,7 +402,7 @@ class MongoDBFileService @Inject() (
     FileDAO.findOneById(new ObjectId(id)) match {
       case Some(file) => {
         val previewsByFile = previews.findByFileId(file.id.toString)
-        val sectionsByFile = sections.findByFileId(file.id.toString)
+        val sectionsByFile = sections.findByFileId(UUID(file.id.toString))
         val sectionsWithPreviews = sectionsByFile.map { s =>
           val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
           s.copy(preview = p)
@@ -652,7 +652,7 @@ class MongoDBFileService @Inject() (
               if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
                 datasets.newThumbnail(fileDataset.id.toString())
           }
-          for(section <- sections.findByFileId(file.id.toString)){
+          for(section <- sections.findByFileId(UUID(file.id.toString))){
             sections.removeSection(section)
           }
           for(preview <- previews.findByFileId(file.id.toString)){

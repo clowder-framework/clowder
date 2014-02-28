@@ -5,7 +5,7 @@ import play.api.Logger
 import play.api.libs.json.Json._
 import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
-import models.Comment
+import models.{UUID, Comment}
 import services._
 import javax.inject.{Inject, Singleton}
 import scala.Some
@@ -32,13 +32,13 @@ class Sections @Inject() (
    *  A new ObjectId is created for this section.
    */
   def add() = SecuredAction(authorization = WithPermission(Permission.AddSections)) { implicit request =>
-    request.body.\("file_id").asOpt[String] match {
+    (request.body \ "file_id").asOpt[String] match {
       case Some(file_id) => {
         /* Found in testing: given an invalid ObjectId, a runtime exception
          * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.get().
          * So check it first.
          */
-        if (ObjectId.isValid(file_id)) {
+        if (UUID.isValid(UUID(file_id))) {
           files.get(file_id) match {
             case Some(file) =>
               val id = sections.insert(request.body)
@@ -65,7 +65,7 @@ class Sections @Inject() (
    */
   def get(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetSections)) { implicit request =>
     Logger.info("Getting info for section with id " + id)
-    sections.get(id) match {
+    sections.get(UUID(id)) match {
       case Some(section) =>
         Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
           "startTime" -> section.startTime.getOrElse(-1).toString, "tags" -> Json.toJson(section.tags.map(_.name))))
@@ -84,8 +84,8 @@ class Sections @Inject() (
     /* Found in testing: given an invalid ObjectId, a runtime exception
      * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
      */
-    if (ObjectId.isValid(id)) {
-      sections.get(id) match {
+    if (UUID.isValid(UUID(id))) {
+      sections.get(UUID(id)) match {
         case Some(section) =>
           Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
             "tags" -> Json.toJson(section.tags.map(_.name))))
@@ -144,10 +144,11 @@ class Sections @Inject() (
    */
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.info("Removing all tags for section with id: " + id)
-    if (ObjectId.isValid(id)) {
-      sections.get(id) match {
+    val uuid = UUID(id)
+    if (UUID.isValid(uuid)) {
+      sections.get(uuid) match {
         case Some(section) => {
-          sections.removeAllTags(id)
+          sections.removeAllTags(uuid)
           Ok(Json.obj("status" -> "success"))
         }
         case None => {

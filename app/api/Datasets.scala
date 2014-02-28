@@ -350,7 +350,7 @@ class Datasets @Inject()(
           datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
           datasets.index(id)
         }
-        case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.addTags(UUID(id), userOpt, extractorOpt, tagsCleaned)
       }
       Ok(Json.obj("status" -> "success"))
     } else {
@@ -379,7 +379,7 @@ class Datasets @Inject()(
       (obj_type) match {
         case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.removeTags(UUID(id), userOpt, extractorOpt, tagsCleaned)
       }
       Ok(Json.obj("status" -> "success"))
     } else {
@@ -448,7 +448,7 @@ class Datasets @Inject()(
       obj_type match {
         case TagCheck_File => not_found = files.get(id).isEmpty
         case TagCheck_Dataset => not_found = datasets.get(id).isEmpty
-        case TagCheck_Section => not_found = sections.get(id).isEmpty
+        case TagCheck_Section => not_found = sections.get(UUID(id)).isEmpty
         case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
       }
       if (not_found) {

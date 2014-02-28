@@ -1,6 +1,6 @@
 package services
 
-import models.{Section, Comment}
+import models.{UUID, Section, Comment}
 import play.api.libs.json.JsValue
 
 /**
@@ -8,19 +8,19 @@ import play.api.libs.json.JsValue
  */
 trait SectionService {
 
-  def get(id: String): Option[Section]
+  def get(id: UUID): Option[Section]
 
-  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 
-  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 
-  def findByFileId(fileId: String): List[Section]
+  def findByFileId(fileId: UUID): List[Section]
 
   def findByTag(tag: String): List[Section]
 
-  def removeAllTags(id: String)
+  def removeAllTags(id: UUID)
 
-  def comment(id: String, comment: Comment)
+  def comment(id: UUID, comment: Comment)
 
   def removeSection(s: Section)
 

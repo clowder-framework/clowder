@@ -1,7 +1,5 @@
 package models
 
-import com.mongodb.casbah.Imports._
-
 /**
  * A portion of a file.
  *
@@ -9,8 +7,8 @@ import com.mongodb.casbah.Imports._
  *
  */
 case class Section(
-  id: ObjectId = new ObjectId,
-  file_id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
+  file_id: UUID = UUID.generate,
   order: Int = -1,
   startTime: Option[Int] = None, // in seconds
   endTime: Option[Int] = None, // in seconds

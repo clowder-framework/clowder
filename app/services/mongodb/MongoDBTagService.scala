@@ -11,7 +11,7 @@ import com.novus.salat.dao.ModelCompanion
 import com.novus.salat.dao.SalatDAO
 import MongoContext.context
 import play.api.Play.current
-import models.Tag
+import models.{UUID, Tag}
 
 /**
  * Created by lmarini on 1/17/14.
@@ -133,7 +133,7 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
           datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
           datasets.index(id)
         }
-        case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.addTags(UUID(id), userOpt, extractorOpt, tagsCleaned)
       }
     }
     (not_found, error_str)
@@ -155,7 +155,7 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
       (obj_type) match {
         case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.removeTags(UUID(id), userOpt, extractorOpt, tagsCleaned)
       }
     }
     (not_found, error_str)

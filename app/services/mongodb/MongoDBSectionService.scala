@@ -1,9 +1,8 @@
 package services.mongodb
 
 import services.{PreviewService, SectionService, CommentService}
-import models.{Tag, Comment}
+import models.{UUID, Tag, Comment, Section}
 import javax.inject.{Inject, Singleton}
-import models.Section
 import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
@@ -20,49 +19,49 @@ import play.api.libs.json.{JsValue, Json}
 @Singleton
 class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService) extends SectionService {
 
-  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to section " + id + " : " + tags)
-    val section = SectionDAO.findOneById(new ObjectId(id)).get
+    val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
     val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
     tags.foreach(tag => {
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
         val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
-        SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+        SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
   }
 
-  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in section " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
-    val section = SectionDAO.findOneById(new ObjectId(id)).get
+    val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
     val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map { tag =>
-      SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+      SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
     }
   }
 
-  def get(id: String): Option[Section] = {
-    SectionDAO.findOneById(new ObjectId(id))
+  def get(id: UUID): Option[Section] = {
+    SectionDAO.findOneById(new ObjectId(id.stringify))
   }
 
-  def findByFileId(id: String): List[Section] = {
-    SectionDAO.find(MongoDBObject("file_id" -> new ObjectId(id))).sort(MongoDBObject("startTime" -> 1)).toList
+  def findByFileId(id: UUID): List[Section] = {
+    SectionDAO.find(MongoDBObject("file_id" -> new ObjectId(id.stringify))).sort(MongoDBObject("startTime" -> 1)).toList
   }
 
   def findByTag(tag: String): List[Section] = {
     SectionDAO.find(MongoDBObject("tags.name" -> tag)).toList
   }
 
-  def removeAllTags(id: String) {
-    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+  def removeAllTags(id: UUID) {
+    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false, WriteConcern.Safe)
   }
 
-  def comment(id: String, comment: Comment) {
-    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+  def comment(id: UUID, comment: Comment) {
+    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
 
   def removeSection(s: Section) {

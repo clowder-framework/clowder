@@ -66,7 +66,7 @@ class Files @Inject() (
             Map(file -> ff)
           }
         }
-        val sectionsByFile = sections.findByFileId(file.id.toString)
+        val sectionsByFile = sections.findByFileId(UUID(file.id.toString))
         val sectionsWithPreviews = sectionsByFile.map { s =>
           val p = previews.findBySectionId(s.id.toString)
           s.copy(preview = Some(p(0)))

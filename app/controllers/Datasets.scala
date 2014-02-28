@@ -160,8 +160,8 @@ class Datasets @Inject()(
           var commentsByDataset = comments.findCommentsByDatasetId(id)
           filesInDataset.map {
             file =>
-              commentsByDataset ++= comments.findCommentsByFileId(file.id.toString())
-              sections.findByFileId(file.id.toString).map { section =>
+              commentsByDataset ++= comments.findCommentsByFileId(file.id.toString)
+              sections.findByFileId(UUID(file.id.toString)).map { section =>
                 commentsByDataset ++= comments.findCommentsBySectionId(section.id.toString())
               }
           }
@@ -182,9 +182,9 @@ class Datasets @Inject()(
    */
   def datasetBySection(section_id: String) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
     request =>
-      sections.get(section_id) match {
+      sections.get(UUID(section_id)) match {
         case Some(section) => {
-          datasets.findOneByFileId(section.file_id) match {
+          datasets.findOneByFileId(new ObjectId(section.file_id.toString)) match {
             case Some(dataset) => Redirect(routes.Datasets.dataset(dataset.id.toString))
             case None => InternalServerError("Dataset not found")
           }

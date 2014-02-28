@@ -15,16 +15,18 @@ class UUID(uuid: String) {
 object UUID {
 
   def apply(uuid: String): UUID = {
-//    new UUID(java.util.UUID.fromString(uuid).toString)
     new UUID(new ObjectId(uuid).toString)
   }
 
   def apply(): UUID = {
-//    new UUID(java.util.UUID.randomUUID().toString)
     new UUID(new ObjectId().toString)
   }
 
   def generate(): UUID = apply()
+
+  def isValid(uuid: UUID): Boolean = {
+    ObjectId.isValid(uuid.stringify)
+  }
 }
 
 object UUIDConversions {
