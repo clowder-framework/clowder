@@ -27,6 +27,10 @@ object UUID {
   def generate(): UUID = apply()
 }
 
+object UUIDConversions {
+  implicit def stringToUUID(s: String) = UUID(s)
+}
+
 object UUIDTransformer extends CustomTransformer[UUID, ObjectId] {
   def deserialize(objectId: ObjectId) = {
     Logger.trace("Deserializing ObjectId to UUID :" + objectId)

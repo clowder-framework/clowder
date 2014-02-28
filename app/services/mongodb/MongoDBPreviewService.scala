@@ -131,7 +131,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
   }
 
   def removePreview(p: Preview) {
-    for (tile <- tiles.get(p.id.toString)) {
+    for (tile <- tiles.get(UUID(p.id.toString))) {
       TileDAO.remove(MongoDBObject("_id" -> tile.id))
     }
     // for IIP server references, also delete the files being referenced on the IIP server they reside

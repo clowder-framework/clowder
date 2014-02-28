@@ -9,14 +9,12 @@ import play.api.Play.current
 import java.io.InputStream
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.commons.MongoDBObject
-import models.Tile
+import models.{UUID, Tile}
 import play.api.libs.json.{JsValue, JsObject}
 import com.mongodb.casbah.Imports._
-import models.Tile
 import scala.Some
 import com.mongodb.WriteConcern
 import play.api.libs.json.Json._
-import models.Tile
 import scala.Some
 import play.api.Logger
 import javax.inject.{Inject, Singleton}
@@ -27,20 +25,20 @@ import javax.inject.{Inject, Singleton}
 @Singleton
 class MongoDBTileService @Inject() (previews: PreviewService) extends TileService {
 
-  def get(tileId: String): Option[Tile] = {
-    TileDAO.findOneById(new ObjectId(tileId))
+  def get(tileId: UUID): Option[Tile] = {
+    TileDAO.findOneById(new ObjectId(tileId.stringify))
   }
 
-  def updateMetadata(tileId: String, previewId: String, level: String, json: JsValue) {
+  def updateMetadata(tileId: UUID, previewId: UUID, level: String, json: JsValue) {
     json match {
     case JsObject(fields) => {
-      previews.get(previewId) match {
+      previews.get(previewId.stringify) match {
         case Some(preview) => {
           get(tileId) match {
             case Some(tile) =>
               val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-              TileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(tileId)),
-                $set("metadata" -> metadata, "preview_id" -> new ObjectId(previewId), "level" -> level), false, false, WriteConcern.SAFE)
+              TileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(tileId.stringify)),
+                $set("metadata" -> metadata, "preview_id" -> new ObjectId(previewId.stringify), "level" -> level), false, false, WriteConcern.SAFE)
             case None => Logger.error("Tile not found")
           }
         }
@@ -50,17 +48,17 @@ class MongoDBTileService @Inject() (previews: PreviewService) extends TileServic
     }
   }
 
-  def findTile(previewId: String, filename: String, level: String): Option[Tile] = {
+  def findTile(previewId: UUID, filename: String, level: String): Option[Tile] = {
     try {
-      val theTile = TileDAO.find(MongoDBObject("preview_id" -> new ObjectId(previewId), "filename" -> filename, "level" -> level)).toList.head
+      val theTile = TileDAO.find(MongoDBObject("preview_id" -> new ObjectId(previewId.stringify), "filename" -> filename, "level" -> level)).toList.head
       return Option(theTile)
     } catch {
       case e: NoSuchElementException => return None
     }
   }
 
-  def findByPreviewId(previewId: String): List[Tile] = {
-    TileDAO.find(MongoDBObject("preview_id" -> new ObjectId(previewId))).toList
+  def findByPreviewId(previewId: UUID): List[Tile] = {
+    TileDAO.find(MongoDBObject("preview_id" -> new ObjectId(previewId.stringify))).toList
   }
 
   /**
@@ -86,9 +84,9 @@ class MongoDBTileService @Inject() (previews: PreviewService) extends TileServic
   /**
    * Get blob.
    */
-  def getBlob(id: String): Option[(InputStream, String, String, Long)] = {
+  def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "tiles")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream,
         file.getAs[String]("filename").getOrElse("unknown-name"),
         file.getAs[String]("contentType").getOrElse("unknown"),

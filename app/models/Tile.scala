@@ -1,7 +1,5 @@
 package models
 
-import org.bson.types.ObjectId
-
 /**
  * Pyramid tiles of images for Seadragon.
  *
@@ -9,7 +7,7 @@ import org.bson.types.ObjectId
  *
  */
 case class Tile(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   preview_id: Option[String] = None,
   filename: Option[String] = None,
   contentType: String,

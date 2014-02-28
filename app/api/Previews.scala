@@ -8,7 +8,7 @@ import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
 import play.api.libs.json.JsObject
 import com.mongodb.WriteConcern
-import models.ThreeDAnnotation
+import models.{UUID, ThreeDAnnotation}
 import play.api.libs.json.JsValue
 import play.api.libs.concurrent.Execution.Implicits._
 import java.io.BufferedReader
@@ -160,9 +160,9 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
           case JsObject(fields) => {
             previews.get(preview_id) match {
               case Some(preview) => {
-                tiles.get(tile_id) match {
+                tiles.get(UUID(tile_id)) match {
                   case Some(tile) => {
-                    tiles.updateMetadata(tile_id, preview_id, level, request.body)
+                    tiles.updateMetadata(UUID(tile_id), UUID(preview_id), level, request.body)
                     Ok(toJson(Map("status" -> "success")))
                   }
                   case None => BadRequest(toJson("Tile not found"))
@@ -183,10 +183,10 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
         val dzi_id = dzi_id_dir.replaceAll("_files", "")
-        tiles.findTile(dzi_id, filename, level) match {
+        tiles.findTile(UUID(dzi_id), filename, level) match {
           case Some(tile) => {
 
-            tiles.getBlob(tile.id.toString()) match {
+            tiles.getBlob(tile.id) match {
 
               case Some((inputStream, filename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {

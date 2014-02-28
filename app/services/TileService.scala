@@ -1,6 +1,6 @@
 package services
 
-import models.Tile
+import models.{UUID, Tile}
 import java.io.InputStream
 import play.api.libs.json.JsValue
 
@@ -9,15 +9,15 @@ import play.api.libs.json.JsValue
  */
 trait TileService {
 
-  def get(tileId: String): Option[Tile]
+  def get(tileId: UUID): Option[Tile]
 
-  def updateMetadata(tileId: String, previewId: String, level: String, json: JsValue)
+  def updateMetadata(tileId: UUID, previewId: UUID, level: String, json: JsValue)
 
-  def findTile(previewId: String, filename: String, level: String): Option[Tile]
+  def findTile(previewId: UUID, filename: String, level: String): Option[Tile]
 
-  def findByPreviewId(previewId: String): List[Tile]
+  def findByPreviewId(previewId: UUID): List[Tile]
 
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String
 
-  def getBlob(id: String): Option[(InputStream, String, String, Long)]
+  def getBlob(id: UUID): Option[(InputStream, String, String, Long)]
 }
