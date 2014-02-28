@@ -1,6 +1,3 @@
-/**
- *
- */
 package services.mongodb
 
 import services._

@@ -142,19 +142,21 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
 
   def addDataset(collectionId: String, datasetId: String) = Try {
+    Logger.debug(s"Adding dataset $datasetId to collection $collectionId")
     Collection.findOneById(new ObjectId(collectionId)) match{
       case Some(collection) => {
         datasets.get(datasetId) match {
           case Some(dataset) => {
             if(!isInCollection(dataset,collection)){
               // add dataset to collection
-              addDataset(collection.id.toString, dataset.id.toString)
+              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId)),
+                $addToSet("datasets" ->  Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)
               //add collection to dataset
               datasets.addCollection(dataset.id.toString, collection.id.toString)
-              Logger.info("Adding dataset to collection completed")
+              Logger.debug("Adding dataset to collection completed")
             }
             else{
-              Logger.info("Dataset was already in collection.")
+              Logger.debug("Dataset was already in collection.")
             }
             Success
           }

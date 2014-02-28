@@ -1,16 +1,9 @@
-/**
- *
- */
 package services
+
 import models._
 import play.api.libs.json.JsValue
-import scala.util.Try
-import com.mongodb.casbah.commons.MongoDBObject
-import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import models.File
-import com.mongodb.casbah.WriteConcern
-import play.api.Logger
 
 /**
  * Generic dataset service.
