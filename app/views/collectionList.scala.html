@@ -27,7 +27,7 @@
 			<tbody>
 				@collections.map { collection =>
 					<tr>
-						<td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a></td>
+						<td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></td>
 						<td>@collection.created.format("MMM dd, yyyy")</td>
 						<td>@collection.description</td>
 						<td>

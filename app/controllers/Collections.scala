@@ -115,22 +115,22 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         collection => {
           Logger.debug("Saving dataset " + collection.name)
           collections.insert(collection)
-          Redirect(routes.Collections.collection(collection.id.toString))
+          Redirect(routes.Collections.collection(collection.id))
         })
   }
 
   /**
    * Collection.
    */
-  def collection(id: String) = SecuredAction(authorization = WithPermission(Permission.ShowCollection)) {
+  def collection(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowCollection)) {
     implicit request =>
       implicit val user = request.user
-      collections.get(UUID(id)) match {
+      collections.get(id) match {
         case Some(collection) => {
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection.name, collection.id.toString()))
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id.stringify), collection.name, collection.id.toString()))
         }
         case None => {
-          Logger.error("Error getting collection " + id); InternalServerError
+          Logger.error("Error getting collection " + id); BadRequest("Collection not found")
         }
       }
   }

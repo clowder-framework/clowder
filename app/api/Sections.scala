@@ -38,7 +38,7 @@ class Sections @Inject() (
          * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.get().
          * So check it first.
          */
-        if (UUID.isValid(UUID(file_id))) {
+        if (UUID.isValid(file_id)) {
           files.get(file_id) match {
             case Some(file) =>
               val id = sections.insert(request.body)
@@ -84,7 +84,7 @@ class Sections @Inject() (
     /* Found in testing: given an invalid ObjectId, a runtime exception
      * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
      */
-    if (UUID.isValid(UUID(id))) {
+    if (UUID.isValid(id)) {
       sections.get(UUID(id)) match {
         case Some(section) =>
           Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
@@ -144,11 +144,10 @@ class Sections @Inject() (
    */
   def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) { implicit request =>
     Logger.info("Removing all tags for section with id: " + id)
-    val uuid = UUID(id)
-    if (UUID.isValid(uuid)) {
-      sections.get(uuid) match {
+    if (UUID.isValid(id)) {
+      sections.get(UUID(id)) match {
         case Some(section) => {
-          sections.removeAllTags(uuid)
+          sections.removeAllTags(UUID(id))
           Ok(Json.obj("status" -> "success"))
         }
         case None => {

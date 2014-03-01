@@ -27,9 +27,11 @@ object Global extends GlobalSettings {
             source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
         }
     }
+    Logger.info("Application has started")
   }
 
   override def onStop(app: Application) {
+    Logger.info("Application shutdown")
   }
 
   private lazy val injector = services.DI.injector

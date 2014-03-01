@@ -24,8 +24,8 @@ object UUID {
 
   def generate(): UUID = apply()
 
-  def isValid(uuid: UUID): Boolean = {
-    ObjectId.isValid(uuid.stringify)
+  def isValid(uuid: String): Boolean = {
+    ObjectId.isValid(uuid)
   }
 }
 

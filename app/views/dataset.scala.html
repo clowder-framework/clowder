@@ -680,7 +680,7 @@
 				<h3>Collections</h3>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
-					<tr><td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
 					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
 				}
 				</table>

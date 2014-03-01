@@ -43,7 +43,7 @@ POST    /dataset/submit                   @controllers.Datasets.submit
 GET      /collections                                                        @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET      /collections/new                                                    @controllers.Collections.newCollection
 POST     /collection/submit                                                  @controllers.Collections.submit
-GET      /collection/:id                                                     @controllers.Collections.collection(id)	
+GET      /collection/:id                                                     @controllers.Collections.collection(id: UUID)
 
 # Tags
 GET     /tags/search                      @controllers.Tags.search(tag)
