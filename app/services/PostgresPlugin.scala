@@ -361,14 +361,15 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id::text FROM datapoints"
-    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
+      "(SELECT datapoints.gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text FROM sensors, streams, datapoints" +
+      " WHERE sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid AND "
+//    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
     if (since.isDefined) query += "start_time >= ? "
     if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
     if (until.isDefined) query += "start_time <= ? "
     if ((since.isDefined || until.isDefined) && geocode.isDefined) query += " AND "
     if (parts.length == 3) {
-      query += " ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+      query += " ST_DWithin(datapoints.geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       query += " ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
       var j = 0
@@ -376,12 +377,16 @@ class PostgresPlugin(application: Application) extends Plugin {
         query += "ST_MakePoint(?, ?), "
         j += 2
       }
-      query += "ST_MakePoint(?, ?)])), geog)"
+      query += "ST_MakePoint(?, ?)])), datapoints.geog)"
     }
     // attributes
     if (!attributes.isEmpty) for (x <- 0 until attributes.size) {
      query += " AND "
      query += "? = ANY(SELECT json_object_keys(datapoints.data))"
+    }
+    // data source
+    if (!source.isEmpty) for (x <- 0 until source.size) {
+      query += " AND ? = sensors.metadata::json->>'type'"
     }
     //stream
     if (stream_id.isDefined) query += "stream_id = ?"
@@ -413,10 +418,18 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i + 2, parts(0).toDouble)
       i += 2
     }
+    // attributes
     if (!attributes.isEmpty) {
       for (x <- 0 until attributes.size) {
       i = i + 1
       st.setString(i, attributes(x))
+      }
+    }
+    // sources
+    if (!source.isEmpty) {
+      for (x <- 0 until source.size) {
+        i = i + 1
+        st.setString(i, source(x))
       }
     }
     if (stream_id.isDefined) {
