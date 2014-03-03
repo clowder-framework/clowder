@@ -1,6 +1,6 @@
 package services.mongodb
 
-import models.Comment
+import models.{UUID, Comment}
 import services.CommentService
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
@@ -13,44 +13,44 @@ import com.mongodb.casbah.Imports._
  */
 class MongoDBCommentService extends CommentService {
 
-  def get(commentId: String): Option[Comment] = {
-    Comment.findOneById(new ObjectId(commentId))
+  def get(commentId: UUID): Option[Comment] = {
+    Comment.findOneById(new ObjectId(commentId.stringify))
   }
 
   def insert(comment: Comment): Option[String] = {
     Comment.insert(comment).map(_.toString)
   }
 
-  def findCommentsByCommentId(id: String) : List[Comment] = {
+  def findCommentsByCommentId(id: UUID) : List[Comment] = {
     Comment.dao.find(MongoDBObject("comment_id"->id)).map { comment =>
-      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
+      comment.copy(replies=findCommentsByCommentId(comment.id))
     }.toList
   }
 
-  def findCommentsByDatasetId(id: String, asTree: Boolean=true) : List[Comment] = {
+  def findCommentsByDatasetId(id: UUID, asTree: Boolean=true) : List[Comment] = {
     if (asTree) {
-      Comment.dao.find(("comment_id" $exists false) ++ ("dataset_id"->id)).map { comment =>
-        comment.copy(replies=findCommentsByCommentId(comment.id.toString))
+      Comment.dao.find(("comment_id" $exists false) ++ ("dataset_id"->new ObjectId(id.stringify))).map { comment =>
+        comment.copy(replies=findCommentsByCommentId(comment.id))
       }.toList
     } else {
       Comment.dao.find(MongoDBObject("dataset_id"->id)).toList
     }
   }
 
-  def findCommentsByFileId(id: String) : List[Comment] = {
-    Comment.dao.find(("comment_id" $exists false) ++ ("file_id"->id)).map { comment =>
-      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
+  def findCommentsByFileId(id: UUID) : List[Comment] = {
+    Comment.dao.find(("comment_id" $exists false) ++ ("file_id"->new ObjectId(id.stringify))).map { comment =>
+      comment.copy(replies=findCommentsByCommentId(comment.id))
     }.toList
   }
 
-  def findCommentsBySectionId(id: String) : List[Comment] = {
-    Comment.dao.find(("comment_id" $exists false) ++ ("section_id"->id)).map { comment =>
-      comment.copy(replies=findCommentsByCommentId(comment.id.toString))
+  def findCommentsBySectionId(id: UUID) : List[Comment] = {
+    Comment.dao.find(("comment_id" $exists false) ++ ("section_id"->new ObjectId(id.stringify))).map { comment =>
+      comment.copy(replies=findCommentsByCommentId(comment.id))
     }.toList
   }
 
   def removeComment(c: Comment){
-    for(reply <- findCommentsByCommentId(c.id.toString())){
+    for(reply <- findCommentsByCommentId(c.id)){
       removeComment(reply)
     }
     Comment.remove(MongoDBObject("_id" -> c.id))

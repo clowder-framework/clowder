@@ -29,10 +29,12 @@ object UUID {
   }
 }
 
+// scala conversion
 object UUIDConversions {
   implicit def stringToUUID(s: String) = UUID(s)
 }
 
+// Salat transformer
 object UUIDTransformer extends CustomTransformer[UUID, ObjectId] {
   def deserialize(objectId: ObjectId) = {
     Logger.trace("Deserializing ObjectId to UUID :" + objectId)

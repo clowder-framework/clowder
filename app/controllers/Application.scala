@@ -20,15 +20,7 @@ class Application  @Inject() (files: FileService) extends SecuredController {
   	val latestFiles = files.latest(5)
     Ok(views.html.index(latestFiles))
   }
-  
-  /**
-   * Testing action.
-   */
-  def testJson = SecuredAction()  { implicit request =>
-    Ok("{test:1}").as(JSON)
-  }
-  
-    
+
   /**
    *  Javascript routing.
    */

@@ -2,7 +2,6 @@ package services.filesystem
 
 import java.io.InputStream
 import play.api.Play
-import java.util.UUID
 import play.Logger
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -12,6 +11,7 @@ import java.io.File
 import com.mongodb.casbah.commons.MongoDBObject
 import securesocial.core.Identity
 import services.mongodb.{FileDAO, MongoDBFileService}
+import models.UUID
 
 /**
  * Store blobs on the file system.
@@ -25,10 +25,10 @@ trait FileSystemDB {
   /**
    * Save a file to the file system and store metadata about it in Mongo.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[models.File] = {
+  override  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[models.File] = {
     Play.current.configuration.getString("files.path") match {
       case Some(path) => {
-        val id = UUID.randomUUID().toString()
+        val id = UUID.generate
         val filePath = if (path.last != '/') path + "/" + id else path + id
         Logger.info("Copying file to " + filePath)
         // FIXME is there a better way than casting to FileInputStream?
@@ -51,11 +51,11 @@ trait FileSystemDB {
   /**
    * Get the bytes of a file from Mongo and the file name.
    */
-  def getBytes(id: String): Option[(InputStream, String, String, Long)] = {
+  override def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
     Play.current.configuration.getString("files.path") match {
       case Some(path) => {
         val files = JodaGridFS(FileDAO.dao.collection.db, "uploads")
-        files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+        files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
           case Some(file) => {
             file.getAs[String]("path") match {
               case Some(relativePath) => {

@@ -32,7 +32,7 @@ class MongoDBTileService @Inject() (previews: PreviewService) extends TileServic
   def updateMetadata(tileId: UUID, previewId: UUID, level: String, json: JsValue) {
     json match {
     case JsObject(fields) => {
-      previews.get(previewId.stringify) match {
+      previews.get(previewId) match {
         case Some(preview) => {
           get(tileId) match {
             case Some(tile) =>

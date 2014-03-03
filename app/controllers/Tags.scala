@@ -18,7 +18,7 @@ class Tags @Inject()(datasets: DatasetService, files: FileService, sections: Sec
     val taggedDatasets = datasets.findByTag(tagCleaned)
     val taggedFiles    = files.findByTag(tagCleaned)
     val sectionsByTag = sections.findByTag(tagCleaned)
-    val sectionsWithFiles = for (s <- sectionsByTag; f <- files.get(s.file_id.toString)) yield (s, f)
+    val sectionsWithFiles = for (s <- sectionsByTag; f <- files.get(s.file_id)) yield (s, f)
     Ok(views.html.searchByTag(tag, taggedDatasets, taggedFiles, sectionsWithFiles))
   }
 }

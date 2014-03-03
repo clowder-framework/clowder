@@ -63,7 +63,7 @@ class Files @Inject()(
   sqarql: RdfSPARQLService,
   thumbnails: ThumbnailService) extends ApiController {
 
-  def get(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def get(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
       Logger.info("GET file with id " + id)
       files.get(id) match {
@@ -84,7 +84,7 @@ class Files @Inject()(
       Ok(toJson(list))
   }
 
-  def downloadByDatasetAndFilename(datasetId: String, filename: String, preview_id: String) =
+  def downloadByDatasetAndFilename(datasetId: UUID, filename: String, preview_id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
       request =>
         datasets.getFileId(datasetId, filename) match {
@@ -96,7 +96,7 @@ class Files @Inject()(
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: String) =
+  def download(id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
       request =>
 
@@ -146,7 +146,7 @@ class Files @Inject()(
    * Download query used by Versus
    *
    */
-  def downloadquery(id: String) =
+  def downloadquery(id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
       request =>
         queries.get(id) match {
@@ -191,7 +191,7 @@ class Files @Inject()(
   /**
    * Add metadata to file.
    */
-  def addMetadata(id: String) =
+  def addMetadata(id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
       request =>
         Logger.debug(s"Adding metadata to file $id")
@@ -237,7 +237,7 @@ class Files @Inject()(
               file match {
                 case Some(f) => {
 
-                  val id = f.id.toString
+                  val id = f.id
                   if (showPreviews.equals("FileLevel"))
                     flags = flags + "+filelevelshowpreviews"
                   else if (showPreviews.equals("None"))
@@ -256,9 +256,9 @@ class Files @Inject()(
                         var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
                         flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
                         nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                        files.renameFile(f.id.toString, nameOfFile)
+                        files.renameFile(f.id, nameOfFile)
                       }
-                      files.setContentType(f.id.toString, fileType)
+                      files.setContentType(f.id, fileType)
                     }
                   }
                   else if (nameOfFile.toLowerCase().endsWith(".mov")) {
@@ -274,7 +274,8 @@ class Files @Inject()(
                   val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
                   current.plugin[RabbitmqPlugin].foreach {
-                    _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))
+                    // TODO replace null with None
+                    _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
                   }
 
                   //for metadata files
@@ -290,7 +291,7 @@ class Files @Inject()(
 
                     //add file to RDF triple store if triple store is used
                     configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                      case "yes" => sqarql.addFileToGraph(f.id.toString)
+                      case "yes" => sqarql.addFileToGraph(f.id)
                       case _ => {}
                     }
                   }
@@ -300,7 +301,7 @@ class Files @Inject()(
                     }
                   }
 
-                  Ok(toJson(Map("id" -> id)))
+                  Ok(toJson(Map("id" -> id.stringify)))
                 }
                 case None => {
                   Logger.error("Could not retrieve file that was just saved.")
@@ -319,7 +320,7 @@ class Files @Inject()(
   /**
    * Send job for file preview(s) generation at a later time.
    */
-  def sendJob(file_id: String, fileType: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+  def sendJob(file_id: UUID, fileType: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
       files.get(file_id) match {
         case Some(theFile) => {
@@ -339,7 +340,7 @@ class Files @Inject()(
 
           Logger.debug("(Re)sending job for file " + nameOfFile)
 
-          val id = theFile.id.toString
+          val id = theFile.id
           if (showPreviews.equals("None"))
             flags = flags + "+nopreviews"
 
@@ -347,11 +348,12 @@ class Files @Inject()(
           // TODO RK : need figure out if we can use https
           val host = "http://" + request.host + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
 
+          // TODO replace null with None
           current.plugin[RabbitmqPlugin].foreach {
-            _.extract(ExtractorMessage(id, id, host, key, Map.empty, theFile.length.toString, "", flags))
+            _.extract(ExtractorMessage(id, id, host, key, Map.empty, theFile.length.toString, null, flags))
           }
 
-          Ok(toJson(Map("id" -> id)))
+          Ok(toJson(Map("id" -> id.stringify)))
 
         }
         case None => {
@@ -364,7 +366,7 @@ class Files @Inject()(
   /**
    * Upload a file to a specific dataset
    */
-  def uploadToDataset(dataset_id: String, showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -379,7 +381,9 @@ class Files @Inject()(
                     if (thirdSeparatorIndex >= 0) {
                       var firstSeparatorIndex = nameOfFile.indexOf("_")
                       var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-                      flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+                      flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) +
+                              "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) +
+                              "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
                       nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
                     }
                   }
@@ -393,7 +397,7 @@ class Files @Inject()(
                   file match {
                     case Some(f) => {
 
-                      val id = f.id.toString
+                      val id = f.id
                       if (showPreviews.equals("FileLevel"))
                         flags = flags + "+filelevelshowpreviews"
                       else if (showPreviews.equals("None"))
@@ -413,9 +417,9 @@ class Files @Inject()(
                             var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
                             flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
                             nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                            files.renameFile(f.id.toString, nameOfFile)
+                            files.renameFile(f.id, nameOfFile)
                           }
-                          files.setContentType(f.id.toString, fileType)
+                          files.setContentType(f.id, fileType)
                         }
                       }
                       else if (nameOfFile.toLowerCase().endsWith(".mov")) {
@@ -454,8 +458,8 @@ class Files @Inject()(
 
                       // add file to dataset
                       // TODO create a service instead of calling salat directly
-                      val theFile = files.get(f.id.toString).get
-                      datasets.addFile(dataset.id.toString, theFile)
+                      val theFile = files.get(f.id).get
+                      datasets.addFile(dataset.id, theFile)
                       if (!theFile.xmlMetadata.isEmpty) {
                         datasets.index(dataset_id)
                       }
@@ -473,15 +477,15 @@ class Files @Inject()(
                       if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                         configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                           case "yes" => {
-                            sqarql.addFileToGraph(f.id.toString)
-                            sqarql.linkFileToDataset(f.id.toString, dataset_id)
+                            sqarql.addFileToGraph(f.id)
+                            sqarql.linkFileToDataset(f.id, dataset_id)
                           }
                           case _ => {}
                         }
                       }
 
                       //sending success message
-                      Ok(toJson(Map("id" -> id)))
+                      Ok(toJson(Map("id" -> id.stringify)))
                     }
                     case None => {
                       Logger.error("Could not retrieve file that was just saved.")
@@ -513,8 +517,8 @@ class Files @Inject()(
         case Some(user) => {
           request.body.file("File").map {
             f =>
-              var originalId = originalIdAndFlags;
-              var flags = "";
+              var originalId = originalIdAndFlags
+              var flags = ""
               if (originalIdAndFlags.indexOf("+") != -1) {
                 originalId = originalIdAndFlags.substring(0, originalIdAndFlags.indexOf("+"));
                 flags = originalIdAndFlags.substring(originalIdAndFlags.indexOf("+"));
@@ -526,7 +530,7 @@ class Files @Inject()(
               val uploadedFile = f
               file match {
                 case Some(f) => {
-                  files.setIntermediate(f.id.toString)
+                  files.setIntermediate(f.id)
                   var fileType = f.contentType
                   if (fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.toLowerCase().endsWith(".zip")) {
                     fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")
@@ -542,14 +546,15 @@ class Files @Inject()(
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
                   // TODO RK : need figure out if we can use https
                   val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
-                  val id = f.id.toString
+                  val id = f.id
+                  // TODO replace null with None
                   current.plugin[RabbitmqPlugin].foreach {
-                    _.extract(ExtractorMessage(originalId, id, host, key, Map.empty, f.length.toString, "", flags))
+                    _.extract(ExtractorMessage(UUID(originalId), id, host, key, Map.empty, f.length.toString, null, flags))
                   }
                   current.plugin[ElasticsearchPlugin].foreach {
                     _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
                   }
-                  Ok(toJson(Map("id" -> id)))
+                  Ok(toJson(Map("id" -> id.stringify)))
                 }
                 case None => {
                   Logger.error("Could not retrieve file that was just saved.")
@@ -568,7 +573,7 @@ class Files @Inject()(
   /**
    * Upload metadata for preview and attach it to a file.
    */
-  def uploadPreview(file_id: String) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def uploadPreview(file_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
       request.body.file("File").map {
         f =>
@@ -584,10 +589,10 @@ class Files @Inject()(
   /**
    * Add preview to file.
    */
-  def attachPreview(file_id: String, preview_id: String) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+  def attachPreview(file_id: UUID, preview_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
     request =>
     // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
-      val eid = request.body.\("extractor_id").asOpt[String]
+      val eid = (request.body \ "extractor_id").asOpt[String]
       val extractor_id = if (eid.isDefined) {
         eid
       } else {
@@ -596,13 +601,13 @@ class Files @Inject()(
       }
       request.body match {
         case JsObject(fields) => {
-          // TODO create a service instead of calling salat directly
           files.get(file_id) match {
             case Some(file) => {
               previews.get(preview_id) match {
                 case Some(preview) =>
                   // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
-                  previews.attachToFile(preview_id, file_id, eid.getOrElse("Other"), request.body)
+                  // TODO replace null with None
+                  previews.attachToFile(preview_id, file_id, UUID(eid.get), request.body)
                   Ok(toJson(Map("status" -> "success")))
                 case None => BadRequest(toJson("Preview not found"))
               }
@@ -623,10 +628,10 @@ class Files @Inject()(
       }
   }
 
-  def getRDFUserMetadata(id: String, mappingNumber: String = "1") = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+  def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
     implicit request =>
-      play.Play.application().configuration().getString("rdfexporter") match {
-        case "on" => {
+      configuration.getString("rdfexporter") match {
+        case Some("on") => {
           files.get(id) match {
             case Some(file) => {
               val theJSON = files.getUserMetadataJSON(id)
@@ -683,10 +688,10 @@ class Files @Inject()(
     return xmlFile
   }
 
-  def getRDFURLsForFile(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+  def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
     request =>
-      play.Play.application().configuration().getString("rdfexporter") match {
-        case "on" => {
+      configuration.getString("rdfexporter") match {
+        case Some("on") => {
           files.get(id) match {
             case Some(file) => {
 
@@ -732,7 +737,7 @@ class Files @Inject()(
       }
   }
 
-  def addUserMetadata(id: String) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
+  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
     implicit request =>
       Logger.debug("Adding user metadata to file " + id)
       val theJSON = Json.stringify(request.body)
@@ -771,11 +776,11 @@ class Files @Inject()(
     ).reduce((left: DBObject, right: DBObject) => left ++ right)
   }
 
-  def filePreviewsList(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def filePreviewsList(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     request =>
       files.get(id) match {
         case Some(file) => {
-          val filePreviews = previews.findByFileId(file.id.toString);
+          val filePreviews = previews.findByFileId(file.id);
           val list = for (prv <- filePreviews) yield jsonPreview(prv)
           Ok(toJson(list))
         }
@@ -800,15 +805,15 @@ class Files @Inject()(
   /**
    * Add 3D geometry file to file.
    */
-  def attachGeometry(file_id: String, geometry_id: String) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+  def attachGeometry(file_id: UUID, geometry_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
     request =>
       request.body match {
         case JsObject(fields) => {
           files.get(file_id) match {
             case Some(file) => {
-              threeD.getGeometry(UUID(geometry_id)) match {
+              threeD.getGeometry(geometry_id) match {
                 case Some(geometry) =>
-                  threeD.updateGeometry(UUID(file_id), UUID(geometry_id), fields)
+                  threeD.updateGeometry(file_id, geometry_id, fields)
                   Ok(toJson(Map("status" -> "success")))
                 case None => BadRequest(toJson("Geometry file not found"))
               }
@@ -824,15 +829,15 @@ class Files @Inject()(
   /**
    * Add 3D texture to file.
    */
-  def attachTexture(file_id: String, texture_id: String) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+  def attachTexture(file_id: UUID, texture_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
     request =>
       request.body match {
         case JsObject(fields) => {
           files.get((file_id)) match {
             case Some(file) => {
-              threeD.getTexture(UUID(texture_id)) match {
+              threeD.getTexture(texture_id) match {
                 case Some(texture) => {
-                  threeD.updateTexture(UUID(file_id), UUID(texture_id), fields)
+                  threeD.updateTexture(file_id, texture_id, fields)
                   Ok(toJson(Map("status" -> "success")))
                 }
                 case None => BadRequest(toJson("Texture file not found"))
@@ -848,17 +853,17 @@ class Files @Inject()(
   /**
    * Add thumbnail to file.
    */
-  def attachThumbnail(file_id: String, thumbnail_id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+  def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
       files.get(file_id) match {
         case Some(file) => {
-          thumbnails.get(UUID(thumbnail_id)) match {
+          thumbnails.get(thumbnail_id) match {
             case Some(thumbnail) => {
               files.updateThumbnail(file_id, thumbnail_id)
               val datasetList = datasets.findByFileId(file.id)
               for (dataset <- datasetList) {
                 if (dataset.thumbnail_id.isEmpty) {
-                  datasets.updateThumbnail(dataset.id.toString, thumbnail_id)
+                  datasets.updateThumbnail(dataset.id, thumbnail_id)
                 }
               }
 
@@ -874,13 +879,13 @@ class Files @Inject()(
   /**
    * Find geometry file for given 3D file and geometry filename.
    */
-  def getGeometry(three_d_file_id: String, filename: String) =
+  def getGeometry(three_d_file_id: UUID, filename: String) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
-        threeD.findGeometry(UUID(three_d_file_id), filename) match {
+        threeD.findGeometry(three_d_file_id, filename) match {
           case Some(geometry) => {
 
-            threeD.getGeometryBlob(UUID(geometry.id.toString)) match {
+            threeD.getGeometryBlob(geometry.id) match {
 
               case Some((inputStream, filename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {
@@ -916,7 +921,7 @@ class Files @Inject()(
                   }
                 }
               }
-              case None => Logger.error("No geometry file found: " + geometry.id.toString()); InternalServerError("No geometry file found")
+              case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
 
             }
 
@@ -928,13 +933,13 @@ class Files @Inject()(
   /**
    * Find texture file for given 3D file and texture filename.
    */
-  def getTexture(three_d_file_id: String, filename: String) =
+  def getTexture(three_d_file_id: UUID, filename: String) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
-        threeD.findTexture(UUID(three_d_file_id), filename) match {
+        threeD.findTexture(three_d_file_id, filename) match {
           case Some(texture) => {
 
-            threeD.getBlob(UUID(texture.id.toString)) match {
+            threeD.getBlob(texture.id) match {
 
               case Some((inputStream, filename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {
@@ -947,7 +952,7 @@ class Files @Inject()(
                       case (start, end) =>
 
                         inputStream.skip(start)
-                        import play.api.mvc.{SimpleResult, ResponseHeader}
+
                         SimpleResult(
                           header = ResponseHeader(PARTIAL_CONTENT,
                             Map(
@@ -984,14 +989,14 @@ class Files @Inject()(
   /**
    * REST endpoint: GET: get the tag data associated with this file.
    */
-  def getTags(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
       Logger.info("Getting tags for file with id " + id)
       /* Found in testing: given an invalid ObjectId, a runtime exception
        * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.get().
        * So check it first.
        */
-      if (ObjectId.isValid(id)) {
+      if (UUID.isValid(id.stringify)) {
         files.get(id) match {
           case Some(file) => Ok(Json.obj("id" -> file.id.toString, "filename" -> file.filename,
             "tags" -> Json.toJson(file.tags.map(_.name))))
@@ -1020,7 +1025,7 @@ class Files @Inject()(
    *      which contains the cause of the error, such as "No 'tags' specified", and
    *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
    */
-  def addTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]): SimpleResult = {
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): SimpleResult = {
 
     val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
 
@@ -1037,7 +1042,7 @@ class Files @Inject()(
     }
   }
 
-  def removeTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]): SimpleResult = {
+  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): SimpleResult = {
 
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
 
@@ -1059,7 +1064,7 @@ class Files @Inject()(
    * In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
    * so will be added.
    */
-  def addTags(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
+  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
     implicit request =>
       addTagsHelper(TagCheck_File, id, request)
   }
@@ -1071,7 +1076,7 @@ class Files @Inject()(
    * Current implementation enforces the restriction which only allows the tags to be removed by
    * the same user or extractor.
    */
-  def removeTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
     implicit request =>
       removeTagsHelper(TagCheck_File, id, request)
   }
@@ -1081,10 +1086,10 @@ class Files @Inject()(
    * This is a big hammer -- it does not check the userId or extractor_id and
    * forcefully remove all tags for this id.  It is mainly intended for testing.
    */
-  def removeAllTags(id: String) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
     implicit request =>
       Logger.info("Removing all tags for file with id: " + id)
-      if (ObjectId.isValid(id)) {
+      if (UUID.isValid(id.stringify)) {
         files.get(id) match {
           case Some(file) => {
             files.removeAllTags(id)
@@ -1103,11 +1108,11 @@ class Files @Inject()(
 
   // ---------- Tags related code ends ------------------
 
-  def comment(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
+  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
       request.user match {
         case Some(identity) => {
-          request.body.\("text").asOpt[String] match {
+          (request.body \ "text").asOpt[String] match {
             case Some(text) => {
               val comment = new Comment(identity, text, file_id = Some(id))
               comments.insert(comment)
@@ -1130,12 +1135,12 @@ class Files @Inject()(
   /**
    * Return whether a file is currently being processed.
    */
-  def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def isBeingProcessed(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     request =>
       files.get(id) match {
         case Some(file) => {
           var isActivity = "false"
-          extractions.findIfBeingProcessed(file.id.toString) match {
+          extractions.findIfBeingProcessed(file.id) match {
             case false =>
             case true => isActivity = "true"
           }
@@ -1155,37 +1160,41 @@ class Files @Inject()(
   }
 
   def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
-    val list = for (prv <- prvs) yield jsonPreview(prv._1, prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
+    val list = for (prv <- prvs) yield jsonPreview(UUID(prv._1), prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
     val listJson = toJson(list.toList)
     toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
   }
 
-  def jsonPreview(pvId: java.lang.String, pId: String, pPath: String, pMain: String, pvRoute: java.lang.String, pvContentType: String, pvLength: Long): JsValue = {
+  def jsonPreview(pvId: UUID, pId: String, pPath: String, pMain: String, pvRoute: java.lang.String, pvContentType: String, pvLength: Long): JsValue = {
     if (pId.equals("X3d"))
-      toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
-        "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(pvId).toString, "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(pvId).toString, "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(pvId).toString))
+      toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
+        "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
+        "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(pvId).toString,
+        "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(pvId).toString,
+        "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(pvId).toString))
     else
-      toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
+      toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
+        "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
 
-  def getPreviews(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def getPreviews(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     request =>
       files.get(id) match {
         case Some(file) => {
 
-          val previewsFromDB = previews.findByFileId(file.id.toString)
+          val previewsFromDB = previews.findByFileId(file.id)
           val previewers = Previewers.findPreviewers
           //Logger.info("Number of previews " + previews.length);
           val files = List(file)
           val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
             val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
             }
             if (pvf.length > 0) {
               (file -> pvf)
             } else {
               val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+                (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
               }
               (file -> ff)
             }
@@ -1200,7 +1209,7 @@ class Files @Inject()(
       }
   }
 
-  def getTechnicalMetadataJSON(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+  def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
     request =>
       files.get(id) match {
         case Some(file) => {
@@ -1213,7 +1222,7 @@ class Files @Inject()(
       }
   }
 
-  def removeFile(id: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteFiles)) {
+  def removeFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteFiles)) {
     request =>
       files.get(id) match {
         case Some(file) => {
@@ -1281,7 +1290,7 @@ class Files @Inject()(
   }
 
 
-  def index(id: String) {
+  def index(id: UUID) {
     files.get(id) match {
       case Some(file) => {
         var tagListBuffer = new ListBuffer[String]()

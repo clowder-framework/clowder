@@ -1,6 +1,3 @@
-/**
- *
- */
 package models
 
 import org.bson.types.ObjectId
@@ -19,7 +16,7 @@ import services.mongodb.MongoSalatPlugin
  * @author Luigi Marini
  */
 case class Stream(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   name: String)
 
 case class Geometry(
@@ -32,7 +29,7 @@ case class GeoJSON(
   features: List[Geometry])
 
 case class Datapoint(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   time: Option[Date], location: Option[Geometry],
   data: Option[Map[String, String]],
   source: Option[String])

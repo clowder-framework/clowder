@@ -1,6 +1,5 @@
 package models
 
-import org.bson.types.ObjectId
 import java.util.Date
 
 /**
@@ -10,8 +9,8 @@ import java.util.Date
  *
  */
 case class Extraction(
-  id: ObjectId = new ObjectId,
-  file_id: ObjectId,
+  id: UUID = UUID.generate,
+  file_id: UUID,
   extractor_id: String,
   status: String = "N/A",
   start: Option[Date],

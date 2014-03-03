@@ -54,19 +54,19 @@ class RDFUpdateService(application: Application) extends Plugin {
   def modifyRDFOfMetadataChangedFiles() {
     val changedFiles = files.findMetadataChangedFiles()
     for (changedFile <- changedFiles) {
-      modifyRDFUserMetadataFiles(changedFile.id.toString)
+      modifyRDFUserMetadataFiles(changedFile.id)
     }
   }
 
   def modifyRDFOfMetadataChangedDatasets() {
     val changedDatasets = datasets.findMetadataChangedDatasets()
     for (changedDataset <- changedDatasets) {
-      modifyRDFUserMetadataDatasets(changedDataset.id.toString)
+      modifyRDFUserMetadataDatasets(changedDataset.id)
     }
   }
 
 
-  def modifyRDFUserMetadataFiles(id: String, mappingNumber: String = "1") = {
+  def modifyRDFUserMetadataFiles(id: UUID, mappingNumber: String = "1") = {
     sparql.removeFileFromGraphs(id, "rdfCommunityGraphName")
     files.get(id) match {
       case Some(file) => {
@@ -160,7 +160,7 @@ class RDFUpdateService(application: Application) extends Plugin {
   }
 
 
-  def modifyRDFUserMetadataDatasets(id: String, mappingNumber: String = "1") = {
+  def modifyRDFUserMetadataDatasets(id: UUID, mappingNumber: String = "1") = {
     sparql.removeDatasetFromUserGraphs(id)
     datasets.get(id) match {
       case Some(dataset) => {

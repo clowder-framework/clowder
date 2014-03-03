@@ -1,16 +1,11 @@
-/**
- *
- */
 package services.cassandra
 
-import models.{File, Dataset, Collection}
+import models.{UUID, Dataset, Collection}
 import services.DatasetService
 import play.api.libs.json.{JsNull, JsValue}
 import com.mongodb.casbah.commons.MongoDBObject
-import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import models.File
-import com.mongodb.casbah.WriteConcern
 
 /**
  * Store datasets in Cassandra.
@@ -50,7 +45,7 @@ class CassandraDataset extends DatasetService {
   /**
    * Get dataset.
    */
-  def get(id: String): Option[Dataset] = {
+  def get(id: UUID): Option[Dataset] = {
     None
   }
 
@@ -69,7 +64,7 @@ class CassandraDataset extends DatasetService {
   /**
    * 
    */
-  def listInsideCollection(collectionId: String) : List[Dataset] = {
+  def listInsideCollection(collectionId: UUID) : List[Dataset] = {
     List.empty[Dataset]
   }
   
@@ -80,7 +75,7 @@ class CassandraDataset extends DatasetService {
     false
   }
 
-  def getFileId(datasetId: String, filename: String): Option[String] = {
+  def getFileId(datasetId: UUID, filename: String): Option[UUID] = {
     None
   }
 
@@ -88,87 +83,87 @@ class CassandraDataset extends DatasetService {
     JsNull
   }
 
-  def isInCollection(datasetId: String, collectionId: String): Boolean = {
+  def isInCollection(datasetId: UUID, collectionId: UUID): Boolean = {
     return false
   }
   
   def modifyRDFOfMetadataChangedDatasets(){}
   
-  def modifyRDFUserMetadata(id: String, mappingNumber: String="1") {}
+  def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1") {}
 
-  def addMetadata(id: String, json: String) {}
+  def addMetadata(id: UUID, json: String) {}
 
-  def addXMLMetadata(id: String, fileId: String, json: String) {}
+  def addXMLMetadata(id: UUID, fileId: UUID, json: String) {}
 
-  def addUserMetadata(id: String, json: String) {}
+  def addUserMetadata(id: UUID, json: String) {}
 
-  def addFile(datasetId: String, file: File) {}
+  def addFile(datasetId: UUID, file: File) {}
 
-  def removeFile(datasetId: String, fileId: String) {}
+  def removeFile(datasetId: UUID, fileId: UUID) {}
 
-  def createThumbnail(datasetId: String) {}
+  def createThumbnail(datasetId: UUID) {}
 
-  def updateThumbnail(datasetId: String, thumbnailId: String) {}
+  def updateThumbnail(datasetId: UUID, thumbnailId: UUID) {}
 
-  def selectNewThumbnailFromFiles(datasetId: String) {}
+  def selectNewThumbnailFromFiles(datasetId: UUID) {}
 
-  def index(id: String) {}
+  def index(id: UUID) {}
 
-  def removeTag(id: String, tagId: String) {}
+  def removeTag(id: UUID, tagId: UUID) {}
 
-  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
+  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
 
-  def removeAllTags(id: String) {}
+  def removeAllTags(id: UUID) {}
 
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset] = {List.empty}
 
   def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset] = {List.empty}
 
-  def removeDataset(id: String) {}
+  def removeDataset(id: UUID) {}
 
-  def getUserMetadataJSON(id: String): String = ""
+  def getUserMetadataJSON(id: UUID): String = ""
 
-  def findOneByFileId(file_id: ObjectId) = None
+  def findOneByFileId(file_id: UUID) = None
 
-  def findByFileId(file_id: ObjectId) = List.empty
+  def findByFileId(file_id: UUID) = List.empty
 
-  def findNotContainingFile(file_id: ObjectId) = List.empty
+  def findNotContainingFile(file_id: UUID) = List.empty
 
   def findByTag(tag: String) = List.empty
 
-  def getMetadata(id: String) = Map.empty
+  def getMetadata(id: UUID) = Map.empty
 
-  def getUserMetadata(id: String) = scala.collection.mutable.Map.empty
+  def getUserMetadata(id: UUID) = scala.collection.mutable.Map.empty
 
-  def getTechnicalMetadataJSON(id: String) = ""
+  def getTechnicalMetadataJSON(id: UUID) = ""
 
-  def getXMLMetadataJSON(id: String) = ""
+  def getXMLMetadataJSON(id: UUID) = ""
 
-  def removeXMLMetadata(id: String, fileId: String) {}
+  def removeXMLMetadata(id: UUID, fileId: UUID) {}
 
-  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
 
-  def setUserMetadataWasModified(id: String, wasModified: Boolean) {}
+  def setUserMetadataWasModified(id: UUID, wasModified: Boolean) {}
 
   def findMetadataChangedDatasets() = List.empty
 
   /**
    * Check recursively whether a dataset's user-input metadata match a requested search tree.
    */
-  def searchUserMetadata(id: String, requestedMetadataQuery: Any) = false
+  def searchUserMetadata(id: UUID, requestedMetadataQuery: Any) = false
 
   def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String, Any], root: String) = MongoDBObject()
 
   /**
    * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree.
    */
-  def searchMetadata(id: String, requestedMap: java.util.LinkedHashMap[String, Any], currentMap: scala.collection.mutable.Map[String, Any]) = false
+  def searchMetadata(id: UUID, requestedMap: java.util.LinkedHashMap[String, Any], currentMap: scala.collection.mutable.Map[String, Any]) = false
 
-  def addCollection(datasetId: String, collectionId: String) {}
+  def addCollection(datasetId: UUID, collectionId: UUID) {}
 
-  def removeCollection(datasetId: String, collectionId: String) {}
+  def removeCollection(datasetId: UUID, collectionId: UUID) {}
 
-  def newThumbnail(datasetId: String) {}
+  def newThumbnail(datasetId: UUID) {}
 
   def update(dataset: Dataset) {}
 

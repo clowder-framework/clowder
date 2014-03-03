@@ -1,6 +1,6 @@
 package services
 
-import models.Extraction
+import models.{UUID, Extraction}
 
 /**
  * Track information about individual extractions.
@@ -9,7 +9,7 @@ import models.Extraction
  */
 trait ExtractionService {
 
-  def findIfBeingProcessed(fileId: String): Boolean
+  def findIfBeingProcessed(fileId: UUID): Boolean
 
   def findAll(): List[Extraction]
 

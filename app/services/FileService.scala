@@ -2,7 +2,7 @@ package services
 
 
 import java.io.InputStream
-import models.{Dataset, File, Comment}
+import models.{UUID, Dataset, File, Comment}
 import securesocial.core.Identity
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsObject, JsArray, JsValue}
@@ -23,7 +23,7 @@ trait FileService {
    * Get the input stream of a file given a file id.
    * Returns input stream, file name, content type, content length.
    */
-  def getBytes(id: String): Option[(InputStream, String, String, Long)]
+  def getBytes(id: UUID): Option[(InputStream, String, String, Long)]
   
   /**
    * List all files in the system.
@@ -43,7 +43,7 @@ trait FileService {
   /**
    * Get file metadata.
    */
-  def get(id: String): Option[File]
+  def get(id: UUID): Option[File]
 
   /**
    * Lastest file in chronological order.
@@ -63,64 +63,65 @@ trait FileService {
   /**
    * Store file metadata.
    */
-  def storeFileMD(id: String, filename: String, contentType: Option[String], author: Identity): Option[File]
+  def storeFileMD(id: UUID, filename: String, contentType: Option[String], author: Identity): Option[File]
 
-  def index(id: String)
+  def index(id: UUID)
 
   /**
    * Update thumbnail used to represent this dataset.
    */
-  def updateThumbnail(fileId: String, thumbnailId: String)
+  def updateThumbnail(fileId: UUID, thumbnailId: UUID)
 
   // TODO return JsValue
-  def getXMLMetadataJSON(id: String): String
+  def getXMLMetadataJSON(id: UUID): String
   
   def modifyRDFOfMetadataChangedFiles()
   
-  def modifyRDFUserMetadata(id: String, mappingNumber: String="1")
+  def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1")
 
   def isInDataset(file: File, dataset: Dataset): Boolean
 
-  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 
-  def addMetadata(fileId: String, metadata: JsValue)
+  def addMetadata(fileId: UUID, metadata: JsValue)
 
-  def listOutsideDataset(dataset_id: String): List[File]
+  def listOutsideDataset(dataset_id: UUID): List[File]
 
-  def getMetadata(id: String): scala.collection.immutable.Map[String,Any]
+  def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any]
 
-  def getUserMetadata(id: String): scala.collection.mutable.Map[String,Any]
+  def getUserMetadata(id: UUID): scala.collection.mutable.Map[String,Any]
 
-  def getUserMetadataJSON(id: String): String
+  def getUserMetadataJSON(id: UUID): String
 
-  def getTechnicalMetadataJSON(id: String): String
+  def getTechnicalMetadataJSON(id: UUID): String
 
-  def addVersusMetadata(id: String, json: JsValue)
+  def addVersusMetadata(id: UUID, json: JsValue)
 
   def getJsonArray(list: List[JsObject]): JsArray
 
-  def addUserMetadata(id: String, json: String)
+  def addUserMetadata(id: UUID, json: String)
 
-  def addXMLMetadata(id: String, json: String)
+  def addXMLMetadata(id: UUID, json: String)
 
   def findByTag(tag: String): List[File]
 
   def findIntermediates(): List[File]
 
-  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 
-  def removeAllTags(id: String)
+  def removeAllTags(id: UUID)
 
-  def comment(id: String, comment: Comment)
+  def comment(id: UUID, comment: Comment)
 
-  def setIntermediate(id: String)
+  def setIntermediate(id: UUID)
 
-  def renameFile(id: String, newName: String)
-  def setContentType(id: String, newType: String)
+  def renameFile(id: UUID, newName: String)
 
-  def setUserMetadataWasModified(id: String, wasModified: Boolean)
+  def setContentType(id: UUID, newType: String)
 
-  def removeFile(id: String)
+  def setUserMetadataWasModified(id: UUID, wasModified: Boolean)
+
+  def removeFile(id: UUID)
 
   def removeTemporaries()
 
@@ -130,7 +131,7 @@ trait FileService {
 
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File]
 
-  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject
+  def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String, Any], root: String): MongoDBObject
 
   def removeOldIntermediates()
 }

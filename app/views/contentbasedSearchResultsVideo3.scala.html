@@ -27,13 +27,13 @@
 					<div class="media">
 					  <a class="pull-left" href=@r._2>
 						
-						<img class='mmd-img media-object' src='@api.routes.Previews.download(r._1)' alt='@r._4' title='Distance @r._3'></img>
+						<img class='mmd-img media-object' src='@api.routes.Previews.download(UUID(r._1))' alt='@r._4' title='Distance @r._3'></img>
 						
 					  </a>
 					  <div class="media-body">
 					    <h4 class="media-heading">@r._4</h4>
 					    <p>Distance: @r._3</p>
-					    <a href=@routes.Search.findSimilarFile(r._1)>Find Similar</a>
+					    <a href=@routes.Search.findSimilarFile(UUID(r._1))>Find Similar</a>
 					  </div>
 					</div>
 					</td></tr>

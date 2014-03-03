@@ -116,7 +116,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   }
   
   //Get available Measures from Versus 
-  def getMeasures()=SecuredAction(authorization=WithPermission(Permission.Admin)){
+  def getMeasures() = SecuredAction(authorization=WithPermission(Permission.Admin)){
      request =>
       
     Async{  

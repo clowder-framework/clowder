@@ -17,6 +17,7 @@ import scala.concurrent.Future
 import scala.Some
 import api.WithPermission
 import util.SearchResult
+import models.UUID
 
 /**
  * Text search.
@@ -52,7 +53,7 @@ class Search @Inject() (
                   Logger.info(value.getName + " = " + value.getValue())
                 }
                 if (hit.getType() == "file") {
-                  files.get(hit.getId()) match {
+                  files.get(UUID(hit.getId())) match {
                     case Some(file) =>{
                       Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                       Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
@@ -66,12 +67,12 @@ class Search @Inject() (
                 Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
                   Logger.debug("DATASETS:Dataset.id="+hit.getId());
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
-                   datasets.get(hit.getId()) match {
+                   datasets.get(UUID(hit.getId())) match {
                     case Some(dataset) =>
                       Logger.debug("Search result found dataset" + hit.getId()); datasetList += dataset
                     case None => {
                       Logger.debug("Dataset not found " + hit.getId())
-                  	Redirect(routes.Datasets.dataset(hit.getId)) 
+                  	Redirect(routes.Datasets.dataset(UUID(hit.getId)))
                   }
                   }
                 }
@@ -101,7 +102,7 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching multimedia index")
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
@@ -142,7 +143,7 @@ class Search @Inject() (
             val list = new ListBuffer[SearchResult]
             while (queue.size > 0) {
               val element = queue.pop()
-              val previewsBySection = previews.findBySectionId(element.section_id.toString)
+              val previewsBySection = previews.findBySectionId(UUID(element.section_id))
               if (previewsBySection.size == 1) {
                 Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previewsBySection(0).id.toString)
                 list.prepend(SearchResult(element.section_id, element.distance, Some(previewsBySection(0).id.toString)))
@@ -245,12 +246,13 @@ class Search @Inject() (
       } //match
     } //Async
   }
+
   /*
    * 
    * Finds similar images/objects in Multiple index for a given query image/object
    * 
    * */
-  def findSimilar(id:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def findSimilar(id:UUID) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
  
    Async{ 
       
@@ -278,7 +280,7 @@ class Search @Inject() (
             				var resultSeqFuture=indexSeq.map{
             						index=>
                 var u = for {
-            							indexResult<-plugin.queryIndex(id, index._1)
+            							indexResult<-plugin.queryIndex(id.stringify, index._1)
             							} yield {
                   (indexResult, index._3, index._4, index._5)
             							}
@@ -313,7 +315,7 @@ class Search @Inject() (
 		                			  
             queries.getFile(id) match {
 		                			  	case Some(file)=>{ 
-                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
+                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id.stringify, yFinal.size, yFinal))
 		                			  	}
 		                			  	case None=>{
 		                			  			Ok(id +" not found")
@@ -332,7 +334,7 @@ class Search @Inject() (
   }
 
  /*Find similar images/objects in Multiple index for an image in the Medici repository*/
-  def findSimilarFile(id: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def findSimilarFile(id: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     Async {
 
       current.plugin[VersusPlugin] match {
@@ -359,7 +361,7 @@ class Search @Inject() (
             var resultSeqFuture = indexSeq.map {
               index =>
                 val u = for {
-                  indexResult <- plugin.queryIndexFile(id, index._1)
+                  indexResult <- plugin.queryIndexFile(id.stringify, index._1)
                 } yield {
                   (indexResult, index._3, index._4, index._5)
                 }
@@ -390,7 +392,7 @@ class Search @Inject() (
 
             files.get(id) match {
               case Some(file) => {
-                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id, yFinal.size, yFinal))
+                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id.stringify, yFinal.size, yFinal))
               }
               case None => {
                 Ok(id + " not found")
@@ -408,8 +410,6 @@ class Search @Inject() (
     } //Async
 
   }
-
-  def Filterby(id: String) = TODO
 
   def uploadquery() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     request.body.file("picture").map { picture =>

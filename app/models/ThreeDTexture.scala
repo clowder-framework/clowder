@@ -1,7 +1,5 @@
 package models
 
-import org.bson.types.ObjectId
-
 /**
  * 3D textures for x3dom generated from obj models.
  *

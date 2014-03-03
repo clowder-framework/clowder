@@ -5,7 +5,7 @@ import java.util.Date
 import com.mongodb.casbah.Imports.MongoDBObject
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.novus.salat.annotations.Key
-import services.mongodb.{MongoContext, MongoSalatPlugin}
+import services.mongodb.MongoContext
 import MongoContext.context
 import play.api.Play.current
 import services.mongodb.MongoSalatPlugin
@@ -18,7 +18,7 @@ import com.mongodb.casbah.commons.TypeImports.ObjectId
  * @author Luigi Marini
  */
 case class User(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   username: String,
   password: String,
   address: Option[Address] = None,
@@ -26,7 +26,7 @@ case class User(
   updated: Option[Date] = None,
   deleted: Option[Date] = None,
   friends: Option[List[String]] = None,
-  @Key("company_id") company: ObjectId = new ObjectId)
+  @Key("company_id") company: Option[UUID] = None)
 
 case class Address(
   street: String,
@@ -34,7 +34,7 @@ case class Address(
   country: String)
 
 case class Company(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   name: String)
 
 object Company extends ModelCompanion[Company, ObjectId] {

@@ -13,11 +13,12 @@ import org.apache.http.message.BasicNameValuePair
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import services.{RdfSPARQLService, DI, DatasetService}
 import javax.inject.{Inject, Singleton}
+import models.UUID
 
 @Singleton
 class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends RdfSPARQLService {
 
-  def addFileToGraph(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
+  def addFileToGraph(fileId: UUID, selectedGraph:String = "rdfXMLGraphName"): Null = {
     	
 		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
 		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
@@ -45,7 +46,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
         return null	
   }
   
-  def addDatasetToGraph(datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
+  def addDatasetToGraph(datasetId: UUID, selectedGraph: String = "rdfXMLGraphName"): Null = {
     
 		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
 		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
@@ -73,7 +74,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
 		return null
   }
   
-  def linkFileToDataset(fileId: String, datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
+  def linkFileToDataset(fileId: UUID, datasetId: UUID, selectedGraph: String = "rdfXMLGraphName"): Null = {
     
 		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
 		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
@@ -102,7 +103,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
 		return null
   }
   
-  def removeFileFromGraphs(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
+  def removeFileFromGraphs(fileId: UUID, selectedGraph:String = "rdfXMLGraphName"): Null = {
     
 	    val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
         val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("")  + "/data/" + graphName + "_file_" + fileId        
@@ -120,7 +121,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
     
   }
   
-  def removeDatasetFromUserGraphs(datasetId: String): Null = {
+  def removeDatasetFromUserGraphs(datasetId: UUID): Null = {
     
 	    val graphName = play.api.Play.configuration.getString("rdfCommunityGraphName").getOrElse("")
         val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("")  + "/data/" + graphName + "_dataset_" + datasetId        
@@ -138,7 +139,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
     
   }
   
-  def detachFileFromDataset(fileId: String, datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null = {
+  def detachFileFromDataset(fileId: UUID, datasetId: UUID, selectedGraph:String = "rdfXMLGraphName"): Null = {
     
 		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/update/"
 		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")
@@ -170,7 +171,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
     
   }
   
-  def removeDatasetFromGraphs(datasetId: String): Null = {
+  def removeDatasetFromGraphs(datasetId: UUID): Null = {
           
         //First, delete all RDF links having to do with files belonging only to the dataset to be deleted, as those files will be deleted together with the dataset
          datasets.get(datasetId) match{
@@ -180,13 +181,13 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
 				      var notTheDataset = for(currDataset<- datasets.findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
 				      if(notTheDataset.size == 0){
 				        if(f.filename.endsWith(".xml")){
-				        	removeFileFromGraphs(f.id.toString, "rdfXMLGraphName")
+				        	removeFileFromGraphs(f.id, "rdfXMLGraphName")
 				        }
-				        removeFileFromGraphs(f.id.toString, "rdfCommunityGraphName")
+				        removeFileFromGraphs(f.id, "rdfCommunityGraphName")
 				      }
 				      else{
 				        if(f.filename.endsWith(".xml")){
-				        	detachFileFromDataset(f.id.toString, datasetId, "rdfXMLGraphName")
+				        	detachFileFromDataset(f.id, datasetId, "rdfXMLGraphName")
 				        }
 				      }
 				    }                
@@ -220,7 +221,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
         return resultsString
   }
   
-  def addFromFile(id: String, tempFile: java.io.File, fileOrDataset: String, selectedGraph:String = "rdfCommunityGraphName") : Null = {
+  def addFromFile(id: UUID, tempFile: java.io.File, fileOrDataset: String, selectedGraph:String = "rdfCommunityGraphName") : Null = {
     
         val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
 		val graphName = play.api.Play.configuration.getString(selectedGraph).getOrElse("")

@@ -16,27 +16,27 @@ import scala.util.{Try, Success, Failure}
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService) extends ApiController {
 
-  def attachDataset(collectionId: String, datasetId: String) = SecuredAction(parse.anyContent,
+  def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
                     authorization=WithPermission(Permission.CreateCollections)) { request =>
 
-    collections.addDataset(UUID(collectionId), UUID(datasetId)) match {
+    collections.addDataset(collectionId, datasetId) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
     }
   }
   
-  def removeDataset(collectionId: String, datasetId: String, ignoreNotFound: String) = SecuredAction(parse.anyContent,
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent,
                     authorization=WithPermission(Permission.CreateCollections)) { request =>
 
-    collections.removeDataset(UUID(collectionId), UUID(datasetId), Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
+    collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
     }
   }
   
-  def removeCollection(collectionId: String) = SecuredAction(parse.anyContent,
+  def removeCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
                        authorization=WithPermission(Permission.DeleteCollections)) { request =>
-    collections.delete(UUID(collectionId))
+    collections.delete(collectionId)
     Ok(toJson(Map("status" -> "success")))
   }
 

@@ -1,7 +1,5 @@
 package models
 
-import org.bson.types.ObjectId
-
 /**
  * 3D binary geometry files for x3dom.
  *
@@ -9,7 +7,7 @@ import org.bson.types.ObjectId
  *
  */
 case class ThreeDGeometry(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   file_id: Option[String] = None,
   filename: Option[String] = None,
   contentType: String,

@@ -1,6 +1,3 @@
-/**
- *
- */
 package controllers
 
 import play.api.Logger
@@ -9,15 +6,12 @@ import play.api.data.Forms._
 import java.io.FileInputStream
 import play.api.Play.current
 import services._
-import org.bson.types.ObjectId
 import java.util.Date
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
-import com.mongodb.casbah.commons.MongoDBObject
 import models._
 import fileutils.FilesUtils
 import api.Permission
-
 import javax.inject.Inject
 import scala.Some
 import services.ExtractorMessage
@@ -107,19 +101,19 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: String) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
+  def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
     implicit request =>
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
       datasets.get(id) match {
         case Some(dataset) => {
-          val filesInDataset = dataset.files.map(f => files.get(f.id.toString).get)
+          val filesInDataset = dataset.files.map(f => files.get(f.id).get)
 
           //Search whether dataset is currently being processed by extractor(s)
           var isActivity = false
           try {
             for (f <- filesInDataset) {
-              extractions.findIfBeingProcessed(f.id.toString) match {
+              extractions.findIfBeingProcessed(f.id) match {
                 case false =>
                 case true => isActivity = true; throw ActivityFound
               }
@@ -133,13 +127,13 @@ class Datasets @Inject()(
           val previewers = Previewers.findPreviewers
           val previewslist = for (f <- datasetWithFiles.files) yield {
             val pvf = for (p <- previewers; pv <- f.previews; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield {
-              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
             }
             if (pvf.length > 0) {
               (f -> pvf)
             } else {
               val ff = for (p <- previewers; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(f.contentType))) yield {
-                (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id.toString).toString, f.contentType, f.length)
+                (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id).toString, f.contentType, f.length)
               }
               (f -> ff)
             }
@@ -153,16 +147,16 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(UUID(id)).sortBy(_.name)
-          val collectionsInside = collections.listInsideDataset(UUID(id)).sortBy(_.name)
+          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
+          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
           val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
 
           var commentsByDataset = comments.findCommentsByDatasetId(id)
           filesInDataset.map {
             file =>
-              commentsByDataset ++= comments.findCommentsByFileId(file.id.toString)
+              commentsByDataset ++= comments.findCommentsByFileId(file.id)
               sections.findByFileId(UUID(file.id.toString)).map { section =>
-                commentsByDataset ++= comments.findCommentsBySectionId(section.id.toString())
+                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
               }
           }
           commentsByDataset = commentsByDataset.sortBy(_.posted)
@@ -180,12 +174,12 @@ class Datasets @Inject()(
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: String) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
+  def datasetBySection(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
     request =>
-      sections.get(UUID(section_id)) match {
+      sections.get(section_id) match {
         case Some(section) => {
-          datasets.findOneByFileId(new ObjectId(section.file_id.toString)) match {
-            case Some(dataset) => Redirect(routes.Datasets.dataset(dataset.id.toString))
+          datasets.findOneByFileId(section.file_id) match {
+            case Some(dataset) => Redirect(routes.Datasets.dataset(dataset.id))
             case None => InternalServerError("Dataset not found")
           }
         }
@@ -245,7 +239,7 @@ class Datasets @Inject()(
                       file match {
                         case Some(f) => {
 
-                          val id = f.id.toString
+                          val id = f.id
                           if (showPreviews.equals("FileLevel"))
                             flags = flags + "+filelevelshowpreviews"
                           else if (showPreviews.equals("None"))
@@ -264,9 +258,9 @@ class Datasets @Inject()(
                                 var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
                                 flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
                                 nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                                files.renameFile(f.id.toString, nameOfFile)
+                                files.renameFile(f.id, nameOfFile)
                               }
-                              files.setContentType(f.id.toString, fileType)
+                              files.setContentType(f.id, fileType)
                             }
                           }
                           else if (nameOfFile.toLowerCase().endsWith(".mov")) {
@@ -287,7 +281,8 @@ class Datasets @Inject()(
                           //and return the files
                           if (!fileType.equals("multi/files-zipped")) {
                             current.plugin[RabbitmqPlugin].foreach {
-                              _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))
+                              // TODO replace null with None
+                              _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
                             }
                           }
 
@@ -297,7 +292,7 @@ class Datasets @Inject()(
 
                           if (fileType.equals("multi/files-zipped")) {
                             current.plugin[RabbitmqPlugin].foreach {
-                              _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id.toString, flags))
+                              _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id, flags))
                             }
                             //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
                           }
@@ -305,8 +300,8 @@ class Datasets @Inject()(
                           //for metadata files
                           if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                             val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                            files.addXMLMetadata(f.id.toString, xmlToJSON)
-                            datasets.addXMLMetadata(dt.id.toString, f.id.toString, xmlToJSON)
+                            files.addXMLMetadata(f.id, xmlToJSON)
+                            datasets.addXMLMetadata(dt.id, f.id, xmlToJSON)
 
                             Logger.debug("xmlmd=" + xmlToJSON)
 
@@ -316,7 +311,7 @@ class Datasets @Inject()(
                             }
                             // index dataset
                             current.plugin[ElasticsearchPlugin].foreach {
-                              _.index("data", "dataset", dt.id.toString,
+                              _.index("data", "dataset", dt.id,
                                 List(("name", dt.name), ("description", dt.description), ("xmlmetadata", xmlToJSON)))
                             }
                           }
@@ -327,7 +322,7 @@ class Datasets @Inject()(
                             }
                             // index dataset
                             current.plugin[ElasticsearchPlugin].foreach {
-                              _.index("data", "dataset", dt.id.toString,
+                              _.index("data", "dataset", dt.id,
                                 List(("name", dt.name), ("description", dt.description)))
                             }
                           }
@@ -335,15 +330,15 @@ class Datasets @Inject()(
                           // TODO RK need to replace unknown with the server name and dataset type
                           val dtkey = "unknown." + "dataset." + "unknown"
                           current.plugin[RabbitmqPlugin].foreach {
-                            _.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))
+                            _.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))
                           }
 
                           //add file to RDF triple store if triple store is used
                           if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                               case "yes" => {
-                                sparql.addFileToGraph(f.id.toString)
-                                sparql.linkFileToDataset(f.id.toString, dt.id.toString)
+                                sparql.addFileToGraph(f.id)
+                                sparql.linkFileToDataset(f.id, dt.id)
                               }
                               case _ => {}
                             }
@@ -355,7 +350,7 @@ class Datasets @Inject()(
                           Logger.debug("Inside File: Extraction Id : " + extractJobId)
 
                           // redirect to dataset page
-                          Redirect(routes.Datasets.dataset(dt.id.toString))
+                          Redirect(routes.Datasets.dataset(dt.id))
                         }
 
                         case None => {
@@ -363,7 +358,7 @@ class Datasets @Inject()(
                           val dt = dataset.copy(author = identity)
                           datasets.update(dt)
                           // redirect to dataset page
-                          Redirect(routes.Datasets.dataset(dt.id.toString))
+                          Redirect(routes.Datasets.dataset(dt.id))
                         }
                       }
                     }
@@ -379,7 +374,7 @@ class Datasets @Inject()(
                     //Existing file selected
 
                     // add file to dataset
-                    val theFile = files.get(fileId)
+                    val theFile = files.get(UUID(fileId))
                     if (theFile.isEmpty)
                       Redirect(routes.Datasets.newDataset()).flashing("error" -> "Selected file not found. Maybe it was removed.")
                     val theFileGet = theFile.get
@@ -388,42 +383,42 @@ class Datasets @Inject()(
                     datasets.update(dt)
 
                     if (!theFileGet.xmlMetadata.isEmpty) {
-                      val xmlToJSON = files.getXMLMetadataJSON(fileId)
-                      datasets.addXMLMetadata(dt.id.toString, fileId, xmlToJSON)
+                      val xmlToJSON = files.getXMLMetadataJSON(UUID(fileId))
+                      datasets.addXMLMetadata(dt.id, UUID(fileId), xmlToJSON)
                       // index dataset
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", "dataset", dt.id.toString,
+                        _.index("data", "dataset", dt.id,
                           List(("name", dt.name), ("description", dt.description), ("xmlmetadata", xmlToJSON)))
                       }
                     } else {
                       // index dataset
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", "dataset", dt.id.toString,
+                        _.index("data", "dataset", dt.id,
                           List(("name", dt.name), ("description", dt.description)))
                       }
                     }
 
                     //reindex file
-                    files.index(theFileGet.id.toString())
+                    files.index(theFileGet.id)
 
                     // TODO RK : need figure out if we can use https
                     val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
                     // TODO RK need to replace unknown with the server name and dataset type
                     val dtkey = "unknown." + "dataset." + "unknown"
                     current.plugin[RabbitmqPlugin].foreach {
-                      _.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))
+                      _.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))
                     }
 
                     //link file to dataset in RDF triple store if triple store is used
                     if (theFileGet.filename.endsWith(".xml")) {
                       play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                        case "yes" => sparql.linkFileToDataset(fileId, dt.id.toString)
+                        case "yes" => sparql.linkFileToDataset(UUID(fileId), dt.id)
                         case _ => {}
                       }
                     }
 
                     // redirect to dataset page
-                    Redirect(routes.Datasets.dataset(dt.id.toString))
+                    Redirect(routes.Datasets.dataset(dt.id))
                   }
                 }
               }

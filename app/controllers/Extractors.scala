@@ -1,18 +1,10 @@
-/**
- *
- */
 package controllers
 
 import play.api.mvc.Controller
-import models.Extraction
-import play.api.mvc.WebSocket
-import play.api.libs.iteratee.Iteratee
-import play.api.libs.iteratee.Enumerator
-import play.api.mvc.Action
 import api.WithPermission
 import api.Permission
 import javax.inject.{Inject, Singleton}
-import services.{ExtractionService, FileService}
+import services.ExtractionService
 
 /**
  * Information about extractors.
@@ -27,5 +19,4 @@ class Extractors  @Inject() (extractions: ExtractionService) extends Controller 
     val allExtractions = extractions.findAll()
     Ok(views.html.extractions(allExtractions))
   }
-  
 }

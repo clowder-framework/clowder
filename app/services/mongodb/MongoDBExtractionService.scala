@@ -1,7 +1,7 @@
 package services.mongodb
 
 import services.ExtractionService
-import models.Extraction
+import models.{UUID, Extraction}
 import org.bson.types.ObjectId
 import play.api.Play.current
 import com.novus.salat.dao.ModelCompanion
@@ -14,9 +14,9 @@ import com.mongodb.casbah.commons.MongoDBObject
  */
 class MongoDBExtractionService extends ExtractionService {
 
-  def findIfBeingProcessed(fileId: String): Boolean = {
-    val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId))).toList
-    var extractorsArray: collection.mutable.Map[String, String] = collection.mutable.Map()
+  def findIfBeingProcessed(fileId: UUID): Boolean = {
+    val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
+    val extractorsArray: collection.mutable.Map[String, String] = collection.mutable.Map()
     for (currentExtraction <- allOfFile) {
       extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
     }
@@ -31,7 +31,6 @@ class MongoDBExtractionService extends ExtractionService {
     Extraction.insert(extraction)
   }
 }
-
 
 object Extraction extends ModelCompanion[Extraction, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {

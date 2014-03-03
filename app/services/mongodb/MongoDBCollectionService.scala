@@ -145,14 +145,14 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
     Logger.debug(s"Adding dataset $datasetId to collection $collectionId")
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
-        datasets.get(datasetId.stringify) match {
+        datasets.get(datasetId) match {
           case Some(dataset) => {
             if(!isInCollection(dataset,collection)){
               // add dataset to collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
                 $addToSet("datasets" ->  Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)
               //add collection to dataset
-              datasets.addCollection(dataset.id.toString, collection.id.toString)
+              datasets.addCollection(dataset.id, collection.id)
               Logger.debug("Adding dataset to collection completed")
             }
             else{
@@ -176,14 +176,14 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
-        datasets.get(datasetId.stringify) match {
+        datasets.get(datasetId) match {
           case Some(dataset) => {
             if(isInCollection(dataset,collection)){
               // remove dataset from collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
                 $addToSet("datasets" -> Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)
               //remove collection from dataset
-              datasets.removeCollection(dataset.id.toString, collection.id.toString)
+              datasets.removeCollection(dataset.id, collection.id)
               Logger.info("Removing dataset from collection completed")
             }
             else{
@@ -218,7 +218,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
       case Some(collection) => {
         for(dataset <- collection.datasets){
           //remove collection from dataset
-          datasets.removeCollection(dataset.id.toString, collection.id.toString)
+          datasets.removeCollection(dataset.id, collection.id)
         }
         Collection.remove(MongoDBObject("_id" -> collection.id))
         Success

@@ -6,6 +6,7 @@ import java.util.Date
 import play.api.Play.current
 import javax.inject.Inject
 import services.{CommentService, DatasetService, ElasticsearchPlugin}
+import models.UUID
 
 /**
  * Comments on datasets.
@@ -14,7 +15,7 @@ import services.{CommentService, DatasetService, ElasticsearchPlugin}
  */
 class Comments @Inject()(datasets: DatasetService, comments: CommentService) extends ApiController {
 
-  def comment(id: String) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
+  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
       comments.get(id) match {
         case Some(parent) => {
@@ -22,7 +23,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
             case Some(identity) => {
               request.body.\("text").asOpt[String] match {
                 case Some(text) => {
-                  val comment = parent.copy(id = new ObjectId(), comment_id = Some(id), author = identity, text = text, posted = new Date())
+                  val comment = parent.copy(comment_id = Some(id), author = identity, text = text, posted = new Date())
                   comments.insert(comment)
                   if (parent.dataset_id.isDefined) {
                     datasets.get(parent.dataset_id.get) match {

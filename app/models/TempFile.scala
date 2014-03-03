@@ -1,7 +1,6 @@
 package models
 
 import java.util.Date
-import org.bson.types.ObjectId
 
 /**
  * Temporary files used when uploading query images for image based searches.

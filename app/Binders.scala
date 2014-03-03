@@ -42,7 +42,10 @@ object Binders {
     def to(value: ObjectId) = value.toString
   }
 
-  implicit def pathBinder(implicit stringBinder: PathBindable[String]) = new PathBindable[UUID] {
+  /**
+   * UUID path binder
+   */
+  implicit def uuidPathBinder(implicit stringBinder: PathBindable[String]) = new PathBindable[UUID] {
     override def bind(key: String, value: String): Either[String, UUID] = {
       if (UUID.isValid(value))
         Right(UUID(value))
@@ -52,5 +55,17 @@ object Binders {
     override def unbind(key: String, uuid: UUID): String = uuid.stringify
   }
 
-
+  /**
+   * UUID query binder
+   */
+  implicit def uuidQueryBinder(implicit stringBinder: QueryStringBindable[String]) = new QueryStringBindable[UUID] {
+    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, UUID]] = {
+      val value = params(key)(0)
+      if (UUID.isValid(value))
+        Some(Right(UUID(value)))
+      else
+        Some(Left(s"Cannot parse parameter $key"))
+    }
+    override def unbind(key: String, uuid: UUID): String = uuid.stringify
+  }
 }

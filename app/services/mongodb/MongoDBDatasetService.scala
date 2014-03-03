@@ -92,8 +92,8 @@ class MongoDBDatasetService @Inject() (
   /**
    * List all datasets inside a collection.
    */
-  def listInsideCollection(collectionId: String) : List[Dataset] =  {
-    Collection.findOneById(new ObjectId(collectionId)) match{
+  def listInsideCollection(collectionId: UUID) : List[Dataset] =  {
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
         val list = for (dataset <- listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
         return list
@@ -114,8 +114,8 @@ class MongoDBDatasetService @Inject() (
   /**
    * Get dataset.
    */
-  def get(id: String): Option[Dataset] = {
-    Dataset.findOneById(new ObjectId(id))
+  def get(id: UUID): Option[Dataset] = {
+    Dataset.findOneById(new ObjectId(id.stringify))
   }
 
   def latest(): Option[Dataset] = {
@@ -148,12 +148,12 @@ class MongoDBDatasetService @Inject() (
   /**
    *
    */
-  def getFileId(datasetId: String, filename: String): Option[String] = {
+  def getFileId(datasetId: UUID, filename: String): Option[UUID] = {
     get(datasetId) match {
       case Some(dataset) => {
         for (file <- dataset.files) {
           if (file.filename.equals(filename)) {
-            return Some(file.id.toString)
+            return Some(file.id)
           }
         }
         Logger.error("File does not exist in dataset" + datasetId); return None
@@ -165,11 +165,11 @@ class MongoDBDatasetService @Inject() (
   def modifyRDFOfMetadataChangedDatasets(){
     val changedDatasets = findMetadataChangedDatasets()
     for(changedDataset <- changedDatasets){
-      modifyRDFUserMetadata(changedDataset.id.toString)
+      modifyRDFUserMetadata(changedDataset.id)
     }
   }
 
-  def modifyRDFUserMetadata(id: String, mappingNumber: String="1") = {
+  def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1") = {
     sparql.removeDatasetFromUserGraphs(id)
     get(id) match {
       case Some(dataset) => {
@@ -297,12 +297,12 @@ class MongoDBDatasetService @Inject() (
       "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail))
   }
 
-  def isInCollection(datasetId: String, collectionId: String): Boolean = {
+  def isInCollection(datasetId: UUID, collectionId: UUID): Boolean = {
 
-    Collection.findOneById(new ObjectId(collectionId)) match {
+    collections.get(collectionId) match {
       case Some(col) => {
         for (d <- col.datasets) {
-          if (d.id == new ObjectId(datasetId))
+          if (d.id == datasetId)
             return true
         }
         return false
@@ -313,61 +313,61 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def updateThumbnail(datasetId: String, thumbnailId: String) {
-    Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(datasetId)),
-      $set("thumbnail_id" -> new ObjectId(thumbnailId)), false, false, WriteConcern.Safe)
+  def updateThumbnail(datasetId: UUID, thumbnailId: UUID) {
+    Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
+      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
   }
 
-  def createThumbnail(datasetId: String) {
-    Dataset.findOneById(new ObjectId(datasetId)) match {
+  def createThumbnail(datasetId: UUID) {
+    get(datasetId) match {
       case Some(dataset) => {
         val filesInDataset = dataset.files map {
-          f => files.get(f.id.toString).getOrElse(None)
+          f => files.get(f.id).getOrElse(None)
         }
         for (file <- filesInDataset) {
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
             if (!theFile.thumbnail_id.isEmpty) {
-              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
               return
             }
           }
         }
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
       }
       case None => Logger.debug(s"Dataset $datasetId not found")
     }
   }
 
-  def selectNewThumbnailFromFiles(datasetId: String) {
-    Dataset.findOneById(new ObjectId(datasetId)) match {
+  def selectNewThumbnailFromFiles(datasetId: UUID) {
+    get(datasetId) match {
       case Some(dataset) => {
         // TODO cleanup
-        val filesInDataset = dataset.files.map(f => files.get(f.id.toString).getOrElse(None))
+        val filesInDataset = dataset.files.map(f => files.get(f.id).getOrElse(None))
         for (file <- filesInDataset) {
           if (file.isInstanceOf[File]) {
             val theFile = file.asInstanceOf[File]
             if (!theFile.thumbnail_id.isEmpty) {
-              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
               return
             }
           }
         }
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
       }
       case None => Logger.debug("No dataset found with id " + datasetId)
     }
   }
 
-  def findOneByFileId(file_id: ObjectId): Option[Dataset] = {
-    Dataset.dao.findOne(MongoDBObject("files._id" -> file_id))
+  def findOneByFileId(file_id: UUID): Option[Dataset] = {
+    Dataset.dao.findOne(MongoDBObject("files._id" -> new ObjectId(file_id.stringify)))
   }
 
-  def findByFileId(file_id: ObjectId): List[Dataset] = {
-    Dataset.dao.find(MongoDBObject("files._id" -> file_id)).toList
+  def findByFileId(file_id: UUID): List[Dataset] = {
+    Dataset.dao.find(MongoDBObject("files._id" -> new ObjectId(file_id.stringify))).toList
   }
 
-  def findNotContainingFile(file_id: ObjectId): List[Dataset] = {
+  def findNotContainingFile(file_id: UUID): List[Dataset] = {
     val listContaining = findByFileId(file_id)
     (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
   }
@@ -376,8 +376,8 @@ class MongoDBDatasetService @Inject() (
     Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
   }
 
-  def getMetadata(id: String): Map[String, Any] = {
-    Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("metadata" -> 1)) match {
+  def getMetadata(id: UUID): Map[String, Any] = {
+    Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)), MongoDBObject("metadata" -> 1)) match {
       case None => Map.empty
       case Some(x) => {
         x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
@@ -385,8 +385,8 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getUserMetadata(id: String): scala.collection.mutable.Map[String, Any] = {
-    Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("userMetadata" -> 1)) match {
+  def getUserMetadata(id: UUID): scala.collection.mutable.Map[String, Any] = {
+    Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)), MongoDBObject("userMetadata" -> 1)) match {
       case None => new scala.collection.mutable.HashMap[String, Any]
       case Some(x) => {
         val returnedMetadata = x.getAs[DBObject]("userMetadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]]
@@ -395,8 +395,8 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getUserMetadataJSON(id: String): String = {
-    Dataset.dao.collection.findOneByID(new ObjectId(id)) match {
+  def getUserMetadataJSON(id: UUID): String = {
+    Dataset.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case None => "{}"
       case Some(x) => {
         x.getAs[DBObject]("userMetadata") match {
@@ -411,8 +411,8 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getTechnicalMetadataJSON(id: String): String = {
-    Dataset.dao.collection.findOneByID(new ObjectId(id)) match {
+  def getTechnicalMetadataJSON(id: UUID): String = {
+    Dataset.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case None => "{}"
       case Some(x) => {
         x.getAs[DBObject]("metadata") match {
@@ -427,8 +427,8 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getXMLMetadataJSON(id: String): String = {
-    Dataset.dao.collection.findOneByID(new ObjectId(id)) match {
+  def getXMLMetadataJSON(id: UUID): String = {
+    Dataset.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case None => "{}"
       case Some(x) => {
         x.getAs[DBObject]("datasetXmlMetadata") match {
@@ -443,18 +443,18 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def addMetadata(id: String, json: String) {
+  def addMetadata(id: UUID, json: String) {
     Logger.debug(s"Adding metadata to dataset " + id + " : " + json)
     val md = JSON.parse(json).asInstanceOf[DBObject]
-    Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id)), MongoDBObject("metadata" -> 1)) match {
+    Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)), MongoDBObject("metadata" -> 1)) match {
       case None => {
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> md), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata" -> md), false, false, WriteConcern.Safe)
       }
       case Some(x) => {
         x.getAs[DBObject]("metadata") match {
           case Some(map) => {
             val union = map.asInstanceOf[DBObject] ++ md
-            Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $set("metadata" -> union), false, false, WriteConcern.Safe)
+            Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata" -> union), false, false, WriteConcern.Safe)
           }
           case None => Map.empty
         }
@@ -462,24 +462,25 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def addXMLMetadata(id: String, fileId: String, json: String) {
+  def addXMLMetadata(id: UUID, fileId: UUID, json: String) {
     Logger.debug("Adding XML metadata to dataset " + id + " from file " + fileId + ": " + json)
     val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("datasetXmlMetadata" -> DatasetXMLMetadata.toDBObject(models.DatasetXMLMetadata(md, fileId))), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $addToSet("datasetXmlMetadata" -> DatasetXMLMetadata.toDBObject(models.DatasetXMLMetadata(md, fileId.stringify))), false, false, WriteConcern.Safe)
   }
 
-  def removeXMLMetadata(id: String, fileId: String) {
+  def removeXMLMetadata(id: UUID, fileId: UUID) {
     Logger.debug("Removing XML metadata belonging to file " + fileId + " from dataset " + id + ".")
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("datasetXmlMetadata" -> MongoDBObject("fileId" -> fileId)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("datasetXmlMetadata" -> MongoDBObject("fileId" -> fileId.stringify)), false, false, WriteConcern.Safe)
   }
 
-  def addUserMetadata(id: String, json: String) {
+  def addUserMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to dataset " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
-  def addTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
 
@@ -490,25 +491,25 @@ class MongoDBDatasetService @Inject() (
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
         val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
   }
 
-  def setUserMetadataWasModified(id: String, wasModified: Boolean) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+  def setUserMetadataWasModified(id: UUID, wasModified: Boolean) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
   }
 
   def findMetadataChangedDatasets(): List[Dataset] = {
     Dataset.find(MongoDBObject("userMetadataWasModified" -> true)).toList
   }
 
-  def removeTag(id: String, tagId: String) {
+  def removeTag(id: UUID, tagId: UUID) {
     Logger.debug("Removing tag " + tagId)
-    val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId))), false, false, WriteConcern.Safe)
+    val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify))), false, false, WriteConcern.Safe)
   }
 
-  def removeTags(id: String, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
     val dataset = get(id).get
     val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
@@ -516,12 +517,12 @@ class MongoDBDatasetService @Inject() (
     // Only remove existing tags.
     tags.intersect(existingTags).map {
       tag =>
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
     }
   }
 
-  def removeAllTags(id: String) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+  def removeAllTags(id: UUID) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false, WriteConcern.Safe)
   }
 
   // ---------- Tags related code ends ------------------
@@ -529,7 +530,7 @@ class MongoDBDatasetService @Inject() (
   /**
    * Check recursively whether a dataset's user-input metadata match a requested search tree.
    */
-  def searchUserMetadata(id: String, requestedMetadataQuery: Any): Boolean = {
+  def searchUserMetadata(id: UUID, requestedMetadataQuery: Any): Boolean = {
     return searchMetadata(id, requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String, Any]], getUserMetadata(id))
   }
 
@@ -646,7 +647,7 @@ class MongoDBDatasetService @Inject() (
   /**
    * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree.
    */
-  def searchMetadata(id: String, requestedMap: java.util.LinkedHashMap[String, Any], currentMap: scala.collection.mutable.Map[String, Any]): Boolean = {
+  def searchMetadata(id: UUID, requestedMap: java.util.LinkedHashMap[String, Any], currentMap: scala.collection.mutable.Map[String, Any]): Boolean = {
     var allMatch = true
     Logger.debug("req: " + requestedMap);
     Logger.debug("curr: " + currentMap);
@@ -723,32 +724,32 @@ class MongoDBDatasetService @Inject() (
     return allMatch
   }
 
-  def addFile(datasetId: String, file: File) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("files" -> FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)
+  def addFile(datasetId: UUID, file: File) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("files" -> FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)
     if (!file.xmlMetadata.isEmpty) {
-      addXMLMetadata(datasetId, file.id.toString, getXMLMetadataJSON(file.id.toString))
+      addXMLMetadata(datasetId, file.id, getXMLMetadataJSON(file.id))
     }
   }
 
-  def addCollection(datasetId: String, collectionId: String) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $addToSet("collections" -> collectionId), false, false, WriteConcern.Safe)
+  def addCollection(datasetId: UUID, collectionId: UUID) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("collections" -> collectionId), false, false, WriteConcern.Safe)
   }
 
-  def removeCollection(datasetId: String, collectionId: String) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("collections" -> collectionId), false, false, WriteConcern.Safe)
+  def removeCollection(datasetId: UUID, collectionId: UUID) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("collections" -> collectionId), false, false, WriteConcern.Safe)
   }
 
-  def removeFile(datasetId: String, fileId: String) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $pull("files" -> MongoDBObject("_id" -> new ObjectId(fileId))), false, false, WriteConcern.Safe)
+  def removeFile(datasetId: UUID, fileId: UUID) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("files" -> MongoDBObject("_id" -> new ObjectId(fileId.stringify))), false, false, WriteConcern.Safe)
     removeXMLMetadata(datasetId, fileId)
   }
 
-  def newThumbnail(datasetId: String) {
-    Dataset.findOneById(new ObjectId(datasetId)) match {
+  def newThumbnail(datasetId: UUID) {
+    Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
         val filesInDataset = dataset.files map {
           f => {
-            files.get(f.id.toString).getOrElse {
+            files.get(f.id).getOrElse {
               None
             }
           }
@@ -757,29 +758,29 @@ class MongoDBDatasetService @Inject() (
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
             if (!theFile.thumbnail_id.isEmpty) {
-              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
               return
             }
           }
         }
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
       }
       case None =>
     }
   }
 
-  def removeDataset(id: String) {
-    Dataset.findOneById(new ObjectId(id)) match {
+  def removeDataset(id: UUID) {
+    Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
-        for (collection <- collections.listInsideDataset(UUID(id)))
-          collections.removeDataset(collection.id, UUID(dataset.id.toString))
+        for (collection <- collections.listInsideDataset(id))
+          collections.removeDataset(collection.id, dataset.id)
         for (comment <- comments.findCommentsByDatasetId(id)) {
           comments.removeComment(comment)
         }
         for (f <- dataset.files) {
           var notTheDataset = for (currDataset <- findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
-            files.removeFile(f.id.toString)
+            files.removeFile(f.id)
         }
         Dataset.remove(MongoDBObject("_id" -> dataset.id))
       }
@@ -787,8 +788,8 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def index(id: String) {
-    Dataset.findOneById(new ObjectId(id)) match {
+  def index(id: UUID) {
+    Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
         var tagListBuffer = new ListBuffer[String]()
 

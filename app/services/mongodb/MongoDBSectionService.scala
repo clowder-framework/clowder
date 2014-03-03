@@ -65,10 +65,10 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
   }
 
   def removeSection(s: Section) {
-    for (preview <- previews.findBySectionId(s.id.toString)) {
+    for (preview <- previews.findBySectionId(s.id)) {
       previews.removePreview(preview)
     }
-    for (comment <- comments.findCommentsBySectionId(s.id.toString())) {
+    for (comment <- comments.findCommentsBySectionId(s.id)) {
       comments.removeComment(comment)
     }
     SectionDAO.remove(MongoDBObject("_id" -> s.id))

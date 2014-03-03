@@ -23,31 +23,30 @@ import scala.Some
 import play.api.libs.json.JsObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-
 /**
  * Created by lmarini on 2/17/14.
  */
 @Singleton
 class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) extends PreviewService {
 
-  def get(previewId: String): Option[Preview] = {
-    PreviewDAO.findOneById(new ObjectId(previewId))
+  def get(previewId: UUID): Option[Preview] = {
+    PreviewDAO.findOneById(new ObjectId(previewId.stringify))
   }
 
-  def setIIPReferences(id: String, iipURL: String, iipImage: String, iipKey: String) {
-    PreviewDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id)), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
+  def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String) {
+    PreviewDAO.update(MongoDBObject("_id" -> id), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
   }
 
-  def findByFileId(id: String): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("file_id" -> new ObjectId(id))).toList
+  def findByFileId(id: UUID): List[Preview] = {
+    PreviewDAO.find(MongoDBObject("file_id" -> new ObjectId(id.stringify))).toList
   }
 
-  def findBySectionId(id: String): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("section_id" -> new ObjectId(id))).toList
+  def findBySectionId(id: UUID): List[Preview] = {
+    PreviewDAO.find(MongoDBObject("section_id" -> new ObjectId(id.stringify))).toList
   }
 
-  def findByDatasetId(id: String): List[Preview] = {
-    PreviewDAO.dao.find(MongoDBObject("dataset_id" -> new ObjectId(id))).toList
+  def findByDatasetId(id: UUID): List[Preview] = {
+    PreviewDAO.find(MongoDBObject("dataset_id" -> new ObjectId(id.stringify))).toList
   }
 
   /**
@@ -73,9 +72,9 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
   /**
    * Get blob.
    */
-  def getBlob(id: String): Option[(InputStream, String, String, Long)] = {
+  def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+    files.findOne(MongoDBObject("_id" -> id)) match {
       case Some(file) => Some(file.inputStream,
         file.getAs[String]("filename").getOrElse("unknown-name"),
         file.getAs[String]("contentType").getOrElse("unknown"),
@@ -87,12 +86,12 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
   /**
    * Add annotation to 3D model preview.
    */
-  def annotation(id: String, annotation: ThreeDAnnotation) {
-    PreviewDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id)), $addToSet("annotations" -> ThreeDAnnotation.toDBObject(annotation)), false, false, WriteConcern.Safe)
+  def annotation(id: UUID, annotation: ThreeDAnnotation) {
+    PreviewDAO.dao.update(MongoDBObject("_id" -> id), $addToSet("annotations" -> ThreeDAnnotation.toDBObject(annotation)), false, false, WriteConcern.Safe)
   }
 
-  def findAnnotation(preview_id: String, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation] = {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match {
+  def findAnnotation(preview_id: UUID, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation] = {
+    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
       case Some(preview) => {
         for (annotation <- preview.annotations) {
           if (annotation.x_coord.equals(x_coord) && annotation.y_coord.equals(y_coord) && annotation.z_coord.equals(z_coord))
@@ -104,13 +103,13 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     }
   }
 
-  def updateAnnotation(preview_id: String, annotation_id: String, description: String) {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match {
+  def updateAnnotation(preview_id: UUID, annotation_id: UUID, description: String) {
+    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
       case Some(preview) => {
         //var newAnnotations = List.empty[ThreeDAnnotation]
         for (annotation <- preview.annotations) {
           if (annotation.id.toString().equals(annotation_id)) {
-            PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id), "annotations._id" -> annotation.id), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
+            PreviewDAO.update(MongoDBObject("_id" -> preview_id, "annotations._id" -> annotation.id), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
             return
           }
         }
@@ -121,8 +120,8 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
   }
 
 
-  def listAnnotations(preview_id: String): List[ThreeDAnnotation] = {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id)) match {
+  def listAnnotations(preview_id: UUID): List[ThreeDAnnotation] = {
+    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
       case Some(preview) => {
         return preview.annotations
       }
@@ -131,7 +130,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
   }
 
   def removePreview(p: Preview) {
-    for (tile <- tiles.get(UUID(p.id.toString))) {
+    for (tile <- tiles.get(p.id)) {
       TileDAO.remove(MongoDBObject("_id" -> tile.id))
     }
     // for IIP server references, also delete the files being referenced on the IIP server they reside
@@ -154,7 +153,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     if (!p.filename.isEmpty)
     // for oni previews, read the ONI frame references from the preview file and remove them
       if (p.filename.get.endsWith(".oniv")) {
-        val theFile = getBlob(p.id.toString())
+        val theFile = getBlob(p.id)
         val frameRefReader = new BufferedReader(new InputStreamReader(theFile.get._1))
         var fileData = new StringBuilder()
         var currLine = frameRefReader.readLine()
@@ -170,7 +169,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
         }
         //same for PTM file map references
       } else if (p.filename.get.endsWith(".ptmmaps")) {
-        val theFile = getBlob(p.id.toString())
+        val theFile = getBlob(p.id)
         val frameRefReader = new BufferedReader(new InputStreamReader(theFile.get._1))
         var currLine = frameRefReader.readLine()
         while (currLine != null) {
@@ -184,13 +183,13 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     PreviewDAO.remove(MongoDBObject("_id" -> p.id))
   }
 
-  def attachToFile(previewId: String, fileId: String, extractorId: String, json: JsValue) {
+  def attachToFile(previewId: UUID, fileId: UUID, extractorId: UUID, json: JsValue) {
     json match {
       case JsObject(fields) => {
         // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
         val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId)),
-          $set("metadata" -> metadata, "file_id" -> new ObjectId(fileId), "extractor_id" -> extractorId),
+        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> previewId),
+          $set("metadata" -> metadata, "file_id" -> new ObjectId(fileId.stringify), "extractor_id" -> extractorId),
           false, false, WriteConcern.Safe)
         Logger.debug("Updating previews.files " + previewId + " with " + metadata)
       }
@@ -198,11 +197,11 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     }
   }
 
-  def updateMetadata(previewId: String, json: JsValue) {
+  def updateMetadata(previewId: UUID, json: JsValue) {
     json match {
       case JsObject(fields) => {
         val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId)),
+        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
           $set("metadata" -> metadata, "section_id" -> new ObjectId(metadata("section_id").asInstanceOf[String])), false, false, WriteConcern.Safe)
         Logger.debug("Updating previews.files " + previewId + " with " + metadata)
       }

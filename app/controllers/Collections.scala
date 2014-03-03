@@ -127,7 +127,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       implicit val user = request.user
       collections.get(id) match {
         case Some(collection) => {
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id.stringify), collection.name, collection.id.toString()))
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection.name, collection.id.toString()))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

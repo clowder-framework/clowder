@@ -12,7 +12,7 @@ import securesocial.core.Identity
  *
  */
 case class Dataset(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   name: String = "N/A",
   author: Identity,
   description: String = "N/A",

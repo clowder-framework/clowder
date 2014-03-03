@@ -1,14 +1,12 @@
 package api
 
 import play.api.mvc.Controller
-import com.mongodb.casbah.Imports._
 import play.api.libs.json.Json._
 import play.api.Play.current
 import services._
 import javax.inject.Inject
 import services.ExtractorMessage
-import models.MultimediaFeatures
-import models.Feature
+import models.{Feature, UUID, MultimediaFeatures}
 import play.api.libs.json.JsObject
 import scala.Some
 
@@ -27,17 +25,18 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
   def index() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
-            previews.get(preview_id) match {
+            previews.get(UUID(preview_id)) match {
       	      case Some(p) =>
 	      	    // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/indexes$", "")
-	            val id = p.id.toString
+	            val id = p.id
 	            current.plugin[RabbitmqPlugin].foreach{
-	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, "", ""))}
+                // TODO replace null with None
+	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, null, ""))}
 	            var fileType = p.contentType
-	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id,fileType) }
+	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id.stringify,fileType) }
 	            Ok(toJson("success"))
       	      case None => BadRequest(toJson("Missing parameter [preview_id]"))
             }
@@ -55,10 +54,11 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
    */
   def features() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
-        multimediaSearch.findFeatureBySection(section_id) match {
+        val sectionUUID = UUID(section_id)
+        multimediaSearch.findFeatureBySection(sectionUUID) match {
           case Some(multimediaFeature) => {
             val features = (request.body \ "features").as[List[JsObject]]
-            multimediaSearch.updateFeatures(multimediaFeature, section_id, features)
+            multimediaSearch.updateFeatures(multimediaFeature, sectionUUID, features)
             Ok(toJson(Map("id"->multimediaFeature.id.toString)))
           }
           case None => {
@@ -66,7 +66,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
             val features = jsFeatures.map {f =>
             	Feature((f \ "representation").as[String], (f \ "descriptor").as[List[Double]])
             }
-            val doc = MultimediaFeatures(section_id = Some(new ObjectId(section_id)), features = features)
+            val doc = MultimediaFeatures(section_id = Some(sectionUUID), features = features)
             multimediaSearch.insert(doc)
             Ok(toJson(Map("id"->doc.id.toString)))
           }

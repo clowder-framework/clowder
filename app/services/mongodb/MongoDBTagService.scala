@@ -50,7 +50,7 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
    *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
    *      record the extractor_id, but omit the userId field, so we leave userOpt as None.
    */
-  def checkErrorsForTag(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]): TagCheck = {
+  def checkErrorsForTag(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): TagCheck = {
     val userObj = request.user
     Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
       + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
@@ -67,13 +67,13 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
 
     if (tags.isEmpty) {
       error_str = "No \"tags\" specified, request.body: " + request.body.toString
-    } else if (!ObjectId.isValid(id)) {
+    } else if (!UUID.isValid(id.stringify)) {
       error_str = "The given id " + id + " is not a valid ObjectId."
     } else {
       obj_type match {
         case TagCheck_File => not_found = files.get(id).isEmpty
         case TagCheck_Dataset => not_found = datasets.get(id).isEmpty
-        case TagCheck_Section => not_found = SectionDAO.findOneById(new ObjectId(id)).isEmpty
+        case TagCheck_Section => not_found = SectionDAO.findOneById(new ObjectId(id.stringify)).isEmpty
         case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
       }
       if (not_found) {
@@ -114,7 +114,7 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
    *      which contains the cause of the error, such as "No 'tags' specified", and
    *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
    */
-  def addTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]): (Boolean, String) = {
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): (Boolean, String) = {
     val tagCheck = checkErrorsForTag(obj_type, id, request)
 
     val error_str = tagCheck.error_str
@@ -133,13 +133,13 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
           datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
           datasets.index(id)
         }
-        case TagCheck_Section => sections.addTags(UUID(id), userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
       }
     }
     (not_found, error_str)
   }
 
-  def removeTagsHelper(obj_type: TagCheckObjType, id: String, request: RequestWithUser[JsValue]): (Boolean, String) = {
+  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): (Boolean, String) = {
     val tagCheck = checkErrorsForTag(obj_type, id, request)
 
     val error_str = tagCheck.error_str
@@ -155,12 +155,11 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
       (obj_type) match {
         case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Section => sections.removeTags(UUID(id), userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }
     }
     (not_found, error_str)
   }
-
 }
 
 object Tag extends ModelCompanion[Tag, ObjectId] {

@@ -1,7 +1,5 @@
 package models
 
-import com.mongodb.casbah.Imports._
-
 /**
  * 3D textures for x3dom generated from obj models.
  *

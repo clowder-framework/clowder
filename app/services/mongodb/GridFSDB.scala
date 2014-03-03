@@ -6,7 +6,7 @@ import play.api.Play.current
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFS
-import models.File
+import models.{UUID, File}
 import com.mongodb.casbah.WriteConcern
 import securesocial.core.Identity
 
@@ -42,15 +42,15 @@ trait GridFSDB {
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
-    Some(File(oid, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
+    Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
   }
 
   /**
    * Get blob.
    */
-  def getBytes(id: String): Option[(InputStream, String, String, Long)] = {
+  def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream, 
           file.getAs[String]("filename").getOrElse("unknown-name"), 
           file.getAs[String]("contentType").getOrElse("unknown"),

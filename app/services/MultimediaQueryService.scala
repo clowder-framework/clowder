@@ -2,7 +2,7 @@ package services
 
 
 import java.io.InputStream
-import models.{MultimediaFeatures, TempFile}
+import models.{UUID, MultimediaFeatures, TempFile}
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
 import com.mongodb.casbah.gridfs.JodaGridFSDBFile
@@ -25,7 +25,7 @@ abstract class MultimediaQueryService {
    * Get the input stream of a file given a file id.
    * Returns input stream, file name, content type, content length.
    */
-  def get(id: String): Option[(InputStream, String, String, Long)]
+  def get(id: UUID): Option[(InputStream, String, String, Long)]
   
   /**
    * List all files in the system.
@@ -36,16 +36,16 @@ abstract class MultimediaQueryService {
   /**
    * Get file metadata.
    */
-  def getFile(id: String): Option[TempFile]
+  def getFile(id: UUID): Option[TempFile]
   
   /**
    * Store file metadata.
    */
-  def storeFileMD(id: String, filename: String, contentType: Option[String]): Option[TempFile]
+  def storeFileMD(id: UUID, filename: String, contentType: Option[String]): Option[TempFile]
 
-  def findFeatureBySection(sectionId: String): Option[MultimediaFeatures]
+  def findFeatureBySection(sectionId: UUID): Option[MultimediaFeatures]
 
-  def updateFeatures(multimediaFeature: MultimediaFeatures, sectionId: String, features: List[JsObject])
+  def updateFeatures(multimediaFeature: MultimediaFeatures, sectionId: UUID, features: List[JsObject])
 
   def insert(multimediaFeature: MultimediaFeatures)
 

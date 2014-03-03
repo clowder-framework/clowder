@@ -1,7 +1,6 @@
 package models
 
 import java.util.Date
-import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
 import com.novus.salat.annotations.raw.Ignore
 
@@ -16,11 +15,11 @@ import com.novus.salat.annotations.raw.Ignore
 case class Comment(
   author: Identity,
   text: String,
-  comment_id: Option[String] = None,
-  dataset_id: Option[String] = None,
-  file_id: Option[String] = None,
-  section_id: Option[String] = None,
+  comment_id: Option[UUID] = None,
+  dataset_id: Option[UUID] = None,
+  file_id: Option[UUID] = None,
+  section_id: Option[UUID] = None,
   posted: Date = new Date(),
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   @Ignore replies: List[Comment] = List.empty)
 

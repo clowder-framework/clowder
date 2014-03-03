@@ -1,7 +1,6 @@
 package models
 
 import java.util.Date
-import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
 
 
@@ -12,7 +11,7 @@ import securesocial.core.Identity
  *
  */
 case class File(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   path: Option[String] = None,
   filename: String,
   author: Identity,
@@ -24,7 +23,7 @@ case class File(
   previews: List[Preview] = List.empty,
   tags: List[Tag] = List.empty,
   metadata: List[Map[String, Any]] = List.empty,
-  thumbnail_id: Option[String] = None,
+  thumbnail_id: Option[UUID] = None,
   isIntermediate: Option[Boolean] = None,
   userMetadata: Map[String, Any] = Map.empty,
   xmlMetadata: Map[String, Any] = Map.empty,

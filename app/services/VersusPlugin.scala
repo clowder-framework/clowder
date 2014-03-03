@@ -13,7 +13,7 @@ import play.api.libs.iteratee.Input.Empty
 import com.mongodb.casbah.gridfs.GridFS
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import models.File
+import models.{UUID, File}
 import play.api.libs.json.Json._
 import scala.concurrent.{blocking, Future, Await}
 import akka.actor.Actor
@@ -43,7 +43,7 @@ class VersusPlugin(application:Application) extends Plugin{
  * This method sends the file's url to Versus for the extraction of descriptors from the file
  */
 
-  def extract(fileid: String): Future[Response] = {
+  def extract(fileid: UUID): Future[Response] = {
 
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
@@ -67,7 +67,7 @@ class VersusPlugin(application:Application) extends Plugin{
                
                 val list=response.json\("versus_descriptors")
                 
-                files.addVersusMetadata(fileid,list)
+                files.addVersusMetadata(fileid, list)
                
                 Logger.debug("GET META DATA:*****")
                 files.getMetadata(fileid).map {
@@ -378,24 +378,24 @@ class VersusPlugin(application:Application) extends Plugin{
             }*/
             
           //-----------------------  
-            files.get(subStr) match {
+            files.get(UUID(subStr)) match {
                	  case Some(file)=>{
 		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
 
                 //Previews..............
-                val previewsFromDB = previews.findByFileId(file.id.toString)
+                val previewsFromDB = previews.findByFileId(file.id)
                 val previewers = Previewers.findPreviewers
                 //Logger.info("Number of previews " + previews.length);
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
                   } else {
                     val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     (file -> ff)
                   }
@@ -451,10 +451,10 @@ class VersusPlugin(application:Application) extends Plugin{
         val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
 
         val len = similarity_value.length
-        // val ar = new Array[String](len)
+
         val se = new Array[(String, String, Double, String)](len)
 		        
-        //var resultArray = new ArrayBuffer[(String, String, Double, String)]()
+
         var resultArray = new ArrayBuffer[(String, String, Double, String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]()
 		var i=0
         similarity_value.map {
@@ -462,27 +462,23 @@ class VersusPlugin(application:Application) extends Plugin{
             val end = result.docID.lastIndexOf("?")
             val begin = result.docID.lastIndexOf("/");
             val subStr = result.docID.substring(begin + 1, end);
-        //    val a = result.docID.split("/")
-          //  val n = a.length - 2
-            files.get(subStr) match {
+
+            files.get(UUID(subStr)) match {
 		        	  case Some(file)=>{
 
-       
-                // se.update(i,(a(n),result.docID,result.proximity,file.filename))
-                //Previews..............
-                val previewsFromDB = previews.findByFileId(file.id.toString)
+                val previewsFromDB = previews.findByFileId(file.id)
                 val previewers = Previewers.findPreviewers
                 //Logger.info("Number of previews " + previews.length);
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
                   } else {
                     val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     (file -> ff)
                   }
@@ -503,11 +499,7 @@ class VersusPlugin(application:Application) extends Plugin{
                 i = i + 1
               }
               case None => None
-
             }
-            
-
-
         } // End of similarity map
         //se
         (indexId, resultArray)
@@ -551,36 +543,30 @@ class VersusPlugin(application:Application) extends Plugin{
             val begin = result.docID.lastIndexOf("/");
             val subStr = result.docID.substring(begin + 1, end);
 
-        //    val a = result.docID.split("/")
-          //  val n = a.length - 2
-            files.get(subStr) match {
+            files.get(UUID(subStr)) match {
               case Some(file) => {
-                // se.update(i,(a(n),result.docID,result.proximity,file.filename))
-                //Previews..............
-                val previewsFromDB = previews.findByFileId(file.id.toString)
+
+                val previewsFromDB = previews.findByFileId(file.id)
                 val previewers = Previewers.findPreviewers
-                //Logger.info("Number of previews " + previews.length);
+
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
                   } else {
                     val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     (file -> ff)
                   }
                 }
                 val filteredPreviews = Map(previewslist: _*)
-                ///Previews ends.........
 
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename))
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val formatter = new DecimalFormat("#.###")
-                // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+
                 val proxvalue = formatter.format(result.proximity).toDouble
                 resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
 

@@ -25,7 +25,7 @@ import services.{TileService, PreviewService}
 @Singleton
 class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
 
-  def downloadPreview(id: String, datasetid: String) =
+  def downloadPreview(id: UUID, datasetid: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
         Redirect(routes.Previews.download(id))
@@ -34,7 +34,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Download preview bytes.
    */
-  def download(id: String) =
+  def download(id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
         previews.getBlob(id) match {
@@ -88,7 +88,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
           f =>
             Logger.debug("Uploading file " + f.filename)
             // store file
-            val id = previews.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+            val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, f.contentType))
             // for IIP server references, store the IIP URL, key and filename on the IIP server for possible later deletion of the previewed file
             if (f.filename.endsWith(".imageurl")) {
               val iipRefReader = new BufferedReader(new FileReader(f.ref.file));
@@ -107,7 +107,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
               previews.setIIPReferences(id, iipURL, iipImage, iipKey)
             }
-            Ok(toJson(Map("id" -> id)))
+            Ok(toJson(Map("id" -> id.stringify)))
         }.getOrElse {
           BadRequest(toJson("File not attached."))
         }
@@ -117,7 +117,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Upload preview metadata.
    *
    */
-  def uploadMetadata(id: String) =
+  def uploadMetadata(id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
       request =>
         Logger.debug(request.body.toString)
@@ -140,7 +140,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Get preview metadata.
    *
    */
-  def getMetadata(id: String) =
+  def getMetadata(id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
         previews.get(id) match {
@@ -149,20 +149,19 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-
   /**
    * Add pyramid tile to preview.
    */
-  def attachTile(preview_id: String, tile_id: String, level: String) =
+  def attachTile(preview_id: UUID, tile_id: UUID, level: String) =
     SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
       request =>
         request.body match {
           case JsObject(fields) => {
             previews.get(preview_id) match {
               case Some(preview) => {
-                tiles.get(UUID(tile_id)) match {
+                tiles.get(tile_id) match {
                   case Some(tile) => {
-                    tiles.updateMetadata(UUID(tile_id), UUID(preview_id), level, request.body)
+                    tiles.updateMetadata(tile_id, preview_id, level, request.body)
                     Ok(toJson(Map("status" -> "success")))
                   }
                   case None => BadRequest(toJson("Tile not found"))
@@ -234,7 +233,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Add annotation to 3D model preview.
    */
-  def attachAnnotation(preview_id: String) =
+  def attachAnnotation(preview_id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
       request =>
         val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
@@ -252,7 +251,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-  def editAnnotation(preview_id: String) =
+  def editAnnotation(preview_id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
       request =>
         Logger.debug("thereq: " + request.body.toString)
@@ -265,7 +264,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
           case Some(preview) => {
             previews.findAnnotation(preview_id, x_coord, y_coord, z_coord) match {
               case Some(annotation) => {
-                previews.updateAnnotation(preview_id, annotation.id.toString(), description)
+                previews.updateAnnotation(preview_id, annotation.id, description)
                 Ok(toJson(Map("status" -> "success")))
               }
               case None => Ok(toJson(Map("status" -> "success"))) //What the user sees locally must not change if an annotation is deleted after the user loads the dataset
@@ -277,7 +276,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-  def listAnnotations(preview_id: String) =
+  def listAnnotations(preview_id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
         previews.get(preview_id) match {

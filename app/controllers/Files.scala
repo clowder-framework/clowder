@@ -46,45 +46,45 @@ class Files @Inject() (
   /**
    * File info.
    */
-  def file(id: String) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+  def file(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     implicit val user = request.user
     Logger.info("GET file with id " + id)
     files.get(id) match {
       case Some(file) => {
-        val previewsFromDB = previews.findByFileId(file.id.toString)
+        val previewsFromDB = previews.findByFileId(file.id)
         val previewers = Previewers.findPreviewers
         val previewsWithPreviewer = {
           val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
-            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
           }
           if (pvf.length > 0) {
             Map(file -> pvf)
           } else {
             val ff = for (p <- previewers; if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
-              (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+              (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
             }
             Map(file -> ff)
           }
         }
         val sectionsByFile = sections.findByFileId(UUID(file.id.toString))
         val sectionsWithPreviews = sectionsByFile.map { s =>
-          val p = previews.findBySectionId(s.id.toString)
+          val p = previews.findBySectionId(s.id)
           s.copy(preview = Some(p(0)))
         }
 
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
-        extractions.findIfBeingProcessed(file.id.toString) match {
+        extractions.findIfBeingProcessed(file.id) match {
 		      case false =>
 		      case true => isActivity = true
         }
         
-        val userMetadata = files.getUserMetadata(file.id.toString)
+        val userMetadata = files.getUserMetadata(file.id)
         Logger.debug("User metadata: " + userMetadata.toString)
         
         var commentsByFile = comments.findCommentsByFileId(id)
         sectionsByFile.map { section =>
-          commentsByFile ++= comments.findCommentsBySectionId(section.id.toString())
+          commentsByFile ++= comments.findCommentsBySectionId(section.id)
         }
         commentsByFile = commentsByFile.sortBy(_.posted)
         
@@ -93,7 +93,7 @@ class Files @Inject() (
         
         val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
         
-        Ok(views.html.file(file, id, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
+        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."
@@ -201,9 +201,9 @@ class Files @Inject() (
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	files.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id, nameOfFile)
 				              }
-				              files.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id, fileType)
 				          }
 				    }
 				    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -216,9 +216,10 @@ class Files @Inject() (
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-	            val id = f.id.toString
+	            val id = f.id
 
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
+              // TODO replace null with None
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
 	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -237,7 +238,7 @@ class Files @Inject() (
 		            }
 	            }
 	            
-	          var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
+	          var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id)}
 	          
 	          Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
@@ -247,13 +248,13 @@ class Files @Inject() (
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-			             case "yes" => sparql.addFileToGraph(f.id.toString)
+			             case "yes" => sparql.addFileToGraph(f.id)
 			             case _ => {}		             
 		             }
 	             }
 	                        
 	            // redirect to file page]
-	            Redirect(routes.Files.file(f.id.toString))  
+	            Redirect(routes.Files.file(f.id))
 	         }
 	         case None => {
 	           Logger.error("Could not retrieve file that was just saved.")
@@ -272,7 +273,7 @@ class Files @Inject() (
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: String) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>
+  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>
     files.getBytes(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
@@ -314,8 +315,8 @@ class Files @Inject() (
     }
   }
 
-  def thumbnail(id: String) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>    
-    thumbnails.getBlob(UUID(id)) match {
+  def thumbnail(id: UUID) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+    thumbnails.getBlob(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
 	          case Some(value) => {
@@ -398,9 +399,9 @@ class Files @Inject() (
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	files.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id, nameOfFile)
 				              }
-				              files.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -413,8 +414,9 @@ class Files @Inject() (
             val key = "unknown." + "file."+ fileType.replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-            val id = f.id.toString
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
+            val id = f.id
+            // TODO replace null with None
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -436,7 +438,7 @@ class Files @Inject() (
 	            //add file to RDF triple store if triple store is used
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => sparql.addFileToGraph(f.id.toString)
+		             case "yes" => sparql.addFileToGraph(f.id)
 		             case _ => {}
 	             }
 	            }
@@ -444,7 +446,7 @@ class Files @Inject() (
             // redirect to file page]
             // val query="http://localhost:9000/files/"+id+"/blob"  
            //  var slashindex=query.lastIndexOf('/')
-             Redirect(routes.Search.findSimilar(f.id.toString))  
+             Redirect(routes.Search.findSimilar(f.id))
          }
           case None => {
             Logger.error("Could not retrieve file that was just saved.")
@@ -468,7 +470,9 @@ class Files @Inject() (
 	              if(thirdSeparatorIndex >= 0){
 	                var firstSeparatorIndex = nameOfFile.indexOf("_")
 	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" +
+                        nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" +
+                        nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 	              }
       	}
@@ -497,9 +501,9 @@ class Files @Inject() (
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	files.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id, nameOfFile)
 				              }
-				              files.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -513,10 +517,11 @@ class Files @Inject() (
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
             
-            val id = f.id.toString
+            val id = f.id
             val path=f.path
 
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
+            // TODO replace null with None
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
             
             //for metadata files
@@ -539,14 +544,14 @@ class Files @Inject() (
 	            //add file to RDF triple store if triple store is used
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => sparql.addFileToGraph(f.id.toString)
+		             case "yes" => sparql.addFileToGraph(f.id)
 		             case _ => {}
 	             }
 	            }
             
             // redirect to file page]
             Logger.debug("Query file id= "+id+ " path= "+path);
-             Redirect(routes.Search.findSimilar(f.id.toString))  
+             Redirect(routes.Search.findSimilar(f.id))
              //Redirect(routes.Search.findSimilar(path.toString())) 
          }
           case None => {
@@ -576,12 +581,10 @@ class Files @Inject() (
         
         Logger.debug("Uploading file " + nameOfFile)
         
-        // store file       
-      //  val file = Services.files.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        // store file
         Logger.info("uploadDragDrop")
         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
-//        Thread.sleep(1000)
         file match {
           case Some(f) => {
                        
@@ -599,9 +602,9 @@ class Files @Inject() (
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	files.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id, nameOfFile)
 				              }
-				              files.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id, fileType)
 				      }
 			    }
 			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -614,9 +617,10 @@ class Files @Inject() (
             val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
             // TODO RK : need figure out if we can use https
             val host = "http://" + request.host + request.path.replaceAll("upload$", "")
-            val id = f.id.toString
+            val id = f.id
 
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
+            // TODO replace null with None
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -638,7 +642,7 @@ class Files @Inject() (
 	            //add file to RDF triple store if triple store is used
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => sparql.addFileToGraph(f.id.toString)
+		             case "yes" => sparql.addFileToGraph(f.id)
 		             case _ => {}
 	             }
 	            }
@@ -658,7 +662,7 @@ class Files @Inject() (
     }
   }
 
-  def uploaddnd(dataset_id: String) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploaddnd(dataset_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
     request.user match {
       case Some(identity) => {
         datasets.get(dataset_id) match {
@@ -704,9 +708,9 @@ class Files @Inject() (
 				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	files.renameFile(f.id.toString, nameOfFile)
+				            	files.renameFile(f.id, nameOfFile)
 				              }
-				              files.setContentType(f.id.toString, fileType)
+				              files.setContentType(f.id, fileType)
 						  }
 					  }
 					  else if(nameOfFile.toLowerCase().endsWith(".mov")){
@@ -719,13 +723,10 @@ class Files @Inject() (
 					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 							  // TODO RK : need figure out if we can use https
 							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
-							  val id = f.id.toString
+							  val id = f.id
 
 							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
-//					  		  current.plugin[ElasticsearchPlugin].foreach{
-//					  			  _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
-//					  }
-					  
+
 					  
 					  //for metadata files
 					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -746,8 +747,8 @@ class Files @Inject() (
 					  
 					  // add file to dataset
 					  // TODO create a service instead of calling salat directly
-					  val theFile = files.get(f.id.toString).get
-					  datasets.addFile(dataset.id.toString, theFile)
+					  val theFile = files.get(f.id).get
+					  datasets.addFile(dataset.id, theFile)
 					  if(!theFile.xmlMetadata.isEmpty){
 						  datasets.index(dataset_id)
 					  }
@@ -761,8 +762,8 @@ class Files @Inject() (
  			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 			             case "yes" => {
-                     sparql.addFileToGraph(f.id.toString)
-                     sparql.linkFileToDataset(f.id.toString, dataset_id)
+                     sparql.addFileToGraph(f.id)
+                     sparql.linkFileToDataset(f.id, dataset_id)
 			             }
 			             case _ => {}
 		             }
@@ -771,15 +772,13 @@ class Files @Inject() (
 					  // redirect to dataset page
 					  Logger.info("Uploading Completed")
 					  
-					  Redirect(routes.Datasets.dataset(dataset_id)) 
+					  Redirect(routes.Datasets.dataset(dataset_id))
 				  	}
 				  	case None => {
 					  Logger.error("Could not retrieve file that was just saved.")
 					  InternalServerError("Error uploading file")
 				  	}
 				  }
-			
-				  //Ok(views.html.multimediasearch())
 			  }.getOrElse {
 				  BadRequest("File not attached.")
 			  }
@@ -787,7 +786,6 @@ class Files @Inject() (
 		  case None => {Logger.error("Error getting dataset" + dataset_id); InternalServerError}
       	}
       }
-
       case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
     }
   }
@@ -796,13 +794,12 @@ class Files @Inject() (
     implicit val user = request.user
   	Ok(views.html.fileMetadataSearch()) 
   }
+
   def generalMetadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileGeneralMetadataSearch()) 
   }
-  
-  
-  
+
   ///////////////////////////////////
   //
   //  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {

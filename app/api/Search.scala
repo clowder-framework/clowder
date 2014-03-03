@@ -9,9 +9,11 @@ import play.api.libs.json.Json.toJson
 import javax.inject.{Inject, Singleton}
 import play.api.Play.current
 import play.api.Play.configuration
+import models.UUID
 
 @Singleton
 class Search @Inject()(files: FileService, datasets: DatasetService, sparql: RdfSPARQLService) extends ApiController {
+
   /**
    * Search results.
    */
@@ -35,7 +37,7 @@ class Search @Inject()(files: FileService, datasets: DatasetService, sparql: Rdf
                     Logger.info(value.getName + " = " + value.getValue())
                   }
                   if (hit.getType() == "file") {
-                    files.get(hit.getId()) match {
+                    files.get(UUID(hit.getId())) match {
                       case Some(file) => {
                         Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                         Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
@@ -47,7 +49,7 @@ class Search @Inject()(files: FileService, datasets: DatasetService, sparql: Rdf
                   } else if (hit.getType() == "dataset") {
                     Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
                     Logger.debug("DATASETS:Dataset.id=" + hit.getId());
-                    datasets.get(hit.getId()) match {
+                    datasets.get(UUID(hit.getId())) match {
                       case Some(dataset) =>
                         Logger.debug("Search result found dataset" + hit.getId()); datasetsFound += dataset
                       case None => {

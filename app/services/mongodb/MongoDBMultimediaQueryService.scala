@@ -37,14 +37,11 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
     Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
   }
   
-  
-   
-  
-   def get(id: String): Option[(InputStream, String, String, Long)] = {
+   def get(id: UUID): Option[(InputStream, String, String, Long)] = {
     
      val queries = GridFS(SocialUserDAO.dao.collection.db, "uploadquery")
     
-      queries.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
+      queries.findOne(MongoDBObject("_id" -> id)) match {
       
       case Some(query) => {
         //Logger.debug(query.toString())
@@ -66,14 +63,14 @@ def listFiles(): List[TempFile]={
   /**
    * Get file metadata.
    */
-def getFile(id: String): Option[TempFile] = {
-    TempFileDAO.findOne(MongoDBObject("_id" -> new ObjectId(id)))
+def getFile(id: UUID): Option[TempFile] = {
+    TempFileDAO.findOne(MongoDBObject("_id" -> id))
   }
 
   /**
    * Store file metadata.
    */
-  def storeFileMD(id: String, filename: String, contentType: Option[String]): Option[TempFile]={
+  def storeFileMD(id: UUID, filename: String, contentType: Option[String]): Option[TempFile]={
      val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploadquery")
@@ -98,13 +95,13 @@ def getFile(id: String): Option[TempFile] = {
     
   }
 
-  def findFeatureBySection(sectionId: String): Option[MultimediaFeatures] = {
-    MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"->new ObjectId(sectionId)))
+  def findFeatureBySection(sectionId: UUID): Option[MultimediaFeatures] = {
+    MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"-> sectionId))
   }
 
-  def updateFeatures(multimediaFeature: MultimediaFeatures, sectionId: String, features: List[JsObject]) {
+  def updateFeatures(multimediaFeature: MultimediaFeatures, sectionId: UUID, features: List[JsObject]) {
     val builder = MongoDBObject.newBuilder
-    builder += "section_id" -> new ObjectId(sectionId)
+    builder += "section_id" -> sectionId
     val listBuilder = MongoDBList.newBuilder
     features.map {f =>
       val featureBuilder = MongoDBObject.newBuilder
