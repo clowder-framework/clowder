@@ -386,7 +386,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     // data source
     if (!source.isEmpty) for (x <- 0 until source.size) {
-      query += " AND ? = sensors.metadata::json->'type'->>'id'"
+      query += " AND ? = json_extract_path_text(sensors.metadata,'type','id')"
     }
     //stream
     if (stream_id.isDefined) query += "stream_id = ?"
