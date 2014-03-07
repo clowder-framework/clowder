@@ -70,6 +70,13 @@ def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
 	            case Some(file) => {
 	              val theJSON = FileDAO.getUserMetadataJSON(id)
 	              val fileSep = System.getProperty("file.separator")
+	              
+	              //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
+	              var extraChar = ""
+	              val OS = System.getProperty("os.name").toLowerCase()
+	              if(OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") >= 0)
+	                extraChar = "\\"
+	              
 	              val tmpDir = System.getProperty("java.io.tmpdir")
 		          var resultDir = tmpDir + fileSep + "medici__rdfuploadtemporaryfiles" + fileSep + new ObjectId().toString
 		          val resultDirFile = new java.io.File(resultDir)
@@ -81,9 +88,9 @@ def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
 		              xmlFile.delete()
 	              }
 	              else{
-	                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+	                new java.io.File(resultDir + fileSep + extraChar + "Results.rdf").createNewFile()
 	              }
-	              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+	              val resultFile = new java.io.File(resultDir + fileSep + extraChar + "Results.rdf")
 	              
 	              //Connecting RDF metadata with the entity describing the original file
 					val rootNodes = new ArrayList[String]()
@@ -162,6 +169,13 @@ def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
 	            case Some(dataset) => {
 	              val theJSON = Dataset.getUserMetadataJSON(id)
 	              val fileSep = System.getProperty("file.separator")
+	              
+	              //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
+	              var extraChar = ""
+	              val OS = System.getProperty("os.name").toLowerCase()
+	              if(OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") >= 0)
+	                extraChar = "\\"
+	              
 	              val tmpDir = System.getProperty("java.io.tmpdir")
 		          var resultDir = tmpDir + fileSep + "medici__rdfuploadtemporaryfiles" + fileSep + new ObjectId().toString
 		          val resultDirFile = new java.io.File(resultDir)
@@ -173,9 +187,9 @@ def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
 		              xmlFile.delete()
 	              }
 	              else{
-	                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+	                new java.io.File(resultDir + fileSep + extraChar + "Results.rdf").createNewFile()
 	              }
-	              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+	              val resultFile = new java.io.File(resultDir + fileSep + extraChar + "Results.rdf")
 	              
 	              //Connecting RDF metadata with the entity describing the original file
 					val rootNodes = new ArrayList[String]()

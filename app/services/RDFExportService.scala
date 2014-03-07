@@ -48,6 +48,13 @@ class RDFExportService (application: Application) extends Plugin {
 	            case Some(file) => {
 	              val theJSON = FileDAO.getUserMetadataJSON(id)
 	              val fileSep = System.getProperty("file.separator")
+	              
+	              //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
+	              var extraChar = ""
+	              val OS = System.getProperty("os.name").toLowerCase()
+	              if(OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") >= 0)
+	                extraChar = "\\"
+	              
 		          var resultDir = resultsDir + new ObjectId().toString
 		          new java.io.File(resultDir).mkdirs()
 	              
@@ -57,9 +64,9 @@ class RDFExportService (application: Application) extends Plugin {
 		              xmlFile.delete()
 	              }
 	              else{
-	                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+	                new java.io.File(resultDir + fileSep + extraChar + "Results.rdf").createNewFile()
 	              }
-	              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+	              val resultFile = new java.io.File(resultDir + fileSep + extraChar + "Results.rdf")
 	              Some(resultFile)	              
 	            }
 	            case None => None
@@ -99,6 +106,13 @@ class RDFExportService (application: Application) extends Plugin {
 	            case Some(dataset) => {
 	              val theJSON = Dataset.getUserMetadataJSON(id)
 	              val fileSep = System.getProperty("file.separator")
+	              
+	              //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
+	              var extraChar = ""
+	              val OS = System.getProperty("os.name").toLowerCase()
+	              if(OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") >= 0)
+	                extraChar = "\\"
+	              
 		          var resultDir = resultsDir + new ObjectId().toString
 		          new java.io.File(resultDir).mkdirs()
 	              
@@ -108,9 +122,9 @@ class RDFExportService (application: Application) extends Plugin {
 		              xmlFile.delete()
 	              }
 	              else{
-	                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
+	                new java.io.File(resultDir + fileSep + extraChar + "Results.rdf").createNewFile()
 	              }
-	              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
+	              val resultFile = new java.io.File(resultDir + fileSep + extraChar + "Results.rdf")
 	              Some(resultFile)	              
 	            }
 	            case None => None
