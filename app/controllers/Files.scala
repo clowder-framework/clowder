@@ -121,7 +121,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     var direction = "b"
     if (when != "") direction = when
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
-    var prev, next = ""
+    var prev = ""
+    var next = ""
     var fileList = List.empty[models.File]
     if (direction == "b") {
       fileList = files.listFilesBefore(date, limit)
