@@ -1,6 +1,9 @@
 package services
 
+import models.SearchResultFile
+import models.SearchResultPreview
 import models.PreviewFilesSearchResult
+import models.SectionDAO
 import models.PreviewDAO
 import models.FileMD
 import models.FileDAO
@@ -61,7 +64,7 @@ class VersusPlugin(application:Application) extends Plugin{
  */
 
   def extract(fileid: String): Future[Response] = {
-
+		  Logger.debug("64 versus plugin extract fileid = " + fileid)
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val fileUrl = client + "/api/files/" + fileid + "?key=" + configuration.getString("commKey").get
@@ -240,100 +243,143 @@ class VersusPlugin(application:Application) extends Plugin{
     response
   }
   
-  
-        
   /*
-   * Sends a request to index a file based on its type
-   * Currently, it only supports images
+   * Helper method - handles the actual call to the Versus Restpoint to index a file (image or video preview)
+   * 
    */
-  def index(id: String, fileType: String) {
-
-    val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
-    val indexId = configuration.getString("versus.index").getOrElse("")
-    val urlf = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get
+  def index(id: String, fileType: String, urlf:String) {
+    
+	Logger.debug("Top of index , id = " + id + ", fileType = " +fileType )
+    val configuration = play.api.Play.configuration   
+    val indexId = configuration.getString("versus.index").getOrElse("")    
     val host = configuration.getString("versus.host").getOrElse("")
-
-    var indexurl = host + "/index/" + indexId + "/add"
-    Logger.debug("VersusPlugin: index method indexurl: " + indexurl);
-    val indexList = getIndexes()
-    var k = 0
-    indexList.map {
-      response =>
-        //Logger.debug("response.body=" + response.body)
-        val json: JsValue = Json.parse(response.body)
-        Logger.debug("index(): json=" + json);
-        val list = json.as[Seq[models.IndexList.IndexList]]
-        val len = list.length
-        val indexes = new Array[(String, String)](len)
-
-        list.map {
-          index =>
-
-            Logger.debug("indexID=" + index.indexID + " MIMEType=" + index.MIMEtype + " fileType=" + fileType);
-            indexes.update(k, (index.indexID, index.MIMEtype))
-            val typeA = fileType.split("/")
-            val typeB = index.MIMEtype.split("/")
-            // if (fileType.equals(index.MIMEtype)) {
-            if (typeA(0).equals(typeB(0)) || typeB(0).equals("*")) {
-              indexurl = host + "/index/" + index.indexID + "/add"
+    var indexurl = host + "/index/" + indexId + "/add"    
+	 getIndexesAsFutureList().map{
+    	indexList=>
+        	indexList.map{
+    			index=>    
+            Logger.debug("indexID=" + index.id + " MIMEType=" + index.MIMEtype + " fileType=" + fileType);
+    
+            val fileTypeStr = fileType.split("/")
+            val mimeTypeStr = index.MIMEtype.split("/")
+            //fileType = image/png or image/jpeg
+            //MIMEtype = image/*
+            if (fileTypeStr(0).equals(mimeTypeStr(0)) || mimeTypeStr(0).equals("*")) {
+              indexurl = host + "/index/" + index.id + "/add"
               WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map {
                 res =>
-                  Logger.debug("response from Adding file to Index " + index.indexID + "= " + res.body)
-
+                  //Logger.debug("response from Adding file to Index " + index.id + "= " + res.body)
               } //WS map end
             } //if fileType end
-        }
-
+        }// indexList.map {
     }
+  }
+  
+  
+  /*
+   * Removes video or image file from indexes on Versus side.
+   * Goes through the list of all indexes and calls versus restpoint to remove the file from each index. 
+   * If input file is a still image - removes the file itself from the indexes.
+   * If input file is a video - finds all its previews and removes each preview from the indexes.
+   * 
+   */
+  def removeFromIndexes(fileId: String){
+    Logger.debug("removeFromIndexes for fileId = " + fileId)
+      
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("versus.host").getOrElse("")   
+    
+    files.getFile(fileId) match {
 
+              case Some(file) => {                
+               
+                //
+                //if file is a video, then it might have several still image previews 
+                //(Previews are the first frame of each shot of the video file).
+                //These previews were indexed and are now part of Versus indexes.
+                //Have to remove these previews from the Versus indexes.
+                //
+                if (file.contentType.contains("video/")){
+                 
+                  //find previews of type IMAGE and delete these from Versus
+                  for(preview <- PreviewDAO.findByFileId(file.id)){
+                    if (preview.contentType.contains("image")){
+                    	for (indexList <-getIndexesAsFutureList()){
+                    		for (index<- indexList){                			    
+                    			Logger.debug("259 removePreviewFromIndexes previewId = " + preview.id + ", indexId = " + index.id)
+                    			val queryurl = host + "/index/" + index.id + "/removeFrom"
+                    			val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(preview.id.toString)))
+                    		}  
+                    	}   
+                    }
+                 }   // for(preview <- PreviewDAO.findByFileId(file.id)){             
+                }                
+             
+                if(!file.contentType.contains("video/")){
+                  for (indexList <- getIndexesAsFutureList()){
+                	  for (index <-	indexList){                	  		   
+                		  Logger.debug("311 IMAGE removeFromIndex fileId = " + fileId + ", indexId = " + index.id)
+                		  val queryurl = host + "/index/" + index.id + "/removeFrom"
+                		  val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(fileId)))
+                	  }  
+                  }                  
+                }             
+              }//end case Some(file) 
+              case None => {
+                Logger.debug(" 279 No file found")
+              }
+      }
+     
+  	}
+  
+  
+  def removeDatasetFromIndexes (datasetId: String){
+    Logger.debug("removeFromIndexes for datasetId = " + datasetId)
+      
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("versus.host").getOrElse("")
+	  
+     getIndexesAsFutureList().map{
+    	indexList=>
+        	indexList.map{
+    			index=>   
+    			  Logger.debug("removeDatasetFromIndexes datasetId = " + datasetId + ", indexId = " + index.id)
+    			  val queryurl = host + "/index/" + index.id + "/removeFrom"
+    			  //val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(fileId)))
+    		}  
+    	}   
+  
   }
   
   /*
-   * Sends a request to Versus index a frame from a shot of a video 
+   * Sends a request to Versus RestPoint to index a still image file
+   * 
+   */
+  def  indexImage  (id: String, fileType: String) {   
+    val configuration = play.api.Play.configuration
+    val client = configuration.getString("versus.client").getOrElse("")
+    val indexId = configuration.getString("versus.index").getOrElse("")
+    val urlf = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get    
+    index(id, fileType, urlf)
+  }
+  
+  /*
+   * Sends a request to Versus to index a video preview file (first frame of each shot of a video)
    */
   def indexPreview(id: String, fileType: String) {
-
-    val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
-    val indexId = configuration.getString("versus.index").getOrElse("")
-
-    val urlf = client + "/api/previews/" + id + "?key=" + configuration.getString("commKey").get
-    val host = configuration.getString("versus.host").getOrElse("")
-
-    var indexurl = host + "/index/" + indexId + "/add"
-    Logger.debug("VersusPlugin: index method indexurl: " + indexurl);
-    val indexList = getIndexes()
-    var k = 0
-    indexList.map {
-      response =>
-        //Logger.debug("response.body=" + response.body)
-        val json: JsValue = Json.parse(response.body)
-        Logger.debug("index(): json=" + json);
-        val list = json.as[Seq[models.IndexList.IndexList]]
-        val len = list.length
-        val indexes = new Array[(String, String)](len)
-
-        list.map {
-          index =>
-            Logger.debug("indexID=" + index.indexID + " MIMEType=" + index.MIMEtype + " fileType=" + fileType);
-            indexes.update(k, (index.indexID, index.MIMEtype))
-            val typeA = fileType.split("/")
-            val typeB = index.MIMEtype.split("/")
-            // if (fileType.equals(index.MIMEtype)) {
-            if (typeA(0).equals(typeB(0)) || typeB(0).equals("*")) {
-              indexurl = host + "/index/" + index.indexID + "/add"
-              WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map {
-                res =>
-                  Logger.debug("response from Adding file to Index " + index.indexID + "= " + res.body)
-
-              } //WS map end
-            } //if fileType end
-        }
-
-    }
-
+	  //called from /app/api/Indexes.scala->index()
+	  //which is called from cinemetrics extractor ->uploadShot
+	  Logger.debug("Top of index preview, id = " + id + ", fileType = " +fileType )
+	  val configuration = play.api.Play.configuration
+	  val client = configuration.getString("versus.client").getOrElse("")
+	  val indexId = configuration.getString("versus.index").getOrElse("")
+	  val urlf = client + "/api/previews/" + id + "?key=" + configuration.getString("commKey").get    
+	  index(id, fileType, urlf)    
   }
+  
+  
+  
+  
   
   /*
    * Sends a request to Versus to build an index based on id
@@ -349,31 +395,23 @@ class VersusPlugin(application:Application) extends Plugin{
     var buildResponse: Future[Response] = WS.url(buildurl).post("")
     buildResponse.map {
       r => Logger.debug("r.body" + r.body);
-
     }
-
     buildResponse
   }
   
   
   
-  //def queryIndexForURL(imageURL: String, indexId: String): Future[(String,  List[PreviewFilesSearchResult])] = {
-def queryIndexForURL(imageURL: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
+  def queryIndexForURL(imageURL: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
 
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
-
     val host = configuration.getString("versus.host").getOrElse("")
-
     var queryurl = host + "/index/" + indexId + "/query"
-
-    //val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(query)))
-    //queryIndex(imageURL, queryurl, imageURL)
+    
     queryIndex(queryurl, imageURL) 
   }
   
   
-  //def queryIndexForFile(inputFileId: String, indexId: String): Future[(String,  List[PreviewFilesSearchResult])] = {
   def queryIndexForFile(inputFileId: String, indexId: String): Future[ List[PreviewFilesSearchResult]] = {
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")    
@@ -389,8 +427,7 @@ def queryIndexForURL(imageURL: String, indexId: String): Future[  List[PreviewFi
     //    
     val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
     
-    queryIndex(queryIndexUrl, queryStr)   
-    //queryIndex(inputFileId, queryIndexUrl, queryStr)   
+    queryIndex(queryIndexUrl, queryStr)        
    }
   
   
@@ -457,7 +494,6 @@ def queryIndexForURL(imageURL: String, indexId: String): Future[  List[PreviewFi
      
     val responseFuture: Future[Response] = WS.url(queryIndexUrl).post(Map("infile"->Seq(inputFileURL)))   
     //mapping Future[Response] to Future[List[PreviewFilesSearchResult]]    
-    //val listOfResults: Future[List[PreviewFilesSearchResult]] = responseFuture.map {
     responseFuture.map {      
       response =>
     
@@ -489,68 +525,54 @@ def queryIndexForURL(imageURL: String, indexId: String): Future[  List[PreviewFi
             //
             val isFile = result.docID.contains("files")
             val isPreview = result.docID.contains("previews")
-           // Logger.debug("478 isFile = " + isFile + "... isPreview = " + isPreview)           
-            
                       
             if (isPreview){ 
-              PreviewDAO.getBlob(result_id) match{                            	
+               PreviewDAO.getBlob(result_id) match{                            	
                 case Some (blob)=>{   
-              
-              	//  val (fis, filename, cont, len) = blob
-              	  val filename =blob._2
+              	  val previewName =blob._2
               	   //use helper method to get the results
-              		val oneResult = getPrevSearchResult(result_id, filename, result)           
-              		resultList += oneResult                        	
-              		}                                   	
-              case None=>None              
-              }
+              		getPrevSearchResult(result_id, previewName, result)    match {
+              	    	case Some (previewResult) => {
+              	    		resultList += new PreviewFilesSearchResult("preview", null, previewResult) 
+              	    	}
+              	    	case None =>{
+              	    		//no PreviewSearchResult - do nothing
+              	    	}              	    
+              		}     	
+                } 
+                case None=>{
+                  //no blob found - do nothing
+                }
+              }//PreviewDAO.getBlob(result_id) match{ 
             }//end of if (isPreview){    
             
-        if (isFile) {
+            if (isFile) {
               files.getFile(result_id) match {               	  
                 case Some (file)=>{  
-              
-               	    //val thid = file.thumbnail_id
-               	   
-               	    //use helper method to get the results
-               	    val oneResult = getFileSeachResult(result_id, file, result)
-               	    resultList += oneResult                    	                  	  
+                	//use helper method to get the results
+               	    val oneFileResult = getFileSeachResult(result_id, file, result)
+               	    resultList += new PreviewFilesSearchResult("file", oneFileResult, null  )                  	                  	  
                	    }               	  
-              case None => {
-               		  //None                
-               		  Logger.debug("515 could not find file with this id " + result_id)
-               	  }            	
+                case None => {}            	
               }
-              }//end of if (isFile)        
-        } // End of similarity map            
-        
-       
+          }//end of if (isFile)        
+        } // End of similarity map      
         resultList.toList
-    } 
-   
+    	}   
     }
-    
+  
   
     /*
     * Helper method. Called from queryIndex    
     */
-   def getFileSeachResult(result_id:String, file:models.File, result:models.Result.Result):PreviewFilesSearchResult={    	         
-		        	   //=== find list of datasets ids
-         	
-		  		//this file can belong to none or one or more  datsets
-		  					var dataset_id_list = Dataset.findByFileId(file.id).map{
-               		  		  dataset=>dataset.id.toString()               		  		  
-               		  		}
-  
-                //Previews..............
-               //
-                //TODO: do we need previews value??
-                //
-                val pre= new HashMap[models.File, 
-                             Array[(java.lang.String, String, String, String, 
-                                 java.lang.String, String, Long)]]      
-                val previews=pre.toMap
-                ///Previews ends.........
+   def getFileSeachResult(result_id:String, file:models.File, result:models.Result.Result):SearchResultFile=
+   {    	         
+		  //=== find list of datasets ids
+		  //this file can belong to 0 or 1 or more  datsets
+		  var dataset_id_list = Dataset.findByFileId(file.id).map{
+			  dataset=>dataset.id.toString()               		  		  
+		  }
+           
               
                 val formatter = new DecimalFormat("#.###")
                 // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
@@ -565,62 +587,102 @@ def queryIndexForURL(imageURL: String, indexId: String): Future[  List[PreviewFi
                 	}
                 	case None=>{}                  
                 }
-                val oneResult = new PreviewFilesSearchResult("file", result_id, result.docID, 
-                		proxvalue, file.filename, previews, dataset_id_list.toList, thumbn_id)
                 
-                oneResult                
+                /* id: String, 
+    url: String,
+    distance: Double,
+    title: String,
+    datasetIdList: List[String],
+    
+    //for files, since files have thumbnails extracted by ncsa.image extractor
+    thumbnail_id:String*/
+                val oneFileResult = new SearchResultFile(result_id, result.docID, 
+                		proxvalue, file.filename, dataset_id_list.toList, thumbn_id)
+                
+                //val oneResult = new PreviewFilesSearchResult("file", oneFileResult)
+                
+               // val oneResult = new PreviewFilesSearchResult("file", result_id, result.docID, 
+                	//	proxvalue, file.filename, dataset_id_list.toList, thumbn_id)
+                
+                oneFileResult                
    }
    
    /*
     * Helper method. Called from queryIndex
     */
-   def getPrevSearchResult(result_id:String, filename:String, result:models.Result.Result):PreviewFilesSearchResult={
-    
-                Logger.debug("479 Found a preview with id = " + result_id)
-                                
-                //
-                //TODO: do we need previews value??
-                //
-                val pre= new HashMap[models.File, 
-                             Array[(java.lang.String, String, String, String, 
-                                 java.lang.String, String, Long)]]      
-                val previews=pre.toMap
-               
-                Logger.debug("previews = " + previews)
-                //val formatter = new DecimalFormat("#.###")
-                val formatter = new DecimalFormat("0.##########E0")
-                
-                val proxvalue = formatter.format(result.proximity).toDouble
-                
-                Logger.debug("411 proximity = " + result.proximity + ",proxvalue = " + proxvalue )
-               
-                //=== find dataset id
-                val file_id = PreviewDAO.findFileId(result_id)//.getOrElse("0")		                     
-                val file_id_str = file_id.getOrElse("0")		          		            
+  	def getPrevSearchResult(preview_id:String, prevName:String, result:models.Result.Result):Option[SearchResultPreview]=
+  	{                           
+		  //val formatter = new DecimalFormat("#.###")
+		  val formatter = new DecimalFormat("0.##########E0")                
+		  val proxvalue = formatter.format(result.proximity).toDouble
+		         
+		  PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+		  case Some(preview)=>{
+			  var startTime=0                   
+			  var fileName = ""
+			  var datasetIdList=new ListBuffer[String]
+			  var fileIdString = ""                    
                   
-                Logger.debug("626 file_id = " + file_id)
-                Logger.debug("626 file_id_str = " + file_id_str)
-                
-                //find list of datasets ids. This preview belongs to a file
-                //(video file has several previews),
-                //and this file can belong to 0 or 1 or more datasets
-                var dataset_id_list=new ListBuffer[String]
-                for(dataset <- Dataset.findByFileId(new ObjectId(file_id_str))){		               
-                	dataset_id_list+= dataset.id.toString()		             
-            	}                         
-               Logger.debug("746 previews datast_id_list = " +dataset_id_list )
-                //thumbnail_id is only used for files. this needs to be improved.!!
-                val thumbnail_id=""
-                  val file = models.File
-               var oneResult = new PreviewFilesSearchResult("preview", result_id,result.docID, 
-                   proxvalue, filename, previews, dataset_id_list.toList, "")   
-                
-               oneResult   
-   }
-
-
+			  //===get section for this preview and its start/end time                    
+			  preview.section_id match {
+			  	case Some(section_id)=>{
+			  		SectionDAO.findOneById(section_id)match {
+			  			case Some(section)=>{
+                            startTime = section.startTime.getOrElse(0)
+                        }
+                        case None =>{}                          
+                     }
+			  	} 
+			  	case None =>{}                      
+			  }
+			  //===done: finding section
+                    
+			  //=== get file for this preview
+			  // get file's id, name, and all datasets it belongs to.
+			  preview.file_id match{
+			  	case Some(file_id)=>{
+			  		fileIdString = file_id.toString                        
+			  		FileDAO.findOneById(file_id) match {
+			  			case Some(file)=>{
+			  				fileName = file.filename			  				
+			  				for(dataset <- Dataset.findByFileId(file_id)){                  				               
+			  					datasetIdList+= dataset.id.toString()		             
+			  				} 
+			  			}
+			  			case None =>{}
+			  		}// FileDAO.findOneById(file_id) match
+                        
+			  	} //case Some(file_id)=>{
+			  	case None=>{}
+			  } //== done: file for this preview
+			  
+    /*id: String, 
+    url: String,
+    distance: Double,
+    previewName: String,
+    datasetIdList: List[String]= List.empty,
+    fileId: String="",
+    fileTitle:String="",
+    shotStartTime:String="",
+    shotEndTime: String=""     */
+                    
+			  var onePreviewResult = new SearchResultPreview(preview_id, result.docID, proxvalue, 
+					  prevName, datasetIdList.toList, fileIdString, fileName, startTime)                               
+                  		
+			  return Some(onePreviewResult )               
+                    
+		  }//END OF: case Some(preview)=>{
+                  
+		  //No preview found
+		  case None=>{return None}
+                  
+		}//END OF : PreviewDAO.findOneById(new ObjectId(preview_id)) match
+        
+   } 
+ 
+ 
   override def onStop() {
     Logger.debug("Shutting down Versus Plugin")
   }
+ 
 }
-
