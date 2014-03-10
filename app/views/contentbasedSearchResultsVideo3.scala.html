@@ -1,9 +1,19 @@
-@(fileName:String, resultsList:List[(models.Index.Index,  List[models.PreviewFilesSearchResult])])   						
+@(fileName:String, resultsList:List[(Index.Index,  List[PreviewFilesSearchResult])])   						
 
-@import models.Index
-@import models.PreviewFilesSearchResult
 @import helper._
 @import collection.JavaConverters._
+@import models.Index.Index
+
+@import models.PreviewFilesSearchResult
+
+@import models.SearchResultFile
+
+@import models.SearchResultPreview
+
+
+
+
+
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @main("Search Results") {
@@ -40,57 +50,96 @@
 			<tr>
 				<td style="vertical-align:middle; height:150px;">
 					<div class="media">
-					  <a class="pull-left" href=@oneResult.url>
-						
-						@if(oneResult.fileOrPreview.equalsIgnoreCase("file")){							
-							@if(!oneResult.thumbnail_id.isEmpty){
+					  
+						@****** result is File ******@
+						@if(oneResult.fileOrPreview.equalsIgnoreCase("file")){
+							
+							<a class="pull-left" href=@oneResult.searchResultFile.url>							
+							@if(!oneResult.searchResultFile.thumbnail_id.isEmpty){
 								<img class='mmd-img media-object' 
-									src='@(routes.Files.thumbnail(oneResult.thumbnail_id))'
-									alt='Thumbnail of @(oneResult.title)' 
-									title='Distance @oneResult.distance'>
+									src='@(routes.Files.thumbnail(oneResult.searchResultFile.thumbnail_id))'
+									alt='Thumbnail of @(oneResult.searchResultFile.title)' 
+									title='Distance @oneResult.searchResultFile.distance'>
 								</img>
 							}
-							@if(oneResult.thumbnail_id.isEmpty){No thumbnail available}						
-							<br>												
-						}	@*end of is FIle*@		
-						
-						@if(oneResult.fileOrPreview.equalsIgnoreCase("preview")){					
-						
-						<img class='mmd-img media-object' 
-							src='@api.routes.Previews.download(oneResult.id)' 
-							alt='@oneResult.title' 
-							title='Distance @oneResult.distance'>
-						</img>
-						}@* end of If Preview *@
-						
-					  </a>
+							@if(oneResult.searchResultFile.thumbnail_id.isEmpty){No thumbnail available}						
+							<br>
+							
+							</a>
 					  <div class="media-body">
-					    <h4 class="media-heading">@oneResult.title</h4>
-					    <p>Distance: @oneResult.distance</p>				    
+					    <h4 class="media-heading">@oneResult.searchResultFile.title</h4>
+					    <p>Distance: @oneResult.searchResultFile.distance</p>				    
 						
-					    @if(oneResult.datasetIdList.size==0){
+					    @if(oneResult.searchResultFile.datasetIdList.size==0){
 					    	No dataset associated with this image 
 					    }
-					  @if(oneResult.datasetIdList.size>0){
-					  	<b>Belongs to  @oneResult.datasetIdList.size dataset(s)</b>
-					  	@oneResult.datasetIdList.map{id=>					   
+					  @if(oneResult.searchResultFile.datasetIdList.size>0){
+					  	<b>Belongs to  @oneResult.searchResultFile.datasetIdList.size dataset(s)</b>
+					  	@oneResult.searchResultFile.datasetIdList.map{id=>					   
 					     		<br><a href=@routes.Datasets.dataset(id)> View Dataset </a>
 					    	}  						  	 
-					    }	    
-					     
-					    @if(oneResult.fileOrPreview.equalsIgnoreCase("file")){ 
-					    	<br>
+					    }	 
+					    
+					    <br>
 					    	
-					    	<a href=@routes.Search.findSimilarFile(oneResult.id)>Find Similar</a>
+					    	<a href=@routes.Search.findSimilarFile(oneResult.searchResultFile.id)>Find Similar</a>
 					 
 					     	<br>
-					     	<a href="@(routes.Files.file(oneResult.id))">View File @oneResult.title</a>
-					    } 
+					     	<a href="@(routes.Files.file(oneResult.searchResultFile.id))">View File @oneResult.searchResultFile.title</a>
+					     	
+						}	@*end of is FIle*@		
+						
+						
+@***** 
+	/*id: String, 
+    url: String,
+    distance: Double,
+    previewName: String,
+    datasetIdList: List[String]= List.empty,
+    fileId: String="",
+    fileTitle:String="",
+    shotStartTime:String="",
+    shotEndTime: String=""     
+ */*****@
+    
+   					 @*** result is Preview ***@
+						@if(oneResult.fileOrPreview.equalsIgnoreCase("preview")){					
+						<a class="pull-left" href=@oneResult.searchResultPreview.url>	
+						<img class='mmd-img media-object' 
+							src='@api.routes.Previews.download(oneResult.searchResultPreview.id)' 
+							alt='@oneResult.searchResultPreview.previewName' 
+							title='Distance @oneResult.searchResultPreview.distance'>
+						</img>
+						
+						</a>
+					  <div class="media-body">
+					    <h4 class="media-heading">@oneResult.searchResultPreview.previewName</h4>
+					    <p>Distance: @oneResult.searchResultPreview.distance</p>				    
+						
+					    @if(oneResult.searchResultPreview.datasetIdList.size==0){
+					    	No dataset associated with this image 
+					    }
+					  @if(oneResult.searchResultPreview.datasetIdList.size>0){
+					  	<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
+					  	@oneResult.searchResultPreview.datasetIdList.map{id=>					   
+					     		<br><a href=@routes.Datasets.dataset(id)> View Dataset </a>
+					     		<br>
+					     	<a href="@(routes.Files.file(oneResult.searchResultPreview.fileId))">
+					     		View File @oneResult.searchResultPreview.fileTitle</a>
+					     		<br>
+					     		Shot start time: @oneResult.searchResultPreview.shotStartTime
+					     		
+					    	}  						  	 
+					    }					    
+					    
+						}@* end of If Preview *@
+						
+					     
 					     
 					  </div>
 					</div>
 					</td></tr>
-		}
+		}  @** END OF @for(oneResult <- previewsAndFiles) { **@
 		</table></td>
 	}
 	</tr>

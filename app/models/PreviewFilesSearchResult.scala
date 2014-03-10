@@ -15,17 +15,8 @@
 package models
 
 case class PreviewFilesSearchResult(
-    fileOrPreview:String,
-    id: String, 
-    url: String,
-    distance: Double,
-    title: String,
-    previewsList: Map[File, 
-      Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
-    datasetIdList: List[String],
-    
-    //for files, since files have thumbnails extracted by ncsa.image extractor
-    thumbnail_id:String
-    
+    fileOrPreview:String,  
+    searchResultFile: SearchResultFile,
+    searchResultPreview: SearchResultPreview    
 )
 
