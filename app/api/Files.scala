@@ -75,7 +75,8 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
    * List all files.
    */
   def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ListFiles)) { request =>
-      val list = for (f <- files.listFiles()) yield jsonFile(f)
+      Logger.debug("78 files list")
+    	val list = for (f <- files.listFiles()) yield jsonFile(f)
       Ok(toJson(list))
     }
   
@@ -1101,6 +1102,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
    * Return whether a file is currently being processed.
    */
   def isBeingProcessed(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { request =>
+  	//Logger.debug("From the top of Files isBeingProcessed")
   	files.getFile(id) match {
   	  case Some(file) => { 	    
   		  var isActivity = "false"
@@ -1171,10 +1173,26 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
   
   
   def removeFile(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteFiles)) { request =>
+    Logger.debug("1172 api/Files-remove file")
     files.getFile(id)  match {
       case Some(file) => {
+         //=== start of versus plugin code 
+        current.plugin[VersusPlugin] match {    		
+    		case Some(plugin)=>{ 
+    			plugin.removeFromIndexes(id)    	  
+    		}
+    		case None => {
+    			Logger.debug("No versus plugin found")
+    		}
+        }
+        //=== end of versus plugin code
+        
         FileDAO.removeFile(id)
         Logger.debug(file.filename)
+        
+        
+       
+        
         //remove file from RDF triple store if triple store is used
 	        play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		        case "yes" => {
