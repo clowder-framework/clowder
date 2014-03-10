@@ -32,9 +32,12 @@ import java.io.InputStreamReader
  */
 case class Preview (
 	id: ObjectId = new ObjectId,
-	file_id: Option[String] = None,
-	section_id: Option[String] = None,
-	dataset_id: Option[String] = None,
+	//file_id: Option[String] = None,
+	//section_id: Option[String] = None,
+	//dataset_id: Option[String] = None,
+	file_id: Option[ObjectId] = None,
+	section_id: Option[ObjectId] = None,
+	dataset_id: Option[ObjectId] = None,
 	filename: Option[String] = None,
 	contentType: String,
 	annotations: List[ThreeDAnnotation] = List.empty,
@@ -56,9 +59,10 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
   }
   
   def findByFileId(id: ObjectId): List[Preview] = {
-    dao.find(MongoDBObject("file_id"->id)).toList
-  }
+		    dao.find(MongoDBObject("file_id"->id)).toList
+		  }
   
+    
   def findBySectionId(id: ObjectId): List[Preview] = {
     dao.find(MongoDBObject("section_id"->id)).toList
   }
@@ -71,7 +75,7 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
    * Returns file id for the preview with given id.
    *
    */
-  def findFileId(id: String): Option[String] = {		  
+  def findFileId(id: String): Option[ObjectId] = {		  
 	dao.findOneById(new ObjectId(id)) match{
 		  case Some(preview) => {			 
 			  return preview.file_id
@@ -109,6 +113,7 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
     val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id))) match {
       case Some(file) => Some(file.inputStream, 
+          //"filename" is actually the name of this preview.
           file.getAs[String]("filename").getOrElse("unknown-name"),
           file.getAs[String]("contentType").getOrElse("unknown"),
           file.getAs[Long]("length").getOrElse(0))
