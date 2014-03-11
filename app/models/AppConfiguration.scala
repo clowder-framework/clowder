@@ -53,6 +53,7 @@ object AppConfiguration extends ModelCompanion[AppConfiguration, ObjectId] {
   }
   
   def addAdmin(newAdminEmail: String) {
+    Logger.debug("Adding admin: "+ newAdminEmail)
     AppConfiguration.update(MongoDBObject("name" -> "default"), $addToSet("admins" ->  newAdminEmail), false, false, WriteConcern.Safe)
   }
   def removeAdmin(adminEmail: String) {
