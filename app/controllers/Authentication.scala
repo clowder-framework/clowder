@@ -5,6 +5,8 @@ import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
 import models.Credentials
+import api.WithPermission
+import api.Permission
 
 /**
  * Login, logout, signup.
@@ -12,7 +14,7 @@ import models.Credentials
  * @author Luigi Marini
  *
  */
-object Authentication extends Controller {
+object Authentication extends SecuredController {
   
   /**
    * Login form.
@@ -44,4 +46,10 @@ object Authentication extends Controller {
       user => Ok("Login successfull")
     )
   }
+  
+  def notAuthorized = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+    implicit val user = request.user
+    Ok(views.html.notAuthorized())
+  }
+  
 }
