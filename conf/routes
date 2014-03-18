@@ -12,13 +12,20 @@ GET      /users/by-country/:country                                          con
 GET      /users/create/:username                                             controllers.Users.create(username)
 GET      /users/view/:id                                                     controllers.Users.view(id)
 
+# DTS Information
+GET       /DTSInfo/requests             @controllers.DTSInfo.getDTSRequests()
+GET       /DTSInfo/servers				@controllers.DTSInfo.getExtractorServersIP()
+GET       /DTSInfo/extractors           @controllers.DTSInfo.getExtractorNames() 
+GET       /DTSInfo/inputtypes           @controllers.DTSInfo.getExtractorInputTypes()
+
+
 # Files
 GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET		/files/new					      @controllers.Files.uploadFile
 
-#This may not require; will change in subsequent version
-GET     /extract                          @controllers.Files.extractFile
-POST    /extract                          @controllers.Files.uploadExtract()
+#This may not require; This is only for testing. It will change in subsequent version
+GET     /extraction/form                  @controllers.Files.extractFile
+POST    /extraction/upload                @controllers.Files.uploadExtract()
 #End
 
 GET     /files/metadataSearch          	  @controllers.Files.metadataSearch

@@ -47,6 +47,7 @@ object Extraction extends ModelCompanion[Extraction, ObjectId] {
   /**
    * Returns list of extractors and their corresponding status for a specified file
    */
+  
   def getExtractorList(fileId:ObjectId):collection.mutable.Map[String,String] ={
   
     val allOfFile = dao.find(MongoDBObject("file_id" -> fileId)).toList
@@ -57,6 +58,15 @@ object Extraction extends ModelCompanion[Extraction, ObjectId] {
   return extractorsArray
   
 }
+  
+def getExtractionTime(fileId:ObjectId):List[Date] ={
+  val allOfFile = dao.find(MongoDBObject("file_id" -> fileId)).toList
+	var extractorsTimeArray=List[Date]()
+	for(currentExtraction <- allOfFile){
+	    extractorsTimeArray = currentExtraction.start.get :: extractorsTimeArray
+	}
+  return extractorsTimeArray
+} 
   
 }
 

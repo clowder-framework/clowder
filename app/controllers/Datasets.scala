@@ -40,7 +40,7 @@ import api.WithPermission
  * @author Luigi Marini
  *
  */
-class Datasets @Inject() (datasets: DatasetService, files: FileService, collections: CollectionService) extends SecuredController {
+class Datasets @Inject() (datasets: DatasetService, files: FileService, collections: CollectionService, dtsrequests:DTSRequestsService) extends SecuredController {
 
 object ActivityFound extends Exception { }
    
@@ -283,7 +283,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 			                if(!fileType.equals("multi/files-zipped")){
 						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
-					        }
+					         }
 					        
 					        // add file to dataset 
 					        val dt = dataset.copy(files = List(f), author=identity)
@@ -338,6 +338,25 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		 			    	//Logger.debug("Inside File: Extraction Id : "+ extractJobId)
 		 			    	
 				            // redirect to dataset page
+		 			    	
+		 			    			/***** Inserting DTS Requests   **/  
+		 			    			
+						            val clientIP=request.remoteAddress
+						            //val clientIP=request.headers.get("Origin").get
+					                val domain=request.domain
+					                val keysHeader=request.headers.keys
+					                //request.
+					                Logger.debug("---\n \n")
+					            
+					                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+					                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+					                
+					                Logger.debug("----")
+					                val serverIP= request.host
+						            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+						            
+						            /****************************/ 
+		 			    	
 				            Redirect(routes.Datasets.dataset(dt.id.toString))
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
@@ -394,6 +413,24 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
 						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id.toString, dt.id.toString, host, dtkey, Map.empty, "0", dt.id.toString, ""))}
+		          
+		          /***** Inserting DTS Requests   **/  
+	                               Logger.debug("************THE FILE ALREADY EXISTS*********")
+						            val clientIP=request.remoteAddress
+						            //val clientIP=request.headers.get("Origin").get
+					                val domain=request.domain
+					                val keysHeader=request.headers.keys
+					                //request.
+					                Logger.debug("---\n \n")
+					            
+					                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+					                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+					                
+					                Logger.debug("----")
+					                val serverIP= request.host
+						            dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id.toString(), theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
+						            
+				/****************************/ 
 		          
 		          //link file to dataset in RDF triple store if triple store is used
 		          if(theFileGet.filename.endsWith(".xml")){

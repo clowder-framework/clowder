@@ -42,7 +42,8 @@ import play.api.libs.json.JsArray
 class RabbitmqPlugin(application: Application) extends Plugin {
 val files: FileService =  DI.injector.getInstance(classOf[FileService])
   var extractQueue: Option[ActorRef] = None
-  
+  var channel:Channel=null
+  var connection:Connection=null
   override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
     
@@ -59,8 +60,8 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
       if (!port.equals("")) factory.setPort(port.toInt)
       if (!user.equals("")) factory.setUsername(user)
       if (!password.equals("")) factory.setPassword(password)
-      val connection: Connection = factory.newConnection()
-      val channel = connection.createChannel()
+       connection = factory.newConnection()
+      channel = connection.createChannel()
       val replyQueueName = channel.queueDeclare().getQueue()
       Logger.debug("Reply queue name: " + replyQueueName)
       // extraction queue
@@ -89,7 +90,15 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
 
   override def onStop() {
     Logger.debug("Shutting down Rabbitmq Plugin")
-  }
+    if(channel!=null){   
+        Logger.debug("Channel closing")
+        channel.close()
+    }
+    if(connection!=null){
+      Logger.debug("Connection closing")
+      connection.close()
+    }
+  }//end of Rabbitmq on stop
 
   override lazy val enabled = {
     !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
@@ -116,8 +125,58 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
     bindingList
 
   }
+  
+  def getServerIPs():Future[Response] = {
+    val configuration = play.api.Play.configuration
+   // val rUrl = "http://dts1.ncsa.illinois.edu:15672/api/channels"
+      val rUrl = "http://localhost:15672/api/channels"
+
+    val ipList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
+
+    ipList.map{
+      l=>Logger.debug("Channel : "+ l.body)
+      Logger.debug("-----------------------------------------------")
+      Logger.debug(" ")
+      
+    }
+   ipList
+   }
+  
+  def getQueueBindings(vhost:String,qname:String):Future[Response]={
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("rabbitmq.host").getOrElse("")
+    
+    var vhost1:String=""
+    if(vhost=="/"){
+      vhost1="%2F"
+    }
+    val qbindUrl="http://"+host+":15672/api/queues/"+vhost1+"/"+qname+"/bindings"
+    Logger.debug("-----query bind Url:  "+ qbindUrl)
+    val rks=WS.url(qbindUrl).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
+    rks 
+  }
+  
+  def getChannelInfo(cid: String): Future[Response]={
+     val configuration = play.api.Play.configuration
+     //val cUrl = "http://dts1.ncsa.illinois.edu:15672/api/channels"
+     val cUrl = "http://localhost:15672/api/channels"
+
+    val deList: Future[Response] = WS.url(cUrl+"/"+cid).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
+
+   /* deList.map{
+      l=>
+        Logger.debug("Channel Details : "+ l.body)
+      
+    }*/
+   deList
+     
+  }
+
 
 }
+
+
+
 
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
  
@@ -189,8 +248,10 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
             val extractor_id = (json \ "extractor_id").as[String]
             val status = (json \ "status").as[String]
             val start = (json \ "start").asOpt[String]
+            //val end = (json \ "end").asOpt[String]
             val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             val startDate = formatter.parse(start.get)
+            //val endDate=formatter.parse(end.get)
             Logger.info("Status start: " + startDate)
             Extraction.insert(Extraction(new ObjectId(), file_id, extractor_id, status, Some(startDate), None))
           

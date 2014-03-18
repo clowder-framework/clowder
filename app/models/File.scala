@@ -358,6 +358,7 @@ def getJsonArray(list: List[JsObject]): JsArray = {
 	          Thumbnail.remove(MongoDBObject("_id" -> file.thumbnail_id.get))
         }
         FileDAO.remove(MongoDBObject("_id" -> file.id))
+        Logger.debug("File Removed")
       }
       case None =>
     }    

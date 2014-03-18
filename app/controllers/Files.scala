@@ -41,7 +41,7 @@ import javax.inject.Inject
  *
  * @author Luigi Marini
  */
-class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService) extends SecuredController {
+class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, dtsrequests: DTSRequestsService) extends SecuredController {
 
   /**
    * Upload form.
@@ -158,7 +158,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
    * Upload file page.
    */
   def uploadFile = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
-    implicit val user = request.user
+     implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
   
@@ -222,7 +222,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
               // TODO RK need to replace unknown with the server name
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
               // TODO RK : need figure out if we can use https
-              val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+             // val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+              val host = "http://" + request.host
               val id = f.id.toString
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 	            
@@ -343,7 +344,24 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
 	            val id = f.id.toString
+             
+	            /***** Inserting DTS Requests   **/  
+	            
+	            val clientIP=request.remoteAddress
+	            //val clientIP=request.headers.get("Origin").get
+                val domain=request.domain
+                val keysHeader=request.headers.keys
+                //request.
+                Logger.debug("---\n \n")
+            
+                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
                 
+                Logger.debug("----")
+                val serverIP= request.host
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+	           /****************************/ 
+	           
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 	            
 	            //for metadata files
@@ -856,6 +874,25 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id.toString
 
+							  
+							   /***** Inserting DTS Requests   **/  
+	            
+						            val clientIP=request.remoteAddress
+						            //val clientIP=request.headers.get("Origin").get
+					                val domain=request.domain
+					                val keysHeader=request.headers.keys
+					                //request.
+					                Logger.debug("---\n \n")
+					            
+					                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+					                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+					                
+					                Logger.debug("----")
+					                val serverIP= request.host
+						            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+						      
+						      /****************************/ 
+							  
 							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
 //					  		  current.plugin[ElasticsearchPlugin].foreach{
 //					  			  _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))

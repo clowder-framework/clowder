@@ -71,7 +71,7 @@ import scala.util.control._
 
 object MustBreak extends Exception { }
 
-class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, tags: TagService)  extends ApiController {
+class Files @Inject() (files: FileService, datasets: DatasetService, queries: QueryService, tags: TagService, dtsrequests:DTSRequestsService )  extends ApiController {
   
   def get(id: String) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
 	    Logger.info("GET file with id " + id)    
@@ -292,6 +292,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
     request.user match {
       case Some(user) => {
         request.body.file("File").map { f =>
+         
           var nameOfFile = f.filename
           var flags = ""
           if (nameOfFile.toLowerCase().endsWith(".ptm")) {
@@ -330,6 +331,22 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
               val host = "http://" + request.host
               Logger.debug("hosts=" + request.host)
               //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
+              /***** Inserting DTS Requests   **/  
+	            
+	            val clientIP=request.remoteAddress
+	            //val clientIP=request.headers.get("Origin").get
+                val domain=request.domain
+                val keysHeader=request.headers.keys
+                //request.
+                Logger.debug("---\n \n")
+            
+                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+                
+                Logger.debug("----")
+                val serverIP= request.host
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+	           /****************************/ 
               current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags)) }
 
               //for metadata files
@@ -419,6 +436,25 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
                 Logger.debug("host= "+host)
+                
+                /***** Inserting DTS Requests   **/  
+	            
+	            val clientIP=request.remoteAddress
+	            //val clientIP=request.headers.get("Origin").get
+                val domain=request.domain
+                val keysHeader=request.headers.keys
+                //request.
+                Logger.debug("---\n \n")
+            
+                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+                
+                Logger.debug("----")
+                val serverIP= request.host
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+	           /****************************/ 
+                
+                
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
 	            	            
 	            //for metadata files
@@ -570,7 +606,24 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 	          // TODO RK : need figure out if we can use https
 	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
-	              
+	          
+	          /***** Inserting DTS Requests   **/  
+	            
+	            val clientIP=request.remoteAddress
+	            //val clientIP=request.headers.get("Origin").get
+                val domain=request.domain
+                val keysHeader=request.headers.keys
+                //request.
+                Logger.debug("---\n \n")
+            
+                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+                
+                Logger.debug("----")
+                val serverIP= request.host
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+	           /****************************/ 
+	          
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
 	          
 	          //for metadata files

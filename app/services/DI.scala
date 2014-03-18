@@ -9,6 +9,7 @@ import play.api.Play
 import com.google.inject.Guice
 import com.google.inject.AbstractModule
 
+
 /**
  * @author Luigi Marini
  *
@@ -32,6 +33,8 @@ class ProdModule extends AbstractModule {
     bind(classOf[QueryService]).to(classOf[QueryServiceFileSystemDB])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
+    bind(classOf[ExtractorService]).to(classOf[MongoDBExtractorService])
+    bind(classOf[DTSRequestsService]).to(classOf[MongoDBDTSRequestsService])
   }
 }
 
@@ -45,5 +48,7 @@ class DevModule extends AbstractModule {
     bind(classOf[QueryService]).to(classOf[QueryServiceFileSystemDB])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
+    bind(classOf[ExtractorService]).to(classOf[MongoDBExtractorService])
+    bind(classOf[DTSRequestsService]).to(classOf[MongoDBDTSRequestsService])
   }
-}
+  }
