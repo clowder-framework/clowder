@@ -170,7 +170,8 @@ def updateDTSRequests()={
                 var host = configuration.getString("rabbitmq.host").getOrElse("")
                 if (!kslist.contains(host))
                   // kslist =  host+ "-" + subq :: kslist
-                  kslist = host :: kslist
+                  //kslist = host :: kslist
+                  kslist="127.0.0.1" :: kslist
 
               } else {
                 var iparr = subi.split('-')(0).split(':')

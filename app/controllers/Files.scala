@@ -226,7 +226,22 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
               val host = "http://" + request.host
               val id = f.id.toString
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
+	            /***** Inserting DTS Requests   **/  
 	            
+	            val clientIP=request.remoteAddress
+	            //val clientIP=request.headers.get("Origin").get
+                val domain=request.domain
+                val keysHeader=request.headers.keys
+                //request.
+                Logger.debug("---\n \n")
+            
+                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+                
+                Logger.debug("----")
+                val serverIP= request.host
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+	           /****************************/ 
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
