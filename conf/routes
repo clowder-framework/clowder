@@ -136,6 +136,14 @@ GET      /javascriptRoutes                                                   con
 # API documentation using Swagger
 GET      /api-docs.json                                                      controllers.ApiHelpController.getResources
 
+# DTS Information
+GET       /api/DTSInfo/requests             @api.DTSInfo.getDTSRequests()
+GET       /api/DTSInfo/servers				@api.DTSInfo.getExtractorServersIP()
+GET       /api/DTSInfo/extractors           @api.DTSInfo.getExtractorNames() 
+GET       /api/DTSInfo/inputtypes           @api.DTSInfo.getExtractorInputTypes()
+
+
+
 # Rest API
 POST	/api/files/:three_d_file_id/geometries/:geometry_id		@api.Files.attachGeometry(three_d_file_id,geometry_id)
 POST	/api/files/:three_d_file_id/3dTextures/:texture_id		@api.Files.attachTexture(three_d_file_id,texture_id)
@@ -166,6 +174,7 @@ POST    /api/files/:id/tags/remove_all                          @api.Files.remov
 GET     /api/files/:id/extract                                  @api.Files.extract(id)
 
 #This may change depending on our discussion on identifying the details of extraction in DTS service
+POST    /api/extraction/uploadurl                               @api.Files.uploadURL()
 POST    /api/extraction                                         @api.Files.uploadExtract()
 GET     /api/extraction/:id/status                              @api.Files.checkExtractorsStatus(id)
 POST    /api/extraction/:id                                     @api.Files.submitAextraction(id)
@@ -177,7 +186,7 @@ POST    /api/files/:id/previews/:p_id     						@api.Files.attachPreview(id, p_i
 GET		/api/files/:id/listpreviews		  						@api.Files.filePreviewsList(id)
 GET		/api/files/:id/getPreviews								@api.Files.getPreviews(id)
 GET		/api/files/:id/isBeingProcessed							@api.Files.isBeingProcessed(id)
-#GET		/api/files/:three_d_file_id/:filename					@api.Files.getGeometry(three_d_file_id,filename)
+#GET    /api/files/:three_d_file_id/:filename					@api.Files.getGeometry(three_d_file_id,filename)
 GET		/api/files/:three_d_file_id/:filename					@api.Files.getTexture(three_d_file_id,filename)
 GET     /api/files/:id                    						@api.Files.download(id)
 GET     /api/queries/:id				                       @api.Files.downloadquery(id)	
