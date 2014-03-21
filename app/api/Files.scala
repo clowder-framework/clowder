@@ -2,8 +2,13 @@
  *
  */
 package api
-
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.OutputStream
+import java.net.URL
+import java.net.HttpURLConnection
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.util.Date
 import java.util.ArrayList
 import java.io.BufferedWriter
@@ -375,6 +380,150 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 
   }
    
+  /**
+   * Upload a file based on a url
+   * 
+   */
+  import javax.activation.MimetypesFileTypeMap
+  def uploadURL() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+    request.user match {
+      case Some(user) => {
+        val configuration = play.api.Play.configuration
+        val tmpdir = configuration.getString("tmpdir").getOrElse("")
+        val datap = request.body.dataParts
+        val fileurl = datap.get("fileurl")
+        
+        
+        Logger.debug("[uploadURL]file Url=" + fileurl.get(0))
+
+       //Ok(toJson(Map("id" -> "xyz2345"))) 
+        var fout:OutputStream=null;
+       // var out: OutputStream = null;
+        //var in: InputStream = null;
+        var in: BufferedInputStream=null;
+        var buff = new Array[Byte](10240)
+        try {
+          Logger.debug("file Url=" + fileurl.get(0))
+          val url = new URL(fileurl.get(0))
+          var len = 0
+          
+          val urlsplit=fileurl.get(0).split("/")
+          val filename=urlsplit(urlsplit.length-1)
+          Logger.debug("filename: "+filename)
+        
+          val connection = url.openConnection().asInstanceOf[HttpURLConnection]
+        
+          connection.setRequestMethod("GET")
+          
+          
+          val ct = connection.getContentType()
+          val clen = connection.getContentLength()
+          
+         // connection.setFixedLengthStreamingMode(clen)
+          
+          val name=connection.getHeaderField("Name")
+          val contentencodings=connection.getContentEncoding()
+          val info=connection.getHeaderFields()
+          val infolen=info.size()
+          Logger.debug("Key Set="+ info.keySet())
+          Logger.debug("content-type " + ct + " content length-" + clen)
+          Logger.debug("contentencodings= "+contentencodings)
+          
+          //in = connection.getInputStream
+          //val localfile = "sample2.png"
+          
+           in = new BufferedInputStream(url.openStream())
+         //var out: ByteArrayOutputStream = new ByteArrayOutputStream()
+          var fout: OutputStream = new FileOutputStream(tmpdir+filename)
+          // out = new BufferedOutputStream(new FileOutputStream(localfile))
+
+          var buf = new Array[Byte](clen)
+          var count = 0
+          while (count != -1) {
+            Logger.debug("Inside while: before: count= "+ count)
+            count = in.read(buf)
+            Logger.debug("Inside while: after: count= "+ count)
+           // out.write(buf, 0, count);
+            if(count == -1){
+              Logger.debug("Inside While even if count is -1")
+            }else{
+                Logger.debug("Trying to write into file")
+                fout.write(buf, 0, count)
+            }
+          }
+          fout.flush()
+          Logger.debug("After read")
+          
+          val localfile=tmpdir+filename
+          
+          import java.io.File
+          val dddd = new File(localfile)
+          
+        
+          val mimetype = new MimetypesFileTypeMap().getContentType(dddd)
+          var fileType = mimetype
+          Logger.debug("fileType= "+ fileType)
+          val file = files.save(new FileInputStream(dddd), dddd.getName(), Some(ct), user, null)
+          val uploadedFile = dddd
+         
+             
+          file match {
+            case Some(f) => {
+              //current.plugin[FileDumpService].foreach { _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile)) }
+
+             val id = f.id.toString
+             fileType=f.contentType
+             val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+              // TODO RK : need figure out if we can use https
+              Logger.debug("request.hosts=" + request.host)
+              Logger.debug("request.path=" + request.path)
+              val host = "http://" + request.host
+              Logger.debug("hosts=" + request.host)
+              //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
+             current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", "")) }
+              Logger.debug("After RabbitmqPlugin")
+              /***** Inserting DTS Requests   **/  
+	            
+	            val clientIP=request.remoteAddress
+	            //val clientIP=request.headers.get("Origin").get
+                val domain=request.domain
+                val keysHeader=request.headers.keys
+                //request.
+                Logger.debug("---\n \n")
+            
+                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+                
+                Logger.debug("----")
+                val serverIP= request.host
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+	           /****************************/ 
+              Ok(toJson(Map("id" -> id)))
+            }
+            case None => {
+              Logger.error("Could not retrieve file that was just saved.")
+              InternalServerError("Error uploading file")
+            }
+          } //end of file match
+        } catch {
+          case e: Exception =>
+            println(e.printStackTrace())
+            BadRequest(toJson("File not attached"))
+        } finally {
+         if(fout!=null)
+           fout.close
+          
+          if(in != null)
+            in.close
+          
+        } //end of finally
+        //      } //end requestbody
+      } //end of match user
+      case None => BadRequest(toJson("Not authorized."))
+    }
+  }
+  
+  
   /**
    * Upload file using multipart form enconding.
    */

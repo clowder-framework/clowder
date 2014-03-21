@@ -20,6 +20,10 @@ import java.text.SimpleDateFormat
 
 class MongoDBDTSRequestsService extends DTSRequestsService {
 
+ /* def getList(x:com.mongodb.BasicDBList):List[String]={
+    var y=Json.parse(com.mongodb.util.JSON.serialize(x))
+    
+  }*/
   def getDTSRequests(): List[DTSRequests] = {
     var list_requests = List[DTSRequests]()
     val allRequests = DTSRequests.dao.collection.find()

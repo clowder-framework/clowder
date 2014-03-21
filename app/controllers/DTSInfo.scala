@@ -46,7 +46,7 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
             list_servers1=ls.substring(1, ls.size-1)::list_servers1
             }
         Logger.debug("JSARRAY----" + jarr.toString)
-        //Ok(Json.obj("Servers" -> jarr))
+       //Ok(Json.obj("Servers" -> jarr))
         Ok(views.html.dtsserverip(list_servers1,list_servers1.size))
       }
     }
@@ -65,7 +65,7 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
 
     }
     Logger.debug("JSARRAY----" + jarr.toString)
-   // Ok(Json.obj("Extractors" -> jarr))
+    //Ok(Json.obj("Extractors" -> jarr))
     Ok(views.html.dtsextractors(list_names1,list_names1.size))
 
   }
