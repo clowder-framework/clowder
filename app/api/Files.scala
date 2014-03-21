@@ -44,6 +44,7 @@ import play.api.mvc.SimpleResult
 import models.File
 import play.api.libs.json.JsObject
 import play.api.Play.configuration
+import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
 /**
  * Json API for files.
@@ -51,6 +52,7 @@ import play.api.Play.configuration
  * @author Luigi Marini
  *
  */
+@Api(value = "/files", listingPath = "/api-docs.json/files", description = "A file is the raw bytes plus metadata.")
 class Files @Inject()(
   files: FileService,
   datasets: DatasetService,
@@ -63,6 +65,7 @@ class Files @Inject()(
   sqarql: RdfSPARQLService,
   thumbnails: ThumbnailService) extends ApiController {
 
+  @ApiOperation(value = "Retrieve a file by id", notes = "Returns file metadata", responseClass = "None", httpMethod = "GET")
   def get(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
       Logger.info("GET file with id " + id)

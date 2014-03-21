@@ -22,9 +22,13 @@ object ApiHelp extends Controller {
 			  basePath: "http://localhost:9000/api",
 			  apis: [
 			    {
-			      path: "/datasets.{format}",
+			      path: "/datasets.json",
 			      description: "Datasets are basic containers of data"
-			    }
+			    },
+          {
+            path: "/files.json",
+            description: "Files include raw bytes and metadata"
+          }
 			  ]
 			}
     """))

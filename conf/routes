@@ -5,6 +5,11 @@
 # Home page
 GET      /                                                                   @controllers.Application.index
 
+# Map static resources from the /public folder to the /assets URL path
+#GET      /documentation/api/*testFile                                        controllers.Assets.at(path="/public/docs/api", testFile)
+GET      /assets/img/glyphicons-halflings-white.png                          controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
+GET      /assets/img/glyphicons-halflings.png                                controllers.Assets.at(path="/public", file="/images/glyphicons-halflings.png")
+GET      /assets/*file                                                       controllers.Assets.at(path="/public", file)
 
 # Users
 GET      /users                                                              controllers.Users.list
@@ -65,12 +70,7 @@ GET      /files/:id/similar                                                  @co
 GET      /queries/:id/similar                                                @controllers.Search.findSimilar(id: UUID)
 
 # Previewers
-GET      /previewers/list                                                    controllers.Previewers.list	
-
-# Map static resources from the /public folder to the /assets URL path
-GET      /assets/img/glyphicons-halflings-white.png                          controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
-GET      /assets/img/glyphicons-halflings.png                                controllers.Assets.at(path="/public", file="/images/glyphicons-halflings.png")
-GET      /assets/*file                                                       controllers.Assets.at(path="/public", file)
+GET      /previewers/list                                                    controllers.Previewers.list
 
 ## SecureSocial ##
 
@@ -117,7 +117,9 @@ POST    /admin/theme                                                         @co
 GET      /javascriptRoutes                                                   @controllers.Application.javascriptRoutes
 
 # API documentation using Swagger
-GET      /api-docs.json                                                      controllers.ApiHelpController.getResources
+GET     /api-docs.json                                                      controllers.ApiHelpController.getResources
+GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
+GET     /api-docs.json/files              controllers.ApiHelpController.getResource(path = "/api-docs.json/files")
 
 # Rest API
 POST	/api/files/:three_d_file_id/geometries/:geometry_id		@api.Files.attachGeometry(three_d_file_id: UUID,geometry_id: UUID)
@@ -155,8 +157,6 @@ GET     /api/queries/:id				                        @api.Files.downloadquery(id:
 
 # DANGER
 GET     /api/delete-data                    					api.Admin.deleteAllData
-
-GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)

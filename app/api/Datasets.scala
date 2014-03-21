@@ -36,7 +36,7 @@ import play.api.Play.configuration
  * @author Luigi Marini
  *
  */
-@Api(value = "/datasets", listingPath = "/api-docs.{format}/datasets", description = "A dataset is a container for files and metadata")
+@Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
 class Datasets @Inject()(
   datasets: DatasetService,
