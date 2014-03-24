@@ -181,7 +181,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
             if(isInCollection(dataset,collection)){
               // remove dataset from collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
-                $addToSet("datasets" -> Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)
+            		  $pull("datasets" ->  MongoDBObject( "_id" -> dataset.id)), false, false, WriteConcern.Safe)
               //remove collection from dataset
               datasets.removeCollection(dataset.id, collection.id)
               Logger.info("Removing dataset from collection completed")
