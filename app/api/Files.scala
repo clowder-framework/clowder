@@ -491,7 +491,11 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 			                val serverIP= request.host
 				            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 				           /****************************/ 
-			              
+			                
+				            /*file remove from temporary directory*/
+				            
+				            dddd.delete()
+				            
 				            Ok(toJson(Map("id" -> id)))
 			            }
 			            case None => {
