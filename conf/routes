@@ -174,7 +174,7 @@ POST    /api/files/:id/tags/remove_all                          @api.Files.remov
 GET     /api/files/:id/extract                                  @api.Files.extract(id)
 
 #This may change depending on our discussion on identifying the details of extraction in DTS service
-POST    /api/extraction/uploadurl                               @api.Files.uploadURL()
+POST    /api/extraction/uploadbyurl                             @api.Files.uploadbyURL()
 POST    /api/extraction                                         @api.Files.uploadExtract()
 GET     /api/extraction/:id/status                              @api.Files.checkExtractorsStatus(id)
 POST    /api/extraction/:id                                     @api.Files.submitAextraction(id)
