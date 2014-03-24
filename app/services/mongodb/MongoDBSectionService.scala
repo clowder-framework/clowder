@@ -18,6 +18,10 @@ import play.api.libs.json.{JsValue, Json}
  */
 @Singleton
 class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService) extends SectionService {
+  
+  def listSections(): List[Section] = {
+    SectionDAO.findAll.toList
+  }
 
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to section " + id + " : " + tags)

@@ -8,6 +8,8 @@ import play.api.libs.json.JsValue
  */
 trait SectionService {
 
+  def listSections(): List[Section]
+  
   def get(id: UUID): Option[Section]
 
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
