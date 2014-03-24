@@ -168,9 +168,9 @@ def updateDTSRequests()={
                 Logger.debug("LocalHost: The Extractor is running local to Rabbitmq Server")
                 Logger.debug("GET the rabbitmq host name")
                 var host = configuration.getString("rabbitmq.host").getOrElse("")
-                if (!kslist.contains(host))
+                if (!kslist.contains(host) && !kslist.contains("127.0.0.1"))
                   // kslist =  host+ "-" + subq :: kslist
-                  //kslist = host :: kslist
+                 //  kslist = host :: kslist
                   kslist="127.0.0.1" :: kslist
 
               } else {
