@@ -17,8 +17,8 @@ object MongoContext {
       val name = "global"
       override val typeHintStrategy = StringTypeHintStrategy(when = TypeHintFrequency.Always,
         typeHint = "_typeHint")
+      registerCustomTransformer(UUIDTransformer)
       registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
       registerClassLoader(Play.classloader)
-      registerCustomTransformer(UUIDTransformer)
     }
 }

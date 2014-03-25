@@ -647,9 +647,9 @@ class MongoDBFileService @Inject() (
           if(!file.thumbnail_id.isEmpty)
             Thumbnail.remove(MongoDBObject("_id" -> file.thumbnail_id.get))
         }
-        FileDAO.remove(MongoDBObject("_id" -> file.id))
+        FileDAO.removeById(new ObjectId(file.id.stringify))
       }
-      case None =>
+      case None => Logger.debug("File not found")
     }
   }
 

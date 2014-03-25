@@ -1229,8 +1229,8 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
+          Logger.debug("Deleting file: " + file.filename)
           files.removeFile(id)
-          Logger.debug(file.filename)
           //remove file from RDF triple store if triple store is used
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
             case "yes" => {
@@ -1243,7 +1243,7 @@ class Files @Inject()(
           }
           Ok(toJson(Map("status" -> "success")))
         }
-        case None => Ok(toJson(Map("status" -> "success")))
+        case None => Ok(toJson(Map("status" -> "error", "msg" -> "file not found")))
       }
   }
 
