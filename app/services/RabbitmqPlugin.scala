@@ -90,12 +90,16 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
 
   def receive = {
     case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags) => {
+      var theDatasetId = ""
+      if(datasetId != null)
+        theDatasetId = datasetId.stringify
+      
       val msgMap = scala.collection.mutable.Map(
         "id" -> Json.toJson(id.stringify),
         "intermediateId" -> Json.toJson(intermediateId.stringify),
         "fileSize" -> Json.toJson(fileSize),
         "host" -> Json.toJson(host),
-        "datasetId" -> Json.toJson(datasetId.stringify),
+        "datasetId" -> Json.toJson(theDatasetId),
         "flags" -> Json.toJson(flags)
       )
       // add extra fields
