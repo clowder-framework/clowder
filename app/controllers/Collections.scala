@@ -62,8 +62,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       var firstPage = false
       var lastPage = false
       if (latest.size == 1) {
-        firstPage = collectionList.exists(_.id == latest.get.id)
-        lastPage = collectionList.exists(_.id == first.get.id)
+        firstPage = collectionList.exists(_.id.equals(latest.get.id))
+        lastPage = collectionList.exists(_.id.equals(first.get.id))
         Logger.debug("latest " + latest.get.id + " first page " + firstPage)
         Logger.debug("first " + first.get.id + " last page " + lastPage)
       }

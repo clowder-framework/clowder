@@ -10,6 +10,7 @@ import play.api.Logger
 class UUID(uuid: String) {
   def stringify = uuid
   override def toString() = uuid
+  def equals(uuidToCompare: UUID) = {stringify == uuidToCompare.stringify}
 }
 
 object UUID {

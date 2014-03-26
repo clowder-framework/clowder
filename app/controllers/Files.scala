@@ -127,8 +127,8 @@ class Files @Inject() (
     var firstPage = false
     var lastPage = false
     if (latest.size == 1) {
-      firstPage = fileList.exists(_.id == latest.get.id)
-      lastPage = fileList.exists(_.id == first.get.id)
+      firstPage = fileList.exists(_.id.equals(latest.get.id))
+      lastPage = fileList.exists(_.id.equals(first.get.id))
       Logger.debug("latest " + latest.get.id + " first page " + firstPage)
       Logger.debug("first " + first.get.id + " last page " + lastPage)
     }
