@@ -597,10 +597,10 @@ class Files @Inject()(
     // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
       val extractor_id = if (eid.isDefined) {
-        eid
+        Some(UUID(eid.get))
       } else {
-        Logger.info("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to \"Other\".  request.body: " + request.body.toString)
-        "Other"
+        Logger.info("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to None.  request.body: " + request.body.toString)
+        None
       }
       request.body match {
         case JsObject(fields) => {
@@ -610,7 +610,7 @@ class Files @Inject()(
                 case Some(preview) =>
                   // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
                   // TODO replace null with None
-                  previews.attachToFile(preview_id, file_id, UUID(eid.get), request.body)
+                  previews.attachToFile(preview_id, file_id, extractor_id, request.body)
                   Ok(toJson(Map("status" -> "success")))
                 case None => BadRequest(toJson("Preview not found"))
               }
