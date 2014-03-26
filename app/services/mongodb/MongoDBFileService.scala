@@ -642,10 +642,10 @@ class MongoDBFileService @Inject() (
             comments.removeComment(comment)
           }
           for(texture <- threeD.findTexturesByFileId(file.id)){
-            ThreeDTextureDAO.remove(MongoDBObject("_id" -> texture.id))
+            ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
           if(!file.thumbnail_id.isEmpty)
-            Thumbnail.remove(MongoDBObject("_id" -> file.thumbnail_id.get))
+            Thumbnail.removeById(new ObjectId(file.thumbnail_id.get.stringify))
         }
         FileDAO.removeById(new ObjectId(file.id.stringify))
       }
