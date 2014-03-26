@@ -110,8 +110,9 @@ class Files @Inject() (
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
-    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-    var prev, next = ""
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+    var prev = ""
+    var next = ""
     var fileList = List.empty[models.File]
     if (direction == "b") {
       fileList = files.listFilesBefore(date, limit)

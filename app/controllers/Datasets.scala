@@ -62,7 +62,7 @@ class Datasets @Inject()(
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when
-      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
       var prev, next = ""
       var datasetList = List.empty[models.Dataset]
       if (direction == "b") {
