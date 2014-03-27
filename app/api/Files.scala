@@ -81,6 +81,7 @@ class Files @Inject()(
   /**
    * List all files.
    */
+  
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
     request =>
       val list = for (f <- files.listFiles()) yield jsonFile(f)
