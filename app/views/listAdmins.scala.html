@@ -1,9 +1,6 @@
 @(admins: List[String])(implicit user: Option[securesocial.core.Identity])
 
 @main("Admins") {
-	<script language="javascript">	
-		var hostIp = "@play.Play.application().configuration().getString("hostIp")";
-	</script>
 	<script src="@routes.Assets.at("javascripts/manageAdmins.js")" type="text/javascript"></script>
 	<script>
 		function handleRemoval(email, theElement){

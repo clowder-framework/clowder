@@ -5,7 +5,7 @@ function removeAdmin(email){
 
 	var request = $.ajax({
 	       type: 'POST',
-	       url: "http://"+hostIp+":"+window.location.port+"/api/remove-admin",
+	       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/remove-admin",
 	       data: JSON.stringify(adminId),
 	       contentType: "application/json"
 	     });

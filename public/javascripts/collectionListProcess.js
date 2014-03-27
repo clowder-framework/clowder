@@ -1,7 +1,8 @@
 function removeCollection(collectionId,event){
+
 	var request = $.ajax({
 	       type: 'POST',
-	       url: "http://"+hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/remove"
+	       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') +"/api/collections/"+collectionId+"/remove"
 	     });
 	request.done(function (response, textStatus, jqXHR){
         console.log("Response " + response);

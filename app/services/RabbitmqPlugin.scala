@@ -30,7 +30,7 @@ import org.bson.types.ObjectId
  */
 class RabbitmqPlugin(application: Application) extends Plugin {
 
-  var extractQueue: Option[ActorRef] = None
+  var extractQueue: Option[ActorRef] = None  
   
   override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
@@ -93,14 +93,27 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 }
 
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
+  
+  val appHttpPort = play.api.Play.configuration.getString("http.port").get
+  val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
  
   def receive = {
       case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags) => {
+        var actualHost = host
+        //Tell the extractors to use https if webserver is so configured
+        if(!appHttpsPort.equals("")){
+          actualHost = host.replaceAll("^http:", "https:").replaceFirst(":"+appHttpPort, ":"+appHttpsPort)
+        }
+        
+        Logger.debug("actualHost: "+ actualHost)
+        Logger.debug("http: "+ appHttpPort)
+        Logger.debug("https: "+ appHttpsPort)
+
         val msgMap = scala.collection.mutable.Map(
             "id" -> Json.toJson(id),
             "intermediateId" -> Json.toJson(intermediateId),
             "fileSize" -> Json.toJson(fileSize),
-            "host" -> Json.toJson(host),
+            "host" -> Json.toJson(actualHost),
             "datasetId" -> Json.toJson(datasetId),
             "flags" -> Json.toJson(flags)
             )

@@ -84,7 +84,6 @@
     	var Configuration = {};
     	Configuration.id  = "@dataset.id";
 		Configuration.authenticated = @user.isDefined;
-		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
 		Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
 		Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
@@ -496,19 +495,19 @@
 							        }
 
 						        if(j <= tableLength)	    
-							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td class='file-list-cell'><a href='"+   window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')   +"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        else if(tableLength > 0)
-						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td class='file-list-cell'><a href='"+  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')  +"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
 						        else{
 						        	if($("#datasetFilesTable tbody").length == 0)
 						        		$("#datasetFilesTable").append("<tbody></tbody>");
-						        	$("#datasetFilesTable tbody").append("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody").append("<tr><td class='file-list-cell'><a href='"+  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')  +"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
 							        		);
@@ -573,9 +572,6 @@
 					<td><a class="requiresLogin" href="#" style="font-style:italic;" onclick="removeFile('@(file.id.toString)',event,true);">Delete</a></td></tr>				
 				}
 				</table>
-				<script language="javascript">	
-					var hostIp = "@play.Play.application().configuration().getString("hostIp")";
-				</script> 
 				<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 				<a href="#myModal" class="btn btn-default btn-sm" data-toggle="modal" id="fileUploadBtn">Add file</a>
 				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -634,7 +630,7 @@
 							var selectedName = $("#filesAddSelect option:selected").text();
 							var request = $.ajax({
 							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
+							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
 							     });  
 							request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);	        
@@ -655,7 +651,7 @@
 						function detachFile(fileId, fileName,event){
 							var request = $.ajax({
 							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
+							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
 							     });
 							request.done(function (response, textStatus, jqXHR){
 								console.log("Response " + response);	        
@@ -746,8 +742,8 @@
 							var selectedName = $("#collectionAddSelect option:selected").text();
 							var request = $.ajax({
 							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/collections/"+selectedId+"/datasets/"+"@dataset.id"
-							     });
+							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+selectedId+"/datasets/"+"@dataset.id"
+							     });  
 							request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);	        
 						        $("#collectionAddSelect option[value=" + selectedId + "]").remove();
@@ -757,17 +753,17 @@
 						        while(i <= tableLength && $("#collTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
 						        	i++;
 						        if(i <= tableLength)	        
-							        $("#collTable tbody tr:nth-child("+i+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+							        $("#collTable tbody tr:nth-child("+i+")").before("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
 							        		);
 						        else if(tableLength > 0)
-						        	$("#collTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+						        	$("#collTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
 							        		);
 						        else{
 						        	if($("#collTable tbody").length == 0)
 						        		$("#collTable").append("<tbody></tbody>");
-						        	$("#collTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+						        	$("#collTable tbody").append("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
 							        		);
 						        	}
@@ -784,7 +780,7 @@
 						function removeCollection(collectionId, collectionName,event){
 							var request = $.ajax({
 							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasetsRemove/"+"@dataset.id"+"/True"
+							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasetsRemove/"+"@dataset.id"+"/True"
 							     });
 							request.done(function (response, textStatus, jqXHR){
 								console.log("Response " + response);	        

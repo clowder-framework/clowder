@@ -65,9 +65,11 @@ function fetchFrame(index,prNum){
 
   console.log("ONI previewer for " + Configuration.id);
   
-  var fileUrl = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.url;
-  var pathJs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.jsPath + "/";
-  previewUrl = "http://" + Configuration.hostIp + ":" + window.location.port + "/api/previews/";
+  var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
+  
+  var fileUrl = hostAddress + Configuration.url;
+  var pathJs = hostAddress + Configuration.jsPath + "/";
+  previewUrl = hostAddress + "/api/previews/";
   var width = 750;
   var height = 550;
   var cacheLength = 5;  

@@ -835,7 +835,7 @@ function clearConfigTabAnnotations(prNum){
 
   console.log("X3D previewer for " + Configuration.id);
   
-  var pathJs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.jsPath + "/";
+  var pathJs = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + Configuration.jsPath + "/";
   
   width = 750;
   height = 550;
