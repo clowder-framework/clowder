@@ -206,6 +206,7 @@ class Datasets @Inject()(
       }
   }
 
+  @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection)) {
     request =>
       collections.get(collectionId) match {

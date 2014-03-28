@@ -28,6 +28,10 @@ object ApiHelp extends Controller {
           {
             path: "/files.json",
             description: "Files include raw bytes and metadata"
+          },
+          {
+            path: "/collections.json",
+            description: "Collections are groupings of datasets"
           }
 			  ]
 			}
