@@ -51,6 +51,9 @@ class Datasets @Inject()(
   /**
    * List all datasets.
    */
+  @ApiOperation(value = "List all datasets",
+      notes = "Returns list of datasets and descriptions.",
+      responseClass = "None", httpMethod = "GET")
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListDatasets)) {
     request =>
       val list = datasets.listDatasets.map(datasets.toJSON(_))
@@ -80,6 +83,9 @@ class Datasets @Inject()(
   /**
    * Create new dataset
    */
+  @ApiOperation(value = "Create new dataset",
+      notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
+      responseClass = "None", httpMethod = "POST")
   def createDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
     request =>
       Logger.debug("Creating new dataset")
@@ -119,6 +125,9 @@ class Datasets @Inject()(
       }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
 
+  @ApiOperation(value = "Attach existing file to dataset",
+      notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
+      responseClass = "None", httpMethod = "POST")
   def attachExistingFile(dsId: UUID, fileId: UUID) = SecuredAction(parse.anyContent,
     authorization = WithPermission(Permission.CreateDatasets)) {
     request =>
@@ -153,6 +162,9 @@ class Datasets @Inject()(
       }
   }
 
+  @ApiOperation(value = "Detach file from dataset",
+      notes = "File is not deleted, only separated from the selected dataset. If the file is an XML metadata file, the metadata are removed from the dataset.",
+      responseClass = "None", httpMethod = "POST")
   def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollections)) {
     request =>
       datasets.get(datasetId) match {
@@ -214,6 +226,9 @@ class Datasets @Inject()(
       Ok(toJson(Map("status" -> "success")))
   }
 
+  @ApiOperation(value = "Add user-generated metadata to dataset",
+      notes = "",
+      responseClass = "None", httpMethod = "POST")
   def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata)) {
     request =>
       Logger.debug(s"Adding user metadata to dataset $id")
@@ -242,6 +257,9 @@ class Datasets @Inject()(
     }
   }
 
+  @ApiOperation(value = "List files in dataset",
+      notes = "Datasets and descriptions.",
+      responseClass = "None", httpMethod = "GET")
   def datasetFilesList(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset)) {
     request =>
       datasets.get(id) match {
@@ -286,6 +304,9 @@ class Datasets @Inject()(
       }
   }
 
+  @ApiOperation(value = "Remove tag of dataset",
+      notes = "",
+      responseClass = "None", httpMethod = "POST")
   def removeTag(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteTags)) {
     implicit request =>
       Logger.debug("Removing tag " + request.body)
@@ -301,6 +322,9 @@ class Datasets @Inject()(
    * REST endpoint: POST: Add tags to a dataset.
    * Requires that the request body contains a "tags" field of List[String] type.
    */
+  @ApiOperation(value = "Add tags to dataset",
+      notes = "Requires that the request body contains a 'tags' field of List[String] type.",
+      responseClass = "None", httpMethod = "POST")
   def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
     implicit request =>
       addTagsHelper(TagCheck_Dataset, id, request)
@@ -310,6 +334,9 @@ class Datasets @Inject()(
    * REST endpoint: POST: remove tags.
    * Requires that the request body contains a "tags" field of List[String] type.
    */
+  @ApiOperation(value = "Remove tags of dataset",
+      notes = "Requires that the request body contains a 'tags' field of List[String] type.",
+      responseClass = "None", httpMethod = "POST")
   def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
     implicit request =>
       removeTagsHelper(TagCheck_Dataset, id, request)
@@ -476,6 +503,9 @@ class Datasets @Inject()(
   /**
    * REST endpoint: POST: remove all tags.
    */
+  @ApiOperation(value = "Remove all tags of dataset",
+      notes = "Forcefully remove all tags for this dataset.  It is mainly intended for testing.",
+      responseClass = "None", httpMethod = "POST")
   def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
     implicit request =>
       Logger.info(s"Removing all tags for dataset with id: $id.")
@@ -500,7 +530,7 @@ class Datasets @Inject()(
 
   // ---------- Tags related code ends ------------------
 
-
+  @ApiOperation(value = "Add comment to dataset", notes = "", responseClass = "None", httpMethod = "POST")
   def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
       request.user match {
@@ -569,6 +599,9 @@ class Datasets @Inject()(
   /**
    * Return whether a dataset is currently being processed.
    */
+  @ApiOperation(value = "Is being processed",
+      notes = "Return whether a dataset is currently being processed by a preprocessor.",
+      responseClass = "None", httpMethod = "GET")
   def isBeingProcessed(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset)) {
     request =>
       datasets.get(id) match {
@@ -624,6 +657,9 @@ class Datasets @Inject()(
       toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
 
+  @ApiOperation(value = "Get dataset previews",
+      notes = "Return the currently existing previews of the selected dataset (full description, including paths to preview files, previewer names etc).",
+      responseClass = "None", httpMethod = "GET")
   def getPreviews(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset)) {
     request =>
       datasets.get(id) match {
@@ -652,6 +688,9 @@ class Datasets @Inject()(
       }
   }
 
+  @ApiOperation(value = "Delete dataset",
+      notes = "Cascading action (deletes all previews and metadata of the dataset and all files existing only in the deleted dataset).",
+      responseClass = "None", httpMethod = "POST")
   def deleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets)) {
     request =>
       datasets.get(id) match {
@@ -668,7 +707,9 @@ class Datasets @Inject()(
       }
   }
 
-
+  @ApiOperation(value = "Get the user-generated metadata of the selected dataset in an RDF file",
+      notes = "",
+      responseClass = "None", httpMethod = "GET")
   def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
     implicit request =>
       configuration.getString("rdfexporter").getOrElse("no") match {
@@ -729,6 +770,9 @@ class Datasets @Inject()(
     return xmlFile
   }
 
+  @ApiOperation(value = "Get URLs of dataset's RDF metadata exports",
+      notes = "URLs of metadata exported as RDF from XML files contained in the dataset, as well as the URL used to export the dataset's user-generated metadata as RDF.",
+      responseClass = "None", httpMethod = "GET")
   def getRDFURLsForDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
     request =>
       configuration.getString("rdfexporter").getOrElse("no") match {
@@ -783,6 +827,9 @@ class Datasets @Inject()(
       }
   }
 
+  @ApiOperation(value = "Get technical metadata of the dataset",
+      notes = "",
+      responseClass = "None", httpMethod = "GET")
   def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
     request =>
       datasets.get(id) match {

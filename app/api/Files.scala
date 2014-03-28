@@ -1184,7 +1184,7 @@ class Files @Inject()(
    * Return whether a file is currently being processed.
    */
   @ApiOperation(value = "Is being processed",
-      notes = "Return whether a file is currently being processed.",
+      notes = "Return whether a file is currently being processed by a preprocessor.",
       responseClass = "None", httpMethod = "GET")
   def isBeingProcessed(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     request =>
