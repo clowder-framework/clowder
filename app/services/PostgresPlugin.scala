@@ -361,7 +361,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT datapoints.gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text FROM sensors, streams, datapoints" +
+      "(SELECT datapoints.gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
       " WHERE sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid AND "
 //    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
     if (since.isDefined) query += "start_time >= ? "
