@@ -21,6 +21,10 @@ import scala.concurrent.Future
 import services.ElasticsearchPlugin
 import java.sql.Timestamp
 import services.PostgresPlugin
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.HashMap
+import scala.collection.mutable.ListMap
+import scala.collection.mutable.ListBuffer
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced
@@ -264,7 +268,7 @@ object Geostreams extends ApiController {
                 val ignore = configuration.getString("json2csv.ignore").getOrElse("").split(",")
                 val seperator = configuration.getString("json2csv.seperator").getOrElse("|")
                 val fixgeometry = configuration.getBoolean("json2csv.fixgeometry").getOrElse(true)
-                Ok(jsonToCSV(Json.parse(d), ignore, hideprefix, seperator, fixgeometry)).as("text/csv")
+                Ok(jsonToCSV(Json.parse(d), ignore, seperator, hideprefix, fixgeometry)).as("text/csv")
               } else {
                 Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
               }
@@ -310,93 +314,171 @@ object Geostreams extends ApiController {
    * in the first row, will not be outputed.
    * @param data the json to be converted to CSV.
    * @param ignore fields to ignore.
-   * @param hideprefix set this to true to not print the prefix in header.
+   * @param prefixSeperator set this to the value to seperate elements in json
+   * @param hidePrefix set this to true to not print the prefix in header.
+   * @param fixGeometry set this to true to convert an array of geomtry to lat, lon, alt
+   * @param 
    * @returns csv formated JSON.
    */
-  def jsonToCSV(data: JsValue, ignore: Array[String] = Array[String](), hidePrefix: Boolean = false, prefixSeperator: String = " - ", fixgeometry:Boolean = true) = {
-    val values = data.as[List[JsObject]]
-    val header = values(0)
-
-    var row = None
+  def jsonToCSV(data: JsValue, ignore: Array[String] = Array[String](), prefixSeperator: String = " - ", hidePrefix: Boolean = false, fixGeometry:Boolean = true) = {
+	val values = data.as[List[JsObject]]
+    val headers = ListBuffer.empty[Header]
     var result = ""
-    result += printHeader(header, "", ignore, prefixSeperator, hidePrefix, fixgeometry) + "\n"
+
+    // find all headers
     for(row <- values)
-    	result += printRow(header, "", ignore, prefixSeperator, row) + "\n"
+      addHeaders(row, headers, ignore, "", prefixSeperator, hidePrefix, fixGeometry)
+    
+    // add headers to top
+    result = printHeader(headers).substring(1) + "\n"
+  	  
+    // add all rows
+    for(row <- values)
+      result += printRow(row, headers, "", prefixSeperator) + "\n"
+    	
+    result
+  }
+
+  /**
+   * Helper function to create a new prefix based on the key, and current prefix
+   */
+  def getPrefix(key: Any, prefix: String, prefixSeperator: String) = {
+    if (prefix == "")
+       key.toString
+     else
+       prefix + prefixSeperator + key.toString
+  }
+
+  /**
+   * Helper function to recursively print the header
+   */
+  def printHeader(headers: ListBuffer[Header]):String = {
+    var result = ""
+    for(h <- headers) {
+      h.value match {
+        case Left(x) => result =result + ",\"" + x + "\""
+        case Right(x) => result = result + printHeader(x)
+      }
+    }
     result
   }
   
   /**
-   * Helper function to print header of JSON Object.
+   * Helper function to create list of headers
    */
-  def printHeader(header: JsObject, prefix: String, ignore: Array[String], prefixSeperator: String, hidePrefix: Boolean, fixgeometry:Boolean):String = {
-    var result = ""
-    for(f <- header.fields if !(ignore contains printKey(prefix, f._1, prefixSeperator))) {
+  def addHeaders(row: JsObject, headers: ListBuffer[Header], ignore: Array[String], prefix: String, prefixSeperator: String, hidePrefix: Boolean, fixGeometry: Boolean) {
+    for(f <- row.fields if !(ignore contains getPrefix(f._1, prefix, prefixSeperator))) {
       f._2 match {
-        case x: JsArray => result += "," + printHeader(x, printKey(prefix, f._1, prefixSeperator), ignore, prefixSeperator, hidePrefix, fixgeometry)
-	    case x: JsObject => result += "," + printHeader(x, printKey(prefix, f._1, prefixSeperator), ignore, prefixSeperator, hidePrefix, fixgeometry)
-	    case _ => if (hidePrefix) {
-                    result += ",\"" + f._1.toString + "\""
-                  } else {
-                    result += ",\"" + printKey(prefix, f._1, prefixSeperator) + "\""
-                  }
+        case y: JsArray => {
+          headers.find(x => x.key.equals(f._1)) match {
+            case Some(Header(f._1, Left(x))) => Logger.error("Duplicate key [" + f._1 + "] detected")
+            case Some(Header(f._1, Right(x))) => addHeaders(y, x, ignore, getPrefix(f._1, prefix, prefixSeperator), prefixSeperator, hidePrefix, fixGeometry)
+            case Some(x) => Logger.error("Unknown header found : " + x)
+            case None => {
+              val x = ListBuffer.empty[Header]
+              headers += Header(f._1, Right(x))
+              addHeaders(y, x, ignore, getPrefix(f._1, prefix, prefixSeperator), prefixSeperator, hidePrefix, fixGeometry)
+            }
+          }
+        }
+        case y: JsObject => {
+          headers.find(x => x.key.equals(f._1)) match {
+            case Some(Header(f._1, Left(x))) => Logger.error("Duplicate key [" + f._1 + "] detected")
+            case Some(Header(f._1, Right(x))) => addHeaders(y, x, ignore, getPrefix(f._1, prefix, prefixSeperator), prefixSeperator, hidePrefix, fixGeometry)
+            case Some(x) => Logger.error("Unknown header found : " + x)
+            case None => {
+              val x = ListBuffer.empty[Header]
+              headers += Header(f._1, Right(x))
+              addHeaders(y, x, ignore, getPrefix(f._1, prefix, prefixSeperator), prefixSeperator, hidePrefix, fixGeometry)
+            }
+          }
+        }
+        case y => {
+          headers.find(x => x.key.equals(f._1)) match {
+            case Some(Header(f._1, Left(x))) => None
+            case Some(Header(f._1, Right(x))) => Logger.error("Duplicate key [" + f._1 + "] detected")
+            case _ => headers += Header(f._1, Left(getHeader(f._1, prefix, prefixSeperator, hidePrefix, fixGeometry)))
+          }
+        }
       }
     }
-    result.substring(1)
-  }
-
-  /**
-   * Helper function to print header of JSON Array.
-   */
-  def printHeader(header: JsArray, prefix: String, ignore: Array[String], prefixSeperator: String, hidePrefix: Boolean, fixgeometry:Boolean):String = {
-    var result = ""
-    // special case for geometry
-    if (fixgeometry && prefix.endsWith("geometry" + prefixSeperator + "coordinates") && ((header.value.length == 2) || (header.value.length == 3))) {
-      if (hidePrefix) {
-        result += ",\"longitude\",\"latitude\""
-        if (header.value.length == 3) {
-          result += ",\"altitude\""
-        }
-      } else {
-        result += ",\"" +  printKey(prefix, "longitude", prefixSeperator) + "\""
-        result += ",\"" +  printKey(prefix, "latitude", prefixSeperator) + "\""
-        if (header.value.length == 3) {
-          result += ",\"" +  printKey(prefix, "altitude", prefixSeperator) + "\""
-        }
-      }
-    } else {
-      header.value.indices.foreach(i => header(i) match {
-        case x: JsArray => result += "," + printHeader(x, printKey(prefix, i, prefixSeperator), ignore, prefixSeperator, hidePrefix, fixgeometry)
-        case x: JsObject => result += "," + printHeader(x, printKey(prefix, i, prefixSeperator), ignore, prefixSeperator, hidePrefix, fixgeometry)
-        case _ => if (hidePrefix) {
-                    result += ",\"" + i.toString + "\""
-                  } else {
-                    result += ",\"" + printKey(prefix, i, prefixSeperator) + "\""
-                  }
-      })      
-    }
-    result.substring(1)
   }
   
   /**
-   * Helper function to convert a key in json to a header key.
+   * Helper function to create list of headers
    */
-  def printKey(prefix: String, key: Any, prefixSeperator: String) = {
-    if (prefix == "")
-       key.toString
-     else
-       prefix.+(prefixSeperator).+(key.toString)
+  def addHeaders(row: JsArray, headers: ListBuffer[Header], ignore: Array[String], prefix: String, prefixSeperator: String, hidePrefix: Boolean, fixGeometry: Boolean) {
+    row.value.indices.withFilter(i => !(ignore contains getPrefix(i, prefix, prefixSeperator))).foreach(i => {
+      val s = i.toString
+      row(i) match {
+        case y: JsArray => {
+          headers.find(f => f.key.equals(s)) match {
+            case Some(Header(s, Left(x))) => Logger.error("Duplicate key [" + s + "] detected")
+            case Some(Header(s, Right(x))) => addHeaders(y, x, ignore, getPrefix(i, prefix, prefixSeperator), prefixSeperator, hidePrefix, fixGeometry)
+            case None => {
+              val x = ListBuffer.empty[Header]
+              headers += Header(s, Right(x))
+              addHeaders(y, x, ignore, getPrefix(i, prefix, prefixSeperator), prefixSeperator, hidePrefix, fixGeometry)
+            }
+          }
+        }
+        case y: JsObject => {
+          headers.find(f => f.key.equals(s)) match {
+            case Some(Header(s, Left(x))) => Logger.error("Duplicate key [" + s + "] detected")
+            case Some(Header(s, Right(x))) => addHeaders(y, x, ignore, getPrefix(i, prefix, prefixSeperator), prefixSeperator, hidePrefix, fixGeometry)
+            case None => {
+              val x = ListBuffer.empty[Header]
+              headers += Header(s, Right(x))
+              addHeaders(y, x, ignore, getPrefix(i, prefix, prefixSeperator), prefixSeperator, hidePrefix, fixGeometry)
+            }
+          }
+        }
+        case y => {
+          headers.find(f => f.key.equals(s)) match {
+            case Some(Header(s, Left(x))) => None
+            case Some(Header(s, Right(x))) => Logger.error("Duplicate key [" + s + "] detected")
+            case _ => headers += Header(s, Left(getHeader(i, prefix, prefixSeperator, hidePrefix, fixGeometry)))
+          }
+        }
+      }
+    })
+  }
+
+  /**
+   * Helper function to create the text that is printed as header
+   */
+  def getHeader(key: Any, prefix: String, prefixSeperator: String, hidePrefix: Boolean, fixGeometry: Boolean): String = {
+    if (fixGeometry && prefix.endsWith("geometry" + prefixSeperator + "coordinates")) {
+      (key.toString, hidePrefix) match {
+        case ("0", true) => "longitude"
+        case ("0", false) => getPrefix("longitude", prefix, prefixSeperator)
+        case ("1", true) => "latitude"
+        case ("1", false) => getPrefix("latitude", prefix, prefixSeperator)
+        case ("2", true) => "altitude"
+        case ("2", false) => getPrefix("altitude", prefix, prefixSeperator)
+        case (_, true) => key.toString
+        case (_, false) => getPrefix(key, prefix, prefixSeperator)
+      }
+    } else {
+      if (hidePrefix)
+        key.toString
+      else
+        getPrefix(key, prefix, prefixSeperator)
+    }
   }
 
   /**
    * Helper function to print data row of JSON Object.
    */
-  def printRow(header: JsObject, prefix: String, ignore: Array[String], prefixSeperator: String, row: JsObject) : String = {
+  def printRow(row: JsObject, headers: ListBuffer[Header], prefix: String, prefixSeperator: String) : String = {
     var result = ""
-    for(f <- header.fields if !(ignore contains printKey(prefix, f._1, prefixSeperator))) {
-      (f._2, row.\(f._1)) match {
-        case (x: JsArray, y: JsArray) => result += "," + printRow(x, printKey(prefix, f._1, prefixSeperator), ignore, prefixSeperator,y)
-        case (x: JsObject, y: JsObject) => result += "," +printRow(x, printKey(prefix, f._1, prefixSeperator), ignore, prefixSeperator,y)
-        case (x, y) => result += "," + y.toString
+    for(h <- headers) {
+      (row.\(h.key), h.value) match {
+        case (x: JsArray, Right(y)) => result += "," + printRow(x, y, getPrefix(h.key, prefix, prefixSeperator), prefixSeperator)
+        case (x: JsObject, Right(y)) => result += "," + printRow(x, y, getPrefix(h.key, prefix, prefixSeperator), prefixSeperator)
+        case (x: JsUndefined, Left(_)) => result += ","
+        case (x, Right(y)) => result += "," + printRow(JsObject(Seq.empty), y, getPrefix(h.key, prefix, prefixSeperator), prefixSeperator)
+        case (x, Left(_)) => result += "," + x
       }
     }
     result.substring(1)
@@ -405,15 +487,23 @@ object Geostreams extends ApiController {
   /**
    * Helper function to print data row of JSON Array.
    */
-  def printRow(header: JsArray, prefix: String, ignore: Array[String], prefixSeperator: String, row: JsArray) : String  = {
+  def printRow(row: JsArray, headers: ListBuffer[Header], prefix: String, prefixSeperator: String) : String  = {
     var result = ""
-    header.value.indices.foreach(i =>
-      (header(i), row(i)) match {
-        case (x: JsArray, y: JsArray) => result += "," + printRow(x, printKey(prefix, i, prefixSeperator), ignore, prefixSeperator, y)
-        case (x: JsObject, y: JsObject) => result += "," + printRow(x, printKey(prefix, i, prefixSeperator), ignore, prefixSeperator,y)
-        case (_: JsString, y: JsString) => result += ",\"" + y.toString + "\""
-        case (x, y) => result += "," + y.toString
-    })
+    for(h <- headers) {
+      val i = h.key.toInt
+      (row(i), h.value) match {
+        case (x: JsArray, Right(y)) => result += "," + printRow(x, y, getPrefix(prefix, h.key, prefixSeperator), prefixSeperator)
+        case (x: JsObject, Right(y)) => result += "," + printRow(x, y, getPrefix(prefix, h.key, prefixSeperator), prefixSeperator)
+        case (x: JsUndefined, Left(_)) => result += ","
+        case (x, Right(y)) => result += "," + printRow(JsObject(Seq.empty), y, getPrefix(h.key, prefix, prefixSeperator), prefixSeperator)
+        case (x, Left(y)) => result += "," + x
+      }
+    }
     result.substring(1)
   }
+
+  /**
+   * Class to hold a json key, and any subkeys
+   */
+  case class Header(key: String, value: Either[String, ListBuffer[Header]])
 }
