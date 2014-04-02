@@ -7,17 +7,13 @@ import play.api.Logger
 /**
  * Created by lmarini on 2/20/14.
  */
-class UUID(uuid: String) {
+case class UUID(uuid: String) {
   def stringify = uuid
   override def toString() = uuid
   def equals(uuidToCompare: UUID) = {stringify == uuidToCompare.stringify}
 }
 
 object UUID {
-
-  def apply(uuid: String): UUID = {
-    new UUID(new ObjectId(uuid).toString)
-  }
 
   def apply(): UUID = {
     new UUID(new ObjectId().toString)
