@@ -785,7 +785,7 @@ class MongoDBDatasetService @Inject() (
           if (notTheDataset.size == 0)
             files.removeFile(f.id)
         }
-        Dataset.remove(MongoDBObject("_id" -> dataset.id))
+        Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
       case None =>
     }

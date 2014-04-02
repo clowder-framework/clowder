@@ -53,7 +53,7 @@ class MongoDBCommentService extends CommentService {
     for(reply <- findCommentsByCommentId(c.id)){
       removeComment(reply)
     }
-    Comment.remove(MongoDBObject("_id" -> c.id))
+    Comment.remove(MongoDBObject("_id" -> new ObjectId(c.id.stringify)))
   }
 }
 

@@ -34,7 +34,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
   }
 
   def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String) {
-    PreviewDAO.update(MongoDBObject("_id" -> id), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
+    PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
   }
 
   def findByFileId(id: UUID): List[Preview] = {
@@ -74,7 +74,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
-    files.findOne(MongoDBObject("_id" -> id)) match {
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream,
         file.getAs[String]("filename").getOrElse("unknown-name"),
         file.getAs[String]("contentType").getOrElse("unknown"),
@@ -87,7 +87,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
    * Add annotation to 3D model preview.
    */
   def annotation(id: UUID, annotation: ThreeDAnnotation) {
-    PreviewDAO.dao.update(MongoDBObject("_id" -> id), $addToSet("annotations" -> ThreeDAnnotation.toDBObject(annotation)), false, false, WriteConcern.Safe)
+    PreviewDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("annotations" -> ThreeDAnnotation.toDBObject(annotation)), false, false, WriteConcern.Safe)
   }
 
   def findAnnotation(preview_id: UUID, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation] = {
@@ -109,7 +109,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
         //var newAnnotations = List.empty[ThreeDAnnotation]
         for (annotation <- preview.annotations) {
           if (annotation.id.toString().equals(annotation_id)) {
-            PreviewDAO.update(MongoDBObject("_id" -> preview_id, "annotations._id" -> annotation.id), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
+            PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id.stringify), "annotations._id" -> new ObjectId(annotation.id.stringify)), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
             return
           }
         }
@@ -131,7 +131,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
 
   def removePreview(p: Preview) {
     for (tile <- tiles.get(p.id)) {
-      TileDAO.remove(MongoDBObject("_id" -> tile.id))
+      TileDAO.remove(MongoDBObject("_id" -> new ObjectId(tile.id.stringify)))
     }
     // for IIP server references, also delete the files being referenced on the IIP server they reside
     if (!p.iipURL.isEmpty) {
@@ -180,7 +180,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
         frameRefReader.close()
       }
 
-    PreviewDAO.remove(MongoDBObject("_id" -> p.id))
+    PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(p.id.stringify)))
   }
 
   def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[UUID], json: JsValue) {

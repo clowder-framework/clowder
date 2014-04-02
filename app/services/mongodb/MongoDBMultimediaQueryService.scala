@@ -41,7 +41,7 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
     
      val queries = GridFS(SocialUserDAO.dao.collection.db, "uploadquery")
     
-      queries.findOne(MongoDBObject("_id" -> id)) match {
+      queries.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       
       case Some(query) => {
         //Logger.debug(query.toString())
@@ -64,7 +64,7 @@ def listFiles(): List[TempFile]={
    * Get file metadata.
    */
 def getFile(id: UUID): Option[TempFile] = {
-    TempFileDAO.findOne(MongoDBObject("_id" -> id))
+    TempFileDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
   }
 
   /**
@@ -117,7 +117,7 @@ def getFile(id: UUID): Option[TempFile] = {
     }
     builder += "features" -> listBuilder.result
     Logger.debug("Features doc " + multimediaFeature.id + " updated")
-    MultimediaFeaturesDAO.update(MongoDBObject("_id" -> multimediaFeature.id), builder.result, false, false, WriteConcern.Safe)
+    MultimediaFeaturesDAO.update(MongoDBObject("_id" -> new ObjectId(multimediaFeature.id.stringify)), builder.result, false, false, WriteConcern.Safe)
   }
 
   def insert(multimediaFeature: MultimediaFeatures) {

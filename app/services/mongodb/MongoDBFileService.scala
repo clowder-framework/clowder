@@ -374,13 +374,13 @@ class MongoDBFileService @Inject() (
     // Only remove existing tags.
     tags.intersect(existingTags).map {
       tag =>
-        FileDAO.update(MongoDBObject("_id" -> id), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+        FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
     }
   }
 
   def addMetadata(fileId: UUID, metadata: JsValue) {
     val doc = JSON.parse(Json.stringify(metadata)).asInstanceOf[DBObject]
-    FileDAO.update(MongoDBObject("_id" -> fileId), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
   }
 
   def get(id: UUID): Option[File] = {
@@ -508,7 +508,7 @@ class MongoDBFileService @Inject() (
         x.getAs[DBObject]("metadata") match {
           case None => {
             Logger.debug("No metadata field found: Adding meta data field")
-            FileDAO.dao.collection.update(MongoDBObject("_id" -> id), $set("metadata.versus_descriptors" -> doc), false, false, WriteConcern.Safe)
+            FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata.versus_descriptors" -> doc), false, false, WriteConcern.Safe)
 
           }
           case Some(map) => {
@@ -540,7 +540,7 @@ class MongoDBFileService @Inject() (
 
             Logger.debug("versus mdList:  " + jobj)
 
-            FileDAO.dao.collection.update(MongoDBObject("_id" -> id), $set("metadata" -> com.mongodb.util.JSON.parse(jobj.toString)), false, false, WriteConcern.Safe)
+            FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata" -> com.mongodb.util.JSON.parse(jobj.toString)), false, false, WriteConcern.Safe)
 
           }
         }
@@ -559,13 +559,13 @@ class MongoDBFileService @Inject() (
   def addUserMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    FileDAO.update(MongoDBObject("_id" -> id), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
   def addXMLMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying XML file metadata to file " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    FileDAO.update(MongoDBObject("_id" -> id), $set("xmlMetadata" -> md), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("xmlMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
 
@@ -588,34 +588,34 @@ class MongoDBFileService @Inject() (
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
         val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
-        FileDAO.update(MongoDBObject("_id" -> id), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+        FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
   }
 
   def removeAllTags(id: UUID) {
-    FileDAO.update(MongoDBObject("_id" -> id), $set("tags" -> List()), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false, WriteConcern.Safe)
   }
   // ---------- Tags related code ends ------------------
 
   def comment(id: UUID, comment: Comment) {
-    FileDAO.update(MongoDBObject("_id" -> id), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
 
   def setIntermediate(id: UUID){
-    FileDAO.update(MongoDBObject("_id" -> id), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
   }
 
   def renameFile(id: UUID, newName: String){
-    FileDAO.update(MongoDBObject("_id" -> id), $set("filename" -> newName), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false, WriteConcern.Safe)
   }
 
   def setContentType(id: UUID, newType: String){
-    FileDAO.update(MongoDBObject("_id" -> id), $set("contentType" -> newType), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("contentType" -> newType), false, false, WriteConcern.Safe)
   }
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean){
-    FileDAO.update(MongoDBObject("_id" -> id), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
   }
 
   def removeFile(id: UUID){
@@ -804,7 +804,7 @@ class MongoDBFileService @Inject() (
    * Update thumbnail used to represent this dataset.
    */
   def updateThumbnail(fileId: UUID, thumbnailId: UUID) {
-    FileDAO.update(MongoDBObject("_id" -> fileId),
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)),
       $set("thumbnail_id" -> thumbnailId), false, false, WriteConcern.Safe)
   }
 

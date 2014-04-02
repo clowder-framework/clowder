@@ -75,7 +75,7 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     for (comment <- comments.findCommentsBySectionId(s.id)) {
       comments.removeComment(comment)
     }
-    SectionDAO.remove(MongoDBObject("_id" -> s.id))
+    SectionDAO.remove(MongoDBObject("_id" -> new ObjectId(s.id.stringify)))
   }
 
   def insert(json: JsValue): String = {
