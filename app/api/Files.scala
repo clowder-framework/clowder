@@ -1024,9 +1024,9 @@ class Files @Inject()(
 
   // ---------- Tags related code starts ------------------
   /**
-   * REST endpoint: GET: get the tag data associated with this file.
+   * REST endpoint: GET: gets the tag data associated with this file.
    */
-  @ApiOperation(value = "Get tags of file", notes = "", responseClass = "None", httpMethod = "GET")
+  @ApiOperation(value = "Gets tags of a file", notes = "Returns a list of strings, List[String].", responseClass = "None", httpMethod = "GET")
   def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
       Logger.info("Getting tags for file with id " + id)
@@ -1097,13 +1097,13 @@ class Files @Inject()(
   }
 
   /**
-   * REST endpoint: POST: Add tags to a file.
+   * REST endpoint: POST: Adds tags to a file.
    * Tag's (name, userId, extractor_id) tuple is used as a unique key.
    * In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
    * so will be added.
    */
-  @ApiOperation(value = "Add tags to file",
-      notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.",
+  @ApiOperation(value = "Adds tags to a file",
+      notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.  The tags are expected as a list of strings: List[String].  An example is:<br>    curl -H 'Content-Type: application/json' -d '{\"tags\":[\"namo\", \"amitabha\"], \"extractor_id\": \"curl\"}' \"http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey\"",
       responseClass = "None", httpMethod = "POST")
   def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
     implicit request =>
@@ -1111,14 +1111,14 @@ class Files @Inject()(
   }
 
   /**
-   * REST endpoint: POST: remove tags.
+   * REST endpoint: POST: removes tags.
    * Tag's (name, userId, extractor_id) tuple is used as a unique key.
    * In other words, the same tag names but diff userId or extractor_id are considered as diff tags.
    * Current implementation enforces the restriction which only allows the tags to be removed by
    * the same user or extractor.
    */
-  @ApiOperation(value = "Remove tags of file",
-      notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.",
+  @ApiOperation(value = "Removes tags of a file",
+      notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.  The tags are expected as a list of strings: List[String].",
       responseClass = "None", httpMethod = "POST")
   def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
     implicit request =>
@@ -1126,12 +1126,12 @@ class Files @Inject()(
   }
 
   /**
-   * REST endpoint: POST: remove all tags.
+   * REST endpoint: POST: removes all tags of a file.
    * This is a big hammer -- it does not check the userId or extractor_id and
    * forcefully remove all tags for this id.  It is mainly intended for testing.
    */
-  @ApiOperation(value = "Remove all tags of file",
-      notes = "Forcefully remove all tags for this file.  It is mainly intended for testing.",
+  @ApiOperation(value = "Removes all tags of a file",
+      notes = "This is a big hammer -- it does not check the userId or extractor_id and forcefully remove all tags for this file.  It is mainly intended for testing.",
       responseClass = "None", httpMethod = "POST")
   def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
     implicit request =>
