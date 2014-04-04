@@ -520,7 +520,7 @@ class MongoDBFileService @Inject() (
 
             val retmd = Json.toJson(returnedMetadata)
             var ksize = map.keySet().size()
-            Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
+            Logger.debug("Contains Keys versus descriptors: " + map.containsField("versus_descriptors"))
             val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
 
             var mdList = listd.as[List[JsObject]].map {
