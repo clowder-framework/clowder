@@ -3,7 +3,6 @@ package services.mongodb
 import services.{PreviewService, TileService}
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
-import services.mongodb.{SocialUserDAO, MongoContext, MongoSalatPlugin}
 import MongoContext.context
 import play.api.Play.current
 import java.io.InputStream

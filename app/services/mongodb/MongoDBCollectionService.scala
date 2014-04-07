@@ -197,7 +197,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
       case None => {
         ignoreNotFound match{
           case true => Success
-          case true =>
+          case false =>
             Logger.error("Error getting collection" + collectionId)
             Failure
         }

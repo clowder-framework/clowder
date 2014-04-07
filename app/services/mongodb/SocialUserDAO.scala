@@ -2,11 +2,9 @@ package services.mongodb
 
 import org.bson.types.ObjectId
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import services.mongodb.MongoContext
 import MongoContext.context
 import play.api.Play.current
 import securesocial.core.Identity
-import services.mongodb.MongoSalatPlugin
 
 /**
  * Used to store securesocial users in MongoDB.
