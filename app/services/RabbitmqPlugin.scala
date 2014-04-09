@@ -254,7 +254,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
             //val endDate=formatter.parse(end.get)
             Logger.info("Status start: " + startDate)
             Extraction.insert(Extraction(new ObjectId(), file_id, extractor_id, status, Some(startDate), None))
-          
+            models.DTSInfoSetUp.updateDTSRequests(file_id,extractor_id)
    }
 }
 

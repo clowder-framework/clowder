@@ -13,10 +13,10 @@ GET      /users/create/:username                                             con
 GET      /users/view/:id                                                     controllers.Users.view(id)
 
 # DTS Information
-GET      /DTSInfo/requests             @controllers.DTSInfo.getDTSRequests()
-GET      /DTSInfo/servers			   @controllers.DTSInfo.getExtractorServersIP()
-GET      /DTSInfo/extractors           @controllers.DTSInfo.getExtractorNames() 
-GET      /DTSInfo/inputtypes           @controllers.DTSInfo.getExtractorInputTypes()
+GET      /requests          									   @controllers.DTSInfo.getDTSRequests()
+GET      /extractions/servers_ips									   @controllers.DTSInfo.getExtractorServersIP()
+GET      /extractions/extractors_names         					   @controllers.DTSInfo.getExtractorNames() 
+GET      /extractions/supported_input_types        				   @controllers.DTSInfo.getExtractorInputTypes()
 
 
 # Files
@@ -34,7 +34,7 @@ GET		/files/:id					      @controllers.Files.file(id)
 GET		/files/:id/blob			          @controllers.Files.download(id)
 #GET     /queries/:id/blob				  @controllers.Files.downloadquery(id)
 #GET     /files/:id/similar               @controllers.Files.findSimilar(id)
-POST    /upload					          @controllers.Files.upload
+POST   	/upload					          @controllers.Files.upload
 POST    /uploadSelect                     @controllers.Files.uploadSelect
 POST    /uploadSelectQuery                @controllers.Files.uploadSelectQuery
 #POST   /uploadAjax				     	  @controllers.Files.uploadAjax
@@ -137,10 +137,10 @@ GET      /javascriptRoutes                                                   con
 GET      /api-docs.json                                                      controllers.ApiHelpController.getResources
 
 # DTS Information
-GET       /api/DTSInfo/requests             @api.DTSInfo.getDTSRequests()
-GET       /api/DTSInfo/servers				@api.DTSInfo.getExtractorServersIP()
-GET       /api/DTSInfo/extractors           @api.DTSInfo.getExtractorNames() 
-GET       /api/DTSInfo/inputtypes           @api.DTSInfo.getExtractorInputTypes()
+GET       /api/requests                               		@api.DTSInfo.getDTSRequests()
+GET       /api/extractions/servers_ips				      	@api.DTSInfo.getExtractorServersIP()
+GET       /api/extractions/extractors_names                 @api.DTSInfo.getExtractorNames() 
+GET       /api/extractions/supported_input_types      		@api.DTSInfo.getExtractorInputTypes()
 
 
 
@@ -171,14 +171,14 @@ POST    /api/files/:id/tags/remove                              @api.Files.remov
 POST    /api/files/:id/tags/remove_all                          @api.Files.removeAllTags(id)
 
 
-GET     /api/files/:id/extract                                  @api.Files.extract(id)
+GET     /api/files/:id/extracted_metadata                                  @api.Files.extract(id)
 
 #This may change depending on our discussion on identifying the details of extraction in DTS service
-POST    /api/extraction/uploadbyurl                             @api.Files.uploadbyURL()
-POST    /api/extraction                                         @api.Files.uploadExtract()
-GET     /api/extraction/:id/status                              @api.Files.checkExtractorsStatus(id)
-POST    /api/extraction/:id                                     @api.Files.submitAextraction(id)
-GET     /api/extraction/:id/value                               @api.Files.fetch(id)
+POST    /api/extractions/upload_url                             @api.Files.uploadbyURL()
+POST    /api/extractions/upload_file                            @api.Files.uploadExtract()
+GET     /api/extractions/:id/status                             @api.Files.checkExtractorsStatus(id)
+POST    /api/extractions/:id/submit                             @api.Files.submitAextraction(id)
+GET     /api/extractions/:id/value                              @api.Files.fetch(id)
 # End of change segment
 
 
@@ -189,7 +189,7 @@ GET		/api/files/:id/isBeingProcessed							@api.Files.isBeingProcessed(id)
 #GET    /api/files/:three_d_file_id/:filename					@api.Files.getGeometry(three_d_file_id,filename)
 GET		/api/files/:three_d_file_id/:filename					@api.Files.getTexture(three_d_file_id,filename)
 GET     /api/files/:id                    						@api.Files.download(id)
-GET     /api/queries/:id				                       @api.Files.downloadquery(id)	
+GET     /api/queries/:id				                        @api.Files.downloadquery(id)	
 
 
 # DANGER

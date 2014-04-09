@@ -28,8 +28,9 @@ object DTSInfoSetUp {
 val extractors: ExtractorService =  DI.injector.getInstance(classOf[ExtractorService])
 val dtsrequests:DTSRequestsService=DI.injector.getInstance(classOf[DTSRequestsService])
 
-def updateDTSRequests()={
-  dtsrequests.updateRequest()
+def updateDTSRequests(file_id:ObjectId,extractor_id:String)={
+ 
+  dtsrequests.updateRequest(file_id,extractor_id)
 }
 
 

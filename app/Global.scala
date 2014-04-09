@@ -59,11 +59,11 @@ object Global extends GlobalSettings {
     
     
     
-    Akka.system().scheduler.schedule(0.minutes,5 minutes){
-           models.DTSInfoSetUp.updateExtractorsInfo()
+   /* Akka.system().scheduler.schedule(0.minutes,1 minutes){
+           //models.DTSInfoSetUp.updateExtractorsInfo()
            models.DTSInfoSetUp.updateDTSRequests()
            
-    }
+    }*/
      
   }
 

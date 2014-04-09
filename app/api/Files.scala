@@ -225,7 +225,7 @@ class Files @Inject() (files: FileService, datasets: DatasetService, queries: Qu
 
   /**
    * Add Versus metadata to file: use by Versus Extractor
-   * REST enpoint:POST api/Files/:id/versusmetadata
+   * REST enpoint:POST api/files/:id/versusmetadata
    */
   def addVersusMetadata(id: String) =
     SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) { request =>
