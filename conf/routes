@@ -137,7 +137,7 @@ GET      /javascriptRoutes                                                   con
 GET      /api-docs.json                                                      controllers.ApiHelpController.getResources
 
 # DTS Information
-GET       /api/requests                               		@api.DTSInfo.getDTSRequests()
+GET       /api/extractions/requests                               		@api.DTSInfo.getDTSRequests()
 GET       /api/extractions/servers_ips				      	@api.DTSInfo.getExtractorServersIP()
 GET       /api/extractions/extractors_names                 @api.DTSInfo.getExtractorNames() 
 GET       /api/extractions/supported_input_types      		@api.DTSInfo.getExtractorInputTypes()
