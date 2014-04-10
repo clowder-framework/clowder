@@ -130,11 +130,11 @@
     		}
 			
 			<!-- sections -->
-			@if(f.sections.size > 0) {	
+			@if(sections.size > 0) {	
 			  	<div class="row" style="padding-top: 10px">
 			  	  <div class="col-md-6">
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
-					  	@f.sections.map { s =>
+					  	@sections.map { s =>
 					  		@if(s.preview.isDefined) {
 					  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
 					  				class="img-polaroid" height="100px" 
@@ -168,7 +168,7 @@
 								</tr>
 							</thead>
 							<tbody>
-					  		@f.sections.map { s =>
+					  		@sections.map { s =>
 					  			<tr>
 						  			<td>@s.order</td>
 						  			<td>
@@ -212,7 +212,7 @@
 						if ($("#ourvideo").length>0) {				    
 					        var pop = Popcorn("#ourvideo");
 					       
-							@f.sections.map { s =>
+							@sections.map { s =>
 					  			@if(s.startTime.isDefined) {
 							   		pop.code({
 								        start: @s.startTime,
