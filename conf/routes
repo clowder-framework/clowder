@@ -14,7 +14,7 @@ GET      /users/view/:id                                                     con
 
 # DTS Information
 GET      /requests          									   @controllers.DTSInfo.getDTSRequests()
-GET      /extractions/servers_ips									   @controllers.DTSInfo.getExtractorServersIP()
+GET      /extractions/servers_ips								   @controllers.DTSInfo.getExtractorServersIP()
 GET      /extractions/extractors_names         					   @controllers.DTSInfo.getExtractorNames() 
 GET      /extractions/supported_input_types        				   @controllers.DTSInfo.getExtractorInputTypes()
 
