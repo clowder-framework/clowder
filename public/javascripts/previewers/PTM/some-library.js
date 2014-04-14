@@ -5,6 +5,8 @@
   var height = 600;  
   var width = 750;
   
+  $(Configuration.tab).append("<br/>");
+  
   var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
   $(Configuration.tab).append(
 		  "<object name='ptmApplet' type='application/x-java-applet' height='"+ height +"' width='"+ width +"'>"+

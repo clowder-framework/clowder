@@ -11,6 +11,7 @@
   s.src = pathJs + "pdfobject.js";
   $(Configuration.tab).append(s);
 
+  $(Configuration.tab).append("<br/>");
   
   $(Configuration.tab).append(
 	        "<div id='pdfview" + Configuration.tab.replace("#previewer","") + "' class='pdfview'>If you are seeing this, " +
