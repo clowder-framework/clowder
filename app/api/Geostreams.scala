@@ -251,13 +251,24 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sources: List[String], attributes: List[String], format: String) =
     Action { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchDatapoints(since, until, geocode, stream_id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+          plugin.searchDatapoints(since, until, geocode, stream_id, sources, attributes) match {
+            case Some(d) => {
+              if (format == "csv") {
+                val configuration = play.api.Play.configuration
+                val hideprefix = configuration.getBoolean("json2csv.hideprefix").getOrElse(false)
+                val ignore = configuration.getString("json2csv.ignore").getOrElse("").split(",")
+                val seperator = configuration.getString("json2csv.seperator").getOrElse("|")
+                val fixgeometry = configuration.getBoolean("json2csv.fixgeometry").getOrElse(true)
+                Ok(jsonToCSV(Json.parse(d), ignore, hideprefix, seperator, fixgeometry)).as("text/csv")
+              } else {
+                Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+              }
+            }
             case None => Ok(Json.toJson("""{"status":"No data found"}""")).as("application/json")
           }
         }
@@ -284,5 +295,125 @@ object Geostreams extends ApiController {
       case Some(callback) => callback + "(" + json + ");"
       case None => json
     }
+  }
+
+  // ----------------------------------------------------------------------
+  // Convert JSON data to CSV data.
+  // This code is generic and could be moved to special module, right now
+  // it is used to take a geostream output and convert it to CSV.
+  // ----------------------------------------------------------------------
+  /**
+   * Returns the JSON formated as CSV.
+   *
+   * This will take the first json element and create a header from this. All
+   * additional rows will be parsed based on this first header. Any fields not
+   * in the first row, will not be outputed.
+   * @param data the json to be converted to CSV.
+   * @param ignore fields to ignore.
+   * @param hideprefix set this to true to not print the prefix in header.
+   * @returns csv formated JSON.
+   */
+  def jsonToCSV(data: JsValue, ignore: Array[String] = Array[String](), hidePrefix: Boolean = false, prefixSeperator: String = " - ", fixgeometry:Boolean = true) = {
+    val values = data.as[List[JsObject]]
+    val header = values(0)
+
+    var row = None
+    var result = ""
+    result += printHeader(header, "", ignore, prefixSeperator, hidePrefix, fixgeometry) + "\n"
+    for(row <- values)
+    	result += printRow(header, "", ignore, prefixSeperator, row) + "\n"
+    result
+  }
+  
+  /**
+   * Helper function to print header of JSON Object.
+   */
+  def printHeader(header: JsObject, prefix: String, ignore: Array[String], prefixSeperator: String, hidePrefix: Boolean, fixgeometry:Boolean):String = {
+    var result = ""
+    for(f <- header.fields if !(ignore contains printKey(prefix, f._1, prefixSeperator))) {
+      f._2 match {
+        case x: JsArray => result += "," + printHeader(x, printKey(prefix, f._1, prefixSeperator), ignore, prefixSeperator, hidePrefix, fixgeometry)
+	    case x: JsObject => result += "," + printHeader(x, printKey(prefix, f._1, prefixSeperator), ignore, prefixSeperator, hidePrefix, fixgeometry)
+	    case _ => if (hidePrefix) {
+                    result += ",\"" + f._1.toString + "\""
+                  } else {
+                    result += ",\"" + printKey(prefix, f._1, prefixSeperator) + "\""
+                  }
+      }
+    }
+    result.substring(1)
+  }
+
+  /**
+   * Helper function to print header of JSON Array.
+   */
+  def printHeader(header: JsArray, prefix: String, ignore: Array[String], prefixSeperator: String, hidePrefix: Boolean, fixgeometry:Boolean):String = {
+    var result = ""
+    // special case for geometry
+    if (fixgeometry && prefix.endsWith("geometry" + prefixSeperator + "coordinates") && ((header.value.length == 2) || (header.value.length == 3))) {
+      if (hidePrefix) {
+        result += ",\"longitude\",\"latitude\""
+        if (header.value.length == 3) {
+          result += ",\"altitude\""
+        }
+      } else {
+        result += ",\"" +  printKey(prefix, "longitude", prefixSeperator) + "\""
+        result += ",\"" +  printKey(prefix, "latitude", prefixSeperator) + "\""
+        if (header.value.length == 3) {
+          result += ",\"" +  printKey(prefix, "altitude", prefixSeperator) + "\""
+        }
+      }
+    } else {
+      header.value.indices.foreach(i => header(i) match {
+        case x: JsArray => result += "," + printHeader(x, printKey(prefix, i, prefixSeperator), ignore, prefixSeperator, hidePrefix, fixgeometry)
+        case x: JsObject => result += "," + printHeader(x, printKey(prefix, i, prefixSeperator), ignore, prefixSeperator, hidePrefix, fixgeometry)
+        case _ => if (hidePrefix) {
+                    result += ",\"" + i.toString + "\""
+                  } else {
+                    result += ",\"" + printKey(prefix, i, prefixSeperator) + "\""
+                  }
+      })      
+    }
+    result.substring(1)
+  }
+  
+  /**
+   * Helper function to convert a key in json to a header key.
+   */
+  def printKey(prefix: String, key: Any, prefixSeperator: String) = {
+    if (prefix == "")
+       key.toString
+     else
+       prefix.+(prefixSeperator).+(key.toString)
+  }
+
+  /**
+   * Helper function to print data row of JSON Object.
+   */
+  def printRow(header: JsObject, prefix: String, ignore: Array[String], prefixSeperator: String, row: JsObject) : String = {
+    var result = ""
+    for(f <- header.fields if !(ignore contains printKey(prefix, f._1, prefixSeperator))) {
+      (f._2, row.\(f._1)) match {
+        case (x: JsArray, y: JsArray) => result += "," + printRow(x, printKey(prefix, f._1, prefixSeperator), ignore, prefixSeperator,y)
+        case (x: JsObject, y: JsObject) => result += "," +printRow(x, printKey(prefix, f._1, prefixSeperator), ignore, prefixSeperator,y)
+        case (x, y) => result += "," + y.toString
+      }
+    }
+    result.substring(1)
+  }
+
+  /**
+   * Helper function to print data row of JSON Array.
+   */
+  def printRow(header: JsArray, prefix: String, ignore: Array[String], prefixSeperator: String, row: JsArray) : String  = {
+    var result = ""
+    header.value.indices.foreach(i =>
+      (header(i), row(i)) match {
+        case (x: JsArray, y: JsArray) => result += "," + printRow(x, printKey(prefix, i, prefixSeperator), ignore, prefixSeperator, y)
+        case (x: JsObject, y: JsObject) => result += "," + printRow(x, printKey(prefix, i, prefixSeperator), ignore, prefixSeperator,y)
+        case (_: JsString, y: JsString) => result += ",\"" + y.toString + "\""
+        case (x, y) => result += "," + y.toString
+    })
+    result.substring(1)
   }
 }

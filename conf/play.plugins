@@ -14,7 +14,7 @@
 #10004:securesocial.core.providers.GoogleProvider
 #10005:services.PostgresPlugin
 #10006:services.FileDumpService
-10008:services.RDFUpdateService
+#10008:services.RDFUpdateService
 10009:services.MailerPlugin
 10010:services.AdminsNotifierPlugin
 10013:services.RDFExportService
