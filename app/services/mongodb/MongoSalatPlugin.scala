@@ -75,7 +75,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   override def onStop() {
     sources.map { source =>
 	  try {
-	    source._2.close
+      // Only close connection if not in test mode
+      if (app.mode != Mode.Test) source._2.close
 	  } catch {
 	    case e: MongoException => throw configuration.reportError("mongodb." + source._1, "couldn't close [" + source._2.uri + "]", Some(e))
 	  } finally {

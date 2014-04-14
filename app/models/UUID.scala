@@ -29,6 +29,8 @@ object UUID {
 // scala conversion
 object UUIDConversions {
   implicit def stringToUUID(s: String) = UUID(s)
+  implicit def uuidToObjectId(uuid: UUID) = new ObjectId(uuid.stringify)
+  implicit def objectIdToUUID(objectId: ObjectId) = UUID(objectId.toString)
 }
 
 // Salat transformer

@@ -1,6 +1,3 @@
-/**
- *
- */
 package api
 
 import play.api.mvc.Controller

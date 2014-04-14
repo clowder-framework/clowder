@@ -48,7 +48,8 @@ object ApplicationBuild extends Build {
     "org.codeartisans" % "org.json" % "20131017",
     "postgresql" % "postgresql" % "8.1-407.jdbc3",
     "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
-    "org.springframework" % "spring" % "2.5.6"
+    "org.springframework" % "spring" % "2.5.6",
+    "org.scalatest" %% "scalatest" % "2.1.0" % "test"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
@@ -60,6 +61,7 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
+    testOptions in Test := Nil, // overwrite spec2 config to use scalatest instead
     routesImport += "models._",
     routesImport += "Binders._",
     templatesImport += "org.bson.types.ObjectId",
