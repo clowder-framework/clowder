@@ -24,8 +24,8 @@
 	    	} else {
 	    		<div class="item inner-item">
 	    	}
-	    	<a href="@(routes.Files.file(f.id.toString))">
-	    	<img src="@routes.Files.download(f.id.toString)" alt="@(f.filename)">
+	    	<a href="@(routes.Files.file(f.id))">
+	    	<img src="@routes.Files.download(f.id)" alt="@(f.filename)">
 	    	</a>
 	    	<div class="carousel-caption">
 	    		@f.filename

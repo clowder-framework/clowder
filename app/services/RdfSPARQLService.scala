@@ -1,21 +1,25 @@
 package services
 
-abstract class RdfSPARQLService {
+import models.UUID
 
-  def addFileToGraph(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null  
-  def addDatasetToGraph(datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null
+trait RdfSPARQLService {
+
+  def addFileToGraph(fileId: UUID, selectedGraph: String = "rdfXMLGraphName"): Null
+
+  def addDatasetToGraph(datasetId: UUID, selectedGraph:String = "rdfXMLGraphName"): Null
   
-  def removeFileFromGraphs(fileId: String, selectedGraph:String = "rdfXMLGraphName"): Null
-  def removeDatasetFromGraphs(datasetId: String): Null
+  def removeFileFromGraphs(fileId: UUID, selectedGraph:String = "rdfXMLGraphName"): Null
+
+  def removeDatasetFromGraphs(datasetId: UUID): Null
   
-  def linkFileToDataset(fileId: String, datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null
+  def linkFileToDataset(fileId: UUID, datasetId: UUID, selectedGraph:String = "rdfXMLGraphName"): Null
   
   def sparqlQuery(queryText: String): String
   
-  def detachFileFromDataset(fileId: String, datasetId: String, selectedGraph:String = "rdfXMLGraphName"): Null
+  def detachFileFromDataset(fileId: UUID, datasetId: UUID, selectedGraph:String = "rdfXMLGraphName"): Null
   
-  def removeDatasetFromUserGraphs(fileId: String): Null
+  def removeDatasetFromUserGraphs(fileId: UUID): Null
   
-  def addFromFile(id: String, tempFile: java.io.File, fileOrDataset: String, selectedGraph:String = "rdfCommunityGraphName") : Null
+  def addFromFile(id: UUID, tempFile: java.io.File, fileOrDataset: String, selectedGraph:String = "rdfCommunityGraphName") : Null
   
 }

@@ -65,8 +65,8 @@
 </form>
 <script language="javascript">
 	var topId = "generalUserMetadata_@(dataset_id)"; 
-	window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(dataset_id)";
-	window["rdfIp"+topId] = "@api.routes.Datasets.getRDFUserMetadata(dataset_id)";
+	window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(UUID(dataset_id))";
+	window["rdfIp"+topId] = "@api.routes.Datasets.getRDFUserMetadata(UUID(dataset_id))";
 	window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
 </script>
 <script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>

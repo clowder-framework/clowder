@@ -22,7 +22,7 @@
 		}
 		
 		function replyComment(id) {
-			postComment(id, "@api.routes.Comments.comment(id)".replace("@id", id));
+			postComment(id, "@api.routes.Comments.comment(UUID(id))".replace("@id", id));
 			$("#form_" + id).remove();
 			return false;
 		}
