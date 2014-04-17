@@ -1,3 +1,5 @@
+package unit
+
 import java.util.Date
 import models.{Tag, UUID, File}
 import securesocial.core.{AuthenticationMethod, IdentityId, SocialUser}

@@ -1,3 +1,5 @@
+package unit
+
 import javax.inject.Inject
 import org.scalatest.Assertions._
 import services.FileService

@@ -1,3 +1,5 @@
+package integration
+
 import org.scalatest._
 import play.api.test._
 

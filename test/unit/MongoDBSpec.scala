@@ -1,3 +1,5 @@
+package unit
+
 /**
  * Base class for testing MongoDB services. Doesn't do much yet.
  *

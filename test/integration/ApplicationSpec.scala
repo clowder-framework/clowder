@@ -1,4 +1,5 @@
-import org.scalatest._
+package integration
+
 import play.api.test._
 import play.api.test.Helpers._
 
@@ -10,7 +11,7 @@ import play.api.test.Helpers._
  *
  * @author Luigi Marini
  */
-class ApplicationSpec extends UnitSpec with ServerFixture {
+class ApplicationSpec extends IntegrationSpec with ServerFixture {
 
   implicit val user: Option[securesocial.core.Identity] = None
 
