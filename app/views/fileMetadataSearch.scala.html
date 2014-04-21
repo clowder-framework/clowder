@@ -1,0 +1,56 @@
+@()(implicit user: Option[securesocial.core.Identity])
+
+@main("File user metadata search") {
+<div class="page-header">
+  <h1>File user metadata search</h1>
+</div>
+<div class="row-fluid">
+	<div class="span12">
+		<form class="form-inline">
+			<h5>Select properties to search for (in strings, input * alone to search for any string value):</h5>
+			<div id='queryUserMetadata' class='usr_md_'>
+				&nbsp;&nbsp;&nbsp;<button class="usr_md_" type="button">Add property</button>
+				<ul class="usr_md_ usr_md_search_list"></ul>
+				<button class="usr_md_" type="button">Add disjunction</button>
+				<br />
+				<button class="usr_md_submit btn" type="button">Submit</button></div>
+		</form>	
+		<table id='resultTable' class="table table-bordered table-hover" style="display:none;">
+			<thead>
+				<tr>					
+						<th>Name</th>
+						<th>Type</th>
+						<th>Uploaded</th>
+						<th></th>
+						@if(user.isDefined) {
+							<th></th>
+						}
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<ul class="pager">
+  			<li class="previous" style="visibility:hidden;"><a href="#">Previous</a></li>
+  			<li class ="next" style="visibility:hidden;"><a href="#">Next</a></li>
+		</ul>
+	</div>
+</div>
+<script language="javascript">
+	window["userDefined"] = false;
+</script>
+@if(user.isDefined) {
+	<script language="javascript">
+		window["userDefined"] = true;
+	</script>
+}
+<script language="javascript">	
+	var queryIp = "@api.routes.Files.searchFilesUserMetadata";
+	var modelIp = "@(routes.Assets.at("filesUserMetadataModel"))";
+	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
+	var searchOn = "files";
+	var searchFor = "userMetadata";
+</script>
+<script src="@routes.Assets.at("javascripts/searchUserMetadata.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
+}

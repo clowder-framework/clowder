@@ -775,12 +775,13 @@ function clearConfigTabAnnotations(prNum){
     
     function updatex3dPosition(prNum){
     	if(window["oldx3dposition" + prNum] != window["thisPreview" + prNum].offset().top){
-    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum] - 200) + "px;");
+    		$("#x3dElement" + prNum).attr("style", "position:absolute;top:" + (window["thisPreview" + prNum].offset().top + window["x3dOffset" + prNum] - 80 - window["x3dOffset2" + prNum]) + "px;");
     		window["oldx3dposition" + prNum] = window["thisPreview" + prNum].offset().top;
     	}
     }
     
     function leaveFullscreen(prNum){
+    	
     	$("#annotFields"+prNum).removeClass("fullscreenSubelement");
 		
 		var theDisplay = "";
@@ -812,14 +813,19 @@ function clearConfigTabAnnotations(prNum){
                 document.cancelFullScreen();
             } else if (document.mozCancelFullScreen) {
                 document.mozCancelFullScreen();
-            } else if (navigator.userAgent.indexOf("hrome") != -1) {
-            	if (document.webkitCancelFullScreen)
-            		document.webkitCancelFullScreen();
+            } else if (navigator.userAgent.indexOf("hrome") != -1) {            	
+            	if (document.webkitCancelFullScreen){            		
+            			document.webkitCancelFullScreen();
+            		}
                 
                 $("#x3dElement" + prNum).css("height", window["x3dNormalHeight" + prNum]);
 				$("#x3dElement" + prNum).css("width", window["x3dNormalWidth" + prNum]);
 				$("#x3dElement" + prNum).css("background-color", window["x3dNormalBgColor" + prNum]);
 				$("#x3dElement" + prNum).css("top", window["x3dNormalTop" + prNum]);
+							
+				if(document.activeElement == $("#x3dElement" + prNum + " > canvas").get(0)){
+					document.activeElement.blur();
+				}
             }
 		 window["annotTrackingDiff" + prNum] = 0.000;
 		 window["annotTrackingDiff2" + prNum] = 0.000;	
@@ -889,7 +895,12 @@ function clearConfigTabAnnotations(prNum){
 	else
       window["x3dOffset" + prNum] = 248;	
 	  x3dMeasureInstructions = "";
-  }
+  }  
+  if(Configuration.calledFrom == "dataset")
+	  window["x3dOffset2" + prNum] = 100;
+  else if(Configuration.calledFrom == "file")
+	  window["x3dOffset2" + prNum] = 200;
+  
 
   $(Configuration.tab).append("<table id='x3dElementTable" + prNum + "' style ='margin-bottom:560px;'><tr><td>Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Rotate</td></tr>" 
 		  					+ "<tr><td>Ctrl + Left mouse button drag</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Pan</td></tr>"
@@ -907,7 +918,7 @@ function clearConfigTabAnnotations(prNum){
 		  					+ "<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>"
 		  					+ "</table>");
   
-  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style=' position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum] - 200) + "px;' >"; 
+  var inner = "<x3d id='x3dElement" + prNum + "' showStat='false' showLog='true' height='" + height + "px' width='" + width + "px' x='0px' y='0px' style=' position:absolute;top:" + ($(Configuration.tab).offset().top + window["x3dOffset" + prNum] - window["x3dOffset2" + prNum]) + "px;' >"; 
   window["oldx3dposition" + prNum] = $(Configuration.tab).offset().top;
   window["thisPreview" + prNum] = $(Configuration.tab); 
   //setInterval(function(){updatex3dPosition(prNum);},50);
@@ -1130,7 +1141,7 @@ function clearConfigTabAnnotations(prNum){
 					window["exFullscreenElemEntered"] = "#x3dElement" + prNum;
 				}
 				else{
-					window["fullscreenExitedProperly"] = true;
+					window["fullscreenExitedProperly"] = true;					
 					leaveFullscreen(prNum);
 				}
 			}
@@ -1204,8 +1215,7 @@ function clearConfigTabAnnotations(prNum){
 		  }
 	  });
 	  	  
-	  $("body").on('keydown',function(e){
-
+	  $("body").on('keydown',function(e){		  		  
 		  if(e.which == 16){
 			  window["isShiftClicked" + prNum] = true;
 		  }
@@ -1217,39 +1227,45 @@ function clearConfigTabAnnotations(prNum){
 		  }
 		  else if(e.which == 17){
 			  window["isCtrlClicked" + prNum] = true;
-		  }
+		  }		  
 		  else if((e.which == 27 || (e.which == 81 && window["isShiftClicked" + prNum])) && (document.fullscreenElement || 
 			       document.mozFullScreenElement || document.webkitFullscreenElement)){
-			  var fullScreenElem;
-			  if(document.mozFullScreenElement){
-				  fullScreenElem = document.mozFullScreenElement;
-			  }
-			  else if(document.webkitFullscreenElement){
-				  fullScreenElem = document.webkitFullscreenElement;
-			  }
-			  else{
-				  fullScreenElem = document.fullscreenElement;
-			  }
-			  if(fullScreenElem.getAttribute('id').indexOf("x3dElement") != -1){
-				 if(e.which != 27 && e.target !== undefined)
-					 if(e.target.getAttribute('id') !== null)
-						 if(navigator.userAgent.indexOf("hrome") == -1){
-							 e.preventDefault();
-							  return false;
-						 }
-				 
-				  var prNumber = fullScreenElem.getAttribute('id').replace("x3dElement","");
-				  
-				  window["fullscreenExitedProperly"] = true;
-				  
-				  leaveFullscreen(prNumber);
-				  
-				  window["exFullscreenElemExited"] = "#x3dElement" + prNumber;
-				  				  
-				  e.preventDefault();
-				  return false;
-			  }
+			  
+			  if(document.activeElement.tagName.toLowerCase() !=  "canvas"){
+				  console.log(document.activeElement.tagName);
+				  var fullScreenElem;
+				  if(document.mozFullScreenElement){
+					  fullScreenElem = document.mozFullScreenElement;
+				  }
+				  else if(document.webkitFullscreenElement){
+					  fullScreenElem = document.webkitFullscreenElement;
+				  }
+				  else{
+					  fullScreenElem = document.fullscreenElement;
+				  }
+				  if(fullScreenElem.getAttribute('id').indexOf("x3dElement") != -1){
+					 if(e.which != 27 && e.target !== undefined)
+						 if(e.target.getAttribute('id') !== null)
+							 if(navigator.userAgent.indexOf("hrome") == -1 || true){
+								 e.preventDefault();
+								  return false;
+							 }
+					 
+					  var prNumber = fullScreenElem.getAttribute('id').replace("x3dElement","");
+					  
+					  window["fullscreenExitedProperly"] = true;
+					  
+					  
+					  leaveFullscreen(prNumber);
+					  
+					  window["exFullscreenElemExited"] = "#x3dElement" + prNumber;
+			  
+					  
+					  e.preventDefault();
+					  return false;
+				  }
 		  }
+		}
 	  });  
 	  $("body").on('keyup',function(e){
 		  if(e.which == 16){

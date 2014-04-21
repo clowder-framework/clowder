@@ -13,7 +13,7 @@
 		</div>
 <div class="row">
   <div class="col-md-8">
-		<img src="@api.routes.Previews.download(preview.id.toString)" 
+		<img src="@api.routes.Previews.download(preview.id)"
 					  		class="img-thumbnail"></img>
   </div>
 </div>
@@ -26,8 +26,8 @@
 			@list.map { case util.SearchResult(id, distance, Some(preview_id)) =>
 			<div class="row">
 				<div class="col-md-12">
-					<a href="@routes.Datasets.datasetBySection(id)">
-				  	<img src="@api.routes.Previews.download(preview_id)" 
+					<a href="@routes.Datasets.datasetBySection(UUID(id))">
+				  	<img src="@api.routes.Previews.download(UUID(preview_id))"
 						  		class="img-thumbnail"></img>
 				    </a>
 				  <p>Distance: @distance</p>

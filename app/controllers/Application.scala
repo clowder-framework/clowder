@@ -1,41 +1,26 @@
 package controllers
 
 import play.api.Routes
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import api.Sections
-import api.WithPermission
-import api.Permission
-import models.FileDAO
-import com.mongodb.casbah.commons.MongoDBObject
+import javax.inject.{Singleton, Inject}
+import services.FileService
 
 /**
  * Main application controller.
  * 
  * @author Luigi Marini
  */
-object Application extends SecuredController {
+@Singleton
+class Application  @Inject() (files: FileService) extends SecuredController {
   
   /**
    * Main page.
    */
-//  def index = Action { implicit request =>
-//    Ok(views.html.index())
-//  }
   def index = SecuredAction() { request =>
   	implicit val user = request.user
-  	val latestFiles = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(5).toList
+  	val latestFiles = files.latest(5)
     Ok(views.html.index(latestFiles))
   }
-  
-  /**
-   * Testing action.
-   */
-  def testJson = SecuredAction()  { implicit request =>
-    Ok("{test:1}").as(JSON)
-  }
-  
-    
+
   /**
    *  Javascript routing.
    */
@@ -55,16 +40,27 @@ object Application extends SecuredController {
         
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Datasets.comment,
-        api.routes.javascript.Datasets.tag,
+        api.routes.javascript.Datasets.getTags,
+        api.routes.javascript.Datasets.addTags,
         api.routes.javascript.Datasets.removeTag,
-        api.routes.javascript.Datasets.removeTag,
+        api.routes.javascript.Datasets.removeTags,
+        api.routes.javascript.Datasets.removeAllTags,
         api.routes.javascript.Files.comment,
-        api.routes.javascript.Files.tag,
+        api.routes.javascript.Files.getTags,
+        api.routes.javascript.Files.addTags,
+        api.routes.javascript.Files.removeTags,
+        api.routes.javascript.Files.removeAllTags,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.comment,
-        api.routes.javascript.Sections.tag
+        api.routes.javascript.Sections.getTags,
+        api.routes.javascript.Sections.addTags,
+        api.routes.javascript.Sections.removeTags,
+        api.routes.javascript.Sections.removeAllTags,
+        api.routes.javascript.Geostreams.searchSensors,
+        api.routes.javascript.Geostreams.getSensorStreams,
+        api.routes.javascript.Geostreams.searchDatapoints
       )
     ).as(JSON) 
   }

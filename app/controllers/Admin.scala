@@ -11,7 +11,7 @@ import securesocial.core.SecureSocial
 import api.ApiController
 import api.WithPermission
 import api.Permission
-import services.VersusPlugin
+import services.{AppConfigurationService, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
@@ -24,6 +24,7 @@ import scala.concurrent._
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
+import javax.inject.{Inject, Singleton}
 
 /**
  * Administration pages.
@@ -31,7 +32,8 @@ import play.api.libs.concurrent.Promise
  * @author Luigi Marini
  *
  */
-object Admin extends SecuredController {
+@Singleton
+class Admin @Inject() (appConfiguration: AppConfigurationService) extends SecuredController {
 
   private val themes = "bootstrap/bootstrap.css" ::
     "bootstrap-amelia.min.css" ::
@@ -40,6 +42,7 @@ object Admin extends SecuredController {
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val themeId = themes.indexOf(getTheme)
     Logger.debug("Theme id " + themeId)
+    implicit val user = request.user
     Ok(views.html.admin(themeId))
   }
 
@@ -113,7 +116,7 @@ object Admin extends SecuredController {
   }
   
   //Get available Measures from Versus 
-  def getMeasures()=SecuredAction(authorization=WithPermission(Permission.Admin)){
+  def getMeasures() = SecuredAction(authorization=WithPermission(Permission.Admin)){
      request =>
       
     Async{  
@@ -183,13 +186,7 @@ object Admin extends SecuredController {
             val indexer = (request.body \ "indexer").as[String]
             Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
             var reply = plugin.createIndex(adapter, extractor, measure, indexer)
-            //Logger.debug("REPLY FROM Versus: "+reply)
-            for {
-              response <- reply
-            } yield {
-              response
-              Ok(response.body)
-            }
+            for (response <- reply) yield Ok(response.body)
           } //case some
 
           case None => {
@@ -208,13 +205,21 @@ object Admin extends SecuredController {
         current.plugin[VersusPlugin] match {
 
           case Some(plugin) => {
-
+           Logger.debug("::::Inside getIndexes()::::")
             var indexListResponse = plugin.getIndexes()
 
             for {
               indexList <- indexListResponse
             } yield {
-              Ok(indexList.json)
+             if(indexList.body.isEmpty())
+              { 
+                Logger.debug(":::::::::::No:indexList.json")
+                Ok("No Index")
+                
+              }
+                else{
+                  Ok(indexList.json)
+                }
             }
 
           } //case some
@@ -314,7 +319,7 @@ object Admin extends SecuredController {
   def setTheme() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { implicit request =>
     request.body.\("theme").asOpt[Int] match {
       case Some(theme) => {
-        AppConfiguration.setTheme(themes(theme))
+        appConfiguration.setTheme(themes(theme))
         Ok("""{"status":"ok"}""").as(JSON)
       }
       case None => {
@@ -324,10 +329,5 @@ object Admin extends SecuredController {
     }
   }
 
-  def getTheme(): String = {
-    AppConfiguration.getDefault match {
-      case Some(appConf) => Logger.debug("Theme" + appConf.theme); appConf.theme
-      case None => themes(0)
-    }
-  }
+  def getTheme(): String = appConfiguration.getTheme()
 }

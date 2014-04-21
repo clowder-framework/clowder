@@ -25,11 +25,11 @@ mongo:
 
 medici:
 - launch sbt inside medici-play folder
--- ./sbt
+-- ./sbt -Dhttp.port=<running port number> "run <running port number>"
 - start application
 -- run
 - connect to server
--- http://localhost:9000/
+-- http://localhost:<running port number>/
 
 Editing code
 
@@ -38,5 +38,8 @@ install scala ide:
 -- for juno (4.x) you will need a milestone
 
 make medici ready for eclipse
--- ./sbt 'eclipse with-source=true execution-environment=JavaSE-1.6'
+-- ./sbt 'eclipse with-source=true execution-environment=JavaSE-1.7'
 
+further notes:
+-- In order for the RDF storage and querying features to work, 4store has to be installed
+   http://4store.org/

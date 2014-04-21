@@ -25,6 +25,8 @@ import securesocial.core.providers.utils.RoutesHelper
 import securesocial.core.IdentityId
 
 /**
+ * Enforce authentication and authorization.
+ * 
  * @author Luigi Marini
  * @author Rob Kooper
  *
