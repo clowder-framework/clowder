@@ -31,10 +31,15 @@ $(document).ready(function () {
 	<div class="col-md-12">
 		<div id="masonry">
 		@datasets.map { dataset =>
-		  <div class="post-box col-lg-4 col-md-4 col-sm-4">
+		  <div class="post-box col-lg-3 col-md-3 col-sm-3">
 		  <div class="panel panel-default">
+
+              <div class="pull-right"><a href="#" title="Bookmark" class="pull-right bookmark-link">
+                  <span class="glyphicon glyphicon-bookmark bookmark"></span>
+              </a></div>
+
   			<div class="panel-body">
-			  	
+			  	<div class="pic">
 			  		@if(!dataset.thumbnail_id.isEmpty){
 						<a href="@(routes.Datasets.dataset(dataset.id.toString))">
 							<img class="img-responsive" src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)">
@@ -44,62 +49,29 @@ $(document).ready(function () {
 							PDF, JPEG
 						</a>
 					}
-			  		
-			  	</a>
-			  	<div class="caption"><h3><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></h3><p>@dataset.description</p></div>
+                </div>
+			  	<div class="caption">
+                    <h3><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></h3>
+                    <p>@dataset.description</p>
+                </div>
 			</div>
 			</div>
     	  </div>
 		}
 		</div>
-	</div>
-	</div>
-	</div>
-	</div>
-</div>
 
-<div class="row">
-	<div class="col-md-12">
-		<table class="table table-bordered table-hover">
-			<thead>
-				<tr>
-					@if(user.isDefined) {
-						<th style="width: 25%">Name</th>
-						<th style="width: 15%">Created</th>
-						<th style="width: 40%">Description</th>
-						<th style="width: 10%"></th>
-						<th style="width: 10%"></th>
-					}
-					@if(!user.isDefined) {
-						<th style="width: 25%">Name</th>
-						<th style="width: 15%">Created</th>
-						<th style="width: 50%">Description</th>
-						<th style="width: 10%"></th>
-					}
-				</tr>
-			</thead>
-			<tbody>
-				@datasets.map { dataset =>
-					<tr>
-						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
-						<td>@dataset.created.format("MMM dd, yyyy")</td>
-						<td>@dataset.description</td>
-						<td>@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" width="120">}</td>
-						@if(user.isDefined) {
-							<td><a href="#" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
-						}
-					</tr>
-				}
-			</tbody>
-		</table>
-		<ul class="pager">
-			@if(prev != "") {
-  			<li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
-  			}
-  			@if(next != "") {
-  			<li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
-  			}
-		</ul>
+        <ul class="pager">
+            @if(prev != "") {
+            <li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
+            }
+            @if(next != "") {
+            <li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
+            }
+        </ul>
+
+	</div>
+	</div>
+	</div>
 	</div>
 </div>
 <script language="javascript">	

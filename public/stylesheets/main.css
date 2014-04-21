@@ -273,12 +273,12 @@ button.tech_md_ {
 
 .file-type {
 	display:block;
-	font-size: 33px;
+	font-size: 20px;
     font-weight: 500;
 	color: white;
 	background-color: #0B61A4;
 	width: 100%;
-	min-height: 200px;
+	min-height: 150px;
 	border: 1px solid;
 	text-align: center;
 	vertical-align: middle;
@@ -289,10 +289,29 @@ button.tech_md_ {
 	text-decoration: none;
 }
 
-.wordwrap { 
-   white-space: pre-wrap;      /* CSS3 */   
-   white-space: -moz-pre-wrap; /* Firefox */    
-   white-space: -pre-wrap;     /* Opera <7 */   
-   white-space: -o-pre-wrap;   /* Opera 7 */    
+.wordwrap {
+   white-space: pre-wrap;      /* CSS3 */
+   white-space: -moz-pre-wrap; /* Firefox */
+   white-space: -pre-wrap;     /* Opera <7 */
+   white-space: -o-pre-wrap;   /* Opera 7 */
    word-wrap: break-word;      /* IE */
+   /* line-height: 200px; */
+}
+
+.panel .bookmark-link {
+    padding: 0px;
+    margin: 0px;
+}
+
+.panel .bookmark {
+    padding-right: 2px;
+}
+
+.panel .panel-body .img-responsive {
+    margin: 0 auto;
+}
+
+.panel .panel-body .pic {
+    vertical-align: middle;
+    height: 150px;
 }
