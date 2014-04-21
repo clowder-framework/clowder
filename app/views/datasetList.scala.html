@@ -39,22 +39,23 @@ $(document).ready(function () {
               </a></div>
 
   			<div class="panel-body">
-			  	<div class="pic">
 			  		@if(!dataset.thumbnail_id.isEmpty){
 						<a href="@(routes.Datasets.dataset(dataset.id.toString))">
 							<img class="img-responsive" src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)">
 						</a>
-					} else {
-						<a class="file-type wordwrap" href="@(routes.Datasets.dataset(dataset.id.toString))">
-							PDF, JPEG
-						</a>
 					}
-                </div>
 			  	<div class="caption">
-                    <h3><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></h3>
+                    <h4><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></h4>
                     <p>@dataset.description</p>
                 </div>
 			</div>
+              <!-- Dataset Info -->
+              <ul class="list-group">
+                  <li class="list-group-item">
+                      <span class="glyphicon glyphicon glyphicon-file" title="files"></span> @dataset.files.size
+                      <span class="glyphicon glyphicon glyphicon-tags" title="tags"></span>  @dataset.tags.size
+                  </li>
+              </ul>
 			</div>
     	  </div>
 		}
