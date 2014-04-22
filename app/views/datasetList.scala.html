@@ -46,15 +46,15 @@ $(document).ready(function () {
 					}
 			  	<div class="caption">
                     <h4><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
-                    <p>@dataset.description</p>
+                    <p>@util.Formatters.ellipsize(dataset.description, 200)</p>
                 </div>
 			</div>
               <!-- Dataset Info -->
               <ul class="list-group">
                   <li class="list-group-item">
-                      <span class="glyphicon glyphicon glyphicon-file" title="files"></span> @dataset.files.size
-                      <span class="glyphicon glyphicon glyphicon-tags" title="tags"></span>  @dataset.tags.size
-                      <span class="glyphicon glyphicon glyphicon-list" title="metadata"></span>  @dataset.userMetadata.keys.size
+                      <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
+                      <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
+                      <span class="glyphicon glyphicon glyphicon-list" title="@dataset.userMetadata.keys.size metadata fields"></span>  @dataset.userMetadata.keys.size
                   </li>
               </ul>
 			</div>
