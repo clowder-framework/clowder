@@ -168,7 +168,7 @@ class VersusPlugin(application:Application) extends Plugin{
 
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
-    val indexurl = host + "/index"
+    val indexurl = host + "/indexes"
     var k = 0
     val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
     indexList.map {
@@ -184,7 +184,7 @@ class VersusPlugin(application:Application) extends Plugin{
   def getIndexesAsFutureList(): Future[List[models.Index.Index]]= {    
    val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
-    val indexurl = host + "/index"
+    val indexurl = host + "/indexes"
    
     val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
         
@@ -203,7 +203,7 @@ class VersusPlugin(application:Application) extends Plugin{
   def deleteIndex(indexId: String): Future[Response] = {
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
-    val deleteurl = host + "/index/" + indexId
+    val deleteurl = host + "/indexes/" + indexId
     Logger.debug("IndexID=" + indexId);
     var deleteResponse: Future[Response] = WS.url(deleteurl).delete()
     deleteResponse.map {
@@ -219,7 +219,7 @@ class VersusPlugin(application:Application) extends Plugin{
   def deleteAllIndexes(): Future[Response] = {
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
-    val indexurl = host + "/index"
+    val indexurl = host + "/indexes"
 
     val response: Future[Response] = WS.url(indexurl).delete()
     response
@@ -232,7 +232,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
 
-    val createIndexUrl = host + "/index";
+    val createIndexUrl = host + "/indexes";
     Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
     Logger.debug("theurl: " + createIndexUrl);
     val response = WS.url(createIndexUrl).post(Map("Adapter" -> Seq(adapter), "Extractor" -> Seq(extractor), "Measure" -> Seq(measure), "Indexer" -> Seq(indexer))).map {
@@ -253,7 +253,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration   
     val indexId = configuration.getString("versus.index").getOrElse("")    
     val host = configuration.getString("versus.host").getOrElse("")
-    var indexurl = host + "/index/" + indexId + "/add"    
+    var indexurl = host + "/indexes/" + indexId + "/add"    
 	 getIndexesAsFutureList().map{
     	indexList=>
         	indexList.map{
@@ -265,7 +265,8 @@ class VersusPlugin(application:Application) extends Plugin{
             //fileType = image/png or image/jpeg
             //MIMEtype = image/*
             if (fileTypeStr(0).equals(mimeTypeStr(0)) || mimeTypeStr(0).equals("*")) {
-              indexurl = host + "/index/" + index.id + "/add"
+              Logger.debug("268 for index.id = " + index.id + " calling add to index")
+              indexurl = host + "/indexes/" + index.id + "/add"
               WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map {
                 res =>
                   //Logger.debug("response from Adding file to Index " + index.id + "= " + res.body)
@@ -284,6 +285,9 @@ class VersusPlugin(application:Application) extends Plugin{
    * 
    */
   def removeFromIndexes(fileId: String){
+    //
+    //called from app/api/Files->removeFile()
+    //
     Logger.debug("removeFromIndexes for fileId = " + fileId)
       
     val configuration = play.api.Play.configuration
@@ -307,7 +311,7 @@ class VersusPlugin(application:Application) extends Plugin{
                     	for (indexList <-getIndexesAsFutureList()){
                     		for (index<- indexList){                			    
                     			Logger.debug("259 removePreviewFromIndexes previewId = " + preview.id + ", indexId = " + index.id)
-                    			val queryurl = host + "/index/" + index.id + "/removeFrom"
+                    			val queryurl = host + "/indexes/" + index.id + "/remove_from"
                     			val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(preview.id.toString)))
                     		}  
                     	}   
@@ -319,7 +323,7 @@ class VersusPlugin(application:Application) extends Plugin{
                   for (indexList <- getIndexesAsFutureList()){
                 	  for (index <-	indexList){                	  		   
                 		  Logger.debug("311 IMAGE removeFromIndex fileId = " + fileId + ", indexId = " + index.id)
-                		  val queryurl = host + "/index/" + index.id + "/removeFrom"
+                		  val queryurl = host + "/indexes/" + index.id + "/remove_from"
                 		  val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(fileId)))
                 	  }  
                   }                  
@@ -332,7 +336,7 @@ class VersusPlugin(application:Application) extends Plugin{
      
   	}
   
-  
+  //is this method still being user????
   def removeDatasetFromIndexes (datasetId: String){
     Logger.debug("removeFromIndexes for datasetId = " + datasetId)
       
@@ -344,7 +348,7 @@ class VersusPlugin(application:Application) extends Plugin{
         	indexList.map{
     			index=>   
     			  Logger.debug("removeDatasetFromIndexes datasetId = " + datasetId + ", indexId = " + index.id)
-    			  val queryurl = host + "/index/" + index.id + "/removeFrom"
+    			  val queryurl = host + "/indexes/" + index.id + "/remove_from"
     			  //val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(fileId)))
     		}  
     	}   
@@ -390,7 +394,7 @@ class VersusPlugin(application:Application) extends Plugin{
     //val indexId=configuration.getString("versus.index").getOrElse("")
 
     val host = configuration.getString("versus.host").getOrElse("")
-    val buildurl = host + "/index/" + indexId + "/build"
+    val buildurl = host + "/indexes/" + indexId + "/build"
     Logger.debug("IndexID=" + indexId);
     var buildResponse: Future[Response] = WS.url(buildurl).post("")
     buildResponse.map {
@@ -406,7 +410,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val host = configuration.getString("versus.host").getOrElse("")
-    var queryurl = host + "/index/" + indexId + "/query"
+    var queryurl = host + "/indexes/" + indexId + "/query"
     
     queryIndex(queryurl, imageURL) 
   }
@@ -421,9 +425,9 @@ class VersusPlugin(application:Application) extends Plugin{
     // calls @api.Files.downloadquery(id)
     //      
     val host = configuration.getString("versus.host").getOrElse("")
-    var queryIndexUrl = host + "/index/" + indexId + "/query"   
+    var queryIndexUrl = host + "/indexes/" + indexId + "/query"   
     //
-    //queryIndexUrl = http://localhost:8080/api/v1/index/b9a4b265-f517-423a-bcc2-27e23a8eab13/query
+    //queryIndexUrl = http://localhost:8080/api/v1/indexes/b9a4b265-f517-423a-bcc2-27e23a8eab13/query
     //    
     val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
     
@@ -454,7 +458,7 @@ class VersusPlugin(application:Application) extends Plugin{
     //imageFileURL = http://localhost:9000/api/queries/52f3da24e4b0f9ce279eb9d6?key=r1ek3rs
     //         
     val host = configuration.getString("versus.host").getOrElse("")
-    var queryIndexUrl = host + "/index/" + indexId + "/query"
+    var queryIndexUrl = host + "/indexes/" + indexId + "/query"
     
     queryIndex( queryIndexUrl, imageFileURL)       
   }
@@ -467,20 +471,19 @@ class VersusPlugin(application:Application) extends Plugin{
  * 		indexId - id of the indexer against which to query the image
  * 
  * returns: 
- * 		list of preview search results: search results will be sorted by proximity to the given image.
+ * 		list of previews and files search results: search results will be sorted by proximity to the given image.
  * 
- * Note the the indexer might contain both "previews", i.e. video file previews(image files extracted from a video file) 
+ * Note the the indexer might contain both "previews", i.e. video file previews(images extracted from a video file) 
  * and "files", i.e. files that were uploaded as images originally
- * the list will contain both previews 
- * 
- * THe list of results will contain both "previews" and "files" sorted by their proximity to the
+ *  
+ * The list of results will contain both "previews" and "files" sorted by their proximity to the
  * given image.
  *  */     
    
   def queryIndex( queryIndexUrl: String, inputFileURL: String): Future[ List[PreviewFilesSearchResult]] = {
 	    
      //
-     //queryIndexUrl = http://localhost:8080/api/v1/index/a885bad2-f463-496f-a881-c01ebd4c31f1/query
+     //queryIndexUrl = http://localhost:8080/api/v1/indexes/a885bad2-f463-496f-a881-c01ebd4c31f1/query
      //will call IndexResource -> queryindex on Versus side
      //
      
@@ -568,7 +571,7 @@ class VersusPlugin(application:Application) extends Plugin{
    def getFileSeachResult(result_id:String, file:models.File, result:models.Result.Result):SearchResultFile=
    {    	         
 		  //=== find list of datasets ids
-		  //this file can belong to 0 or 1 or more  datsets
+		  //this file can belong to 0 or 1 or more  datasets
 		  var dataset_id_list = Dataset.findByFileId(file.id).map{
 			  dataset=>dataset.id.toString()               		  		  
 		  }
