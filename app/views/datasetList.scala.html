@@ -40,12 +40,12 @@ $(document).ready(function () {
 
   			<div class="panel-body">
 			  		@if(!dataset.thumbnail_id.isEmpty){
-						<a href="@(routes.Datasets.dataset(dataset.id.toString))">
-							<img class="img-responsive" src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)">
+						<a href="@(routes.Datasets.dataset(dataset.id))">
+							<img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)">
 						</a>
 					}
 			  	<div class="caption">
-                    <h4><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></h4>
+                    <h4><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
                     <p>@dataset.description</p>
                 </div>
 			</div>
