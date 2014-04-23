@@ -2,7 +2,7 @@ package models
 
 case class SearchResultPreview (
   
-    id: String, 
+    id: UUID, 
     url: String,
     distance: Double,
     previewName: String,

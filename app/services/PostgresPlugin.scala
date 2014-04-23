@@ -354,31 +354,45 @@ class PostgresPlugin(application: Application) extends Plugin {
     counts
   }
   
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]): Option[String] = {
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], source: List[String], attributes: List[String]): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
     }
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id::text FROM datapoints"
-    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
-    if (since.isDefined) query += "start_time >= ? "
-    if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
-    if (until.isDefined) query += "start_time <= ? "
-    if ((since.isDefined || until.isDefined) && geocode.isDefined) query += " AND "
+      "(SELECT datapoints.gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
+      " WHERE sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid"
+//    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
+    if (since.isDefined) query += " AND start_time >= ?"
+    if (until.isDefined) query += " AND start_time <= ?"
     if (parts.length == 3) {
-      query += " ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+      query += " AND ST_DWithin(datapoints.geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
-      query += " ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
+      query += " AND ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
       var j = 0
       while (j < parts.length) {
         query += "ST_MakePoint(?, ?), "
         j += 2
       }
-      query += "ST_MakePoint(?, ?)])), geog)"
+      query += "ST_MakePoint(?, ?)])), datapoints.geog)"
     }
-    if (stream_id.isDefined) query += "stream_id = ?"
+    // attributes
+    if (!attributes.isEmpty) {
+      query += " AND (? = ANY(SELECT json_object_keys(datapoints.data))"
+      for (x <- 1 until attributes.size)
+        query += " OR ? = ANY(SELECT json_object_keys(datapoints.data))"
+      query += ")"
+    }
+    // data source
+    if (!source.isEmpty) {
+      query += " AND (? = json_extract_path_text(sensors.metadata,'type','id')"
+      for (x <- 1 until source.size)
+        query += " OR ? = json_extract_path_text(sensors.metadata,'type','id')"
+      query += ")"
+    }
+    //stream
+    if (stream_id.isDefined) query += " AND stream_id = ?"
     query += " order by start_time asc) As t;"
     val st = conn.prepareStatement(query)
     var i = 0
@@ -407,6 +421,20 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i + 2, parts(0).toDouble)
       i += 2
     }
+    // attributes
+    if (!attributes.isEmpty) {
+      for (x <- 0 until attributes.size) {
+      i = i + 1
+      st.setString(i, attributes(x))
+      }
+    }
+    // sources
+    if (!source.isEmpty) {
+      for (x <- 0 until source.size) {
+        i = i + 1
+        st.setString(i, source(x))
+      }
+    }
     if (stream_id.isDefined) {
       i = i + 1
       st.setInt(i, stream_id.get.toInt)
@@ -419,7 +447,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     rs.close()
     st.close()
-    Logger.debug("Searching datapoints result: " + data)
+    Logger.trace("Searching datapoints result: " + data)
     if (data == "null") None // FIXME
     else Some(data)
   }
@@ -450,6 +478,6 @@ class PostgresPlugin(application: Application) extends Plugin {
 
   def test() {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
-    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None))
+    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, List.empty, List.empty))
   }
 }

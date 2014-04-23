@@ -1,7 +1,7 @@
 package models
 
 case class SearchResultFile (     
-    id: String, 
+    id: UUID, 
     url: String,
     distance: Double,
     title: String,

@@ -3,48 +3,39 @@ package services
 import models.SearchResultFile
 import models.SearchResultPreview
 import models.PreviewFilesSearchResult
-import models.SectionDAO
-import models.PreviewDAO
+
+
 import models.FileMD
-import models.FileDAO
+
 import models.File
 import models.Dataset
 import play.api.{ Plugin, Logger, Application }
-import java.util.Date
 import play.api.libs.json.Json
-import play.api.Play.current
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
-import play.api.libs.concurrent.Promise
 import java.io._
 import play.api.Logger
 import play.api.Play.current
-import play.api.data.Form
 import play.api.data.Forms._
-import play.api.mvc._
-import services._
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Input.{El, EOF, Empty}
+import play.api.libs.iteratee.Input.Empty
 import com.mongodb.casbah.gridfs.GridFS
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import java.util.Date
-import org.bson.types.ObjectId
-import com.mongodb.casbah.Imports._
+import models.{UUID, File}
 import play.api.libs.json.Json._
-import scala.concurrent.{future, blocking, Future, Await}
-import scala.concurrent.ExecutionContext.Implicits.global
-import play.libs.Akka
-import akka.actor.Props
+import scala.concurrent.{blocking, Future, Await}
 import akka.actor.Actor
 import akka.actor.ActorRef
 import controllers.Previewers
 import controllers.routes
 import java.text.DecimalFormat
+
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashMap
 import scala.collection.immutable.Map
+import scala.collection.mutable.ListBuffer
+
 /** 
  * Versus Plugin
  * 
@@ -54,6 +45,9 @@ import scala.collection.immutable.Map
 class VersusPlugin(application:Application) extends Plugin{
   
   val files: FileService =  DI.injector.getInstance(classOf[FileService])
+  val previews: PreviewService =  DI.injector.getInstance(classOf[PreviewService])
+  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
   
   override def onStart() {
     Logger.debug("Starting Versus Plugin")
@@ -63,8 +57,8 @@ class VersusPlugin(application:Application) extends Plugin{
  * This method sends the file's url to Versus for the extraction of descriptors from the file
  */
 
-  def extract(fileid: String): Future[Response] = {
-		  Logger.debug("64 versus plugin extract fileid = " + fileid)
+
+  def extract(fileid: UUID): Future[Response] = {
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val fileUrl = client + "/api/files/" + fileid + "?key=" + configuration.getString("commKey").get
@@ -80,17 +74,17 @@ class VersusPlugin(application:Application) extends Plugin{
         desResponse.map {
           response =>
             // Logger.debug("RESPONSE FROM EXTRACT****:" +response.body)
-            files.getFile(fileid) match {
+            files.get(fileid) match {
 
               case Some(file) => {
               //  FileDAO.addVersusMetadata(fileid, response.json.toString)
                
                 val list=response.json\("versus_descriptors")
                 
-                FileDAO.addVersusMetadata(fileid,list)
+                files.addVersusMetadata(fileid, list)
                
                 Logger.debug("GET META DATA:*****")
-                FileDAO.getMetadata(fileid).map {
+                files.getMetadata(fileid).map {
                   md =>
                     Logger.debug(":::" + md._2.toString)
                 }
@@ -253,6 +247,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration   
     val indexId = configuration.getString("versus.index").getOrElse("")    
     val host = configuration.getString("versus.host").getOrElse("")
+
     var indexurl = host + "/indexes/" + indexId + "/add"    
 	 getIndexesAsFutureList().map{
     	indexList=>
@@ -267,6 +262,7 @@ class VersusPlugin(application:Application) extends Plugin{
             if (fileTypeStr(0).equals(mimeTypeStr(0)) || mimeTypeStr(0).equals("*")) {
               Logger.debug("268 for index.id = " + index.id + " calling add to index")
               indexurl = host + "/indexes/" + index.id + "/add"
+
               WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map {
                 res =>
                   //Logger.debug("response from Adding file to Index " + index.id + "= " + res.body)
@@ -284,7 +280,7 @@ class VersusPlugin(application:Application) extends Plugin{
    * If input file is a video - finds all its previews and removes each preview from the indexes.
    * 
    */
-  def removeFromIndexes(fileId: String){
+  def removeFromIndexes(fileId: UUID){
     //
     //called from app/api/Files->removeFile()
     //
@@ -293,7 +289,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")   
     
-    files.getFile(fileId) match {
+    files.get(fileId) match {
 
               case Some(file) => {                
                
@@ -306,28 +302,32 @@ class VersusPlugin(application:Application) extends Plugin{
                 if (file.contentType.contains("video/")){
                  
                   //find previews of type IMAGE and delete these from Versus
-                  for(preview <- PreviewDAO.findByFileId(file.id)){
+                  for(preview <- previews.findByFileId(file.id)){
                     if (preview.contentType.contains("image")){
                     	for (indexList <-getIndexesAsFutureList()){
                     		for (index<- indexList){                			    
                     			Logger.debug("259 removePreviewFromIndexes previewId = " + preview.id + ", indexId = " + index.id)
                     			val queryurl = host + "/indexes/" + index.id + "/remove_from"
-                    			val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(preview.id.toString)))
+                    			val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(preview.id.stringify)))
                     		}  
                     	}   
                     }
-                 }   // for(preview <- PreviewDAO.findByFileId(file.id)){             
+                 }   // for(preview <- previews.findByFileId(file.id)){             
                 }                
              
                 if(!file.contentType.contains("video/")){
                   for (indexList <- getIndexesAsFutureList()){
-                	  for (index <-	indexList){                	  		   
+                	  for (index <-	indexList){  
+                	               	  		   
                 		  Logger.debug("311 IMAGE removeFromIndex fileId = " + fileId + ", indexId = " + index.id)
-                		  val queryurl = host + "/indexes/" + index.id + "/remove_from"
-                		  val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(fileId)))
+                		   val queryurl = host + "/indexes/" + index.id + "/remove_from"
+                		  val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(fileId.stringify)))
+                		  									  
+                		  
+                		 
                 	  }  
                   }                  
-                }             
+                }            
               }//end case Some(file) 
               case None => {
                 Logger.debug(" 279 No file found")
@@ -363,8 +363,10 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId = configuration.getString("versus.index").getOrElse("")
+
     val urlf = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get    
     index(id, fileType, urlf)
+
   }
   
   /*
@@ -410,9 +412,11 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val host = configuration.getString("versus.host").getOrElse("")
+
     var queryurl = host + "/indexes/" + indexId + "/query"
     
     queryIndex(queryurl, imageURL) 
+
   }
   
   
@@ -431,6 +435,7 @@ class VersusPlugin(application:Application) extends Plugin{
     //    
     val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
     
+
     queryIndex(queryIndexUrl, queryStr)        
    }
   
@@ -451,6 +456,7 @@ class VersusPlugin(application:Application) extends Plugin{
  */    
   def queryIndexForImage(imageId: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
   //def queryIndexForImage(imageId: String, indexId: String): Future[(String,  List[PreviewFilesSearchResult])] = {
+
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")    
     val imageFileURL = client + "/api/queries/" + imageId + "?key=" + configuration.getString("commKey").get
@@ -502,7 +508,8 @@ class VersusPlugin(application:Application) extends Plugin{
     
         Logger.debug("500 response.body = " + response.body)        
         val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
+
+        val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
         //        //case class Result( val docID :String, val proximity :Double)	
         //result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
         //or
@@ -511,6 +518,7 @@ class VersusPlugin(application:Application) extends Plugin{
         var resultList = new ListBuffer[PreviewFilesSearchResult]
                             
         similarity_value.map {          
+
           result =>
                   Logger.debug("452 result = " + result)
             
@@ -520,8 +528,10 @@ class VersusPlugin(application:Application) extends Plugin{
             //        
             //parse docID to get preivew id or file id - string between '/' and '?'
             val end = result.docID.lastIndexOf("?")
+
             val begin = result.docID.lastIndexOf("/");                       
-            val result_id = result.docID.substring(begin + 1, end);
+            val result_id_str = result.docID.substring(begin + 1, end);
+            val result_id = UUID(result_id_str);
           
             //
             //check if this is a file or a preview
@@ -530,7 +540,7 @@ class VersusPlugin(application:Application) extends Plugin{
             val isPreview = result.docID.contains("previews")
                       
             if (isPreview){ 
-               PreviewDAO.getBlob(result_id) match{                            	
+               previews.getBlob(result_id) match{                            	
                 case Some (blob)=>{   
               	  val previewName =blob._2
               	   //use helper method to get the results
@@ -546,17 +556,18 @@ class VersusPlugin(application:Application) extends Plugin{
                 case None=>{
                   //no blob found - do nothing
                 }
-              }//PreviewDAO.getBlob(result_id) match{ 
+              }//previews.getBlob(result_id) match{ 
             }//end of if (isPreview){    
             
             if (isFile) {
-              files.getFile(result_id) match {               	  
+              files.get(result_id) match {               	  
                 case Some (file)=>{  
                 	//use helper method to get the results
                	    val oneFileResult = getFileSeachResult(result_id, file, result)
                	    resultList += new PreviewFilesSearchResult("file", oneFileResult, null  )                  	                  	  
                	    }               	  
                 case None => {}            	
+
               }
           }//end of if (isFile)        
         } // End of similarity map      
@@ -568,12 +579,12 @@ class VersusPlugin(application:Application) extends Plugin{
     /*
     * Helper method. Called from queryIndex    
     */
-   def getFileSeachResult(result_id:String, file:models.File, result:models.Result.Result):SearchResultFile=
+   def getFileSeachResult(result_id:UUID, file:models.File, result:models.VersusSimilarityResult.VersusSimilarityResult):SearchResultFile=
    {    	         
 		  //=== find list of datasets ids
 		  //this file can belong to 0 or 1 or more  datasets
-		  var dataset_id_list = Dataset.findByFileId(file.id).map{
-			  dataset=>dataset.id.toString()               		  		  
+		  var dataset_id_list = datasets.findByFileId(file.id).map{
+			  dataset=>dataset.id.stringify             		  		  
 		  }
            
               
@@ -585,8 +596,8 @@ class VersusPlugin(application:Application) extends Plugin{
                   file.thumbnail_id match {               
                 	case Some(thumb_id) => {
                 	  Logger.debug("615 file.thumbnail_id = " + thumb_id)
-                	  thumbn_id = thumb_id.toString
-                		//thumbnail_id = id.toString()
+                	  thumbn_id = thumb_id.stringify
+                		//thumbnail_id = id.stringify
                 	}
                 	case None=>{}                  
                 }
@@ -613,13 +624,13 @@ class VersusPlugin(application:Application) extends Plugin{
    /*
     * Helper method. Called from queryIndex
     */
-  	def getPrevSearchResult(preview_id:String, prevName:String, result:models.Result.Result):Option[SearchResultPreview]=
+  	def getPrevSearchResult(preview_id:UUID, prevName:String, result:models.VersusSimilarityResult.VersusSimilarityResult):Option[SearchResultPreview]=
   	{                           
 		  //val formatter = new DecimalFormat("#.###")
 		  val formatter = new DecimalFormat("0.##########E0")                
 		  val proxvalue = formatter.format(result.proximity).toDouble
 		         
-		  PreviewDAO.findOneById(new ObjectId(preview_id)) match {
+		  previews.get(preview_id) match {
 		  case Some(preview)=>{
 			  var startTime=0                   
 			  var fileName = ""
@@ -629,7 +640,7 @@ class VersusPlugin(application:Application) extends Plugin{
 			  //===get section for this preview and its start/end time                    
 			  preview.section_id match {
 			  	case Some(section_id)=>{
-			  		SectionDAO.findOneById(section_id)match {
+			  		sections.get(section_id)match {
 			  			case Some(section)=>{
                             startTime = section.startTime.getOrElse(0)
                         }
@@ -644,16 +655,16 @@ class VersusPlugin(application:Application) extends Plugin{
 			  // get file's id, name, and all datasets it belongs to.
 			  preview.file_id match{
 			  	case Some(file_id)=>{
-			  		fileIdString = file_id.toString                        
-			  		FileDAO.findOneById(file_id) match {
+			  		fileIdString = file_id.stringify                   
+			  		files.get(file_id) match {
 			  			case Some(file)=>{
 			  				fileName = file.filename			  				
-			  				for(dataset <- Dataset.findByFileId(file_id)){                  				               
-			  					datasetIdList+= dataset.id.toString()		             
+			  				for(dataset <- datasets.findByFileId(file_id)){                  				               
+			  					datasetIdList+= dataset.id.stringify	             
 			  				} 
 			  			}
 			  			case None =>{}
-			  		}// FileDAO.findOneById(file_id) match
+			  		}// files.get(file_id) match
                         
 			  	} //case Some(file_id)=>{
 			  	case None=>{}
@@ -679,7 +690,7 @@ class VersusPlugin(application:Application) extends Plugin{
 		  //No preview found
 		  case None=>{return None}
                   
-		}//END OF : PreviewDAO.findOneById(new ObjectId(preview_id)) match
+		}//END OF : previews.get(preview_id) match
         
    } 
  

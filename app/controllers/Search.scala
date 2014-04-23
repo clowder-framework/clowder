@@ -1,64 +1,40 @@
 package controllers
-//import play.api.Logger
-import play.api.mvc._
-import services.ElasticsearchPlugin
-import services.VersusPlugin
+
+
 import play.Logger
 import scala.collection.JavaConversions.mapAsScalaMap
-import sys.process._
-import java.net.URL
-import java.io.File
-import scala.io.Source
-import java.io._
-import play.api.libs.ws.WS
-import models.SectionDAO
-import org.bson.types.ObjectId
-import models.PreviewDAO
-import models.MultimediaFeatures
-import models.MultimediaFeaturesDAO
-import com.mongodb.casbah.commons.MongoDBObject
+//import services.Services
+
+import services._
+import play.Logger
+import scala.collection.JavaConversions.mapAsScalaMap
 import edu.illinois.ncsa.isda.lsva.ImageMeasures
 import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
-import scala.collection.mutable.LinkedList
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListBuffer
 import util.DistancePriorityQueue
-import util.DistancePriorityQueue
-import org.elasticsearch.action.search.SearchRequest
-import util.SearchResult
-import util.DistancePriorityQueue
-import play.api.libs.ws.WS
-import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import java.io.FileInputStream
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import scala.collection.mutable.ArrayBuffer
-import models.Result
-import models.SimilarityResult
-import play.api.libs.json.Reads
-import play.api.libs.json.JsArray
-import models.TempFileDAO
-import com.mongodb.DBCollection
 import play.api.Play.current
-import play.api.libs.concurrent._
-import scala.concurrent.{ future, blocking, Future, Await }
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.ArrayBuffer
-import models.Dataset
-import api.WithPermission
 import api.Permission
-import services.{ CollectionService, DatasetService, FileService, QueryService}
-import javax.inject.{ Singleton, Inject }
+import javax.inject.Inject
 import scala.concurrent.Future
+import scala.Some
+import api.WithPermission
+import util.SearchResult
+import models.UUID
 
 /**
  * Text search.
  *
  * @author Luigi Marini
  */
-class Search @Inject() (datasets: DatasetService, files: FileService, 
-    collections: CollectionService, queries: QueryService) extends SecuredController {
+class Search @Inject() (
+  datasets: DatasetService,
+  files: FileService,
+  collections: CollectionService,
+  queries: MultimediaQueryService,
+  previews: PreviewService) extends SecuredController {
 
   /**
    * Search results.
@@ -82,7 +58,7 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
                   Logger.info(value.getName + " = " + value.getValue())
                 }
                 if (hit.getType() == "file") {
-                  files.getFile(hit.getId()) match {
+                  files.get(UUID(hit.getId())) match {
                     case Some(file) =>{
                       Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                       Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
@@ -96,12 +72,13 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
                 Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
                   Logger.debug("DATASETS:Dataset.id="+hit.getId());
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
-                   datasets.get(hit.getId()) match {
+                   datasets.get(UUID(hit.getId())) match {
                     case Some(dataset) =>
                       Logger.debug("Search result found dataset" + hit.getId()); datasetList += dataset
                     case None => {
                       Logger.debug("Dataset not found " + hit.getId())
-                  	Redirect(routes.Datasets.dataset(hit.getId)) 
+                  	Redirect(routes.Datasets.dataset(UUID(hit.getId)))            
+                  	
                   }
                   }
                 }
@@ -126,17 +103,16 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
   def multimediasearch() = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Starting multimedia search interface")
     Ok(views.html.multimediasearch())
-    //Ok("Sucessful")
   }
 
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching multimedia index")
     // TODO handle multiple previews found
-    val preview = PreviewDAO.findBySectionId(new ObjectId(section_id))(0)
-    MultimediaFeaturesDAO.findOne(MongoDBObject("section_id" -> new ObjectId(section_id))) match {
+    val preview = previews.findBySectionId(section_id)(0)
+    queries.findFeatureBySection(section_id) match {
       case Some(feature) => {
         // setup priority queues
         val queues = new HashMap[String, DistancePriorityQueue]
@@ -146,7 +122,7 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
         // push into priority queues
         feature.features.map { f =>
           Logger.debug("Computing " + f.representation)
-          MultimediaFeaturesDAO.find(MongoDBObject()).toList.map { mf =>
+          queries.listAll().map { mf =>
             Logger.trace("Found multimedia features " + mf.id + " for section " + section_id)
             mf.features.find(_.representation == f.representation) match {
               case Some(fd) => {
@@ -166,33 +142,6 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
             }
           }
         }
-        //        // grab first 10 items from priority queues
-        //        val items = new HashMap[String, ListBuffer[SearchResult]]
-        //        for(i <- 1 to 10) {
-        //          Logger.debug("test")
-        //          queues.foreach { case (k,v) =>
-        //            
-        //            if (items.contains(k)) {
-        //              if (v.size > 0) items(k) += v.pop
-        //            } else {
-        //              items += k -> (new ListBuffer() += v.pop)
-        //            }: Unit // TODO fixed in scala 2.10 https://issues.scala-lang.org/browse/SI-4938
-        //          }
-        //           Logger.debug("test")
-        //        }
-
-        //        val queuesWithPreviews = queues map {case (key, queue) =>
-        //          val newQueue = new DistancePriorityQueue(queue.size())
-        //          while (queue.size > 0) {
-        //            val element = queue.pop()
-        //            val previews = PreviewDAO.findBySectionId(new ObjectId(element.id))
-        //            if (previews.size == 1) {
-        //              newQueue.add(SearchResult(element.id, element.distance, Some(previews(0).id.toString)))
-        //            } else {
-        //              Logger.error("Found more/less than one preview " + preview)
-        //            }
-        //          }
-        //        }
 
         val items = new HashMap[String, ListBuffer[SearchResult]]
         queues map {
@@ -200,10 +149,10 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
             val list = new ListBuffer[SearchResult]
             while (queue.size > 0) {
               val element = queue.pop()
-              val previews = PreviewDAO.findBySectionId(new ObjectId(element.section_id))
-              if (previews.size == 1) {
-                Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previews(0).id.toString)
-                list.prepend(SearchResult(element.section_id, element.distance, Some(previews(0).id.toString)))
+              val previewsBySection = previews.findBySectionId(UUID(element.section_id))
+              if (previewsBySection.size == 1) {
+                Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previewsBySection(0).id.toString)
+                list.prepend(SearchResult(element.section_id, element.distance, Some(previewsBySection(0).id.toString)))
               } else {
                 Logger.error("Found more/less than one preview " + preview)
               }
@@ -224,12 +173,11 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
 
   def SearchByText(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching for" + query)
-
-    //Ok(views.html.searchTextResults(query))
     Ok("")
   }
 
   
+
   /*
    * GET the query image from the URL and compare within the database and show the result   */
   def searchbyURL(queryURL: String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
@@ -262,26 +210,24 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
         }
       } //match            
     } //Async
-  }  	
-  
-  
-  
-   /*
+
+  }
+
+  /*
    * 
    * Finds similar images/objects in Multiple index for a given query image/object
    * 
    * */
-  def findSimilar(imageID:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
+  def findSimilar(imageID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
    Async{      
     current.plugin[VersusPlugin] match {    		
-    	case Some(plugin)=>{     	  
-        	
+    	case Some(plugin)=>{          	
     		val futureFutureListResults = for {    	  
     			indexList<-plugin.getIndexesAsFutureList()
     		} yield { 	      				
     			val resultListOfFutures=indexList.map{
     				index=>    
-    				  plugin.queryIndexForImage(imageID, index.id).map{
+    				  plugin.queryIndexForImage(imageID.stringify, index.id).map{
     				    queryResult=>
     				      (index, queryResult)
     				  }    								  
@@ -303,8 +249,8 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
             		}
     			}
     		}            
-        } //case some plugin
-                    
+        } //case some plugin   
+    	
         case None => {
           Future(Ok("No Versus Service"))
         }
@@ -312,12 +258,11 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
     } //Async
   }
   
-  
   //
   //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
   // also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
   //
-  def findSimilarFile(imageID:String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def findSimilarFile(imageID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
    	 Async{     
      
     current.plugin[VersusPlugin] match {    		
@@ -327,7 +272,7 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
     		} yield { 	      				
     			val resultListOfFutures=indexList.map{
     				index=>    
-    				  plugin.queryIndexForFile(imageID, index.id).map{
+    				  plugin.queryIndexForFile(imageID.stringify, index.id).map{
     				    queryResult=>
     				      (index, queryResult)
     				  }    								  
@@ -339,8 +284,8 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
     		for{
     			futureListResults<-futureFutureListResults
     			listOfResults<-futureListResults      		
-    		} yield {        
-    			files.getFile(imageID) match {
+    		} yield {     		  
+    			files.get(imageID) match {
             		case Some(file)=>{              
             		  Ok(views.html.contentbasedSearchResultsVideo3(file.filename, listOfResults))              
             		}
@@ -350,22 +295,19 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
     			}
     		}              
         } //case some plugin                    
+
         case None => {
           Future(Ok("No Versus Service"))
         }
       } //match            
     } //Async
-  } 
-  
- 
-  
-  def Filterby(id: String) = TODO
+  }
+
+//  def Filterby(id: String) = TODO
 
   def uploadquery() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     request.body.file("picture").map { picture =>
       import java.io.File
-      val filename = picture.filename
-      val contentType = picture.contentType
       picture.ref.moveTo(new File("/tmp/picture"))
       Ok("File uploaded")
     }.getOrElse {
@@ -373,17 +315,4 @@ class Search @Inject() (datasets: DatasetService, files: FileService,
         "error" -> "Missing file")
     }
   }
-  /*Action(parse.multipartFormData) { request =>
-  request.body.file("picture").map { picture =>
-    import java.io.File
-    val filename = picture.filename 
-    val contentType = picture.contentType
-    picture.ref.moveTo(new File("/tmp/picture"))
-    Ok("File uploaded")
-  }.getOrElse {
-    Redirect(routes.Application.index).flashing(
-      "error" -> "Missing file"
-    )
-  }
-}*/
 }
