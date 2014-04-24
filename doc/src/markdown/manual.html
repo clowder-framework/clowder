@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<title>Medici</title>
+
+<xmp theme="united" style="display:none;">
+
+Medici is a web-based content management system that allows users to share, annotate, organize and analyze large collections of datasets. Unlike other CMS, Medici focuses on unstructured data in the form of arbitrary files and structured data in the form of metadata associated with the files.
+
+<img src="img/dataset.png" alt="Dataset page" style="width: 500px;"/>
+
+
+Medici is designed to support any data format and multiple research domains and contains three major extension points: preprocessing, processing and previewing. Information in Medici is organized using the following data model:
+
+<img src="img/datamodel.jpg" alt="Data model" style="width: 600px;"/>
+
+When new data is added to the system, whether it is via the web interface or through the RESTful API, preprocessing is off-loaded to extraction services in charge of extracting appropriate data and metadata. The extraction services attempt to extract information and run preprocessing steps based on the type of the data just uploaded. Extracted information is then written back to the repository using appropriate API endpoints.
+
+<img src="img/extraction.jpg" alt="Extraction bus" style="width: 500px;"/>
+
+For example, in the case of images, a preprocessing step takes care of creating the previews of the image, but also of extracting EXIF and GPS metadata from the image. If GPS information is available, the web client shows the location of the dataset on a map embedded in the page. By making the clients and preprocessing steps independent the system can grow and adapt to different user communities and research domains.
+
+Medici uses a variety of technologies to accomplish its goals. The overall architecture of a typical deployment looks as follows:
+
+<img src="img/architecture.jpg" alt="Architecture" style="width: 500px;"/>
+
+The web application and individual extractors comprise most of the custom Medici code and the core of the system. Most of the other blocks in the diagram are external services Medici depends on. The next section covers how to setup a typical stack.
+
+# Installation
+
+The following instructions cover dependencies, source code and configuration.
+
+## Requirements
+
+The minimum requirements are:
+
+* The Java Development Kit. Either the [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) or the [Open JDK](http://openjdk.java.net/) . You might already have Java installed. Open a command prompt and try typing `java`.
+
+* The [MongoDB](http://www.mongodb.org/) database. The latest stable version should do (2.2.6).
+
+If you would like to use the extractor functionality (which is true in most cases), you will also need:
+
+* The [RabbitMQ](http://www.rabbitmq.com/) event bus. Different packages are available for specific operating systems. Requires Erlang. Erlang is installed with most package as a dependency.
+
+For text-based search functionality the following is required:
+
+* The [Elasticsearch](http://www.elasticsearch.org/) distributed search service. Requires Java.
+
+For content-based search the following is required:
+
+* The [Versus](http://isda.ncsa.illinois.edu/documentation/versus/tutorial.html) service.
+
+## Source code
+
+The source code is available at the following url as a collection of git repositories :
+
+* https://opensource.ncsa.illinois.edu/stash/projects/MED
+
+The repository `medici-play` containes the web frontend and is required. It should be cloned using the following command:
+
+```
+git clone https://opensource.ncsa.illinois.edu/stash/scm/med/medici-play.git
+```
+
+Most of the other repositories include specific extractors. Basic extractors are available in `extractors-core`:
+
+```
+git clone https://opensource.ncsa.illinois.edu/stash/scm/med/extractors-core.git
+```
+
+## Setup
+
+With the required software in place and the code checked out, it is just a matter of starting web frontend. Please make sure all services are running before doing this.
+
+The web frontend is setup using the (sbt)[http://www.scala-sbt.org/] build system. Change directory into the medicy-play main directory and run the code using the following command
+
+```
+./sbt run
+```
+
+To have access to other commands enter the sbt shell first and the use one of the many commands available (you can get a list by typing `help` in the shell). For example, to build the application for deployment type the following: 
+
+```
+./sbt
+> dist
+```
+
+The default configuration is fine for simple testing, but if you would like to modify any of the settings, you can find the all the configuration files under the `conf/` directory. The followling files are of particular importance:
+
+* `conf/application.conf` includes all the basic configuration entries. For example the MongoDB credentials for deployments where MongoDB has non default configuration.
+* `conf/play.plugins` is usesd to turn on and off specific functionality in the system. Plugins specific to Medici are available under `app/services/`.
+* `conf/securesocial.conf` includes configuration settings for email functionality when signup as well as ways to configure the different identity providers (for example Twitter or Facebook). More information can be found on the [securesocial](http://securesocial.ws/) website.
+
+# Using the API
+
+The RESTFUl application programming interface is the best way to interact with Medici programmaticaly. Much of the web frontend and the extractors use this same API to interact with the system.
+
+Following is a brief description of all the available endpoints. For more information take a look at the source under `app/api`. All routes are defined in `conf/routes`. For methods that write to the system a key is required. The default key is available in `conf/application.conf` under `commKey`. Please change this to a very long string of characters when deploying the system. The key is passed as a query parameter to the url. For example `?key=sdjof902j39f09joahsduh0932jnujv09erjfosind`.
+
+HTTP Method  | Endpoint      | Description
+------------ | ------------- | ------------
+GET  |  /api/files                                 | List files
+POST |  /api/files                                 | Upload file
+POST |	/api/files/searchusermetadata              | Search user specified metadata
+POST |	/api/files/searchmetadata                  | Search system generated metadata
+POST |  /api/uploadToDataset/:id                   | Upload file to dataset
+POST |	/api/files/:fileId/remove				    | Delete file
+GET  |  /api/files/:id/metadata                    | Get file information
+POST |	/api/files/:file_id/thumbnails/:thumbnail_id | Attach thumbnail to file
+POST |  /api/files/:id/metadata           		    | Add system-specified metadata
+POST |  /api/files/:id/usermetadata	  		    | Add user-specified metadata
+GET  |  /api/files/:id/technicalmetadatajson       | Get system-specified metadata
+POST |  /api/files/:id/comment				        | Add comment to file
+GET  |  /api/files/:id/tags                        | List file tags
+POST |  /api/files/:id/tags                        | Add file tags           
+POST |  /api/files/:id/tags/remove                 | Remove file tags
+POST |  /api/files/:id/tags/remove_all             | Remove all tags from file
+POST |  /api/files/:id/previews/:p_id     	        | Attach preview to file
+GET	 |	/api/files/:id/listpreviews		  		    | List all previews associated with file
+GET	 |	/api/files/:id/getPreviews				    | List previews associated with file filter by available previewers
+GET	 |	/api/files/:id/isBeingProcessed			    | Whether a file is being processed by an extractor
+GET	 |	/api/files/:three_d_file_id/:filename	     | Get texture associated with file
+POST |	/api/files/:three_d_file_id/geometries/:geometry_id | Attach geometry
+POST |	/api/files/:three_d_file_id/3dTextures/:texture_id | Attach texture
+GET  |  /api/files/:id                             | Download original file
+POST |	/api/files/uploadIntermediate/:idAndFlags  | *
+POST |	/api/files/sendJob/:fileId/:fileType	    | *
+GET	 |	/api/files/getRDFURLsForFile/:id	        | *
+GET	 |	/api/files/rdfUserMetadata/:id			    | *
+GET  |  /api/queries/:id		                    | Versus download query
+POST |	/api/collections/:coll_id/datasets/:ds_id   | Associate dataset with collection
+POST |	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound | Remove dataset from collection
+POST | 	/api/collections/:coll_id/remove	         | Delete collection
+GET	 |	/api/collections/:coll_id/getDatasets	     | List datasets in collection
+GET  |  /api/datasets			                     | List datasets
+POST |  /api/datasets                              | Create new dataset
+POST |	/api/datasets/searchusermetadata		| Search datasets by user-specified metadata
+POST | 	/api/datasets/searchmetadata			| Search datasets system-specifed metadata
+GET	 |	/api/datasets/listOutsideCollection/:coll_id | List all datasets not in a collection
+POST |	/api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound | Remove file from dataset
+GET	 |  /api/datasets/getRDFURLsForDataset/:id	 | Get dataset information as RDF
+GET	 |	/api/datasets/rdfUserMetadata/:id		 | Get user-specified metadata as RDF
+POST |	/api/datasets/:datasetId/remove			   | Delete dataset
+POST |  /api/datasets/:id/metadata		  		   | Add system-specified metadata to dataset
+POST |  /api/datasets/:id/usermetadata	  		   | Add user-specified metadata to dataset
+GET  |  /api/datasets/:id/technicalmetadatajson   | Get system-specified for dataset
+GET  |	/api/datasets/:id/listFiles		 		    | List files in dataset
+POST |  /api/datasets/:id/comment				    | Add comment to dataset
+POST |	/api/datasets/:id/removeTag 			    | Remove tag from dataset
+GET  |  /api/datasets/:id/tags                    | List tags in dataset
+POST |  /api/datasets/:id/tags                    | Add tag to dataset
+POST |  /api/datasets/:id/tags/remove             | Remove tags from dataset
+POST |  /api/datasets/:id/tags/remove_all         | Remove all tags from dataset 
+GET	 |	/api/datasets/:id/isBeingProcessed		| If dataset is being processed by extractors
+GET	 |	/api/datasets/:id/getPreviews			| Get previews associated with dataset
+POST |	/api/datasets/:ds_id/files/:file_id	| Associate file with dataset
+GET  |  /api/previews/:preview_id/textures/dataset/:datasetid/json | *
+GET  |  /api/previews/:preview_id/textures/dataset/:dataset_id//:filename | *
+GET	 |	/api/previews/:dzi_id_dir/:level/:filename | *
+POST |  /api/previews/:dzi_id/tiles/:tile_id/:level | *
+POST |  /api/previews/:id/metadata | Add metadata to preview
+GET  |  /api/previews/:id/metadata  | Get metadata from preview
+POST |  /api/previews/:id/annotationAdd  | Add annotation to 3D model
+POST |  /api/previews/:id/annotationEdit   | Edit annotation of 3D model   
+GET  |  /api/previews/:id/annotationsList | List annotations associated with preview
+GET  |  /api/previews/:id         | Get preview bytes
+POST |  /api/previews             | Create new preview
+POST |  /api/indexes              | Create a new content-based index
+POST |  /api/indexes/features     | Add feauture vector to content-based index
+POST |  /api/sections             | Create new section
+GET  |  /api/sections/:id          | Get section metadata 
+POST |  /api/sections/:id/comments | Add comment to section
+GET  |  /api/sections/:id/tags      | Get tags associated with section
+POST |  /api/sections/:id/tags      | Associate tags with section
+POST |  /api/sections/:id/tags/remove | Remove tags from section
+POST |  /api/sections/:id/tags/remove_all  | Remove all tags from section
+POST |  /api/geostreams/sensors		   | Create new sensor
+GET  |  /api/geostreams/sensors/:id/streams | List streams associated with sensor
+GET  |  /api/geostreams/sensors/:id     |     Get sensor information
+GET  |  /api/geostreams/sensors         | Search sensors by space
+POST |   /api/geostreams/streams		 |  Create new stream
+GET  |  /api/geostreams/streams/:id     | Get stream information
+GET  |  /api/geostreams/streams          | Search streams by space
+DELETE |  /api/geostreams/streams/:id    |  Delete stream
+POST |  /api/geostreams/datapoints        | Create new geotemporal datapoint
+GET  |  /api/geostreams/datapoints/:id    | Get datapoint
+GET  |  /api/geostreams/datapoints        | Search datapoints by space and time
+GET  |  /api/geostreams/counts           | Return counts for sensors, streams and datapoints
+POST |	/api/tiles						  | Upload tile to image pyramid
+POST |	/api/geometries					  | Upload geometry
+POST |	/api/3dTextures					  | Upload 3D texture
+POST |   /api/fileThumbnail               | Upload file thumbnail
+POST |	/api/comment/:id				  |	Create new comment
+GET  | 	/api/search                      | Text based search
+
+You can use `curl` to test the service. If you are on Linux or MacOSX you should have it already. Try typing `curl` on the command prompt. If you are on windows, you can download a build at http://curl.haxx.se/.
+If you want a more rich GUI experience most web browsers have extensions that can be used instead. 
+For example for Chrome you can try [cREST client](https://chrome.google.com/webstore/detail/dev-http-client/aejoelaoggembcahagimdiliamlcdmfm).
+
+# Extending the system
+
+Soon&trade;
+
+## Creating new extractors
+
+Soon&trade;
+
+## Creating new previewers
+
+Soon&trade;
+
+
+
+</xmp>
+
+<script src="http://strapdownjs.com/v/0.2/strapdown.js"></script>
+</html>

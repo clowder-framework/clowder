@@ -4,22 +4,33 @@
 <div class="page-header">
   <h1>Files</h1>
 </div>
-<div class="row-fluid">
-	<div class="span12">
+<div class="row">
+	<div class="col-md-12">
 		<table class="table table-bordered table-hover">
 			<thead>
 				<tr>
 					<th>Name</th>
 					<th>Type</th>
 					<th>Uploaded</th>
+					<th></th>
+					@if(user.isDefined) {
+						<th></th>
+					}
 				</tr>
 			</thead>
 			<tbody>
 				@files.map { file =>
 					<tr>
-						<td><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></td>
+						<td><a href="@(routes.Files.file(file.id))">@file.filename</a></td>
 						<td>@(if(file.contentType != null) file.contentType else "N/A")</td>
 						<td>@file.uploadDate</td>
+						<td>
+							@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
+							@if(file.thumbnail_id.isEmpty){No thumbnail available}
+						</td>
+						@if(user.isDefined) {
+							<td><a href="#" onclick="removeFile('@(file.id)',event)">Remove</a></td>
+						}
 					</tr>
 				}
 			</tbody>
@@ -34,4 +45,8 @@
 		</ul>
 	</div>
 </div>
+<script language="javascript">	
+	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
+</script>
+<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 }

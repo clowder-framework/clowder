@@ -1,81 +1,33 @@
-@(comments: List[models.Comment], name: String, post: String = "")(implicit user: Option[securesocial.core.Identity])
+@(comments: List[models.Comment])(implicit user: Option[securesocial.core.Identity])
 
-@if(user.isDefined && (post != "")) {
-	<form class="form-inline">
-		<textarea type="text" id="commentField" class="comment-input-box"></textarea><br/>
-		<button class="btn" id="commentBtn">Comment</button>
-	</form>
-
-	<script language="javascript">
-		$(function() {		   
-		   $('#commentBtn').click(function() {
-		     var comment = $('#commentField').val();
-  	         $('#commentField').val("");
-
-		     if (comment !== "") {
-		     	 console.log("submitting comment " + comment);
-
-			     var request = $.ajax({
-			       url:  "@post",
-			       data: JSON.stringify({ comment: comment }),
-			       type: "POST",
-			       contentType: "application/json",
-			     });
-			     
-			     request.done(function (response, textStatus, jqXHR){ 
-			        console.log("Response " + response);
-			        var post="<div class=\"comment\">";
-      				@if(user.get.avatarUrl.isDefined) {
-				   	  post += "<div class=\"comment-image\"><img src=\"@user.get.avatarUrl.get\"></div>";
-				    }
-					post += "<div class=\"comment-header\">";
-					post += "<div class=\"comment-author\">@user.get.fullName</div>";
-					post += "<div class=\"comment-date\">" + new Date().toString() + "</div>";
-					post += "<div style=\"clear: both;\"></div>";
-					post += "</div>";
-					post += "<div class=\"comment-body\">" + comment + "</div>";
-@*					post += "<div class=\"comment-footer\"><a href=\"javascript:void(0)\" onclick=\"return reply(this)\">reply</a></div>"; *@
-					post += "</div>";
-					$("#@name").prepend("<li class=\"comment-thread\">" + post + "</li>");
-			     });
-	    
-			     request.fail(function (jqXHR, textStatus, errorThrown){
-			        console.error(
-			            "The following error occured: "+
-			            textStatus, errorThrown
-			            
-			        );
-			        //window.location = "../login"; // FIXME hardcoded
-			     });
-	     	 }
-	     	return false;
-		  });
-		 });
-   	 </script>
-}
-
-<ol class="comment-threads unstyled @name" id="@name">
-	@comments.map { c =>
-		<li class="comment-thread">
-			<div class="comment">
-				@SocialUserDAO.findOneByEmail(c.author) match {
-					case Some(x) => {
-						<div class="comment-image"><img src='@x.avatarUrl.getOrElse("")'></div>
-						<div class="comment-header">
-							<div class="comment-author">@x.fullName</div>
-					}
-					case None => {
-						<div class="comment-header">
-							<div class="comment-author">@c.author</div>
-					}
-				}
-					<div class="comment-date">@c.posted.format("MMM dd, yyyy")</div>
-					<div style="clear: both;"></div>
-				</div>
-				<div class="comment-body">@c.text</div>
-@*				<div class="comment-footer"><a href="javascript:void(0)" onclick="return reply(this)">reply</a></div> *@
+@comments.reverse.map { c =>
+<div class="comment">
+	<div class="media">
+  		<a class="pull-left" href="#">
+  			<div class="thumbnail">
+    			<img class="avatar" src='@c.author.avatarUrl.getOrElse("")'>
+    		</div>
+  		</a>
+		<div class="media-body">
+			<div class="comment-header">
+				<div class="comment-author"><a href="#">@c.author.fullName</a></div>
+			<div class="comment-date">@c.posted.format("MMM dd, yyyy HH:mm:ss")</div>
+			<div style="clear: both;"></div>
 			</div>
-			@comment(c.replies, c.id.toString)
-		</li>
-	}
-</ol>
+			<div class="comment-body">@c.text</div>
+			@if(user.isDefined) {
+			<div class="comment-footer">
+				<a href="javascript:void(0)" onclick="return showReplyComment('@c.id');">reply</a>
+			</div>
+			}
+			<div class="comment-reply">
+				<div class="comment-threads unstyled" id="reply_@c.id">
+				@comment(c.replies.sortBy(_.posted))
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+	
+
+}

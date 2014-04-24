@@ -1,56 +1,68 @@
 package controllers
 
 import play.api.Routes
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import api.Sections
+import javax.inject.{Singleton, Inject}
+import services.FileService
 
 /**
  * Main application controller.
  * 
  * @author Luigi Marini
  */
-object Application extends Controller with securesocial.core.SecureSocial {
+@Singleton
+class Application  @Inject() (files: FileService) extends SecuredController {
   
   /**
    * Main page.
    */
-//  def index = Action { implicit request =>
-//    Ok(views.html.index())
-//  }
-  def index = UserAwareAction { implicit request =>
+  def index = SecuredAction() { request =>
   	implicit val user = request.user
-    Ok(views.html.index())
+  	val latestFiles = files.latest(5)
+    Ok(views.html.index(latestFiles))
   }
-  
-  /**
-   * Testing action.
-   */
-  def testJson = Action {
-    Ok("{test:1}").as(JSON)
-  }
-  
-    
+
   /**
    *  Javascript routing.
    */
-  def javascriptRoutes = Action { implicit request =>
+  def javascriptRoutes = SecuredAction() { implicit request =>
     Ok(
       Routes.javascriptRouter("jsRoutes")(
         routes.javascript.Admin.test,
         routes.javascript.Admin.secureTest,
         routes.javascript.Admin.reindexFiles,
-        routes.javascript.Tags.tag,
+        routes.javascript.Admin.createIndex,
+        routes.javascript.Admin.buildIndex,
+        routes.javascript.Admin.deleteIndex,
+        routes.javascript.Admin.deleteAllIndexes,
+        routes.javascript.Admin.getIndexes,
         routes.javascript.Tags.search,
-        routes.javascript.Files.comment,
-        routes.javascript.Datasets.comment,
-        routes.javascript.Datasets.tag,
+        routes.javascript.Admin.setTheme,
         
+        api.routes.javascript.Comments.comment,
+        api.routes.javascript.Datasets.comment,
+        api.routes.javascript.Datasets.getTags,
+        api.routes.javascript.Datasets.addTags,
+        api.routes.javascript.Datasets.removeTag,
+        api.routes.javascript.Datasets.removeTags,
+        api.routes.javascript.Datasets.removeAllTags,
+        api.routes.javascript.Files.comment,
+        api.routes.javascript.Files.getTags,
+        api.routes.javascript.Files.addTags,
+        api.routes.javascript.Files.removeTags,
+        api.routes.javascript.Files.removeAllTags,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
-        api.routes.javascript.Sections.tag,
         api.routes.javascript.Sections.comment,
+        api.routes.javascript.Selected.remove
+        api.routes.javascript.Sections.comment,
+        api.routes.javascript.Sections.getTags,
+        api.routes.javascript.Sections.addTags,
+        api.routes.javascript.Sections.removeTags,
+        api.routes.javascript.Sections.removeAllTags,
+        api.routes.javascript.Geostreams.searchSensors,
+        api.routes.javascript.Geostreams.getSensorStreams,
+        api.routes.javascript.Geostreams.searchDatapoints,
         api.routes.javascript.Selected.add,
         api.routes.javascript.Selected.remove
       )

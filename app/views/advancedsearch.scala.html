@@ -11,9 +11,9 @@
   </div>
 
 
-<div class="row-fluid">
+<div class="row">
       
-        <div class="span12">
+        <div class="col-md-12">
 			
 	@form(action = routes.Files.upload, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 	    <fieldset>
@@ -25,18 +25,18 @@
         </div>
 	  }
 	  
-	  <!-- @form(action = routes.Files.uploadAjax, 'class -> "form-horizontal") {
+@*	  @form(action = routes.Files.uploadAjax, 'class -> "form-horizontal") { 
 	  
-	  <fieldset>-->
+	  <fieldset> *@
 	      <legend> Drop an Image and Search </legend>
 	      <br>
 	      <div id="filedrag"> Drop Box</div>
 	      <output id="list"></output>
-	 <!--  </fieldset>-->
+@*    </fieldset> *@
 	  <div class="form-actions">
           <input type="submit" class="btn btn-primary" value="Search"/>
         </div>
-	 <!--  }-->
+	 @*  } *@
 	  
    @form(action = routes.Search.searchbyURL(""), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 	    <fieldset>

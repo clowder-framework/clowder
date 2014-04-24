@@ -1,6 +1,0 @@
-!root!,Node 4,1,1
-Node 4,String1,1,*
-Node 4,Node2,0,*
-Node2,String1,1,1
-Node2,Node3,0,1
-Node3,String2,0,*

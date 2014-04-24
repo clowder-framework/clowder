@@ -367,10 +367,10 @@ function turnjs_onload(page,pathJs) {
 	//Set totalpage
 	total_page = page;
 	
-	loadjscssfile(pathJs + "jquery-ui-1.10.3.custom.min", "css");
+	//loadjscssfile(pathJs + "jquery-ui-1.10.3.custom.min", "css");
 	loadjscssfile(pathJs + "book", "css");
 	
-	loadjscssfile(pathJs + "jquery-ui-1.10.3.custom.min", "js");
+	//loadjscssfile(pathJs + "jquery-ui-1.10.3.custom.min", "js");
 	
 	loadjscssfile(pathJs + "turn", "js");
 	loadjscssfile(pathJs + "hammer", "js");

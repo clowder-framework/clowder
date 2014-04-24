@@ -1,0 +1,4 @@
+{ "name" : "RDF",
+  "main" : "some-library.js",
+  "contentType" : ["application/rdf+xml"]
+  }

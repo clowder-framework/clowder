@@ -4,14 +4,14 @@
 		<h1>Search Results For <small>@query</small></h1>
 	</div>
 	@if(size == 0) {
-	<div class="row-fluid">
-		<div class="span12">
+	<div class="row">
+		<div class="col-md-12">
 			No results found. Sorry!
 		</div>
 	</div>
 	}
-	<div class="row-fluid">
-		<div class="span12">
+	<div class="row">
+		<div class="col-md-12">
 		
 		<table class="table table-bordered table-hover">
 			<thead>
@@ -24,7 +24,7 @@
 			<tbody>
 			   @results.map{   re=>
 	                  <tr>
-						<td><a href=@routes.Files.file(re._1)> @re._4</a></td>
+						<td><a href=@routes.Files.file(UUID(re._1))> @re._4</a></td>
 						<td>@re._3</td>
 					
 				}

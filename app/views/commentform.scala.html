@@ -1,0 +1,87 @@
+@(id: String, posturl: String)(implicit user: Option[securesocial.core.Identity])
+
+@if(user.isDefined) {
+	<form class="form-inline">
+		<textarea id="commentField_@id" class="comment-input-box"></textarea>
+		<br />
+		<button class="btn btn-default" onclick="return postComment('@id', '@posturl');">Comment</button>
+	</form>
+	
+	<script language="javascript">
+		function showReplyComment(id) {
+			if ($("#commentField_" + id).length == 0) {
+				var form="<form class=\"form-inline\">";
+				form += "<textarea id=\"commentField_" + id + "\" class=\"comment-input-box\"></textarea>";
+				form += "<br />";
+				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return replyComment('" + id + "')\">Reply</button>";
+				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return cancelComment('" + id + "')\">Cancel</button>";
+				form += "</form>";
+				$("#reply_" + id).prepend("<div class=\"comment-thread\" id=\"form_" + id + "\">" + form + "</div>");
+			}
+			return false;
+		}
+		
+		function replyComment(id) {
+			postComment(id, "@api.routes.Comments.comment(UUID(id))".replace("@id", id));
+			$("#form_" + id).remove();
+			return false;
+		}
+
+		function cancelComment(id) {
+			$("#form_" + id).remove();
+			return false;
+		}
+
+		function postComment(id, posturl) {
+			var text = $('#commentField_' + id).val();
+			$('#commentField_' + id).val("");
+
+			console.log("Posting " + text + " to " + posturl);
+			if (text !== "") {
+				console.log("submitting comment " + text);
+	
+				var request = $.ajax({
+					url:  posturl,
+					data: JSON.stringify({ text: text }),
+					type: "POST",
+					contentType: "application/json",
+		     	});
+		     
+				request.done(function (response, textStatus, jqXHR) { 
+					console.log("Response " + response);
+					var date = new Date();
+					var post="<div class=\"comment\">";
+					post += "<div class=\"media\">";
+					post += "<a class='pull-left' href='#'>";
+  					post += "<div class='thumbnail'>";
+    				post += "<img class='avatar' src='@(user.get.avatarUrl.getOrElse(""))'>";
+    				post += "</div></a>";
+					post += "<div class='media-body'>";
+					post += "<div class=\"comment-header\">";
+					post += "<div class=\"comment-author\"><a href='#'>@user.get.fullName</a></div>";
+					@* TODO add dateformat plugin *@
+					post += "<div class=\"comment-date\">" + date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDay() + "</div>";
+					post += "<div style=\"clear: both;\"></div>";
+					post += "</div>";
+					post += "<div class=\"comment-body\">" + text + "</div>";
+					post += "<div class=\"comment-footer\"><a href=\"javascript:void(0)\" onclick=\"return showReplyComment('" + response + "');\">reply</a></div>";
+					post += "<div class=\"comment-reply\">";
+					post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">";
+					post += "</div>";
+					post += "</div>";
+					post += "</div>";
+					post += "</div>";
+					post += "</div>";
+					$("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");
+				});
+	
+				request.fail(function (jqXHR, textStatus, errorThrown){
+					console.error("The following error occured: " + textStatus, errorThrown);
+					alert("The comment was not posted due to : " + textStatus);
+				});
+			}
+			return false;
+		}
+	</script>
+	
+}

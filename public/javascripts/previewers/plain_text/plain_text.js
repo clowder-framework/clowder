@@ -6,6 +6,9 @@
   var width = 750;
   var height = 550;
     
+  var prNum = Configuration.tab.replace("#previewer","");
+  window["currentTextHolderId" + prNum] = $(Configuration.tab);
+  
   $(document).ready(function() {
     $.ajax({
         type: "GET",
@@ -28,8 +31,7 @@
 	}
 
 	table += "</table></div>";
-
-	$(Configuration.tab).append(table);
+	window["currentTextHolderId" + prNum].append(table);
 
     // var record_num = 5;  // or however many elements there are in each row
     // var allTextLines = allText.split(/\r\n|\n/);

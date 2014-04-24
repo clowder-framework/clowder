@@ -9,6 +9,7 @@ import securesocial.core.Identity
 import play.api.data.Form
 import securesocial.core.SecuredRequest
 import securesocial.controllers.PasswordChange.ChangeInfo
+import play.api.templates.Txt
 
 class SecureSocialTemplatesPlugin(application: play.Application) extends TemplatesPlugin {
  /**
@@ -73,10 +74,10 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current http request
    * @return a String with the html code for the email
    */
-  def getSignUpEmail(token: String)(implicit request: RequestHeader): String = {
-    views.html.ss.mails.signUpEmail(token).body
+  def getSignUpEmail(token: String)(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
+    (None, Some(views.html.ss.mails.signUpEmail(token)))
   }
-
+  
   /**
    * Returns the email sent when the user is already registered
    *
@@ -84,8 +85,8 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current request
    * @return a String with the html code for the email
    */
-  def getAlreadyRegisteredEmail(user: Identity)(implicit request: RequestHeader): String = {
-    views.html.ss.mails.alreadyRegisteredEmail(user).body
+  def getAlreadyRegisteredEmail(user: Identity)(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
+    (None, Some(views.html.ss.mails.alreadyRegisteredEmail(user)))
   }
 
   /**
@@ -95,8 +96,8 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current request
    * @return a String with the html code for the email
    */
-  def getWelcomeEmail(user: Identity)(implicit request: RequestHeader): String = {
-    views.html.ss.mails.welcomeEmail(user).body
+  def getWelcomeEmail(user: Identity)(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
+    (None, Some(views.html.ss.mails.welcomeEmail(user)))
   }
 
   /**
@@ -106,8 +107,8 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current request
    * @return a String with the html code for the email
    */
-  def getUnknownEmailNotice()(implicit request: RequestHeader): String = {
-    views.html.ss.mails.unknownEmailNotice(request).body
+  def getUnknownEmailNotice()(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
+    (None, Some(views.html.ss.mails.unknownEmailNotice(request)))
   }
 
   /**
@@ -118,8 +119,8 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current http request
    * @return a String with the html code for the email
    */
-  def getSendPasswordResetEmail(user: Identity, token: String)(implicit request: RequestHeader): String = {
-    views.html.ss.mails.passwordResetEmail(user, token).body
+  def getSendPasswordResetEmail(user: Identity, token: String)(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
+    (None, Some(views.html.ss.mails.passwordResetEmail(user, token)))
   }
 
   /**
@@ -129,8 +130,8 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @param request the current http request
    * @return a String with the html code for the email
    */
-  def getPasswordChangedNoticeEmail(user: Identity)(implicit request: RequestHeader): String = {
-    views.html.ss.mails.passwordChangedNotice(user).body
+  def getPasswordChangedNoticeEmail(user: Identity)(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
+    (None, Some(views.html.ss.mails.passwordChangedNotice(user)))
   }
   
   def getNotAuthorizedPage[A](implicit request: Request[A]): Html = {

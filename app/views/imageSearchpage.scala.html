@@ -6,15 +6,15 @@
 		<h1>Search Results For <medium>@name</medium></h1>
 	</div>
 	@if(size == 0) {
-	<div class="row-fluid">
-		<div class="span12">
+	<div class="row">
+		<div class="col-md-12">
 			No results found. Sorry!
 		</div>
 	</div>
 	}
 	
 <div class="container" > 
-	<div class="row-fluid" >
+	<div class="row" >
 	<div>
 	
 	<table id='tablec' border="1">
@@ -75,11 +75,6 @@
 		 		  
 							@if(c.count==1){	
 								@if(i.count<5){
-								<!--<tr>
-								 <td>@{i.count+=1;i.count}</td> 
-								<td><a href=@routes.Files.file(ele._1)> @ele._4</a></td>
-								<td>@ele._3</td>
-								</tr>-->
 								<script>
 								console.log("i=@i.count indexID:@index fileId=@ele._4 distance=@ele._3");
 								    var row2=document.getElementById("tablec").insertRow(-1);
@@ -88,7 +83,7 @@
 								  var t=row2.insertCell(1);
 								  var u=row2.insertCell(2);
 								  z.innerHTML="@i.count";
-								  t.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
+								  t.innerHTML="<a href=@routes.Files.file(UUID(ele._1))>@ele._4</a>";
 								  u.innerHTML="@ele._3";
 								 // console.log("if:c=1,i.count=",@i.count,"rows["+@{i.count+1}+"].cells[1]=",row2.cells[1].innerHTML);
 								 // console.log("if:c=1,i.count=",@i.count,"rows["+@{i.count+1}+"].cells[2]=",row2.cells[2].innerHTML);
@@ -108,7 +103,7 @@
 								
 								// var y=col3.insertCell(-1);
 								
-								 z.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
+								 z.innerHTML="<a href=@routes.Files.file(UUID(ele._1))>@ele._4</a>";
 								 y.innerHTML=@ele._3;
 								  var row3=document.getElementById("tablec").rows[@{i.count+1}];
 								 console.log("row2.cells["+@{2*c.count-1}+"].innerHTML=",row3.cells[@{2*c.count-1}].innerHTML);
