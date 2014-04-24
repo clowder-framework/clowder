@@ -66,9 +66,9 @@
 			Configuration.fileSize = @p._7;			
 		}
 		else if("@p._2" === "X3d"){							
-			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
-			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
-			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
+			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1))";
+			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(UUID(p._1))";
+			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(UUID(p._1))";
 			Configuration.wasPTM = "@(filename.endsWith(".ptm")  || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "dataset";
 		}
@@ -163,7 +163,7 @@
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@f.sections.map { s =>
 					  		@if(s.preview.isDefined) {
-					  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
+					  			<img src="@api.routes.Previews.download(s.preview.get.id)"
 					  				class="img-polaroid" height="100px" 
 					  			@if(s.startTime.isDefined) {
 					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -206,7 +206,7 @@
 						  			</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
-								  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
+								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
 								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;" 
 								  			@if(s.startTime.isDefined) {
 								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -231,7 +231,7 @@
 						  		 		}
 						  		 	}
 						  			 </td>
-						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id.toString)">Similar</a></td>
+						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
 					  			 </tr>
 					  		}
 				  		</table>
@@ -374,7 +374,7 @@
     			function updateIsBeingProcessed(){
     				var request = $.ajax({
  				       type: 'GET',  
- 				       url: "@api.routes.Datasets.isBeingProcessed(dataset.id.toString)",
+ 				       url: "@api.routes.Datasets.isBeingProcessed(dataset.id)",
  				       contentType: "application/json"
  				     });
     				request.done(function (respJSON){
@@ -467,7 +467,7 @@
     			function checkForNewPreviews(){
 	    			var request = $.ajax({
 					       type: 'GET',  
-					       url: "@api.routes.Datasets.getPreviews(dataset.id.toString)",
+					       url: "@api.routes.Datasets.getPreviews(dataset.id)",
 					       contentType: "application/json"
 					     });
 					request.done(function (respJSON){
@@ -496,7 +496,7 @@
     			function updateFiles(){
     				var request = $.ajax({
  				       type: 'GET',  
- 				       url: "@api.routes.Datasets.datasetFilesList(dataset.id.toString)",
+ 				       url: "@api.routes.Datasets.datasetFilesList(dataset.id)",
  				       contentType: "application/json"
  				     });
     				request.done(function (respJSON){
@@ -555,17 +555,17 @@
 			  <div class="tab-content">
 			    <div class="tab-pane active" id="tab1">
 				      @if(user.isDefined) {
-				      	  @commentform(dataset.id.toString, api.routes.Datasets.comment(dataset.id.toString).toString)
+				      	  @commentform(dataset.id.stringify, api.routes.Datasets.comment(dataset.id).toString)
 				      }
 			 		  <div class="comment-threads unstyled" id="reply_@dataset.id.toString">
 				      	 @comment(comments)
 				      </div> 
 			    </div>
 			    <div class="tab-pane" id="tab2">
-			      @metadata(dataset.id.toString, md, usrmd, rdfExported)
+			      @metadata(dataset.id.stringify, md, usrmd, rdfExported)
 			    </div>
 			    <div class="tab-pane" id="tab3">
-			      @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id.toString).toString, dataset.notesHTML.getOrElse(""))
+			      @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
 			    </div>
 			  </div>
 			</div>	
@@ -591,9 +591,9 @@
 				<h3>Files</h3>
 				<table id="datasetFilesTable">
 				@dataset.files.map { file =>				
-					<tr><td  class="file-list-cell"><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="detachFile('@(file.id.toString)','@(file.filename)',event)">Detach</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-					<td><a class="requiresLogin" href="#" style="font-style:italic;" onclick="removeFile('@(file.id.toString)',event,true);">Delete</a></td></tr>				
+					<tr><td  class="file-list-cell"><a href="@(routes.Files.file(file.id))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="detachFile('@(file.id)','@(file.filename)',event)">Detach</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a class="requiresLogin" href="#" style="font-style:italic;" onclick="removeFile('@(file.id)',event,true);">Delete</a></td></tr>
 				}
 				</table>
 				<script language="javascript">	
@@ -604,7 +604,7 @@
 				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 				    <div class="modal-dialog">
 				      <div class="modal-content">
-				      @form(action = routes.Files.uploaddnd(dataset.id.toString), 'enctype -> "multipart/form-data", 'role -> "form") {
+				      @form(action = routes.Files.uploaddnd(dataset.id), 'enctype -> "multipart/form-data", 'role -> "form") {
 				        <div class="modal-header">
 				          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				          <h4 class="modal-title">Add file</h4>
@@ -633,7 +633,7 @@
 				<div class="ui-widget requiresLogin" id="filesUi" style="padding-top:15px;">
 					<select id="filesAddSelect" data-inputid="selectingInputFiles" data-errorid="doesNotExistErrorFiles">
 					@filesOutside.map { file =>  
-						<option value="@(file.id.toString)">@(file.filename)</option>
+						<option value="@(file.id)">@(file.filename)</option>
 					}					  
 					</select>
 					<button class="btn combobutton" id="addFileBtn" style="vertical-align:top;">Add existing file</button>
@@ -725,8 +725,8 @@
 				<h3>Collections</h3>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
-					<tr><td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
+					<tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id)','@(collection.name)',event)">Remove</a></td></tr>
 				}
 				</table>
 
@@ -735,7 +735,7 @@
 						<div class="input-group input-group-sm col-md-8"">
 							<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections">
 							@collectionsOutside.map { collection =>
-								<option value="@(collection.id.toString)">@(collection.name)</option>
+								<option value="@(collection.id)">@(collection.name)</option>
 							}					  
 							</select>
 							<span class="input-group-btn">

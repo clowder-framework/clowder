@@ -22,21 +22,21 @@
 	<tbody>
     @for(dataset <- datasets) {
 		<tr>
-			<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name [dataset]</a></td>
+			<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name [dataset]</a></td>
 			<td>@dataset.created</td>
 			<td>@dataset.description</td>
 		</tr>
 	}
     @for(file <- files) {
 		<tr>
-			<td><a href="@(routes.Files.file(file.id.toString))">@file.filename [file]</a></td>
+			<td><a href="@(routes.Files.file(file.id))">@file.filename [file]</a></td>
 			<td>@file.uploadDate</td>
 			<td></td>
 		</tr>
 	}
     @for(sf <- sectionsWithFiles) {
 		<tr>
-			<td><a href="@(routes.Files.file(sf._1.file_id.toString))">@sf._2.filename [section]</a></td>
+			<td><a href="@(routes.Files.file(sf._1.file_id))">@sf._2.filename [section]</a></td>
 			<td>@sf._2.uploadDate</td>
 			<td></td>
 		</tr>

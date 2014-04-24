@@ -40,8 +40,8 @@
 </form>
 <script language="javascript">
 	var topId = "generalUserMetadata_@(file_id)"; 
-	window["uploadIp"+topId] = "@api.routes.Files.addUserMetadata(file_id)";
-	window["rdfIp"+topId] = "@api.routes.Files.getRDFUserMetadata(file_id)";
+	window["uploadIp"+topId] = "@api.routes.Files.addUserMetadata(UUID(file_id))";
+	window["rdfIp"+topId] = "@api.routes.Files.getRDFUserMetadata(UUID(file_id))";
 	window["modelIp"+topId] = "@(routes.Assets.at("filesUserMetadataModel"))";
 </script>
 <script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>

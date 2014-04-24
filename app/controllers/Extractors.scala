@@ -1,16 +1,10 @@
-/**
- *
- */
 package controllers
 
 import play.api.mvc.Controller
-import models.Extraction
-import play.api.mvc.WebSocket
-import play.api.libs.iteratee.Iteratee
-import play.api.libs.iteratee.Enumerator
-import play.api.mvc.Action
 import api.WithPermission
 import api.Permission
+import javax.inject.{Inject, Singleton}
+import services.ExtractionService
 
 /**
  * Information about extractors.
@@ -18,10 +12,11 @@ import api.Permission
  * @author Luigi Marini
  *
  */
-object Extractors extends Controller with SecuredController {
+@Singleton
+class Extractors  @Inject() (extractions: ExtractionService) extends Controller with SecuredController {
 
-  def extractions = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
-    Ok(views.html.extractions(Extraction.findAll.toList))
+  def listAllExtractions = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    val allExtractions = extractions.findAll()
+    Ok(views.html.extractions(allExtractions))
   }
-  
 }

@@ -291,7 +291,6 @@ fieldset #email_field .controls #email{
   height: 100%;
 }
 
-
 .mmd-img {
 	width: 80px;
 }
@@ -308,6 +307,57 @@ fieldset #email_field .controls #email{
     margin: 0 auto;
 }
 
+.img-thumbnail {
+    padding: 10px;
+}
+
+.post-box {
+    margin: 15px 0 15px 0;
+}
+
+.file-type {
+	display:block;
+	font-size: 20px;
+    font-weight: 500;
+	color: white;
+	background-color: #0B61A4;
+	width: 100%;
+	min-height: 150px;
+	border: 1px solid;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.file-type:hover {
+	color: white;
+	text-decoration: none;
+}
+
+.wordwrap {
+   white-space: pre-wrap;      /* CSS3 */
+   white-space: -moz-pre-wrap; /* Firefox */
+   white-space: -pre-wrap;     /* Opera <7 */
+   white-space: -o-pre-wrap;   /* Opera 7 */
+   word-wrap: break-word;      /* IE */
+   /* line-height: 200px; */
+}
+
+.panel .bookmark-link {
+    padding: 0px;
+    margin: 0px;
+}
+
+.panel .bookmark {
+    padding-right: 2px;
+}
+
+.panel .panel-body .img-responsive {
+    margin: 0 auto;
+}
+
+.panel .panel-body .pic {
+    vertical-align: middle;
+}
 .accordion{
 	margin-bottom: 30px;
 }
@@ -318,7 +368,15 @@ textarea:focus, input[type='text']:focus, input[type='password']:focus{
 	box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset, 0px 0px 8px rgba(102, 175, 233, 0.6);
 	
 }
+
 textarea, input[type='text'], input[type='password']{
 	transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+}
+
+.truncate {
+  width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
