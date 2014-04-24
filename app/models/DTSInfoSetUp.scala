@@ -3,10 +3,10 @@ package models
 import org.bson.types.ObjectId
 import java.util.Date
 import play.api.Play.current
-import services.MongoSalatPlugin
+//import services.MongoSalatPlugin
 import com.novus.salat.dao.ModelCompanion
 import com.novus.salat.dao.SalatDAO
-import MongoContext.context
+//import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import java.util.ArrayList
 import play.api.libs.concurrent
@@ -222,6 +222,7 @@ def updateDTSRequests(file_id:ObjectId,extractor_id:String)={
               }
               Logger.debug("inputTypes: "+inputTypes)
               extractors.insertInputTypes(inputTypes)
+              
              "DONE"
             }
           

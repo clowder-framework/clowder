@@ -15,7 +15,7 @@ import play.api.libs.json.Json
 import models._
 import com.mongodb.casbah.Imports._
 import com.mongodb.WriteConcern
-import MongoContext.context
+//import MongoContext.context
 import java.text.SimpleDateFormat
 
 class MongoDBDTSRequestsService extends DTSRequestsService {

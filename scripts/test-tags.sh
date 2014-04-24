@@ -43,7 +43,7 @@ if [ x$OID == "x" ] ; then
     DB_COL="uploads.files"
   fi
   MARG="db.${DB_COL}.findOne({ \\\\\$or: [ { tags: { \\\\\$exists: false } }, { tags: [] } ] }, { _id: 1 })"
-  OID=`mongo-exec.sh "$MARG" | cut -d\" -f4`
+  OID=`./mongo-exec.sh "$MARG" | cut -d\" -f4`
 fi
 echo ${OTYPE} ID: ${OID}
 if [ $OID == "null" ] ; then
@@ -99,7 +99,7 @@ test_post_tag 'Remove some tags' '{"tags":["  statue ", "      buddha\t\t  "], "
 
 test_post_tag 'Remove all tags' '{"tags":["amituofo"]}' "/api/${OTYPE}s/${OID}/tags/remove_all"
 
-test_get 'Invalid ObjectId: non-digit' "/api/${OTYPE}s/hello/tags"
-test_get 'Invalid ObjectId: digit, but invalid' "/api/${OTYPE}s/5272d0d7e4b0c4c9a43e81c/tags"
+#test_get 'Invalid ObjectId: non-digit' "/api/${OTYPE}s/hello/tags"
+#test_get 'Invalid ObjectId: digit, but invalid' "/api/${OTYPE}s/5272d0d7e4b0c4c9a43e81c/tags"
 test_get 'Valid ObjectId, not found' "/api/${OTYPE}s/5272d0d7e4b0c4c9a43e81c8/tags"
 

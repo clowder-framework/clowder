@@ -1,7 +1,8 @@
 import com.mongodb.casbah.Imports._
-import play.api.{ GlobalSettings, Application }
+import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.api.Play.current
+
 import services._
 import play.libs.Akka
 import java.util.concurrent.TimeUnit
@@ -12,6 +13,10 @@ import services.ExtractorService
 import java.util.Date
 import java.util.Calendar
 import models._
+
+import services.mongodb.MongoSalatPlugin
+
+
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
  *
@@ -21,7 +26,6 @@ object Global extends GlobalSettings {
       var serverStartTime:Date=null
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded
-    
     models.ServerStartTime.startTime = Calendar.getInstance().getTime()
     serverStartTime = models.ServerStartTime.startTime
     Logger.debug("\n----Server Start Time----" + serverStartTime + "\n \n")
@@ -42,22 +46,9 @@ object Global extends GlobalSettings {
         source.collection("extractor.inputtypes").ensureIndex(MongoDBObject("inputType" -> ""))
         source.collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
       }
+
     }
-    
-    //Delete garbage files (ie past intermediate extractor results files) from DB
-    var timeInterval = play.Play.application().configuration().getInt("intermediateCleanup.checkEvery")
-    Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
-      models.FileDAO.removeOldIntermediates()
-    }
-  //Clean temporary RDF files if RDF exporter is activated
-    if(play.Play.application().configuration().getString("rdfexporter").equals("on")){
-	    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
-	    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
-	      models.FileDAO.removeTemporaries()
-	    }
-    }
-    
-    
+ 
     
     Akka.system().scheduler.schedule(0.minutes,1 minutes){
            models.DTSInfoSetUp.updateExtractorsInfo()
@@ -65,9 +56,13 @@ object Global extends GlobalSettings {
            
     }
      
+
+    Logger.info("Application has started")
+
   }
 
   override def onStop(app: Application) {
+    Logger.info("Application shutdown")
   }
 
   private lazy val injector = services.DI.injector
@@ -76,5 +71,4 @@ object Global extends GlobalSettings {
   override def getControllerInstance[A](clazz: Class[A]) = {
     injector.getInstance(clazz)
   }
-
 }

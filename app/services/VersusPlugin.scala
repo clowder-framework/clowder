@@ -1,42 +1,27 @@
 package services
 
 import play.api.{ Plugin, Logger, Application }
-import java.util.Date
 import play.api.libs.json.Json
-import play.api.Play.current
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
-import play.api.libs.concurrent.Promise
 import java.io._
-import models.FileMD
 import play.api.Logger
 import play.api.Play.current
-import play.api.data.Form
 import play.api.data.Forms._
-import play.api.mvc._
-import services._
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Input.{El, EOF, Empty}
+import play.api.libs.iteratee.Input.Empty
 import com.mongodb.casbah.gridfs.GridFS
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import java.util.Date
-import models.File
-import org.bson.types.ObjectId
-import com.mongodb.casbah.Imports._
+import models.{UUID, File}
 import play.api.libs.json.Json._
-import scala.concurrent.{future, blocking, Future, Await}
-import scala.concurrent.ExecutionContext.Implicits.global
-import play.libs.Akka
-import akka.actor.Props
+import scala.concurrent.{blocking, Future, Await}
 import akka.actor.Actor
 import akka.actor.ActorRef
-import models.PreviewDAO
 import controllers.Previewers
 import controllers.routes
 import java.text.DecimalFormat
 import scala.collection.mutable.ArrayBuffer
-import models.FileDAO
 import scala.collection.mutable.HashMap
 import scala.collection.immutable.Map
 /** 
@@ -48,6 +33,7 @@ import scala.collection.immutable.Map
 class VersusPlugin(application:Application) extends Plugin{
   
   val files: FileService =  DI.injector.getInstance(classOf[FileService])
+  val previews: PreviewService =  DI.injector.getInstance(classOf[PreviewService])
   
   override def onStart() {
 
@@ -59,7 +45,7 @@ class VersusPlugin(application:Application) extends Plugin{
  * This method sends the file's url to Versus for the extraction of descriptors from the file
  */
 
-  def extract(fileid: String): Future[Response] = {
+  def extract(fileid: UUID): Future[Response] = {
 
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
@@ -77,17 +63,17 @@ class VersusPlugin(application:Application) extends Plugin{
         desResponse.map {
           response =>
             // Logger.debug("RESPONSE FROM EXTRACT****:" +response.body)
-            files.getFile(fileid) match {
+            files.get(fileid) match {
 
               case Some(file) => {
               //  FileDAO.addVersusMetadata(fileid, response.json.toString)
                
                 val list=response.json\("versus_descriptors")
                 
-                FileDAO.addVersusMetadata(fileid,list)
+                files.addVersusMetadata(fileid, list)
                
                 Logger.debug("GET META DATA:*****")
-                FileDAO.getMetadata(fileid).map {
+                files.getMetadata(fileid).map {
                   md =>
                     Logger.debug(":::" + md._2.toString)
                 }
@@ -242,7 +228,7 @@ class VersusPlugin(application:Application) extends Plugin{
         //Logger.debug("response.body=" + response.body)
         val json: JsValue = Json.parse(response.body)
         Logger.debug("index(): json=" + json);
-        val list = json.as[Seq[models.IndexList.IndexList]]
+        val list = json.as[Seq[models.VersusIndexList.VersusIndexList]]
         val len = list.length
         val indexes = new Array[(String, String)](len)
 
@@ -289,7 +275,7 @@ class VersusPlugin(application:Application) extends Plugin{
         //Logger.debug("response.body=" + response.body)
         val json: JsValue = Json.parse(response.body)
         Logger.debug("index(): json=" + json);
-        val list = json.as[Seq[models.IndexList.IndexList]]
+        val list = json.as[Seq[models.VersusIndexList.VersusIndexList]]
         val len = list.length
         val indexes = new Array[(String, String)](len)
 
@@ -353,7 +339,7 @@ class VersusPlugin(application:Application) extends Plugin{
     resultFuture.map {
       response =>
         val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
+        val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
 
         val len = similarity_value.length
         // val ar = new Array[String](len)
@@ -395,18 +381,18 @@ class VersusPlugin(application:Application) extends Plugin{
             }*/
             
           //-----------------------  
-            files.getFile(subStr) match {
+            files.get(UUID(subStr)) match {
                	  case Some(file)=>{
 		        	   // se.update(i,(a(n),result.docID,result.proximity,file.filename))
 
                 //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
+                val previewsFromDB = previews.findByFileId(file.id)
                 val previewers = Previewers.findPreviewers
                 //Logger.info("Number of previews " + previews.length);
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString), pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
@@ -417,7 +403,7 @@ class VersusPlugin(application:Application) extends Plugin{
                     (file -> ff)
                   }
                 }
-                val previews = Map(previewslist: _*)
+                val filteredPreviews = Map(previewslist: _*)
                 ///Previews ends.........
 
                 //resultArray += ((subStr, result.docID, result.proximity, file.filename))
@@ -425,7 +411,7 @@ class VersusPlugin(application:Application) extends Plugin{
                 val formatter = new DecimalFormat("#.###")
                 // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
 
                 //     ar.update(i, file.filename)
 
@@ -465,13 +451,13 @@ class VersusPlugin(application:Application) extends Plugin{
         resultFuture.map{
       response =>
         val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
+        val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
 
         val len = similarity_value.length
-        // val ar = new Array[String](len)
+
         val se = new Array[(String, String, Double, String)](len)
 		        
-        //var resultArray = new ArrayBuffer[(String, String, Double, String)]()
+
         var resultArray = new ArrayBuffer[(String, String, Double, String,Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])]()
 		var i=0
         similarity_value.map {
@@ -479,21 +465,17 @@ class VersusPlugin(application:Application) extends Plugin{
             val end = result.docID.lastIndexOf("?")
             val begin = result.docID.lastIndexOf("/");
             val subStr = result.docID.substring(begin + 1, end);
-        //    val a = result.docID.split("/")
-          //  val n = a.length - 2
-            files.getFile(subStr) match {
+
+            files.get(UUID(subStr)) match {
 		        	  case Some(file)=>{
 
-       
-                // se.update(i,(a(n),result.docID,result.proximity,file.filename))
-                //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
+                val previewsFromDB = previews.findByFileId(file.id)
                 val previewers = Previewers.findPreviewers
                 //Logger.info("Number of previews " + previews.length);
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString), pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
@@ -504,14 +486,14 @@ class VersusPlugin(application:Application) extends Plugin{
                     (file -> ff)
                   }
                 }
-                val previews = Map(previewslist: _*)
+                val filteredPreviews = Map(previewslist: _*)
                 ///Previews ends.........
 
                 //resultArray += ((subStr, result.docID, result.proximity, file.filename))
                 val formatter = new DecimalFormat("#.###")
                 // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
 
                 //     ar.update(i, file.filename)
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
@@ -520,11 +502,7 @@ class VersusPlugin(application:Application) extends Plugin{
                 i = i + 1
               }
               case None => None
-
             }
-            
-
-
         } // End of similarity map
         //se
         (indexId, resultArray)
@@ -553,7 +531,7 @@ class VersusPlugin(application:Application) extends Plugin{
     resultFuture.map {
       response =>
         val json: JsValue = Json.parse(response.body)
-        val similarity_value = json.as[Seq[models.Result.Result]]
+        val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
 
         val len = similarity_value.length
         // val ar = new Array[String](len)
@@ -568,19 +546,16 @@ class VersusPlugin(application:Application) extends Plugin{
             val begin = result.docID.lastIndexOf("/");
             val subStr = result.docID.substring(begin + 1, end);
 
-        //    val a = result.docID.split("/")
-          //  val n = a.length - 2
-            files.getFile(subStr) match {
+            files.get(UUID(subStr)) match {
               case Some(file) => {
-                // se.update(i,(a(n),result.docID,result.proximity,file.filename))
-                //Previews..............
-                val previewsFromDB = PreviewDAO.findByFileId(file.id)
+
+                val previewsFromDB = previews.findByFileId(file.id)
                 val previewers = Previewers.findPreviewers
-                //Logger.info("Number of previews " + previews.length);
+
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString).toString, pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString), pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
@@ -591,15 +566,12 @@ class VersusPlugin(application:Application) extends Plugin{
                     (file -> ff)
                   }
                 }
-                val previews = Map(previewslist: _*)
-                ///Previews ends.........
+                val filteredPreviews = Map(previewslist: _*)
 
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename))
-                //resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val formatter = new DecimalFormat("#.###")
-                // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, previews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
 
                 //     ar.update(i, file.filename)
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)

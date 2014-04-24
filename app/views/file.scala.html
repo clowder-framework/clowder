@@ -40,9 +40,9 @@
 			Configuration.fileSize = @p._7;			
 		}
 		else if("@p._2" === "X3d"){							
-			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
-			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
-			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
+			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1)))";
+			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(UUID(p._1))";
+			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(UUID(p._1))";
 			Configuration.wasPTM = "@(filename.endsWith(".ptm") || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "file";
 		}
@@ -130,13 +130,13 @@
     		}
 			
 			<!-- sections -->
-			@if(f.sections.size > 0) {	
+			@if(sections.size > 0) {	
 			  	<div class="row" style="padding-top: 10px">
 			  	  <div class="col-md-6">
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
-					  	@f.sections.map { s =>
+					  	@sections.map { s =>
 					  		@if(s.preview.isDefined) {
-					  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
+					  			<img src="@api.routes.Previews.download(s.preview.get.id)"
 					  				class="img-polaroid" height="100px" 
 					  			@if(s.startTime.isDefined) {
 					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -168,12 +168,12 @@
 								</tr>
 							</thead>
 							<tbody>
-					  		@f.sections.map { s =>
+					  		@sections.map { s =>
 					  			<tr>
 						  			<td>@s.order</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
-								  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
+								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
 								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;" 
 								  			@if(s.startTime.isDefined) {
 								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -198,7 +198,7 @@
 						  		 		}
 						  		 	}
 						  			 </td>
-						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id.toString)">Similar</a></td>
+						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
 					  			 </tr>
 					  		}
 				  		</table>
@@ -212,7 +212,7 @@
 						if ($("#ourvideo").length>0) {				    
 					        var pop = Popcorn("#ourvideo");
 					       
-							@f.sections.map { s =>
+							@sections.map { s =>
 					  			@if(s.startTime.isDefined) {
 							   		pop.code({
 								        start: @s.startTime,
@@ -259,7 +259,7 @@
     		}
 
 			@if(!file.metadata.isEmpty) {
-					<div id='technicalMetadata_@(file.id.toString)'>
+					<div id='technicalMetadata_@(file.id)'>
 						<button class="tech_md_" type="button">Show file technical metadata</button>
 						<div style="display:none;">
 						<ul>
@@ -294,7 +294,7 @@
     			function updateIsBeingProcessed(){  
     				var request = $.ajax({
  				       type: 'GET',  
- 				       url: "@api.routes.Files.isBeingProcessed(file.id.toString)",
+ 				       url: "@api.routes.Files.isBeingProcessed(file.id)",
  				       contentType: "application/json"
  				     });
     				request.done(function (respJSON){
@@ -376,7 +376,7 @@
     			function checkForNewPreviews(){
 	    			var request = $.ajax({
 					       type: 'GET',  
-					       url: "@api.routes.Files.getPreviews(file.id.toString)",
+					       url: "@api.routes.Files.getPreviews(file.id)",
 					       contentType: "application/json"
 					     });
 					request.done(function (respJSON){
@@ -410,7 +410,7 @@
     		
 
 		<div class="col-md-4">
-			<a href="@routes.Files.download(id)" class="btn btn-default pull-right" target="_blank">Download</a>
+			<a href="@routes.Files.download(UUID(id))" class="btn btn-default pull-right" target="_blank">Download</a>
 		</div>
 
 	</div>
@@ -423,7 +423,7 @@
 				</div>
 				<div id="collapseOne" class="accordion-body in collapse">
 			      	@if(user.isDefined) {
-			      		@commentform(file.id.toString, api.routes.Files.comment(file.id.toString).toString)
+			      		@commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
 			      	}
 			 		<ol class="comment-threads unstyled" id="reply_@file.id.toString">
 				    	@comment(comments)
@@ -483,8 +483,8 @@
 					<div id="collapseFour" class="accordion-body in collapse">
 				      	<table id="datasTable">
 						@fileDataset.map { dataset =>
-							<tr><td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-							<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id.toString)','@(dataset.name)',event)">Detach</a></td></tr>
+							<tr><td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+							<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a></td></tr>
 						}
 						</table>
 						<div class="ui-widget requiresLogin" id="datasetsUi">
