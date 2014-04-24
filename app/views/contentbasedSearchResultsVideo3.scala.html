@@ -55,14 +55,14 @@
 						@if(oneResult.fileOrPreview.equalsIgnoreCase("file")){
 							
 							<a class="pull-left" href=@oneResult.searchResultFile.url>							
-							@if(!oneResult.searchResultFile.thumbnail_id.isEmpty){
+							@if(!oneResult.searchResultFile.thumbnail_id_str.isEmpty){
 								<img class='mmd-img media-object' 
-									src='@(routes.Files.thumbnail(oneResult.searchResultFile.thumbnail_id))'
+									src='@(routes.Files.thumbnail(UUID(oneResult.searchResultFile.thumbnail_id_str)))'
 									alt='Thumbnail of @(oneResult.searchResultFile.title)' 
 									title='Distance @oneResult.searchResultFile.distance'>
 								</img>
 							}
-							@if(oneResult.searchResultFile.thumbnail_id.isEmpty){No thumbnail available}						
+							@if(oneResult.searchResultFile.thumbnail_id_str.isEmpty){No thumbnail available}						
 							<br>
 							
 							</a>
@@ -76,7 +76,7 @@
 					  @if(oneResult.searchResultFile.datasetIdList.size>0){
 					  	<b>Belongs to  @oneResult.searchResultFile.datasetIdList.size dataset(s)</b>
 					  	@oneResult.searchResultFile.datasetIdList.map{id=>					   
-					     		<br><a href=@routes.Datasets.dataset(id)> View Dataset </a>
+					     		<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
 					    	}  						  	 
 					    }	 
 					    
@@ -124,9 +124,9 @@
 					  @if(oneResult.searchResultPreview.datasetIdList.size>0){
 					  	<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
 					  	@oneResult.searchResultPreview.datasetIdList.map{id=>					   
-					     		<br><a href=@routes.Datasets.dataset(id)> View Dataset </a>
+					     		<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
 					     		<br>
-					     	<a href="@(routes.Files.file(oneResult.searchResultPreview.fileId))">
+					     	<a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileId)))">
 					     		View File @oneResult.searchResultPreview.fileTitle</a>
 					     		<br>
 					     		Shot start time: @oneResult.searchResultPreview.shotStartTime

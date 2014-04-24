@@ -6,7 +6,7 @@ case class SearchResultFile (
     distance: Double,
     title: String,
     datasetIdList: List[String],   
-    thumbnail_id:String    
+    thumbnail_id_str: String    
 )
 
 

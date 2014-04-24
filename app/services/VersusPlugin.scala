@@ -580,45 +580,30 @@ class VersusPlugin(application:Application) extends Plugin{
     * Helper method. Called from queryIndex    
     */
    def getFileSeachResult(result_id:UUID, file:models.File, result:models.VersusSimilarityResult.VersusSimilarityResult):SearchResultFile=
-   {    	         
+   {    	     
 		  //=== find list of datasets ids
 		  //this file can belong to 0 or 1 or more  datasets
 		  var dataset_id_list = datasets.findByFileId(file.id).map{
 			  dataset=>dataset.id.stringify             		  		  
-		  }
-           
+		  }           
               
-                val formatter = new DecimalFormat("#.###")
-                // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
-                val proxvalue = formatter.format(result.proximity).toDouble               
-                  
-                var thumbn_id =""
-                  file.thumbnail_id match {               
-                	case Some(thumb_id) => {
-                	  Logger.debug("615 file.thumbnail_id = " + thumb_id)
-                	  thumbn_id = thumb_id.stringify
-                		//thumbnail_id = id.stringify
-                	}
-                	case None=>{}                  
-                }
+		  val formatter = new DecimalFormat("#.###")
+		  // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
+		  val proxvalue = formatter.format(result.proximity).toDouble                 
                 
-                /* id: String, 
-    url: String,
-    distance: Double,
-    title: String,
-    datasetIdList: List[String],
-    
-    //for files, since files have thumbnails extracted by ncsa.image extractor
-    thumbnail_id:String*/
-                val oneFileResult = new SearchResultFile(result_id, result.docID, 
-                		proxvalue, file.filename, dataset_id_list.toList, thumbn_id)
-                
-                //val oneResult = new PreviewFilesSearchResult("file", oneFileResult)
-                
-               // val oneResult = new PreviewFilesSearchResult("file", result_id, result.docID, 
-                	//	proxvalue, file.filename, dataset_id_list.toList, thumbn_id)
-                
-                oneFileResult                
+		  file.thumbnail_id match {               
+		  	case Some(thumb_id) => {
+		  		Logger.debug("615 file.thumbnail_id = " + thumb_id)              		
+		  		val oneFileResult = new SearchResultFile(result_id, result.docID, 
+                		proxvalue, file.filename, dataset_id_list.toList, thumb_id.stringify)
+		  		return oneFileResult
+		  	}
+		  	case None=>{
+		  		val oneFileResult = new SearchResultFile(result_id, result.docID, 
+                		proxvalue, file.filename, dataset_id_list.toList, "")
+		  		return oneFileResult		  				
+		  	} 	                 
+		  }                        
    }
    
    /*
