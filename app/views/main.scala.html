@@ -1,6 +1,6 @@
 @(title: String)(content: Html)(implicit user: Option[securesocial.core.Identity] = None)
 
-@import models.AppAppearance._
+@import services._
 
 <!DOCTYPE html>
 
@@ -12,7 +12,7 @@
     <meta name="author" content="">
 <title>@title</title>
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-<link rel="stylesheet" href="@routes.Assets.at("stylesheets/" + Admin.getTheme())">
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/" + services.DI.injector.getInstance(classOf[services.AppConfigurationService]).getTheme())">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("javascripts/jquery-ui-1.10.3.custom.min.css")">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/pdf.css")">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/tableborder.css")">
@@ -40,7 +40,7 @@
 				      <span class="glyphicon-bar"></span>
 				      <span class="glyphicon-bar"></span>
 				    </button>
-					<a class="navbar-brand" href="@routes.Application.index">@(AppAppearance.getDefault.get.displayedName)</a>
+					<a class="navbar-brand" href="@routes.Application.index">@(services.DI.injector.getInstance(classOf[AppAppearanceService]).getDefault.get.displayedName)</a>
 				</div>
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
@@ -69,6 +69,7 @@
 						   	<li><a href="@routes.Files.generalMetadataSearch">General metadata search</a></li>
 						   </ul>
 						</li>
+                        <li><a href="@routes.Assets.at("docs/api/index.html")">API</a></li>
 					</ul>
 					
 					
@@ -109,7 +110,7 @@
 						   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
 						   <ul class="dropdown-menu">
 						   	<li><a href="@routes.Admin.main">Main</a></li>	
-						   	<li><a href="@routes.Extractors.extractions">Extractors events</a></li>
+						   	<li><a href="@routes.Extractors.listAllExtractions">Extractors events</a></li>
 						   	<li><a href="@routes.Admin.newAdmin">Add admin</a></li>	
 						   	<li><a href="@routes.Admin.listAdmins">List admins</a></li>					   	
 						   </ul>

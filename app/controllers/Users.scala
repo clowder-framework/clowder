@@ -26,6 +26,7 @@ import models.AppConfiguration
 import play.api.templates.Html
 import play.api.Logger
 import play.api.libs.concurrent.Akka
+import services.AppConfigurationService
 
 /**
  * Manage users.
@@ -33,6 +34,8 @@ import play.api.libs.concurrent.Akka
  * @author Luigi Marini
  */
 object Users extends Controller {
+  
+  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
   
   /**
    * List users.
@@ -115,7 +118,7 @@ object Users extends Controller {
             case None => {
               val token = createToken(email, isSignUp = true)
               val theHTML = views.html.signUpEmailThroughAdmin(token._1, email)
-              for(admin <- AppConfiguration.getDefault.get.admins){
+              for(admin <- appConfiguration.getDefault.get.admins){
             	  sendEmail(Messages(SignUpEmailSubject), admin, theHTML)
               }
             }

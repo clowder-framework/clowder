@@ -1,9 +1,7 @@
 package services
 
-import play.api.{ Plugin, Logger, Application }
-import models.File
+import play.api.{Plugin, Application}
 import models._
-import org.bson.types.ObjectId
 import Transformation.LidoToCidocConvertion
 import play.api.Play.current
 import java.util.ArrayList
@@ -17,7 +15,6 @@ import org.apache.commons.io.FileUtils
 import org.bson.types.ObjectId
 import org.json.JSONObject
 import play.libs.Akka
-import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 
@@ -27,18 +24,24 @@ import play.api.libs.concurrent.Execution.Implicits._
  * @author Constantinos Sophocleous
  *
  */
-class RDFUpdateService (application: Application) extends Plugin {
+class RDFUpdateService(application: Application) extends Plugin {
+
+  val files: FileService = DI.injector.getInstance(classOf[FileService])
+  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  val sparql: RdfSPARQLService = DI.injector.getInstance(classOf[RdfSPARQLService])
+
+  object MustBreak extends Exception {}
 
   override def onStart() {
     Logger.debug("Starting RDF updater Plugin")
-    
+
     var timeInterval = play.Play.application().configuration().getInt("rdfRepoUpdate.updateEvery")
-	    Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
-	      modifyRDFOfMetadataChangedFiles()
-	      modifyRDFOfMetadataChangedDatasets()
-	    }
+    Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours) {
+      modifyRDFOfMetadataChangedFiles()
+      modifyRDFOfMetadataChangedDatasets()
+    }
   }
-  
+
   override def onStop() {
     Logger.debug("Shutting down RDF updater Plugin")
   }
@@ -46,29 +49,27 @@ class RDFUpdateService (application: Application) extends Plugin {
   override lazy val enabled = {
     !application.configuration.getString("rdfupdateservice").filter(_ == "disabled").isDefined
   }
-  
-  
-   def modifyRDFOfMetadataChangedFiles(){    
-    val changedFiles = FileDAO.findMetadataChangedFiles()
-    for(changedFile <- changedFiles){
-      modifyRDFUserMetadataFiles(changedFile.id.toString)
+
+
+  def modifyRDFOfMetadataChangedFiles() {
+    val changedFiles = files.findMetadataChangedFiles()
+    for (changedFile <- changedFiles) {
+      modifyRDFUserMetadataFiles(changedFile.id)
     }
   }
-   
-   def modifyRDFOfMetadataChangedDatasets(){    
-    val changedDatasets = Dataset.findMetadataChangedDatasets()
-    for(changedDataset <- changedDatasets){
-      modifyRDFUserMetadataDatasets(changedDataset.id.toString)
+
+  def modifyRDFOfMetadataChangedDatasets() {
+    val changedDatasets = datasets.findMetadataChangedDatasets()
+    for (changedDataset <- changedDatasets) {
+      modifyRDFUserMetadataDatasets(changedDataset.id)
     }
   }
-  
-  
-  
-def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
-    services.Services.rdfSPARQLService.removeFileFromGraphs(id, "rdfCommunityGraphName")
-    FileDAO.findOneById(new ObjectId(id)) match { 
+
+ def modifyRDFUserMetadataFiles(id: UUID, mappingNumber: String="1") = {
+    sparql.removeFileFromGraphs(id, "rdfCommunityGraphName")
+    files.get(id) match { 
 	            case Some(file) => {
-	              val theJSON = FileDAO.getUserMetadataJSON(id)
+	              val theJSON = files.getUserMetadataJSON(id)
 	              val fileSep = System.getProperty("file.separator")
 	              
 	              //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
@@ -151,23 +152,23 @@ def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
 					}
 					fileWriter.close()
 	              
-					services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected, "file")
+					sparql.addFromFile(id, resultFileConnected, "file") 
 					resultFileConnected.delete()
 					
-					services.Services.rdfSPARQLService.addFileToGraph(id, "rdfCommunityGraphName")
+					sparql.addFileToGraph(id, "rdfCommunityGraphName") 
 					
-					FileDAO.setUserMetadataWasModified(id, false)
+					files.setUserMetadataWasModified(id, false) 
 	            }
 	            case None => {}
 	 }
   }
 
 
-	def modifyRDFUserMetadataDatasets(id: String, mappingNumber: String="1") = {
-    services.Services.rdfSPARQLService.removeDatasetFromUserGraphs(id)
-    Dataset.findOneById(new ObjectId(id)) match { 
+	def modifyRDFUserMetadataDatasets(id: UUID, mappingNumber: String="1") = {
+	 	sparql.removeDatasetFromUserGraphs(id)
+	 	datasets.get(id) match { 
 	            case Some(dataset) => {
-	              val theJSON = Dataset.getUserMetadataJSON(id)
+	              val theJSON = datasets.getUserMetadataJSON(id)
 	              val fileSep = System.getProperty("file.separator")
 	              
 	              //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
@@ -250,41 +251,41 @@ def modifyRDFUserMetadataFiles(id: String, mappingNumber: String="1") = {
 					}
 					fileWriter.close()
 	              
-					services.Services.rdfSPARQLService.addFromFile(id, resultFileConnected, "dataset")
-					resultFileConnected.delete()
-					
-					services.Services.rdfSPARQLService.addDatasetToGraph(id, "rdfCommunityGraphName")
-					
-					Dataset.setUserMetadataWasModified(id, false)
+					sparql.addFromFile(id, resultFileConnected, "dataset")
+			        resultFileConnected.delete()
+			
+			        sparql.addDatasetToGraph(id, "rdfCommunityGraphName")
+			
+			        datasets.setUserMetadataWasModified(id, false)
 	            }
 	            case None => {}
 	 }
   }
 
-  
+
   def jsonToXML(theJSON: String): java.io.File = {
-    
-    val jsonObject = new JSONObject(theJSON)    
+
+    val jsonObject = new JSONObject(theJSON)
     var xml = org.json.XML.toString(jsonObject)
-    
+
     //Remove spaces from XML tags
     var currStart = xml.indexOf("<")
     var currEnd = -1
     var xmlNoSpaces = ""
-    while(currStart != -1){
-      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
-      currEnd = xml.indexOf(">", currStart+1)
-      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
-      currStart = xml.indexOf("<", currEnd+1)
+    while (currStart != -1) {
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd + 1, currStart)
+      currEnd = xml.indexOf(">", currStart + 1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart, currEnd + 1).replaceAll(" ", "_")
+      currStart = xml.indexOf("<", currEnd + 1)
     }
-    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
-    
-    val xmlFile = java.io.File.createTempFile("xml",".xml")
-    val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
+    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd + 1)
+
+    val xmlFile = java.io.File.createTempFile("xml", ".xml")
+    val fileWriter = new BufferedWriter(new FileWriter(xmlFile))
     fileWriter.write(xmlNoSpaces)
     fileWriter.close()
-    
-    return xmlFile    
+
+    return xmlFile
   }
-  
+
 }

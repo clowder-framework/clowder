@@ -1,9 +1,7 @@
-/**
- *
- */
 package services
 
-import models.Collection
+import models.{UUID, Dataset, Collection}
+import scala.util.Try
 
 /**
  * Generic collection service.
@@ -11,7 +9,7 @@ import models.Collection
  * @author Constantinos Sophocleous
  *
  */
-abstract class CollectionService {
+trait CollectionService {
 
    /**
    * List all collections in the system.
@@ -36,15 +34,63 @@ abstract class CollectionService {
   /**
    * Get collection.
    */
-  def get(id: String): Option[Collection]
+  def get(id: UUID): Option[Collection]
+
+  /**
+   * Lastest collection in chronological order.
+   */
+  def latest(): Option[Collection]
+
+  /**
+   * First collection in chronological order.
+   */
+  def first(): Option[Collection]
+
+  /**
+   * Create collection.
+   */
+  def insert(collection: Collection)
+
+  /**
+   * Add datataset to collection
+   */
+  def addDataset(collectionId: UUID, datasetId: UUID): Try[Unit]
+
+  /**
+   * Remove dataset from collection
+   */
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true): Try[Unit]
+
+  /**
+   * Delete collection and any reference of it
+   */
+  def delete(collectionId: UUID): Try[Unit]
+
+  def deleteAll()
+
+  def findOneByDatasetId(datasetId: UUID): Option[Collection]
+
+  /**
+   * List all collections outside a dataset.
+   */
+  def listOutsideDataset(datasetId: UUID): List[Collection]
+
+  /**
+   * List all collections inside a dataset.
+   */
+  def listInsideDataset(datasetId: UUID): List[Collection]
+
+
+  def isInDataset(dataset: Dataset, collection: Collection): Boolean
   
   /**
-   * 
+   * Update thumbnail used to represent this collection.
    */
-  def listInsideDataset(datasetId: String): List[Collection]
+  def updateThumbnail(collectionId: UUID, thumbnailId: UUID)
   
   /**
-   * 
+   * Set new thumbnail.
    */
-  def listOutsideDataset(datasetId: String): List[Collection]
+  def createThumbnail(collectionId: UUID)
+
 }

@@ -1,3 +1,4 @@
+import models.UUID
 import play.api.mvc._
 import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
@@ -41,26 +42,30 @@ object Binders {
     def to(value: ObjectId) = value.toString
   }
 
-  // TODO LM Play 2.1 compatability
-//  /**
-//   * Read ObjectId
-//   */
-//  implicit object objectIdReads extends Reads[ObjectId] {
-//    def reads(json: JsValue) = json match {
-//      case JsString(s) => {
-//        if (ObjectId.isValid(s))
-//          JsSuccess(new ObjectId(s))
-//        else
-//          JsError(ValidationError("validate.error.objectid"))
-//      }
-//      case _ => JsError(Seq(JsPath() -> Seq(ValidationError("validate.error.expected.jsstring"))))
-//    }
-//  }
-//
-//  /**
-//   * Write ObjectId
-//   */
-//  implicit object objectIdWrites extends Writes[ObjectId] {
-//    def writes(o: ObjectId) = JsString(o.toString)
-//  }
+  /**
+   * UUID path binder
+   */
+  implicit def uuidPathBinder(implicit stringBinder: PathBindable[String]) = new PathBindable[UUID] {
+    override def bind(key: String, value: String): Either[String, UUID] = {
+      if (UUID.isValid(value))
+        Right(UUID(value))
+      else
+        Left(s"Cannot parse parameter $key")
+    }
+    override def unbind(key: String, uuid: UUID): String = uuid.stringify
+  }
+
+  /**
+   * UUID query binder
+   */
+  implicit def uuidQueryBinder(implicit stringBinder: QueryStringBindable[String]) = new QueryStringBindable[UUID] {
+    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, UUID]] = {
+      val value = params(key)(0)
+      if (UUID.isValid(value))
+        Some(Right(UUID(value)))
+      else
+        Some(Left(s"Cannot parse parameter $key"))
+    }
+    override def unbind(key: String, uuid: UUID): String = uuid.stringify
+  }
 }

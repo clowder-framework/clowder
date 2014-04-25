@@ -11,12 +11,10 @@ import securesocial.core.SecureSocial
 import api.ApiController
 import api.WithPermission
 import api.Permission
-import services.VersusPlugin
+import services.{AppConfigurationService, AppAppearanceService, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
-import models.AppConfiguration
-import models.AppAppearance
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.Logger
@@ -29,13 +27,16 @@ import play.api.libs.concurrent.Promise
 import play.api.data.Form
 import play.api.data.Forms._
 
+import javax.inject.{Inject, Singleton}
+
 /**
  * Administration pages.
  *
  * @author Luigi Marini
  *
  */
-object Admin extends SecuredController {
+@Singleton
+class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance: AppAppearanceService) extends SecuredController {
 
   private val themes = "bootstrap/bootstrap.css" ::
     "bootstrap-amelia.min.css" ::
@@ -44,9 +45,9 @@ object Admin extends SecuredController {
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val themeId = themes.indexOf(getTheme)
     Logger.debug("Theme id " + themeId)
-    val appAppearance = AppAppearance.getDefault.get
+    val appAppearanceGet = appAppearance.getDefault.get
     implicit val user = request.user
-    Ok(views.html.admin(themeId, appAppearance))
+    Ok(views.html.admin(themeId, appAppearanceGet))
   }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
@@ -119,7 +120,7 @@ object Admin extends SecuredController {
   }
   
   //Get available Measures from Versus 
-  def getMeasures()=SecuredAction(authorization=WithPermission(Permission.Admin)){
+  def getMeasures() = SecuredAction(authorization=WithPermission(Permission.Admin)){
      request =>
       
     Async{  
@@ -189,13 +190,7 @@ object Admin extends SecuredController {
             val indexer = (request.body \ "indexer").as[String]
             Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
             var reply = plugin.createIndex(adapter, extractor, measure, indexer)
-            //Logger.debug("REPLY FROM Versus: "+reply)
-            for {
-              response <- reply
-            } yield {
-              response
-              Ok(response.body)
-            }
+            for (response <- reply) yield Ok(response.body)
           } //case some
 
           case None => {
@@ -328,7 +323,7 @@ object Admin extends SecuredController {
   def setTheme() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { implicit request =>
     request.body.\("theme").asOpt[Int] match {
       case Some(theme) => {
-        AppConfiguration.setTheme(themes(theme))
+        appConfiguration.setTheme(themes(theme))
         Ok("""{"status":"ok"}""").as(JSON)
       }
       case None => {
@@ -338,18 +333,13 @@ object Admin extends SecuredController {
     }
   }
 
-  def getTheme(): String = {
-    AppConfiguration.getDefault match {
-      case Some(appConf) => Logger.debug("Theme" + appConf.theme); appConf.theme
-      case None => themes(0)
-    }
-  }
+  def getTheme(): String = appConfiguration.getTheme()
   
   val adminForm = Form(
   single(
     "email" -> email
   )verifying("Admin already exists.", fields => fields match {
-     		case adminMail => !AppConfiguration.adminExists(adminMail)
+     		case adminMail => !appConfiguration.adminExists(adminMail)
      	})
 )
   
@@ -364,7 +354,7 @@ object Admin extends SecuredController {
         adminForm.bindFromRequest.fold(
           errors => BadRequest(views.html.newAdmin(errors)),
 	      newAdmin => {
-	    	  		AppConfiguration.addAdmin(newAdmin)		            
+	    	  		appConfiguration.addAdmin(newAdmin)		            
 		            Redirect(routes.Application.index)
 			      } 
 	)
@@ -373,7 +363,7 @@ object Admin extends SecuredController {
   def listAdmins() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
     
-    AppConfiguration.getDefault match{
+    appConfiguration.getDefault match{
       case Some(conf) =>{
         Ok(views.html.listAdmins(conf.admins))
       }
@@ -383,5 +373,5 @@ object Admin extends SecuredController {
       
     }  
   }
-  
+
 }
