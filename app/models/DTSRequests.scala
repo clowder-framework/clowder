@@ -25,7 +25,7 @@ import play.api.libs.json.Json
 case class DTSRequests(
     serverIP:String,
     clientIP:String,
-    fileid:String,
+    fileid:UUID,
     filename:String,
     fileType:String,
     filesize:Long,

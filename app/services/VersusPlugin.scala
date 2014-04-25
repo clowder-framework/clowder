@@ -392,13 +392,13 @@ class VersusPlugin(application:Application) extends Plugin{
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString), pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id), pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
                   } else {
                     val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     (file -> ff)
                   }
@@ -411,8 +411,8 @@ class VersusPlugin(application:Application) extends Plugin{
                 val formatter = new DecimalFormat("#.###")
                 // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
-
+               // resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, null))
                 //     ar.update(i, file.filename)
 
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
@@ -475,13 +475,13 @@ class VersusPlugin(application:Application) extends Plugin{
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString), pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id), pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
                   } else {
                     val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     (file -> ff)
                   }
@@ -493,7 +493,7 @@ class VersusPlugin(application:Application) extends Plugin{
                 val formatter = new DecimalFormat("#.###")
                 // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, null))
 
                 //     ar.update(i, file.filename)
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)
@@ -555,13 +555,13 @@ class VersusPlugin(application:Application) extends Plugin{
                 val files = List(file)
                 val previewslist = for (f <- files) yield {
                   val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id.toString), pv.contentType, pv.length)
+                    (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id), pv.contentType, pv.length)
                   }
                   if (pvf.length > 0) {
                     (file -> pvf)
                   } else {
                     val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id.toString) + "/blob", file.contentType, file.length)
+                      (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     (file -> ff)
                   }
@@ -571,7 +571,7 @@ class VersusPlugin(application:Application) extends Plugin{
                 val formatter = new DecimalFormat("#.###")
 
                 val proxvalue = formatter.format(result.proximity).toDouble
-                resultArray += ((subStr, result.docID, proxvalue, file.filename, filteredPreviews))
+                resultArray += ((subStr, result.docID, proxvalue, file.filename, null))
 
                 //     ar.update(i, file.filename)
                 //Logger.debug("i"+i +" name="+ar(i)+"se(i)"+se(i)._3)

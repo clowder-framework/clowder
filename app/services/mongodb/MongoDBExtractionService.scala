@@ -38,7 +38,7 @@ class MongoDBExtractionService extends ExtractionService {
   
   def getExtractorList(fileId:UUID):collection.mutable.Map[String,String] ={
   
-    val allOfFile = Extraction.find(MongoDBObject("file_id" -> fileId)).toList
+    val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
 	var extractorsArray:collection.mutable.Map[String,String] = collection.mutable.Map()
 	for(currentExtraction <- allOfFile){
 	    extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
@@ -47,8 +47,8 @@ class MongoDBExtractionService extends ExtractionService {
   
 }
 
-  def getExtractionTime(fileId:ObjectId):List[Date] ={
-  val allOfFile = Extraction.find(MongoDBObject("file_id" -> fileId)).toList
+  def getExtractionTime(fileId:UUID):List[Date] ={
+  val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
 	var extractorsTimeArray=List[Date]()
 	for(currentExtraction <- allOfFile){
 	    extractorsTimeArray = currentExtraction.start.get :: extractorsTimeArray

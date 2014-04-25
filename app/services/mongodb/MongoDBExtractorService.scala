@@ -1,4 +1,7 @@
 package services
+
+import services._
+import models._
 import org.bson.types.ObjectId
 import java.util.Date
 import play.api.Play.current
@@ -12,12 +15,20 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import models._
 import com.mongodb.casbah.Imports._
 import com.mongodb.WriteConcern
-import MongoContext.context
+import javax.inject.{Singleton, Inject}
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json._
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.util.JSON
+import jsonutils.JsonUtil
+import scala.Some
+import scala.util.parsing.json.JSONArray
+import services.mongodb.MongoContext.context
+import services.mongodb.MongoSalatPlugin
 
-
+@Singleton
 class MongoDBExtractorService extends ExtractorService {
 
     
@@ -36,18 +47,7 @@ class MongoDBExtractorService extends ExtractorService {
     list_servers
   }
 
- /* def insertServerIPs(iplist: List[String]) = {
-
-    val coll = ExtractorServer.dao.collection
-    coll.drop()
-    Logger.debug("extractor.servers: collection dropped.......")
-
-    for (sip <- iplist) {
-      coll.insert(MongoDBObject("server" -> sip))
-      Logger.debug("extractor.servers: document inserted : " + sip)
-    }
-  }*/
-  
+   
   def insertServerIPs(iplist: List[String]) = {
 
     val coll = ExtractorServer.dao.collection
@@ -55,7 +55,8 @@ class MongoDBExtractorService extends ExtractorService {
     Logger.debug("extractor.servers: collection dropped.......")
 
     for (sip <- iplist) {
-      ExtractorServer.insert(new ExtractorServer(sip))
+       ExtractorServer.insert(new ExtractorServer(sip))
+      //coll.insert(MongoDBObject("server" -> sip))
       Logger.debug("extractor.servers: document inserted : " + sip)
     }
   }
@@ -76,15 +77,7 @@ class MongoDBExtractorService extends ExtractorService {
     list_queue
   }
 
- /* def insertExtractorNames(exlist: List[String]) = {
-    val qcoll = ExtractorNames.dao.collection
-    qcoll.drop()
-    Logger.debug("extractor.names: collection dropped.......")
-    for (qn <- exlist) {
-      Logger.debug("extractor.names: document inserted: " + qn)
-      qcoll.insert(MongoDBObject("name" -> qn))
-    }
-  }*/
+ 
    def insertExtractorNames(exlist: List[String]) = {
     val qcoll = ExtractorNames.dao.collection
     qcoll.drop()
@@ -92,6 +85,7 @@ class MongoDBExtractorService extends ExtractorService {
     for (qn <- exlist) {
       Logger.debug("extractor.names: document inserted: " + qn)
       ExtractorNames.insert(new ExtractorNames(qn))
+      //qcoll.insert(MongoDBObject("name" -> qn))
     }
   }
 
@@ -111,21 +105,13 @@ class MongoDBExtractorService extends ExtractorService {
     list_inputs
   }
 
- /* def insertInputTypes(inputTypes: List[String]) = {
-    val inputcoll = ExtractorInputType.dao.collection
-    inputcoll.drop()
-    Logger.debug("extractor.inputtypes: collection dropped.......")
-    for (ipt <- inputTypes) {
-      inputcoll.insert(MongoDBObject("inputType" -> ipt))
-      Logger.debug("extractor.inputtypes: document inserted: " + ipt)
-    }
-  }*/
-   def insertInputTypes(inputTypes: List[String]) = {
+ def insertInputTypes(inputTypes: List[String]) = {
     val inputcoll = ExtractorInputType.dao.collection
     inputcoll.drop()
     Logger.debug("extractor.inputtypes: collection dropped.......")
     for (ipt <- inputTypes) {
       ExtractorInputType.insert(new ExtractorInputType(ipt))
+      //inputcoll.insert(MongoDBObject("inputType" -> ipt))
       Logger.debug("extractor.inputtypes: document inserted: " + ipt)
     }
   }

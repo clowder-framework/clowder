@@ -120,7 +120,7 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
              Logger.debug("----Else block")
            }
                
-          jarr=jarr:+(Json.obj("clientIP"->dtsreq.clientIP,"fileid"->dtsreq.fileid,"filename"->dtsreq.filename,"fileType"->dtsreq.fileType,"filesize"->dtsreq.filesize,"uploadDate"->dtsreq.uploadDate,"extractors"->js ,"startTime"->dtsreq.startTime,"endTime"->dtsreq.endTime))
+          jarr=jarr:+(Json.obj("clientIP"->dtsreq.clientIP,"fileid"->dtsreq.fileid.stringify,"filename"->dtsreq.filename,"fileType"->dtsreq.fileType,"filesize"->dtsreq.filesize,"uploadDate"->dtsreq.uploadDate,"extractors"->js ,"startTime"->dtsreq.startTime,"endTime"->dtsreq.endTime))
         }
     
     Ok(jarr)

@@ -263,10 +263,10 @@ class Files @Inject()(
         case Some(file) => {
           val list = request.body \ ("versus_descriptors")
 
-          FileDAO.addVersusMetadata(id, list)
+          files.addVersusMetadata(id, list)
 
           Logger.debug("GET META DATA:*****")
-          FileDAO.getMetadata(id).map {
+          files.getMetadata(id).map {
             md =>
               Logger.debug(":::" + md._2.toString)
           }
@@ -378,14 +378,14 @@ class Files @Inject()(
                 
                 Logger.debug("----")
                 val serverIP= request.host
-	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id.toString(), fileType, f.length,f.uploadDate)
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 	           /****************************/ 
               current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags)) }
 
               //for metadata files
               if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                 val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                FileDAO.addXMLMetadata(id, xmlToJSON)
+                files.addXMLMetadata(id, xmlToJSON)
 
                 Logger.debug("xmlmd=" + xmlToJSON)
 
@@ -517,7 +517,7 @@ class Files @Inject()(
 			                
 			                Logger.debug("----")
 			                val serverIP= request.host
-				            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id.stringify, fileType, f.length,f.uploadDate)
+				            dtsrequests.insertRequest(serverIP,clientIP, f.filename,id, fileType, f.length,f.uploadDate)
 				           /****************************/ 
 			                
 				            /*file remove from temporary directory*/
@@ -700,7 +700,7 @@ class Files @Inject()(
                 
                 Logger.debug("----")
                 val serverIP= request.host
-	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id.stringify, fileType, f.length,f.uploadDate)
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 	           /****************************/ 
                   current.plugin[RabbitmqPlugin].foreach {
                     // TODO replace null with None
@@ -1033,7 +1033,7 @@ class Files @Inject()(
 		                
 		                Logger.debug("----")
 		                val serverIP= request.host
-			            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id.toString, fileType, f.length,f.uploadDate)
+			            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 			           /****************************/ 
                       current.plugin[RabbitmqPlugin].foreach {
                         _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))
@@ -1774,8 +1774,8 @@ class Files @Inject()(
    * Returns Previews extracted so far for a file
    * 
    */
-  def extractPreviews(id: String) = {
-    val previews = PreviewDAO.findByFileId(new ObjectId(id));
+  def extractPreviews(id: UUID) = {
+    val previews1 =previews.findByFileId(id);
     /*
      * Initial implementation: Flat tree of {"extractor_id", "preview_id", "url", "contentType", ...} items.
      * 
@@ -1788,14 +1788,17 @@ class Files @Inject()(
     // Transform the preview list into a list of ["extractor_id", "values"] items,
     // where "values" are the preview properties, such as "preview_id", "url", and "contentType".
     var previewRes = Map[String, MutableList[JsValue]]()
-    previews.filter(_.extractor_id.isDefined).foreach(p => {
-      val ename = p.extractor_id.get
-      val jitem = Json.obj("preview_id" -> p.id.toString,
-        "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id.toString).toString)
-      if (previewRes.contains(ename)) {
-        previewRes.get(ename).get += jitem
+    previews1.filter(_.extractor_id.isDefined).foreach(p => {
+     
+     val ename = p.extractor_id.get
+      
+         
+      val jitem = Json.obj("preview_id" -> p.id.stringify,
+        "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id).toString)
+      if (previewRes.contains(ename.toString)) {
+        previewRes.get(ename.toString).get += jitem
       } else {
-        previewRes += ((ename, MutableList(jitem)))
+        previewRes += ((ename.toString, MutableList(jitem)))
       }
     })
     val jpreviews = previewRes.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
@@ -1807,42 +1810,9 @@ class Files @Inject()(
    * 
    */
   
-  def extractVersusDescriptors(id:String): JsValue= {
-    
-    FileDAO.dao.collection.findOneByID(new ObjectId(id)) match {
-      case Some(x) => {
-
-        x.getAs[DBObject]("metadata") match {
-          case None => {
-            Logger.debug("No metadata field found: Adding meta data field")
-            Json.obj("Message"->("No metadata for file"+id))
-          }
-          case Some(map) => {
-
-            Logger.debug("metadata found ")
-
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
-            Logger.debug("retmd: " + returnedMetadata)
-
-            val retmd = toJson(returnedMetadata)
-            //Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
-            if(map.containsKey("versus_descriptors")){
-             val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
-             listd
-            }
-            else
-            Json.obj(""->"")
-           
-          }
-        }
-
-      }
-      case None => {
-        Logger.error("Error getting file" + id)
-        Json.obj("Error in File"->id)
-
-      }
-    }
+  def extractVersusDescriptors(id:UUID): JsValue= {
+    val vDes=files.getVersusMetadata(id)
+    vDes
   }
   
   /*convert list of JsObject to JsArray*/
@@ -2031,7 +2001,7 @@ def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorizat
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
                   
-                  Ok(Json.obj("file_id" -> id, "filename" -> file.filename, "Status" -> status, "tags" -> jtags, "previews" -> jpreviews, "versus descriptors" -> vdescriptors))
+                  Ok(Json.obj("file_id" -> id.stringify, "filename" -> file.filename, "Status" -> status, "tags" -> jtags, "previews" -> jpreviews, "versus descriptors" -> vdescriptors))
                 } //end of yield
 
               } //end of some file
@@ -2069,8 +2039,9 @@ def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorizat
      files.get(id) match {
         case Some(file) =>
           val jtags = extractTags(file)
-          val jpreviews = extractPreviews(id.toString)
-          val vdescriptors=extractVersusDescriptors(id.toString)
+          //val jpreviews = extractPreviews(id)
+           val jpreviews = ""
+          val vdescriptors=extractVersusDescriptors(id)
           Logger.debug("jtags: " + jtags.toString)
           Logger.debug("jpreviews: " + jpreviews.toString)
           Ok(Json.obj("file_id" -> id.toString, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors"->vdescriptors))

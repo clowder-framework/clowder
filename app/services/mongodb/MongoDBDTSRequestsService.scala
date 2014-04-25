@@ -15,10 +15,13 @@ import play.api.libs.json.Json
 import models._
 import com.mongodb.casbah.Imports._
 import com.mongodb.WriteConcern
-//import MongoContext.context
+import services.mongodb.MongoContext.context
+import services.mongodb.MongoSalatPlugin
 import java.text.SimpleDateFormat
 
-class MongoDBDTSRequestsService extends DTSRequestsService {
+import javax.inject.{Singleton, Inject}
+
+class MongoDBDTSRequestsService @Inject()(extractions: ExtractionService)extends DTSRequestsService {
 
  /* def getList(x:com.mongodb.BasicDBList):List[String]={
     var y=Json.parse(com.mongodb.util.JSON.serialize(x))
@@ -36,7 +39,7 @@ class MongoDBDTSRequestsService extends DTSRequestsService {
     list_requests
   }
 
-  def insertRequest(serverIP: String, clientIP: String, filename: String, fileid: String, fileType: String, filesize: Long, uploadDate: Date) = {
+  def insertRequest(serverIP: String, clientIP: String, filename: String, fileid: UUID, fileType: String, filesize: Long, uploadDate: Date) = {
     DTSRequests.insert(new DTSRequests(serverIP, clientIP, fileid, filename, fileType, filesize, uploadDate, None, None, None))
     // DTSRequests.dao.collection.insert(MongoDBObject("serverIP"->serverIP,"clientIP"->clientIP,"fileid"->fileid,"filename"->filename,"fileType"->fileType,"filesize"->filesize,"uploadDate"->uploadDate,"Extractors"->null,"startTime"->None,"endTime"->None))
   }
@@ -71,7 +74,7 @@ class MongoDBDTSRequestsService extends DTSRequestsService {
     }
   }*/
   
-  def updateRequest(file_id:ObjectId,extractor_id:String) = {
+  def updateRequest(file_id:UUID,extractor_id:String) = {
     val requests = getRequests(file_id)
     Logger.debug("-----UPDATING DTS REQUESTS----------")
     Logger.debug( "NO of Requests to be updated : "+requests.length);
@@ -84,12 +87,12 @@ class MongoDBDTSRequestsService extends DTSRequestsService {
 
       Logger.debug("File Id for UPDATE MongoDB DTS REQUESTS: " + fileid)
 
-      var extime = Extraction.getExtractionTime(new ObjectId(fileid))
+      var extime=extractions.getExtractionTime(file_id)
      
       var sortedTime = extime.sortBy(_.getTime())
       var len = sortedTime.size
 
-      var ex = Extraction.getExtractorList(new ObjectId(fileid.toString))
+      var ex = extractions.getExtractorList(file_id)
      
       val elist = ex.keySet.toList
       Logger.debug("----extractorlist:----"+ elist);
@@ -103,11 +106,11 @@ class MongoDBDTSRequestsService extends DTSRequestsService {
   }
 
   
-  def getRequests(file_id:ObjectId) = {
+  def getRequests(file_id:UUID) = {
     Logger.debug("GET REQUESTS---- fileID"+ file_id.toString)
     //val query = MongoDBObject("endTime" -> None)
     val id=file_id.toString
-    val query = MongoDBObject("fileid"->id)
+    val query = MongoDBObject("fileid"->new ObjectId(file_id.stringify))
     var requests1=DTSRequests.find(query)
     Logger.debug("REQUEST Length: "+ requests1.length)
     

@@ -451,7 +451,7 @@ class Datasets @Inject()(
 					                
 					                Logger.debug("----")
 					                val serverIP= request.host
-						            dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id.toString(), theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
+						            dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
 						            
 				//****************************//* 
 

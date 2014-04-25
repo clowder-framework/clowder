@@ -28,6 +28,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsArray
+import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Rabbitmq service.

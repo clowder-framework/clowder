@@ -69,10 +69,13 @@ class Files @Inject() (
             Map(file -> ff)
           }
         }
-        val sectionsByFile = sections.findByFileId(UUID(file.id.toString))
+        val sectionsByFile = sections.findByFileId(file.id)
         val sectionsWithPreviews = sectionsByFile.map { s =>
-          val p = previews.findBySectionId(s.id)
+        val p = previews.findBySectionId(s.id)
+        if(p.length>0)
           s.copy(preview = Some(p(0)))
+         else
+           s.copy(preview = None)
         }
 
         //Search whether file is currently being processed by extractor(s)
@@ -218,8 +221,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
               // TODO RK : need figure out if we can use https
              // val host = "http://" + request.host + request.path.replaceAll("upload$", "")
               val host = "http://" + request.host
-              val id = f.id.toString
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
+              val id = f.id
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
 	            /***** Inserting DTS Requests   **/  
 	            
 	            val clientIP=request.remoteAddress
@@ -239,7 +242,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              FileDAO.addXMLMetadata(id, xmlToJSON)
+	              files.addXMLMetadata(id, xmlToJSON)
 	              
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
@@ -253,9 +256,9 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            }
 	            }
 	            
-	          var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
+	          //var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
 	          
-	          Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
+	         // Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
 	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 	            
@@ -263,7 +266,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	                        
 	            // redirect to file page]
 	         //   Redirect("http://localhost:9000/api/files/"+f.id.toString+"/extract")  
-	          Ok(views.html.extract(f.id.toString))
+	          Ok(views.html.extract(f.id))
 	         // val x=Application.javascriptRoutes
 	      
 	       //   Redirect(x.api.Files.extract(f.id.toString))

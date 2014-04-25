@@ -474,6 +474,8 @@ class MongoDBFileService @Inject() (
     }
   }
 
+  
+  
   /**
    *  Add versus descriptors to the metadata
    *
@@ -555,7 +557,45 @@ class MongoDBFileService @Inject() (
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
 
+ def getVersusMetadata(id:UUID): JsValue= {
+    
+    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case Some(x) => {
+    	 
+        x.getAs[DBObject]("metadata") match {
+          case None => {
+            Logger.debug("No metadata field found: Adding meta data field")
+            Json.obj("Message"->("No metadata for file"+id))
+          }
+          case Some(map) => {
 
+            Logger.debug("metadata found ")
+
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+            Logger.debug("retmd: " + returnedMetadata)
+
+            val retmd =Json.toJson(returnedMetadata)
+            //Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
+            if(map.containsKey("versus_descriptors")){
+             val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
+             listd
+            }
+            else
+            Json.obj(""->"")
+           
+          }
+        }
+
+      }
+      case None => {
+        Logger.error("Error getting file" + id)
+        Json.obj("Error in File"->id.stringify)
+
+      }
+    }
+  }
+  
+  
   def addUserMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
