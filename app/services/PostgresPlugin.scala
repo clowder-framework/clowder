@@ -12,6 +12,7 @@ import java.util.Date
 import java.text.SimpleDateFormat
 import java.sql.Timestamp
 import java.sql.Statement
+import play.api.libs.json.{Json, JsObject, JsArray, JsValue}
 
 /**
  * Postgres connection and simple geoindex methods.
@@ -443,13 +444,36 @@ class PostgresPlugin(application: Application) extends Plugin {
     Logger.debug("Geostream search: " + st)
     val rs = st.executeQuery()
     while (rs.next()) {
-      data += rs.getString(1)
+      if (!attributes.isEmpty) {
+        val jsdata = Json.parse(rs.getString(1)) match {
+          case v : JsObject => data += filterProperties(v, attributes)
+          case v : JsArray => data += "[" + (for(t <- v.as[List[JsObject]]) yield filterProperties(t, attributes)).mkString(",") + "]"
+          case v => data += rs.getString(1)
+		}
+      } else {
+        data += rs.getString(1)
+      }
     }
     rs.close()
     st.close()
     Logger.trace("Searching datapoints result: " + data)
     if (data == "null") None // FIXME
     else Some(data)
+  }
+  
+  def filterProperties(obj: JsObject, attributes: List[String]) = {
+    var props = JsObject(Seq.empty)
+    (obj \ "properties").asOpt[JsObject] match {
+	  case Some(x) => {
+	    for (f <- x.fieldSet) {
+	      if (("source" == f._1) || attributes.contains(f._1)) {
+	        props = props + f
+	      }
+	    }
+	    (obj - ("properties") + ("properties", props)).toString
+	  }
+	  case None => obj.toString
+    }
   }
   
   def getDatapoint(id: String): Option[String] = {
