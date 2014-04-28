@@ -629,15 +629,15 @@ class MongoDBFileService @Inject() (
             if(!file.xmlMetadata.isEmpty){
               datasets.index(fileDataset.id)
             }
-            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
-              if(file.thumbnail_id.get == fileDataset.thumbnail_id.get){
+            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
+              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
                 datasets.newThumbnail(fileDataset.id)
                 
                 	for(collectionId <- fileDataset.collections){
 		                          collections.get(new UUID(collectionId)) match{
 		                            case Some(collection) =>{		                              
-		                            	if(!collection.thumbnail_id.isEmpty){
-		                            		if(collection.thumbnail_id.get == fileDataset.thumbnail_id.get){
+		                            	if(!collection.thumbnail_id.isEmpty){	                            	  
+		                            		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
 		                            			collections.createThumbnail(collection.id)
 		                            		}		                        
 		                            	}
@@ -646,6 +646,7 @@ class MongoDBFileService @Inject() (
 		                          }
 		                        }		        	  
 		        }
+            }
                      
           }
           for(section <- sections.findByFileId(file.id)){

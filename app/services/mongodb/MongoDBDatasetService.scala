@@ -318,7 +318,7 @@ class MongoDBDatasetService @Inject() (
 
   def updateThumbnail(datasetId: UUID, thumbnailId: UUID) {
     Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
 
   def createThumbnail(datasetId: UUID) {

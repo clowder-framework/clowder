@@ -56,6 +56,7 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 class Files @Inject()(
   files: FileService,
   datasets: DatasetService,
+  collections: CollectionService,
   queries: MultimediaQueryService,
   tags: TagService,
   comments: CommentService,
@@ -861,6 +862,12 @@ class Files @Inject()(
               for (dataset <- datasetList) {
                 if (dataset.thumbnail_id.isEmpty) {
                   datasets.updateThumbnail(dataset.id, thumbnail_id)
+                  val collectionList = collections.listInsideDataset(dataset.id)                  
+                  for(collection <- collectionList){
+                    if (collection.thumbnail_id.isEmpty) {
+                      collections.updateThumbnail(collection.id, thumbnail_id)
+                    }
+                  }                  
                 }
               }
 

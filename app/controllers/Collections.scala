@@ -81,25 +81,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         }
       }
 
-      var collectionsWithThumbnails = List.empty[models.Collection]
-      for (collection <- collectionList) {
-        var collectionThumbnail: Option[String] = None
-        try {
-          for (dataset <- collection.datasets) {
-            if (!dataset.thumbnail_id.isEmpty) {
-              collectionThumbnail = dataset.thumbnail_id
-              throw ThumbnailFound
-            }
-          }
-        } catch {
-          case ThumbnailFound =>
-        }
-        val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
-        collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
-      }
-      collectionsWithThumbnails = collectionsWithThumbnails.reverse
-
-      Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit))
+      Ok(views.html.collectionList(collectionList, prev, next, limit))
     
   }
 

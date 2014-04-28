@@ -155,9 +155,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
               //add collection to dataset
               datasets.addCollection(dataset.id, collection.id)
               
-              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
-                  Collection.dao.collection.update(MongoDBObject("_id" -> collection.id), 
-                  $set("thumbnail_id" -> dataset.thumbnail_id), false, false, WriteConcern.Safe)
+              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
+                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
+                  $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
               }
               
               Logger.debug("Adding dataset to collection completed")
@@ -252,7 +252,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   
   def updateThumbnail(collectionId: UUID, thumbnailId: UUID) {
     Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
-      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
   
   def createThumbnail(collectionId:UUID){
