@@ -22,5 +22,5 @@
 
 	 viewer = new Seadragon.Viewer("seadragon" + Configuration.tab.replace("#previewer",""));
 	 viewer.openDzi(Configuration.url);
-	 			
+			
 }(jQuery, Configuration));
