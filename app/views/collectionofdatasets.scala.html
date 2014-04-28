@@ -1,8 +1,23 @@
-@(datasetsInCollection: List[models.Dataset], collectionName: String, collectionId: String)(implicit user: Option[securesocial.core.Identity])
+@(datasetsInCollection: List[models.Dataset], collection: models.Collection)(implicit user: Option[securesocial.core.Identity])
 
 @main("Collection") {
 <div class="page-header">
-  <h1>@collectionName</h1>
+  <h1>@collection.name</h1>
+</div>
+<div class="row">
+	<div class="col-md-2">
+	
+	</div>
+	<div class="col-md-6">
+				<dl class="dl-horizontal">
+					@if(!collection.author.isEmpty){
+						<dt>Author:</dt>
+						<dd>@collection.author.get.fullName</dd>
+					}
+					<dt>Description:</dt>
+					<dd>@collection.description</dd>				
+				</dl>
+	</div>
 </div>
 <div class="row">
 	<div class="col-md-12">
@@ -60,8 +75,8 @@
 	</div>
 </div>
 <script language="javascript">	
-	var queryIp = "@api.routes.Datasets.listOutsideCollection(UUID(collectionId))";
-	var collectionId = "@collectionId";
+	var queryIp = "@api.routes.Datasets.listOutsideCollection(collection.id)";
+	var collectionId = "@collection.id.stringify";
 </script>
 <script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
 }

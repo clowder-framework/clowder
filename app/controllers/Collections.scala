@@ -29,7 +29,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       "name" -> nonEmptyText,
       "description" -> nonEmptyText
     )
-      ((name, description) => Collection(name = name, description = description, created = new Date))
+      ((name, description) => Collection(name = name, description = description, created = new Date, author = null))
       ((collection: Collection) => Some((collection.name, collection.description)))
   )
 
@@ -113,18 +113,23 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   def submit() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>
       implicit val user = request.user
-
-      collectionForm.bindFromRequest.fold(
-        errors => BadRequest(views.html.newCollection(errors)),
-        collection => {
-          Logger.debug("Saving collection " + collection.name)
-          collections.insert(collection)
-                    
-          // redirect to collection page
-          Redirect(routes.Collections.collection(collection.id))
-          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Collection","added",collection.id.toString,collection.name)}
-          Redirect(routes.Collections.collection(collection.id))
-        })
+      user match {
+	      case Some(identity) => {
+	      
+	      collectionForm.bindFromRequest.fold(
+	        errors => BadRequest(views.html.newCollection(errors)),
+	        collection => {
+	          Logger.debug("Saving collection " + collection.name)
+	          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity)))
+	                    
+	          // redirect to collection page
+	          Redirect(routes.Collections.collection(collection.id))
+	          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Collection","added",collection.id.toString,collection.name)}
+	          Redirect(routes.Collections.collection(collection.id))
+	        })
+	      }
+	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
+      }
   }
 
   /**
@@ -135,9 +140,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
       collections.get(id) match {
-        case Some(collection) => {
+        case Some(collection) => { 
           Logger.debug(s"Found collection $id")
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection.name, collection.id.toString()))
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
