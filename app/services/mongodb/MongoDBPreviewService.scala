@@ -183,9 +183,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(p.id.stringify)))
   }
 
-  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[UUID], json: JsValue) {
+  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue) {
     json match {
       case JsObject(fields) => {
+        Logger.debug("attachToFile: extractorId is '" + extractorId.toString + "'.")
         // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
         val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
         PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),

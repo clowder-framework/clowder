@@ -1197,10 +1197,10 @@ class Files @Inject()(
     // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
       val extractor_id = if (eid.isDefined) {
-        Some(UUID(eid.get))
+        eid
       } else {
         Logger.info("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to None.  request.body: " + request.body.toString)
-        None
+        Some("Other")
       }
       request.body match {
         case JsObject(fields) => {
@@ -1789,9 +1789,10 @@ class Files @Inject()(
     // where "values" are the preview properties, such as "preview_id", "url", and "contentType".
     var previewRes = Map[String, MutableList[JsValue]]()
     previews1.filter(_.extractor_id.isDefined).foreach(p => {
-     
+     Logger.debug("p:  "+ p.toString)
+     Logger.debug("p.extractor_id:  "+ p.extractor_id.toString + ", None is: " + scala.None.toString + ", Some(Noe) is: " + scala.Some(None).toString)
+     //val ename = p.extractor_id.getOrElse("Other")
      val ename = p.extractor_id.get
-      
          
       val jitem = Json.obj("preview_id" -> p.id.stringify,
         "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id).toString)
@@ -2039,8 +2040,8 @@ def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorizat
      files.get(id) match {
         case Some(file) =>
           val jtags = extractTags(file)
-          //val jpreviews = extractPreviews(id)
-           val jpreviews = ""
+          val jpreviews = extractPreviews(id)
+          // val jpreviews = ""
           val vdescriptors=extractVersusDescriptors(id)
           Logger.debug("jtags: " + jtags.toString)
           Logger.debug("jpreviews: " + jpreviews.toString)
