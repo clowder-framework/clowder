@@ -565,7 +565,9 @@ class MongoDBFileService @Inject() (
         x.getAs[DBObject]("metadata") match {
           case None => {
             Logger.debug("No metadata field found: Adding meta data field")
-            Json.obj("Message"->("No metadata for file"+id))
+            //Json.obj("Message"->("No metadata for file"+id))
+            //Json.obj(""->"")
+            null
           }
           case Some(map) => {
 

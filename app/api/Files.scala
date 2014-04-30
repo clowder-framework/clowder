@@ -1813,7 +1813,13 @@ class Files @Inject()(
   
   def extractVersusDescriptors(id:UUID): JsValue= {
     val vDes=files.getVersusMetadata(id)
-    vDes
+    if(vDes==null){
+     //Json.toJson(Map(""->""))  
+    Json.arr()
+    }else{
+      vDes
+    }
+         
   }
   
   /*convert list of JsObject to JsArray*/
