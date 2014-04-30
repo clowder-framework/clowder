@@ -239,11 +239,11 @@ class Files @Inject() (
 		            }
 	            }
 	            
-	          var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id)}
+	         // var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id)}
 	          
-	          Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
+	         // Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
-	             current.plugin[VersusPlugin].foreach{ _.indexImage(f.id.toString,fileType) }
+	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id.toString,fileType) }
 	             //current.plugin[VersusPlugin].foreach{_.build()}
 	             
 	             //add file to RDF triple store if triple store is used
@@ -478,7 +478,7 @@ class Files @Inject() (
 	              }
       	}
         
-        Logger.debug("Uploading file " + nameOfFile)
+        Logger.debug("Controllers/Files Uploading file " + nameOfFile)
         
         // store file       
         Logger.info("uploadSelectQuery")
