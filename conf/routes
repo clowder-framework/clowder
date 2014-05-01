@@ -73,15 +73,12 @@ GET      /queries/:id/similar                                                @co
 GET      /previewers/list                                                    controllers.Previewers.list
 
 # Selected
-GET     /selected                         controllers.Selected.get
+GET     /selected                         @controllers.Selected.get
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/img/glyphicons-halflings-white.png      controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
 GET     /assets/img/glyphicons-halflings.png            controllers.Assets.at(path="/public", file="/images/glyphicons-halflings.png")
 GET     /assets/*file                     controllers.Assets.at(path="/public", file)
-
-# test json
-GET		/test						      controllers.Application.testJson
 
 ## SecureSocial ##
 
@@ -265,5 +262,5 @@ POST	/api/comment/:id					@api.Comments.comment(id: UUID)
 GET   	/api/search                       @api.Search.search(query: String ?= "")
 POST	/api/sparqlquery				  @api.Search.querySPARQL
 
-POST    /api/selected                     api.Selected.add
-POST    /api/selected/remove              api.Selected.remove
+POST    /api/selected                     @api.Selected.add
+POST    /api/selected/remove              @api.Selected.remove

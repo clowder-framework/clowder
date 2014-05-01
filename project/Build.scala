@@ -61,6 +61,8 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
+    requireJs += "main.js",
+    requireJs += "masonry.js",
     testOptions in Test := Nil, // overwrite spec2 config to use scalatest instead
     routesImport += "models._",
     routesImport += "Binders._",

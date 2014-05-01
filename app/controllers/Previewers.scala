@@ -1,6 +1,3 @@
-/**
- *
- */
 package controllers
 
 import java.util.regex.Pattern
@@ -29,6 +26,7 @@ import api.Permission
  *
  */
 object Previewers extends Controller with SecuredController {
+
   def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
     Ok(views.html.previewers(findPreviewers))
   }

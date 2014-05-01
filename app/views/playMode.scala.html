@@ -1,0 +1,6 @@
+@play.api.Play.maybeApplication.map(_.mode) match {
+  case Some(play.api.Mode.Dev) => {Development}
+  case Some(play.api.Mode.Prod) => {Production}
+  case Some(play.api.Mode.Test) => {Test}
+  case _ => {Unknown}
+}

@@ -396,13 +396,9 @@ fieldset #email_field .controls #email{
    /* line-height: 200px; */
 }
 
-.panel .bookmark-link {
-    padding: 0px;
-    margin: 0px;
-}
-
-.panel .bookmark {
-    padding-right: 2px;
+.panel .select {
+    padding-right: 5px;
+    padding-top: 5px;
 }
 
 .panel .panel-body .img-responsive {

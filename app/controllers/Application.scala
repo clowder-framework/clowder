@@ -54,8 +54,6 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.comment,
-        api.routes.javascript.Selected.remove
-        api.routes.javascript.Sections.comment,
         api.routes.javascript.Sections.getTags,
         api.routes.javascript.Sections.addTags,
         api.routes.javascript.Sections.removeTags,
