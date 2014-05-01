@@ -489,7 +489,8 @@ class MongoDBFileService @Inject() (
    */
   def addVersusMetadata(id: UUID, json: JsValue) {
 
-    Logger.debug("Adding metadata to file " + id + " : " + json)
+    //Logger.debug("******Adding metadata to file " + id + " : " + json)
+     Logger.debug("******MongoDB::::Adding metadata to file " + id.toString )
 
     var jsonlist = json.as[List[JsObject]] // read json as list of JSON objects
 
@@ -498,7 +499,7 @@ class MongoDBFileService @Inject() (
         Logger.debug("extraction_id=" + list \ ("extraction_id"))
         Logger.debug("adapter_name=" + list \ ("adapter_name"))
         Logger.debug("extractor_name=" + list \ ("extractor_name"))
-        Logger.debug("descriptor=" + list \ ("descriptor"))
+        //Logger.debug("descriptor=" + list \ ("descriptor"))
         (list \ ("extraction_id"), list \ ("adapter_name"), list \ ("extractor_name"), list \ ("descriptor"))
     } /* to access into the list of json objects and convert as list of tuples*/
 
@@ -509,13 +510,13 @@ class MongoDBFileService @Inject() (
 
         x.getAs[DBObject]("metadata") match {
           case None => {
-            Logger.debug("No metadata field found: Adding meta data field")
+            Logger.debug("-----No metadata field found: Adding meta data field----")
             FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata.versus_descriptors" -> doc), false, false, WriteConcern.Safe)
 
           }
           case Some(map) => {
 
-            Logger.debug("metadata found ")
+            Logger.debug("----metadata found--- ")
 
             val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
             Logger.debug("retmd: " + returnedMetadata)
@@ -566,8 +567,8 @@ class MongoDBFileService @Inject() (
           case None => {
             Logger.debug("No metadata field found: Adding meta data field")
             //Json.obj("Message"->("No metadata for file"+id))
-            //Json.obj(""->"")
-            null
+            Json.obj(""->"")
+           // null
           }
           case Some(map) => {
 
