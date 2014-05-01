@@ -36,8 +36,9 @@ class MongoDBSelectionService @Inject() (datasets: DatasetService)  extends Sele
   }
 
   def remove(dataset: UUID, user: String) {
+    Logger.debug("Removing dataset " + dataset + " from user selection " + user)
     val query = MongoDBObject("user" -> user)
-    val update = $pull("datasets" -> dataset)
+    val update = $pull("datasets" -> dataset.stringify)
     SelectedDAO.dao.collection.update(query, update, upsert=true)
   }
 
