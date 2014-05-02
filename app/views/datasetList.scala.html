@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], prev: String, next: String, limit: Int)(implicit user: Option[securesocial.core.Identity])
+@(datasets: List[models.Dataset], prev: String, next: String, limit: Int, userSelections: List[String])(implicit user: Option[securesocial.core.Identity])
 
 @main("Datasets") {
 
@@ -16,9 +16,17 @@
 		  <div class="post-box col-lg-3 col-md-3 col-sm-3">
 		  <div class="panel panel-default">
 
-            <a href="#" title="Select" class="pull-right select" data-id="@dataset.id">
-              <span class="glyphicon glyphicon-plus"></span>
-            </a>
+            @if(user.isDefined) {
+                  @if(userSelections.contains(dataset.id.stringify)) {
+                    <a href="#" title="Click to deselect dataset" class="pull-right select" data-id="@dataset.id">
+                      <span class="glyphicon glyphicon-ok"></span>
+                    </a>
+                  } else {
+                    <a href="#" title="Click to select dataset" class="pull-right select" data-id="@dataset.id">
+                      <span class="glyphicon glyphicon-plus"></span>
+                    </a>
+                  }
+            }
 
   			<div class="panel-body">
 			  		@if(!dataset.thumbnail_id.isEmpty){

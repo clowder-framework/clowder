@@ -31,6 +31,7 @@ class Datasets @Inject()(
   comments: CommentService,
   sections: SectionService,
   extractions: ExtractionService,
+  selections: SelectionService,
   sparql: RdfSPARQLService) extends SecuredController {
 
   object ActivityFound extends Exception {}
@@ -60,6 +61,12 @@ class Datasets @Inject()(
   def list(when: String, date: String, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
     implicit request =>
       implicit val user = request.user
+      Logger.debug("User selections" + user)
+      val userSelections: List[String] =
+        if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+        else List.empty[String]
+      Logger.debug("User selection " + userSelections)
+
       var direction = "b"
       if (when != "") direction = when
       val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
@@ -94,7 +101,7 @@ class Datasets @Inject()(
           next = formatter.format(datasetList.last.created)
         }
       }
-      Ok(views.html.datasetList(datasetList, prev, next, limit))
+      Ok(views.html.datasetList(datasetList, prev, next, limit, userSelections))
   }
 
 
