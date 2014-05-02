@@ -1,0 +1,158 @@
+@(id: String, posturl: String)(implicit user: Option[securesocial.core.Identity])
+
+@if(user.isDefined) {
+	<form class="form-inline" id="form1">
+		<input type="checkbox" name="owner" value="yes" checked>  I own the rights
+		<br>
+		Rights Holder: <input type="text" name="ownername">
+		<br>
+		<br>
+		License Selection:
+		<br>
+        <input type="radio" name="type" value="license1"> Limited<br>
+        <input type="radio" name="type" value="license2"> Creative Commons<br>
+		<input type="radio" name="type" value="license3"> Public Domain<br>
+		<br>
+		<table>
+			<tr class="license1 hidden">
+				<td>Description:</td>
+				<td><input type="text" name="licensedesc"
+					value="All Rights Reserved"></td>
+			</tr>
+			<tr class="license1 hidden">
+				<td>License URL:</td>
+				<td><input type="text" name="licenseurl"></td>
+			</tr>
+			<tr class="license1 hidden">
+			     <td><input type="checkbox" name="allowdl" value="off">  Allow Downloading of the file</td>
+			</tr>
+			<tr class="license2 hidden">
+				<td><input type="checkbox" name="commercial" value="yes" checked>
+					Allow commercial use</td>
+			</tr>
+			<tr class="license2 hidden">
+				<td><input type="checkbox" name="remixing" value="yes">
+					Allow remixing</td>
+			</tr>
+			<tr class="license2 hidden">
+				<td><input type="checkbox" name="sharealike" value="yes">
+					Require share-alike</td>
+			</tr>
+		</table>		
+		<br>
+		<button class="btn btn-default" onclick="return postComment('@id', '@posturl');">Update</button>
+		<button class="btn btn-default" onclick="return postComment('@id', '@posturl');">Cancel</button>
+	</form>
+	
+	<!-- Need to also handle what to set as default radio. Whether it is default, because
+	     there is no data, or if it is passed in from the model.
+	-->
+	<script type="text/javascript" language="javascript">	  
+	  $(document).ready(function() {		 
+		  var $radios = $('input[name=type]');
+		    //Will have to modify the if check to see if there is data that specifies what should be selected
+		    if($radios.is(':checked') === false) {
+		        //None are selected, so select the default
+		    	$radios.filter('[value=license2]').trigger('click');		    	
+		        //updateLicenseForm('.' + $radios.filter('[value=license1]').val()); //This one works for sure!
+		    	updateLicenseForm('.' + $('input[name=type]:checked', '#form1').val()); //Works also, is better.
+		    }
+		    else {
+		    	//Select the one that the data specifies.
+		    	alert('WHAT?');
+		    }
+		    //$('input[name=type]:checked', '#form1').val()
+		  //var selected = $("input:radio[name=type]:checked").val();
+		  //$(selected).removeClass('hidden');
+	  });
+	  
+	  $('input[name=type]').change( function() {
+		  var klass = '.' + $(this).val();
+		  updateLicenseForm(klass);
+	  });
+	  
+	  function updateLicenseForm(klass) {
+          //var klass = '.' + $(this).val();
+          $('.license1,.license2').addClass('hidden');
+          $(klass).removeClass('hidden');
+      }
+	</script>
+	
+	<script language="javascript">
+		function showReplyComment(id) {
+			if ($("#commentField_" + id).length == 0) {
+				var form="<form class=\"form-inline\">";
+				form += "<textarea id=\"commentField_" + id + "\" class=\"comment-input-box\"></textarea>";
+				form += "<br />";
+				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return replyComment('" + id + "')\">Reply</button>";
+				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return cancelComment('" + id + "')\">Cancel</button>";
+				form += "</form>";
+				$("#reply_" + id).prepend("<div class=\"comment-thread\" id=\"form_" + id + "\">" + form + "</div>");
+			}
+			return false;
+		}
+		
+		function replyComment(id) {
+			postComment(id, "@api.routes.Comments.comment(UUID(id))".replace("@id", id));
+			$("#form_" + id).remove();
+			return false;
+		}
+
+		function cancelComment(id) {
+			$("#form_" + id).remove();
+			return false;
+		}
+
+		function postComment(id, posturl) {
+			var text = $('#commentField_' + id).val();
+			$('#commentField_' + id).val("");
+
+			console.log("Posting " + text + " to " + posturl);
+			if (text !== "") {
+				console.log("submitting comment " + text);
+	
+				var request = $.ajax({
+					url:  posturl,
+					data: JSON.stringify({ text: text }),
+					type: "POST",
+					contentType: "application/json",
+		     	});
+		     
+				request.done(function (response, textStatus, jqXHR) { 
+					console.log("Response " + response);
+					var date = new Date();
+					var post="<div class=\"comment\">";
+					post += "<div class=\"media\">";
+					post += "<a class='pull-left' href='#'>";
+  					post += "<div class='thumbnail'>";
+    				post += "<img class='avatar' src='@(user.get.avatarUrl.getOrElse(""))'>";
+    				post += "</div></a>";
+					post += "<div class='media-body'>";
+					post += "<div class=\"comment-header\">";
+					post += "<div class=\"comment-author\"><a href='#'>@user.get.fullName</a></div>";
+					@* TODO add dateformat plugin *@
+					post += "<div class=\"comment-date\">" + date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDay() + "</div>";
+					post += "<div style=\"clear: both;\"></div>";
+					post += "</div>";
+					post += "<div class=\"comment-body\">" + text + "</div>";
+					post += "<div class=\"comment-footer\"><a href=\"javascript:void(0)\" onclick=\"return showReplyComment('" + response + "');\">reply</a></div>";
+					post += "<div class=\"comment-reply\">";
+					post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">";
+					post += "</div>";
+					post += "</div>";
+					post += "</div>";
+					post += "</div>";
+					post += "</div>";
+					$("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");
+				});
+	
+				request.fail(function (jqXHR, textStatus, errorThrown){
+					console.error("The following error occured: " + textStatus, errorThrown);
+					alert("The comment was not posted due to : " + textStatus);
+				});
+			}
+			return false;
+		}
+	</script>
+	
+}
