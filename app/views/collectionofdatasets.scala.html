@@ -8,7 +8,7 @@
 	<div class="col-md-2">
 	
 	</div>
-	<div class="col-md-6">
+	<div class="col-md-12">
 				<dl class="dl-horizontal">
 					@if(!collection.author.isEmpty){
 						<dt>Author:</dt>
@@ -25,11 +25,19 @@
 		<table id='collectionDatasetsTable' class="table table-bordered table-hover">
 			<thead>
 				<tr>
-					<th style="width: 27%">Name</th>
-					<th style="width: 17%">Created</th>
-					<th style="width: 36%">Description</th>
-					<th style="width: 10%"></th>
-					<th style="width: 10%"></th>
+					@if(user.isDefined) {
+						<th style="width: 27%">Name</th>
+						<th style="width: 17%">Created</th>
+						<th style="width: 36%">Description</th>
+						<th style="width: 10%"></th>
+						<th style="width: 10%"></th>
+					}
+					@if(!user.isDefined) {
+						<th style="width: 27%">Name</th>
+						<th style="width: 17%">Created</th>
+						<th style="width: 36%">Description</th>
+						<th style="width: 20%"></th>
+					}
 				</tr>
 			</thead>
 			<tbody>
@@ -42,7 +50,7 @@
 							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
-						<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
+						<td class="requiresLogin"><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
 					</tr>
 				}
 			</tbody>
@@ -51,7 +59,7 @@
 			<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
   			<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
-		<button id="addDatasetBtn" class="btn btn-default" type="button">Add dataset</button>
+		<button id="addDatasetBtn" class="btn btn-default requiresLogin" type="button">Add dataset</button>
 		<button id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display:none;">Done</button>
 		<br />
 		<br />		
@@ -74,7 +82,18 @@
 		</ul>
 	</div>
 </div>
-<script language="javascript">	
+<script language="javascript">
+	@if(user.isDefined) {
+		@if(collection.author.isDefined){
+			@if(!(user.get.identityId.userId.equals(collection.author.get.identityId.userId))){
+				$(".requiresLogin").css("display","none");
+			}
+		}					
+	}
+	@if(!user.isDefined) {
+		$(".requiresLogin").css("display","none");
+	}
+
 	var queryIp = "@api.routes.Datasets.listOutsideCollection(collection.id)";
 	var collectionId = "@collection.id.stringify";
 </script>
