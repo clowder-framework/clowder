@@ -135,7 +135,7 @@ class Datasets @Inject()(
       notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
       responseClass = "None", httpMethod = "POST")
   def attachExistingFile(dsId: UUID, fileId: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.CreateDatasets)) {
+    authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(dsId)) {
 	request =>
      datasets.get(dsId) match {
       case Some(dataset) => {
@@ -184,7 +184,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Detach file from dataset",
       notes = "File is not deleted, only separated from the selected dataset. If the file is an XML metadata file, the metadata are removed from the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollections)) {
+  def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(datasetId)) {
     request =>
      datasets.get(datasetId) match{
       case Some(dataset) => {
@@ -256,7 +256,7 @@ class Datasets @Inject()(
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
-  def addMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata)) {
+  def addMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata), resourceId = Some(id)) {
     request =>
       Logger.debug(s"Adding metadata to dataset $id")
       datasets.addMetadata(id, Json.stringify(request.body))
@@ -267,7 +267,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Add user-generated metadata to dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata)) {
+  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata), resourceId = Some(id)) {
     request =>
       Logger.debug(s"Adding user metadata to dataset $id")
       datasets.addUserMetadata(id, Json.stringify(request.body))
@@ -345,7 +345,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove tag of dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeTag(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteTags)) {
+  def removeTag(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteTagsDatasets)) {
     implicit request =>
       Logger.debug("Removing tag " + request.body)
       request.body.\("tagId").asOpt[String].map {
@@ -363,7 +363,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Add tags to dataset",
       notes = "Requires that the request body contains a 'tags' field of List[String] type.",
       responseClass = "None", httpMethod = "POST")
-  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
+  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTagsDatasets)) {
     implicit request =>
       addTagsHelper(TagCheck_Dataset, id, request)
   }
@@ -375,7 +375,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove tags of dataset",
       notes = "Requires that the request body contains a 'tags' field of List[String] type.",
       responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsDatasets)) {
     implicit request =>
       removeTagsHelper(TagCheck_Dataset, id, request)
   }
@@ -544,7 +544,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove all tags of dataset",
       notes = "Forcefully remove all tags for this dataset.  It is mainly intended for testing.",
       responseClass = "None", httpMethod = "POST")
-  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsDatasets)) {
     implicit request =>
       Logger.info(s"Removing all tags for dataset with id: $id.")
       if (UUID.isValid(id.stringify)) {
@@ -729,7 +729,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Delete dataset",
       notes = "Cascading action (deletes all previews and metadata of the dataset and all files existing only in the deleted dataset).",
       responseClass = "None", httpMethod = "POST")
-  def deleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets)) {
+  def deleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets), resourceId = Some(id)) {
     request =>
       datasets.get(id) match {
         case Some(dataset) => {

@@ -27,7 +27,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollections)) { request =>
+                    authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
 
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
@@ -39,7 +39,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollections)) { request =>
+                    authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
 
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
@@ -51,7 +51,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "Does not delete the individual datasets in the collection.",
       responseClass = "None", httpMethod = "POST")
   def removeCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-                       authorization=WithPermission(Permission.DeleteCollections)) { request =>
+                       authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
     collections.delete(collectionId)
     Ok(toJson(Map("status" -> "success")))
   }

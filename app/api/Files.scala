@@ -204,7 +204,7 @@ class Files @Inject()(
       notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
       responseClass = "None", httpMethod = "POST")
   def addMetadata(id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
+    SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata), resourceId = Some(id)) {
       request =>
         Logger.debug(s"Adding metadata to file $id")
         val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
@@ -344,7 +344,7 @@ class Files @Inject()(
   @ApiOperation(value = "(Re)send preprocessing job for file",
       notes = "Force Medici to (re)send preprocessing job for selected file, processing the file as a file of the selected MIME type. Returns file id on success. In the requested file type, replace / with __ (two underscores).",
       responseClass = "None", httpMethod = "POST")
-  def sendJob(file_id: UUID, fileType: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+  def sendJob(file_id: UUID, fileType: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles), Some(file_id)) {
     implicit request =>
       files.get(file_id) match {
         case Some(theFile) => {
@@ -393,7 +393,7 @@ class Files @Inject()(
   @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles), Some(dataset_id)) { implicit request =>
     request.user match {
      case Some(user) => {
       datasets.get(dataset_id) match {
@@ -605,7 +605,7 @@ class Files @Inject()(
   /**
    * Upload metadata for preview and attach it to a file.
    */
-  def uploadPreview(file_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def uploadPreview(file_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles), Some(file_id)) {
     implicit request =>
       request.body.file("File").map {
         f =>
@@ -624,7 +624,7 @@ class Files @Inject()(
   @ApiOperation(value = "Attach existing preview to file",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def attachPreview(file_id: UUID, preview_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+  def attachPreview(file_id: UUID, preview_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles), resourceId = Some(file_id)) {
     request =>
     // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
@@ -731,7 +731,7 @@ class Files @Inject()(
     @ApiOperation(value = "Add user-generated metadata to file",
 	      notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
 	      responseClass = "None", httpMethod = "POST")
-    def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
+    def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata), resourceId = Some(id)) {
         implicit request =>
           Logger.debug("Adding user metadata to file " + id)
           val theJSON = Json.stringify(request.body)
@@ -802,7 +802,7 @@ class Files @Inject()(
   /**
    * Add 3D geometry file to file.
    */
-  def attachGeometry(file_id: UUID, geometry_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+  def attachGeometry(file_id: UUID, geometry_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles), resourceId = Some(file_id)) {
     request =>
       request.body match {
         case JsObject(fields) => {
@@ -826,7 +826,7 @@ class Files @Inject()(
   /**
    * Add 3D texture to file.
    */
-  def attachTexture(file_id: UUID, texture_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+  def attachTexture(file_id: UUID, texture_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles), resourceId = Some(file_id)) {
     request =>
       request.body match {
         case JsObject(fields) => {
@@ -851,7 +851,7 @@ class Files @Inject()(
    * Add thumbnail to file.
    */
   @ApiOperation(value = "Add thumbnail to file", notes = "Attaches an already-existing thumbnail to a file.", responseClass = "None", httpMethod = "POST")
-  def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+  def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles), resourceId = Some(file_id)) {
     implicit request =>
       files.get(file_id) match {
         case Some(file) => {
@@ -1072,7 +1072,7 @@ class Files @Inject()(
   @ApiOperation(value = "Adds tags to a file",
       notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.  The tags are expected as a list of strings: List[String].  An example is:<br>    curl -H 'Content-Type: application/json' -d '{\"tags\":[\"namo\", \"amitabha\"], \"extractor_id\": \"curl\"}' \"http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey\"",
       responseClass = "None", httpMethod = "POST")
-  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
+  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTagsFiles)) {
     implicit request =>
       addTagsHelper(TagCheck_File, id, request)
   }
@@ -1087,7 +1087,7 @@ class Files @Inject()(
   @ApiOperation(value = "Removes tags of a file",
       notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.  The tags are expected as a list of strings: List[String].",
       responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsFiles)) {
     implicit request =>
       removeTagsHelper(TagCheck_File, id, request)
   }
@@ -1100,7 +1100,7 @@ class Files @Inject()(
   @ApiOperation(value = "Removes all tags of a file",
       notes = "This is a big hammer -- it does not check the userId or extractor_id and forcefully remove all tags for this file.  It is mainly intended for testing.",
       responseClass = "None", httpMethod = "POST")
-  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsFiles)) {
     implicit request =>
       Logger.info("Removing all tags for file with id: " + id)
       if (UUID.isValid(id.stringify)) {
@@ -1273,7 +1273,7 @@ class Files @Inject()(
 	  @ApiOperation(value = "Delete file",
 		      notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
 		      responseClass = "None", httpMethod = "POST")
-	  def removeFile(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteFiles)) { request =>
+	  def removeFile(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteFiles), resourceId = Some(id)) { request =>
 	    files.get(id)  match {
 	      case Some(file) => {
 	        files.removeFile(id)
