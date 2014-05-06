@@ -667,7 +667,7 @@ class Files @Inject() (
     }
   }
 
-  def uploaddnd(dataset_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles), resourceId = Some(dataset_id)) { implicit request =>
+  def uploaddnd(dataset_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(dataset_id)) { implicit request =>
     request.user match {
       case Some(identity) => {
         datasets.get(dataset_id) match {

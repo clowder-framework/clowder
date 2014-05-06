@@ -393,7 +393,7 @@ class Files @Inject()(
   @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles), Some(dataset_id)) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets), Some(dataset_id)) { implicit request =>
     request.user match {
      case Some(user) => {
       datasets.get(dataset_id) match {
