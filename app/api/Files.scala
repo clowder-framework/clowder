@@ -2008,7 +2008,8 @@ def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorizat
                   
                   val jtags = extractTags(file)
                   val jpreviews = extractPreviews(id)
-                  val vdescriptors = extractVersusDescriptors(id)
+                 // val vdescriptors = extractVersusDescriptors(id)
+                  val vdescriptors = ""
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
                   
@@ -2052,7 +2053,8 @@ def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorizat
           val jtags = extractTags(file)
           val jpreviews = extractPreviews(id)
           // val jpreviews = ""
-          val vdescriptors=extractVersusDescriptors(id)
+          //val vdescriptors=extractVersusDescriptors(id)
+          val vdescriptors=""
           Logger.debug("jtags: " + jtags.toString)
           Logger.debug("jpreviews: " + jpreviews.toString)
           Ok(Json.obj("file_id" -> id.toString, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors"->vdescriptors))
