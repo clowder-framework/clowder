@@ -748,7 +748,8 @@ class Files @Inject()(
       }
 
   def jsonFile(file: File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
+    		"authorId" -> file.author.identityId.userId))
   }
 
   def jsonFileWithThumbnail(file: File): JsValue = {
@@ -756,7 +757,8 @@ class Files @Inject()(
     if (!file.thumbnail_id.isEmpty)
       fileThumbnail = file.thumbnail_id.toString().substring(5, file.thumbnail_id.toString().length - 1)
 
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "dateCreated" -> file.uploadDate.toString(), "thumbnail" -> fileThumbnail))
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "dateCreated" -> file.uploadDate.toString(), "thumbnail" -> fileThumbnail,
+    		"authorId" -> file.author.identityId.userId))
   }
 
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {

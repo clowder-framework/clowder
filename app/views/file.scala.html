@@ -492,7 +492,7 @@
 							data-parent="#accordion3" href="#collapseThree">Community-generated metadata</a>
 					</div>
 					<div id="collapseThree" class="accordion-body in collapse">
-				      	@fileusermetadata(id, usrmd, rdfExported)
+				      	@fileusermetadata(file, usrmd, rdfExported)
 					</div>
 				</div>
 			</div>
@@ -507,13 +507,24 @@
 				      	<table id="datasTable">
 						@fileDataset.map { dataset =>
 							<tr><td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-							<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a></td></tr>
+							<td class="requiresLogin requiresLoginCommunity">
+							@if(user.isDefined) {
+									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+										<a href="#" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a>
+									}													
+							}								
+							</td>
+							</tr>
 						}
 						</table>
-						<div class="ui-widget requiresLogin" id="datasetsUi">
+						<div class="ui-widget requiresLogin requiresLoginCommunity" id="datasetsUi">
 							<select id="datasetAddSelect" data-inputid="selectingInputDatasets" data-errorid="doesNotExistErrorDatasets">
 							@datasetsOutside.map { dataset =>
-								<option value="@(dataset.id.toString)">@(dataset.name)</option>
+								@if(user.isDefined) {
+									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+										<option value="@(dataset.id.toString)">@(dataset.name)</option>
+									}													
+								}
 							}					  
 							</select>
 							<button class="btn combobutton" id="addDatasBtn" style="vertical-align:top;">Add to dataset</button>
@@ -619,4 +630,16 @@
 		$("#accordionsDiv").offset({ top: newOffsetTop, left: newOffsetLeft })   ;	
 	
 	</script>
+		@if(!user.isDefined) {
+     	   <script language="javascript">
+     			$(".requiresLogin").css("display","none");
+       	   </script>
+     	 }
+     	 @if(user.isDefined) {
+     	 	@if(!user.get.identityId.userId.equals(file.author.identityId.userId)){
+      	   		<script language="javascript">
+	     			$(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
+	       		</script>
+       }
+     	 }
 }
