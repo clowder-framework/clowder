@@ -739,7 +739,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def removeCollection(datasetId: UUID, collectionId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("collections" -> collectionId), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("collections" -> collectionId.stringify), false, false, WriteConcern.Safe)
   }
 
   def removeFile(datasetId: UUID, fileId: UUID) {
