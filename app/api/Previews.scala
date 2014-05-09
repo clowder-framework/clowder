@@ -118,33 +118,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    *
    */
 
-/*  def uploadMetadata(id: String) = 
-    SecuredAction(authorization=WithPermission(Permission.CreateFiles)) { request =>
-      Logger.debug(request.body.toString)
-      request.body match {
-        case JsObject(fields) => {
-          Logger.debug(fields.toString)
-	      PreviewDAO.findOneById(new ObjectId(id)) match {
-	        case Some(preview) =>
-	            val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-	          
-                 
-	            val result = PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id)),	              
-	                $set("metadata" -> metadata,   "section_id"->new ObjectId(metadata("section_id").asInstanceOf[String]), 
-	                    //this line adds file_id as string to Preview
-	                    //add file_id as object id
-	                		//"file_id"->metadata("file_id").asInstanceOf[String]),
-	          
-	                       "file_id"-> new ObjectId(metadata("file_id").asInstanceOf[String])),
-	                     
-	                			false, false, WriteConcern.SAFE)
-	            Logger.debug("Updating previews.files " + id + " with " + metadata)
-	            Ok(toJson(Map("status"->"success")))
-	        case None => BadRequest(toJson("Preview not found"))
-	      }
-	      * 
-	      */
-
   def uploadMetadata(id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
       request =>
