@@ -13,30 +13,15 @@ import play.api.libs.json.JsResult
 
 object Index {
 
-/*import play.api.libs.json._
-import play.api.libs.functional.syntax._
-
-implicit val personReads: Reads[Person] = (
-  (__ \ "name").read[String]
-    and (__ \ "age").read[Int]
-  )(Person)
-
-val futureResult: Future[JsResult[Person]] = WS.url(url).get().map {
-  response => (response.json \ "person").validate[Person]
-}*/
-
-
-  //case class IndexList( val indexID :String, val MIMEtype :String)
   case class Index( 
       val id :String, 
       val MIMEtype :String, 
       val extractorID:String, 
       val measureID:String, 
-      val indexerType:String)
-  
+      val indexerType:String)  
   
    implicit object Index extends Reads[Index] {
-    def reads(json: JsValue) ={
+	def reads(json: JsValue) ={
      
       val maybeID:String = (json \"indexID").as[String]
       val maybeType:String=(json\"MIMEtype").as[String]
@@ -47,5 +32,5 @@ val futureResult: Future[JsResult[Person]] = WS.url(url).get().map {
          
     }
 
-    }
+   }
 }
