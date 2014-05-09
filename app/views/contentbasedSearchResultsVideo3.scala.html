@@ -2,32 +2,16 @@
 
 @import helper._
 @import collection.JavaConverters._
+
 @import models.Index.Index
-
 @import models.PreviewFilesSearchResult
-
 @import models.SearchResultFile
-
 @import models.SearchResultPreview
-
-
-
-
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-@main("Search Results") {
+@main("Search Results") {	
 	
-	
- @*********************
-* This is a comment *
-*********************@
-
-@*************************************
- * Home page.                        *
- *                                   *
- * @param msg The message to display *
- *************************************@
 	<div class="page-header">
 		<h1>Search Results For <medium>@fileName</medium></h1>
 	</div>
@@ -80,28 +64,13 @@
 					    	}  						  	 
 					    }	 
 					    
-					    <br>
-					    	
-					    	<a href=@routes.Search.findSimilarFile(oneResult.searchResultFile.id)>Find Similar</a>
-					 
+					    <br>					    	
+					    	<a href=@routes.Search.findSimilarFile(oneResult.searchResultFile.id)>Find Similar</a>					 
 					     	<br>
 					     	<a href="@(routes.Files.file(oneResult.searchResultFile.id))">View File @oneResult.searchResultFile.title</a>
 					     	
-						}	@*end of is FIle*@		
+						}	@*end of is File*@		
 						
-
-						
-@***** 
-	/*id: String, 
-    url: String,
-    distance: Double,
-    previewName: String,
-    datasetIdList: List[String]= List.empty,
-    fileId: String="",
-    fileTitle:String="",
-    shotStartTime:String="",
-    shotEndTime: String=""     
- */*****@
     
    					 @*** result is Preview ***@
 						@if(oneResult.fileOrPreview.equalsIgnoreCase("preview")){					
@@ -135,9 +104,7 @@
 					    }					    
 					    
 						}@* end of If Preview *@
-						
-					     
-					     
+											     
 
 					  </div>
 					</div>
