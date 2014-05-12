@@ -1,0 +1,26 @@
+# add some explicit text file types
+*.scala       text diff=scala
+*.js          text diff=javascript
+*.html        text diff=html
+*.xml         text diff=xml
+*.less        text diff=less
+*.json        text diff=json
+*.css         text diff=css
+*.java        text diff=java
+*.txt         text diff=txt
+*.conf        text diff=property
+*.properties  text diff=property
+*.plugins     text diff=txt
+*.bat         text diff=bat eol=crlf
+*.sh          text diff=bat eol=lf
+routes        text diff=txt
+
+
+# add some explicit binary file types
+*.png         binary
+*.gif         binary
+*.jpg         binary
+*.jar         binary
+*.dll         binary
+*.so          binary
+
