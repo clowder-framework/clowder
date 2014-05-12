@@ -159,6 +159,7 @@ GET     /api/queries/:id				                        @api.Files.downloadquery(id:
 # DANGER
 GET     /api/delete-data                    					api.Admin.deleteAllData
 
+POST    /api/collections                                        @api.Collections.createCollection()
 GET		/api/collections/list														@api.Collections.listCollections
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)

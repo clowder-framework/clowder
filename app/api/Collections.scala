@@ -19,6 +19,31 @@ import com.wordnik.swagger.annotations.ApiOperation
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService) extends ApiController {
 
+  @ApiOperation(value = "Create a collection",
+      notes = "",
+      responseClass = "None", httpMethod = "POST")
+  def createCollection() = SecuredAction(authorization=WithPermission(Permission.CreateCollections)) {
+    request =>
+      Logger.debug("Creating new collection")
+      (request.body \ "name").asOpt[String].map {
+        name =>
+          (request.body \ "description").asOpt[String].map {
+            description =>
+              files.get(UUID(file_id)) match {
+                case Some(file) =>
+                  val c = Collection(name = name, description = description, created = new Date())
+                  collections.insert(c) match {
+                    case Some(id) => {
+                     Ok(toJson(Map("id" -> id)))
+                    }
+                    case None => Ok(toJson(Map("status" -> "error")))
+                  }
+                case None => BadRequest(toJson("Bad file_id = " + file_id))
+              }
+          }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
+      }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
+  }
+
   @ApiOperation(value = "Add dataset to collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
