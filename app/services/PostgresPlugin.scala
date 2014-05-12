@@ -103,6 +103,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
       query += "ST_MakePoint(?, ?)])), geog)"
     }
+    query += " ORDER BY name"
     query += ") As t;"
     val st = conn.prepareStatement(query)
     i = 0
