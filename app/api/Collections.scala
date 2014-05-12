@@ -1,6 +1,7 @@
 package api
 
 import models.{UUID, Collection}
+import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
@@ -9,6 +10,7 @@ import services.CollectionService
 import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
+import java.util.Date
 
 /**
  * Manipulate collections.
@@ -29,16 +31,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         name =>
           (request.body \ "description").asOpt[String].map {
             description =>
-              files.get(UUID(file_id)) match {
-                case Some(file) =>
-                  val c = Collection(name = name, description = description, created = new Date())
-                  collections.insert(c) match {
-                    case Some(id) => {
-                     Ok(toJson(Map("id" -> id)))
-                    }
-                    case None => Ok(toJson(Map("status" -> "error")))
-                  }
-                case None => BadRequest(toJson("Bad file_id = " + file_id))
+              val c = Collection(name = name, description = description, created = new Date())
+              collections.insert(c) match {
+                case Some(id) => {
+                 Ok(toJson(Map("id" -> id)))
+                }
+                case None => Ok(toJson(Map("status" -> "error")))
               }
           }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
