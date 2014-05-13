@@ -39,14 +39,14 @@
 						@if(oneResult.fileOrPreview.equalsIgnoreCase("file")){
 							
 							<a class="pull-left" href=@oneResult.searchResultFile.url>							
-							@if(!oneResult.searchResultFile.thumbnail_id_str.isEmpty){
+							@if(!oneResult.searchResultFile.thumbnailIdString.isEmpty){
 								<img class='mmd-img media-object' 
-									src='@(routes.Files.thumbnail(UUID(oneResult.searchResultFile.thumbnail_id_str)))'
+									src='@(routes.Files.thumbnail(UUID(oneResult.searchResultFile.thumbnailIdString)))'
 									alt='Thumbnail of @(oneResult.searchResultFile.title)' 
 									title='Distance @oneResult.searchResultFile.distance'>
 								</img>
 							}
-							@if(oneResult.searchResultFile.thumbnail_id_str.isEmpty){No thumbnail available}						
+							@if(oneResult.searchResultFile.thumbnailIdString.isEmpty){No thumbnail available}						
 							<br>
 							
 							</a>
@@ -95,7 +95,7 @@
 					  	@oneResult.searchResultPreview.datasetIdList.map{id=>					   
 					     		<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
 					     		<br>
-					     	<a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileId)))">
+					     	<a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
 					     		View File @oneResult.searchResultPreview.fileTitle</a>
 					     		<br>
 					     		Shot start time: @oneResult.searchResultPreview.shotStartTime
