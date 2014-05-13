@@ -1,8 +1,6 @@
 /*
- * Exact copy of existing IndexList class, this name of the class
- *is more appropriate since it holds information about just one index, not a list.
- * 
- * TODO: Check if IndexList is used anywhere in the project, delete it.
+ * Used to pass information about an index between Medici and Versus.
+ * Used by VersusPlugin.
  */
 
 package models
