@@ -19,10 +19,8 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListMap
 import scala.collection.mutable.ListBuffer
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.concurrent.Promise
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.ExecutionContext
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced
