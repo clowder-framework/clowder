@@ -11,16 +11,16 @@ import play.api.libs.json.Reads
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsResult
 
-object Index {
+object VersusIndex {
 
-  case class Index( 
+  case class VersusIndex( 
       val id :String, 
       val MIMEtype :String, 
       val extractorID:String, 
       val measureID:String, 
       val indexerType:String)  
   
-   implicit object Index extends Reads[Index] {
+   implicit object Index extends Reads[VersusIndex] {
 	def reads(json: JsValue) ={
      
       val maybeID:String = (json \"indexID").as[String]
@@ -28,7 +28,7 @@ object Index {
       val exType:String=(json\"Extractor").as[String]
       val meType:String=(json\"Measure").as[String]
       val indxrType:String=(json\"Indexer").as[String]
-      JsSuccess(Index(maybeID,maybeType,exType,meType,indxrType) )
+      JsSuccess(VersusIndex(maybeID,maybeType,exType,meType,indxrType) )
          
     }
 

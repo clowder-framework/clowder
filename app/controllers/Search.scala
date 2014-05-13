@@ -216,20 +216,17 @@ class Search @Inject() (
    * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is NOT id db, just uploaded by user)
    **/
   def findSimilar(fileID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
-   	Async{ 
+   	Logger.debug("Finding similar files")
+    Async{ 
    		//query file will be stored in MultimediaQueryService
    		//in controllers/Files -> uploadSelectQuery
    		var contentTypeStr="";
    		queries.get(fileID) match {
-   			//queries.get(UUID("535ff22ee4b09350e18e7a94")) match {
    			case Some((inputStream, filename, contentType, length)) => {                
    				contentTypeStr=contentType;
-   				Logger.debug(" 232 file.contentType = " + contentType)
-    
    				current.plugin[VersusPlugin] match {    		
    					case Some(plugin)=>{          	
    						val futureFutureListResults = for {    	  
-   							//indexList<-plugin.getIndexesAsFutureList()
    							indexList<-plugin.getIndexesForContentTypeAsFutureList(contentTypeStr)
    						} yield { 	      				
    							val resultListOfFutures=indexList.map{
@@ -257,7 +254,7 @@ class Search @Inject() (
    			}//case Some((inputStream...
    			
    			case None=>{
-   				Logger.debug("235 no file found")
+   				Logger.debug("File with id " +fileID +" not found")
    				Future(Ok("File with id " +fileID +" not found"))
    			}
    		}//end of queries.get(imageID) match 
@@ -273,10 +270,11 @@ class Search @Inject() (
     //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
   	//also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
   	//
+    Logger.debug("Finding similar file for " + inputFileId)
+    
   Async{       	   
   		//file will be stored in FileService
    	   	var contentTypeStr="";
-   	   	//files.getBytes(UUID("535ff22ee4b09350e18e7a94")) match {
    	   	files.getBytes(inputFileId) match {
    	   		case Some((inputStream, filename, contentType, length)) => {  
    	   			contentTypeStr = contentType
@@ -310,7 +308,7 @@ class Search @Inject() (
    			}//case Some((inputStream...
    			
    			case None=>{
-   				Logger.debug("235 no file found")
+   				Logger.debug("Could not find similar for file id " +inputFileId )
    				Future(Ok("Could not find similar for file id " +inputFileId ))
    			}
    		}//end of files.getBytes(inputFileId) match 
