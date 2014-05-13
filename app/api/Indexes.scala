@@ -36,7 +36,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
                 // TODO replace null with None
 	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, null, ""))}
 	            var fileType = p.contentType
-	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id.stringify,fileType) }
+	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id,fileType) }
 	            Ok(toJson("success"))
       	      case None => BadRequest(toJson("Missing parameter [preview_id]"))
             }
