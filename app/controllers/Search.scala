@@ -175,11 +175,11 @@ class Search @Inject() (
     Logger.debug("Searching for" + query)
     Ok("")
   }
-
   
 
   /*
-   * GET the query image from the URL and compare within the database and show the result   */
+   * GET the query file from a URL and compare within the database and show the result   
+   * */
   def searchbyURL(queryURL: String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
    	Async{         
    	  current.plugin[VersusPlugin] match {    		
@@ -210,98 +210,113 @@ class Search @Inject() (
         }
       } //match            
     } //Async
-
   }
 
-  /*
-   * 
-   * Finds similar images/objects in Multiple index for a given query image/object
-   * 
-   * */
-  def findSimilar(imageID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
-   Async{      
-    current.plugin[VersusPlugin] match {    		
-    	case Some(plugin)=>{          	
-    		val futureFutureListResults = for {    	  
-    			indexList<-plugin.getIndexesAsFutureList()
-    		} yield { 	      				
-    			val resultListOfFutures=indexList.map{
-    				index=>    
-    				  plugin.queryIndexForImage(imageID.stringify, index.id).map{
-    				    queryResult=>
-    				      (index, queryResult)
-    				  }    								  
-    			}  	
-    			//convert list of futures into a Future[list]
-    			scala.concurrent.Future.sequence(resultListOfFutures)    			
-           	}//End yield- outer for    		
+  /** 
+   * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is NOT id db, just uploaded by user)
+   **/
+  def findSimilar(fileID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
+   	Async{ 
+   		//query file will be stored in MultimediaQueryService
+   		//in controllers/Files -> uploadSelectQuery
+   		var contentTypeStr="";
+   		queries.get(fileID) match {
+   			//queries.get(UUID("535ff22ee4b09350e18e7a94")) match {
+   			case Some((inputStream, filename, contentType, length)) => {                
+   				contentTypeStr=contentType;
+   				Logger.debug(" 232 file.contentType = " + contentType)
+    
+   				current.plugin[VersusPlugin] match {    		
+   					case Some(plugin)=>{          	
+   						val futureFutureListResults = for {    	  
+   							//indexList<-plugin.getIndexesAsFutureList()
+   							indexList<-plugin.getIndexesForContentTypeAsFutureList(contentTypeStr)
+   						} yield { 	      				
+   							val resultListOfFutures=indexList.map{
+   								index=>    
+   									plugin.queryIndexForNewFile(fileID, index.id).map{
+   										queryResult=>(index, queryResult)
+   									}    								  
+   							}  	
+   							//convert list of futures into a Future[list]
+   							scala.concurrent.Future.sequence(resultListOfFutures)    			
+   						}//End yield    		
     		
-    		for{
-    			futureListResults<-futureFutureListResults
-    			listOfResults<-futureListResults      		
-    		} yield {    			
-    			queries.getFile(imageID) match {
-            		case Some(file)=>{              
-            		  Ok(views.html.contentbasedSearchResultsVideo3(file.filename, listOfResults))              
-            		}
-            		case None=>{
-            		  Ok("Image with id " +imageID +" not found")
-            		}
-    			}
-    		}            
-        } //case some plugin   
-    	
-        case None => {
-          Future(Ok("No Versus Service"))
-        }
-      } //match            
+   						for{
+   							futureListResults<-futureFutureListResults
+   							listOfResults<-futureListResults      		
+   						} yield {  
+   							Ok(views.html.contentbasedSearchResultsVideo3(filename, listOfResults))             		
+   						}    		            
+   					} //end of case Some(plugin)   
+
+   					case None => {
+   						Future(Ok("No Versus Service"))
+   					}
+   				} //current.plugin[VersusPlugin] match  
+   			}//case Some((inputStream...
+   			
+   			case None=>{
+   				Logger.debug("235 no file found")
+   				Future(Ok("File with id " +fileID +" not found"))
+   			}
+   		}//end of queries.get(imageID) match 
     } //Async
   }
   
-  //
-  //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
-  // also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
-  //
-  def findSimilarFile(imageID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
-   	 Async{     
-     
-    current.plugin[VersusPlugin] match {    		
-    	case Some(plugin)=>{      	  
-    		val futureFutureListResults = for {
-    			indexList<-plugin.getIndexesAsFutureList()
-    		} yield { 	      				
-    			val resultListOfFutures=indexList.map{
-    				index=>    
-    				  plugin.queryIndexForFile(imageID.stringify, index.id).map{
-    				    queryResult=>
-    				      (index, queryResult)
-    				  }    								  
-    			}  	
-    			//convert list of futures into a Future[list]
-    			scala.concurrent.Future.sequence(resultListOfFutures)
-           	}//End yield- outer for    	
+  /**      
+  * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is already in db)
+  *  
+  **/
+  def findSimilarFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  	//
+    //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
+  	//also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
+  	//
+  Async{       	   
+  		//file will be stored in FileService
+   	   	var contentTypeStr="";
+   	   	//files.getBytes(UUID("535ff22ee4b09350e18e7a94")) match {
+   	   	files.getBytes(inputFileId) match {
+   	   		case Some((inputStream, filename, contentType, length)) => {  
+   	   			contentTypeStr = contentType
+   	   			current.plugin[VersusPlugin] match {    		
+   	   				case Some(plugin)=>{      	  
+   	   					val futureFutureListResults = for {
+   	   						indexList<-plugin.getIndexesForContentTypeAsFutureList(contentTypeStr)
+   	   					} yield { 	      				
+   	   						val resultListOfFutures=indexList.map{
+   	   							index=>    
+   	   								plugin.queryIndexForExistingFile(inputFileId, index.id).map{
+   	   									queryResult=>  (index, queryResult)
+   	   								}    								  
+   	   						}  	
+   	   						//convert list of futures into a Future[list]
+   	   						scala.concurrent.Future.sequence(resultListOfFutures)
+   	   					}//End yield- outer for    	
     		
-    		for{
-    			futureListResults<-futureFutureListResults
-    			listOfResults<-futureListResults      		
-    		} yield {     		  
-    			files.get(imageID) match {
-            		case Some(file)=>{              
-            		  Ok(views.html.contentbasedSearchResultsVideo3(file.filename, listOfResults))              
-            		}
-            		case None=>{
-            			Ok(imageID +" not found")
-            		}
-    			}
-    		}              
-        } //case some plugin                    
+   	   					for{
+   	   						futureListResults<-futureFutureListResults
+   	   						listOfResults<-futureListResults      		
+   	   					} yield {     			             
+   	   						Ok(views.html.contentbasedSearchResultsVideo3(filename, listOfResults))          
+   	   					}    		             
+   	   				} //end of case Some(plugin)                   
 
-        case None => {
-          Future(Ok("No Versus Service"))
-        }
-      } //match            
+   	   				case None => {
+   	   					Future(Ok("No Versus Service"))
+   	   				}
+   	   			} //current.plugin[VersusPlugin] match  
+   			}//case Some((inputStream...
+   			
+   			case None=>{
+   				Logger.debug("235 no file found")
+   				Future(Ok("Could not find similar for file id " +inputFileId ))
+   			}
+   		}//end of files.getBytes(inputFileId) match 
     } //Async
   }
+     
 
 //  def Filterby(id: String) = TODO
 

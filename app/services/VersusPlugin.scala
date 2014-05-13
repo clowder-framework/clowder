@@ -44,13 +44,12 @@ import scala.collection.mutable.ListBuffer
  **/
 class VersusPlugin(application:Application) extends Plugin{
   
-  val tempFiles: TempFileService =  DI.injector.getInstance(classOf[TempFileService])
   val files: FileService =  DI.injector.getInstance(classOf[FileService])
   val previews: PreviewService =  DI.injector.getInstance(classOf[PreviewService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
-  //val queries: MultimediaQueryService = DI.injector.getInstance(classOf[MultimediaQueryService])
-  
+  val queries: MultimediaQueryService = DI.injector.getInstance(classOf[MultimediaQueryService])
+
   override def onStart() {
     Logger.debug("Starting Versus Plugin")
   }
@@ -277,23 +276,23 @@ class VersusPlugin(application:Application) extends Plugin{
    * Sends a request to Versus RestPoint to index a still image file
    * 
    */
-  def  indexFile  (id: String, fileType: String) {   
+  def  indexFile  (fileId: UUID, fileType: String) {   
     //called from /app/controllers/Files.scala->upload()
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId = configuration.getString("versus.index").getOrElse("")
 
-    val urlf = client + "/api/files/" + id + "?key=" + configuration.getString("commKey").get    
-    index(id, fileType, urlf)
+    val fileURL = client + "/api/files/" + fileId + "?key=" + configuration.getString("commKey").get    
+    index(fileURL, fileType)
 
   }
   /*
-   * Helper method - handles the actual call to the Versus Restpoint to index a file (image or video preview)
+   * Helper method - handles the actual call to the Versus Restpoint to index a file (document or image or video preview)
    * 
    */
-  def index(id: String, fileType: String, urlf:String) {
+  def index(fileURL:String, fileType: String) {
     
-	Logger.debug("Top of index , id = " + id + ", fileType = " +fileType )
+	Logger.debug("Top of index , fileURL = " + fileURL + ", fileType = " +fileType )
     val configuration = play.api.Play.configuration   
     val indexId = configuration.getString("versus.index").getOrElse("")    
     val host = configuration.getString("versus.host").getOrElse("")
@@ -314,7 +313,7 @@ class VersusPlugin(application:Application) extends Plugin{
     					Logger.debug("268 for index.id = " + index.id + " calling add to index")
     					indexurl = host + "/indexes/" + index.id + "/add"
 
-    					WS.url(indexurl).post(Map("infile" -> Seq(urlf))).map {
+    					WS.url(indexurl).post(Map("infile" -> Seq(fileURL))).map {
     						res =>
     						//Logger.debug("response from Adding file to Index " + index.id + "= " + res.body)
     					} //WS map end
@@ -411,20 +410,17 @@ class VersusPlugin(application:Application) extends Plugin{
   /*
    * Sends a request to Versus to index a video preview file (first frame of each shot of a video)
    */
-  def indexPreview(id: String, fileType: String) {
+  def indexPreview(previewId: UUID, fileType: String) {
 	  //called from /app/api/Indexes.scala->index()
 	  //which is called from cinemetrics extractor ->uploadShot
-	  Logger.debug("Top of index preview, id = " + id + ", fileType = " +fileType )
+	  Logger.debug("Top of index preview, id = " + previewId + ", fileType = " +fileType )
 	  val configuration = play.api.Play.configuration
 	  val client = configuration.getString("versus.client").getOrElse("")
 	  val indexId = configuration.getString("versus.index").getOrElse("")
-	  val urlf = client + "/api/previews/" + id + "?key=" + configuration.getString("commKey").get    
-	  index(id, fileType, urlf)    
+	  val prevURL = client + "/api/previews/" + previewId + "?key=" + configuration.getString("commKey").get    
+	  index(prevURL, fileType)    
   }
-  
-  
-  
-  
+    
   
   /*
    * Sends a request to Versus to build an index based on id
@@ -444,8 +440,9 @@ class VersusPlugin(application:Application) extends Plugin{
     buildResponse
   }  
   
-  
-  def queryIndexForURL(imageURL: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
+     
+   
+  def queryIndexForURL(fileURL: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
 		  Logger.debug("414 top of queryIndexForURL")
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
@@ -453,109 +450,69 @@ class VersusPlugin(application:Application) extends Plugin{
 
     var queryurl = host + "/indexes/" + indexId + "/query"
     //TODO  where does the url get uploaded?
-     queryIndex(imageURL, indexId)
+     queryIndex(queryurl, indexId)
   }
   
-  
-  def queryIndexForFile(inputFileId: UUID, indexId: String): Future[ List[PreviewFilesSearchResult]] = {
-    //called when multimedia search -> find similar is clicked
-    
-    		  Logger.debug("427 -queryIndexForFile" )
-
+  /*
+   * Searches for entries similar to the input file, which is already in the db.
+   */
+  	def queryIndexForExistingFile(inputFileId: UUID, indexId: String): Future[ List[PreviewFilesSearchResult]] = {
+		  //called when multimedia search -> find similar is clicked    
+		  Logger.debug("463 -queryIndexForExistingFile" )   		  
     		  
-    		  
-    val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")    
-    val imageFileURL = client + "/api/queries/" + inputFileId.stringify + "?key=" + configuration.getString("commKey").get
-    //
-    //imageFileURL = http://localhost:9000/api/queries/52f3da24e4b0f9ce279eb9d6?key=r1ek3rs
-    // calls @api.Files.downloadquery(id)
-    //      
-    val host = configuration.getString("versus.host").getOrElse("")
-    var queryIndexUrl = host + "/indexes/" + indexId + "/query"   
-    //
-    //queryIndexUrl = http://localhost:8080/api/v1/indexes/b9a4b265-f517-423a-bcc2-27e23a8eab13/query
-    //    
-    val queryStr = client + "/api/files/" + inputFileId.stringify + "?key=" + configuration.getString("commKey").get
-    
-    ////////////////////////
-    
-    //FileService will have the file
-    files.get(inputFileId) match {
-              case Some(file) => {     
-                Logger.debug(" 494 file.contentType = " + file.contentType)
-              }
-              case None=>{
-                Logger.debug("497 no file found")
-              }
-		  }
-     ///////////////////////////////////
-     queryIndex(queryStr, indexId) 
-   }
+		  val configuration = play.api.Play.configuration
+		  val client = configuration.getString("versus.client").getOrElse("")    
+		  val imageFileURL = client + "/api/queries/" + inputFileId + "?key=" + configuration.getString("commKey").get
+		  //
+		  //imageFileURL = http://localhost:9000/api/queries/52f3da24e4b0f9ce279eb9d6?key=r1ek3rs
+		  // calls @api.Files.downloadquery(id)
+		  //      
+		  val host = configuration.getString("versus.host").getOrElse("")
+		  var queryIndexUrl = host + "/indexes/" + indexId + "/query"   
+		  //
+		  //queryIndexUrl = http://localhost:8080/api/v1/indexes/b9a4b265-f517-423a-bcc2-27e23a8eab13/query
+		  //    
+		  val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
+		  
+		  queryIndex(queryStr, indexId) 
+   	}
   
   
    /*
- * sends a query to an index in Versus
- * input: 
- * 	imageId - id of the image file (on Medici) to query against an existing index(on Versus)
- * 	indexId - id of the indexer against which to query the image
- * 
- * returns: 
- * 	list of preview search results: search results will be sorted by proximity to the given image.
- * 
- * Note the the index might contain both "previews", i.e. video file previews(image files extracted 
- * from a video file) 
- * and "files", i.e. files that were uploaded as images originally
- * The list of results will contain both "previews" and "files" sorted by their proximity to the
- * given image. 
- */    
-  def queryIndexForImage(imageId: UUID, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
+   * Searches for entries similar to the new query file (NOT in the db, just uploaded by the user)
+   */
+  def queryIndexForNewFile(newFileId: UUID, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
   //def queryIndexForImage(imageId: String, indexId: String): Future[(String,  List[PreviewFilesSearchResult])] = {
-		  Logger.debug("462 -queryIndexForImage" )
+		  Logger.debug("487 -queryIndexForImage" )
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")    
-    val imageFileURL = client + "/api/queries/" + imageId + "?key=" + configuration.getString("commKey").get
+    val queryStr = client + "/api/queries/" + newFileId + "?key=" + configuration.getString("commKey").get
     //
     //imageFileURL = http://localhost:9000/api/queries/52f3da24e4b0f9ce279eb9d6?key=r1ek3rs
     //         
     val host = configuration.getString("versus.host").getOrElse("")
     var queryIndexUrl = host + "/indexes/" + indexId + "/query"
-    
-    ////////////////////////
-    
-    //file will be saved in TempFilesService
-    tempFiles.get(imageId) match {
-
-              case Some(file) => {                
-               
-                Logger.debug(" 494 file.contentType = " + file.contentType)
-              }
-              case None=>{
-                Logger.debug("497 no file found")
-              }
-		  }
-
         
-            		///////////////////////////////////
-    
-    queryIndex(imageFileURL, indexId)   
+    queryIndex(queryStr, indexId)   
   }
   
  
-  /*
- * Sends a query to an index in Versus
+  /**
+ * Sends a search query to an index in Versus
  * input: 
- * 		imageId - id of the image file to query against an indexer
- * 		indexId - id of the indexer against which to query the image
+ * 		inputFileURL - URL string of the file to query against an index
+ * 		indexId - id of the index to search within
  * 
  * returns: 
  * 		list of previews and files search results: search results will be sorted by proximity to the given image.
  * 
- * Note the the indexer might contain both "previews", i.e. video file previews(images extracted from a video file) 
- * and "files", i.e. files that were uploaded as images originally
- *  
+ * Note the the image index might contain both "previews", i.e. video file previews(images extracted from a video file) 
+ * and "files", i.e. in case of image searching - files that were "born as still images"
+ * 
  * The list of results will contain both "previews" and "files" sorted by their proximity to the
  * given image.
+ * 
+ * In case of non-image file types (e.g. pdf), only list of files will be returned.
  *  */     
    
   def queryIndex( inputFileURL: String, indexId: String ): Future[ List[PreviewFilesSearchResult]] = {  
@@ -586,21 +543,17 @@ class VersusPlugin(application:Application) extends Plugin{
     responseFuture.map {      
       response =>
     
-        Logger.debug("500 response.body = " + response.body)        
+        //Logger.debug("500 response.body = " + response.body)        
         val json: JsValue = Json.parse(response.body)
 
         val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
-        //        //case class Result( val docID :String, val proximity :Double)	
-        //result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
-        //or
-        //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs    
-        //        
+           
         var resultList = new ListBuffer[PreviewFilesSearchResult]
                             
         similarity_value.map {          
 
           result =>
-                  Logger.debug("452 result = " + result)
+                  Logger.debug("564 result = " + result)
             
             //result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
             //or
@@ -608,7 +561,6 @@ class VersusPlugin(application:Application) extends Plugin{
             //        
             //parse docID to get preivew id or file id - string between '/' and '?'
             val end = result.docID.lastIndexOf("?")
-
             val begin = result.docID.lastIndexOf("/");                       
             val result_id_str = result.docID.substring(begin + 1, end);
             val result_id = UUID(result_id_str);
@@ -618,13 +570,14 @@ class VersusPlugin(application:Application) extends Plugin{
             //
             val isFile = result.docID.contains("files")
             val isPreview = result.docID.contains("previews")
-                      
+             
+            //when searching for videos - might get previews search results
             if (isPreview){ 
                previews.getBlob(result_id) match{                            	
                 case Some (blob)=>{   
               	  val previewName =blob._2
               	   //use helper method to get the results
-              		getPrevSearchResult(result_id, previewName, result)    match {
+              		getPrevSearchResult(result_id, previewName, result)  match {
               	    	case Some (previewResult) => {
               	    		resultList += new PreviewFilesSearchResult("preview", null, previewResult) 
               	    	}
@@ -639,6 +592,7 @@ class VersusPlugin(application:Application) extends Plugin{
               }//previews.getBlob(result_id) match{ 
             }//end of if (isPreview){    
             
+            //in case of still images AND non-image file formats
             if (isFile) {
               files.get(result_id) match {               	  
                 case Some (file)=>{  
@@ -646,9 +600,7 @@ class VersusPlugin(application:Application) extends Plugin{
                	    val oneFileResult = getFileSeachResult(result_id, file, result)
                	    resultList += new PreviewFilesSearchResult("file", oneFileResult, null  )                  	                  	  
                	    }               	  
-                case None => {}            	
-
-              }
+                case None => {}                 }
           }//end of if (isFile)        
         } // End of similarity map      
         resultList.toList
@@ -673,7 +625,7 @@ class VersusPlugin(application:Application) extends Plugin{
                 
 		  file.thumbnail_id match {               
 		  	case Some(thumb_id) => {
-		  		Logger.debug("615 file.thumbnail_id = " + thumb_id)              		
+		  		//Logger.debug("615 file.thumbnail_id = " + thumb_id)              		
 		  		val oneFileResult = new SearchResultFile(result_id, result.docID, 
                 		proxvalue, file.filename, dataset_id_list.toList, thumb_id.stringify)
 		  		return oneFileResult
@@ -729,22 +681,12 @@ class VersusPlugin(application:Application) extends Plugin{
 			  				} 
 			  			}
 			  			case None =>{}
-			  		}// files.get(file_id) match
-                        
-			  	} //case Some(file_id)=>{
+			  		}// end of files.get(file_id) match                        
+			  	} //end of case Some(file_id)=>{
+			  	
 			  	case None=>{}
 			  } //== done: file for this preview
-			  
-    /*id: String, 
-    url: String,
-    distance: Double,
-    previewName: String,
-    datasetIdList: List[String]= List.empty,
-    fileId: String="",
-    fileTitle:String="",
-    shotStartTime:String="",
-    shotEndTime: String=""     */
-                    
+			                      
 			  var onePreviewResult = new SearchResultPreview(preview_id, result.docID, proxvalue, 
 					  prevName, datasetIdList.toList, fileIdString, fileName, startTime)                               
                   		
@@ -755,8 +697,7 @@ class VersusPlugin(application:Application) extends Plugin{
 		  //No preview found
 		  case None=>{return None}
                   
-		}//END OF : previews.get(preview_id) match
-        
+		}//END OF : previews.get(preview_id) match        
    } 
  
  
