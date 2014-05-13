@@ -243,7 +243,7 @@ class Files @Inject() (
 	          
 	         // Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
-	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id.toString,fileType) }
+	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
 	             //current.plugin[VersusPlugin].foreach{_.build()}
 	             
 	             //add file to RDF triple store if triple store is used
