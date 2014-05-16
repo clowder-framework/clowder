@@ -84,7 +84,7 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
 
     } catch {
       case ioe: java.io.IOException => Logger.error("Error connecting to rabbitmq broker " + ioe.toString)
-      case _: Throwable => Logger.error("Unknown error connecting to rabbitmq broker ")
+      case t: Throwable => Logger.error("Unknown error connecting to rabbitmq broker " + t.toString)
     }
   }
 

@@ -26,8 +26,8 @@ object ApplicationBuild extends Build {
     "org.openrdf.sesame" % "sesame-rio-trig" % "2.7.8",
     "org.openrdf.sesame" % "sesame-rio-trix" % "2.7.8",
     "org.openrdf.sesame" % "sesame-rio-turtle" % "2.7.8",
-    "info.aduna.commons" % "aduna-commons-io" % "2.7.0",
-    "info.aduna.commons" % "aduna-commons-lang" % "2.7.0",
+    "info.aduna.commons" % "aduna-commons-io" % "2.8.0",
+    "info.aduna.commons" % "aduna-commons-lang" % "2.9.0",
     "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
@@ -68,8 +68,8 @@ object ApplicationBuild extends Build {
     resolvers += Resolver.url("sbt-plugin-releases", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("sbt-plugin-snapshots", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-    //resolvers += "Aduna" at "http://repo.aduna-software.org/maven2/releases",
-    resolvers+= "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public",
+    resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
+
     resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public"
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
