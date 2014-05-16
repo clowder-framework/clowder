@@ -27,12 +27,11 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
   dtsrequests.updateRequest(file_id,extractor_id)
 }
 
-
- def updateExtractorsInfo()={
-  val x=  current.plugin[RabbitmqPlugin] match {
+  def updateExtractorsInfo() = {
+    val updateStatus = current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         val configuration = play.api.Play.configuration
-        var futureIPs = plugin.getServerIPs() /* Get Channel IPs*/
+        var futureIPs = plugin.getChannelsList() /* Get Channel IPs*/
         var ips = for {
           ipsResponse <- futureIPs /* Convert Future Response to Response*/
         } yield {
@@ -44,7 +43,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
             svr =>
 
               Logger.debug("Server Name : " + svr \ "name")
-              val ipl = (svr \ "name") //Get the Channel name by traversing the JsObject
+              val ipl = (svr \ "name")    //Get the Channel name by traversing the JsObject
 
               // val ipl=xyz.as[JsObject] \"name"
 
@@ -72,7 +71,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
         /*
 		                   * Get the channel details
 		                   * extract consumer_tags field
-		                   * if it is ctag, it denotes consumer, otherwise publisher
+		                   * if it is ctag, it denotes a consumer, otherwise a publisher
 		                   * We want consumers, that is server IPs that is running extractor and name of the extractor
 		                   */
 
@@ -144,13 +143,13 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
 
         } //end of 2nd yield   
 
-      var z=  for {
-          fin <- finalResult
-          finalResponse <- fin
-        } yield {
+      var updateExNameIPsStatus = for {
+    	 	fin <- finalResult
+    	 	finalResponse <- fin
+        	} yield {
 
           var kslist = List[String]()
-          var qlist=List[String]()
+          var qlist = List[String]()
           var subi: String = ""
           var subq: String = ""
           for (i <- finalResponse) { /*(ip,flag,queue name)*/
@@ -165,74 +164,74 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
                 var host = configuration.getString("rabbitmq.host").getOrElse("")
                 if (!kslist.contains(host) && !kslist.contains("127.0.0.1"))
                   // kslist =  host+ "-" + subq :: kslist
-                 //  kslist = host :: kslist
-                  kslist="127.0.0.1" :: kslist
+                  //  kslist = host :: kslist
+                  kslist = "127.0.0.1" :: kslist
 
               } else {
                 var iparr = subi.split('-')(0).split(':')
                 if (!kslist.contains(iparr(0)))
                   kslist = iparr(0) :: kslist
               }
-              if(!qlist.contains(subq))
-                 qlist=subq::qlist
+              if (!qlist.contains(subq))
+                qlist = subq :: qlist
             }
           }
           extractors.insertServerIPs(kslist)
-                
+
           extractors.insertExtractorNames(qlist)
-                    
-      var rktypelist=qlist.map{
-		             qn=> 
-			              var rktype=for{
-			                 qbindingResponse<-plugin.getQueueBindings("/", qn)
-			                }yield{
-			                  var frk=""
-			                  val qbindingjson=qbindingResponse.json
-			                  val qbindingList=qbindingjson.as[List[JsObject]]
-			                  val rkList=qbindingList.map{
-			                                qb=> 
-			                                  Logger.debug("queue name:"+ qn+ "   Routing Key: "+ (qb\"routing_key").toString())
-			                                  (qb\"routing_key").toString()
-			                              }//end of map
-			                  for(rk<-rkList){
-			                       if(rk!=qn){
-			                            frk=rk
-			                        }
-			                  }
-			                  frk
-			                }
-			            
-		                rktype
-                 }//end of qlist map
-          
-         var y= for{
-            types<-scala.concurrent.Future.sequence(rktypelist)
-            }yield{
-              var inputTypes=List[String]()
-              for(input<-types){
-                 var typearr=input.split("\\.")
-                 if(!inputTypes.contains(typearr(2)))
-                  inputTypes=typearr(2)::inputTypes
+
+          var rktypelist = qlist.map {
+            qn =>
+              var rktype = for {
+                qbindingResponse <- plugin.getQueueBindings("/", qn)
+              } yield {
+                var frk = ""
+                val qbindingjson = qbindingResponse.json
+                val qbindingList = qbindingjson.as[List[JsObject]]
+                val rkList = qbindingList.map {
+                  qb =>
+                    Logger.debug("queue name:" + qn + "   Routing Key: " + (qb \ "routing_key").toString())
+                    (qb \ "routing_key").toString()
+                } //end of map
+                for (rk <- rkList) {
+                  if (rk != qn) {
+                    frk = rk
+                  }
+                }
+                frk
               }
-              Logger.debug("inputTypes: "+inputTypes)
-              extractors.insertInputTypes(inputTypes)
-              
-             "DONE"
-            }
-          
-         y //Ok(Json.obj("Servers"->kslist))
-         // kslist
+
+              rktype
+          } //end of qlist map
+
+        var updateInputTypeStatus= for {
+            	types <- scala.concurrent.Future.sequence(rktypelist)
+          	} yield {
+          		var inputTypes = List[String]()
+          		for (input <- types) {
+                var typearr = input.split("\\.")
+                if (!inputTypes.contains(typearr(2)))
+                  inputTypes = typearr(2) :: inputTypes
+                }
+            Logger.debug("inputTypes: " + inputTypes)
+            extractors.insertInputTypes(inputTypes)
+
+            "DONE"
+          }
+
+          updateInputTypeStatus //Ok(Json.obj("Servers"->kslist))
+          // kslist
         } //end of yield
-       
-       z 
-      
+
+        updateExNameIPsStatus
+
       } //end of case match
 
       case None => {
-       Future(Future("DONE"))
+        Future(Future("DONE"))
       }
     } //end of match
-  x
+    updateStatus
   }
   
   

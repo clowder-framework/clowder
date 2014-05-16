@@ -395,14 +395,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            }
 	            }
 	            
-
-	          //var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
-
-	          
-	         // Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
-
-	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-	             //current.plugin[VersusPlugin].foreach{_.build()}
+                current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+	            
 	             
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){

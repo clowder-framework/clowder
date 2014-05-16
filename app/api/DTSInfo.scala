@@ -21,13 +21,20 @@ import services.DTSRequestsService
 import models.DTSInfoSetUp
 import play.api.libs.json._
 import java.util.Calendar
+import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
+/**
+ * Json API for Extractions Information for files.
+ *
+ * @author Smruti Padhy
+ *
+ */
 class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsService) extends ApiController {
 
   /**
    * extractor server ip
    */
-
+ 
   def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
     Async {
       for {

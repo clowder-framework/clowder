@@ -118,20 +118,35 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
   
   def getBindings(): Future[Response] = {
     val configuration = play.api.Play.configuration
-    val rUrl = "http://localhost:15672/api/bindings"
-
-    val bindingList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
-
+    val host = configuration.getString("rabbitmq.host").getOrElse("")
+    val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
+    
+     val ruser = configuration.getString("rabbitmq.user").getOrElse("")
+     val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
+     
+    //val rUrl = "http://localhost:15672/api/bindings"
+    val rUrl="http://"+host+":"+mgmt_api_port+"/api/bindings"
+   
+    //val bindingList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
+     val bindingList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
     bindingList
 
   }
   
-  def getServerIPs():Future[Response] = {
-    val configuration = play.api.Play.configuration
-   // val rUrl = "http://dts1.ncsa.illinois.edu:15672/api/channels"
-      val rUrl = "http://localhost:15672/api/channels"
 
-    val ipList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
+  def getChannelsList():Future[Response] = {
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("rabbitmq.host").getOrElse("")
+    val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
+    
+    val ruser = configuration.getString("rabbitmq.user").getOrElse("")
+    val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
+       
+    val rUrl="http://"+host+":"+mgmt_api_port+"/api/channels"
+
+
+
+    val ipList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
 
     ipList.map{
       l=>Logger.debug("Channel : "+ l.body)
@@ -142,33 +157,44 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
    ipList
    }
   
+  
   def getQueueBindings(vhost:String,qname:String):Future[Response]={
     val configuration = play.api.Play.configuration
     val host = configuration.getString("rabbitmq.host").getOrElse("")
+    val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
+    
+     val ruser = configuration.getString("rabbitmq.user").getOrElse("")
+     val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
     
     var vhost1:String=""
     if(vhost=="/"){
       vhost1="%2F"
     }
-    val qbindUrl="http://"+host+":15672/api/queues/"+vhost1+"/"+qname+"/bindings"
-    Logger.debug("-----query bind Url:  "+ qbindUrl)
-    val rks=WS.url(qbindUrl).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
+    //val qbindUrl="http://"+host+":15672/api/queues/"+vhost1+"/"+qname+"/bindings"
+     
+    val qbindUrl="http://"+host+":"+mgmt_api_port+"/api/queues/"+vhost1+"/"+qname+"/bindings"
+    
+     Logger.debug("-----query bind Url:  "+ qbindUrl)
+    
+    val rks=WS.url(qbindUrl).withHeaders("Accept" -> "application/json").withAuth(ruser,ruser_pwd, AuthScheme.BASIC).get()
     rks 
   }
   
-  def getChannelInfo(cid: String): Future[Response]={
+def getChannelInfo(cid: String): Future[Response]={
      val configuration = play.api.Play.configuration
-     //val cUrl = "http://dts1.ncsa.illinois.edu:15672/api/channels"
-     val cUrl = "http://localhost:15672/api/channels"
+     val host = configuration.getString("rabbitmq.host").getOrElse("")
+     val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
+    
+     val ruser = configuration.getString("rabbitmq.user").getOrElse("")
+     val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
+     
+    
+   
+       val cUrl="http://"+host+":"+mgmt_api_port+"/api/channels"
 
-    val deList: Future[Response] = WS.url(cUrl+"/"+cid).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
+    val chInfo: Future[Response] = WS.url(cUrl+"/"+cid).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
 
-   /* deList.map{
-      l=>
-        Logger.debug("Channel Details : "+ l.body)
-      
-    }*/
-   deList
+    chInfo
      
   }
 

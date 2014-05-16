@@ -23,10 +23,7 @@ import javax.inject.{Singleton, Inject}
 
 class MongoDBDTSRequestsService @Inject()(extractions: ExtractionService)extends DTSRequestsService {
 
- /* def getList(x:com.mongodb.BasicDBList):List[String]={
-    var y=Json.parse(com.mongodb.util.JSON.serialize(x))
-    
-  }*/
+
   def getDTSRequests(): List[DTSRequests] = {
     var list_requests = List[DTSRequests]()
     val allRequests = DTSRequests.dao.collection.find()
@@ -99,7 +96,7 @@ class MongoDBDTSRequestsService @Inject()(extractions: ExtractionService)extends
       if (len != 0) {
         var update = $set("extractors" -> elist, "startTime" -> sortedTime(0), "endTime" -> sortedTime(len - 1))
         var result = DTSRequests.dao.collection.update(r, update)
-       // var result = DTSRequests
+       
       }
 
     }

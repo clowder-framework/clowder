@@ -329,7 +329,10 @@ class Datasets @Inject()(
                                 List(("name", dt.name), ("description", dt.description)))
                             }
                           }
-
+                          
+                          // index the file using Versus for content-based retrieval
+                          current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+                          
                           // TODO RK need to replace unknown with the server name and dataset type
                           val dtkey = "unknown." + "dataset." + "unknown"
                           current.plugin[RabbitmqPlugin].foreach {
@@ -347,30 +350,15 @@ class Datasets @Inject()(
                             }
                           }
 
-                         // var extractJobId = current.plugin[VersusPlugin].foreach {
-                         //   _.extract(id)
-                         // }
-                         // Logger.debug("Inside File: Extraction Id : " + extractJobId)
-
-                          // redirect to dataset page
-                          
-                          //***** Inserting DTS Requests   **//*  
+                                         
+                          /*---- Insert DTS Request to the database   ----*/
 		 			    			
 						            val clientIP=request.remoteAddress
-						            //val clientIP=request.headers.get("Origin").get
-					                val domain=request.domain
-					                val keysHeader=request.headers.keys
-					                //request.
-					                Logger.debug("---\n \n")
-					            
-					                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-					                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-					                
-					                Logger.debug("----")
-					                val serverIP= request.host
+						            val serverIP= request.host
 						            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 						            
-						  //****************************// 
+						  /*--------------------------------------------*/ 
+						   // redirect to dataset page          
                           Redirect(routes.Datasets.dataset(dt.id))
                         }
 

@@ -33,6 +33,7 @@ import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
 import play.api.http.ContentTypes
 import play.api.libs.MimeTypes
+import scala.collection.mutable.MutableList
 
 
 /**
@@ -365,6 +366,9 @@ class MongoDBFileService @Inject() (
       }
     }
   }
+  
+ 
+  
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
@@ -565,10 +569,10 @@ class MongoDBFileService @Inject() (
     	 
         x.getAs[DBObject]("metadata") match {
           case None => {
-            Logger.debug("No metadata field found: Adding meta data field")
-            Json.obj("Message"->("No metadata for file "+id))
+            Logger.debug("No metadata field found")
+           // Json.obj("Message"->("No metadata for file "+id))
            // Json.obj(""->"")
-           // null
+            null
           }
           case Some(map) => {
 
@@ -584,7 +588,7 @@ class MongoDBFileService @Inject() (
              listd
             }
             else
-            Json.obj(""->"")
+             Json.obj(""->"")
            
           }
         }

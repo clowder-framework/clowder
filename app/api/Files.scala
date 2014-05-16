@@ -63,8 +63,7 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
 import services.ExtractorMessage
 import scala.util.parsing.json.JSONArray
-import api.RequestWithUser
-import api.WithPermission
+
 
 import controllers.Previewers
 import scala.concurrent.Future
@@ -283,282 +282,7 @@ class Files @Inject()(
       }
 
     }
- /***
-  * For DTS service use case: suppose a user posts a file to the extraction api, no extractors are avaliable. Now she checks the status 
-  * for the extractor if it up. If yes, she may again wants to submit the file for extraction again. Since she has already uploaded
-  * it, this time will just uses the file id to submit the request again.
-  * This api takes file id and notify the user that the request has been sent for processing.
-  * This may change depending on our our design on DTS extraction service. 
-  * 
-  */
-  def submitAextraction(id:UUID)=SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)){ implicit request =>
-    current.plugin[RabbitmqPlugin] match {
-        case Some(plugin) => {
-          if (UUID.isValid(id.stringify)) {
-            files.get(id) match {
-              case Some(file) => {
-                val fileType=file.contentType
-                val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                val host = "http://" + request.host
-                current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, file.length.toString,null, "")) }
-                Ok("Sent for Extraction. check the status")
-              }
-              case None=>
-                Logger.error("Could not retrieve file that was just saved.")
-              InternalServerError("Error uploading file")
-            }//file match
-          } // if Object id
-          else{
-            BadRequest("Not valid id")
-          }
-        } //case plugin  
-        case None=>{
-          BadRequest("No Service")
-        }
-    }//plugin match         
-   }
-  
-  
-  /**
-   * Uploads file for extraction and returns a file id ; It does not index the file. 
-   * This is very similar to upload(). 
-   * Needs to be decided on the semantics of upload for DTS extraction service and its difference to upload file to Medici for curation and storage.   
-   * This may change accordingly.
-   */
-
-  def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
-    request.user match {
-      case Some(user) => {
-        request.body.file("File").map { f =>
-         
-          var nameOfFile = f.filename
-          var flags = ""
-          if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-            var thirdSeparatorIndex = nameOfFile.indexOf("__")
-            if (thirdSeparatorIndex >= 0) {
-              var firstSeparatorIndex = nameOfFile.indexOf("_")
-              var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-              flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-              nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-            }
-          }
-
-          Logger.debug("Uploading file " + nameOfFile)
-          // store file
-          val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, null)
-          val uploadedFile = f
-          file match {
-            case Some(f) => {
-              current.plugin[FileDumpService].foreach { _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile)) }
-
-              val id = f.id
-              var fileType = f.contentType
-              if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
-                fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
-                if (fileType.startsWith("ERROR: ")) {
-                  Logger.error(fileType.substring(7))
-                  InternalServerError(fileType.substring(7))
-                }
-              }
-
-              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-              // TODO RK : need figure out if we can use https
-              Logger.debug("request.hosts=" + request.host)
-              Logger.debug("request.path=" + request.path)
-              val host = "http://" + request.host
-              Logger.debug("hosts=" + request.host)
-              //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
-              /***** Inserting DTS Requests   **/  
-	            
-	            val clientIP=request.remoteAddress
-	            //val clientIP=request.headers.get("Origin").get
-                val domain=request.domain
-                val keysHeader=request.headers.keys
-                //request.
-                Logger.debug("---\n \n")
-            
-                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-                
-                Logger.debug("----")
-                val serverIP= request.host
-	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-	           /****************************/ 
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags)) }
-
-              //for metadata files
-              if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                files.addXMLMetadata(id, xmlToJSON)
-
-                Logger.debug("xmlmd=" + xmlToJSON)
-
-              }
-
-              Ok(toJson(Map("id" -> id.toString)))
-            }
-            case None => {
-              Logger.error("Could not retrieve file that was just saved.")
-              InternalServerError("Error uploading file")
-            }
-          }
-        }.getOrElse {
-          BadRequest(toJson("File not attached."))
-        }
-      }
-
-      case None => BadRequest(toJson("Not authorized."))
-    }
-
-  }
-   
-  /**
-   * Upload a file based on a url
-   * 
-   */
-  import javax.activation.MimetypesFileTypeMap
-  def uploadbyURL() = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
-    request.user match {
-      case Some(user) => {
-        val configuration = play.api.Play.configuration
-        val tmpdir = configuration.getString("tmpdir").getOrElse("")
-             
-       
-        val fileurljs=request.body.\("fileurl").asOpt[String]
-        Logger.debug("[uploadURL] file Url=" + fileurljs)
-
-      fileurljs match{
-          
-          case Some(fileurl)=>{
-			        var fout:OutputStream=null;
-			        var in: BufferedInputStream=null;
-			        var buff = new Array[Byte](10240)
-			        try {
-			         
-			          val url = new URL(fileurl)
-			          var len = 0
-			          
-			          val urlsplit=fileurl.split("/")
-			          val filename=urlsplit(urlsplit.length-1)
-			          Logger.debug("filename: "+filename)
-			        
-			          val connection = url.openConnection().asInstanceOf[HttpURLConnection]
-			        
-			          connection.setRequestMethod("GET")
-			          
-			          
-			          val ct = connection.getContentType()
-			          val clen = connection.getContentLength()
-			         
-			         		          
-			          val name=connection.getHeaderField("Name")
-			          val contentencodings=connection.getContentEncoding()
-			          val info=connection.getHeaderFields()
-			          val infolen=info.size()
-			          Logger.debug("Key Set="+ info.keySet())
-			          Logger.debug("content-type " + ct + " content length-" + clen)
-			          Logger.debug("contentencodings= "+contentencodings)
-			          
-			         in = new BufferedInputStream(url.openStream())
-			         
-			          var fout: OutputStream = new FileOutputStream(tmpdir+filename)
-			          		
-			          var buf = new Array[Byte](clen)
-			          var count = 0
-			          while (count != -1) {
-			            Logger.debug("Inside while: before: count= "+ count)
-			            count = in.read(buf)
-			            Logger.debug("Inside while: after: count= "+ count)
-			            if(count == -1){
-			              Logger.debug("Inside While even if count is -1")
-			            }else{
-			                Logger.debug("Trying to write into file")
-			                fout.write(buf, 0, count)
-			            }
-			          }
-			          fout.flush()
-			          Logger.debug("After read")
-			          
-			          val localfile=tmpdir+filename
-			          
-			          import java.io.File
-			          val dddd = new File(localfile)
-			          
-			        
-			          val mimetype = new MimetypesFileTypeMap().getContentType(dddd)
-			          var fileType = mimetype
-			          Logger.debug("fileType= "+ fileType)
-			          val file = files.save(new FileInputStream(dddd), dddd.getName(), Some(ct), user, null)
-			          val uploadedFile = dddd
-			         
-			             
-			          file match {
-			            case Some(f) => {
-			              			
-			             val id = f.id
-			             fileType=f.contentType
-			             val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-			              // TODO RK : need figure out if we can use https
-			              Logger.debug("request.hosts=" + request.host)
-			              Logger.debug("request.path=" + request.path)
-			              val host = "http://" + request.host
-			              Logger.debug("hosts=" + request.host)
-			              //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
-			             current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
-			              Logger.debug("After RabbitmqPlugin")
-			              
-			              /***** Inserting DTS Requests   **/  
-				            
-				            val clientIP=request.remoteAddress
-				            //val clientIP=request.headers.get("Origin").get
-			                val domain=request.domain
-			                val keysHeader=request.headers.keys
-			                //request.
-			                Logger.debug("---\n \n")
-			            
-			                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-			                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-			                
-			                Logger.debug("----")
-			                val serverIP= request.host
-				            dtsrequests.insertRequest(serverIP,clientIP, f.filename,id, fileType, f.length,f.uploadDate)
-				           /****************************/ 
-			                
-				            /*file remove from temporary directory*/
-				            
-				            dddd.delete()
-				            
-				            Ok(toJson(Map("id" -> id.toString)))
-			            }
-			            case None => {
-			              Logger.error("Could not retrieve file that was just saved.")
-			              InternalServerError("Error uploading file")
-			            }
-			          } //end of file match
-			        } catch {
-			          case e: Exception =>
-			            println(e.printStackTrace())
-			            BadRequest(toJson("File not attached"))
-			        } finally {
-			         if(fout!=null)
-			           fout.close
-			          
-			          if(in != null)
-			            in.close
-			          
-			        } //end of finally
-             } //end of match some file url
-        case None=>{
-          Ok("NO Url specified")
-        }
-        } //end of match fielurl 
-      } //end of match user
-      case None => BadRequest(toJson("Not authorized."))
-    }
-  }
-  
-  
-
+ 
   /**
    * Upload file using multipart form enconding.
    */
@@ -566,7 +290,7 @@ class Files @Inject()(
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
-  def upload(showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+ def upload(showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
 
       request.user match {
@@ -585,81 +309,21 @@ class Files @Inject()(
                 }
               }
 
-/*//<<<<<<< HEAD
-	            val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-	            // TODO RK : need figure out if we can use https
-	            val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
-                Logger.debug("host= "+host)
-                
-                /***** Inserting DTS Requests   **/  
-	            
-	            val clientIP=request.remoteAddress
-	            //val clientIP=request.headers.get("Origin").get
-                val domain=request.domain
-                val keysHeader=request.headers.keys
-                //request.
-                Logger.debug("---\n \n")
-            
-                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-                
-                Logger.debug("----")
-                val serverIP= request.host
-	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-	           /****************************/ 
-                
-                
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", flags))}
-	            	            
-	            //for metadata files
-	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              FileDAO.addXMLMetadata(id, xmlToJSON)
-	              
-	              Logger.debug("xmlmd=" + xmlToJSON)
-	              
-	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
-		            }
-	              
-	              //add file to RDF triple store if triple store is used
-	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => {
-		               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-		             }
-		             case _ => {}
-	             }
-	            }
-	            else{
-		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
-		            }
-	            }
-	            
-	            Ok(toJson(Map("id"->id)))   
-	          }
-	          case None => {
-	            Logger.error("Could not retrieve file that was just saved.")
-	            InternalServerError("Error uploading file")
-	          }
-	        }
-	      }.getOrElse {
-	         BadRequest(toJson("File not attached."))
-	      }
-=======*/
-              Logger.debug("Uploading file " + nameOfFile)
+             Logger.debug("Uploading file " + nameOfFile)
               // store file
               val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
               val uploadedFile = f
               file match {
                 case Some(f) => {
-
+                 
                   val id = f.id
                   if (showPreviews.equals("FileLevel"))
                     flags = flags + "+filelevelshowpreviews"
                   else if (showPreviews.equals("None"))
                     flags = flags + "+nopreviews"
                   var fileType = f.contentType
+                 
+                  
                   if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
                     fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
                     if (fileType.startsWith("ERROR: ")) {
@@ -690,22 +354,18 @@ class Files @Inject()(
                   // TODO RK : need figure out if we can use https
                   val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
-                  /***** Inserting DTS Requests   **/  
+                /*---- Insert DTS Request to database---*/  
 	            
 	            val clientIP=request.remoteAddress
-	            //val clientIP=request.headers.get("Origin").get
-                val domain=request.domain
-                val keysHeader=request.headers.keys
-                //request.
-                Logger.debug("---\n \n")
-            
-                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-                
-                Logger.debug("----")
-                val serverIP= request.host
+	            val serverIP= request.host
 	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-	           /****************************/ 
+	           
+	            /*---------------------------------------*/ 
+	            
+                  // index the file using Versus
+                  current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+	            
+	            
                   current.plugin[RabbitmqPlugin].foreach {
                     // TODO replace null with None
                     _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
@@ -744,7 +404,6 @@ class Files @Inject()(
           }.getOrElse {
             BadRequest(toJson("File not attached."))
           }
-//>>>>>>> refs/remotes/origin/develop*/
         }
 
         case None => BadRequest(toJson("Not authorized."))
@@ -803,156 +462,7 @@ class Files @Inject()(
   /**
    * Upload a file to a specific dataset
    */
-/*<<<<<<< HEAD
-  def uploadToDataset(dataset_id: String, showPreviews: String="DatasetLevel") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
-    request.user match {
-        case Some(user) => {
-    datasets.get(dataset_id) match {
-      case Some(dataset) => {
-        request.body.file("File").map { f =>
-          		var nameOfFile = f.filename
-	            var flags = ""
-	            if(nameOfFile.toLowerCase().endsWith(".ptm")){
-	            	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
-		              if(thirdSeparatorIndex >= 0){
-		                var firstSeparatorIndex = nameOfFile.indexOf("_")
-		                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-		            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-		            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-		              }
-	            }
-          
-          Logger.debug("Uploading file " + nameOfFile)
-          // store file
-          val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
-          val uploadedFile = f
-          
-          // submit file for extraction
-          file match {
-            case Some(f) => {
-                            
-              val id = f.id.toString
-              if(showPreviews.equals("FileLevel"))
-	            flags = flags + "+filelevelshowpreviews"
-	          else if(showPreviews.equals("None"))
-	            flags = flags + "+nopreviews"
-	          var fileType = f.contentType
-	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
-	        	  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
-
-	        	  if(fileType.startsWith("ERROR: ")){
-	        		  Logger.error(fileType.substring(7))
-	        		  InternalServerError(fileType.substring(7))
-				  }
-	        	  if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
-					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
-					              if(thirdSeparatorIndex >= 0){
-					                var firstSeparatorIndex = nameOfFile.indexOf("_")
-					                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-					            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-					            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-					            	FileDAO.renameFile(f.id.toString, nameOfFile)
-					              }
-					        	  FileDAO.setContentType(f.id.toString, fileType)
-					          }
-	          }
-	          else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
-	              
-              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-              
-	          // TODO RK need to replace unknown with the server name
-	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-	          // TODO RK : need figure out if we can use https
-	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
-	          
-	          /***** Inserting DTS Requests   **/  
-	            
-	            val clientIP=request.remoteAddress
-	            //val clientIP=request.headers.get("Origin").get
-                val domain=request.domain
-                val keysHeader=request.headers.keys
-                //request.
-                Logger.debug("---\n \n")
-            
-                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-                
-                Logger.debug("----")
-                val serverIP= request.host
-	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-	           /****************************/ 
-	          
-	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags)) }
-	          
-	          //for metadata files
-              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-            	  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-            			  FileDAO.addXMLMetadata(id, xmlToJSON)
-
-            			  Logger.debug("xmlmd=" + xmlToJSON)
-
-            			  current.plugin[ElasticsearchPlugin].foreach{
-            		  		_.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
-            	  		  }
-              }
-              else{
-            	  current.plugin[ElasticsearchPlugin].foreach{
-            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
-            	  }
-              }
-                           
-              // add file to dataset   
-              // TODO create a service instead of calling salat directly
-              val theFile = FileDAO.get(f.id.toString).get
-              Dataset.addFile(dataset.id.toString, theFile)              
-              if(!theFile.xmlMetadata.isEmpty){
-	            	Dataset.index(dataset_id)
-		      	}	
-
-              // TODO RK need to replace unknown with the server name and dataset type
-              val dtkey = "unknown." + "dataset." + "unknown"
-
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, "")) }
-
-              Logger.info("Uploading Completed")
-              
-              //add file to RDF triple store if triple store is used
-              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-			             case "yes" => {
-			               services.Services.rdfSPARQLService.addFileToGraph(f.id.toString)
-			               services.Services.rdfSPARQLService.linkFileToDataset(f.id.toString, dataset_id)
-			             }
-			             case _ => {}
-		             }
-              }
-
-              //sending success message
-              Ok(toJson(Map("id" -> id)))
-            }
-            case None => {
-              Logger.error("Could not retrieve file that was just saved.")
-              InternalServerError("Error uploading file")
-            }
-          }
-
-        }.getOrElse {
-          BadRequest(toJson("File not attached."))
-        }
-      } 
-        case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
-      }
-     }
-        
-        case None => BadRequest(toJson("Not authorized."))
-    }
-  }*/
-  
-   
-
-  @ApiOperation(value = "Upload a file to a specific dataset",
+ @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
   def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
@@ -1023,22 +533,16 @@ class Files @Inject()(
                       val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
                       // TODO RK : need figure out if we can use https
                       val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
-                      /***** Inserting DTS Requests   **/  
-	            
-			            val clientIP=request.remoteAddress
-			            //val clientIP=request.headers.get("Origin").get
-		                val domain=request.domain
-		                val keysHeader=request.headers.keys
-		                //request.
-		                Logger.debug("---\n \n")
-		            
-		                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-		                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-		                
-		                Logger.debug("----")
-		                val serverIP= request.host
+                      
+                      /*----- Insert DTS Requests  -------*/  
+	                   val clientIP=request.remoteAddress
+			            val serverIP= request.host
 			            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-			           /****************************/ 
+			           /*-------------------------*/ 
+                      
+			             // index the file using Versus
+			            current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+			            
                       current.plugin[RabbitmqPlugin].foreach {
                         _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))
                       }
@@ -1152,6 +656,9 @@ class Files @Inject()(
                   val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
                   val id = f.id
                   // TODO replace null with None
+                   // index the file using Versus
+                  current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+                  
                   current.plugin[RabbitmqPlugin].foreach {
                     _.extract(ExtractorMessage(UUID(originalId), id, host, key, Map.empty, f.length.toString, null, flags))
                   }
@@ -1739,322 +1246,21 @@ class Files @Inject()(
   }
 
   // ---------- Tags related code ends ------------------
-
-  // ---------- Extract (BD-38) related code starts ------------------
-  /**
-   * Returns extracted lists of tags for a file
-   * 
-   */
-  
-  def extractTags(file: models.File) = {
-    val tags = file.tags
-    // Transform the tag list into a list of ["extractor_id" or "userId", "values"] items,
-    // where "values" are the list of tag name values.
-    var tagResE = Map[String, MutableList[String]]()
-    tags.filter(_.extractor_id.isDefined).foreach(tag => {
-      val ename = tag.extractor_id.get
-      if (tagResE.contains(ename)) {
-        tagResE.get(ename).get += tag.name
-      } else {
-        tagResE += ((ename, MutableList(tag.name)))
-      }
-    })
-    val jtagsE = tagResE.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
-    var tagResU = Map[String, MutableList[String]]()
-    tags.filter(_.userId.isDefined).foreach(tag => {
-      val ename = tag.userId.get
-      if (tagResU.contains(ename)) {
-        tagResU.get(ename).get += tag.name
-      } else {
-        tagResU += ((ename, MutableList(tag.name)))
-      }
-    })
-    val jtagsU = tagResU.map { case (k, v) => Json.obj("userId" -> k, "values" -> Json.toJson(v)) }
-    val jtags = jtagsE ++ jtagsU
-    jtags
-  }
-  
-  /**
-   * Returns Previews extracted so far for a file
-   * 
-   */
-  def extractPreviews(id: UUID) = {
-    val previews1 =previews.findByFileId(id);
-    /*
-     * Initial implementation: Flat tree of {"extractor_id", "preview_id", "url", "contentType", ...} items.
-     * 
-    val jpreviews = filePreviews.map(p =>
-      Json.obj("extractor_id" -> p.extractor_id, "preview_id" -> p.id.toString,
-        "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id.toString).toString))
-    jpreviews
-    * 
-    */
-    // Transform the preview list into a list of ["extractor_id", "values"] items,
-    // where "values" are the preview properties, such as "preview_id", "url", and "contentType".
-    var previewRes = Map[String, MutableList[JsValue]]()
-    previews1.filter(_.extractor_id.isDefined).foreach(p => {
-     Logger.debug("p:  "+ p.toString)
-     Logger.debug("p.extractor_id:  "+ p.extractor_id.toString + ", None is: " + scala.None.toString + ", Some(Noe) is: " + scala.Some(None).toString)
-     //val ename = p.extractor_id.getOrElse("Other")
-     val ename = p.extractor_id.get
-         
-      val jitem = Json.obj("preview_id" -> p.id.stringify,
-        "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id).toString)
-      if (previewRes.contains(ename.toString)) {
-        previewRes.get(ename.toString).get += jitem
-      } else {
-        previewRes += ((ename.toString, MutableList(jitem)))
-      }
-    })
-    val jpreviews = previewRes.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
-    jpreviews
-  }
-  
-  /**
-   * Returns Versus Descriptors from metadata field for a file
-   * 
-   */
-  
-  def extractVersusDescriptors(id:UUID): JsValue= {
-    val vDes=files.getVersusMetadata(id)
-   // if(vDes==null){
-     //Json.toJson(Map(""->""))  
-   // Json.arr()
-   // }else{
-      vDes
-  //  }
-         
-  }
-  
-  /*convert list of JsObject to JsArray*/
-def getJsonArray(list: List[JsObject]): JsArray = {
-    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
-  }
-
-
-/**
- * For a given file id, checks for the status of all extractors processing that file.
- * REST endpoint  GET /api/extraction/:id/status 
- * input: file id
- * returns: a list of status of all extractors responsible for extractions on the file and the final status of extraction job
- * Async is going to deprecreate is subsequent version of Play Framework. So need to change SecuredAction class to be able use the Action.async
- */
-
-def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
-    Async {
-      current.plugin[RabbitmqPlugin] match {
-
-        case Some(plugin) => {
-          files.get(id) match {
-            case Some(file) => {
-              
-              var isActivity = "false"
-              extractions.findIfBeingProcessed(file.id) match {
-                case false =>
-                case true => isActivity = "true"
-              }
-              
-              val l = extractions.getExtractorList(file.id) map {
-                elist => (elist._1, elist._2)
-              }
-
-              var blist = plugin.getBindings()
-
-              for {
-                rkeyResponse <- blist
-              } yield {
-                val rkeyjson = rkeyResponse.json
-                val rkeyjsonlist = rkeyjson.as[List[JsObject]]
-                val rkeylist = rkeyjsonlist.map {
-                  rk =>
-                    Logger.debug("Routing Key : " + rk \ "routing_key")
-                    (rk \ "routing_key").toString
-                }
-                
-                if (isActivity.equals("true")) {
-                 // Logger.debug("***************Processing :l.size= " + l.size.toString)
-                  l += "Status" -> "Processing"
-
-                 // Logger.debug(l.toString)
-                  Ok(toJson(l.toMap))
-                } else {
-                  val ct = file.contentType
-                  val mt = ct.split("/")
-                  for (m <- mt)
-                    Logger.debug("m= " + m)
-                
-                  var flag = false
-                  if (l.size == 0) {
-                    
-                    val rkl = rkeylist.toArray
-                    
-                    for (s <- rkl) {
-                                            
-                      var x = s.split("\\.")
-                      //Logger.debug("after split x0=" + x(0) + "  x1=" + x(1))
-
-                      if (x.length > 2) { // based on the routing key obtained from rabbitmq server
-                        
-                        if (x(2).equals(mt(0)) && !flag) {
-                          Logger.debug("x(2)" + x(2) + "  mt(0): " + mt(0))
-                          l += "Status" -> "Required Extractor is either busy or not currently running"
-                          flag = true
-                         
-                        }
-                      }
-                    } //end of for rkl
-                    
-                    if (flag == false)
-                      l += "Status" -> "No Extractor Available. Request is not Queued"
-
-                  } else {
-                    l += "Status" -> "Done"
-                  }
-                  Logger.debug("l.toString : " + l.toString)
-                  Ok(toJson(l.toMap))
-                }
-
-              } //end of yield
-
-            } //end of some file
-            case None => {
-              Future(Ok("no file"))
-            }
-          } //end of match file
-        }
-
-        case None => {
-          Future(Ok("No Rabbitmq Service"))
-        }
-      }
-    } //Async ends
-  }
-
-  /**
-   * fetch the extracted metadata for the file
-   * REST end-point: GET /api/extraction/:id/value
-   * input: file id
-   * Returns status of the extraction request and  metadata extracted so far   
-   * 
-   */
-
-  def fetch(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
-    Async {
-      current.plugin[RabbitmqPlugin] match {
-
-        case Some(plugin) => {
-          if (UUID.isValid(id.stringify)) {
-            files.get(id) match {
-              case Some(file) => {
-                Logger.info("Getting extract info for file with id " + id)
-                
-                var isActivity = "false"
-                extractions.findIfBeingProcessed(file.id) match {
-                  case false =>
-                  case true => isActivity = "true"
-                }
-                val l = extractions.getExtractorList(file.id) map {
-                  elist => (elist._1, elist._2)
-                }
-
-                var blist = plugin.getBindings()
-
-                for {
-                  rkeyResponse <- blist
-                } yield {
-                  val rkeyjson = rkeyResponse.json
-                  val rkeyjsonlist = rkeyjson.as[List[JsObject]]
-                  val rkeylist = rkeyjsonlist.map {
-                    rk =>
-                      Logger.debug("Routing Key : " + rk \ "routing_key")
-                      (rk \ "routing_key").toString
-                  }
-                  var status = ""
-                  if (isActivity.equals("true")) {
-                     status = "Processing"
-
-                  } else {
-                    val ct = file.contentType
-                    val mt = ct.split("/")
-                    for (m <- mt)
-                      Logger.debug("m= " + m)
-
-                    var flag = false
-                    if (l.size == 0) {
-                      Logger.debug("Inside If")
-                      val rkl = rkeylist.toArray
-                      
-                      for (s <- rkl) {
-                        var x = s.split("\\.")
-                        if (x.length > 2) {
-                          if (x(2).equals(mt(0)) && !flag) {
-                            Logger.debug("x(2)" + x(2) + "  mt(0): " + mt(0))
-                            status = "Required Extractor is either busy or is not currently running. Try after some time."
-                            flag = true
-                             
-                          }
-                        }
-                      }
-                      
-                      if (flag == false)
-                        status = "No Extractor Available. Request is not queued."
-
-                    } else {
-                      status = "Done"
-                        
-                    }
-                    
-                  } //end of outer else
-                  
-                  val jtags = extractTags(file)
-                  val jpreviews = extractPreviews(id)
-                 // val vdescriptors = extractVersusDescriptors(id)
-                  val vdescriptors = ""
-                  Logger.debug("jtags: " + jtags.toString)
-                  Logger.debug("jpreviews: " + jpreviews.toString)
-                  
-                  Ok(Json.obj("file_id" -> id.stringify, "filename" -> file.filename, "Status" -> status, "tags" -> jtags, "previews" -> jpreviews, "versus descriptors" -> vdescriptors))
-                } //end of yield
-
-              } //end of some file
-              case None => {
-                val error_str = "The file with id " + id + " is not found."
-                Logger.error(error_str)
-                Future(NotFound(toJson(error_str)))
-              }
-            } //end of match file
-          } else {
-            val error_str = "The given id " + id + " is not a valid ObjectId."
-            Logger.error(error_str)
-            Future(BadRequest(Json.toJson(error_str)))
-          }
-
-        }
-
-        case None => {
-          Future(Ok("No Rabbitmq Service"))
-        }
-      }
-    } //Async 
-  }
-  
-  
+ 
  /**
-  * REST endpoint: GET  api/files/:id/extract 
+  * REST endpoint: GET  api/files/:id/extracted_metadata 
   * Returns metadata extracted so far for a file with id
   * 
   */
-    
+  @ApiOperation(value = "Provides metadata extracted for a file", notes = "", responseClass = "None", httpMethod = "GET")  
   def extract(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     Logger.info("Getting extract info for file with id " + id)
     if (UUID.isValid(id.stringify)) {
      files.get(id) match {
         case Some(file) =>
-          val jtags = extractTags(file)
-          val jpreviews = extractPreviews(id)
-          // val jpreviews = ""
-          val vdescriptors=extractVersusDescriptors(id)
-          //val vdescriptors=""
+          val jtags = models.File.extractTags(file)
+          val jpreviews = models.File.extractPreviews(id)
+          val vdescriptors=models.File.extractVersusDescriptors(id)
           Logger.debug("jtags: " + jtags.toString)
           Logger.debug("jpreviews: " + jpreviews.toString)
           Ok(Json.obj("file_id" -> id.toString, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors"->vdescriptors))
@@ -2071,10 +1277,6 @@ def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorizat
     }
   }
   
-  
-  // ---------- Extract (BD-38) related code ends ------------------
-
- 
   @ApiOperation(value = "Add comment to file", notes = "", responseClass = "None", httpMethod = "POST")
   def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
