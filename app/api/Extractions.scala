@@ -464,11 +464,11 @@ class Extractions @Inject() (
 
                   val status = computeStatus(rkeyResponse, file, l)
 
-                  val jtags = models.File.extractTags(file)
+                  val jtags = FileOP.extractTags(file)
 
-                  val jpreviews = models.File.extractPreviews(id)
+                  val jpreviews = FileOP.extractPreviews(id)
 
-                  val vdescriptors = models.File.extractVersusDescriptors(id)
+                  val vdescriptors = FileOP.extractVersusDescriptors(id)
                   //val vdescriptors = ""
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
