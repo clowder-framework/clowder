@@ -201,7 +201,7 @@ class Search @Inject() (
     			futureListResults<-futureFutureListResults
     			listOfResults<-futureListResults   			    		
     		} yield {
-    		   Ok(views.html.contentbasedSearchResultsVideo3(queryURL, listOfResults))     		
+    		   Ok(views.html.multimediaSearchResults(queryURL, listOfResults))     		
     		}              
         } //case some
                     
@@ -243,7 +243,7 @@ class Search @Inject() (
    							futureListResults<-futureFutureListResults
    							listOfResults<-futureListResults      		
    						} yield {  
-   							Ok(views.html.contentbasedSearchResultsVideo3(filename, listOfResults))             		
+   							Ok(views.html.multimediaSearchResults(filename, listOfResults))             		
    						}    		            
    					} //end of case Some(plugin)   
 
@@ -297,7 +297,7 @@ class Search @Inject() (
    	   						futureListResults<-futureFutureListResults
    	   						listOfResults<-futureListResults      		
    	   					} yield {     			             
-   	   						Ok(views.html.contentbasedSearchResultsVideo3(filename, listOfResults))          
+   	   						Ok(views.html.multimediaSearchResults(filename, listOfResults))          
    	   					}    		             
    	   				} //end of case Some(plugin)                   
 
