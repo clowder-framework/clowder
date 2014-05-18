@@ -118,24 +118,57 @@ object Geostreams extends ApiController {
       }
     }
   
+  def updateStatisticsSensor(id: String) = 
+    Action { request =>
+      Logger.debug("update sensor statistics for " + id)
+	  current.plugin[PostgresPlugin] match {
+	    case Some(plugin) => {
+	      plugin.updateSensorStats(Some(id))
+	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	    }
+	    case None => pluginNotEnabled
+	  }
+  }
+  
+  def updateStatisticsStream(id: String) = 
+    Action { request =>
+      Logger.debug("update stream statistics for " + id)
+	  current.plugin[PostgresPlugin] match {
+	    case Some(plugin) => {
+	      plugin.updateStreamStats(Some(id))
+	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	    }
+	    case None => pluginNotEnabled
+	  }
+  }
+  
+  def updateStatisticsStreamSensor() = 
+    Action { request =>
+      Logger.debug("update all sensor/stream statistics")
+	  current.plugin[PostgresPlugin] match {
+	    case Some(plugin) => {
+	      plugin.updateSensorStats(None)
+	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	    }
+	    case None => pluginNotEnabled
+	  }
+  }
   
   def getSensorStatistics(id: String) =  
     Action { request =>
-      Logger.debug("Get sensor statistics" + id)
+      Logger.debug("Get sensor statistics " + id)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          val dates = plugin.getSensorDateRange(id) match {
-            case Some(d) => d
-            case None => """{}"""
+          val json = plugin.getSensorStats(id) match {
+            case Some(d) => {
+              val data = Json.parse(d)
+              Json.obj(
+                  "range" -> Map[String, JsValue]("min_start_time" -> data \ "min_start_time", "max_start_time" -> data \ "max_start_time"),
+                  "parameters" -> data \ "parameters"
+                  )
+            }
+            case None => Json.obj("range" -> Map.empty[String, String], "parameters" -> Array.empty[String])
           }
-          val parameters = plugin.getSensorParameters(id) match {
-            case Some(params) => params
-            case None => """{"parameters":[]}"""
-          }
-          val json = Json.obj(
-        		  "range" -> Json.parse(dates),
-        		  "parameters" -> Json.parse(parameters) \ "parameters"
-        		  )
           Ok(jsonp(Json.prettyPrint(json), request)).as("application/json")
         }
         case None => pluginNotEnabled
