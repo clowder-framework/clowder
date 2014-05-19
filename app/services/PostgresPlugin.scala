@@ -97,9 +97,9 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"FROM sensors " +
     			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid "
 	if (parts.length == 3) {
-      query += "WHERE AND ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+      query += "WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
-      query += "WHERE AND ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
+      query += "WHERE ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
       i = 0
       while (i < parts.length) {
         query += "ST_MakePoint(?, ?), "
@@ -136,7 +136,6 @@ class PostgresPlugin(application: Application) extends Plugin {
     data += "]"
     rs.close()
     st.close()
-    Logger.debug("Searching sensors result: " + data)
     if (data == "null") { // FIXME
       Logger.debug("Searching NONE")
       None
@@ -392,11 +391,11 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT datapoints.gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
+      "(SELECT datapoints.gid As id, datapoints.start_time, datapoints.end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
       " WHERE sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid"
 //    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
-    if (since.isDefined) query += " AND start_time >= ?"
-    if (until.isDefined) query += " AND start_time <= ?"
+    if (since.isDefined) query += " AND datapoints.start_time >= ?"
+    if (until.isDefined) query += " AND datapoints.end_time <= ?"
     if (parts.length == 3) {
       query += " AND ST_DWithin(datapoints.geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
