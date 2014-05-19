@@ -473,20 +473,22 @@ class PostgresPlugin(application: Application) extends Plugin {
     Logger.debug("Geostream search: " + st)
     val rs = st.executeQuery()
     while (rs.next()) {
-      if (!attributes.isEmpty) {
-        val jsdata = Json.parse(rs.getString(1)) match {
-          case v : JsObject => data += filterProperties(v, attributes)
-          case v : JsArray => data += "[" + (for(t <- v.as[List[JsObject]]) yield filterProperties(t, attributes)).mkString(",") + "]"
-          case v => data += rs.getString(1)
-		}
-      } else {
-        data += rs.getString(1)
+      if (rs.getString(1) != null) {
+        if (!attributes.isEmpty) {
+          val jsdata = Json.parse(rs.getString(1)) match {
+            case v : JsObject => data += filterProperties(v, attributes)
+            case v : JsArray => data += "[" + (for(t <- v.as[List[JsObject]]) yield filterProperties(t, attributes)).mkString(",") + "]"
+            case v => data += rs.getString(1)
+		  }
+        } else {
+          data += rs.getString(1)
+        }
       }
     }
     rs.close()
     st.close()
     Logger.trace("Searching datapoints result: " + data)
-    if (data == "null") None // FIXME
+    if (data == "") None // FIXME
     else Some(data)
   }
   
