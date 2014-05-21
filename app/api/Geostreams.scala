@@ -18,6 +18,9 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListMap
 import scala.collection.mutable.ListBuffer
+import play.api.libs.iteratee.Enumerator
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced
@@ -115,24 +118,57 @@ object Geostreams extends ApiController {
       }
     }
   
+  def updateStatisticsSensor(id: String) = 
+    Action { request =>
+      Logger.debug("update sensor statistics for " + id)
+	  current.plugin[PostgresPlugin] match {
+	    case Some(plugin) => {
+	      plugin.updateSensorStats(Some(id))
+	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	    }
+	    case None => pluginNotEnabled
+	  }
+  }
+  
+  def updateStatisticsStream(id: String) = 
+    Action { request =>
+      Logger.debug("update stream statistics for " + id)
+	  current.plugin[PostgresPlugin] match {
+	    case Some(plugin) => {
+	      plugin.updateStreamStats(Some(id))
+	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	    }
+	    case None => pluginNotEnabled
+	  }
+  }
+  
+  def updateStatisticsStreamSensor() = 
+    Action { request =>
+      Logger.debug("update all sensor/stream statistics")
+	  current.plugin[PostgresPlugin] match {
+	    case Some(plugin) => {
+	      plugin.updateSensorStats(None)
+	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	    }
+	    case None => pluginNotEnabled
+	  }
+  }
   
   def getSensorStatistics(id: String) =  
     Action { request =>
-      Logger.debug("Get sensor statistics" + id)
+      Logger.debug("Get sensor statistics " + id)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          val dates = plugin.getSensorDateRange(id) match {
-            case Some(d) => d
-            case None => """{}"""
+          val json = plugin.getSensorStats(id) match {
+            case Some(d) => {
+              val data = Json.parse(d)
+              Json.obj(
+                  "range" -> Map[String, JsValue]("min_start_time" -> data \ "min_start_time", "max_start_time" -> data \ "max_start_time"),
+                  "parameters" -> data \ "parameters"
+                  )
+            }
+            case None => Json.obj("range" -> Map.empty[String, String], "parameters" -> Array.empty[String])
           }
-          val parameters = plugin.getSensorParameters(id) match {
-            case Some(params) => params
-            case None => """{"parameters":[]}"""
-          }
-          val json = Json.obj(
-        		  "range" -> Json.parse(dates),
-        		  "parameters" -> Json.parse(parameters) \ "parameters"
-        		  )
           Ok(jsonp(Json.prettyPrint(json), request)).as("application/json")
         }
         case None => pluginNotEnabled
@@ -261,7 +297,7 @@ object Geostreams extends ApiController {
                 val ignore = configuration.getString("json2csv.ignore").getOrElse("").split(",")
                 val seperator = configuration.getString("json2csv.seperator").getOrElse("|")
                 val fixgeometry = configuration.getBoolean("json2csv.fixgeometry").getOrElse(true)
-                Ok(jsonToCSV(Json.parse(d), ignore, seperator, hideprefix, fixgeometry)).as("text/csv")
+                Ok.chunked(jsonToCSV(Json.parse(d), ignore, seperator, hideprefix, fixgeometry)).as("text/csv")
               } else {
                 Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
               }
@@ -298,7 +334,7 @@ object Geostreams extends ApiController {
   // Convert JSON data to CSV data.
   // This code is generic and could be moved to special module, right now
   // it is used to take a geostream output and convert it to CSV.
-  // ----------------------------------------------------------------------
+  // ----------------------------------------------------------------------  
   /**
    * Returns the JSON formated as CSV.
    *
@@ -311,25 +347,29 @@ object Geostreams extends ApiController {
    * @param hidePrefix set this to true to not print the prefix in header.
    * @param fixGeometry set this to true to convert an array of geomtry to lat, lon, alt
    * @param 
-   * @returns csv formated JSON.
+   * @returns Enumarator[String]
    */
   def jsonToCSV(data: JsValue, ignore: Array[String] = Array[String](), prefixSeperator: String = " - ", hidePrefix: Boolean = false, fixGeometry:Boolean = true) = {
-	val values = data.as[List[JsObject]]
+    val values = data.as[List[JsObject]]
     val headers = ListBuffer.empty[Header]
-    var result = ""
 
     // find all headers
-    for(row <- values)
-      addHeaders(row, headers, ignore, "", prefixSeperator, hidePrefix, fixGeometry)
+    var rowcount = 0
+    val runtime = Runtime.getRuntime()
     
-    // add headers to top
-    result = printHeader(headers).substring(1) + "\n"
-  	  
-    // add all rows
-    for(row <- values)
-      result += printRow(row, headers, "", prefixSeperator) + "\n"
-    	
-    result
+    Enumerator.generateM(Future[Option[String]] {
+      if (headers.isEmpty) {
+	    for(row <- values)
+	      addHeaders(row, headers, ignore, "", prefixSeperator, hidePrefix, fixGeometry)
+        Some(printHeader(headers).substring(1) + "\n")
+      } else if (rowcount < values.length) {
+        val x = Some(printRow(values(rowcount), headers, "", prefixSeperator) + "\n")
+        rowcount += 1
+        x
+      } else {
+        None
+      }
+    })
   }
 
   /**

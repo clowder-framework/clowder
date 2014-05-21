@@ -160,6 +160,7 @@ GET     /api/queries/:id				                        @api.Files.downloadquery(id:
 # DANGER
 GET     /api/delete-data                    					api.Admin.deleteAllData
 
+POST    /api/collections                                        @api.Collections.createCollection()
 GET		/api/collections/list														@api.Collections.listCollections
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
@@ -218,24 +219,28 @@ POST    /api/sections/:id/tags/remove_all                       @api.Sections.re
 
 # geostreaming
 
-POST    /api/geostreams/datapoints        api.Geostreams.addDatapoint
-GET     /api/geostreams/datapoints/:id    api.Geostreams.getDatapoint(id: String)
-GET     /api/geostreams/datapoints        api.Geostreams.searchDatapoints(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json")
+POST    /api/geostreams/datapoints           api.Geostreams.addDatapoint
+GET     /api/geostreams/datapoints/:id       api.Geostreams.getDatapoint(id: String)
+GET     /api/geostreams/datapoints           api.Geostreams.searchDatapoints(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json")
 
 
 POST    /api/geostreams/sensors			     api.Geostreams.createSensor
+GET     /api/geostreams/sensors/update       api.Geostreams.updateStatisticsStreamSensor()
+GET     /api/geostreams/sensors/:id          api.Geostreams.getSensor(id: String)
 GET     /api/geostreams/sensors/:id/stats    api.Geostreams.getSensorStatistics(id: String)
 GET     /api/geostreams/sensors/:id/streams  api.Geostreams.getSensorStreams(id: String)
-GET     /api/geostreams/sensors/:id          api.Geostreams.getSensor(id: String)
+GET     /api/geostreams/sensors/:id/update   api.Geostreams.updateStatisticsSensor(id: String)
 GET     /api/geostreams/sensors              api.Geostreams.searchSensors(geocode: Option[String] ?= None)
 
-POST    /api/geostreams/streams			  api.Geostreams.createStream
-GET     /api/geostreams/streams/:id       api.Geostreams.getStream(id: String)
-GET     /api/geostreams/streams           api.Geostreams.searchStreams(geocode: Option[String] ?= None)
-DELETE  /api/geostreams/streams/:id       api.Geostreams.deleteStream(id: String)
+POST    /api/geostreams/streams			     api.Geostreams.createStream
+GET     /api/geostreams/streams/update       api.Geostreams.updateStatisticsStreamSensor()
+GET     /api/geostreams/streams/:id          api.Geostreams.getStream(id: String)
+GET     /api/geostreams/streams/:id/update   api.Geostreams.updateStatisticsStream(id: String)
+GET     /api/geostreams/streams              api.Geostreams.searchStreams(geocode: Option[String] ?= None)
+DELETE  /api/geostreams/streams/:id          api.Geostreams.deleteStream(id: String)
 
-DELETE  /api/geostreams/dropall           api.Geostreams.deleteAll
-GET     /api/geostreams/counts            api.Geostreams.counts
+DELETE  /api/geostreams/dropall              api.Geostreams.deleteAll
+GET     /api/geostreams/counts               api.Geostreams.counts
 
 GET     /geostreams                       controllers.Geostreams.browse
 

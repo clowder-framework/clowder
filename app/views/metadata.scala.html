@@ -15,7 +15,7 @@
 					@value
 				}
 			} else {
-			    @printLevel(value.asInstanceOf[Map[String, Any]])
+			    @printLevel(value.asInstanceOf[DBObject].toMap.asScala.toMap.asInstanceOf[Map[String, Any]])
 			}</li>
 		}
 		</ul>
