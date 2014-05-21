@@ -134,4 +134,16 @@ trait FileService {
   def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String, Any], root: String): MongoDBObject
 
   def removeOldIntermediates()
+  
+  /**
+   * Update the licensing data that is currently associated with the file.
+   * 
+   * id: The id of the file
+   * licenseType: A String representing the type of license
+   * rightsHolder: A String that is the free-text describing the owner of the license. Only required for certain license types
+   * licenseText: Text that describes what the license is
+   * licenseUrl: A reference to the license information
+   * allowDl: true or false, to allow downloading of the file or dataset. Relevant only for certain license types
+   */
+  def updateLicensing(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDl: String)
 }

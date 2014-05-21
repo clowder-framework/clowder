@@ -27,6 +27,7 @@ case class File(
   isIntermediate: Option[Boolean] = None,
   userMetadata: Map[String, Any] = Map.empty,
   xmlMetadata: Map[String, Any] = Map.empty,
-  userMetadataWasModified: Option[Boolean] = None)
+  userMetadataWasModified: Option[Boolean] = None,
+  licenseData: LicenseData = new LicenseData())
 
 

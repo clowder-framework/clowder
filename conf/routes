@@ -146,6 +146,7 @@ GET     /api/files/:id/tags                                     @api.Files.getTa
 POST    /api/files/:id/tags                                     @api.Files.addTags(id: UUID)
 POST    /api/files/:id/tags/remove                              @api.Files.removeTags(id: UUID)
 POST    /api/files/:id/tags/remove_all                          @api.Files.removeAllTags(id: UUID)
+POST    /api/files/:id/licensing                                @api.Files.updateLicensing(id: UUID)
 
 POST    /api/files/:id/previews/:p_id     						@api.Files.attachPreview(id: UUID, p_id: UUID)
 GET		/api/files/:id/listpreviews		  						@api.Files.filePreviewsList(id: UUID)
@@ -189,6 +190,7 @@ GET     /api/datasets/:id/tags                                  @api.Datasets.ge
 POST    /api/datasets/:id/tags                                  @api.Datasets.addTags(id: UUID)
 POST    /api/datasets/:id/tags/remove                           @api.Datasets.removeTags(id: UUID)
 POST    /api/datasets/:id/tags/remove_all                       @api.Datasets.removeAllTags(id: UUID)
+POST    /api/datasets/:id/licensing                             @api.Datasets.updateLicensing(id: UUID)
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					@api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			@api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)

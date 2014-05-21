@@ -94,6 +94,8 @@
     <script>
     	window.onload = function() {
     		isPageLoaded = true;
+    		var rightsHolder = @dataset.licenseData.m_rightsHolder;
+    		alert("onLoad - " + rightsHolder);
     	}
     </script>
     
@@ -931,6 +933,35 @@
 			       </script>
 		      	}
 			</div>
+			     <!-- Licensing elements --> 
+          <div id="accordionsDiv" class="row ds-section-sm" style="margin-top:20px; width: 370px; padding-left:15px;">        
+	        <div class="accordion" id="accordion5" style="border: 5px solid; border-style: ridge; width: 370px; padding:5px 10px 5px 10px;">
+	            <div class="accordion-group">
+	                <div class="accordian-heading">
+	                    <h3>Licensing Information</h3>
+	                    <table>
+	                       <tr>
+	                        <td><b>License Holder: </b></td>
+	                        <td id="rightsholderdata" style="padding-left:10px;">blank</td>
+	                       </tr>
+	                       <tr>
+	                        <td><b>License Text: </b></td>
+	                        <td id="licensetextdata" style="padding-left:10px;">blank</td>
+	                       </tr>
+	                    </table>
+	                    <p>
+	                    <a class="accordion-toggle collapsed" data-toggle="collapse"
+	                        data-parent="#accordion5" href="#collapseFive" id="editlicense">Edit Licensing</a>
+	                </div>
+	                <div id="collapseFive" class="accordion-body collapse">
+	                    @if(user.isDefined) {
+	                        @licenseform(dataset.id.stringify, dataset.licenseData, "dataset")
+	                    }
+	                </div>
+	            </div>
+	        </div>
+	      </div>
+        <!-- End Licensing elements -->
 		</div>
 	</div>
 }

@@ -1,10 +1,29 @@
-@(id: String, posturl: String)(implicit user: Option[securesocial.core.Identity])
+@(id: String, licenseData: models.LicenseData, sourceObject: String)(implicit user: Option[securesocial.core.Identity])
+
+<!--
+User interface panel that displays license options to the user and allows them to select one. Depending on the given license
+type selected, the user will then have the option to make other choices regarding certain specifics for that license type. 
+Finally, handle the user submission by pushing the data up to the correct API endpoint. In this case, it is either the 
+File or Dataset API updateLicensing endpoint, through the specified jsRoute.
+
+In the future, may need to see if that endpoint can be unified.
+
+Author: Mario Felarca
+
+Used By: dataset.scala.html, file.scala.html 
+ -->
 
 @if(user.isDefined) {
 	<form class="form-inline" id="form1">
-		<input type="checkbox" name="owner" value="yes" checked>  I own the rights
-		<br>
-		Rights Holder: <input type="text" name="ownername">
+	   <table style="width: 100%;">
+	       <tr>
+		       <td colspan="2"><input type="checkbox" id="ownrights" value="yes">  I own the rights</td>
+		   </tr>
+		   <tr>
+		       <td style="width: 30%">Rights Holder:</td>
+		       <td><input style="width: 100%"; type="text" name="ownername"></td>
+		   </tr>
+		</table>
 		<br>
 		<br>
 		License Selection:
@@ -13,69 +32,216 @@
         <input type="radio" name="type" value="license2"> Creative Commons<br>
 		<input type="radio" name="type" value="license3"> Public Domain<br>
 		<br>
-		<table>
+		<table style="width: 100%;">
 			<tr class="license1 hidden">
-				<td>Description:</td>
-				<td><input type="text" name="licensedesc"
-					value="All Rights Reserved"></td>
+				<td style="width: 30%;">Description:</td>
+				<td><input style="width: 100%; type="text" name="licensedesc"></td>
 			</tr>
 			<tr class="license1 hidden">
-				<td>License URL:</td>
-				<td><input type="text" name="licenseurl"></td>
+				<td style="width: 30%;">License URL:</td>
+				<td><input style="width: 100%; type="text" name="licenseurl"></td>
 			</tr>
 			<tr class="license1 hidden">
-			     <td><input type="checkbox" name="allowdl" value="off">  Allow Downloading of the file</td>
+			     <td colspan="2"><input type="checkbox" name="allowdl" value="off">  Allow Downloading of the file</td>
 			</tr>
 			<tr class="license2 hidden">
-				<td><input type="checkbox" name="commercial" value="yes" checked>
+				<td><input type="checkbox" id="commercial" value="yes">
 					Allow commercial use</td>
 			</tr>
 			<tr class="license2 hidden">
-				<td><input type="checkbox" name="remixing" value="yes">
+				<td><input type="checkbox" id="remixing" value="yes">
 					Allow remixing</td>
 			</tr>
 			<tr class="license2 hidden">
-				<td><input type="checkbox" name="sharealike" value="yes">
+				<td><input type="checkbox" id="sharealike" value="yes" disabled>
 					Require share-alike</td>
 			</tr>
 		</table>		
 		<br>
-		<button class="btn btn-default" onclick="return postComment('@id', '@posturl');">Update</button>
-		<button class="btn btn-default" onclick="return postComment('@id', '@posturl');">Cancel</button>
+		<button class="btn btn-default" onclick="return updateData('@id');">Update</button>
+		<!-- <button class="btn btn-default" onclick="return updateInterface();">Update</button> -->
+		<button class="btn btn-default" onclick="return closeEdit();">Close</button>
 	</form>
 	
 	<!-- Need to also handle what to set as default radio. Whether it is default, because
 	     there is no data, or if it is passed in from the model.
 	-->
-	<script type="text/javascript" language="javascript">	  
-	  $(document).ready(function() {		 
-		  var $radios = $('input[name=type]');
-		    //Will have to modify the if check to see if there is data that specifies what should be selected
-		    if($radios.is(':checked') === false) {
-		        //None are selected, so select the default
-		    	$radios.filter('[value=license2]').trigger('click');		    	
-		        //updateLicenseForm('.' + $radios.filter('[value=license1]').val()); //This one works for sure!
-		    	updateLicenseForm('.' + $('input[name=type]:checked', '#form1').val()); //Works also, is better.
-		    }
-		    else {
-		    	//Select the one that the data specifies.
-		    	alert('WHAT?');
-		    }
-		    //$('input[name=type]:checked', '#form1').val()
-		  //var selected = $("input:radio[name=type]:checked").val();
-		  //$(selected).removeClass('hidden');
+	
+	<script type="text/javascript" language="javascript">
+	
+	var currentUserName = "@user.get.fullName"; 
+    
+    $(document).ready(function() {         
+        //Will have to modify the if check to see if there is data that specifies what should be selected
+        //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
+        //describing the licensing rights, the URL for the license, and whether or not downloading is 
+        //allowed.        
+        var licenseType = "@licenseData.m_licenseType";
+        var rightsHolder = "@licenseData.m_rightsHolder";
+        var licenseText = "@licenseData.m_licenseText";
+        var licenseUrl = "@licenseData.m_licenseUrl";        
+        var allowDl = "@licenseData.m_allowDl";
+        var $radios = $('input[name=type]');       
+        
+        
+        if (licenseType == null || licenseType.trim().length == 0) {            
+            //No license data is present so far, so go to defaults
+            if($radios.is(':checked') === false) {
+                //None are selected, so select the default
+                $radios.filter('[value=license1]').trigger('click');       
+                $('#ownrights').trigger('click');
+                $('input[name=licensedesc]').val("All Rights Reserved");
+                //updateLicenseForm('.' + $radios.filter('[value=license1]').val()); //This one works for sure!
+                //updateLicenseForm('.' + $('input[name=type]:checked', '#form1').val()); //Works also, is better.
+            }
+            else {
+                //Select the one that the data specifies.
+                alert('Error in setting defaults');
+            }
+        }        
+        else {
+            //license data is present 
+
+            $radios.filter("[value=" + licenseType + "]").trigger('click');            
+            
+            if (rightsHolder == currentUserName) {
+                $('#ownrights').trigger('click');
+            }                        
+            else {
+                if (licenseType == "license1") {                	
+                    if (rightsHolder == null || rightsHolder.trim().length == 0){
+                        $('#ownrights').trigger('click');
+                    }
+                    else {
+                        //In this case, the rightsHolder is valid free text
+                        $('input[name=ownername]').val(rightsHolder);
+                    }
+                }                
+            }            
+            
+            //Set license text and license url based off license type
+            if (licenseType == "license1") {
+                if (licenseText == null || licenseText.trim().length == 0) {
+                    $('input[name=licensedesc]').val("All Rights Reserved");
+                }
+                else {
+                    $('input[name=licensedesc]').val(licenseText);
+                }
+                
+                $('input[name=licenseurl]').val(licenseUrl);                
+                
+                if (allowDl == "true") {
+                    $('input[name=allowdl]').attr('checked', true);
+                }
+                else {
+                    $('input[name=allowdl]').attr('checked', false);
+                }                
+            }            
+            else if (licenseType == "license2") {
+                //Check the license text to determine what checkboxes to select
+                //TODO make this so that the checkbox data simply comes down with the licensedata as well??
+                var commBox = $('#commercial');
+                var remixBox = $('#remixing');
+                var shareBox = $('#sharealike');
+                
+                if (licenseText == "Attribution-NoDerivs") {
+                    //Only commercial checked
+                    commBox.attr('checked', true);  
+                }
+                else if (licenseText == "Attribution-NonCommercial") {
+                    //Only re-mixing checked
+                    remixBox.attr('checked', true);  
+                }
+                else if (licenseText == "Attribution-NonCommercial-ShareAlike") {
+                    //Only re-mixing and share-alike checked
+                    remixBox.attr('checked', true);  
+                    shareBox.attr('checked', true);
+                } 
+                else if (licenseText == "Attribution-ShareAlike") {
+                    //All checkboxes checked
+                    remixBox.attr('checked', true);  
+                    shareBox.attr('checked', true);
+                    commBox.attr('checked', true);
+                } 
+                else if (licenseText == "Attribution") {
+                    //Only re-mixing and commercial checked
+                    remixBox.attr('checked', true);  
+                    commBox.attr('checked', true);
+                } 
+                
+                //In this case, set the fields to the licenseText
+                $('input[name=ownername]').val(licenseText);
+                $('input[name=licensedesc]').val(licenseText);
+            }                        
+        }
+        
+        //No matter what, must update the data on the UI. No submission though.
+        //Reset the variables based on all the work that the ready function has done...
+        licenseType = $('input[name=type]:checked', '#form1').val();            
+        rightsHolder = $('input[name=ownername]').val();
+        licenseText = $('input[name=licensedesc]').val();
+        licenseUrl = $('input[name=licenseurl]').val();
+        allowDl = $('input[name=allowdl]').prop('checked'); 
+        updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDl);
+        
+    });
+	
+	</script>
+	
+	<script type="text/javascript" language="javascript">			 
+	  	  
+	  var currentUserName = "@user.get.fullName"; 
+	
+	  //Handle the selection of the checkbox that makes the owner the current user
+	  var cbox = $('#ownrights'); 
+	  var rightsHolder = $('input[name=ownername]');
+	  cbox.change( function() {
+		   
+          if (cbox.is(':checked')) {
+        	  //disable the Rights Holder box and put the owner name into it
+        	  rightsHolder.val(currentUserName);
+        	  rightsHolder.attr("disabled", "disabled");
+          }
+          else {
+        	  //enable the Rights Holder box and empty it
+        	  rightsHolder.val('');
+              rightsHolder.removeAttr("disabled");        	  
+          }
+          
+      });
+	  
+	  //Handle the de-select and select of remixing which needs to alter the status of share-alike
+	  var remixBox = $('#remixing');
+	  var shareBox = $('#sharealike');
+	  remixBox.change( function() {
+		 if (!remixBox.prop('checked')) {
+			 shareBox.attr('checked', false);
+			 shareBox.attr("disabled", true);
+		 } 
+		 else {
+			 shareBox.attr("disabled", false);
+		 }
 	  });
 	  
+	  //Handle the change of selection for the license type 
 	  $('input[name=type]').change( function() {
 		  var klass = '.' + $(this).val();
 		  updateLicenseForm(klass);
 	  });
 	  
+	  //Update the actual form elements to give the user the correct choices
 	  function updateLicenseForm(klass) {
           //var klass = '.' + $(this).val();
           $('.license1,.license2').addClass('hidden');
           $(klass).removeClass('hidden');
       }
+	  
+	  function closeEdit() {
+		$("#editlicense").addClass('collapsed');
+		$("#collapseFive").collapse('toggle');		
+		return false;
+	  }
+	  	  
 	</script>
 	
 	<script language="javascript">
@@ -101,6 +267,192 @@
 		function cancelComment(id) {
 			$("#form_" + id).remove();
 			return false;
+		}
+		
+		function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDl) {
+            
+            if (licenseType == 'license1') {
+                if (licenseText == null || licenseText.trim().length == 0) {
+                    licenseText = 'All Rights Reserved';
+                }
+                if (licenseUrl != null && licenseUrl.trim().length > 0) {                	
+                    if (!licenseUrl.startsWith("http")) {                    	
+                        licenseUrl = "http://" + licenseUrl;                        
+                    }
+                    licenseText = '<a href="' + licenseUrl + '" target="_blank">' + licenseText + '</a>';
+                }
+            }
+            else if (licenseType == 'license2') {
+                
+                //No checkboxes selected
+                if (licenseText == "Attribution-NonCommercial-NoDerivs") {
+                    rightsHolder = '<img src="@routes.Assets.at("images/cc-by-nc-nd.png")" alt="Attribution-NonCommercial-NoDerivs" />';
+                    licenseText = '<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/" target="_blank">Attribution-NonCommercial-NoDerivs</a>';
+                }
+                //Only commercial selected
+                else if (licenseText == "Attribution-NoDerivs") {
+                    rightsHolder = '<img src="@routes.Assets.at("images/cc-by-nd.png")" alt="Attribution-NoDerivs" />';
+                    licenseText = '<a href="http://creativecommons.org/licenses/by-nd/3.0/" target="_blank">Attribution-NoDerivs</a>';
+                }
+                //Only remixing selected
+                else if (licenseText == "Attribution-NonCommercial") {
+                    rightsHolder = '<img src="@routes.Assets.at("images/cc-by-nd.png")" alt="Attribution-NonCommercial" />';
+                    licenseText = '<a href="http://creativecommons.org/licenses/by-nc/3.0/" target="_blank">Attribution-NonCommercial</a>';
+                }
+                //Remixing and Sharealike selected
+                else if (licenseText == "Attribution-NonCommercial-ShareAlike") {
+                    rightsHolder = '<img src="@routes.Assets.at("images/cc-by-nc-sa.png")" alt="Attribution-NonCommercial-ShareAlike" />';
+                    licenseText = '<a href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank">Attribution-NonCommercial-ShareAlike</a>';
+                }
+                //All checkboxes selected
+                else if (licenseText == "Attribution-ShareAlike") {
+                    rightsHolder = '<img src="@routes.Assets.at("images/cc-by-sa.png")" alt="Attribution-ShareAlike" />';
+                    licenseText = '<a href="http://creativecommons.org/licenses/by-sa/3.0/" target="_blank">Attribution-ShareAlike</a>';
+                }
+                //Commercial and Remixing selected
+                else if (licenseText == "Attribution") {
+                    rightsHolder = '<img src="@routes.Assets.at("images/cc-by.png")" alt="' + rightsHolder + '" />';
+                    licenseText = '<a href="http://creativecommons.org/licenses/by/3.0/" target="_blank">' + licenseText + '</a>';
+                }
+                else {
+                    rightsHolder = 'Creative Commons';
+                    licenseText = 'Specific level info';
+                }
+            }
+            else if (licenseType == 'license3') {
+                rightsHolder = '<img src="@routes.Assets.at("images/cc-pd.png")" alt="Public Domain Dedication" />'
+                licenseText = '<a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">Public Domain Dedication</a>';
+            }
+            else {
+                alert('Extra case!!');
+            }
+
+            //Update the display and close the editor
+            $("#rightsholderdata").html(rightsHolder);
+            $("#licensetextdata").html(licenseText);
+            
+            //return false;
+		}
+		
+		function updateData(id) {
+	        var licenseType = $('input[name=type]:checked', '#form1').val();	        
+	        var rightsHolder = $('input[name=ownername]').val();
+	        var licenseText = $('input[name=licensedesc]').val();
+	        var licenseUrl = $('input[name=licenseurl]').val();
+	        var allowDl = $('input[name=allowdl]').prop('checked').toString(); 
+	        	
+	        if (licenseType == "license1") {
+	        	if (rightsHolder == null || rightsHolder.trim().length == 0) {
+	        		//for this license type, rights holder can't be null. default to current user
+	        		rightsHolder = "@user.get.fullName";
+	        		$('#ownrights').trigger('click');
+	        	}
+	        	
+	        	if (licenseText == null || licenseText.trim().length == 0) {
+	        		licenseText = "All Rights Reserved";
+	        	}
+	        	
+	        	if (licenseText != null && licenseText.trim().length == 0) {
+	        		//don't allow empty string as a value. explicitly set it to null.
+	        		licenseText = null;
+	        	}
+	        }
+	        if (licenseType == "license2") {
+	        	//Change the rightsHolder
+	        	
+	        	var commBox = $('#commercial');
+                var remixBox = $('#remixing');
+                var shareBox = $('#sharealike');
+                
+                //No checkboxes selected
+	        	if (!commBox.prop('checked') && !remixBox.prop('checked') && !shareBox.prop('checked')) {
+                    rightsHolder = "Creative Commons";
+                    licenseText = "Attribution-NonCommercial-NoDerivs";
+                    licenseUrl = "http://creativecommons.org/licenses/by-nc-nd/3.0/";
+                }
+                //Only commercial selected
+                else if (commBox.prop('checked') && !remixBox.prop('checked') && !shareBox.prop('checked')) {
+                    rightsHolder = '<img src="@routes.Assets.at("images/cc-by-nd.png")" alt="Attribution-NoDerivs" />';
+                    licenseText = '<a href="http://creativecommons.org/licenses/by-nd/3.0/" target="_blank">Attribution-NoDerivs</a>';
+                }
+                //Only remixing selected
+                else if (!commBox.prop('checked') && remixBox.prop('checked') && !shareBox.prop('checked')) {
+                    rightsHolder = "Creative Commons";
+                    licenseText = "Attribution-NonCommercial";
+                    licenseUrl = "http://creativecommons.org/licenses/by-nc/3.0/";
+                }
+                //Remixing and Sharealike selected
+                else if (!commBox.prop('checked') && remixBox.prop('checked') && shareBox.prop('checked')) {
+                    rightsHolder = "Creative Commons";
+                    licenseText = "Attribution-NonCommercial-ShareAlike";
+                    licenseUrl = "http://creativecommons.org/licenses/by-nc-sa/3.0/";
+                }
+                //All checkboxes selected
+                else if (commBox.prop('checked') && remixBox.prop('checked') && shareBox.prop('checked')) {
+                    rightsHolder = "Creative Commons";
+                    licenseText = "Attribution-ShareAlike";
+                    licenseUrl = "http://creativecommons.org/licenses/by-sa/3.0/";
+                }
+                //Commercial and Remixing selected
+                else if (commBox.prop('checked') && remixBox.prop('checked') && !shareBox.prop('checked')) {
+                    rightsHolder = "Creative Commons";
+                    licenseText = "Attribution";
+                    licenseUrl = "http://creativecommons.org/licenses/by/3.0/";
+                }
+                else {
+                    rightsHolder = 'Creative Commons';
+                    licenseText = 'Specific level info';
+                }
+            }
+            else if (licenseType == 'license3') {
+                rightsHolder = "Public Domain Dedication";
+                licenseText = "Public Domain Dedication";
+                licenseUrl = "http://creativecommons.org/publicdomain/zero/1.0/";
+            }
+	        	        
+	        //var jsonData = JSON.stringify({"licenseData":[licenseType, rightsHolder, licenseText, licenseUrl, allowDl]});
+	        var jsonData = JSON.stringify({"licenseType":licenseType, "rightsHolder":rightsHolder, "licenseText":licenseText, "licenseUrl":licenseUrl, "allowDl":allowDl});
+	        
+	        var request = null;
+	        
+	        var sourceVal = "@sourceObject";	        
+	        
+	        if (sourceVal == 'dataset') {
+		        request = jsRoutes.api.Datasets.updateLicensing(id).ajax({
+		           data: jsonData,
+	               type: 'POST',
+	               contentType: "application/json",
+	            });
+	        }
+	        else if (sourceVal == 'file') {
+	        	request = jsRoutes.api.Files.updateLicensing(id).ajax({
+	        	    data: jsonData,
+	        	    type: 'POST',
+	        	    contentType: "application/json",
+	        	});
+	        }
+	                     
+             request.done(function (response, textStatus, jqXHR){
+            	//console.log("Response " + response);
+            	//Sucessful update of the DB
+                updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDl);
+	            
+	            $("#editlicense").addClass('collapsed');
+	            $("#collapseFive").collapse('toggle');   
+             });
+    
+	         
+             request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error(
+                    "The following error occured: "+
+                    textStatus, errorThrown
+                    
+                );
+                alert("Updating the licensing information failed.");
+             });
+             
+             return false;
+	        	           	       	        
 		}
 
 		function postComment(id, posturl) {

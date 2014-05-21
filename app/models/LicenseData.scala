@@ -8,6 +8,9 @@ import org.bson.types.ObjectId
 import play.api.Play.current
 import services.mongodb.MongoSalatPlugin
 
+/**
+ * case class to handle specific license information. Currently attached to individual Datasets and Files.  
+ */
 case class LicenseData (
         id: UUID = UUID.generate,
         m_licenseType: String = "license1",
@@ -19,12 +22,3 @@ case class LicenseData (
         m_ccRequireShareAlike: Boolean = false,
         m_allowDl: Boolean = false
 )
-
-object LicenseData extends ModelCompanion[LicenseData, ObjectId] {
-//  val collection = MongoConnection()("test-alt")("licensedata")
-//  val dao = new SalatDAO[LicenseData, ObjectId](collection = collection) {}
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[LicenseData, ObjectId](collection = x.collection("licensedata")) {}
-  }
-}

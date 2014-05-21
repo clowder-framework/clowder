@@ -1021,6 +1021,120 @@ class Files @Inject()(
           case None => Logger.error("Texture file not found"); InternalServerError
         }
     }
+  
+  
+   //Update Licensing code 
+  /**
+   * REST endpoint: POST: update the licensing data associated with a specific File
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with this file 
+   *  
+   *  The data contained in the request body will be containe the following key-value pairs:
+   *  
+   *  licenseType, currently:
+   *        license1 - corresponds to Limited 
+   *        license2 - corresponds to Creative Commons
+   *        license3 - corresponds to Public Domain
+   *        
+   *  rightsHolder, currently only required if licenseType is license1. Reflects the specific name of the organization or person that holds the rights
+   *   
+   *  licenseText, currently tied to the licenseType
+   *        license1 - Free text that a user can enter to describe the license
+   *        license2 - 1 of 6 options that reflects the specific set of options associated with the Creative Commons license, these are:
+   *            Attribution-NonCommercial-NoDerivs
+   *            Attribution-NoDerivs
+   *            Attribution-NonCommercial
+   *            Attribution-NonCommercial-ShareAlike
+   *            Attribution-ShareAlike
+   *            Attribution
+   *        license3 - Public Domain Dedication
+   *        
+   *  licenseUrl, free text that a user can enter to go with the licenseText in the case of license1. Fixed URL's for the other 2 cases.
+   *  
+   *  allowDl, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
+   */
+  @ApiOperation(value = "Update licensing information to a dataset",
+      notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
+      responseClass = "None", httpMethod = "POST")
+  def updateLicensing(id: UUID) = 
+    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicensing)) {    
+    Logger.info("-------- HERE Files API ------------")
+    implicit request =>
+      if (UUID.isValid(id.stringify)) {         
+
+          //Set up the vars we are looking for
+          var licenseType: String = null;
+          var rightsHolder: String = null;
+          var licenseText: String = null;
+          var licenseUrl: String = null;
+          var allowDl: String = null;
+          
+          var aResult: JsResult[String] = (request.body \ "licenseType").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                licenseType = s.get
+              }
+              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+          }
+          
+          aResult = (request.body \ "rightsHolder").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                rightsHolder = s.get
+              }
+              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+          }
+          
+          aResult = (request.body \ "licenseText").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                licenseText = s.get
+              }
+              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+          }
+          
+          aResult = (request.body \ "licenseUrl").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                licenseUrl = s.get
+              }
+              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+          }
+          
+          aResult = (request.body \ "allowDl").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                allowDl = s.get
+              }
+              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+          }          
+          
+          Logger.info(s"updateLicensing for file with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDl")
+          
+          files.updateLicensing(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDl)
+          Ok(Json.obj("status" -> "success"))
+      } 
+      else {
+        Logger.info(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+  
+  
+  
+  //End, Update Licensing code
 
   // ---------- Tags related code starts ------------------
   /**

@@ -43,6 +43,7 @@ class Datasets @Inject()(
       "name" -> nonEmptyText,
       "description" -> nonEmptyText
     )
+      //No LicenseData needed here, as on creation, default arg handles it. MMF - 5/2014
       ((name, description) => Dataset(name = name, description = description, created = new Date, author = null))
       ((dataset: Dataset) => Some((dataset.name, dataset.description)))
   )
@@ -108,7 +109,7 @@ class Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {
           val filesInDataset = dataset.files.map(f => files.get(f.id).get)
-
+          
           //Search whether dataset is currently being processed by extractor(s)
           var isActivity = false
           try {
