@@ -34,15 +34,7 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
   /**
    * extractor server ip
    */
- 
-  def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
-    Async {
-      for {
-        x <- DTSInfoSetUp.updateExtractorsInfo()
-        status <- x
-      } yield {
-
-        Logger.debug("Update Status:" + status)
+   def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
         val list_servers = extractors.getExtractorServerIPList()
         var jarr = new JsArray()
         //var list_servers1=List[String]()
@@ -54,11 +46,13 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
             }
         Logger.debug("JSARRAY----" + jarr.toString)
         Ok(Json.obj("Servers" -> jarr))
-        //Ok(views.html.dtsserverip(list_servers1,list_servers1.size))
-      }
-    }
+      
   }
 
+ 
+  
+
+  
   def getExtractorNames() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
 
     val list_names = extractors.getExtractorNames()
@@ -133,6 +127,7 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
     Ok(jarr)
    
   }
+  
   /*convert list of JsObject to JsArray*/
 def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))

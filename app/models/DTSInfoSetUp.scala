@@ -45,24 +45,18 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
               Logger.debug("Server Name : " + svr \ "name")
               val ipl = (svr \ "name")    //Get the Channel name by traversing the JsObject
 
-              // val ipl=xyz.as[JsObject] \"name"
-
-              //  Logger.debug("ipl.toString====" + ipl.toString())
-
+              
               val ipltoString = ipl.toString //Convert from JsValue to To String
 
               val ipls = ipltoString.substring(1, ipltoString.length() - 5) // get read of the quotation mark and String (1) in the end of the name
 
-              //Logger.debug("substring ====" + ipls)
-
+             
               val url = java.net.URLEncoder.encode(ipls, "UTF-8")
 
               val c = "%20"
               val url1 = url.replaceAll("\\+", c) + "%20(1)"
-              Logger.debug("________________________________________________")
-              Logger.debug("")
-
-              // Logger.debug("URLencoded====" + url1)
+              
+             
               (ipltoString, url1)
           } //end of map
           ulist
@@ -113,10 +107,10 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
 
                 var flag = false
                 for (xt <- consumer_tags) {
-                  //var str = xt(0).toString
+                 
                   var str = xt
                   var substr = str.substring(1, str.length - 1)
-                  //Logger.debug("str=" + substr)
+                  
                   if (substr == ("ctag1.0")) {
                     Logger.debug(substr + " :::  CONSUMER")
                     flag = true
@@ -219,7 +213,8 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
             "DONE"
           }
 
-          updateInputTypeStatus //Ok(Json.obj("Servers"->kslist))
+          updateInputTypeStatus 
+          //Ok(Json.obj("Servers"->kslist))
           // kslist
         } //end of yield
 
