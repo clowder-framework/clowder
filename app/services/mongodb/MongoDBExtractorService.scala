@@ -16,17 +16,18 @@ import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import com.mongodb.casbah.Imports._
-import com.mongodb.WriteConcern
+//import com.mongodb.WriteConcern
 import javax.inject.{Singleton, Inject}
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
-import com.mongodb.casbah.WriteConcern
+//import com.mongodb.casbah.WriteConcern
 import com.mongodb.util.JSON
 import jsonutils.JsonUtil
 import scala.Some
 import scala.util.parsing.json.JSONArray
 import services.mongodb.MongoContext.context
 import services.mongodb.MongoSalatPlugin
+//import com.mongodb.casbah.Imports.WriteConcern
 
 @Singleton
 class MongoDBExtractorService extends ExtractorService {
@@ -55,7 +56,8 @@ class MongoDBExtractorService extends ExtractorService {
     Logger.debug("extractor.servers: collection dropped.......")
 
     for (sip <- iplist) {
-       ExtractorServer.insert(new ExtractorServer(sip))
+      // ExtractorServer.insert(new ExtractorServer(sip))
+      ExtractorServer.insert(new ExtractorServer(sip), WriteConcern.Safe)
       //coll.insert(MongoDBObject("server" -> sip))
       Logger.debug("extractor.servers: document inserted : " + sip)
     }
@@ -84,7 +86,7 @@ class MongoDBExtractorService extends ExtractorService {
     Logger.debug("extractor.names: collection dropped.......")
     for (qn <- exlist) {
       Logger.debug("extractor.names: document inserted: " + qn)
-      ExtractorNames.insert(new ExtractorNames(qn))
+      ExtractorNames.insert(new ExtractorNames(qn),WriteConcern.Safe)
       //qcoll.insert(MongoDBObject("name" -> qn))
     }
   }
@@ -110,7 +112,7 @@ class MongoDBExtractorService extends ExtractorService {
     inputcoll.drop()
     Logger.debug("extractor.inputtypes: collection dropped.......")
     for (ipt <- inputTypes) {
-      ExtractorInputType.insert(new ExtractorInputType(ipt))
+      ExtractorInputType.insert(new ExtractorInputType(ipt),WriteConcern.Safe)
       //inputcoll.insert(MongoDBObject("inputType" -> ipt))
       Logger.debug("extractor.inputtypes: document inserted: " + ipt)
     }

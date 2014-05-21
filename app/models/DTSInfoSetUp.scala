@@ -16,6 +16,7 @@ import services.ExtractorService
 import services.DI
 import scala.concurrent.Future
 import services.DTSRequestsService
+import java.net.InetAddress
 
 
 object DTSInfoSetUp {
@@ -159,7 +160,9 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
                 if (!kslist.contains(host) && !kslist.contains("127.0.0.1"))
                   // kslist =  host+ "-" + subq :: kslist
                   //  kslist = host :: kslist
-                  kslist = "127.0.0.1" :: kslist
+                  Logger.debug("---HOSTNAME:  "+InetAddress.getLocalHost().getHostName())
+                  //kslist = "127.0.0.1" :: kslist
+                  kslist = InetAddress.getLocalHost().getHostName() :: kslist
 
               } else {
                 var iparr = subi.split('-')(0).split(':')
