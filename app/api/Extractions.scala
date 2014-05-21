@@ -554,14 +554,7 @@ class Extractions @Inject() (
  @ApiOperation(value = "Lists servers IPs running the extractors",
     notes = "  ",
     responseClass = "None", httpMethod = "GET") 
-  def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
-    Async {
-      for {
-        x <- DTSInfoSetUp.updateExtractorsInfo()
-        status <- x
-      } yield {
-
-        Logger.debug("Update Status:" + status)
+    def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
         val list_servers = extractors.getExtractorServerIPList()
         var jarr = new JsArray()
         //var list_servers1=List[String]()
@@ -573,11 +566,8 @@ class Extractions @Inject() (
             }
         Logger.debug("JSARRAY----" + jarr.toString)
         Ok(Json.obj("Servers" -> jarr))
-        //Ok(views.html.dtsserverip(list_servers1,list_servers1.size))
-      }
-    }
+      
   }
-
  @ApiOperation(value = "Lists the currenlty running extractors",
     notes = "  ",
     responseClass = "None", httpMethod = "GET") 
