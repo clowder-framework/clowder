@@ -568,8 +568,10 @@ class MongoDBFileService @Inject() (
     
     FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case Some(x) => {
-    	 
-        x.getAs[DBObject]("metadata") match {
+    	Logger.debug("FileDAO keySets==="+x.keySet().toString())
+    	Logger.debug("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
+        
+    	x.getAs[DBObject]("metadata")match {
           case None => {
             Logger.debug("No metadata field found")
            // Json.obj("Message"->("No metadata for file "+id))
