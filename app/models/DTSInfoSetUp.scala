@@ -157,10 +157,10 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
                 Logger.debug("LocalHost: The Extractor is running local to Rabbitmq Server")
                 Logger.debug("GET the rabbitmq host name")
                 var host = configuration.getString("rabbitmq.host").getOrElse("")
-                if (!kslist.contains(host) && !kslist.contains("127.0.0.1"))
+                if (!kslist.contains(host) && !kslist.contains("127.0.0.1") && !kslist.contains(InetAddress.getLocalHost().getCanonicalHostName()))
                   // kslist =  host+ "-" + subq :: kslist
                   //  kslist = host :: kslist
-                  Logger.debug("---HOSTNAME:  "+InetAddress.getLocalHost().getHostName())
+                  Logger.debug("---C HOSTNAME:  "+InetAddress.getLocalHost().getCanonicalHostName())
                   //kslist = "127.0.0.1" :: kslist
                   kslist = InetAddress.getLocalHost().getHostName() :: kslist
 
