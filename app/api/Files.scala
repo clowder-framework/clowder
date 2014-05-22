@@ -266,7 +266,7 @@ class Files @Inject()(
           
           //Logger.debug("~~~~MetaData:"+ list)
           files.addVersusMetadata(id, list)
-
+          //files.addVersusMetadata(id, list)
          /* Logger.debug("Get Versus Metdata:*****")
           files.getMetadata(id).map {
             md =>

@@ -152,17 +152,23 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
 
               subi = i._1.substring(1, i._1.length - 1) /*to get rid of quotation marks in ip address*/
               subq = i._3.substring(1, i._3.length - 1) /*to get rid of quotation marks in queue name,i.e., extractor name*/
-
-              if (subi.contains("[::1]") || subi.contains("127.0.0.1")) {
-                Logger.debug("LocalHost: The Extractor is running local to Rabbitmq Server")
-                Logger.debug("GET the rabbitmq host name")
-                var host = configuration.getString("rabbitmq.host").getOrElse("")
-                if (!kslist.contains(host) && !kslist.contains("127.0.0.1") && !kslist.contains(InetAddress.getLocalHost().getCanonicalHostName()))
-                  // kslist =  host+ "-" + subq :: kslist
-                  //  kslist = host :: kslist
-                  Logger.debug("---C HOSTNAME:  "+InetAddress.getLocalHost().getCanonicalHostName())
+                           
+              val hostname=InetAddress.getLocalHost().getCanonicalHostName()
+                                                       
+              if (subi.contains("[::1]") || subi.contains("127.0.0.1") ) {
+                 Logger.debug("LocalHost: The Extractor is running local to Rabbitmq Server")
+                 Logger.debug("GET the rabbitmq host name")
+               
+                 var host = configuration.getString("rabbitmq.host").getOrElse("")
+                                           
+                 if (!kslist.contains(host) && !kslist.contains("127.0.0.1") && !kslist.contains(hostname)){
+                  
+                   Logger.info("!contains hostname:= "+ !kslist.contains(hostname))
                   //kslist = "127.0.0.1" :: kslist
-                  kslist = InetAddress.getLocalHost().getHostName() :: kslist
+                  kslist = hostname :: kslist
+                  Logger.info("Appended ---HOSTNAME:  "+hostname)
+                  Logger.info("-------kslist = "+kslist.toString)
+                 } 
 
               } else {
                 var iparr = subi.split('-')(0).split(':')

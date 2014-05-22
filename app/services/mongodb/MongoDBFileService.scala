@@ -569,17 +569,15 @@ class MongoDBFileService @Inject() (
     FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case Some(x) => {
     	Logger.debug("FileDAO keySets==="+x.keySet().toString())
-    	
-    	Logger.debug("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
+    	Logger.info("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
         
-    	//x.getAs[DBObject]("metadata")match {
-    	x.getAs[java.util.Map[String,Any]]("metadata")match {  
-          case None => {
-            Logger.debug("--------------")
+    	x.getAs[DBObject]("metadata")match {
+    	    case None => {
+            Logger.info("--------------")
             Logger.debug("  ")
-            Logger.debug("No metadata field found")
+            Logger.info("No metadata field found")
             
-            Logger.debug("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
+            Logger.info("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
            // Json.obj("Message"->("No metadata for file "+id))
            // Json.obj(""->"")
             null
@@ -587,15 +585,16 @@ class MongoDBFileService @Inject() (
           case Some(map) => {
 
             Logger.debug("metadata found ")
-            //map.containsKey(key)
+           
             val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
-            Logger.debug("retmd: " + returnedMetadata)
+            
+            Logger.info("retmd: " + returnedMetadata)
 
             val retmd =Json.toJson(returnedMetadata)
-            Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
-           // Logger.debug("Contains Fields versus descriptors: " + map.containsField("versus_descriptors"))
-            if(map.containsKey("versus_descriptors")){
-           // if(map.containsField("versus_descriptors")){
+            //Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
+            Logger.debug("Contains Fields versus descriptors: " + map.containsField("versus_descriptors"))
+            //if(map.containsKey("versus_descriptors")){
+            if(map.containsField("versus_descriptors")){
               
              val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
              listd

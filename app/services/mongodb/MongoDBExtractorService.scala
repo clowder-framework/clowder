@@ -54,13 +54,11 @@ class MongoDBExtractorService extends ExtractorService {
     val coll = ExtractorServer.dao.collection
     coll.drop()
     Logger.debug("extractor.servers: collection dropped.......")
-
     for (sip <- iplist) {
-      // ExtractorServer.insert(new ExtractorServer(sip))
-      ExtractorServer.insert(new ExtractorServer(sip), WriteConcern.Safe)
-      //coll.insert(MongoDBObject("server" -> sip))
-      Logger.debug("extractor.servers: document inserted : " + sip)
+     ExtractorServer.insert(new ExtractorServer(sip), WriteConcern.Safe)
+     Logger.debug("extractor.servers: document inserted : " + sip)
     }
+    
   }
 
   def getExtractorNames() = {
