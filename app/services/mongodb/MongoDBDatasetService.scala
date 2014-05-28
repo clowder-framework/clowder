@@ -486,16 +486,11 @@ class MongoDBDatasetService @Inject() (
   /**
    * Implementation of updateLicenseing defined in services/DatasetService.scala.
    */
-  def updateLicensing(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDl: String) {
-      Logger.info(" ------- MongoDBDatasetService ------")
+  def updateLicensing(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDl: String) {      
       val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDl = allowDl.toBoolean)
-      //val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
-      //    $set("licenseType" -> licenseType, "rightsHolder" -> rightsHolder, "licenseText" -> licenseText, "licenseUrl" -> licenseUrl, "allowDl" -> allowDl), 
-      //    false, false, WriteConcern.Safe);
       val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
           $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
-          false, false, WriteConcern.Safe);
-      Logger.info("-------- result is " + result)
+          false, false, WriteConcern.Safe);      
   }
   
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {

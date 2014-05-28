@@ -349,8 +349,9 @@ Used By: dataset.scala.html, file.scala.html
                 }
                 //Only commercial selected
                 else if (commBox.prop('checked') && !remixBox.prop('checked') && !shareBox.prop('checked')) {
-                    rightsHolder = '<img src="@routes.Assets.at("images/cc-by-nd.png")" alt="Attribution-NoDerivs" />';
-                    licenseText = '<a href="http://creativecommons.org/licenses/by-nd/3.0/" target="_blank">Attribution-NoDerivs</a>';
+                	rightsHolder = "Creative Commons";
+                    licenseText = "Attribution-NoDerivs";
+                    licenseUrl = "http://creativecommons.org/licenses/by-nd/3.0/";
                 }
                 //Only remixing selected
                 else if (!commBox.prop('checked') && remixBox.prop('checked') && !shareBox.prop('checked')) {

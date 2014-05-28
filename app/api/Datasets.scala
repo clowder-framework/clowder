@@ -316,8 +316,7 @@ class Datasets @Inject()(
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
   def updateLicensing(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicensing)) {
-    Logger.info("-------- HERE Datasets API ------------")
+    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicensing)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -335,7 +334,10 @@ class Datasets @Inject()(
               case s: JsSuccess[String] => {
                 licenseType = s.get
               }
-              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseType data is missing."))
+              }                            
           }
           
           aResult = (request.body \ "rightsHolder").validate[String]
@@ -345,7 +347,10 @@ class Datasets @Inject()(
               case s: JsSuccess[String] => {
                 rightsHolder = s.get
               }
-              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"rightsHolder data is missing.")) 
+              }              
           }
           
           aResult = (request.body \ "licenseText").validate[String]
@@ -355,7 +360,10 @@ class Datasets @Inject()(
               case s: JsSuccess[String] => {                
                 licenseText = s.get
               }
-              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseText data is missing."))
+              }              
           }
           
           aResult = (request.body \ "licenseUrl").validate[String]
@@ -365,7 +373,10 @@ class Datasets @Inject()(
               case s: JsSuccess[String] => {                
                 licenseUrl = s.get
               }
-              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseUrl data is missing."))
+              }
           }
           
           aResult = (request.body \ "allowDl").validate[String]
@@ -375,16 +386,19 @@ class Datasets @Inject()(
               case s: JsSuccess[String] => {                
                 allowDl = s.get
               }
-              case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString()) 
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"allowDl data is missing."))
+              }
           }          
           
-          Logger.info(s"updateLicensing for dataset with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDl")
+          Logger.debug(s"updateLicensing for dataset with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDl")
           
           datasets.updateLicensing(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDl)
           Ok(Json.obj("status" -> "success"))
       } 
       else {
-        Logger.info(s"The given id $id is not a valid ObjectId.")
+        Logger.error(s"The given id $id is not a valid ObjectId.")
         BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
   }
