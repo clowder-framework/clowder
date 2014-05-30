@@ -62,22 +62,59 @@ $(document).ready(function () {
 		}
 		</div>
 
-        <ul class="pager">
-            @if(prev != "") {
-            <li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
-            }
-            @if(next != "") {
-            <li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
-            }
-        </ul>
-
 	</div>
 	</div>
 	</div>
 	</div>
 </div>
-<script language="javascript">	
-	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
-</script>
+
+
+<div class="row">
+	<div class="col-md-12">
+		<table class="table table-bordered table-hover">
+			<thead>
+				<tr>
+					@if(user.isDefined) {
+						<th style="width: 25%">Name</th>
+						<th style="width: 15%">Created</th>
+						<th style="width: 40%">Description</th>
+						<th style="width: 10%"></th>
+						<th style="width: 10%"></th>
+					}
+					@if(!user.isDefined) {
+						<th style="width: 25%">Name</th>
+						<th style="width: 15%">Created</th>
+						<th style="width: 50%">Description</th>
+						<th style="width: 10%"></th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				@datasets.map { dataset =>
+					<tr>
+						<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
+						<td>@dataset.created.format("MMM dd, yyyy")</td>
+						<td style="white-space:pre-line">@dataset.description</td>
+						<td>
+							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
+							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
+						</td>
+						@if(user.isDefined) {
+							<td><a href="#" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+		<ul class="pager">
+			@if(prev != "") {
+  			<li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
+  			}
+  			@if(next != "") {
+  			<li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
+  			}
+		</ul>
+	</div>
+</div>
 <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
 }

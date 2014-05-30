@@ -49,7 +49,7 @@ trait CollectionService {
   /**
    * Create collection.
    */
-  def insert(collection: Collection)
+  def insert(collection: Collection): Option[String]
 
   /**
    * Add datataset to collection

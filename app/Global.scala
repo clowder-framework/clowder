@@ -3,13 +3,15 @@ import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.api.Play.current
 import services.mongodb.MongoSalatPlugin
+import play.api.mvc.WithFilters
+import play.filters.gzip.GzipFilter
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
  *
  * @author Luigi Marini
  */
-object Global extends GlobalSettings {
+object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
 
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded

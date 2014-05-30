@@ -40,15 +40,18 @@ class Search @Inject() (
    * Search results.
    */
   def search(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+    implicit val user = request.user
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         Logger.debug("Searching for: " + query)
-        var fileList = ListBuffer.empty[models.File]
-        var datasetList = ListBuffer.empty[models.Dataset]
-        var mapdatasetIds= new scala.collection.mutable.HashMap[String,(String,String)]
+        var listOfFiles = ListBuffer.empty[models.File]
+        var listOfdatasets = ListBuffer.empty[models.Dataset]
+        var listOfcollections = ListBuffer.empty[models.Collection]
+        var mapdatasetIds = new scala.collection.mutable.HashMap[String, ListBuffer[(String, String)]]
+        var mapcollectionIds = new scala.collection.mutable.HashMap[String, ListBuffer[(String, String)]]
         if (query != "") {
-          import play.api.Play.current
-          val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query) }
+          import play.api.Play.current          
+          val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([:/\\\\])", "\\\\$1"))}
           result match {
             case Some(searchResponse) => {
               for (hit <- searchResponse.getHits().getHits()) {
@@ -57,24 +60,49 @@ class Search @Inject() (
                 for ((key, value) <- mapAsScalaMap(hit.getFields())) {
                   Logger.info(value.getName + " = " + value.getValue())
                 }
+                
                 if (hit.getType() == "file") {
                   files.get(UUID(hit.getId())) match {
                     case Some(file) =>{
                       Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                       Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
                       //Logger.debug("Search result found file " + hit.getId()); files += file
-                       mapdatasetIds.put(hit.getId(), (hit.getSource().get("datasetId").toString(),hit.getSource.get("datasetName").toString))
-                      fileList += file
+                      
+                      var datasetsList =  ListBuffer() : ListBuffer[(String, String)]
+                      val datasetsIdsList = hit.getSource().get("datasetId").toString().split(" %%% ").toList
+                      val datasetsNamesList = hit.getSource().get("datasetName").toString().split(" %%% ").toList.iterator
+                      for(currentDatasetId <- datasetsIdsList){
+                        datasetsList = datasetsList :+ (currentDatasetId, datasetsNamesList.next())
+                      }
+                      
+                      mapdatasetIds.put(hit.getId(), datasetsList)
+                      listOfFiles += file
                     }
                     case None => Logger.debug("File not found " + hit.getId())
                   }
-                } else if (hit.getType() == "dataset") {
-                Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
-                  Logger.debug("DATASETS:Dataset.id="+hit.getId());
+                }
+                
+                else if (hit.getType() == "dataset") {
+                  Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
+                  Logger.debug("DATASETS:Dataset.id=" + hit.getId());
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
-                   datasets.get(UUID(hit.getId())) match {
-                    case Some(dataset) =>
-                      Logger.debug("Search result found dataset" + hit.getId()); datasetList += dataset
+
+                  datasets.get(UUID(hit.getId())) match {
+                    case Some(dataset) =>{
+                      Logger.debug("Search result found dataset" + hit.getId())
+                      
+                      var collectionsList =  ListBuffer() : ListBuffer[(String, String)]
+                      Logger.debug("src: "+hit.getSource().toString())
+                      val collectionsIdsList = hit.getSource().get("collId").toString().split(" %%% ").toList
+                      val collectionsNamesList = hit.getSource().get("collName").toString().split(" %%% ").toList.iterator
+                      for(currentCollectionId <- collectionsIdsList){
+                        collectionsList = collectionsList :+ (currentCollectionId, collectionsNamesList.next())
+                      }
+                      
+                      mapcollectionIds.put(hit.getId(), collectionsList)
+                      
+                      listOfdatasets += dataset
+                      }
                     case None => {
                       Logger.debug("Dataset not found " + hit.getId())
                   	Redirect(routes.Datasets.dataset(UUID(hit.getId)))            
@@ -82,7 +110,35 @@ class Search @Inject() (
                   }
                   }
                 }
-                Ok(views.html.searchResults(query, fileList.toArray, datasetList.toArray,mapdatasetIds))
+                
+                else if (hit.getType() == "collection") {
+                  Logger.debug("COLLECTIONS:hits.hits._source: Search result found collection " + hit.getSource().get("name"))
+                  Logger.debug("COLLECTIONS:Collection.id=" + hit.getId());
+                  //Dataset.findOneById(new ObjectId(hit.getId())) match {
+                  collections.get(UUID(hit.getId())) match {
+                    case Some(collection) =>
+                      Logger.debug("Search result found collection" + hit.getId());                      
+                      var collectionThumbnail:Option[String] = None
+                      try{
+				        for(dataset <- collection.datasets){
+				          if(!dataset.thumbnail_id.isEmpty){
+				            collectionThumbnail = dataset.thumbnail_id
+				            throw ThumbnailFound		
+				          }
+				        }
+				        }catch {
+				        	case ThumbnailFound =>
+				        }
+                      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+                      listOfcollections += collectionWithThumbnail
+                    case None => {
+                      Logger.debug("Collection not found " + hit.getId())
+                      Redirect(routes.Collections.collection(UUID(hit.getId)))
+                    }
+                  }
+                }
+ 
+                Ok(views.html.searchResults(query, listOfFiles.toArray, listOfdatasets.toArray, listOfcollections.toArray, mapdatasetIds, mapcollectionIds))
               }
             }
             case None => {
@@ -90,7 +146,10 @@ class Search @Inject() (
             }
           }
         }
-        Ok(views.html.searchResults(query, fileList.toArray, datasetList.toArray,mapdatasetIds))
+
+        Logger.debug("newquery: " + query.replaceAll("([:/\\\\])", "\\\\$1"))
+        Ok(views.html.searchResults(query, listOfFiles.toArray, listOfdatasets.toArray, listOfcollections.toArray, mapdatasetIds, mapcollectionIds))
+
       }
       case None => {
         Logger.debug("Search plugin not enabled")
