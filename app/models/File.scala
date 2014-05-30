@@ -23,10 +23,8 @@ case class File(
   previews: List[Preview] = List.empty,
   tags: List[Tag] = List.empty,
   metadata: List[Map[String, Any]] = List.empty,
-  thumbnail_id: Option[UUID] = None,
+  thumbnail_id: Option[String] = None,
   isIntermediate: Option[Boolean] = None,
   userMetadata: Map[String, Any] = Map.empty,
   xmlMetadata: Map[String, Any] = Map.empty,
   userMetadataWasModified: Option[Boolean] = None)
-
-

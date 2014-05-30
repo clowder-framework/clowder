@@ -108,7 +108,7 @@
 		@for((f, pvs) <- previews) {
 				<div id='previewedFileName_@(f.id.toString)' class='filenameDiv'><h4 style="font-weight:bold;">@f.filename</h4></div>
 			
-				<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
+				<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename" style="margin-left:0px;">
 		    		<div class="span12">
 				  		<div class="tabbable">
 							<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
@@ -292,6 +292,28 @@
 								$("#technicalMetadata_@(f.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
 							}
 						});				
+					</script>
+				}
+				@if(!f.xmlMetadata.isEmpty) {
+					<div id='xmlMetadata_@(f.id.toString)'>
+						<button class="tech_md_" type="button">Show XML-uploaded metadata</button>
+						<div style="display:none;">
+						<ul>								
+								@printLevel(f.xmlMetadata)
+						</ul>
+						</div>
+					</div>
+					<script>
+						$("#xmlMetadata_@(f.id.toString) > button").on('click',function(){
+							if($("#xmlMetadata_@(f.id.toString) > div").attr('style') == 'display:none;'){
+								$("#xmlMetadata_@(f.id.toString) > div").attr('style', 'display:block;');
+								$("#xmlMetadata_@(f.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
+							}
+							else{
+								$("#xmlMetadata_@(f.id.toString) > div").attr('style', 'display:none;');
+								$("#xmlMetadata_@(f.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
+							}
+						});	
 					</script>
 				}
 				
@@ -536,7 +558,7 @@
 					<dt>Owner:</dt>
 					<dd>@dataset.author.fullName</dd>
 					<dt>Description:</dt>
-					<dd>@dataset.description</dd>
+					<dd style="white-space:pre-line">@dataset.description</dd>
 				    <dt>Created:</dt>
 					<dd>@dataset.created.format("MMM dd, yyyy")</dd>
 				</dl>
