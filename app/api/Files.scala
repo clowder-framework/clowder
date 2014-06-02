@@ -1348,6 +1348,9 @@ class Files @Inject()(
         	//=== end of versus plugin code
           
           files.removeFile(id)
+          current.plugin[ElasticsearchPlugin].foreach {
+	        	_.delete("data", "file", id.stringify)
+	        }
           //remove file from RDF triple store if triple store is used
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
             case "yes" => {
