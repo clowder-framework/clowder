@@ -547,8 +547,10 @@ class VersusPlugin(application:Application) extends Plugin{
                 
 		  file.thumbnail_id match {               
 		  	case Some(thumb_id) => {
+		  		//val oneFileResult = new SearchResultFile(result_id, result.docID, 
+                	//	proxvalue, file.filename, dataset_id_list.toList, thumb_id.stringify)
 		  		val oneFileResult = new SearchResultFile(result_id, result.docID, 
-                		proxvalue, file.filename, dataset_id_list.toList, thumb_id.stringify)
+                		proxvalue, file.filename, dataset_id_list.toList, thumb_id)
 		  		return oneFileResult
 		  	}
 		  	case None=>{
