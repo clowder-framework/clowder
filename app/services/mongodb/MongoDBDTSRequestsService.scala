@@ -41,40 +41,12 @@ class MongoDBDTSRequestsService @Inject()(extractions: ExtractionService)extends
     // DTSRequests.dao.collection.insert(MongoDBObject("serverIP"->serverIP,"clientIP"->clientIP,"fileid"->fileid,"filename"->filename,"fileType"->fileType,"filesize"->filesize,"uploadDate"->uploadDate,"Extractors"->null,"startTime"->None,"endTime"->None))
   }
 
- /* def updateRequest(file_id:ObjectId,extractor_id:String) = {
-    val requests = getRequests(file_id,extractor_id)
-    Logger.debug("-----UPDATING DTS REQUESTS----------")
-    Logger.debug( "NO of Requests to be updated : "+requests.length);
-    for (r <- requests) {
 
-      var req = Json.parse(com.mongodb.util.JSON.serialize(r))
-
-      var fileid1 = (req \ ("fileid")).toString()
-      var fileid = fileid1.substring(1, fileid1.size - 1)
-
-      Logger.debug("File Id for UPDATE MongoDB DTS REQUESTS: " + fileid)
-
-      var extime = Extraction.getExtractionTime(new ObjectId(fileid))
-
-      var sortedTime = extime.sortBy(_.getTime())
-      var len = sortedTime.size
-
-      var ex = Extraction.getExtractorList(new ObjectId(fileid.toString))
-     
-      val elist = ex.keySet.toList
-      Logger.debug("----extractorlist:----"+ elist);
-      if (len != 0) {
-        var update = $set("extractors" -> elist, "startTime" -> sortedTime(0), "endTime" -> sortedTime(len - 1))
-        var result = DTSRequests.dao.collection.update(r, update)
-      }
-
-    }
-  }*/
   
   def updateRequest(file_id:UUID,extractor_id:String) = {
     val requests = getRequests(file_id)
     Logger.debug("-----UPDATING DTS REQUESTS----------")
-    Logger.debug( "NO of Requests to be updated : "+requests.length);
+    Logger.debug( "Number of Requests to be updated : "+requests.length);
     for (r <- requests) {
 
       var req = Json.parse(com.mongodb.util.JSON.serialize(r))
@@ -112,7 +84,6 @@ class MongoDBDTSRequestsService @Inject()(extractions: ExtractionService)extends
     Logger.debug("REQUEST Length: "+ requests1.length)
     
     var requests = DTSRequests.dao.collection.find(query)
-    //.find(query)
     requests
   }
 

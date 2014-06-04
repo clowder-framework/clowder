@@ -20,12 +20,6 @@ import java.io.ByteArrayInputStream
 
 import scala.collection.mutable.MutableList
 
-
-import org.bson.types.ObjectId
-
-import com.mongodb.WriteConcern
-import com.mongodb.casbah.Imports._
-
 import models._
 import play.api.Logger
 import play.api.Play.current
@@ -65,10 +59,6 @@ import play.api.Play.configuration
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
 import services.ExtractorMessage
-import scala.util.parsing.json.JSONArray
-
-
-import controllers.Previewers
 import scala.concurrent.Future
  
 import scala.util.control._

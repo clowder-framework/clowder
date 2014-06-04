@@ -15,8 +15,6 @@ import com.rabbitmq.client.DefaultConsumer
 import com.rabbitmq.client.Envelope
 import models.{UUID, Extraction}
 import java.text.SimpleDateFormat
-
-import org.bson.types.ObjectId
 import com.rabbitmq.client.ReturnListener
 import scala.concurrent.Future
 import play.api.libs.ws.WS

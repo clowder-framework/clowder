@@ -1,6 +1,5 @@
 package models
 
-import org.bson.types.ObjectId
 import java.util.Date
 import play.api.Play.current
 import java.util.ArrayList
@@ -45,33 +44,25 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
 
               Logger.debug("Server Name : " + svr \ "name")
               val ipl = (svr \ "name")    //Get the Channel name by traversing the JsObject
-
-              
               val ipltoString = ipl.toString //Convert from JsValue to To String
-
               val ipls = ipltoString.substring(1, ipltoString.length() - 5) // get read of the quotation mark and String (1) in the end of the name
-
-             
               val url = java.net.URLEncoder.encode(ipls, "UTF-8")
-
               val c = "%20"
               val url1 = url.replaceAll("\\+", c) + "%20(1)"
-              
-             
               (ipltoString, url1)
           } //end of map
           ulist
         } //end of first yield
 
         /*
-		                   * Get the channel details
-		                   * extract consumer_tags field
-		                   * if it is ctag, it denotes a consumer, otherwise a publisher
-		                   * We want consumers, that is server IPs that is running extractor and name of the extractor
-		                   */
+		* Get the channel details
+		* extract consumer_tags field
+		* if it is ctag, it denotes a consumer, otherwise a publisher
+		* We want consumers, that is server IPs that is running extractor and name of the extractor
+		*/
 
         var finalResult = for {
-          chiplist <- ips /*get the channel IPs as response*/
+          chiplist <- ips /* get the channel IPs as response */
         } yield { /* start of 2nd yield*/
 
           //Logger.debug("-------Loop through each Channel IP-------")
@@ -85,22 +76,16 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
               } yield {
                 Logger.debug("---------IP:----- " + url1._1)
                 val cdetailjson = cdetailResponse.json
-
                 val cdetail = cdetailjson.as[JsObject] /*convert the json response to JsObject to make it traversable*/
-                var consumer_details_List = (cdetail \\ "consumer_details").toList
-
-                //Logger.debug("CONSUMER DETAILS====" + consumer_details_List)
-
+                val consumer_details_List = (cdetail \\ "consumer_details").toList
                 var consumer_tags = List[String]()
                 var queue: Seq[JsValue] = null
                 var queuename: Seq[JsValue] = null
 
                 for (ct <- consumer_details_List) {
-
                   var ctag = ct \\ "consumer_tag"
                   // Logger.debug("cTAG:::::" + ctag)
                   consumer_tags = ctag(0).toString :: consumer_tags
-
                   queue = ct \\ "queue"
                   queuename = queue(0) \\ "name"
                   Logger.debug(" Queuename: " + queuename(0))
@@ -108,10 +93,8 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
 
                 var flag = false
                 for (xt <- consumer_tags) {
-                 
                   var str = xt
                   var substr = str.substring(1, str.length - 1)
-                  
                   if (substr == ("ctag1.0")) {
                     Logger.debug(substr + " :::  CONSUMER")
                     flag = true
