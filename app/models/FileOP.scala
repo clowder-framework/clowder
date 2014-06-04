@@ -87,8 +87,7 @@ object FileOP {
   def extractVersusDescriptors(id:UUID): JsValue= {
     val vDes=files.getVersusMetadata(id)
     if(vDes==null){
-      //Json.toJson(Map(""->""))  
-    Json.arr()
+       Json.arr()
     }else{
       vDes
     }

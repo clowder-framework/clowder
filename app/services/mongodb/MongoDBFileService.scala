@@ -495,8 +495,7 @@ class MongoDBFileService @Inject() (
    *
    */
   def addVersusMetadata(id: UUID, json: JsValue) {
-
-    //Logger.debug("******Adding metadata to file " + id + " : " + json)
+   
      Logger.debug("******MongoDB::::Adding Versus metadata to file " + id.toString )
 
     var jsonlist = json.as[List[JsObject]] // read json as list of JSON objects
@@ -572,15 +571,15 @@ class MongoDBFileService @Inject() (
     FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case Some(x) => {
     	Logger.debug("FileDAO keySets==="+x.keySet().toString())
-    	Logger.info("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
+    	Logger.debug("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
         
     	x.getAs[DBObject]("metadata")match {
     	    case None => {
-            Logger.info("--------------")
+            Logger.debug("--------------")
             Logger.debug("  ")
-            Logger.info("No metadata field found")
+            Logger.debug("No metadata field found")
             
-            Logger.info("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
+            Logger.debug("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
            // Json.obj("Message"->("No metadata for file "+id))
            // Json.obj(""->"")
             null
@@ -591,7 +590,7 @@ class MongoDBFileService @Inject() (
            
             val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
             
-            Logger.info("retmd: " + returnedMetadata)
+            Logger.debug("retmd: " + returnedMetadata)
 
             val retmd =Json.toJson(returnedMetadata)
             //Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
