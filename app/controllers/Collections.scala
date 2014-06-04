@@ -11,8 +11,10 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
+import play.api.Play.current
 import javax.inject.{Singleton, Inject}
 import services.{DatasetService, CollectionService}
+import services.ElasticsearchPlugin
 
 object ThumbnailFound extends Exception {}
 
@@ -115,6 +117,12 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         collection => {
           Logger.debug("Saving dataset " + collection.name)
           collections.insert(collection)
+          
+          // index collection
+		            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id, 
+		                List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+          
           Redirect(routes.Collections.collection(collection.id))
         })
   }

@@ -154,10 +154,10 @@ POST	/api/files/:three_d_file_id/geometries/:geometry_id		@api.Files.attachGeome
 POST	/api/files/:three_d_file_id/3dTextures/:texture_id		@api.Files.attachTexture(three_d_file_id: UUID,texture_id: UUID)
 POST	/api/files/:file_id/thumbnails/:thumbnail_id			@api.Files.attachThumbnail(file_id: UUID,thumbnail_id: UUID)
 GET     /api/files                        						@api.Files.list
-POST    /api/files                        						@api.Files.upload(showPreviews: String ?= "DatasetLevel")
+POST    /api/files                        						@api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "")
 POST	/api/files/searchusermetadata							@api.Files.searchFilesUserMetadata
 POST	/api/files/searchmetadata								@api.Files.searchFilesGeneralMetadata
-POST    /api/uploadToDataset/:id                        		@api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel")
+POST    /api/uploadToDataset/:id                        		@api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "")
 POST	/api/files/uploadIntermediate/:idAndFlags				@api.Files.uploadIntermediate(idAndFlags)
 
 POST	/api/files/sendJob/:fileId/:fileType					@api.Files.sendJob(fileId: UUID,fileType)
@@ -169,6 +169,8 @@ POST    /api/files/:id/metadata           						@api.Files.addMetadata(id: UUID)
 POST    /api/files/:id/versus_metadata                          @api.Files.addVersusMetadata(id:UUID) 
 POST    /api/files/:id/usermetadata	  							@api.Files.addUserMetadata(id: UUID)
 GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnicalMetadataJSON(id: UUID)
+GET     /api/files/:id/xmlmetadatajson           				@api.Files.getXMLMetadataJSON(id: UUID)
+GET     /api/files/:id/usermetadatajson           				@api.Files.getUserMetadataJSON(id: UUID)
 POST    /api/files/:id/comment									@api.Files.comment(id: UUID)
 
 
@@ -212,7 +214,7 @@ GET     /api/queries/:id				                        @api.Files.downloadquery(id:
 # DANGER
 GET     /api/delete-data                    					api.Admin.deleteAllData
 
-POST    /api/collections                                        @api.Collections.createCollection()
+POST    /api/collections                                        					@api.Collections.createCollection()
 GET		/api/collections/list														@api.Collections.listCollections
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
@@ -231,18 +233,22 @@ POST	/api/datasets/:datasetId/remove								@api.Datasets.deleteDataset(datasetI
 POST    /api/datasets/:id/metadata		  							@api.Datasets.addMetadata(id: UUID)
 POST    /api/datasets/:id/usermetadata	  							@api.Datasets.addUserMetadata(id: UUID)
 GET     /api/datasets/:id/technicalmetadatajson           			@api.Datasets.getTechnicalMetadataJSON(id: UUID)
+GET     /api/datasets/:id/xmlmetadatajson           				@api.Datasets.getXMLMetadataJSON(id: UUID)
+GET     /api/datasets/:id/usermetadatajson           				@api.Datasets.getUserMetadataJSON(id: UUID)
 GET 	/api/datasets/:id/listFiles		 							@api.Datasets.datasetFilesList(id: UUID)
 POST    /api/datasets/:id/comment									@api.Datasets.comment(id: UUID)
-GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
-GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)
-POST	/api/datasets/:ds_id/files/:file_id							@api.Datasets.attachExistingFile(ds_id: UUID, file_id: UUID)
-#GET 	/api/datasets/:id				 							@api.Datasets.datasetFilesList(id: UUID)
 
 POST 	/api/datasets/:id/removeTag 								@api.Datasets.removeTag(id: UUID)
 GET     /api/datasets/:id/tags                                  @api.Datasets.getTags(id: UUID)
 POST    /api/datasets/:id/tags                                  @api.Datasets.addTags(id: UUID)
 POST    /api/datasets/:id/tags/remove                           @api.Datasets.removeTags(id: UUID)
 POST    /api/datasets/:id/tags/remove_all                       @api.Datasets.removeAllTags(id: UUID)
+
+GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
+GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)
+POST	/api/datasets/:ds_id/files/:file_id							@api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
+GET 	/api/datasets/:id				 							@api.Datasets.datasetFilesList(id: UUID)
+
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					@api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			@api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
@@ -254,7 +260,7 @@ POST    /api/previews/:id/annotationAdd        									    @api.Previews.attach
 POST    /api/previews/:id/annotationEdit        									@api.Previews.editAnnotation(id: UUID)
 GET     /api/previews/:id/annotationsList        									@api.Previews.listAnnotations(id: UUID)
 GET     /api/previews/:id                 											@api.Previews.download(id: UUID)
-POST    /api/previews                     											@api.Previews.upload(iipKey: String ?= "")
+POST    /api/previews  																@api.Previews.upload(iipKey: String ?= "")
 
 POST     /api/indexes                                                        @api.Indexes.index
 POST     /api/indexes/features                                               @api.Indexes.features

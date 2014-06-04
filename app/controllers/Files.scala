@@ -16,6 +16,7 @@ import fileutils.FilesUtils
 import api.WithPermission
 import api.Permission
 import javax.inject.Inject
+import java.util.Date
 
 /**
  * Manage files.
@@ -108,7 +109,7 @@ class Files @Inject() (
         }
     }
   }
-
+  
   /**
    * List a specific number of files before or after a certain date.
    */
@@ -378,6 +379,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
 
 	            
+	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -386,12 +389,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
+		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName","")))
+		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName","")))
 		            }
 	            }
 	            
@@ -425,6 +428,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }
   }
 
+  ////////////////////////////////////////////////
+  
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
@@ -573,6 +578,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+            
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -581,12 +588,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
+		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else {
 		            current.plugin[ElasticsearchPlugin].foreach{
-		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
 		            }
 	            }
 	            
@@ -678,6 +685,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -687,12 +695,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
+		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
 		            }
 	            }
 	            
@@ -777,6 +785,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+            
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -785,12 +795,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
 		            }
 	            }
 	            
@@ -901,6 +911,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 							  
 							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
 
+					  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 					  
 					  //for metadata files
 					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -910,12 +921,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 								  Logger.debug("xmlmd=" + xmlToJSON)
 
 								  current.plugin[ElasticsearchPlugin].foreach{
-						  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
+						  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
 						  		  }
 					  }
 					  else{
 						  current.plugin[ElasticsearchPlugin].foreach{
-							  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
+							  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
 						  }
 					  }
 					  

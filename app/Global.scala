@@ -16,14 +16,21 @@ import models._
 
 import services.mongodb.MongoSalatPlugin
 
+import play.api.mvc.WithFilters
+import play.filters.gzip.GzipFilter
+
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
  *
  * @author Luigi Marini
  */
-object Global extends GlobalSettings {
+
+object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
+        
       var serverStartTime:Date=null
+
+
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded
     models.ServerStartTime.startTime = Calendar.getInstance().getTime()
@@ -49,7 +56,7 @@ object Global extends GlobalSettings {
     }
  
     
-    Akka.system().scheduler.schedule(0.minutes,5 minutes){
+    Akka.system().scheduler.schedule(0.minutes,2 minutes){
            models.DTSInfoSetUp.updateExtractorsInfo()
     }
      
