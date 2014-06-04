@@ -117,6 +117,7 @@ class Files @Inject()(
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
     request =>
       val list = for (f <- files.listFiles()) yield jsonFile(f)
+
       Ok(toJson(list))
 
   }
@@ -1427,6 +1428,7 @@ class Files @Inject()(
 	    }
 	  }
 
+
 	  @ApiOperation(value = "Get technical metadata of the resource described by the file",
 		      notes = "",
 		      responseClass = "None", httpMethod = "GET")
@@ -1443,36 +1445,49 @@ class Files @Inject()(
 	      }
 	  }
   
-	  @ApiOperation(value = "Delete file",
-		      notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
-		      responseClass = "None", httpMethod = "POST")
-	  def removeFile(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.DeleteFiles)) { request =>
-	    files.get(id)  match {
-	      case Some(file) => {
-	        files.removeFile(id)
-	        current.plugin[ElasticsearchPlugin].foreach {
+	 
+
+
+  @ApiOperation(value = "Delete file",
+      notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
+      responseClass = "None", httpMethod = "POST")
+  def removeFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteFiles)) {
+    request =>
+      files.get(id) match {
+        case Some(file) => {
+        	Logger.debug("Deleting file: " + file.filename)
+        	//=== start of versus plugin code 
+        	current.plugin[VersusPlugin] match {    		
+        		case Some(plugin)=>{ 
+        			plugin.removeFromIndexes(id)    	  
+        		}
+        		case None => {
+        			Logger.debug("No versus plugin found")
+        		}
+        	}
+        	//=== end of versus plugin code
+          
+          files.removeFile(id)
+          current.plugin[ElasticsearchPlugin].foreach {
 	        	_.delete("data", "file", id.stringify)
 	        }
-	        
-	        Logger.debug(file.filename)
+          //remove file from RDF triple store if triple store is used
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => {
+              if (file.filename.endsWith(".xml")) {
+                sqarql.removeFileFromGraphs(id, "rdfXMLGraphName")
+              }
+              sqarql.removeFileFromGraphs(id, "rdfCommunityGraphName")
+            }
+            case _ => {}
+          }
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => Ok(toJson(Map("status" -> "error", "msg" -> "file not found")))
 
-	        //remove file from RDF triple store if triple store is used
-		        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-	            case "yes" => {
-	              if (file.filename.endsWith(".xml")) {
-	                sqarql.removeFileFromGraphs(id, "rdfXMLGraphName")
-	              }
-	              sqarql.removeFileFromGraphs(id, "rdfCommunityGraphName")
-	            }
-	            case _ => {}
-	          }
-	        
-	                
-	        Ok(toJson(Map("status"->"success")))
-	      }
-	      case None => Ok(toJson(Map("status" -> "success")))
-	    }
-	  }
+      }
+  }
+
 
   /**
    * List datasets satisfying a user metadata search tree.

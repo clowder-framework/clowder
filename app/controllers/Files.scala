@@ -45,8 +45,8 @@ class Files @Inject() (
     mapping(
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
-  )
-
+  )  
+  
   /**
    * File info.
    */
@@ -398,8 +398,13 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            }
 	            }
 	            
-                current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+        
+
+	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
 	            
+
+
+
 	             
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -639,7 +644,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              }
       	}
         
-        Logger.debug("Uploading file " + nameOfFile)
+        Logger.debug("Controllers/Files Uploading file " + nameOfFile)
         
         // store file       
         Logger.info("uploadSelectQuery")
