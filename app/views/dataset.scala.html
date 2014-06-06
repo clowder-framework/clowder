@@ -552,18 +552,95 @@
 
 		<!-- right column -->
 		<div class="col-md-4">
-		    <div class="row ds-section-sm">
-		    	<h3>About</h3>
-				<dl class="dl-horizontal">
-					<dt>Owner:</dt>
-					<dd>@dataset.author.fullName</dd>
-					<dt>Description:</dt>
-					<dd style="white-space:pre-line">@dataset.description</dd>
-				    <dt>Created:</dt>
-					<dd>@dataset.created.format("MMM dd, yyyy")</dd>
-				</dl>
-			</div>
-			
+		
+		  <!-- Dataset information elements --> 
+          <div id="aboutDiv" class="row ds-section-sm" style="margin-top:20px; width: 370px; padding-left:15px;">        
+            <div class="accordion" id="accordion5" style="width: 370px;">
+                <div class="accordion-group">
+                    <h3>About</h3>
+                    <div class="accordian-heading" style="padding-left:20px;">                        
+                        <table>
+                           <tr>
+                            <td><b>Owner: </b></td>
+                            <td id="aboutowner" style="padding-left:10px;">@dataset.author.fullName</td>
+                           </tr>
+                           <tr>
+                            <td style="vertical-align:top;"><b>Description: </b></td>
+                            <td id="aboutdesc" style="padding-left:10px;">@dataset.description</td>
+                           </tr>
+                           <tr>
+                            <td><b>Created: </b></td>
+                            <td id="aboutcreate" style="padding-left:10px;">@dataset.created.format("MMM dd, yyyy")</td>
+                           </tr>
+                        </table>
+                        <p>
+                        <a class="accordion-toggle collapsed" data-toggle="collapse"
+                            data-parent="#accordion6" href="#collapseSix" id="editabout" style="padding-left:2px;">Edit</a>
+                    </div>
+                    <div id="collapseSix" class="accordion-body collapse" style="border: 5px solid; border-style: ridge; padding:5px 10px 5px 10px;">
+                        @if(user.isDefined) {
+                            <form class="form-inline" id="form2">
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="width: 30%; vertical-align:top;">Description:</td>
+                                        <td>
+                                            <textarea cols=30 rows=4 type="text" id="editdesc">@dataset.description</textarea>                                            
+                                        </td>
+                                    </tr>
+                                </table>
+                                <br>
+                                
+                                <button class="btn btn-default" onclick="return updateAboutData('@dataset.id.stringify');">Update</button>
+                                <button class="btn btn-default" onclick="return closeAboutEdit();">Close</button>
+                             </form>
+                        }
+                    </div>
+                </div>
+            </div>
+          </div>
+          
+          <script type="text/javascript" language="javascript">
+              function closeAboutEdit() {
+                  $("#editabout").addClass('collapsed');
+                  $("#collapseSix").collapse('toggle');      
+                  return false;
+              }
+              
+              function updateAboutData(datasetId, description) {
+            	  var description = $("#editdesc").val();
+            	  var jsonData = JSON.stringify({"description":description});                 
+                  
+                  var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
+                	  data: jsonData,
+                      type: 'POST',
+                      contentType: "application/json",
+                  });
+                  
+                  request.done(function (response, textStatus, jqXHR){
+                      ///console.log("Response " + response);
+                      //Sucessful update of the DB - update the interface
+
+                      $("#aboutdesc").html(description);
+                      
+                      closeAboutEdit();
+                   });
+          
+                   
+                   request.fail(function (jqXHR, textStatus, errorThrown){
+                      console.error(
+                          "The following error occured: "+
+                          textStatus, errorThrown
+                          
+                      );
+                      alert("Updating the dataset information failed.");
+                   });
+                  
+            	  return false;
+              }
+          </script>
+          <!-- End dataset information elements -->          
+			 
+
 			<div class="row ds-section-sm">
 				<h3>Files</h3>
 				<table id="datasetFilesTable">

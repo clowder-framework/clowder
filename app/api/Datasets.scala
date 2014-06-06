@@ -26,6 +26,9 @@ import java.io.FileInputStream
 import play.api.libs.concurrent.Execution.Implicits._
 import services._
 import play.api.libs.json.JsString
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsError
 import scala.Some
 import models.File
 import play.api.Play.configuration
@@ -287,7 +290,54 @@ class Datasets @Inject()(
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
                "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
+  
+  //Update Dataset Information code starts
 
+  /**
+   * REST endpoint: POST: update the licensing data associated with a specific Dataset
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with this dataset 
+   *  
+   *  The data contained in the request body will be containe the following key-value pairs:
+   *  
+   */
+  @ApiOperation(value = "Update dataset administrative information",
+      notes = "Takes one argument, a String. description",
+      responseClass = "None", httpMethod = "POST")
+  def updateInformation(id: UUID) = 
+    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
+    implicit request =>
+      if (UUID.isValid(id.stringify)) {          
+
+          //Set up the vars we are looking for
+          var description: String = null;
+          
+          var aResult: JsResult[String] = (request.body \ "description").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                description = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"description data is missing."))
+              }                            
+          }
+          Logger.debug(s"updateInformation for dataset with id  $id. Arg is $description")
+          
+          datasets.updateInformation(id, description)
+          Ok(Json.obj("status" -> "success"))
+      } 
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+  //End, Update Dataset Information code
+  
   // ---------- Tags related code starts ------------------
   /**
    * REST endpoint: GET: get the tag data associated with this section.

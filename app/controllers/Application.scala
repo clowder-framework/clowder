@@ -45,6 +45,7 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Datasets.removeTag,
         api.routes.javascript.Datasets.removeTags,
         api.routes.javascript.Datasets.removeAllTags,
+        api.routes.javascript.Datasets.updateInformation,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
         api.routes.javascript.Files.addTags,

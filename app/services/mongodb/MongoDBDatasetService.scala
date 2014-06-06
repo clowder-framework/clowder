@@ -482,7 +482,16 @@ class MongoDBDatasetService @Inject() (
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
-
+  
+  /**
+   * Implementation of updateInformation defined in services/DatasetService.scala.
+   */
+  def updateInformation(id: UUID, description: String) {
+      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
+          $set("description" -> description), 
+          false, false, WriteConcern.Safe);
+  }
+  
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
