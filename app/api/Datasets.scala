@@ -294,13 +294,18 @@ class Datasets @Inject()(
   //Update Dataset Information code starts
 
   /**
-   * REST endpoint: POST: update the licensing data associated with a specific Dataset
+   * REST endpoint: POST: update the administrative information associated with a specific Dataset
    * 
    *  Takes one arg, id:
    *  
    *  id, the UUID associated with this dataset 
    *  
-   *  The data contained in the request body will be containe the following key-value pairs:
+   *  The data contained in the request body will contain data to be updated associated by the following String key-value pairs:
+   *  
+   *  description,The text for the updated description for the dataset
+   *  
+   *  Currently description is the only field that can be modified, however this api is extensible enough to add other existing
+   *  fields, or new fields, in the future.  
    *  
    */
   @ApiOperation(value = "Update dataset administrative information",
