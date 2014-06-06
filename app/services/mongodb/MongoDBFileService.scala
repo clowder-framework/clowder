@@ -213,14 +213,17 @@ class MongoDBFileService @Inject() (
         var fileDsName = ""
 
         for (dataset <- datasets.findByFileId(file.id)) {
-          fileDsId = fileDsId + dataset.id.toString + "  "
-          fileDsName = fileDsName + dataset.name + "  "
+          fileDsId = fileDsId + dataset.id.stringify + " %%% "
+          fileDsName = fileDsName + dataset.name + " %%% "
         }
+        
+        val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType), ("datasetId", fileDsId), ("datasetName", fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
         }
+        
       }
       case None => Logger.error("File not found: " + id)
     }
@@ -656,7 +659,7 @@ class MongoDBFileService @Inject() (
             ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
           if(!file.thumbnail_id.isEmpty)
-            Thumbnail.removeById(new ObjectId(file.thumbnail_id.get.stringify))
+            Thumbnail.removeById(new ObjectId(file.thumbnail_id.get))
         }
         FileDAO.removeById(new ObjectId(file.id.stringify))
       }
@@ -816,7 +819,7 @@ class MongoDBFileService @Inject() (
    */
   def updateThumbnail(fileId: UUID, thumbnailId: UUID) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)),
-      $set("thumbnail_id" -> thumbnailId), false, false, WriteConcern.Safe)
+      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
 
 }

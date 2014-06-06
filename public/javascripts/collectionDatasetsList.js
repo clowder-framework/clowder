@@ -51,7 +51,7 @@
 	        $('#collectionDatasetsTable tbody').prepend("<tr id='datasetRow1' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='" + "http://" + hostIp + ":" + window.location.port
 					+ "/datasets/" + datasetId + "'>"+ event.target.innerHTML + "</a></td>"
 					+ "<td>" + inputDate + "</td>"
-					+ "<td>" + inputDescr + "</td>"
+					+ "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 					+ "<td>" + inputThumbnail + "</td>"
 					+ "<td><a href='#!' onclick='removeDataset(\"" + datasetId + "\",event)'>Remove</a></td></tr>");
 	        $('#collectionDatasetsTable tbody tr').css('display','none');
@@ -120,7 +120,7 @@
 	      + "onclick='addDataset(\"" + datasetId + "\",event)' "
 	      + ">"+ event.target.parentNode.parentNode.children[0].children[0].innerHTML + "</a></td>"
 	      + "<td>" + inputDate + "</td>"
-	      + "<td>" + inputDescr + "</td>"
+	      + "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 	      + "<td>" + inputThumbnail + "</td>"
 	      + "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
 	      + "/datasets/" + datasetId + "'>View</a></td></tr>";
@@ -274,7 +274,7 @@
 		        								+ "onclick='addDataset(\"" + respJSON[i].id + "\",event)' "
 		        								+ ">"+ respJSON[i].datasetname + "</a></td>"
 		        								+ "<td>" + createdDate + "</td>"
-		        								+ "<td>" + respJSON[i].description + "</td>"
+		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 		        								+ "<td>" + datasetThumbnail + "</td>"
 		        								+ "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
 		        								+ "/datasets/" + respJSON[i].id + "'>View</a></td></tr>");

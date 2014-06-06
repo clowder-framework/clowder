@@ -16,6 +16,7 @@ import fileutils.FilesUtils
 import api.WithPermission
 import api.Permission
 import javax.inject.Inject
+import java.util.Date
 
 /**
  * Manage files.
@@ -41,8 +42,8 @@ class Files @Inject() (
     mapping(
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
-  )
-
+  )  
+  
   /**
    * File info.
    */
@@ -102,7 +103,7 @@ class Files @Inject() (
         }
     }
   }
-
+  
   /**
    * List a specific number of files before or after a certain date.
    */
@@ -222,6 +223,8 @@ class Files @Inject() (
               // TODO replace null with None
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
 	            
+	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -230,20 +233,20 @@ class Files @Inject() (
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
+		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName","")))
+		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName","")))
 		            }
 	            }
 	            
-	          var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id)}
+	         // var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id)}
 	          
-	          Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
+	         // Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
-	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
 	             //current.plugin[VersusPlugin].foreach{_.build()}
 	             
 	             //add file to RDF triple store if triple store is used
@@ -271,6 +274,8 @@ class Files @Inject() (
     }
   }
 
+  ////////////////////////////////////////////////
+  
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
@@ -419,6 +424,8 @@ class Files @Inject() (
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+            
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -427,12 +434,12 @@ class Files @Inject() (
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
+		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else {
 		            current.plugin[ElasticsearchPlugin].foreach{
-		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
 		            }
 	            }
 	            
@@ -478,7 +485,7 @@ class Files @Inject() (
 	              }
       	}
         
-        Logger.debug("Uploading file " + nameOfFile)
+        Logger.debug("Controllers/Files Uploading file " + nameOfFile)
         
         // store file       
         Logger.info("uploadSelectQuery")
@@ -524,6 +531,7 @@ class Files @Inject() (
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -533,12 +541,12 @@ class Files @Inject() (
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
+		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
 		            }
 	            }
 	            
@@ -623,6 +631,8 @@ class Files @Inject() (
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+            
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -631,12 +641,12 @@ class Files @Inject() (
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
 		            }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))
+		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
 		            }
 	            }
 	            
@@ -728,6 +738,7 @@ class Files @Inject() (
 
 							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
 
+					  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 					  
 					  //for metadata files
 					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -737,12 +748,12 @@ class Files @Inject() (
 								  Logger.debug("xmlmd=" + xmlToJSON)
 
 								  current.plugin[ElasticsearchPlugin].foreach{
-						  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
+						  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
 						  		  }
 					  }
 					  else{
 						  current.plugin[ElasticsearchPlugin].foreach{
-							  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
+							  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
 						  }
 					  }
 					  

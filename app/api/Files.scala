@@ -4,6 +4,9 @@ import java.io.FileInputStream
 import java.io.BufferedWriter
 import java.io.FileWriter
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import org.bson.types.ObjectId
 
 import com.mongodb.WriteConcern
@@ -79,7 +82,6 @@ class Files @Inject()(
         }
       }
   }
-
   /**
    * List all files.
    */
@@ -87,6 +89,7 @@ class Files @Inject()(
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
     request =>
       val list = for (f <- files.listFiles()) yield jsonFile(f)
+
       Ok(toJson(list))
   }
 
@@ -227,105 +230,112 @@ class Files @Inject()(
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
-  def upload(showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
       request.user match {
         case Some(user) => {
-          request.body.file("File").map {
-            f =>
-              var nameOfFile = f.filename
-              var flags = ""
-              if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-                var thirdSeparatorIndex = nameOfFile.indexOf("__")
-                if (thirdSeparatorIndex >= 0) {
-                  var firstSeparatorIndex = nameOfFile.indexOf("_")
-                  var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-                  flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-                  nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                }
-              }
+	      request.body.file("File").map { f =>        
+	          var nameOfFile = f.filename
+	          var flags = ""
+	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
+		          	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+		              if(thirdSeparatorIndex >= 0){
+		                var firstSeparatorIndex = nameOfFile.indexOf("_")
+		                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+		            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+		            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+		              }
+	          }
+	        
+	        Logger.debug("Uploading file " + nameOfFile)
+	        // store file
+	        var realUser = user
+	          if(!originalZipFile.equals("")){
+	             files.get(new UUID(originalZipFile)) match{
+	               case Some(originalFile) => {
+	                 realUser = originalFile.author
+	               }
+	               case None => {}
+	             }
+	         }
 
-              Logger.debug("Uploading file " + nameOfFile)
-              // store file
-              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
-              val uploadedFile = f
-              file match {
-                case Some(f) => {
-
-                  val id = f.id
-                  if (showPreviews.equals("FileLevel"))
-                    flags = flags + "+filelevelshowpreviews"
-                  else if (showPreviews.equals("None"))
-                    flags = flags + "+nopreviews"
-                  var fileType = f.contentType
-                  if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
-                    fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
-                    if (fileType.startsWith("ERROR: ")) {
-                      Logger.error(fileType.substring(7))
-                      InternalServerError(fileType.substring(7))
-                    }
-                    if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped")) {
-                      var thirdSeparatorIndex = nameOfFile.indexOf("__")
-                      if (thirdSeparatorIndex >= 0) {
-                        var firstSeparatorIndex = nameOfFile.indexOf("_")
-                        var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-                        flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-                        nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                        files.renameFile(f.id, nameOfFile)
-                      }
-                      files.setContentType(f.id, fileType)
-                    }
-                  }
-                  else if (nameOfFile.toLowerCase().endsWith(".mov")) {
-                    fileType = "ambiguous/mov";
-                  }
-
-                  current.plugin[FileDumpService].foreach {
-                    _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
-                  }
+	        var realUserName = realUser.fullName
+	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
+	        val uploadedFile = f
+	        file match {
+	          case Some(f) => {
+	            	            
+	            val id = f.id
+	            if(showPreviews.equals("FileLevel"))
+	            	flags = flags + "+filelevelshowpreviews"
+	            else if(showPreviews.equals("None"))
+	            	flags = flags + "+nopreviews"
+	            var fileType = f.contentType
+	            if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
+	            	fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
+	            	if(fileType.startsWith("ERROR: ")){
+	            		Logger.error(fileType.substring(7))
+	            		InternalServerError(fileType.substring(7))
+	            	}
+	            	if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+					              if(thirdSeparatorIndex >= 0){
+					                var firstSeparatorIndex = nameOfFile.indexOf("_")
+					                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+					            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+					            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+					            	files.renameFile(f.id, nameOfFile)
+					              }
+					        	  files.setContentType(f.id, fileType)
+					          }
+	            }
+	            else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
+	            
+	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
                   // TODO RK : need figure out if we can use https
                   val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
-                  current.plugin[RabbitmqPlugin].foreach {
-                    // TODO replace null with None
-                    _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
-                  }
-
-                  //for metadata files
-                  if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                    val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                    files.addXMLMetadata(id, xmlToJSON)
-
-                    Logger.debug("xmlmd=" + xmlToJSON)
-
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
-                    }
-
-                    //add file to RDF triple store if triple store is used
-                    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+	            	    
+                val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
+                  
+	            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              files.addXMLMetadata(id, xmlToJSON)
+	              
+	              Logger.debug("xmlmd=" + xmlToJSON)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+		            }
+	              
+	              //add file to RDF triple store if triple store is used
+	             configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                       case "yes" => sqarql.addFileToGraph(f.id)
                       case _ => {}
                     }
-                  }
-                  else {
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType)))
-                    }
-                  }
-
-                  Ok(toJson(Map("id" -> id.stringify)))
-                }
-                case None => {
-                  Logger.error("Could not retrieve file that was just saved.")
-                  InternalServerError("Error uploading file")
-                }
-              }
-          }.getOrElse {
-            BadRequest(toJson("File not attached."))
-          }
+	            }
+	            else{
+		            current.plugin[ElasticsearchPlugin].foreach{
+		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
+		            }
+	            }
+	            
+	            Ok(toJson(Map("id"->id.stringify)))
+	          }
+	          case None => {
+	            Logger.error("Could not retrieve file that was just saved.")
+	            InternalServerError("Error uploading file")
+	          }
+	        }
+	      }.getOrElse {
+	         BadRequest(toJson("File not attached."))
+	      }
         }
 
         case None => BadRequest(toJson("Not authorized."))
@@ -387,147 +397,153 @@ class Files @Inject()(
   @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
-    implicit request =>
-      request.user match {
-        case Some(user) => {
-          datasets.get(dataset_id) match {
-            case Some(dataset) => {
-              request.body.file("File").map {
-                f =>
-                  var nameOfFile = f.filename
-                  var flags = ""
-                  if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-                    var thirdSeparatorIndex = nameOfFile.indexOf("__")
-                    if (thirdSeparatorIndex >= 0) {
-                      var firstSeparatorIndex = nameOfFile.indexOf("_")
-                      var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-                      flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) +
-                              "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) +
-                              "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-                      nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                    }
-                  }
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
+    request.user match {
+     case Some(user) => {
+      datasets.get(dataset_id) match {
+       case Some(dataset) => {
+        request.body.file("File").map { f =>
+          		var nameOfFile = f.filename
+	            var flags = ""
+	            if(nameOfFile.toLowerCase().endsWith(".ptm")){
+	            	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+		              if(thirdSeparatorIndex >= 0){
+		                var firstSeparatorIndex = nameOfFile.indexOf("_")
+		                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+		            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+		            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+		              }
+	            }
+          
+          Logger.debug("Uploading file " + nameOfFile)         
+          // store file
+          var realUser = user
+          if(!originalZipFile.equals("")){
+             files.get(new UUID(originalZipFile)) match{
+               case Some(originalFile) => {
+                 realUser = originalFile.author
+               }
+               case None => {}
+             }
+         }          
+          var realUserName = realUser.fullName
+          val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
+          val uploadedFile = f         
+          
+          // submit file for extraction
+          file match {
+            case Some(f) => {
+                            
+              val id = f.id.toString
+              if(showPreviews.equals("FileLevel"))
+	            flags = flags + "+filelevelshowpreviews"
+	          else if(showPreviews.equals("None"))
+	            flags = flags + "+nopreviews"
+	          var fileType = f.contentType
+	          if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")){
+	        	  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
 
-                  Logger.debug("Uploading file " + nameOfFile)
-                  // store file
-                  val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
-                  val uploadedFile = f
+	        	  if(fileType.startsWith("ERROR: ")){
+	        		  Logger.error(fileType.substring(7))
+	        		  InternalServerError(fileType.substring(7))
+				  }
+	        	  if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+					              if(thirdSeparatorIndex >= 0){
+					                var firstSeparatorIndex = nameOfFile.indexOf("_")
+					                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+					            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+					            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+					            	files.renameFile(f.id, nameOfFile)
+					              }
+					        	  files.setContentType(f.id, fileType)
+					          }
+	          }
+	          else if(nameOfFile.toLowerCase().endsWith(".mov")){
+							  fileType = "ambiguous/mov";
+						  }
+	              
+              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+              
+	          // TODO RK need to replace unknown with the server name
+	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+	          // TODO RK : need figure out if we can use https
+	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
+	              
+	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, Map.empty, f.length.toString, dataset_id, flags)) }
+	          
+	          val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+	          
+	          //for metadata files
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+            	  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+            	  		  files.addXMLMetadata(new UUID(id), xmlToJSON)
 
-                  // submit file for extraction
-                  file match {
-                    case Some(f) => {
+            			  Logger.debug("xmlmd=" + xmlToJSON)
 
-                      val id = f.id
-                      if (showPreviews.equals("FileLevel"))
-                        flags = flags + "+filelevelshowpreviews"
-                      else if (showPreviews.equals("None"))
-                        flags = flags + "+nopreviews"
-                      var fileType = f.contentType
-                      if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")) {
-                        fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")
-
-                        if (fileType.startsWith("ERROR: ")) {
-                          Logger.error(fileType.substring(7))
-                          InternalServerError(fileType.substring(7))
-                        }
-                        if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped")) {
-                          var thirdSeparatorIndex = nameOfFile.indexOf("__")
-                          if (thirdSeparatorIndex >= 0) {
-                            var firstSeparatorIndex = nameOfFile.indexOf("_")
-                            var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-                            flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-                            nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                            files.renameFile(f.id, nameOfFile)
-                          }
-                          files.setContentType(f.id, fileType)
-                        }
-                      }
-                      else if (nameOfFile.toLowerCase().endsWith(".mov")) {
-                        fileType = "ambiguous/mov";
-                      }
-
-                      current.plugin[FileDumpService].foreach {
-                        _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
-                      }
-
-                      // TODO RK need to replace unknown with the server name
-                      val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                      // TODO RK : need figure out if we can use https
-                      val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
-
-                      current.plugin[RabbitmqPlugin].foreach {
-                        _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))
-                      }
-
-                      //for metadata files
-                      if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                        val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                        files.addXMLMetadata(id, xmlToJSON)
-
-                        Logger.debug("xmlmd=" + xmlToJSON)
-
-                        current.plugin[ElasticsearchPlugin].foreach {
-                          _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", dataset.id.toString), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
-                        }
-                      }
-                      else {
-                        current.plugin[ElasticsearchPlugin].foreach {
-                          _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", dataset.id.toString), ("datasetName", dataset.name)))
-                        }
-                      }
-
-                      // add file to dataset
-                      // TODO create a service instead of calling salat directly
-                      val theFile = files.get(f.id).get
-                      datasets.addFile(dataset.id, theFile)
-                      if (!theFile.xmlMetadata.isEmpty) {
-                        datasets.index(dataset_id)
-                      }
-
-                      // TODO RK need to replace unknown with the server name and dataset type
-                      val dtkey = "unknown." + "dataset." + "unknown"
-
-                      current.plugin[RabbitmqPlugin].foreach {
-                        _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, ""))
-                      }
-
-                      Logger.info("Uploading Completed")
-
-                      //add file to RDF triple store if triple store is used
-                      if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                          case "yes" => {
-                            sqarql.addFileToGraph(f.id)
-                            sqarql.linkFileToDataset(f.id, dataset_id)
-                          }
-                          case _ => {}
-                        }
-                      }
-
-                      //sending success message
-                      Ok(toJson(Map("id" -> id.stringify)))
-                    }
-                    case None => {
-                      Logger.error("Could not retrieve file that was just saved.")
-                      InternalServerError("Error uploading file")
-                    }
-                  }
-
-              }.getOrElse {
-                BadRequest(toJson("File not attached."))
+            			  current.plugin[ElasticsearchPlugin].foreach{
+            		  		_.index("data", "file", new UUID(id), List(("filename",f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
+            	  		  }
               }
+              else{
+            	  current.plugin[ElasticsearchPlugin].foreach{
+            		  _.index("data", "file", new UUID(id), List(("filename",nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
+            	  }
+              }
+                           
+              // add file to dataset   
+              // TODO create a service instead of calling salat directly
+              val theFile = files.get(f.id)
+              if(theFile.isEmpty){
+                 Logger.error("Could not retrieve file that was just saved.")
+                 InternalServerError("Error uploading file")                
+              }
+              else{
+            	  datasets.addFile(dataset.id, theFile.get)
+
+	              datasets.index(dataset_id)
+			      	
+
+            	  // TODO RK need to replace unknown with the server name and dataset type
+            	  val dtkey = "unknown." + "dataset." + "unknown"
+
+              	  current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, "")) }
+
+            	  Logger.info("Uploading Completed")
+              
+	              //add file to RDF triple store if triple store is used
+	              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+			             configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
+				             case "yes" => {
+				               sqarql.addFileToGraph(f.id)
+				               sqarql.linkFileToDataset(f.id,dataset_id)
+				             }
+				             case _ => {}
+			             }
+	              }
+
+              //sending success message
+              Ok(toJson(Map("id" -> id)))
+             }
             }
             case None => {
-              Logger.error("Error getting dataset" + dataset_id);
-              InternalServerError
+              Logger.error("Could not retrieve file that was just saved.")
+              InternalServerError("Error uploading file")
             }
           }
-        }
 
-        case None => BadRequest(toJson("Not authorized."))
+        }.getOrElse {
+          BadRequest(toJson("File not attached."))
+        }
+      } 
+        case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
       }
+     }
+        
+        case None => BadRequest(toJson("Not authorized."))
+    }
   }
+  
 
   /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
@@ -572,9 +588,9 @@ class Files @Inject()(
                   current.plugin[RabbitmqPlugin].foreach {
                     _.extract(ExtractorMessage(UUID(originalId), id, host, key, Map.empty, f.length.toString, null, flags))
                   }
-                  current.plugin[ElasticsearchPlugin].foreach {
-                    _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
-                  }
+//                  current.plugin[ElasticsearchPlugin].foreach {
+//                    _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
+//                  }
                   Ok(toJson(Map("id" -> id.stringify)))
                 }
                 case None => {
@@ -653,8 +669,8 @@ class Files @Inject()(
   }
 
   @ApiOperation(value = "Get the user-generated metadata of the selected file in an RDF file",
-      notes = "",
-      responseClass = "None", httpMethod = "GET")
+	      notes = "",
+	      responseClass = "None", httpMethod = "GET")
   def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
     implicit request =>
       configuration.getString("rdfexporter") match {
@@ -711,13 +727,13 @@ class Files @Inject()(
     val fileWriter = new BufferedWriter(new FileWriter(xmlFile))
     fileWriter.write(xmlNoSpaces)
     fileWriter.close()
-
+    
     return xmlFile
   }
-
+  
   @ApiOperation(value = "Get URLs of file's RDF metadata exports.",
-      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
-      responseClass = "None", httpMethod = "GET")
+	      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
+	      responseClass = "None", httpMethod = "GET")
   def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
     request =>
       configuration.getString("rdfexporter") match {
@@ -766,25 +782,25 @@ class Files @Inject()(
         }
       }
   }
+  
+    @ApiOperation(value = "Add user-generated metadata to file",
+	      notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
+	      responseClass = "None", httpMethod = "POST")
+    def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
+        implicit request =>
+          Logger.debug("Adding user metadata to file " + id)
+          val theJSON = Json.stringify(request.body)
+          files.addUserMetadata(id, theJSON)
+          files.index(id)
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => {
+              files.setUserMetadataWasModified(id, true)
+            }
+            case _ => {}
+          }
 
-  @ApiOperation(value = "Add user-generated metadata to file",
-      notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
-      responseClass = "None", httpMethod = "POST")
-  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
-    implicit request =>
-      Logger.debug("Adding user metadata to file " + id)
-      val theJSON = Json.stringify(request.body)
-      files.addUserMetadata(id, theJSON)
-      index(id)
-      configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-        case "yes" => {
-          files.setUserMetadataWasModified(id, true)
-        }
-        case _ => {}
+          Ok(toJson(Map("status" -> "success")))
       }
-
-      Ok(toJson(Map("status" -> "success")))
-  }
 
   def jsonFile(file: File): JsValue = {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
@@ -900,7 +916,7 @@ class Files @Inject()(
               val datasetList = datasets.findByFileId(file.id)
               for (dataset <- datasetList) {
                 if (dataset.thumbnail_id.isEmpty) {
-                  datasets.updateThumbnail(dataset.id, thumbnail_id)
+                  datasets.updateThumbnail(dataset.id, thumbnail_id)                 
                 }
               }
 
@@ -1005,9 +1021,9 @@ class Files @Inject()(
                     }
                   }
                   case None => {
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    Ok.stream(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
-                      .withHeaders(CONTENT_LENGTH -> contentLength.toString)
+                      //.withHeaders(CONTENT_LENGTH -> contentLength.toString)
                       .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 
                   }
@@ -1235,7 +1251,9 @@ class Files @Inject()(
       responseClass = "None", httpMethod = "POST")
   def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
     implicit request =>
-      addTagsHelper(TagCheck_File, id, request)
+      val theResponse = addTagsHelper(TagCheck_File, id, request)
+  	  files.index(id)
+  	  theResponse
   }
 
   /**
@@ -1250,7 +1268,9 @@ class Files @Inject()(
       responseClass = "None", httpMethod = "POST")
   def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
     implicit request =>
-      removeTagsHelper(TagCheck_File, id, request)
+      val theResponse = removeTagsHelper(TagCheck_File, id, request)
+  	  files.index(id)
+  	  theResponse
   }
 
   /**
@@ -1268,6 +1288,7 @@ class Files @Inject()(
         files.get(id) match {
           case Some(file) => {
             files.removeAllTags(id)
+            files.index(id)
             Ok(Json.obj("status" -> "success"))
           }
           case None => {
@@ -1292,7 +1313,7 @@ class Files @Inject()(
             case Some(text) => {
               val comment = new Comment(identity, text, file_id = Some(id))
               comments.insert(comment)
-              index(id)
+              files.index(id)
               Ok(comment.id.toString)
             }
             case None => {
@@ -1360,52 +1381,80 @@ class Files @Inject()(
       notes = "Return the currently existing previews of the selected file (full description, including paths to preview files, previewer names etc).",
       responseClass = "None", httpMethod = "GET")
   def getPreviews(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
-    request =>
-      files.get(id) match {
-        case Some(file) => {
+	    request =>
+	      files.get(id) match {
+	        case Some(file) => {
 
-          val previewsFromDB = previews.findByFileId(file.id)
-          val previewers = Previewers.findPreviewers
-          //Logger.info("Number of previews " + previews.length);
-          val files = List(file)
-          val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
-            val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
-            }
-            if (pvf.length > 0) {
-              (file -> pvf)
-            } else {
-              val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
-              }
-              (file -> ff)
-            }
-          }
+	          val previewsFromDB = previews.findByFileId(file.id)
+	          val previewers = Previewers.findPreviewers
+	          //Logger.info("Number of previews " + previews.length);
+	          val files = List(file)
+	          val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
+	            val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
+	              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
+	            }
+	            if (pvf.length > 0) {
+	              (file -> pvf)
+	            } else {
+	              val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
+	                (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+	              }
+	              (file -> ff)
+	            }
+	          }
 
-          Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
-        }
-        case None => {
-          Logger.error("Error getting file" + id);
-          InternalServerError
-        }
-      }
-  }
+	          Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
+	        }
+	        case None => {
+	          Logger.error("Error getting file" + id);
+	          InternalServerError
+	        }
+	      }
+	  }  
+  
+      @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
+	      notes = "",
+	      responseClass = "None", httpMethod = "GET")
+	  def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+	    files.get(id)  match {
+	      case Some(file) => {
+	        Ok(files.getXMLMetadataJSON(id))
+	      }
+	      case None => {Logger.error("Error finding file" + id); InternalServerError}      
+	    }
+	  }
+	  
+	  @ApiOperation(value = "Get community-generated metadata of the resource described by the file",
+		      notes = "",
+		      responseClass = "None", httpMethod = "GET")
+	  def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+	   files.get(id)  match {
+	      case Some(file) => {
+	        Ok(files.getUserMetadataJSON(id))
+	      }
+	      case None => {Logger.error("Error finding file" + id); InternalServerError}      
+	    }
+	  }
 
-  @ApiOperation(value = "Get technical metadata of the resource described by the file",
-      notes = "",
-      responseClass = "None", httpMethod = "GET")
-  def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-    request =>
-      files.get(id) match {
-        case Some(file) => {
-          Ok(files.getTechnicalMetadataJSON(id))
-        }
-        case None => {
-          Logger.error("Error finding file" + id);
-          InternalServerError
-        }
-      }
-  }
+
+	  @ApiOperation(value = "Get technical metadata of the resource described by the file",
+		      notes = "",
+		      responseClass = "None", httpMethod = "GET")
+	  def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+	    request =>
+	      files.get(id) match {
+	        case Some(file) => {
+	          Ok(files.getTechnicalMetadataJSON(id))
+	        }
+	        case None => {
+	          Logger.error("Error finding file" + id);
+	          InternalServerError
+	        }
+	      }
+	  }
+  
+	 
+
 
   @ApiOperation(value = "Delete file",
       notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
@@ -1414,8 +1463,22 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-          Logger.debug("Deleting file: " + file.filename)
+        	Logger.debug("Deleting file: " + file.filename)
+        	//=== start of versus plugin code 
+        	current.plugin[VersusPlugin] match {    		
+        		case Some(plugin)=>{ 
+        			plugin.removeFromIndexes(id)    	  
+        		}
+        		case None => {
+        			Logger.debug("No versus plugin found")
+        		}
+        	}
+        	//=== end of versus plugin code
+          
           files.removeFile(id)
+          current.plugin[ElasticsearchPlugin].foreach {
+	        	_.delete("data", "file", id.stringify)
+	        }
           //remove file from RDF triple store if triple store is used
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
             case "yes" => {
@@ -1429,8 +1492,10 @@ class Files @Inject()(
           Ok(toJson(Map("status" -> "success")))
         }
         case None => Ok(toJson(Map("status" -> "error", "msg" -> "file not found")))
+
       }
   }
+
 
   /**
    * List datasets satisfying a user metadata search tree.
@@ -1510,13 +1575,15 @@ class Files @Inject()(
         var fileDsName = ""
 
         for (dataset <- datasets.findByFileId(file.id)) {
-          fileDsId = fileDsId + dataset.id.toString + "  "
-          fileDsName = fileDsName + dataset.name + "  "
+          fileDsId = fileDsId + dataset.id.toString + " %%% "
+          fileDsName = fileDsName + dataset.name + " %%% "
         }
+        
+        val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType), ("datasetId", fileDsId),
+            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)), ("datasetId", fileDsId),
               ("datasetName", fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString),
               ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
         }
@@ -1527,3 +1594,5 @@ class Files @Inject()(
 }
 
 object MustBreak extends Exception {}
+
+

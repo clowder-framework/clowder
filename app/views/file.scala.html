@@ -269,19 +269,43 @@
 						</ul>
 						</div>
 					</div>
+					<script>
+						$("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
+							if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+								$("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+								$("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
+							}
+							else{
+								$("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+								$("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
+							}
+						});
+					</script>
 				}
-				<script>
-				$("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
-					if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-						$("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-						$("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
-					}
-					else{
-						$("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-						$("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
-					}
-				});				
-				</script>
+			@if(!file.xmlMetadata.isEmpty) {
+					<div id='xmlMetadata_@(file.id.toString)'>
+						<button class="tech_md_" type="button">Show XML-uploaded metadata</button>
+						<div style="display:none;">
+						<ul>								
+								@printLevel(file.xmlMetadata)
+						</ul>
+						</div>
+					</div>
+					<script>
+						$("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
+							if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+								$("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+								$("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
+							}
+							else{
+								$("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+								$("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
+							}
+						});	
+					</script>
+				}	
+				
+				
 				
 			</div>
     	</div>
@@ -556,17 +580,17 @@
 								        	i++;
 								        if(i <= tableLength)	        
 									        $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
 									        		);
 								        else if(tableLength > 0)
 								        	$("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
 									        		);
 								        else{
 								        	if($("#datasTable tbody").length == 0)
 								        		$("#datasTable").append("<tbody></tbody>");
 								        	$("#datasTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
 									        		);
 								        	}
 									});	
