@@ -21,3 +21,12 @@ case class Preview(
   iipURL: Option[String] = None,
   iipImage: Option[String] = None,
   iipKey: Option[String] = None)
+<<<<<<< HEAD
+=======
+
+
+
+
+
+
+>>>>>>> develop
