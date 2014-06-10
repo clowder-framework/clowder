@@ -29,5 +29,3 @@ case class File(
   xmlMetadata: Map[String, Any] = Map.empty,
   userMetadataWasModified: Option[Boolean] = None,
   notesHTML: Option[String] = None )
-
-

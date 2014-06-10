@@ -373,6 +373,11 @@ textarea, input[type='text'], input[type='password']{
 	transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
 }
 
+.elasticsearchResult{
+	margin-bottom:10px;
+}
+
+
 .truncate {
   width: 150px;
   white-space: nowrap;
