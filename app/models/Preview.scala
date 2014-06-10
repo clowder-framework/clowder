@@ -7,6 +7,7 @@ import com.mongodb.casbah.Imports._
  *
  * @author Luigi Marini
  */
+
 case class Preview(
   id: UUID = UUID.generate,
   file_id: Option[UUID] = None,
@@ -20,4 +21,3 @@ case class Preview(
   iipURL: Option[String] = None,
   iipImage: Option[String] = None,
   iipKey: Option[String] = None)
-

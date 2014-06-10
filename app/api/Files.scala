@@ -89,6 +89,7 @@ class Files @Inject()(
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
     request =>
       val list = for (f <- files.listFiles()) yield jsonFile(f)
+
       Ok(toJson(list))
   }
 
@@ -1283,22 +1284,6 @@ class Files @Inject()(
         }
     }  
 
-  @ApiOperation(value = "Get technical metadata of the resource described by the file",
-      notes = "",
-      responseClass = "None", httpMethod = "GET")
-  def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-    request =>
-      files.get(id) match {
-        case Some(file) => {
-          Ok(files.getTechnicalMetadataJSON(id))
-        }
-        case None => {
-          Logger.error("Error finding file" + id);
-          InternalServerError
-        }
-      }    
-  }
-
     @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
         notes = "",
         responseClass = "None", httpMethod = "GET")
@@ -1338,7 +1323,6 @@ class Files @Inject()(
           }
         }
     }
-  
 
   @ApiOperation(value = "Delete file",
       notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
@@ -1349,6 +1333,9 @@ class Files @Inject()(
         case Some(file) => {
           Logger.debug("Deleting file: " + file.filename)
           files.removeFile(id)
+          current.plugin[VersusPlugin].foreach {        
+            _.removeFromIndexes(id)        
+          }
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "file", id.stringify)
           }

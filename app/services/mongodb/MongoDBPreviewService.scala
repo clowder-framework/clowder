@@ -202,8 +202,13 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
       case JsObject(fields) => {
         val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
         PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
-          $set("metadata" -> metadata, "section_id" -> new ObjectId(metadata("section_id").asInstanceOf[String])), false, false, WriteConcern.Safe)
-        Logger.debug("Updating previews.files " + previewId + " with " + metadata)
+          $set("metadata" -> metadata, "section_id" -> new ObjectId(metadata("section_id").asInstanceOf[String]), 
+        		  //the next line adds file_id as string to Preview. Used by Versus.
+	              "file_id"->metadata("file_id").asInstanceOf[String]),
+	              
+	              false, false, WriteConcern.Safe)      
+	              
+	              Logger.debug("Updating previews.files " + previewId + " with " + metadata)
       }
       case _ => Logger.error("Expected a JSObject")
     }
