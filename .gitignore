@@ -1,24 +1,3 @@
-<<<<<<< HEAD
-logs
-project/project
-project/target
-target
-tmp
-bin
-/*.sublime-workspace
-.history
-.cache
-.target
-dist
-/.idea
-/*.iml
-/out
-/.idea_modules
-/.classpath
-/.project
-/.settings
-/RUNNING_PID
-=======
 logs
 project/project
 project/target
@@ -39,4 +18,3 @@ dist
 /.settings
 /RUNNING_PID
 doc/src/sphinx/_build
->>>>>>> FETCH_HEAD
