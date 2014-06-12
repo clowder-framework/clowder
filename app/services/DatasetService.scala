@@ -182,4 +182,7 @@ trait DatasetService {
    * allowDl: true or false, to allow downloading of the file or dataset. Relevant only for certain license types
    */
   def updateLicensing(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDl: String)
+
+  def setNotesHTML(id: UUID, notesHTML: String)
+
 }

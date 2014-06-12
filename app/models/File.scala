@@ -28,4 +28,6 @@ case class File(
   userMetadata: Map[String, Any] = Map.empty,
   xmlMetadata: Map[String, Any] = Map.empty,
   userMetadataWasModified: Option[Boolean] = None,
-  licenseData: LicenseData = new LicenseData())
+  licenseData: LicenseData = new LicenseData(),
+  notesHTML: Option[String] = None )
+
