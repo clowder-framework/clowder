@@ -604,6 +604,27 @@ class MongoDBFileService @Inject() (
   def comment(id: UUID, comment: Comment) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
+  
+  /**
+   * Implementation of the removeComment method defined in the services/FileService.scala trait.
+   * 
+   * This implementation removes the file by utilizing the CommentService that is associated with this particular
+   * service.
+   */
+  def removeComment(id: UUID) {      
+      var theComment = comments.get(id)
+      comments.removeComment(theComment.get)
+  }
+  
+  /**
+   * Implementation of the editComment method defined in the services/FileService.scala trait.
+   * 
+   * This implementation edits the comment by utilizing the CommentService that is associated with this particular
+   * service.
+   */
+  def editComment(id: UUID, commentText: String) {
+      comments.editComment(id, commentText)
+  }
 
   def setIntermediate(id: UUID){
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)

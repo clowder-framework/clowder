@@ -55,6 +55,12 @@ class MongoDBCommentService extends CommentService {
     }
     Comment.remove(MongoDBObject("_id" -> new ObjectId(c.id.stringify)))
   }
+  
+  def editComment(id: UUID, commentText: String) {      
+      val result = Comment.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
+          $set("text" -> commentText), 
+          false, false, WriteConcern.Safe);      
+  }
 }
 
 

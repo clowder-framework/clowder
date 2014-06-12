@@ -112,6 +112,21 @@ trait FileService {
   def removeAllTags(id: UUID)
 
   def comment(id: UUID, comment: Comment)
+  
+  /**
+   * Remove a comment that is associated with a file.
+   * 
+   * id: The identifier of the comment to remove, as a UUID.
+   */
+  def removeComment(id: UUID)
+  
+  /**
+   * Edit a comment that is associated with a file.
+   * 
+   * id: The identifier of the comment to edit, as a UUID.
+   * commentText: The updated data to use as the comment, as a String.
+   */
+  def editComment(id: UUID, commentText: String)
 
   def setIntermediate(id: UUID)
 

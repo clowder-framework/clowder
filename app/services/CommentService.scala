@@ -20,4 +20,12 @@ trait CommentService {
   def findCommentsBySectionId(id: UUID): List[Comment]
 
   def removeComment(c: Comment)
+  
+  /**
+   * Service provided to actually edit a specific comment by id.
+   * 
+   * id: The identifier of the comment to edit, as a UUID.
+   * commentText: The data to replace the comment text with, as a String.
+   */
+  def editComment(id: UUID, commentText: String)
 }
