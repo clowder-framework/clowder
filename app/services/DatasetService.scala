@@ -181,4 +181,6 @@ trait DatasetService {
    */
   def updateInformation(id: UUID, description: String)
 
+  def setNotesHTML(id: UUID, notesHTML: String)
+
 }

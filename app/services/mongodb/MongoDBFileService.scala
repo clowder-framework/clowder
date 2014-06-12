@@ -44,6 +44,7 @@ import play.api.libs.MimeTypes
 @Singleton
 class MongoDBFileService @Inject() (
   datasets: DatasetService,
+  collections: CollectionService,
   sections: SectionService,
   comments: CommentService,
   previews: PreviewService,
@@ -632,8 +633,10 @@ class MongoDBFileService @Inject() (
               datasets.index(fileDataset.id)
             }
             if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
-              if(file.thumbnail_id.get == fileDataset.thumbnail_id.get)
-                datasets.newThumbnail(fileDataset.id)
+              if(file.thumbnail_id.get == fileDataset.thumbnail_id.get){
+                datasets.newThumbnail(fileDataset.id)	        	  
+		        	}
+  
           }
           for(section <- sections.findByFileId(file.id)){
             sections.removeSection(section)
@@ -809,6 +812,10 @@ class MongoDBFileService @Inject() (
   def updateThumbnail(fileId: UUID, thumbnailId: UUID) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
+  }
+  
+  def setNotesHTML(id: UUID, html: String) {
+	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
   }
 
 }

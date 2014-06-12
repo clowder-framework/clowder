@@ -137,21 +137,21 @@ class Datasets @Inject()(
       responseClass = "None", httpMethod = "POST")
   def attachExistingFile(dsId: UUID, fileId: UUID) = SecuredAction(parse.anyContent,
     authorization = WithPermission(Permission.CreateDatasets)) {
-	request =>
-     datasets.get(dsId) match {
-      case Some(dataset) => {
-        files.get(fileId) match {
-          case Some(file) => {
-            if (!files.isInDataset(file, dataset)) {
-	            datasets.addFile(dsId, file)	            
-	            files.index(fileId)
-                datasets.index(dsId)  
-	            	                  
-	            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-		                        datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
-	            }
-	            
-	            //add file to RDF triple store if triple store is used
+    request =>
+      datasets.get(dsId) match {
+        case Some(dataset) => {
+          files.get(fileId) match {
+            case Some(file) => {
+              if (!files.isInDataset(file, dataset)) {
+                datasets.addFile(dsId, file)
+                files.index(fileId)
+                if (!file.xmlMetadata.isEmpty)
+                  datasets.index(dsId)
+
+                if (dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty)
+                  datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
+
+                //add file to RDF triple store if triple store is used
                 if (file.filename.endsWith(".xml")) {
                   configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                     case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
@@ -175,25 +175,23 @@ class Datasets @Inject()(
       responseClass = "None", httpMethod = "POST")
   def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollections)) {
     request =>
-     datasets.get(datasetId) match{
-      case Some(dataset) => {
-        files.get(fileId) match {
-          case Some(file) => {
-            if(files.isInDataset(file, dataset)){
-	            //remove file from dataset
-	            datasets.removeFile(dataset.id, file.id)
-	            files.index(fileId)
-                datasets.index(datasetId)
-                  
-	            Logger.info("Removing file from dataset completed")
-	            
-	            if(!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-	              if(dataset.thumbnail_id.get == file.thumbnail_id.get){
-	            	  datasets.createThumbnail(dataset.id)
-	              }		                        
-	            }
-	            
-	           //remove link between dataset and file from RDF triple store if triple store is used
+      datasets.get(datasetId) match {
+        case Some(dataset) => {
+          files.get(fileId) match {
+            case Some(file) => {
+              if (files.isInDataset(file, dataset)) {
+                //remove file from dataset
+                datasets.removeFile(dataset.id, file.id)
+                files.index(fileId)
+                if (!file.xmlMetadata.isEmpty)
+                  datasets.index(datasetId)
+
+                if (!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty) {
+                  if (dataset.thumbnail_id.get == file.thumbnail_id.get) {
+                    datasets.createThumbnail(dataset.id)                    
+                  }
+                }
+                //remove link between dataset and file from RDF triple store if triple store is used
                 if (file.filename.endsWith(".xml")) {
                   configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                     case "yes" => rdfsparql.detachFileFromDataset(fileId, datasetId)
@@ -933,11 +931,34 @@ class Datasets @Inject()(
       case Some(dataset) => {
         Ok(datasets.getUserMetadataJSON(id))
       }
+      case None => {
+        Logger.error("Error finding dataset" + id);
+        InternalServerError
+      }      
     }
-   }
-
+  }
+  
+  def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNotes))  { implicit request =>
+	  request.user match {
+	    case Some(identity) => {
+		    request.body.\("notesHTML").asOpt[String] match {
+			    case Some(html) => {
+			        datasets.setNotesHTML(id, html)
+			        //index(id)
+			        Ok(toJson(Map("status"->"success")))
+			    }
+			    case None => {
+			    	Logger.error("no html specified.")
+			    	BadRequest(toJson("no html specified."))
+			    }
+		    }
+	    }
+	    case None => {
+	      Logger.error(("No user identity found in the request, request body: " + request.body))
+	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+	    }
+    }
+  }
 }
 
 object ActivityFound extends Exception {}
-
-

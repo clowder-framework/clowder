@@ -144,6 +144,7 @@ GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnica
 GET     /api/files/:id/xmlmetadatajson           				@api.Files.getXMLMetadataJSON(id: UUID)
 GET     /api/files/:id/usermetadatajson           				@api.Files.getUserMetadataJSON(id: UUID)
 POST    /api/files/:id/comment									@api.Files.comment(id: UUID)
+POST    /api/files/:id/setNotesHTML								@api.Files.setNotesHTML(id: UUID)
 DELETE	/api/files/:id											@api.Files.removeFile(id: UUID)
 
 GET     /api/files/:id/tags                                     @api.Files.getTags(id: UUID)
@@ -190,6 +191,7 @@ GET     /api/datasets/:id/xmlmetadatajson           				@api.Datasets.getXMLMeta
 GET     /api/datasets/:id/usermetadatajson           				@api.Datasets.getUserMetadataJSON(id: UUID)
 GET 	/api/datasets/:id/listFiles		 							@api.Datasets.datasetFilesList(id: UUID)
 POST    /api/datasets/:id/comment									@api.Datasets.comment(id: UUID)
+POST    /api/datasets/:id/setNotesHTML								@api.Datasets.setNotesHTML(id: UUID)
 
 POST 	/api/datasets/:id/removeTag 								@api.Datasets.removeTag(id: UUID)
 GET     /api/datasets/:id/tags                                  	@api.Datasets.getTags(id: UUID)

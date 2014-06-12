@@ -34,6 +34,7 @@ object Permission extends Enumeration {
 		DeleteTags,
 		UpdateDatasetInformation,
 		CreateComments,
+		CreateNotes,
 		AddSections,
 		GetSections,
 		CreateFiles,

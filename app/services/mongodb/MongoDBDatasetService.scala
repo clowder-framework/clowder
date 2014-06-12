@@ -318,7 +318,7 @@ class MongoDBDatasetService @Inject() (
 
   def updateThumbnail(datasetId: UUID, thumbnailId: UUID) {
     Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
 
   def createThumbnail(datasetId: UUID) {
@@ -853,6 +853,10 @@ class MongoDBDatasetService @Inject() (
       }
       case None => Logger.error("Dataset not found: " + id)
     }
+  }
+  
+  def setNotesHTML(id: UUID, notesHTML: String){
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
 }
 
