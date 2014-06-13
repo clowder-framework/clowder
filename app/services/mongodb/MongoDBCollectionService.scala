@@ -243,6 +243,32 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
     Collection.findOne(MongoDBObject("datasets._id" -> new ObjectId(datasetId.stringify)))
   }
   
+  def updateThumbnail(collectionId: UUID, thumbnailId: UUID) {
+	    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+	      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+	  }
+	  
+	  def createThumbnail(collectionId:UUID){
+	    get(collectionId) match{
+		    case Some(collection) => {
+		    		val selecteddatasets = collection.datasets map { ds =>{
+		    			datasets.get(ds.id).getOrElse{None}
+		    		}}
+				    for(dataset <- selecteddatasets){
+				      if(dataset.isInstanceOf[models.Dataset]){
+				          val theDataset = dataset.asInstanceOf[models.Dataset]
+					      if(!theDataset.thumbnail_id.isEmpty){
+					        Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+					        return
+					      }
+				      }
+				    }
+				    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+		    }
+		    case None =>
+	    }  
+	  }
+
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {
       case Some(collection) => {
@@ -265,7 +291,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
       case None => Logger.error("Collection not found: " + id.stringify)
     }
   }
-  
 }
 
 object Collection extends ModelCompanion[Collection, ObjectId] {

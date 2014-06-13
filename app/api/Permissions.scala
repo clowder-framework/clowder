@@ -35,6 +35,7 @@ object Permission extends Enumeration {
 		CreateComments,
 		RemoveComments,
 		EditComments,
+		CreateNotes,
 		AddSections,
 		GetSections,
 		CreateFiles,

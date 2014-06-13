@@ -40,4 +40,4 @@ object Stream extends ModelCompanion[Stream, ObjectId] {
     case Some(x) => new SalatDAO[Stream, ObjectId](collection = x.collection("streams")) {}
   }
 }
-  
+
