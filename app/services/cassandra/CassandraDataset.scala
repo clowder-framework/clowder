@@ -144,7 +144,7 @@ class CassandraDataset extends DatasetService {
   /**
    * Implementation of updateInformation defined in services/DatasetService.scala.
    */
-  def updateInformation(id: UUID, description: String) {}
+  def updateInformation(id: UUID, description: String, name: String) {}
   
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
 

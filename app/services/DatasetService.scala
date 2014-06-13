@@ -178,8 +178,9 @@ trait DatasetService {
    * 
    * id: The id of the dataset
    * description: A String that represents the updated information for the dataset description.
+   * name: A String that represents the updated name for this dataset.
    */
-  def updateInformation(id: UUID, description: String)
+  def updateInformation(id: UUID, description: String, name: String)
 
   def setNotesHTML(id: UUID, notesHTML: String)
 

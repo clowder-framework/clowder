@@ -117,7 +117,7 @@
     </script>
     
 	<div class="page-header">
-		<h1>@dataset.name</h1>
+		<h1 id="aboutname">@dataset.name</h1>
 	</div>
 	
 	<div class="row">	
@@ -605,6 +605,12 @@
                             <form class="form-inline" id="form2">
                                 <table style="width: 100%;">
                                     <tr>
+                                        <td style="width: 30%; vertical-align:top;">Name:</td>
+                                        <td>
+                                            <textarea cols=30 rows=4 type="text" id="editname">@dataset.name</textarea>                                            
+                                        </td>
+                                    </tr>
+                                    <tr>
                                         <td style="width: 30%; vertical-align:top;">Description:</td>
                                         <td>
                                             <textarea cols=30 rows=4 type="text" id="editdesc">@dataset.description</textarea>                                            
@@ -624,14 +630,22 @@
           
           <script type="text/javascript" language="javascript">
               function closeAboutEdit() {
+            	  //Reset the data to the current values
+            	  var text = $("#aboutdesc").html();
+            	  $("#editdesc").val(text);
+            	  text = $("#aboutname").html();
+            	  $("#editname").val(text);
+            	  
+            	  //Close the edit form
                   $("#editabout").addClass('collapsed');
                   $("#collapseSix").collapse('toggle');      
                   return false;
               }
               
-              function updateAboutData(datasetId, description) {
+              function updateAboutData(datasetId) {
             	  var description = $("#editdesc").val();
-            	  var jsonData = JSON.stringify({"description":description});                 
+            	  var name = $("#editname").val();
+            	  var jsonData = JSON.stringify({"description":description, "name":name});                 
                   
                   var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
                 	  data: jsonData,
@@ -644,6 +658,7 @@
                       //Sucessful update of the DB - update the interface
 
                       $("#aboutdesc").html(description);
+                      $("#aboutname").html(name);
                       
                       closeAboutEdit();
                    });

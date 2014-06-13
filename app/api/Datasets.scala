@@ -300,14 +300,15 @@ class Datasets @Inject()(
    *  
    *  The data contained in the request body will contain data to be updated associated by the following String key-value pairs:
    *  
-   *  description,The text for the updated description for the dataset
+   *  description -> The text for the updated description for the dataset
+   *  name -> The text for the updated name for this dataset
    *  
-   *  Currently description is the only field that can be modified, however this api is extensible enough to add other existing
+   *  Currently description and owner are the only fields that can be modified, however this api is extensible enough to add other existing
    *  fields, or new fields, in the future.  
    *  
    */
   @ApiOperation(value = "Update dataset administrative information",
-      notes = "Takes one argument, a String. description",
+      notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
   def updateInformation(id: UUID) = 
     SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
@@ -316,6 +317,7 @@ class Datasets @Inject()(
 
           //Set up the vars we are looking for
           var description: String = null;
+          var name: String = null;
           
           var aResult: JsResult[String] = (request.body \ "description").validate[String]
           
@@ -329,9 +331,22 @@ class Datasets @Inject()(
                 BadRequest(toJson(s"description data is missing."))
               }                            
           }
-          Logger.debug(s"updateInformation for dataset with id  $id. Arg is $description")
           
-          datasets.updateInformation(id, description)
+          aResult = (request.body \ "name").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                name = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"name data is missing."))
+              }                            
+          }
+          Logger.debug(s"updateInformation for dataset with id  $id. Args are $description and $name")
+          
+          datasets.updateInformation(id, description, name)
           Ok(Json.obj("status" -> "success"))
       } 
       else {

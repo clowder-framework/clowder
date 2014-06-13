@@ -486,9 +486,9 @@ class MongoDBDatasetService @Inject() (
   /**
    * Implementation of updateInformation defined in services/DatasetService.scala.
    */
-  def updateInformation(id: UUID, description: String) {
+  def updateInformation(id: UUID, description: String, name: String) {
       val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
-          $set("description" -> description), 
+          $set("description" -> description, "name" -> name), 
           false, false, WriteConcern.Safe);
   }
   
