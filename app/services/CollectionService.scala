@@ -82,5 +82,15 @@ trait CollectionService {
 
 
   def isInDataset(dataset: Dataset, collection: Collection): Boolean
+  
+  /**
+   * Update thumbnail used to represent this collection.
+   */
+  def updateThumbnail(collectionId: UUID, thumbnailId: UUID)
+  
+  /**
+   * Set new thumbnail.
+   */
+  def createThumbnail(collectionId: UUID)
 
 }

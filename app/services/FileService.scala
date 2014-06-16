@@ -136,4 +136,6 @@ trait FileService {
   def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String, Any], root: String): MongoDBObject
 
   def removeOldIntermediates()
+  
+  def setNotesHTML(id: UUID, notesHTML: String)
 }

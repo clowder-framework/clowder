@@ -166,6 +166,8 @@ class CassandraDataset extends DatasetService {
   def newThumbnail(datasetId: UUID) {}
 
   def update(dataset: Dataset) {}
+  
+  def setNotesHTML(id: UUID, notesHTML: String) {}
 
 
 }

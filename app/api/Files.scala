@@ -1373,80 +1373,76 @@ class Files @Inject()(
       notes = "Return the currently existing previews of the selected file (full description, including paths to preview files, previewer names etc).",
       responseClass = "None", httpMethod = "GET")
   def getPreviews(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
-	    request =>
-	      files.get(id) match {
-	        case Some(file) => {
+      request =>
+        files.get(id) match {
+          case Some(file) => {
 
-	          val previewsFromDB = previews.findByFileId(file.id)
-	          val previewers = Previewers.findPreviewers
-	          //Logger.info("Number of previews " + previews.length);
-	          val files = List(file)
-	          val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
-	            val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-	              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
-	            }
-	            if (pvf.length > 0) {
-	              (file -> pvf)
-	            } else {
-	              val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-	                (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
-	              }
-	              (file -> ff)
-	            }
-	          }
+            val previewsFromDB = previews.findByFileId(file.id)
+            val previewers = Previewers.findPreviewers
+            //Logger.info("Number of previews " + previews.length);
+            val files = List(file)
+            val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
+              val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
+                (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
+              }
+              if (pvf.length > 0) {
+                (file -> pvf)
+              } else {
+                val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
+                  (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                }
+                (file -> ff)
+              }
+            }
 
-	          Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
-	        }
-	        case None => {
-	          Logger.error("Error getting file" + id);
-	          InternalServerError
-	        }
-	      }
-	  }  
-  
-      @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
-	      notes = "",
-	      responseClass = "None", httpMethod = "GET")
-	  def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
-	    files.get(id)  match {
-	      case Some(file) => {
-	        Ok(files.getXMLMetadataJSON(id))
-	      }
-	      case None => {Logger.error("Error finding file" + id); InternalServerError}      
-	    }
-	  }
-	  
-	  @ApiOperation(value = "Get community-generated metadata of the resource described by the file",
-		      notes = "",
-		      responseClass = "None", httpMethod = "GET")
-	  def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
-	   files.get(id)  match {
-	      case Some(file) => {
-	        Ok(files.getUserMetadataJSON(id))
-	      }
-	      case None => {Logger.error("Error finding file" + id); InternalServerError}      
-	    }
-	  }
+            Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
+          }
+          case None => {
+            Logger.error("Error getting file" + id);
+            InternalServerError
+          }
+        }
+    }  
 
+    @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
+        notes = "",
+        responseClass = "None", httpMethod = "GET")
+    def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+      files.get(id)  match {
+        case Some(file) => {
+          Ok(files.getXMLMetadataJSON(id))
+        }
+        case None => {Logger.error("Error finding file" + id); InternalServerError}      
+      }
+    }
 
-	  @ApiOperation(value = "Get technical metadata of the resource described by the file",
-		      notes = "",
-		      responseClass = "None", httpMethod = "GET")
-	  def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-	    request =>
-	      files.get(id) match {
-	        case Some(file) => {
-	          Ok(files.getTechnicalMetadataJSON(id))
-	        }
-	        case None => {
-	          Logger.error("Error finding file" + id);
-	          InternalServerError
-	        }
-	      }
-	  }
-  
-	 
+    @ApiOperation(value = "Get community-generated metadata of the resource described by the file",
+          notes = "",
+          responseClass = "None", httpMethod = "GET")
+    def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+     files.get(id)  match {
+        case Some(file) => {
+          Ok(files.getUserMetadataJSON(id))
+        }
+        case None => {Logger.error("Error finding file" + id); InternalServerError}      
+      }
+    }
 
+    @ApiOperation(value = "Get technical metadata of the resource described by the file",
+          notes = "",
+          responseClass = "None", httpMethod = "GET")
+    def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+      request =>
+        files.get(id) match {
+          case Some(file) => {
+            Ok(files.getTechnicalMetadataJSON(id))
+          }
+          case None => {
+            Logger.error("Error finding file" + id);
+            InternalServerError
+          }
+        }
+    }
 
   @ApiOperation(value = "Delete file",
       notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
@@ -1455,22 +1451,14 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-        	Logger.debug("Deleting file: " + file.filename)
-        	//=== start of versus plugin code 
-        	current.plugin[VersusPlugin] match {    		
-        		case Some(plugin)=>{ 
-        			plugin.removeFromIndexes(id)    	  
-        		}
-        		case None => {
-        			Logger.debug("No versus plugin found")
-        		}
-        	}
-        	//=== end of versus plugin code
-          
+          Logger.debug("Deleting file: " + file.filename)
           files.removeFile(id)
+          current.plugin[VersusPlugin].foreach {        
+            _.removeFromIndexes(id)        
+          }
           current.plugin[ElasticsearchPlugin].foreach {
-	        	_.delete("data", "file", id.stringify)
-	        }
+            _.delete("data", "file", id.stringify)
+          }
           //remove file from RDF triple store if triple store is used
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
             case "yes" => {
@@ -1484,10 +1472,8 @@ class Files @Inject()(
           Ok(toJson(Map("status" -> "success")))
         }
         case None => Ok(toJson(Map("status" -> "error", "msg" -> "file not found")))
-
       }
   }
-
 
   /**
    * List datasets satisfying a user metadata search tree.
@@ -1583,6 +1569,28 @@ class Files @Inject()(
       case None => Logger.error("File not found: " + id)
     }
   }
+ 
+  def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNotes))  { implicit request =>
+	  request.user match {
+	    case Some(identity) => {
+		    request.body.\("notesHTML").asOpt[String] match {
+			    case Some(html) => {
+			        files.setNotesHTML(id, html)
+			        //index(id)
+			        Ok(toJson(Map("status"->"success")))
+			    }
+			    case None => {
+			    	Logger.error("no html specified.")
+			    	BadRequest(toJson("no html specified."))
+			    }
+		    }
+	    }
+	    case None =>
+	      Logger.error(("No user identity found in the request, request body: " + request.body))
+	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+	  }
+    }
+
 }
 
 object MustBreak extends Exception {}
