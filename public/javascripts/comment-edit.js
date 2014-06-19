@@ -5,7 +5,7 @@ function editComment(commentId, commentText, reloadPage){
 	var jsonData = JSON.stringify({"commentText":commentText});	
 	var theText = commentText;
     
-    var request = jsRoutes.api.Files.editComment(commentId).ajax({
+    var request = jsRoutes.api.Comments.editComment(commentId).ajax({
   	    data: jsonData,
         type: 'POST',
         contentType: "application/json",

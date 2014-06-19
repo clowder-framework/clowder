@@ -4,7 +4,7 @@ function deleteComment(commentId, reloadPage){
 	
 	var jsonData = JSON.stringify({"id":commentId});	
     
-    var request = jsRoutes.api.Files.removeComment(commentId).ajax({
+    var request = jsRoutes.api.Comments.removeComment(commentId).ajax({
   	    data: "{}",
         type: 'DELETE',
         contentType: "application/json",

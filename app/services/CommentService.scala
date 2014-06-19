@@ -28,4 +28,12 @@ trait CommentService {
    * commentText: The data to replace the comment text with, as a String.
    */
   def editComment(id: UUID, commentText: String)
+  
+   /**
+   * Remove a comment by its identifier.
+   * 
+   * id: The identifier of the comment to remove, as a UUID.
+   */
+  def removeComment(id: UUID)
+    
 }

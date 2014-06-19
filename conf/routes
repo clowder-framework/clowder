@@ -146,8 +146,6 @@ GET     /api/files/:id/usermetadatajson           				@api.Files.getUserMetadata
 POST    /api/files/:id/comment									@api.Files.comment(id: UUID)
 POST    /api/files/:id/setNotesHTML								@api.Files.setNotesHTML(id: UUID)
 DELETE	/api/files/:id											@api.Files.removeFile(id: UUID)
-DELETE  /api/files/:id/removeComment                            @api.Files.removeComment(id: UUID)
-POST    /api/files/:id/editComment                              @api.Files.editComment(id: UUID)
 
 GET     /api/files/:id/tags                                     @api.Files.getTags(id: UUID)
 POST    /api/files/:id/tags                                     @api.Files.addTags(id: UUID)
@@ -273,7 +271,9 @@ GET      /api/sensors/:id                                                    api
 GET      /api/sensors/search                                                 api.Sensors.search
 DELETE   /api/sensors/:id                                                    api.Sensors.delete(id)
 
-POST	/api/comment/:id					@api.Comments.comment(id: UUID)
+POST	/api/comment/:id                                       @api.Comments.comment(id: UUID)
+DELETE  /api/comment/:id/removeComment                         @api.Comments.removeComment(id: UUID)
+POST    /api/comment/:id/editComment                           @api.Comments.editComment(id: UUID)
 
 GET   	/api/search                       @api.Search.search(query: String ?= "")
 POST	/api/sparqlquery				  @api.Search.querySPARQL
