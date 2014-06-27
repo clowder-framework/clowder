@@ -490,7 +490,7 @@
 		<!-- Licensing elements 
 		<div id="accordionsDiv" class="row" style="margin-top:20px; width: 750px; padding-left:15px;">
 		-->
-        <div class="accordion" id="accordion5" style="border: 5px solid; border-style: ridge; width: 370px; padding:5px 10px 5px 10px;">
+        <div class="accordion" id="accordion6" style="width: 370px; padding:5px 10px 5px 10px;">
             <div class="accordion-group">
 				<div class="accordian-heading">
 				    <h3>Licensing Information</h3>
@@ -505,13 +505,22 @@
 					   </tr>
 					</table>
 					<p>
-					<a class="accordion-toggle collapsed" data-toggle="collapse"
-						data-parent="#accordion5" href="#collapseFive" id="editlicense">Edit Licensing</a>
+					@if(user.isDefined) {
+					<a class="btn btn-info accordion-toggle collapsed" data-toggle="collapse"
+						data-parent="#accordion6" href="#collapseSix" id="editlicense" 
+						title="Edit Licensing Information">
+						<span class="glyphicon glyphicon-chevron-down"></span>
+				    </a>
+				    }
 				</div>
-				<div id="collapseFive" class="accordion-body collapse">
+				<div id="collapseSix" class="accordion-body collapse">
+				    <div class="panel panel-info">
+                        <div class="panel-body">
                     @if(user.isDefined) {
                         @licenseform(file.id.toString, file.licenseData, "file")
                     }
+                        </div>
+                    </div>   
                 </div>
             </div>
         </div>

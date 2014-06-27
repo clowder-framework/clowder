@@ -58,9 +58,13 @@ Used By: dataset.scala.html, file.scala.html
 			</tr>
 		</table>		
 		<br>
-		<button class="btn btn-default" onclick="return updateData('@id');">Update</button>
+		<button class="btn btn-primary" title="Update Licensing Information" onclick="return updateData('@id');">
+		  <span class="glyphicon glyphicon-edit"></span>
+		</button>
 		<!-- <button class="btn btn-default" onclick="return updateInterface();">Update</button> -->
-		<button class="btn btn-default" onclick="return closeEdit();">Close</button>
+		<button class="btn btn-default" title="Close Editor" onclick="return closeEdit();">
+		  <span class="glyphicon glyphicon-chevron-up"></span>
+		</button>
 	</form>
 	
 	<!-- Need to also handle what to set as default radio. Whether it is default, because
@@ -238,7 +242,7 @@ Used By: dataset.scala.html, file.scala.html
 	  
 	  function closeEdit() {
 		$("#editlicense").addClass('collapsed');
-		$("#collapseFive").collapse('toggle');		
+		$("#collapseSix").collapse('toggle');		
 		return false;
 	  }
 	  	  
