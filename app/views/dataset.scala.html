@@ -593,14 +593,18 @@
 				@dataset.files.map { file =>				
 					<tr><td  class="file-list-cell"><a href="@(routes.Files.file(file.id))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
 					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="detachFile('@(file.id)','@(file.filename)',event)">Detach</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-					<td><a class="requiresLogin" href="#" style="font-style:italic;" onclick="removeFile('@(file.id)',event,true);">Delete</a></td></tr>
+					<td><a class="requiresLogin btn btn-link" href="#" title="Delete File" onclick="removeFile('@(file.id)',event,true);">
+					    <span class="glyphicon glyphicon-trash"></span>
+					</a></td></tr>
 				}
 				</table>
 				<script language="javascript">	
 					var hostIp = "@play.Play.application().configuration().getString("hostIp")";
 				</script> 
 				<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
-				<a href="#myModal" class="btn btn-default btn-sm" data-toggle="modal" id="fileUploadBtn">Add file</a>
+				<a href="#myModal" class="btn btn-info btn-large" data-toggle="modal" id="fileUploadBtn" title="Add New File to Dataset">
+				    <span class="glyphicon glyphicon-export"></span>
+				</a>
 				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 				    <div class="modal-dialog">
 				      <div class="modal-content">
@@ -622,7 +626,7 @@
 						  </div>
 				        </div>
 				        <div class="modal-footer">
-				          <input type="submit" class="btn btn-default" value="Upload"/>
+				          <button type="submit" class="btn btn-primary" title="Upload File"><span class="glyphicon glyphicon-open"></span></button>				          
 				        </div>
 				      }
 				      </div><!-- /.modal-content -->
@@ -636,7 +640,9 @@
 						<option value="@(file.id)">@(file.filename)</option>
 					}					  
 					</select>
-					<button class="btn combobutton" id="addFileBtn" style="vertical-align:top;">Add existing file</button>
+					<button class="btn btn-primary btn-large" id="addFileBtn" style="vertical-align:center;" title="Add Existing File">
+					   <span class="glyphicon glyphicon-plus"></span>
+					</button>
 					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorFiles" >File does not exist or already added.</span>
 				</div>
 					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
@@ -733,13 +739,15 @@
 				<div class="requiresLogin ui-widget" id="collectionsUi">			
 
 						<div class="input-group input-group-sm col-md-8"">
-							<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections">
+							<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
 							@collectionsOutside.map { collection =>
 								<option value="@(collection.id)">@(collection.name)</option>
 							}					  
 							</select>
 							<span class="input-group-btn">
-								<button class="btn btn-default btn-sm" id="addCollBtn">Add</button>
+								<button class="btn btn-primary btn-large" id="addCollBtn" titel="Add Dataset To Collection" style="vertical-align:center;">
+                                    <span class="glyphicon glyphicon-plus"></span>
+                                </button>
 							</span>
 						</div>
 						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif"  id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
@@ -861,7 +869,9 @@
 					<div class="input-group input-group-sm col-md-8"">
 						<input type="text" id="tagField" class="form-control">
 						<span class="input-group-btn">
-							<button class="btn btn-default btn-sm" id="tagB">Tag</button>
+							<button class="btn btn-primary btn-large" id="tagB" title="Add Tag">
+							    <span class="glyphicon glyphicon-tag"></span>
+							</button>
 						</span>
 					</div>
 				</form>

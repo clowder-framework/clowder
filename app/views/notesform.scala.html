@@ -9,9 +9,9 @@
 			<div id="noteEditor_@id" style="display:none;">
 				<textarea name="content" class="notesArea" id="noteField_@id" style="width:100%;">@currentHTML</textarea>
 			</div>
-			<button class="btn btn-default" onclick="return openForEdit();" style="display:inline;" id="noteEdit_@id">Edit</button>		
-			<button class="btn btn-default" onclick="return postNote('@id', '@posturl');" style="display:none;" id="notePost_@id">Post</button>
-			<button class="btn btn-default" onclick="return cancelEdit();" style="display:none;" id="noteCancel_@id">Cancel</button>
+			<button class="btn btn-info btn-large" onclick="return openForEdit();" style="display:inline;" id="noteEdit_@id" title="Edit Note"><span class="glyphicon glyphicon-pencil"></span></button>		
+			<button class="btn btn-primary" onclick="return postNote('@id', '@posturl');" style="display:none; margin-top:5px;" id="notePost_@id" title="Sumbit"><span class="glyphicon glyphicon-ok"></span></button>
+			<button class="btn btn-default" onclick="return cancelEdit();" style="display:none; margin-top:5px;" id="noteCancel_@id" title="Cancel"><span class="glyphicon glyphicon-remove"></span></button>
 		}
 	</form>
 	@if(user.isDefined) {

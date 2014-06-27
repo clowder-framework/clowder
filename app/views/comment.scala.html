@@ -17,7 +17,11 @@
 			<div class="comment-body">@c.text</div>
 			@if(user.isDefined) {
 			<div class="comment-footer">
-				<a href="javascript:void(0)" onclick="return showReplyComment('@c.id');">reply</a>
+				<a href="#" 
+				    onclick="return showReplyComment('@c.id');"
+				    class="btn btn-small">
+				    <span class="glyphicon glyphicon-share-alt"></span> Reply
+				</a>
 			</div>
 			}
 			<div class="comment-reply">
