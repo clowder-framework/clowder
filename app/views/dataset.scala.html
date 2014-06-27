@@ -597,10 +597,13 @@
                            </tr>
                         </table>
                         <p>
-                        <a class="accordion-toggle collapsed" data-toggle="collapse"
-                            data-parent="#accordion6" href="#collapseSix" id="editabout" style="padding-left:2px;">Edit</a>
+                        <a class="btn btn-info btn-large accordion-toggle collapsed" data-toggle="collapse"
+                            data-parent="#accordion6" href="#collapseSix" id="editabout" style="padding-left:2px;"
+                            title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
                     </div>
-                    <div id="collapseSix" class="accordion-body collapse" style="border: 5px solid; border-style: ridge; padding:5px 10px 5px 10px;">
+                    <div id="collapseSix" class="accordion-body collapse" style="padding:5px 10px 5px 10px;">
+                    <div class="panel panel-info">
+                        <div class="panel-body">
                         @if(user.isDefined) {
                             <form class="form-inline" id="form2">
                                 <table style="width: 100%;">
@@ -619,10 +622,12 @@
                                 </table>
                                 <br>
                                 
-                                <button class="btn btn-default" onclick="return updateAboutData('@dataset.id.stringify');">Update</button>
-                                <button class="btn btn-default" onclick="return closeAboutEdit();">Close</button>
+                                <button class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');" title="Update Information"><span class="glyphicon glyphicon-edit"></span></button>
+                                <button class="btn btn-default" onclick="return closeAboutEdit();" title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span></button>
                              </form>
                         }
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
