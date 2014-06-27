@@ -597,9 +597,11 @@
                            </tr>
                         </table>
                         <p>
-                        <a class="btn btn-info btn-large accordion-toggle collapsed" data-toggle="collapse"
-                            data-parent="#accordion6" href="#collapseSix" id="editabout" style="padding-left:2px;"
-                            title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
+                         @if(user.isDefined) {
+                            <a class="btn btn-info btn-large accordion-toggle collapsed" data-toggle="collapse"
+                               data-parent="#accordion6" href="#collapseSix" id="editabout" style="padding-left:2px;"
+                               title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
+                         }
                     </div>
                     <div id="collapseSix" class="accordion-body collapse" style="padding:5px 10px 5px 10px;">
                     <div class="panel panel-info">
