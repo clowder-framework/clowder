@@ -20,10 +20,14 @@
 				<a href="javascript:void(0)" onclick="return showReplyComment('@c.id');">Reply</a>
 				&nbsp;
 				&nbsp;
-				<a href="javascript:void(0)" onclick="return showEditComment('@c.id');">Edit</a>
+				<a href="javascript:void(0)" onclick="return showEditComment('@c.id');" class="btn btn-info" title="Edit Comment">
+                    <span class="glyphicon glyphicon-edit"></span>
+                </a>
 				&nbsp;
                 &nbsp;
-                <a href="javascript:void(0)" onclick="return deleteComment('@c.id');">Delete</a>
+                <a href="javascript:void(0)" onclick="return deleteComment('@c.id');" class="btn btn-primary" title="Delete Comment">
+                    <span class="glyphicon glyphicon-trash"></span>
+                </a>
 			</div>			
 			}
 			<div class="comment-reply">
