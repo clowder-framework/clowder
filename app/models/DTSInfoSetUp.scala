@@ -16,18 +16,33 @@ import services.DI
 import scala.concurrent.Future
 import services.DTSRequestsService
 import java.net.InetAddress
-
+/*
+ * @author Smruti Padhy 
+ * 
+ *  DTS extractions information 
+ * 
+ */
 
 object DTSInfoSetUp {
 val extractors: ExtractorService =  DI.injector.getInstance(classOf[ExtractorService])
 val dtsrequests:DTSRequestsService=DI.injector.getInstance(classOf[DTSRequestsService])
 
+/*
+ * Updates DTS extraction request
+ * 
+ */
 def updateDTSRequests(file_id:UUID,extractor_id:String)={
  
   dtsrequests.updateRequest(file_id,extractor_id)
 }
 
-  def updateExtractorsInfo() = {
+/**
+ * Updates Extractors information:
+ * IPs of servers on which extractors are running
+ * Currently running extractors' names
+ * Input types supported by currently running extractors  
+ */
+ def updateExtractorsInfo() = {
     val updateStatus = current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         val configuration = play.api.Play.configuration
@@ -65,7 +80,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
           chiplist <- ips /* get the channel IPs as response */
         } yield { /* start of 2nd yield*/
 
-          //Logger.debug("-------Loop through each Channel IP-------")
+          //Loop through each Channel IP
 
           var xylist = chiplist.map {
             url1 =>
@@ -84,7 +99,6 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
 
                 for (ct <- consumer_details_List) {
                   var ctag = ct \\ "consumer_tag"
-                  // Logger.debug("cTAG:::::" + ctag)
                   consumer_tags = ctag(0).toString :: consumer_tags
                   queue = ct \\ "queue"
                   queuename = queue(0) \\ "name"
@@ -102,9 +116,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
                     Logger.debug(substr + " ::: PUBLISHER")
                   }
                 } //end of for
-                //Logger.debug("-----End of IP--------" + url1._1)
-
-                (url1._1, flag, queuename(0).toString)
+               (url1._1, flag, queuename(0).toString)
 
               } //end of yield
 
