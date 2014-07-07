@@ -72,11 +72,11 @@ class Files @Inject() (
         }
         val sectionsByFile = sections.findByFileId(file.id)
         val sectionsWithPreviews = sectionsByFile.map { s =>
-        val p = previews.findBySectionId(s.id)
-        if(p.length>0)
-          s.copy(preview = Some(p(0)))
-         else
-           s.copy(preview = None)
+        	val p = previews.findBySectionId(s.id)
+        	if(p.length>0)
+        		s.copy(preview = Some(p(0)))
+        	else
+        		s.copy(preview = None)
         }
 
         //Search whether file is currently being processed by extractor(s)
@@ -156,8 +156,8 @@ class Files @Inject() (
    * Upload file page.
    */
   def uploadFile = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
-     implicit val user = request.user
-    Ok(views.html.upload(uploadForm))
+  	implicit val user = request.user
+  	Ok(views.html.upload(uploadForm))
   }
   
 /**
@@ -220,58 +220,40 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
               // TODO RK need to replace unknown with the server name
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
               // TODO RK : need figure out if we can use https
-             // val host = "http://" + request.host + request.path.replaceAll("upload$", "")
               val host = "http://" + request.host
               val id = f.id
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
-	            /***** Inserting DTS Requests   **/  
-	            
-	            val clientIP=request.remoteAddress
-	            //val clientIP=request.headers.get("Origin").get
-                val domain=request.domain
-                val keysHeader=request.headers.keys
-                //request.
-                Logger.debug("---\n \n")
-            
-                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-                
-                Logger.debug("----")
-                val serverIP= request.host
-	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-	           /****************************/ 
-	            //for metadata files
-	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              files.addXMLMetadata(id, xmlToJSON)
-	              
-	              Logger.debug("xmlmd=" + xmlToJSON)
-	              
-	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
-		            }
-	            }
-	            else{
-		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName","")))
-		            }
-	            }
-	            
-	          //var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id.toString)} 
-	          
-	         // Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
+	          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+              /***** Inserting DTS Requests   **/  
+              val clientIP=request.remoteAddress
+              val domain=request.domain
+              val keysHeader=request.headers.keys
 
-	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-	            
-	              
-	                        
-	            // redirect to file page]
-	         //   Redirect("http://localhost:9000/api/files/"+f.id.toString+"/extract")  
+              Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+              Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+       		  val serverIP= request.host
+              dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+              /****************************/ 
+              //for metadata files
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+            	  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+            			  files.addXMLMetadata(id, xmlToJSON)
+
+            			  Logger.debug("xmlmd=" + xmlToJSON)
+
+            			  current.plugin[ElasticsearchPlugin].foreach{
+            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
+            	  }
+              }
+              else{
+            	  current.plugin[ElasticsearchPlugin].foreach{
+            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName","")))
+            	  }
+              }
+	          current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+	        
+	           // redirect to extract page
 	          Ok(views.html.extract(f.id))
-	         // val x=Application.javascriptRoutes
-	      
-	       //   Redirect(x.api.Files.extract(f.id.toString))
-	         }
+	          }
 	         case None => {
 	           Logger.error("Could not retrieve file that was just saved.")
 	           InternalServerError("Error uploading file")
