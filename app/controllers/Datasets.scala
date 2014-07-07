@@ -340,13 +340,12 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				             }
 		 			    	
 		 			    	  	
-		 			    	 /*---- Insert DTS Request to the database   ----*/
-		 			    			
-						            val clientIP=request.remoteAddress
-						            val serverIP= request.host
-						            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-						            
-						  /*--------------------------------------------*/
+		 			    	/*---- Insert DTS Request to the database   ----*/
+
+		 			    	val clientIP=request.remoteAddress
+		 			    	val serverIP= request.host
+		 			    	dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+			    			/*--------------------------------------------*/
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id))
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -421,16 +420,13 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				             }
 				   }
 		          //***** Inserting DTS Requests   **//  
-	                               Logger.debug("************THE FILE ALREADY EXISTS*********")
-						            val clientIP=request.remoteAddress
-						            val domain=request.domain
-					                val keysHeader=request.headers.keys
-					                        
-					                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-					                //Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-					                			                
-					                val serverIP= request.host
-						            dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
+		          Logger.debug("The file already exists")
+		          val clientIP=request.remoteAddress
+		          val domain=request.domain
+		          val keysHeader=request.headers.keys
+		          Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+		          val serverIP= request.host
+		          dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
 						            
 				//****************************//
 		          
