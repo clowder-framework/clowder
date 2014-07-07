@@ -111,7 +111,7 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
   }
   
 /**
- * Get the binding lists (lists of routing keys) from the rabbitmq server 
+ * Get the binding lists (lists of routing keys) from the rabbitmq broker 
  */
   
   def getBindings(): Future[Response] = {
@@ -121,16 +121,16 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
     
      val ruser = configuration.getString("rabbitmq.user").getOrElse("")
      val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
-     
-    //val rUrl = "http://localhost:15672/api/bindings"
+       
     val rUrl="http://"+host+":"+mgmt_api_port+"/api/bindings"
    
-    //val bindingList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth("guest", "guest", AuthScheme.BASIC).get()
-     val bindingList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
+    val bindingList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
     bindingList
 
   }
-  
+ /**
+  *  Get Channel list from rabbitmq broker
+  */ 
 
   def getChannelsList():Future[Response] = {
     val configuration = play.api.Play.configuration
@@ -141,43 +141,38 @@ val files: FileService =  DI.injector.getInstance(classOf[FileService])
     val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
        
     val rUrl="http://"+host+":"+mgmt_api_port+"/api/channels"
-
-
-
     val ipList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
-
-    ipList.map{
-      l=>Logger.debug("Channel : "+ l.body)
-      Logger.debug("-----------------------------------------------")
-      Logger.debug(" ")
-      
-    }
-   ipList
+    
+    ipList
    }
-  
+ 
+  /**
+   * Get queue bindings for a given host and queue from rabbitmq broker
+   */
   
   def getQueueBindings(vhost:String,qname:String):Future[Response]={
     val configuration = play.api.Play.configuration
     val host = configuration.getString("rabbitmq.host").getOrElse("")
     val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
     
-     val ruser = configuration.getString("rabbitmq.user").getOrElse("")
-     val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
+    val ruser = configuration.getString("rabbitmq.user").getOrElse("")
+    val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
     
     var vhost1:String=""
     if(vhost=="/"){
       vhost1="%2F"
     }
-    //val qbindUrl="http://"+host+":15672/api/queues/"+vhost1+"/"+qname+"/bindings"
-     
+       
     val qbindUrl="http://"+host+":"+mgmt_api_port+"/api/queues/"+vhost1+"/"+qname+"/bindings"
     
-     Logger.debug("-----query bind Url:  "+ qbindUrl)
+    Logger.debug("-----query bind Url:  "+ qbindUrl)
     
     val rks=WS.url(qbindUrl).withHeaders("Accept" -> "application/json").withAuth(ruser,ruser_pwd, AuthScheme.BASIC).get()
     rks 
   }
-  
+ /**
+  *  Get Channel information from rabbitmq broker for given channel id 'cid'
+  */ 
 def getChannelInfo(cid: String): Future[Response]={
      val configuration = play.api.Play.configuration
      val host = configuration.getString("rabbitmq.host").getOrElse("")
@@ -185,16 +180,10 @@ def getChannelInfo(cid: String): Future[Response]={
     
      val ruser = configuration.getString("rabbitmq.user").getOrElse("")
      val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
-     
-    
-   
-       val cUrl="http://"+host+":"+mgmt_api_port+"/api/channels"
-
-    val chInfo: Future[Response] = WS.url(cUrl+"/"+cid).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
-
+     val cUrl="http://"+host+":"+mgmt_api_port+"/api/channels"
+     val chInfo: Future[Response] = WS.url(cUrl+"/"+cid).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
     chInfo
-     
-  }
+}
 
 
 }
