@@ -22,7 +22,8 @@ import models.DTSInfoSetUp
 import play.api.libs.json._
 import java.util.Calendar
 
-class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsService) extends SecuredController {
+
+class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsService) extends SecuredController {
 
   /**
    * Directs currently running extractor's server IPs to the webpage
