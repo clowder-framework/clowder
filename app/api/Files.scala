@@ -358,13 +358,13 @@ class Files @Inject()(
                   val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
 
-                /*---- Insert DTS Request to database---*/  
-	            
-	            val clientIP=request.remoteAddress
-	            val serverIP= request.host
-	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-	           
-	            /*---------------------------------------*/ 
+                  /*---- Insert DTS Request to database---*/  
+
+                  val clientIP=request.remoteAddress
+                  val serverIP= request.host
+                  dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+
+                  /*---------------------------------------*/ 
 	            
                   // index the file using Versus
                   current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
@@ -542,10 +542,10 @@ class Files @Inject()(
 	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 	          // TODO RK : need figure out if we can use https
 	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
-	          /*----- Insert DTS Requests  -------*/  
-	                   val clientIP=request.remoteAddress
-			            val serverIP= request.host
-			            dtsrequests.insertRequest(serverIP,clientIP, f.filename, f.id, fileType, f.length,f.uploadDate)
+	          /*----- Insert DTS Requests  -------*/
+	          val clientIP = request.remoteAddress
+	          val serverIP = request.host
+	          dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
 			 /*-------------------------*/ 
                       
 			  // index the file using Versus
@@ -675,9 +675,6 @@ class Files @Inject()(
                   current.plugin[RabbitmqPlugin].foreach {
                     _.extract(ExtractorMessage(UUID(originalId), id, host, key, Map.empty, f.length.toString, null, flags))
                   }
-//                  current.plugin[ElasticsearchPlugin].foreach {
-//                    _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
-//                  }
                   Ok(toJson(Map("id" -> id.stringify)))
                 }
                 case None => {
@@ -723,7 +720,7 @@ class Files @Inject()(
       val extractor_id = if (eid.isDefined) {
         eid
       } else {
-        Logger.info("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to None.  request.body: " + request.body.toString)
+        Logger.debug("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to None.  request.body: " + request.body.toString)
         Some("Other")
       }
       request.body match {
@@ -1271,7 +1268,7 @@ class Files @Inject()(
   * 
   */
   @ApiOperation(value = "Provides metadata extracted for a file", notes = "", responseClass = "None", httpMethod = "GET")  
-  def extract(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+  def extract(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ExtractMetadata)) { implicit request =>
     Logger.info("Getting extract info for file with id " + id)
     if (UUID.isValid(id.stringify)) {
      files.get(id) match {
