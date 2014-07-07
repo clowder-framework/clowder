@@ -174,22 +174,12 @@ class Extractions @Inject() (
 
                     Logger.debug("xmlmd=" + xmlToJSON)
 
-                    /* current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("xmlmetadata", xmlToJSON)))
-                    }*/
-
                     //add file to RDF triple store if triple store is used
                     configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                       case "yes" => sqarql.addFileToGraph(f.id)
                       case _ => {}
                     }
                   }
-                  /* else {
-                   current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType)))
-                    }
-                  }*/
-
                   Ok(toJson(Map("id" -> id.stringify)))
                 }
                 case None => {
@@ -213,7 +203,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Uploads a file for extraction using the file's URL",
     notes = "Saves the uploaded file and sends it for extraction. Does not index the file.  ",
     responseClass = "None", httpMethod = "POST")
-  def uploadbyURL() = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploadByURL() = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
     request.user match {
       case Some(user) => {
         val configuration = play.api.Play.configuration
@@ -229,18 +219,24 @@ class Extractions @Inject() (
             var in: BufferedInputStream = null;
             var buff = new Array[Byte](10240)
             try {
-
+              /*
+               * Downloads the file using 'fileurl' as specified in the request body
+               * 
+               * Gets the filename by spliting the 'fileurl' and last string being the filename
+               * e.g: if fileurl is : http://isda.ncsa.illinois.edu/drupal/sites/default/files/pictures/picture.jpg, then picture.jpg is the filename
+               * Opens a HTTPConnection, opens an inputstream to download the file using the given url
+               * Saves the inputstream to a temporary file and names it as (tmpdir+filename) 
+               * Sends it to mongodb to save the file in the database   
+               * 
+               */
+              val urlsplit = fileurl.split("/")
+              val filename = urlsplit(urlsplit.length - 1) 
               val url = new URL(fileurl)
               var len = 0
-
-              val urlsplit = fileurl.split("/")
-              val filename = urlsplit(urlsplit.length - 1)
               Logger.debug("filename: " + filename)
-
+              //Open a Httpconnection to download the file 
               val connection = url.openConnection().asInstanceOf[HttpURLConnection]
-
               connection.setRequestMethod("GET")
-
               val ct = connection.getContentType()
               val clen = connection.getContentLength()
 
@@ -254,17 +250,19 @@ class Extractions @Inject() (
 
               var buf = new Array[Byte](clen)
               var count = 0
-              while (count != -1) {
-                Logger.debug("Inside while: before: count= " + count)
-                count = in.read(buf)
-                Logger.debug("Inside while: after: count= " + count)
-                if (count == -1) {
-                  Logger.debug("Inside While even if count is -1")
-                } else {
-                  Logger.debug("Trying to write into file")
-                  fout.write(buf, 0, count)
+              //Start reading the file from the stream and write to a 'localfile' with 'localfilename'
+              while(count != -1) { 
+                  Logger.trace("Inside while: before: count= " + count)
+                  count = in.read(buf)
+                  Logger.trace("Inside while: after: count= " + count)
+                  if (count == -1) {
+                    Logger.trace("Inside While even if count is -1")
+                  } else {
+                    Logger.trace("Trying to write into file")
+                    fout.write(buf, 0, count)
+                  }
                 }
-              }
+              
               fout.flush()
               Logger.debug("After read")
 
@@ -289,7 +287,6 @@ class Extractions @Inject() (
                   Logger.debug("request.path=" + request.path)
                   val host = "http://" + request.host
                   Logger.debug("hosts=" + request.host)
-                  //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
                   current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
                   Logger.debug("After RabbitmqPlugin")
 
@@ -346,7 +343,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Submites a previously uploaded file's id for extraction",
     notes = "Notifies the user that the file is sent for extraction. check the status  ",
     responseClass = "None", httpMethod = "POST")
-  def submitAextraction(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+  def submitExtraction(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
     current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         if (UUID.isValid(id.stringify)) {
@@ -516,8 +513,18 @@ class Extractions @Inject() (
       if (l.size == 0) {
         Logger.debug("Inside If")
         val rkl = rkeylist.toArray
-
+       /**
+        * Routing key lists obtained from rabbitmq binding api looks this:
+        *  "amq.gen-ik6RuUOEuFxyLIffVCQwSA"
+        *  "ncsa.cv.face"
+        *  "ncsa.cv.eyes"
+        *  "*.file.image.#" (length of array after split of this string is greater than 2)
+        *  we split each routing key based on period "."
+        *  if the length of the array after split is greater than two, and it is equal to the file content type and flag is false (not processing)
+        *  then the queue for the extractor is there, extractor is either busy running other job or it is not currently running.
+        *   */
         for (s <- rkl) {
+          Logger.debug("s===== "+s)
           var x = s.split("\\.")
           if (x.length > 2) {
             if (x(2).equals(mt(0)) && !flag) {
@@ -547,13 +554,11 @@ class Extractions @Inject() (
     def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
         val list_servers = extractors.getExtractorServerIPList()
         var jarr = new JsArray()
-        //var list_servers1=List[String]()
         list_servers.map {
           ls =>
             Logger.debug("Server Name:  " + ls.substring(1, ls.size-1))
             jarr = jarr :+ (Json.parse(ls))
-           // list_servers1=ls.substring(1, ls.size-1)::list_servers1
-            }
+           }
         Logger.debug("JSARRAY----" + jarr.toString)
         Ok(Json.obj("Servers" -> jarr))
       
@@ -570,11 +575,8 @@ class Extractions @Inject() (
       ls =>
         Logger.debug("Extractor Name:  " + ls)
         jarr = jarr :+ (Json.parse(ls))
-        //list_names1=ls.substring(1, ls.size-1)::list_names1
-
-    }
+     }
     Logger.debug("JSARRAY----" + jarr.toString)
-    //Ok(Json.obj("Extractors" -> jarr))
     Ok(toJson(Map("Extractors" -> jarr)))
    
 
@@ -587,14 +589,11 @@ class Extractions @Inject() (
 
     val list_inputtypes = extractors.getExtractorInputTypes()
     var jarr = new JsArray()
-    //var list_inputtypes1=List[String]()
     list_inputtypes.map {
       ls =>
         Logger.debug("Extractor Input Type:  " + ls)
         jarr = jarr :+ (Json.parse(ls))
-        //list_inputtypes1=ls.substring(1, ls.size-1)::list_inputtypes1
-
-    }
+     }
     Logger.debug("JSARRAY----" + jarr.toString)
     Ok(Json.obj("InputTypes" -> jarr))
    
@@ -621,12 +620,11 @@ class Extractions @Inject() (
           
            if(dtsreq.extractors!=None)
            { 
-             Logger.debug("----Inside dts requests----")
+              Logger.debug("----Inside dts requests----")
               extractors1=Json.parse(com.mongodb.util.JSON.serialize(dtsreq.extractors.get))
               extractors2=extractors1.as[List[String]]
-             //Logger.debug("Extractors1:"+ Json.stringify(extractors1))
-             Logger.debug("Extractors2:"+ extractors2)
-             extractors2.map{
+              Logger.debug("Extractors2:"+ extractors2)
+              extractors2.map{
                   ex=>
                    js=js:+toJson(ex)
                  }
