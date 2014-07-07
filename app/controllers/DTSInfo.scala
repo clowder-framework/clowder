@@ -25,7 +25,7 @@ import java.util.Calendar
 class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsService) extends SecuredController {
 
   /**
-   * extractor server ip
+   * Directs currently running extractor's server IPs to the webpage
    */
 
   def getExtractorServersIP() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
@@ -45,13 +45,15 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
             jarr = jarr :+ (Json.parse(ls))
             list_servers1=ls.substring(1, ls.size-1)::list_servers1
             }
-        Logger.debug("JSARRAY----" + jarr.toString)
-       //Ok(Json.obj("Servers" -> jarr))
+        Logger.debug("Json array for list of extractors server ips----" + jarr.toString)
         Ok(views.html.dtsserverip(list_servers1,list_servers1.size))
       }
     }
   }
-
+  
+/**
+ * Directs currently running extractors information to the webpage 
+ */
   def getExtractorNames() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
 
     val list_names = extractors.getExtractorNames()
@@ -64,12 +66,14 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
         list_names1=ls.substring(1, ls.size-1)::list_names1
 
     }
-    Logger.debug("JSARRAY----" + jarr.toString)
-    //Ok(Json.obj("Extractors" -> jarr))
+    Logger.debug("Json array for list of extractor names----" + jarr.toString)
     Ok(views.html.dtsextractors(list_names1,list_names1.size))
 
   }
-
+  
+/**
+ * Directs input type supported by currently running extractors information to the webpage
+ */
   def getExtractorInputTypes() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
 
     val list_inputtypes = extractors.getExtractorInputTypes()
@@ -82,13 +86,15 @@ class DTSInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsS
         list_inputtypes1=ls.substring(1, ls.size-1)::list_inputtypes1
 
     }
-    Logger.debug("JSARRAY----" + jarr.toString)
-   // Ok(Json.obj("InputTypes" -> jarr))
-     Ok(views.html.dtsinputtype(list_inputtypes1,list_inputtypes1.size))
+    Logger.debug("Json array for list of input types supported by extractors----" + jarr.toString)
+    Ok(views.html.dtsinputtype(list_inputtypes1,list_inputtypes1.size))
 
   }
   
-  def getDTSRequests() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+  /**
+   * Directs DTS extractions requests information to the webpage
+   */
+   def getDTSRequests() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
 
     var list_requests = dtsrequests.getDTSRequests()
     var startTime = models.ServerStartTime.startTime
