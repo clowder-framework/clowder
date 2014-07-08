@@ -218,8 +218,6 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
           }
 
           updateInputTypeStatus 
-          //Ok(Json.obj("Servers"->kslist))
-          // kslist
         } //end of yield
 
         updateExNameIPsStatus
