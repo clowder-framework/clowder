@@ -62,7 +62,7 @@ import api.WithPermission
 class Extractions @Inject() (
   files: FileService,
   extractions: ExtractionService,
-  dtsrequests: DTSRequestsService,
+  dtsrequests: ExtractionRequestsService,
   extractors: ExtractorService,
   previews: PreviewService,
   sqarql: RdfSPARQLService,

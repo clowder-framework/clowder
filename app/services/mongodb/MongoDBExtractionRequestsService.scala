@@ -21,7 +21,7 @@ import java.text.SimpleDateFormat
 
 import javax.inject.{Singleton, Inject}
 
-class MongoDBExtractionRequestsService @Inject()(extractions: ExtractionService)extends DTSRequestsService {
+class MongoDBExtractionRequestsService @Inject()(extractions: ExtractionService)extends ExtractionRequestsService {
 
 
   def getDTSRequests(): List[ExtractionRequests] = {

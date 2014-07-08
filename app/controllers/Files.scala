@@ -31,7 +31,7 @@ class Files @Inject() (
   comments: CommentService,
   sections: SectionService,
   extractions: ExtractionService,
-  dtsrequests: DTSRequestsService,
+  dtsrequests: ExtractionRequestsService,
   previews: PreviewService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,

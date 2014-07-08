@@ -88,7 +88,7 @@ class Files @Inject()(
   tags: TagService,
   comments: CommentService,
   extractions: ExtractionService,
-  dtsrequests:DTSRequestsService,
+  dtsrequests:ExtractionRequestsService,
   previews: PreviewService,
   threeD: ThreeDService,
   sqarql: RdfSPARQLService,

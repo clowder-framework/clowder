@@ -2,7 +2,7 @@ package services
 import java.util.Date
 import models._
 
-trait DTSRequestsService {
+trait ExtractionRequestsService {
   
   def insertRequest(serverIP:String,clientIP:String,filename:String,fileid:UUID,fileType:String,filesize:Long, uploadDate:Date)   
   

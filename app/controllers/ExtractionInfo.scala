@@ -17,13 +17,13 @@ import javax.inject.Inject
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsArray
 import services.ExtractorService
-import services.DTSRequestsService
+import services.ExtractionRequestsService
 import models.ExtractionInfoSetUp
 import play.api.libs.json._
 import java.util.Calendar
 
 
-class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRequestsService) extends SecuredController {
+class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: ExtractionRequestsService) extends SecuredController {
 
   /**
    * Directs currently running extractor's server IPs to the webpage

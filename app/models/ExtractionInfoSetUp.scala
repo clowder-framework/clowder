@@ -14,7 +14,7 @@ import javax.inject.Inject
 import services.ExtractorService
 import services.DI
 import scala.concurrent.Future
-import services.DTSRequestsService
+import services.ExtractionRequestsService
 import java.net.InetAddress
 /*
  * @author Smruti Padhy 
@@ -25,7 +25,7 @@ import java.net.InetAddress
 
 object ExtractionInfoSetUp {
 val extractors: ExtractorService =  DI.injector.getInstance(classOf[ExtractorService])
-val dtsrequests:DTSRequestsService=DI.injector.getInstance(classOf[DTSRequestsService])
+val dtsrequests:ExtractionRequestsService=DI.injector.getInstance(classOf[ExtractionRequestsService])
 
 /*
  * Updates DTS extraction request

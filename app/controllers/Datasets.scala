@@ -32,7 +32,7 @@ class Datasets @Inject()(
   comments: CommentService,
   sections: SectionService,
   extractions: ExtractionService,
-  dtsrequests:DTSRequestsService,
+  dtsrequests:ExtractionRequestsService,
   sparql: RdfSPARQLService) extends SecuredController {
 
 
