@@ -6,20 +6,15 @@ import java.io.OutputStream
 import java.net.URL
 import java.net.HttpURLConnection
 import java.io.FileInputStream
-
 import java.io.FileOutputStream
 import java.io.File
 import java.util.Date
 import java.util.ArrayList
-
 import java.io.BufferedWriter
 import java.io.FileWriter
-
 import java.io.FileReader
 import java.io.ByteArrayInputStream
-
 import scala.collection.mutable.MutableList
-
 import models._
 import play.api.Logger
 import play.api.Play.current
@@ -29,22 +24,14 @@ import play.api.libs.json._
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
 import play.api.libs.ws.Response
-
 import javax.inject.Inject
-
 import scala.collection.mutable.ListBuffer
-
 import org.json.JSONObject
-
 import Transformation.LidoToCidocConvertion
-
 import jsonutils.JsonUtil
-
 import services._
 import fileutils.FilesUtils
-
 import controllers.Previewers
-
 import play.api.libs.json.JsString
 import scala.Some
 import services.DumpOfFile
@@ -57,13 +44,12 @@ import models.File
 import play.api.libs.json.JsObject
 import play.api.Play.configuration
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
-
 import services.ExtractorMessage
 import scala.concurrent.Future
- 
 import scala.util.control._
 import javax.activation.MimetypesFileTypeMap
 import java.util.Calendar
+import api.WithPermission
 
 
 /**
@@ -633,7 +619,7 @@ class Extractions @Inject() (
              Logger.debug("----Else block")
            }
                
-          jarr=jarr:+(Json.obj("clientIP"->dtsreq.clientIP,"fileid"->dtsreq.fileid.stringify,"filename"->dtsreq.filename,"fileType"->dtsreq.fileType,"filesize"->dtsreq.filesize,"uploadDate"->dtsreq.uploadDate,"extractors"->js ,"startTime"->dtsreq.startTime,"endTime"->dtsreq.endTime))
+          jarr=jarr:+(Json.obj("clientIP"->dtsreq.clientIP,"fileid"->dtsreq.fileId.stringify,"filename"->dtsreq.fileName,"fileType"->dtsreq.fileType,"filesize"->dtsreq.fileSize,"uploadDate"->dtsreq.uploadDate,"extractors"->js ,"startTime"->dtsreq.startTime,"endTime"->dtsreq.endTime))
         }
     
     Ok(jarr)

@@ -1,4 +1,4 @@
-@(dtsrequests:List[models.DTSRequests], size:Integer,startTime: java.util.Date,currentTime:java.util.Date)
+@(dtsrequests:List[models.ExtractionRequests], size:Integer,startTime: java.util.Date,currentTime:java.util.Date)
 @import helper._
 @import collection.JavaConverters._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -40,9 +40,9 @@
 	
 	<td>@req.clientIP</td>
 	
-	<td>@req.filename</td>
+	<td>@req.fileName</td>
 	<td>@req.fileType</td>
-	<td>@req.filesize</td>
+	<td>@req.fileSize</td>
 	<td>@req.uploadDate</td>
 	<td>@req.extractors</td>
 	<td>@req.startTime</td>
