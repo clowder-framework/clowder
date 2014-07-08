@@ -47,7 +47,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRe
             list_servers1=ls.substring(1, ls.size-1)::list_servers1
             }
         Logger.debug("Json array for list of extractors server ips----" + jarr.toString)
-        Ok(views.html.dtsserverip(list_servers1,list_servers1.size))
+        Ok(views.html.extractorsServersIP(list_servers1,list_servers1.size))
       }
     }
   }
@@ -68,7 +68,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRe
 
     }
     Logger.debug("Json array for list of extractor names----" + jarr.toString)
-    Ok(views.html.dtsextractors(list_names1,list_names1.size))
+    Ok(views.html.extractors(list_names1,list_names1.size))
 
   }
   
@@ -88,7 +88,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRe
 
     }
     Logger.debug("Json array for list of input types supported by extractors----" + jarr.toString)
-    Ok(views.html.dtsinputtype(list_inputtypes1,list_inputtypes1.size))
+    Ok(views.html.extractorsInputTypes(list_inputtypes1,list_inputtypes1.size))
 
   }
   
@@ -100,7 +100,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRe
     var list_requests = dtsrequests.getDTSRequests()
     var startTime = models.ServerStartTime.startTime
     var currentTime = Calendar.getInstance().getTime()
-    Ok(views.html.dtsrequests(list_requests, list_requests.size, startTime, currentTime))
+    Ok(views.html.extractionRequests(list_requests, list_requests.size, startTime, currentTime))
   }
 
 }
