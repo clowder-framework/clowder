@@ -1,7 +1,10 @@
 package services
 import java.util.Date
 import models._
-
+/**
+ * Tracks extractions requests
+ * @author Smruti Padhy
+ */
 trait ExtractionRequestsService {
   
   def insertRequest(serverIP:String,clientIP:String,filename:String,fileid:UUID,fileType:String,filesize:Long, uploadDate:Date)   

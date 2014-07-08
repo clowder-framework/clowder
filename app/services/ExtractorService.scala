@@ -1,6 +1,8 @@
 package services
 
-
+/**
+ * Keeps track of extractors status information
+ */
 
 trait ExtractorService {
   

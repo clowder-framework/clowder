@@ -21,6 +21,11 @@ import java.text.SimpleDateFormat
 
 import javax.inject.{Singleton, Inject}
 
+/**
+ * MongoDB implementation for ExtractionRequestsService to keep track of extraction requests
+ * 
+ */
+
 class MongoDBExtractionRequestsService @Inject()(extractions: ExtractionService)extends ExtractionRequestsService {
 
 

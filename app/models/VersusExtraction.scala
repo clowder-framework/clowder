@@ -4,12 +4,16 @@ import play.api.libs.json.Reads
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsResult
 
-object DescriptorList {
+/**
+ *   Versus Extraction of Descriptors with an adapter, an extractor and a measure
+ *   @author Smruti Padhy
+ */
+object VersusExtraction {
   
-  case class DescriptorList(val extraction_id: String, val adapter_name:String, val extractor_name:String, val descriptor:String )
+  case class VersusExtraction(val extraction_id: String, val adapter_name:String, val extractor_name:String, val descriptor:String )
   
   
-   implicit object DescriptorList extends Reads[DescriptorList] {
+   implicit object VersusExtraction extends Reads[VersusExtraction] {
     def reads(json: JsValue) ={
      
       val ex_id:String = (json \"extractor_id").as[String]
@@ -17,7 +21,7 @@ object DescriptorList {
       val ex_name:String=(json \"extractor_name").as[String]
       val des:String=(json \"descriptor").as[String]
       
-      JsSuccess(DescriptorList(ex_id,a_name,ex_name,des))
+      JsSuccess(VersusExtraction(ex_id,a_name,ex_name,des))
          
     }
 
