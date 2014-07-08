@@ -273,7 +273,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
             Logger.info("Status start: " + startDate)
             val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
             extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
-            models.DTSInfoSetUp.updateDTSRequests(file_id,extractor_id)
+            models.ExtractionInfoSetUp.updateDTSRequests(file_id,extractor_id)
    }
 
 }

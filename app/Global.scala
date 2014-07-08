@@ -8,7 +8,7 @@ import play.libs.Akka
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import models.DTSInfoSetUp
+import models.ExtractionInfoSetUp
 import services.ExtractorService
 import java.util.Date
 import java.util.Calendar
@@ -57,7 +57,7 @@ object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
  
     
     Akka.system().scheduler.schedule(0.minutes,2 minutes){
-           models.DTSInfoSetUp.updateExtractorsInfo()
+           models.ExtractionInfoSetUp.updateExtractorsInfo()
     }
      
 

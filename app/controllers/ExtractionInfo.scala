@@ -18,7 +18,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.JsArray
 import services.ExtractorService
 import services.DTSRequestsService
-import models.DTSInfoSetUp
+import models.ExtractionInfoSetUp
 import play.api.libs.json._
 import java.util.Calendar
 
@@ -32,7 +32,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: DTSRe
   def getExtractorServersIP() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
     Async {
       for {
-        x <- DTSInfoSetUp.updateExtractorsInfo()
+        x <- ExtractionInfoSetUp.updateExtractorsInfo()
         status <- x
       } yield {
 

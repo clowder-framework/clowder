@@ -23,7 +23,7 @@ import java.net.InetAddress
  * 
  */
 
-object DTSInfoSetUp {
+object ExtractionInfoSetUp {
 val extractors: ExtractorService =  DI.injector.getInstance(classOf[ExtractorService])
 val dtsrequests:DTSRequestsService=DI.injector.getInstance(classOf[DTSRequestsService])
 
