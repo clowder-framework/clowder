@@ -50,15 +50,6 @@ object FileOP {
    */
   def extractPreviews(id: UUID) = {
     val previews1 =previews.findByFileId(id);
-    /*
-     * Initial implementation: Flat tree of {"extractor_id", "preview_id", "url", "contentType", ...} items.
-     * 
-    val jpreviews = filePreviews.map(p =>
-      Json.obj("extractor_id" -> p.extractor_id, "preview_id" -> p.id.toString,
-        "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id.toString).toString))
-    jpreviews
-    * 
-    */
     // Transform the preview list into a list of ["extractor_id", "values"] items,
     // where "values" are the preview properties, such as "preview_id", "url", and "contentType".
     var previewRes = Map[String, MutableList[JsValue]]()
