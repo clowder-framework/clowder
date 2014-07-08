@@ -8,5 +8,5 @@ trait DTSRequestsService {
   
   def updateRequest(file_id:UUID,extractor_id:String)
   
-  def getDTSRequests():List[DTSRequests]
+  def getDTSRequests():List[ExtractionRequests]
 }

@@ -6,13 +6,13 @@ import java.util.Date
  * @author Smruti Padhy
  */
 
-case class DTSRequests(
+case class ExtractionRequests(
     serverIP:String,
     clientIP:String,
-    fileid:UUID,
-    filename:String,
+    fileId:UUID,
+    fileName:String,
     fileType:String,
-    filesize:Long,
+    fileSize:Long,
     uploadDate:Date,
     extractors:Option[List[String]],
     startTime:Option[Date],
