@@ -70,8 +70,10 @@ trait SecuredController extends Controller {
               case None => {
                 if (authorization.isAuthorized(null))
                   f(RequestWithUser(None, request))
-                else
+                else {
+                    Logger.info("SecuredController - Authentication failure")
                   Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not logged in.")
+                }
               }
             }
           }

@@ -50,8 +50,10 @@ trait ApiController extends Controller {
               case None => {
                 if (authorization.isAuthorized(null))
                   f(RequestWithUser(None, request))
-                else
-                  Unauthorized("Not authorized")
+                else {
+                    Logger.info("ApiController - Authentication failure")
+                  Unauthorized("Authentication Required")
+                }
               }
             }
           }
