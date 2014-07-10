@@ -20,11 +20,11 @@
 			<tbody>
 				@datasetsInCollection.map { dataset =>
 					<tr style="display:none;" data-datasetId="@(dataset.id.toString)">
-						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
+						<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
 						<td style="white-space:pre-line;">@dataset.description</td>
 						<td>
-							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" width="120">}
+							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
 						<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
@@ -60,7 +60,7 @@
 	</div>
 </div>
 <script language="javascript">	
-	var queryIp = "@api.routes.Datasets.listOutsideCollection(collectionId)";
+	var queryIp = "@api.routes.Datasets.listOutsideCollection(UUID(collectionId))";
 	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
 	var collectionId = "@collectionId";
 </script>

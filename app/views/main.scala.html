@@ -12,7 +12,7 @@
     <meta name="author" content="">
 <title>@title</title>
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-<link rel="stylesheet" href="@routes.Assets.at("stylesheets/" + Admin.getTheme())">
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/" + services.DI.injector.getInstance(classOf[services.AppConfigurationService]).getTheme())">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("javascripts/jquery-ui-1.10.3.custom.min.css")">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/pdf.css")">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/tableborder.css")">
@@ -75,6 +75,7 @@
 						   	<li><a href="@routes.Tags.tagCloud">Tag cloud</a></li>
 						   </ul>
 						</li>
+                        <li><a href="@routes.Assets.at("docs/api/index.html")">API</a></li>
 					</ul>
 					
 					

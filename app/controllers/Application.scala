@@ -6,36 +6,31 @@ import play.api.mvc.Controller
 import api.Sections
 import api.WithPermission
 import api.Permission
-import models.FileDAO
-import com.mongodb.casbah.commons.MongoDBObject
 import models.AppAppearance
+import javax.inject.{Singleton, Inject}
+import services.FileService
+import services.AppAppearanceService
 
 /**
  * Main application controller.
  * 
  * @author Luigi Marini
  */
-object Application extends SecuredController {
+@Singleton
+class Application  @Inject() (files: FileService) extends SecuredController {
+  
+  val appAppearance: AppAppearanceService = services.DI.injector.getInstance(classOf[AppAppearanceService])
   
   /**
    * Main page.
    */
-  def index = SecuredAction() { request =>
-  	implicit val user = request.user
-  	AppAppearance.getDefault.get.displayedName
-  	val latestFiles = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(5).toList
-  	val appAppearance = AppAppearance.getDefault.get
-    Ok(views.html.index(latestFiles, appAppearance.displayedName, appAppearance.welcomeMessage))
+  def index = SecuredAction(authorization = WithPermission(Permission.Public)) { request =>
+	implicit val user = request.user
+	val latestFiles = files.latest(5)
+	val appAppearanceGet = appAppearance.getDefault.get
+	Ok(views.html.index(latestFiles, appAppearanceGet.displayedName, appAppearanceGet.welcomeMessage))
   }
-  
-  /**
-   * Testing action.
-   */
-  def testJson = SecuredAction()  { implicit request =>
-    Ok("{test:1}").as(JSON)
-  }
-  
-    
+
   /**
    *  Javascript routing.
    */
