@@ -95,7 +95,7 @@ class Datasets @Inject()(
 	        }
 	      }
 	      Ok(views.html.datasetList(datasetList, prev, next, limit))
-	  }
+  }
 
 
   /**
@@ -198,10 +198,8 @@ class Datasets @Inject()(
   /**
    * Upload file.
    */
-/**
-   * Upload file.
-   */
-  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+
     implicit val user = request.user
     
     user match {
@@ -307,6 +305,7 @@ class Datasets @Inject()(
 										  //index the file
 										  current.plugin[ElasticsearchPlugin].foreach{
 								  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dt.id.toString()),("datasetName",dt.name), ("xmlmetadata", xmlToJSON)))
+
 								  		  }
 								  		  // index dataset
 								  		  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
@@ -314,7 +313,9 @@ class Datasets @Inject()(
 							  }
 							  else{
 								  //index the file
+
 								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dt.id.toString),("datasetName",dt.name)))}
+
 								  // index dataset
 								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
 								  List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName","")))}
@@ -381,19 +382,18 @@ class Datasets @Inject()(
 				  datasets.update(dt)
 			      
 			      val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+
 			      
 		          if(!theFileGet.xmlMetadata.isEmpty){
 		            val xmlToJSON = files.getXMLMetadataJSON(UUID(fileId))
 		            datasets.addXMLMetadata(dt.id, UUID(fileId), xmlToJSON)
 		            // index dataset
 		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
-			        List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())),
-			            ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
+			        List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
 		          }else{
 		            // index dataset
 		        	  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
-			    	   List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())),
-			    	       ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName","")))}
+			    	   List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName","")))}
 		          }
 		          
 		          //reindex file

@@ -12,9 +12,11 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
+
 import javax.inject.{ Singleton, Inject }
 import services.{ DatasetService, CollectionService }
 import services.AdminsNotifierPlugin
+
 import services.ElasticsearchPlugin
 
 object ThumbnailFound extends Exception {}

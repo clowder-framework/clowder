@@ -18,6 +18,7 @@ import api.Permission
 import javax.inject.Inject
 import java.util.Date 
 
+
 /**
  * Manage files.
  *
@@ -42,8 +43,8 @@ class Files @Inject() (
     mapping(
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
-  )
-
+  )  
+  
   /**
    * File info.
    */
@@ -103,7 +104,7 @@ class Files @Inject() (
         }
     }
   }
-
+  
   /**
    * List a specific number of files before or after a certain date.
    */
@@ -222,8 +223,9 @@ class Files @Inject() (
 
               // TODO replace null with None
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
-	            
+
 	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
+
 	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -241,12 +243,9 @@ class Files @Inject() (
 		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName","")))
 		            }
 	            }
-	            
-	          //var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(f.id)}
-	          
-	          //Logger.debug("Inside File: Extraction Id : "+ extractJobId)       
 
-	             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+
+	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
 	             //current.plugin[VersusPlugin].foreach{_.build()}
 	             
 	             //add file to RDF triple store if triple store is used
@@ -487,7 +486,7 @@ class Files @Inject() (
 	              }
       	}
         
-        Logger.debug("Uploading file " + nameOfFile)
+        Logger.debug("Controllers/Files Uploading file " + nameOfFile)
         
         // store file       
         Logger.info("uploadSelectQuery")
@@ -534,6 +533,7 @@ class Files @Inject() (
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
+
             
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -742,7 +742,6 @@ class Files @Inject() (
 					  
 					  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 
-					  
 					  //for metadata files
 					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 						  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)

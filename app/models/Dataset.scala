@@ -26,5 +26,6 @@ case class Dataset(
   thumbnail_id: Option[String] = None,
   datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
   userMetadataWasModified: Option[Boolean] = None,
-  notesHTML: Option[String] = None 
-)
+  notesHTML: Option[String] = None)
+
+

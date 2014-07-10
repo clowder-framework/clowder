@@ -201,7 +201,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
 	        		  createThumbnail(collection.id)
 	        	  }		                        
 	          }
-              
+
               Logger.info("Removing dataset from collection completed")
             }
             else{
@@ -243,7 +243,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
         current.plugin[ElasticsearchPlugin].foreach {
           _.delete("data", "collection", collection.id.stringify)
         }
+
         current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Collection","removed",collection.id.stringify, collection.name)}
+
         Success
       }
       case None => Success
@@ -259,53 +261,53 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
   
   def updateThumbnail(collectionId: UUID, thumbnailId: UUID) {
-    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
-      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
-  }
-  
-  def createThumbnail(collectionId:UUID){
-    get(collectionId) match{
-	    case Some(collection) => {
-	    		val selecteddatasets = collection.datasets map { ds =>{
-	    			datasets.get(ds.id).getOrElse{None}
-	    		}}
-			    for(dataset <- selecteddatasets){
-			      if(dataset.isInstanceOf[models.Dataset]){
-			          val theDataset = dataset.asInstanceOf[models.Dataset]
-				      if(!theDataset.thumbnail_id.isEmpty){
-				        Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
-				        return
-				      }
-			      }
-			    }
-			    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
-	    }
-	    case None =>
-    }  
-  }
-  
-  def index(id: UUID) {
-	    Collection.findOneById(new ObjectId(id.stringify)) match {
-	      case Some(collection) => {
-	        
-	        var dsCollsId = ""
-	        var dsCollsName = ""
-	          
-	        for(dataset <- collection.datasets){
-	          dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
-	          dsCollsName = dsCollsName + dataset.name + " %%% "
-	        }
-		    
-		    val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
-	        current.plugin[ElasticsearchPlugin].foreach {
-	          _.index("data", "collection", id,
-	            List(("name", collection.name), ("description", collection.description), ("created",formatter.format(collection.created)), ("datasetId",dsCollsId),("datasetName",dsCollsName)))
-	        }
-	      }
-	      case None => Logger.error("Collection not found: " + id.stringify)
-	    }
+	    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+	      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
 	  }
+	  
+	  def createThumbnail(collectionId:UUID){
+	    get(collectionId) match{
+		    case Some(collection) => {
+		    		val selecteddatasets = collection.datasets map { ds =>{
+		    			datasets.get(ds.id).getOrElse{None}
+		    		}}
+				    for(dataset <- selecteddatasets){
+				      if(dataset.isInstanceOf[models.Dataset]){
+				          val theDataset = dataset.asInstanceOf[models.Dataset]
+					      if(!theDataset.thumbnail_id.isEmpty){
+					        Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+					        return
+					      }
+				      }
+				    }
+				    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+		    }
+		    case None =>
+	    }  
+	  }
+
+  def index(id: UUID) {
+    Collection.findOneById(new ObjectId(id.stringify)) match {
+      case Some(collection) => {
+        
+        var dsCollsId = ""
+        var dsCollsName = ""
+          
+        for(dataset <- collection.datasets){
+          dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
+          dsCollsName = dsCollsName + dataset.name + " %%% "
+        }
+	    
+	    val formatter = new SimpleDateFormat("dd/MM/yyyy")
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "collection", id,
+            List(("name", collection.name), ("description", collection.description), ("created",formatter.format(collection.created)), ("datasetId",dsCollsId),("datasetName",dsCollsName)))
+        }
+      }
+      case None => Logger.error("Collection not found: " + id.stringify)
+    }
+  }
 }
 
 object Collection extends ModelCompanion[Collection, ObjectId] {

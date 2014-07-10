@@ -89,27 +89,25 @@ class Datasets @Inject()(
   def createDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
     request =>
       Logger.debug("Creating new dataset")
-      (request.body \ "name").asOpt[String].map {
-        name =>
-          (request.body \ "description").asOpt[String].map {
-            description =>
-              (request.body \ "file_id").asOpt[String].map {
-                file_id =>
-                  files.get(UUID(file_id)) match {
-                    case Some(file) =>
-                      val d = Dataset(name = name, description = description, created = new Date(), files = List(file), author = request.user.get)
-                      datasets.insert(d) match {
-                        case Some(id) => {
-                          files.index(UUID(file_id))
-                          if (!file.xmlMetadata.isEmpty) {
-                            val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
-                            datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
-                            current.plugin[ElasticsearchPlugin].foreach {
+      (request.body \ "name").asOpt[String].map { name =>
+      	  (request.body \ "description").asOpt[String].map { description =>
+      	    (request.body \ "file_id").asOpt[String].map { file_id =>
+      	      files.get(UUID(file_id)) match {
+      	        case Some(file) =>
+      	           val d = Dataset(name=name,description=description, created=new Date(), files=List(file), author=request.user.get)
+		      	   datasets.insert(d) match {
+		      	     case Some(id) => {
+                       files.index(UUID(file_id))
+                       if(!file.xmlMetadata.isEmpty){
+                         val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
+                         datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
+                         current.plugin[ElasticsearchPlugin].foreach {
                               _.index("data", "dataset", UUID(id),
                                 List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
                             }
-                          } else {
-                            current.plugin[ElasticsearchPlugin].foreach {
+                       }
+                       else{
+                         current.plugin[ElasticsearchPlugin].foreach {
                               _.index("data", "dataset", UUID(id),
                                 List(("name", d.name), ("description", d.description)))
                             }
@@ -164,6 +162,7 @@ class Datasets @Inject()(
       }
   }
 
+
   @ApiOperation(value = "Detach file from dataset",
       notes = "File is not deleted, only separated from the selected dataset. If the file is an XML metadata file, the metadata are removed from the dataset.",
       responseClass = "None", httpMethod = "POST")
@@ -182,7 +181,7 @@ class Datasets @Inject()(
 
                 if (!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty) {
                   if (dataset.thumbnail_id.get == file.thumbnail_id.get) {
-                    datasets.createThumbnail(dataset.id)
+                    datasets.createThumbnail(dataset.id)                    
                   }
                 }
                 //remove link between dataset and file from RDF triple store if triple store is used
@@ -192,7 +191,8 @@ class Datasets @Inject()(
                     case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
                   }
                 }
-              }
+               }
+
               else  Logger.info("File was already out of the dataset.")
               Ok(toJson(Map("status" -> "success")))
             }
@@ -207,6 +207,9 @@ class Datasets @Inject()(
         }
       }
   }
+  
+  //////////////////
+
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection)) {
@@ -243,8 +246,8 @@ class Datasets @Inject()(
       }
       Ok(toJson(Map("status" -> "success")))
   }
-
-
+  
+  
   def datasetFilesGetIdByDatasetAndFilename(datasetId: UUID, filename: String): Option[String] = {
     datasets.get(datasetId) match {
       case Some(dataset) => {
@@ -330,8 +333,9 @@ class Datasets @Inject()(
       notes = "Requires that the request body contains a 'tags' field of List[String] type.",
       responseClass = "None", httpMethod = "POST")
   def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
-    implicit request =>
-      addTagsHelper(TagCheck_Dataset, id, request)
+    implicit request =>{
+        addTagsHelper(TagCheck_Dataset, id, request)
+      }
   }
 
   /**
@@ -342,10 +346,11 @@ class Datasets @Inject()(
       notes = "Requires that the request body contains a 'tags' field of List[String] type.",
       responseClass = "None", httpMethod = "POST")
   def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
-    implicit request =>
+    implicit request =>{
       removeTagsHelper(TagCheck_Dataset, id, request)
+    }
   }
-
+  				
   /*
  *  Helper function to handle adding and removing tags for files/datasets/sections.
  *  Input parameters:
@@ -410,7 +415,9 @@ class Datasets @Inject()(
         case TagCheck_Dataset => {
         	datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         	datasets.index(id)
-        }
+
+          }
+
         case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }
       Ok(Json.obj("status" -> "success"))
@@ -521,6 +528,7 @@ class Datasets @Inject()(
           case Some(dataset) => {
             datasets.removeAllTags(id)
             datasets.index(id) 
+
             Ok(Json.obj("status" -> "success"))
           }
           case None => {
@@ -709,7 +717,7 @@ class Datasets @Inject()(
             case _ => Logger.debug("userdfSPARQLStore not enabled")
           }
           datasets.removeDataset(id)
-          
+
           current.plugin[ElasticsearchPlugin].foreach {
         	  _.delete("data", "dataset", id.stringify)
           }
@@ -717,6 +725,7 @@ class Datasets @Inject()(
           for(file <- dataset.files)
         	  files.index(file.id)
           
+
           Ok(toJson(Map("status" -> "success")))
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","removed",dataset.id.stringify, dataset.name)}
           Ok(toJson(Map("status" -> "success")))
@@ -788,6 +797,7 @@ class Datasets @Inject()(
     return xmlFile
   }
 
+  
   @ApiOperation(value = "Get URLs of dataset's RDF metadata exports",
       notes = "URLs of metadata exported as RDF from XML files contained in the dataset, as well as the URL used to export the dataset's user-generated metadata as RDF.",
       responseClass = "None", httpMethod = "GET")
@@ -855,6 +865,7 @@ class Datasets @Inject()(
         case None => Logger.error("Error finding dataset" + id); InternalServerError
       }
   }
+
   
   def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
     datasets.get(id)  match {
@@ -873,6 +884,7 @@ class Datasets @Inject()(
         Logger.error("Error finding dataset" + id);
         InternalServerError
       }      
+
     }
   }
   
@@ -897,7 +909,7 @@ class Datasets @Inject()(
 	    }
     }
   }
-  
+
 }
 
 object ActivityFound extends Exception {}

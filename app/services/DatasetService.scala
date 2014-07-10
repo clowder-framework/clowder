@@ -82,9 +82,6 @@ trait DatasetService {
   def modifyRDFOfMetadataChangedDatasets()
   
 
-  def dumpAllDatasetGroupings(): List[String]
-  
-  def dumpAllDatasetMetadata(): List[String]
 
   def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1")
 
@@ -177,4 +174,6 @@ trait DatasetService {
   def update(dataset: Dataset)
   
   def setNotesHTML(id: UUID, notesHTML: String)
+
 }
+

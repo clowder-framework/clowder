@@ -168,5 +168,3 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
 }
 
 
-
-

@@ -117,6 +117,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Upload preview metadata.
    *
    */
+
   def uploadMetadata(id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
       request =>
@@ -133,6 +134,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
             }
           }
           case _ => Logger.error("Expected a JSObject"); BadRequest(toJson("Expected a JSObject"))
+
         }
     }
 

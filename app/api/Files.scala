@@ -4,6 +4,9 @@ import java.io.FileInputStream
 import java.io.BufferedWriter
 import java.io.FileWriter
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import org.bson.types.ObjectId
 
 import com.mongodb.WriteConcern
@@ -85,7 +88,6 @@ class Files @Inject()(
         }
       }
   }
-
   /**
    * List all files.
    */
@@ -93,6 +95,7 @@ class Files @Inject()(
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
     request =>
       val list = for (f <- files.listFiles()) yield jsonFile(f)
+
       Ok(toJson(list))
   }
 
@@ -306,9 +309,10 @@ class Files @Inject()(
                   val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+
 	            
 	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-	            	            
+
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -335,6 +339,7 @@ class Files @Inject()(
 	            Ok(toJson(Map("id"->id.stringify)))
 	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",id.stringify, nameOfFile)}
 	            Ok(toJson(Map("id"->id.stringify)))
+
 	          }
 	          case None => {
 	            Logger.error("Could not retrieve file that was just saved.")
@@ -538,6 +543,7 @@ class Files @Inject()(
               Ok(toJson(Map("id" -> id)))
               current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",id, nameOfFile)}
               Ok(toJson(Map("id" -> id)))
+
              }
             }
             case None => {
@@ -557,6 +563,7 @@ class Files @Inject()(
         case None => BadRequest(toJson("Not authorized."))
     }
   }
+  
 
 
 
@@ -687,8 +694,8 @@ class Files @Inject()(
   }
 
   @ApiOperation(value = "Get the user-generated metadata of the selected file in an RDF file",
-      notes = "",
-      responseClass = "None", httpMethod = "GET")
+	      notes = "",
+	      responseClass = "None", httpMethod = "GET")
   def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
     implicit request =>
       configuration.getString("rdfexporter") match {
@@ -745,13 +752,13 @@ class Files @Inject()(
     val fileWriter = new BufferedWriter(new FileWriter(xmlFile))
     fileWriter.write(xmlNoSpaces)
     fileWriter.close()
-
+    
     return xmlFile
   }
-
+  
   @ApiOperation(value = "Get URLs of file's RDF metadata exports.",
-      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
-      responseClass = "None", httpMethod = "GET")
+	      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
+	      responseClass = "None", httpMethod = "GET")
   def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
     request =>
       configuration.getString("rdfexporter") match {
@@ -800,25 +807,25 @@ class Files @Inject()(
         }
       }
   }
+  
+    @ApiOperation(value = "Add user-generated metadata to file",
+	      notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
+	      responseClass = "None", httpMethod = "POST")
+    def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
+        implicit request =>
+          Logger.debug("Adding user metadata to file " + id)
+          val theJSON = Json.stringify(request.body)
+          files.addUserMetadata(id, theJSON)
+          files.index(id)
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => {
+              files.setUserMetadataWasModified(id, true)
+            }
+            case _ => {}
+          }
 
-  @ApiOperation(value = "Add user-generated metadata to file",
-      notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
-      responseClass = "None", httpMethod = "POST")
-  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) {
-    implicit request =>
-      Logger.debug("Adding user metadata to file " + id)
-      val theJSON = Json.stringify(request.body)
-      files.addUserMetadata(id, theJSON)
-      index(id)
-      configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-        case "yes" => {
-          files.setUserMetadataWasModified(id, true)
-        }
-        case _ => {}
-      }
-
-      Ok(toJson(Map("status" -> "success")))
-  }
+          Ok(toJson(Map("status" -> "success")))
+    }
 
   def jsonFile(file: File): JsValue = {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
@@ -934,7 +941,7 @@ class Files @Inject()(
               val datasetList = datasets.findByFileId(file.id)
               for (dataset <- datasetList) {
                 if (dataset.thumbnail_id.isEmpty) {
-                  datasets.updateThumbnail(dataset.id, thumbnail_id)
+                  datasets.updateThumbnail(dataset.id, thumbnail_id)                 
                 }
               }
 
@@ -1309,11 +1316,11 @@ class Files @Inject()(
             InternalServerError
           }
         }
+
     } 
 
 
-
-  @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
+    @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
         notes = "",
         responseClass = "None", httpMethod = "GET")
     def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
@@ -1354,7 +1361,6 @@ class Files @Inject()(
     }
 
 
-
   @ApiOperation(value = "Delete file",
       notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
       responseClass = "None", httpMethod = "POST")
@@ -1364,6 +1370,12 @@ class Files @Inject()(
         case Some(file) => {
           Logger.debug("Deleting file: " + file.filename)
           files.removeFile(id)
+          current.plugin[VersusPlugin].foreach {        
+            _.removeFromIndexes(id)        
+          }
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.delete("data", "file", id.stringify)
+          }
           //remove file from RDF triple store if triple store is used
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
             case "yes" => {
@@ -1476,7 +1488,7 @@ class Files @Inject()(
       case None => Logger.error("File not found: " + id)
     }
   }
-  
+
   def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNotes))  { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
@@ -1497,8 +1509,9 @@ class Files @Inject()(
 	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
 	  }
     }
-  
-  
+
 }
 
 object MustBreak extends Exception {}
+
+

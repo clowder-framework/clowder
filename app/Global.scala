@@ -7,6 +7,7 @@ import services.mongodb.MongoDBAppConfigurationService
 import play.api.mvc.WithFilters
 import play.filters.gzip.GzipFilter 
 
+
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
  *
