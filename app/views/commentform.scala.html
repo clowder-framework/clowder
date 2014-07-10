@@ -47,8 +47,7 @@
 					contentType: "application/json",
 		     	});
 		     
-				request.done(function (response, textStatus, jqXHR) { 
-					console.log("Response " + response);
+				request.done(function (response, textStatus, jqXHR) {							            			
 					var date = new Date();
 					var post="<div class=\"comment\">";
 					post += "<div class=\"media\">";
@@ -72,12 +71,20 @@
 					post += "</div>";
 					post += "</div>";
 					post += "</div>";
-					$("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");
+					$("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");			        
 				});
 	
 				request.fail(function (jqXHR, textStatus, errorThrown){
+                    var responseText = jqXHR.responseText;
+                    console.log("jqXHR.responseText is " + responseText);
 					console.error("The following error occured: " + textStatus, errorThrown);
-					alert("The comment was not posted due to : " + textStatus);
+					var errMsg = "You must be logged in to post a comment.";
+					if (responseText == "Authentication Required") {
+						window.location.href="/utils/authenticationRequiredMessage/" + encodeURIComponent(errMsg);
+					}
+					else {
+						alert("The comment was not posted due to : " + responseText);					
+					}
 				});
 			}
 			return false;

@@ -17,6 +17,10 @@ GET      /users/by-country/:country                                          con
 GET      /users/create/:username                                             controllers.Users.create(username)
 GET      /users/view/:id                                                     controllers.Users.view(id)
 
+# Utilities
+GET     /utils/authenticationRequired                   @controllers.RedirectUtility.authenticationRequired
+GET     /utils/authenticationRequiredMessage/:msg       @controllers.RedirectUtility.authenticationRequiredMessage(msg)
+
 # Files
 GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET		/files/new					      @controllers.Files.uploadFile
