@@ -94,6 +94,8 @@ trait FileService {
   def getUserMetadataJSON(id: UUID): String
 
   def getTechnicalMetadataJSON(id: UUID): String
+  
+  def getVersusMetadata(id:UUID): JsValue
 
   def addVersusMetadata(id: UUID, json: JsValue)
 

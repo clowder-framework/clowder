@@ -24,6 +24,7 @@ import api.WithPermission
  * @author Luigi Marini
  *
  */
+
 class Datasets @Inject()(
   datasets: DatasetService,
   files: FileService,
@@ -31,7 +32,9 @@ class Datasets @Inject()(
   comments: CommentService,
   sections: SectionService,
   extractions: ExtractionService,
+  dtsrequests:ExtractionRequestsService,
   sparql: RdfSPARQLService) extends SecuredController {
+
 
   object ActivityFound extends Exception {}
 
@@ -198,6 +201,7 @@ class Datasets @Inject()(
   /**
    * Upload file.
    */
+
 def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
@@ -317,7 +321,11 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 								  List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName","")))}
 							  }
 					    	// TODO RK need to replace unknown with the server name and dataset type		            
-		 			    	val dtkey = "unknown." + "dataset."+ "unknown"
+		 			    	
+					        // index the file using Versus for content-based retrieval
+                            current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+					        
+                            val dtkey = "unknown." + "dataset."+ "unknown"
 					        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 		 			    	
 		 			    	//add file to RDF triple store if triple store is used
@@ -331,9 +339,13 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					             }
 				             }
 		 			    	
-		 			    	var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(id)} 
-		 			    	Logger.debug("Inside File: Extraction Id : "+ extractJobId)
-		 			    	
+		 			    	  	
+		 			    	/*---- Insert DTS Request to the database   ----*/
+
+		 			    	val clientIP=request.remoteAddress
+		 			    	val serverIP= request.host
+		 			    	dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+			    			/*--------------------------------------------*/
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id))
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -407,6 +419,16 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					             case _ => {}
 				             }
 				   }
+		          //***** Inserting DTS Requests   **//  
+		          Logger.debug("The file already exists")
+		          val clientIP=request.remoteAddress
+		          val domain=request.domain
+		          val keysHeader=request.headers.keys
+		          Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+		          val serverIP= request.host
+		          dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
+						            
+				//****************************//
 		          
 				  // redirect to dataset page
 				  Redirect(routes.Datasets.dataset(dt.id)) 				  
@@ -417,6 +439,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		 )
         }
         case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
+
       }
   }
 
