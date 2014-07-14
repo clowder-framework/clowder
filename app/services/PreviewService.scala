@@ -43,7 +43,7 @@ trait PreviewService {
 
   def removePreview(p: Preview)
 
-  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[UUID], json: JsValue)
+  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue)
 
   def updateMetadata(previewId: UUID, json: JsValue)
 }
