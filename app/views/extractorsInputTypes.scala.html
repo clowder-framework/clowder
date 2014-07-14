@@ -1,0 +1,38 @@
+@(dtsinputtype:List[String], size:Integer)
+@import helper._
+@import collection.JavaConverters._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
+@main("Extractors InputType"){
+	<div class="page-header">
+		<h1>Extractors Input Types</h1>
+	</div>
+	@if(size == 0) {
+		<div class="row">
+			<div class="col-md-12">
+				No Extractors found. Sorry!
+			</div>
+		</div>
+	}else{
+		<div class="container" > 
+			<div class="row-fluid" >
+				<div>
+					<table id='tablec'  style="table-layout: fixed;width: 30%" cellpadding="10"  cellspacing="0" border="1">
+					<thead>
+						<tr>
+						<th>Input Types</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for(req <- dtsinputtype){
+							<tr>
+							<td>@req</td>
+							</tr>			
+	                      }
+					</tbody>
+					</table>
+	  	         </div>
+	       </div>
+	   </div>
+	}
+}

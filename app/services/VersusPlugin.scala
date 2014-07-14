@@ -51,7 +51,9 @@ class VersusPlugin(application:Application) extends Plugin{
   val queries: MultimediaQueryService = DI.injector.getInstance(classOf[MultimediaQueryService])
 
   override def onStart() {
+
     Logger.debug("Starting Versus Plugin")
+
   }
   
 /*
@@ -72,6 +74,7 @@ class VersusPlugin(application:Application) extends Plugin{
         Logger.debug("Extract Job ID=" + res.body)
 
         val desResponse = WS.url(extractUrl + "/" + res.body).withHeaders("Accept" -> "application/json").get()
+        
         desResponse.map {
           response =>
             files.get(fileid) match {
@@ -399,17 +402,19 @@ class VersusPlugin(application:Application) extends Plugin{
     buildResponse
   }  
   
+
      
-   
+
   def queryIndexForURL(fileURL: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
 		  Logger.debug("queryIndexForURL")
+
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val host = configuration.getString("versus.host").getOrElse("")
-
     var queryurl = host + "/indexes/" + indexId + "/query"
     //TODO  where does the url get uploaded?
      queryIndex(queryurl, indexId)
+
   }
   
   /*
