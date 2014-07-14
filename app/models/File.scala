@@ -2,6 +2,12 @@ package models
 
 import java.util.Date
 import securesocial.core.Identity
+import scala.collection.mutable.MutableList
+import services._
+import javax.inject.{Inject, Singleton}
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+import play.api.Logger
 
 
 /**
