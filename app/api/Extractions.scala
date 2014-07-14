@@ -537,16 +537,11 @@ class Extractions @Inject() (
  @ApiOperation(value = "Lists servers IPs running the extractors",
     notes = "  ",
     responseClass = "None", httpMethod = "GET") 
-    def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
-        val list_servers = extractors.getExtractorServerIPList()
-        var jarr = new JsArray()
-        list_servers.map {
-          ls =>
-            Logger.debug("Server Name:  " + ls.substring(1, ls.size-1))
-            jarr = jarr :+ (Json.parse(ls))
-           }
-        Logger.debug("JSARRAY----" + jarr.toString)
-        Ok(Json.obj("Servers" -> jarr))
+ def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
+	 
+     val listServersIPs = extractors.getExtractorServerIPList()
+	 val listServersIPsJson=toJson(listServersIPs)
+	 Ok(Json.obj("Servers" -> listServersIPs))
       
   }
  @ApiOperation(value = "Lists the currenlty running extractors",
@@ -554,37 +549,20 @@ class Extractions @Inject() (
     responseClass = "None", httpMethod = "GET") 
  def getExtractorNames() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
 
-    val list_names = extractors.getExtractorNames()
-    var jarr = new JsArray()
-    var list_names1=List[String]()
-    list_names.map {
-      ls =>
-        Logger.debug("Extractor Name:  " + ls)
-        jarr = jarr :+ (Json.parse(ls))
-     }
-    Logger.debug("JSARRAY----" + jarr.toString)
-    Ok(toJson(Map("Extractors" -> jarr)))
-   
-
-  }
+    val listNames = extractors.getExtractorNames()
+    val listNamesJson= toJson(listNames)
+    Ok(toJson(Map("Extractors" -> listNamesJson)))
+   }
 
  @ApiOperation(value = "Lists the input file format supported by currenlty running extractors",
     notes = "  ",
     responseClass = "None", httpMethod = "GET") 
-  def getExtractorInputTypes() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
+ def getExtractorInputTypes() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
 
-    val list_inputtypes = extractors.getExtractorInputTypes()
-    var jarr = new JsArray()
-    list_inputtypes.map {
-      ls =>
-        Logger.debug("Extractor Input Type:  " + ls)
-        jarr = jarr :+ (Json.parse(ls))
-     }
-    Logger.debug("JSARRAY----" + jarr.toString)
-    Ok(Json.obj("InputTypes" -> jarr))
-   
-
-  }
+    val listInputTypes = extractors.getExtractorInputTypes()
+    val listInputTypesJson= toJson(listInputTypes)
+    Ok(Json.obj("InputTypes" -> listInputTypesJson))
+   }
   
  @ApiOperation(value = "Lists dts extraction requests information",
     notes = "  ",
@@ -594,34 +572,33 @@ class Extractions @Inject() (
     var list_requests = dtsrequests.getDTSRequests()
     var startTime = models.ServerStartTime.startTime
     var currentTime = Calendar.getInstance().getTime()
-    
-    var jarr=new JsArray()
-    var jsarrEx=new JsArray()
-    
-  list_requests.map{
-      dtsreq=>
-          var extractors1:JsValue=null
-          var extractors2:List[String]=null
-          var js=Json.arr()
-          
-           if(dtsreq.extractors!=None)
-           { 
-              Logger.debug("----Inside dts requests----")
-              extractors1=Json.parse(com.mongodb.util.JSON.serialize(dtsreq.extractors.get))
-              extractors2=extractors1.as[List[String]]
-              Logger.debug("Extractors2:"+ extractors2)
-              extractors2.map{
-                  ex=>
-                   js=js:+toJson(ex)
-                 }
-                        
-           }else{
-             Logger.debug("----Else block")
-           }
-               
-          jarr=jarr:+(Json.obj("clientIP"->dtsreq.clientIP,"fileid"->dtsreq.fileId.stringify,"filename"->dtsreq.fileName,"fileType"->dtsreq.fileType,"filesize"->dtsreq.fileSize,"uploadDate"->dtsreq.uploadDate,"extractors"->js ,"startTime"->dtsreq.startTime,"endTime"->dtsreq.endTime))
+
+    var jarr = new JsArray()
+    var jsarrEx = new JsArray()
+
+    list_requests.map {
+      dtsreq =>
+        var extractors1: JsValue = null
+        var extractors2: List[String] = null
+        var js = Json.arr()
+
+        if (dtsreq.extractors != None) {
+          Logger.debug("----Inside dts requests----")
+          extractors1 = Json.parse(com.mongodb.util.JSON.serialize(dtsreq.extractors.get))
+          extractors2 = extractors1.as[List[String]]
+          Logger.debug("Extractors2:" + extractors2)
+          extractors2.map {
+            ex =>
+              js = js :+ toJson(ex)
+          }
+
+        } else {
+          Logger.debug("----Else block")
         }
-    
+
+        jarr = jarr :+ (Json.obj("clientIP" -> dtsreq.clientIP, "fileid" -> dtsreq.fileId.stringify, "filename" -> dtsreq.fileName, "fileType" -> dtsreq.fileType, "filesize" -> dtsreq.fileSize, "uploadDate" -> dtsreq.uploadDate, "extractors" -> js, "startTime" -> dtsreq.startTime, "endTime" -> dtsreq.endTime))
+    }
+
     Ok(jarr)
    
   }

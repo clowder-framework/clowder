@@ -195,7 +195,7 @@ POST    /api/extractions/upload_url                             @api.Extractions
 POST    /api/extractions/upload_file                            @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
 GET     /api/extractions/:id/status                             @api.Extractions.checkExtractorsStatus(id:UUID)
 POST    /api/extractions/:id/submit                             @api.Extractions.submitExtraction(id:UUID)
-GET     /api/extractions/:id/value                              @api.Extractions.fetch(id:UUID)
+GET     /api/extractions/:id/metadata                           @api.Extractions.fetch(id:UUID)
 
 # End of change segment
 
