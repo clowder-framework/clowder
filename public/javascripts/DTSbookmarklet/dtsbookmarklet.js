@@ -2,12 +2,15 @@ var img1;
 var embd;
 var status = '';
 var statusCheck;
+var statusContinueExecution;
 var countDone = 0;
 var xMap = new Array();
 var myVar = new Array();
 var tags = {};
 var imgdocs = {};
 var promises = [];
+var nodeStatus;
+var nodeStatus1;
 
 console.log("I am top of dtsbookmarklet!");
 var host = 'http://dts1.ncsa.illinois.edu:9000/';
@@ -39,6 +42,15 @@ var node = document.createTextNode('Search your keyword');
 pdiv.appendChild(node);
 sdiv.appendChild(pdiv);
 
+var pdivStatus = document.createElement('p');
+nodeStatus = document.createTextNode('Status:Extracting...');
+var br = document.createElement("br");
+nodeStatus1=document.createTextNode("Success:"+0+" Failure: "+0);
+pdivStatus.appendChild(nodeStatus);
+pdivStatus.appendChild(br);
+pdivStatus.appendChild(nodeStatus1);
+sdiv.appendChild(pdivStatus);
+
 var fbtn1 = document.createElement('button');
 fbtn1.id = 'closebutton';
 fbtn1.type = 'button';
@@ -50,11 +62,12 @@ var tdiv = document.createElement('div');
 function display() {
 	console.log('Closing the box');
 	$('#searchbox').remove();
+	clearTimeouts();
 }
 
 function searchindex() {
 	var keyword = $('#inputbox').val();
-	alert(keyword);
+	console.log(keyword);
 	if ($('#tablediv').length) {
 		clear_table();
 	}
@@ -111,12 +124,22 @@ function searchindex() {
 			sdiv.appendChild(fbtn2);
 
 		} else {
-			alert("Not Found");
+			console.log("Not Found");
 		}
 
 	}
 
 }
+
+function clearTimeouts(){
+	for ( var k = 0; k < promises.length; k++) {
+		clearTimeout(myVar[k]);
+		console.log('Clearing the Timeouts for--', k);
+	}
+	clearTimeout(statusCheck);
+	clearTimeout(statusContinueExecution);
+}
+
 function clear_table() {
 	$('#tablediv').empty();
 	$('#tablediv').remove();
@@ -140,14 +163,14 @@ function createdoc(tags, url) {
 	return x;
 }
 
-function checkfetch(fileid) {
+function checkfetch(fileid,g) {
 	console.log('-----[checkfetch-- ', fileid, ' --]-----');
 	var exmd1 = new XMLHttpRequest();
 	exmd1.addEventListener('readystatechange',
 			function completionhandlerStatus(evt) {
-				valuestatushandler(fileid, evt);
+				valuestatushandler(fileid, evt,g);
 				console.log('[checkfetch--fileid: ', fileid,
-						' -]-----[exmd1 Eventlistener]');
+						'index: ',g,' -]-----[exmd1 Eventlistener]');
 				// console.log('[checkfetch-',fileid,'-] file id='+ fileid);
 			}, false);
 
@@ -159,7 +182,7 @@ function checkfetch(fileid) {
 
 }
 
-function valuestatushandler(id1, evt) {
+function valuestatushandler(id1, evt,g) {
 	var status = 0;
 	var readyState = 0;
 	console.log('[value_status_handler] File id:'.fontcolor("red") + id1);
@@ -219,7 +242,7 @@ function valuestatushandler(id1, evt) {
 							id : xMap[l].id,
 							tags : tagsArr.join(" ")
 						});
-						setTimeout(checkfetch,2000,str.file_id);
+						myVar[g]=setTimeout(checkfetch,2000,str.file_id,g);
 					}else{
 						console.log("if status is Done : Do Nothing");
 						console.log('else:[value_status_handler-', l,
@@ -254,14 +277,20 @@ function checkResultStopFunction() {
 	console.log('Clearing the status Check');
 
 }
+var failedCountDown;
+var sucessfullyDone;
 function checkResults() {
 	countDone=0;
+	failedCountDown=0;
+	sucessfullyDone=0;
+	
 	for ( var j = 0; j < xMap.length; j++) {
 		if (xMap[j].status == 'Processing') {
 			console.log('---[check Results]---status: Processing');
 		} else if (xMap[j].status == 'Done') {
 			countDone++;
 			console.log('---countDone Incremented-- ');
+			sucessfullyDone++;
 			// clearInterval(myVar[j]);
 			// console.log('Clearing the interval for--',j);
 		} else if (xMap[j].status == 'Required Extractor is either busy or is not currently running. Try after some time.') {
@@ -276,11 +305,22 @@ function checkResults() {
 				}else{
 					console.log("--upload has failed, so skip the execution--");
 					countDone++;
+					failedCountDown++;
 				}
 				
 			}
 		}
 	}
+	//$('#nodeStatus').empty();
+	//$('#nodeStatus').remove();
+	nodeStatus.parentNode.removeChild(nodeStatus);
+	$('#br').remove();
+	nodeStatus1.parentNode.removeChild(nodeStatus1);
+	
+	
+	
+	
+	
 	if (countDone == xMap.length) {
 		status = 'Done';
 		console.log('---Status is DONE---'.fontcolor("red"));
@@ -290,9 +330,20 @@ function checkResults() {
 		}
 		//clearSetInterval();
        //   clearTimeout();
+		nodeStatus = document.createTextNode("Status:- DONE:  "+countDone);
+		nodeStatus1=document.createTextNode(" Sucess:"+sucessfullyDone+" Failed: "+failedCountDown);
+		pdivStatus.appendChild(nodeStatus);
+		pdivStatus.appendChild(br);
+		pdivStatus.appendChild(nodeStatus1);
+		clearTimeout(statusCheck);
 	}else{
+		nodeStatus = document.createTextNode("Status: Extracting... Completed: "+countDone+"/"+xMap.length);
+		nodeStatus1=document.createTextNode(" Sucess:"+sucessfullyDone+" Failed: "+failedCountDown);
+		pdivStatus.appendChild(nodeStatus);
+		pdivStatus.appendChild(br);
+		pdivStatus.appendChild(nodeStatus1);
 		console.log("--setTimeout on checkResults--");
-		setTimeout(checkResults,2000);
+		statusCheck=setTimeout(checkResults,2000);
 	}
 
 }
@@ -397,7 +448,7 @@ function continueExecution(){
 		getMetadata();
 	}
 	else{
-		setTimeout(continueExecution,1000);
+		statusContinueExecution=setTimeout(continueExecution,1000);
 		
 	}
   }
@@ -412,11 +463,11 @@ function getMetadata(){
 		console.log("Promise status: [",g,"]=", promises[g].status);
 	    if(promises[g].status==200){
 			pid=promises[g].responseText;
-			console.log("[getMetadata] responseText: =",pid);
+			console.log("[getMetadata] responseText: =",pid," index="+g);
 			var pidstr=pid.substring(7,pid.length-2);
 			console.log("ResponseText id: " , pidstr);
 			//myVar[g] = setInterval(checkfetch, 5000, pidstr);
-			myVar[g] = setTimeout(checkfetch, 5000, pidstr);
+			myVar[g] = setTimeout(checkfetch, 5000, pidstr,g);
 
 		}else{
 			//myVar[g] = setInterval(doNothing,10000,pidstr);

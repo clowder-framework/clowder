@@ -2,7 +2,7 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 #make this the first rule
-OPTIONS        /*path                                                       @controllers.Application.options(path)
+#OPTIONS        /*path                                                       @controllers.Application.options(path)
 OPTIONS        /*path                                                       api.ApiHelp.options(path)
 
 # Home page
