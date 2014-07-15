@@ -10,7 +10,8 @@ var imgdocs = {};
 var promises = [];
 
 console.log("I am top of dtsbookmarklet!");
-var host = 'http://localhost:9000/';
+var host = 'http://dts1.ncsa.illinois.edu:9000/';
+//var host = 'http://localhost:9000/';
 //var host= 'http://smruti-mac.ncsa.illinois.edu:9000/';
 var key = 'r1ek3rs';
 

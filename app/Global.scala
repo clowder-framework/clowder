@@ -55,7 +55,7 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSett
     }
  
     
-    Akka.system().scheduler.schedule(0.minutes,2 minutes){
+    Akka.system().scheduler.schedule(0.minutes,5 minutes){
            ExtractionInfoSetUp.updateExtractorsInfo()
     }
      

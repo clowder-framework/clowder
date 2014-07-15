@@ -1,8 +1,9 @@
 var js;
 var css_div;
 var js_lunr;
+var hostIP="http://dts1.ncsa.illinois.edu:9000/";
 //var hostIP="http://smruti-mac.ncsa.illinois.edu:9000/";
-var hostIP="http://localhost:9000/";
+//var hostIP="http://localhost:9000/";
 css_div = document.createElement('link');
 css_div.rel = 'stylesheet';
 css_div.media = 'screen';
