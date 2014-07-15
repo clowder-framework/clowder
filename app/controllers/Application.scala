@@ -3,6 +3,7 @@ package controllers
 import play.api.Routes
 import javax.inject.{Singleton, Inject}
 import services.FileService
+import play.api.Logger
 
 /**
  * Main application controller.
@@ -20,6 +21,11 @@ class Application  @Inject() (files: FileService) extends SecuredController {
   	val latestFiles = files.latest(5)
     Ok(views.html.index(latestFiles))
   }
+  
+  def options(path:String) = SecuredAction() { implicit request =>
+    Logger.info("---controller: PreFlight Information---")
+    Ok("")
+   }
 
   /**
    *  Javascript routing.

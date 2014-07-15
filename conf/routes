@@ -2,7 +2,8 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 #make this the first rule
-#OPTIONS        /*path                           controllers.Application.options(path)
+OPTIONS        /*path                                                       @controllers.Application.options(path)
+OPTIONS        /*path                                                       api.ApiHelp.options(path)
 
 # Home page
 GET      /                                                                   @controllers.Application.index
@@ -139,12 +140,6 @@ POST    /admin/theme                                                         @co
 GET      /javascriptRoutes                                                   @controllers.Application.javascriptRoutes
 
 # API documentation using Swagger
-
-
-
-
-
-
 GET     /api-docs.json                                                      controllers.ApiHelpController.getResources
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 GET     /api-docs.json/files              controllers.ApiHelpController.getResource(path = "/api-docs.json/files")
