@@ -1,6 +1,8 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
+#make this the first rule
+#OPTIONS        /*path                           controllers.Application.options(path)
 
 # Home page
 GET      /                                                                   @controllers.Application.index
