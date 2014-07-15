@@ -198,6 +198,9 @@ function valuestatushandler(id1, evt) {
 					// xMap[].tags[0].valueslength='+xMap[l].tags[0].values.length);
 					if (xMap[l].status != 'Done') {
 						xMap[l].status = str.Status;
+						console.log('if status!=Done:[value_status_handler-', l,
+								'-]  xMap[].status=' + xMap[l].status);
+						
 						var tlen = xMap[l].tags.length;
 						var tagsArr = new Array();
 						for ( var m = 0; m < tlen; m++) {
@@ -215,6 +218,7 @@ function valuestatushandler(id1, evt) {
 							id : xMap[l].id,
 							tags : tagsArr.join(" ")
 						});
+						setTimeout(checkfetch,2000,str.file_id);
 					}else{
 						console.log("if status is Done : Do Nothing");
 						console.log('else:[value_status_handler-', l,
@@ -232,7 +236,7 @@ function valuestatushandler(id1, evt) {
 
 function clearSetInterval() {
 	myStopFunction();
-	checkResultStopFunction();
+	//checkResultStopFunction();
 }
 
 function myStopFunction() {
@@ -283,8 +287,11 @@ function checkResults() {
 			var value = tags[key];
 			console.log("key: ", key, "  value=", value);
 		}
-		clearSetInterval();
-
+		//clearSetInterval();
+       //   clearTimeout();
+	}else{
+		console.log("--setTimeout on checkResults--");
+		setTimeout(checkResults,2000);
 	}
 
 }
@@ -363,6 +370,7 @@ var undefinedStatu=0;
 var h=0;
 var b=0;
 setTimeout(continueExecution,1000);
+
 function continueExecution(){
     b++;
 	console.log("Number of times Function Entered b= ",b);
@@ -406,10 +414,12 @@ function getMetadata(){
 			console.log("[getMetadata] responseText: =",pid);
 			var pidstr=pid.substring(7,pid.length-2);
 			console.log("ResponseText id: " , pidstr);
-			myVar[g] = setInterval(checkfetch, 5000, pidstr);
+			//myVar[g] = setInterval(checkfetch, 5000, pidstr);
+			myVar[g] = setTimeout(checkfetch, 5000, pidstr);
 
 		}else{
-			myVar[g] = setInterval(doNothing,10000,pidstr);
+			//myVar[g] = setInterval(doNothing,10000,pidstr);
+			myVar[g] = setTimeout(doNothing,10000,pidstr);
 		}
 	} 
 	
@@ -418,7 +428,8 @@ function getMetadata(){
 function doNothing(id){
 	console.log("----Doing  Nothing ---");
 }
-statusCheck = setInterval(checkResults, 2000);
+//statusCheck = setInterval(checkResults, 2000);
+statusCheck = setTimeout(checkResults, 2000);
 console.log('End of Code');
 
 /*$.when.apply(null, promises).done(function() {
