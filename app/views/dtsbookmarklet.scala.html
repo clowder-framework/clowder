@@ -1,0 +1,12 @@
+@import helper._
+@import collection.JavaConverters._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
+<div class="page-header">
+		<h1>Bookmarklet</h1>
+	</div>
+	<p> <a href="javascript:(function(){
+					document.body.appendChild(document.createElement('script')).src='http://dts1.ncsa.illinois.edu:9000/assets/javascripts/DTSbookmarklet/bookmarkletheader.js';
+  		}				
+				)();">DTS</a>
+	</p>

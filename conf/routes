@@ -26,6 +26,9 @@ GET      /extractions/servers_ips								  		    @controllers.ExtractionInfo.get
 GET      /extractions/extractors_names         					 		    @controllers.ExtractionInfo.getExtractorNames() 
 GET      /extractions/supported_input_types        				   			@controllers.ExtractionInfo.getExtractorInputTypes()
 
+#DTS Bookmarklet
+GET     /bookmarklet														@controllers.ExtractionInfo.getBookmarkletPage()
+
 
 # Files
 GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
