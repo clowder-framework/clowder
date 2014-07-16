@@ -649,9 +649,11 @@
                   return false;
               }
               
-              function updateAboutData(datasetId) {
+              function updateAboutData(datasetId) {            	  
             	  var description = $("#editdesc").val();
-            	  var name = $("#editname").val();
+            	  var name = $("#editname").val();            	  
+            	  var encName = htmlEncode(name);
+            	  var encDescription = htmlEncode(description);
             	  var jsonData = JSON.stringify({"description":description, "name":name});                 
                   
                   var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
@@ -664,8 +666,8 @@
                       ///console.log("Response " + response);
                       //Sucessful update of the DB - update the interface
 
-                      $("#aboutdesc").html(description);
-                      $("#aboutname").html(name);
+                      $("#aboutdesc").text(htmlDecode(encDescription));
+                      $("#aboutname").text(htmlDecode(encName));
                       
                       closeAboutEdit();
                    });
@@ -681,6 +683,14 @@
                    });
                   
             	  return false;
+              }
+              
+              function htmlEncode(value){
+            	  return $('<div/>').text(value).html();
+              }
+
+              function htmlDecode(value){
+            	  return $('<div/>').html(value).text();
               }
           </script>
           <!-- End dataset information elements -->          
