@@ -181,9 +181,7 @@ GET     /api/files/:id/tags                                     @api.Files.getTa
 POST    /api/files/:id/tags                                     @api.Files.addTags(id: UUID)
 POST    /api/files/:id/tags/remove                              @api.Files.removeTags(id: UUID)
 DELETE	/api/files/:id/tags                              		@api.Files.removeTags(id: UUID)
-<<<<<<< HEAD
 POST    /api/files/:id/licensing                                @api.Files.updateLicensing(id: UUID)
-=======
 POST    /api/files/:id/tags/remove_all                          @api.Files.removeAllTags(id: UUID)
 GET     /api/files/:id/extracted_metadata                       @api.Files.extract(id:UUID)
 
@@ -201,7 +199,6 @@ POST    /api/extractions/:id/submit                             @api.Extractions
 GET     /api/extractions/:id/metadata                           @api.Extractions.fetch(id:UUID)
 
 # End of change segment
->>>>>>> c35660ad3e957dc367a1f6b43e5121305ad43525
 
 POST    /api/files/:id/previews/:p_id     						@api.Files.attachPreview(id: UUID, p_id: UUID)
 GET		/api/files/:id/listpreviews		  						@api.Files.filePreviewsList(id: UUID)
