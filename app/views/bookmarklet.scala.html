@@ -33,10 +33,13 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       var countDone;
       var status = '';
       var imgdocs = {};
+
+      // index definition
       var index = lunr(function() {
         this.field('tags', {
           boost : 10
         });
+        this.field('metadata', {boost : 10});
         this.field('url');
         this.ref('id');
       });
@@ -54,21 +57,18 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         $.ajax({
           url : protocol+"//@host/api/extractions/" + fileid + "/metadata?key=" + key,
           accepts : "application/json",
-          // contentType : "application/json",
           success : function(data){
             indexResults(data, g)
           }
         });
-
-
         console.log('----- END -----[checkfetch-', fileid, '-]---------');
       }
 
       /**
         * Index results
         */
-      function indexResults(extraction, g) {
-        console.log(extraction);
+        function indexResults(extraction, g) {
+          console.log(extraction);
         // var str = JSON.parse(value);
         console.log('----[value_status_handler]  STATUS OK  [RESPONSE]='.fontcolor("red")+ extraction);
 
@@ -83,10 +83,12 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
             console.log('[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status);
             console.log('[value_status_handler-', l, '-]  filesInfo[].tags='+ filesInfo[l].tags);
 
+            // execution is done
             if (filesInfo[l].status != 'Done') {
               filesInfo[l].status = extraction.Status;
               console.log('if status!=Done:[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status);
 
+              // parse tags even if not done
               var tlen = filesInfo[l].tags.length;
               var tagsArr = new Array();
               for ( var m = 0; m < tlen; m++) {
@@ -95,24 +97,47 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
                   var t = filesInfo[l].tags[m].values[n];
                   tagsArr.push(t);
                 }
+              } 
+              console.log("id=" + filesInfo[l].id, "    tagsArr=",tagsArr, "   url=", filesInfo[l].url);
 
-                  }// end of for -m
-                  console.log("id=" + filesInfo[l].id, "    tagsArr=",tagsArr, "   url=", filesInfo[l].url);
-                  imgdocs[filesInfo[l].id] = createdoc(tagsArr, filesInfo[l].url);
-                  index.add({
-                    id : filesInfo[l].id,
-                    tags : tagsArr.join(" ")
-                  });
-                  outstandingExtractions[g] = setTimeout(checkfetch,2000, extraction.file_id,g);
-                }else{
-                  console.log("if status is Done : Do Nothing");
-                  console.log('else:[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status);
-                  
-                } // end of if-else
-                break;
-              }
-            } //end of for
+              // check if metadata is present
+              getMetadataAboutFile(filesInfo[l], tagsArr);
+
+              // update cache image metadata
+              imgdocs[filesInfo[l].id] = createdoc(tagsArr, filesInfo[l].url);
+
+
+
+              outstandingExtractions[g] = setTimeout(checkfetch,2000, extraction.file_id,g);
+            } else {
+
+              console.log("if status is Done : Do Nothing");
+              console.log('else:[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status); 
+            } // end of if-else
+            break;
           }
+      } //end of for
+    }
+
+    function getMetadataAboutFile(fileInfo, tagsArr) {
+      console.log("Getting metadata about file " + fileInfo.id);
+      $.ajax({
+        url : protocol+"//@host/api/files/" + fileInfo.id + "/technicalmetadatajson?key=" + key,
+        accepts : "application/json",
+        success : function(data){
+          console.log("fileInfo " + data);
+          console.log("Found metadata on file " + data);
+          console.log(data);
+          filesInfo.metadata = data;
+          // index with lunr
+          index.add({
+            id : fileInfo.id,
+            tags : tagsArr.join(" "),
+            metadata : data
+          });
+        }
+      });
+    }
 
       /**
         * Create document for lunr
@@ -184,6 +209,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           fileidObj.id = str.id;
           fileidObj.tags = '';
           fileidObj.status = '';
+          fileidObj.metadata = [];
           console.log('----[handler]---- fileObj pushed to xMap');
           filesInfo.push(fileidObj);
 
@@ -304,29 +330,46 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         console.log("Reset");
       }
 
-      function findImages() {
-              
-        // reset();
+      function showImages() {
+        // clear table
+        $('#DTSSearchResults tbody tr').remove();
+        // find all images
+        var images = $('img').map(function(){
+          return $(this).prop('src');
+        });
+
+        // upload all images
+        for (i=0; i<images.length; i++) {
+          var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
+          var html = rowTemplate({ src : images[i], info : '' });
+          $('#DTSSearchResults tbody').append(html);
+        }
+      }
+      $('#DTSListImages').click(showImages);
+
+      function submitImages() {
+        // clear table
+        $('#DTSSearchResults tbody tr').remove();
+
+        // showImages();
 
         // find all images
-        var imagesSrc = $('img').map(function(){
+        imagesSrc = $('img').map(function(){
           return $(this).prop('src');
         });
 
         // upload all images
         for (i=0; i<imagesSrc.length; i++) {
           console.log("Uploading image " + imagesSrc[i]);
-          var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
-          var html = rowTemplate({ src : imagesSrc[i], info : 'test' });
-          $('#DTSSearchResults tbody').append(html);
           startUpload(imagesSrc[i]);
         }
         // update ui
         $('#DTSImageFound').text(imagesSrc.length);
+        $('#DTSIndexImages').toggleClass('active');
         // track submissions
         setTimeout(trackCounts, 1000);
       }
-      $('#DTSIndexImages').click(findImages);
+      $('#DTSIndexImages').click(submitImages);
 
       // open modal
       $('#DTSModal').modal();
@@ -370,6 +413,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         if (countDone > 0 && countDone == filesInfo.length) {
           status = 'Done';
           // TODO update ui done
+          $('#DTSIndexImages').toggleClass('active');
           clearTimeout(statusCheck);
         } else {
           statusCheck=setTimeout(checkResults,2000);

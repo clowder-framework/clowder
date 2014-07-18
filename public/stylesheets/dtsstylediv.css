@@ -1,6 +1,6 @@
 
 
-#searchbox
+/*#searchbox
 {
 position:absolute;
 left:1200px;
@@ -47,4 +47,46 @@ img.small {
     width: 300px;
     height: 500px;
     overflow: auto;
+}*/
+
+
+
+
+
+.dts-top-buffer { margin-top:20px; }
+
+.dts-spinner {
+  display: inline-block;
+  opacity: 0;
+  width: 0;
+
+  -webkit-transition: opacity 0.25s, width 0.25s;
+  -moz-transition: opacity 0.25s, width 0.25s;
+  -o-transition: opacity 0.25s, width 0.25s;
+  transition: opacity 0.25s, width 0.25s;
+}
+
+.dts-has-spinner.active {
+  cursor:progress;
+}
+
+.dts-has-spinner.active .dts-spinner {
+  opacity: 1;
+  width: auto; /* This doesn't work, just fix for unkown width elements */
+}
+
+.dts-has-spinner.btn-mini.active .dts-spinner {
+    width: 10px;
+}
+
+.dts-has-spinner.btn-small.active .dts-spinner {
+    width: 13px;
+}
+
+.dts-has-spinner.btn.active .dts-spinner {
+    width: 16px;
+}
+
+.dts-has-spinner.btn-large.active .dts-spinner {
+    width: 19px;
 }
