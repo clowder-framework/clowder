@@ -638,9 +638,9 @@
           <script type="text/javascript" language="javascript">
               function closeAboutEdit() {
             	  //Reset the data to the current values
-            	  var text = $("#aboutdesc").html();
+            	  var text = $("#aboutdesc").text();
             	  $("#editdesc").val(text);
-            	  text = $("#aboutname").html();
+            	  text = $("#aboutname").text();
             	  $("#editname").val(text);
             	  
             	  //Close the edit form
@@ -654,7 +654,7 @@
             	  var name = $("#editname").val();            	  
             	  var encName = htmlEncode(name);
             	  var encDescription = htmlEncode(description);
-            	  var jsonData = JSON.stringify({"description":description, "name":name});                 
+            	  var jsonData = JSON.stringify({"description":encDescription, "name":encName});                 
                   
                   var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
                 	  data: jsonData,
@@ -683,16 +683,10 @@
                    });
                   
             	  return false;
-              }
-              
-              function htmlEncode(value){
-            	  return $('<div/>').text(value).html();
-              }
-
-              function htmlDecode(value){
-            	  return $('<div/>').html(value).text();
-              }
+              }                            
           </script>
+          
+          <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
           <!-- End dataset information elements -->          
 			 
 
