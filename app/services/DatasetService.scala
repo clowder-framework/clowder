@@ -172,7 +172,7 @@ trait DatasetService {
   def update(dataset: Dataset)
   
   /**
-   * Update the licensing data that is currently associated with the dataset.
+   * Update the license data that is currently associated with the dataset.
    * 
    * id: The id of the dataset
    * licenseType: A String representing the type of license
@@ -181,7 +181,7 @@ trait DatasetService {
    * licenseUrl: A reference to the license information
    * allowDl: true or false, to allow downloading of the file or dataset. Relevant only for certain license types
    */
-  def updateLicensing(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDl: String)
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDl: String)
 
   def setNotesHTML(id: UUID, notesHTML: String)
 

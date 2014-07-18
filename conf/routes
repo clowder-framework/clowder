@@ -181,7 +181,7 @@ GET     /api/files/:id/tags                                     @api.Files.getTa
 POST    /api/files/:id/tags                                     @api.Files.addTags(id: UUID)
 POST    /api/files/:id/tags/remove                              @api.Files.removeTags(id: UUID)
 DELETE	/api/files/:id/tags                              		@api.Files.removeTags(id: UUID)
-POST    /api/files/:id/licensing                                @api.Files.updateLicensing(id: UUID)
+POST    /api/files/:id/license                                @api.Files.updateLicense(id: UUID)
 POST    /api/files/:id/tags/remove_all                          @api.Files.removeAllTags(id: UUID)
 GET     /api/files/:id/extracted_metadata                       @api.Files.extract(id:UUID)
 
@@ -246,7 +246,7 @@ POST    /api/datasets/:id/tags                                  	@api.Datasets.a
 POST    /api/datasets/:id/tags/remove                           	@api.Datasets.removeTags(id: UUID)
 POST    /api/datasets/:id/tags/remove_all                       	@api.Datasets.removeAllTags(id: UUID)
 DELETE 	/api/datasets/:id/tags 										@api.Datasets.removeTags(id: UUID)
-POST    /api/datasets/:id/licensing                                 @api.Datasets.updateLicensing(id: UUID)
+POST    /api/datasets/:id/license                                 @api.Datasets.updateLicense(id: UUID)
 
 GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
 GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)

@@ -289,9 +289,9 @@ class Datasets @Inject()(
                "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
 
-  //Update Licensing code 
+  //Update License code 
   /**
-   * REST endpoint: POST: update the licensing data associated with a specific Dataset
+   * REST endpoint: POST: update the license data associated with a specific Dataset
    * 
    *  Takes one arg, id:
    *  
@@ -321,11 +321,11 @@ class Datasets @Inject()(
    *  
    *  allowDl, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
    */
-  @ApiOperation(value = "Update licensing information to a dataset",
+  @ApiOperation(value = "Update license information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
-  def updateLicensing(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicensing)) {    
+  def updateLicense(id: UUID) = 
+    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -401,9 +401,9 @@ class Datasets @Inject()(
               }
           }          
           
-          Logger.debug(s"updateLicensing for dataset with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDl")
+          Logger.debug(s"updateLicense for dataset with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDl")
           
-          datasets.updateLicensing(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDl)
+          datasets.updateLicense(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDl)
           Ok(Json.obj("status" -> "success"))
       } 
       else {
@@ -414,7 +414,7 @@ class Datasets @Inject()(
   
   
   
-  //End, Update Licensing code
+  //End, Update License code
   
   // ---------- Tags related code starts ------------------
   /**

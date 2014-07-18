@@ -487,13 +487,13 @@
 			</div>
 		</div>
 		
-		<!-- Licensing elements 
+		<!-- License elements 
 		<div id="accordionsDiv" class="row" style="margin-top:20px; width: 750px; padding-left:15px;">
 		-->
         <div class="accordion" id="accordion6" style="width: 370px; padding:5px 10px 5px 10px;">
             <div class="accordion-group">
 				<div class="accordian-heading">
-				    <h3>Licensing Information</h3>
+				    <h3>License Information</h3>
 					<table>
 					   <tr>
 						<td><b>License Holder: </b></td>
@@ -508,7 +508,7 @@
 					@if(user.isDefined) {
 					<a class="btn btn-info accordion-toggle collapsed" data-toggle="collapse"
 						data-parent="#accordion6" href="#collapseSix" id="editlicense" 
-						title="Edit Licensing Information">
+						title="Edit License Information">
 						<span class="glyphicon glyphicon-chevron-down"></span>
 				    </a>
 				    }
@@ -524,7 +524,25 @@
                 </div>
             </div>
         </div>
-        <!-- End Licensing elements -->
+        <script type="text/javascript" language="javascript">
+        $(document).ready(function() {         
+            //Will have to modify the if check to see if there is data that specifies what should be selected
+            //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
+            //describing the license rights, the URL for the license, and whether or not downloading is 
+            //allowed.        
+            var fileLicenseType = "@file.licenseData.m_licenseType";
+            var fileRightsHolder = "@file.licenseData.m_rightsHolder";
+            var fileLicenseText = "@file.licenseData.m_licenseText";
+            var fileLicenseUrl = "@file.licenseData.m_licenseUrl";        
+            var fileAllowDl = "@file.licenseData.m_allowDl";              
+            var fileImageBase = '@routes.Assets.at("images")';            
+            
+            if (!@user.isDefined){
+                updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDl, fileImageBase);
+            }
+        });
+        </script>
+        <!-- End License elements -->
 		
 		<!--Debug code-->
 		@if(false){ 
@@ -690,4 +708,6 @@
 		$("#accordionsDiv").offset({ top: newOffsetTop, left: newOffsetLeft })   ;	
 	
 	</script>
+	
+	<script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
 }

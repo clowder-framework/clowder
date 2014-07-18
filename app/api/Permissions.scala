@@ -32,7 +32,7 @@ object Permission extends Enumeration {
 		ShowDatasetsMetadata,
 		CreateTags,
 		DeleteTags,
-		UpdateLicensing,
+		UpdateLicense,
 		CreateComments,
 		CreateNotes,
 		AddSections,

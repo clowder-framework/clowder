@@ -1123,9 +1123,9 @@ class Files @Inject()(
     }
   
   
-   //Update Licensing code 
+   //Update License code 
   /**
-   * REST endpoint: POST: update the licensing data associated with a specific File
+   * REST endpoint: POST: update the license data associated with a specific File
    * 
    *  Takes one arg, id:
    *  
@@ -1155,11 +1155,11 @@ class Files @Inject()(
    *  
    *  allowDl, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
    */
-  @ApiOperation(value = "Update licensing information to a dataset",
+  @ApiOperation(value = "Update License information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
-  def updateLicensing(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicensing)) {    
+  def updateLicense(id: UUID) = 
+    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {         
 
@@ -1235,9 +1235,9 @@ class Files @Inject()(
               }
           }          
           
-          Logger.debug(s"updateLicensing for file with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDl")
+          Logger.debug(s"updateLicense for file with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDl")
           
-          files.updateLicensing(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDl)
+          files.updateLicense(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDl)
           Ok(Json.obj("status" -> "success"))
       } 
       else {
@@ -1248,7 +1248,7 @@ class Files @Inject()(
   
   
   
-  //End, Update Licensing code
+  //End, Update License code
 
   // ---------- Tags related code starts ------------------
   /**
