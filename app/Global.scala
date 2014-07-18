@@ -1,3 +1,4 @@
+
 import com.mongodb.casbah.Imports._
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
@@ -7,6 +8,16 @@ import services.mongodb.MongoDBAppConfigurationService
 import play.api.mvc.WithFilters
 import play.filters.gzip.GzipFilter 
 
+import services._
+import play.libs.Akka
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
+import models.ExtractionInfoSetUp
+import services.ExtractorService
+import java.util.Date
+import java.util.Calendar
+import models._
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
@@ -15,8 +26,14 @@ import play.filters.gzip.GzipFilter
  */
 object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
 
+  var serverStartTime:Date=null
+  
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded
+    models.ServerStartTime.startTime = Calendar.getInstance().getTime()
+    serverStartTime = models.ServerStartTime.startTime
+    Logger.debug("\n----Server Start Time----" + serverStartTime + "\n \n")
+    
     current.plugin[MongoSalatPlugin].map {
       mongo =>
         mongo.sources.values.map {
@@ -29,6 +46,10 @@ object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
             source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
             source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
             source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+            source.collection("extractor.servers").ensureIndex(MongoDBObject("server" -> ""))
+	        source.collection("extractor.names").ensureIndex(MongoDBObject("name" -> ""))
+	        source.collection("extractor.inputtypes").ensureIndex(MongoDBObject("inputType" -> ""))
+	        source.collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
         }
     }
     
@@ -37,6 +58,10 @@ object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
     appConfObj.getDefault()
     for(initialAdmin <- play.Play.application().configuration().getString("initialAdmins").split(","))
     	appConfObj.addAdmin(initialAdmin)
+    	
+    Akka.system().scheduler.schedule(0.minutes,2 minutes){
+           models.ExtractionInfoSetUp.updateExtractorsInfo()
+    }
 
     Logger.info("Application has started")
   }

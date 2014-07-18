@@ -274,11 +274,13 @@
 
 				// add tag to section
 				if (tag != "") {
-					request = window.jsRoutes.api.Sections.tag(sectionid).ajax({
+					var tagsArray = new Array(1);
+					tagsArray[0] = tag;
+					request = window.jsRoutes.api.Sections.addTags(sectionid).ajax({
 						type:        "POST",
 						contentType: "application/json",
 						data:		 JSON.stringify({
-										tag: tag, 
+										tags: tagsArray,
 								  	 }),
 					});
 					request.done(function (response, textStatus, jqXHR){ 

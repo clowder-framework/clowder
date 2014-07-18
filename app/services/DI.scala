@@ -7,6 +7,7 @@ import com.google.inject.AbstractModule
 import services.mongodb._
 import services.fourstore.FourStoreRdfSPARQLService
 
+
 /**
  * Guice module configuration.
  *
@@ -32,6 +33,8 @@ class ProdModule extends AbstractModule {
     bind(classOf[MultimediaQueryService]).to(classOf[MongoDBMultimediaQueryService])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
+    bind(classOf[ExtractorService]).to(classOf[MongoDBExtractorService])
+    bind(classOf[ExtractionRequestsService]).to(classOf[MongoDBExtractionRequestsService])
     bind(classOf[SectionService]).to(classOf[MongoDBSectionService])
     bind(classOf[CommentService]).to(classOf[MongoDBCommentService])
     bind(classOf[PreviewService]).to(classOf[MongoDBPreviewService])
@@ -43,6 +46,7 @@ class ProdModule extends AbstractModule {
     bind(classOf[RdfSPARQLService]).to(classOf[FourStoreRdfSPARQLService])
     bind(classOf[ThumbnailService]).to(classOf[MongoDBThumbnailService])
     bind(classOf[TileService]).to(classOf[MongoDBTileService])
+
   }
 }
 
@@ -56,6 +60,8 @@ class DevModule extends AbstractModule {
     bind(classOf[MultimediaQueryService]).to(classOf[MongoDBMultimediaQueryService])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
+    bind(classOf[ExtractorService]).to(classOf[MongoDBExtractorService])
+    bind(classOf[ExtractionRequestsService]).to(classOf[MongoDBExtractionRequestsService])
     bind(classOf[SectionService]).to(classOf[MongoDBSectionService])
     bind(classOf[CommentService]).to(classOf[MongoDBCommentService])
     bind(classOf[PreviewService]).to(classOf[MongoDBPreviewService])
@@ -67,5 +73,6 @@ class DevModule extends AbstractModule {
     bind(classOf[RdfSPARQLService]).to(classOf[FourStoreRdfSPARQLService])
     bind(classOf[ThumbnailService]).to(classOf[MongoDBThumbnailService])
     bind(classOf[TileService]).to(classOf[MongoDBTileService])
+
   }
-}
+  }

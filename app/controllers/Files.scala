@@ -31,6 +31,7 @@ class Files @Inject() (
   comments: CommentService,
   sections: SectionService,
   extractions: ExtractionService,
+  dtsrequests: ExtractionRequestsService,
   previews: PreviewService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
@@ -68,10 +69,13 @@ class Files @Inject() (
             Map(file -> ff)
           }
         }
-        val sectionsByFile = sections.findByFileId(UUID(file.id.toString))
+        val sectionsByFile = sections.findByFileId(file.id)
         val sectionsWithPreviews = sectionsByFile.map { s =>
           val p = previews.findBySectionId(s.id)
-          s.copy(preview = Some(p(0)))
+          if(p.length>0)
+        		s.copy(preview = Some(p(0)))
+        	else
+        		s.copy(preview = None)
         }
 
         //Search whether file is currently being processed by extractor(s)
@@ -154,6 +158,120 @@ class Files @Inject() (
     implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
+  
+  /**
+   * Upload form for extraction.
+   */
+  val extractForm = Form(
+    mapping(
+      "userid" -> nonEmptyText
+    )(FileMD.apply)(FileMD.unapply)
+  )
+
+  
+  def extractFile = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+    implicit val user = request.user
+    Ok(views.html.uploadExtract(extractForm))
+  }
+  
+def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(identity) => {
+        request.body.file("File").map { f =>
+	          var nameOfFile = f.filename
+	          var flags = ""
+	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
+		          var thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                var firstSeparatorIndex = nameOfFile.indexOf("_")
+	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
+	          }
+	        
+	        Logger.debug("Uploading file " + nameOfFile)
+
+	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+
+	        // store file       
+	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+	        val uploadedFile = f
+	//        Thread.sleep(1000)
+	        file match {
+	          case Some(f) => {
+		        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+	            
+	            if(showPreviews.equals("FileLevel"))
+	                	flags = flags + "+filelevelshowpreviews"
+	            else if(showPreviews.equals("None"))
+	                	flags = flags + "+nopreviews"
+	             var fileType = f.contentType
+				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
+				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
+                if (fileType.startsWith("ERROR: ")) {
+                  Logger.error(fileType.substring(7))
+                  InternalServerError(fileType.substring(7))
+                }
+              }
+
+              // TODO RK need to replace unknown with the server name
+              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+              // TODO RK : need figure out if we can use https
+              val host = "http://" + request.host
+              val id = f.id
+	          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+              /***** Inserting DTS Requests   **/  
+              val clientIP=request.remoteAddress
+              val domain=request.domain
+              val keysHeader=request.headers.keys
+
+              Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+              Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+       		  val serverIP= request.host
+              dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+              /****************************/ 
+              //for metadata files
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+            	  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+            			  files.addXMLMetadata(id, xmlToJSON)
+
+            			  Logger.debug("xmlmd=" + xmlToJSON)
+
+            			  current.plugin[ElasticsearchPlugin].foreach{
+            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
+            	  }
+              }
+              else{
+            	  current.plugin[ElasticsearchPlugin].foreach{
+            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName","")))
+            	  }
+              }
+	          current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+	        
+	           // redirect to extract page
+	          Ok(views.html.extract(f.id))
+	          }
+	         case None => {
+	           Logger.error("Could not retrieve file that was just saved.")
+	           InternalServerError("Error uploading file")
+	         }
+	        }
+	      }.getOrElse {
+	         BadRequest("File not attached.")
+	
+	      }
+      }
+      case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
+    }
+  }
+  
+
+/*def extraction(id: String) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+ 
+
+}*/
 
   /**
    * Upload file.
@@ -220,6 +338,23 @@ class Files @Inject() (
 	            // TODO RK : need figure out if we can use https
 	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
 	            val id = f.id
+	            
+	            /***** Inserting DTS Requests   **/  
+	            
+	            val clientIP=request.remoteAddress
+	            //val clientIP=request.headers.get("Origin").get
+                val domain=request.domain
+                val keysHeader=request.headers.keys
+                //request.
+                Logger.debug("---\n \n")
+            
+                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+                
+                Logger.debug("----")
+                val serverIP= request.host
+	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+	           /****************************/ 
 
               // TODO replace null with None
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
@@ -246,7 +381,6 @@ class Files @Inject() (
 
 
 	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
-	             //current.plugin[VersusPlugin].foreach{_.build()}
 	             
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -737,6 +871,24 @@ class Files @Inject() (
 							  // TODO RK : need figure out if we can use https
 							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id
+							  
+							  /***** Inserting DTS Requests   **/  
+	            
+						            val clientIP=request.remoteAddress
+						            //val clientIP=request.headers.get("Origin").get
+					                val domain=request.domain
+					                val keysHeader=request.headers.keys
+					                //request.
+					                Logger.debug("---\n \n")
+					            
+					                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+					                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
+					                
+					                Logger.debug("----")
+					                val serverIP= request.host
+						            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+						      
+						      /****************************/
 
 							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
 					  

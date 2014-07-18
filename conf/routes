@@ -18,6 +18,17 @@ GET      /users/create/:username                                             con
 GET      /users/view/:id                                                     controllers.Users.view(id)
 POST	 /users/registerThroughAdmins										 controllers.Users.handleStartSignUp
 
+# DTS Information
+GET      /extractions/requests          								    @controllers.ExtractionInfo.getDTSRequests()
+GET      /extractions/servers_ips								  		    @controllers.ExtractionInfo.getExtractorServersIP()
+GET      /extractions/extractors_names         					 		    @controllers.ExtractionInfo.getExtractorNames() 
+GET      /extractions/supported_input_types        				   			@controllers.ExtractionInfo.getExtractorInputTypes()
+
+#This may not require; This is only for testing. It will change in subsequent version
+GET     /extraction/form                  @controllers.Files.extractFile
+POST    /extraction/upload                @controllers.Files.uploadExtract()
+#End
+
 # Files
 GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
 GET		/files/new					      @controllers.Files.uploadFile
@@ -130,6 +141,7 @@ GET     /api-docs.json                                                      cont
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 GET     /api-docs.json/files              controllers.ApiHelpController.getResource(path = "/api-docs.json/files")
 GET     /api-docs.json/collections        controllers.ApiHelpController.getResource(path = "/api-docs.json/collections")
+GET     /api-docs.json/extractions        controllers.ApiHelpController.getResource(path = "/api-docs.json/extractions")
 
 # Rest API
 POST	/api/files/:three_d_file_id/geometries/:geometry_id		@api.Files.attachGeometry(three_d_file_id: UUID,geometry_id: UUID)
@@ -149,6 +161,7 @@ GET		/api/files/rdfUserMetadata/:id							@api.Files.getRDFUserMetadata(id: UUID
 POST	/api/files/:id/remove									@api.Files.removeFile(id: UUID)
 GET     /api/files/:id/metadata           						@api.Files.get(id: UUID)
 POST    /api/files/:id/metadata           						@api.Files.addMetadata(id: UUID)
+POST    /api/files/:id/versus_metadata                          @api.Files.addVersusMetadata(id:UUID) 
 POST    /api/files/:id/usermetadata	  							@api.Files.addUserMetadata(id: UUID)
 GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnicalMetadataJSON(id: UUID)
 GET     /api/files/:id/xmlmetadatajson           				@api.Files.getXMLMetadataJSON(id: UUID)
@@ -163,6 +176,22 @@ POST    /api/files/:id/tags                                     @api.Files.addTa
 POST    /api/files/:id/tags/remove                              @api.Files.removeTags(id: UUID)
 POST    /api/files/:id/tags/remove_all                          @api.Files.removeAllTags(id: UUID)
 DELETE	/api/files/:id/tags                              		@api.Files.removeTags(id: UUID)
+GET     /api/files/:id/extracted_metadata                       @api.Files.extract(id:UUID)
+
+#This may change depending on our discussion on identifying the details of extraction in DTS service
+# DTS Information
+GET       /api/extractions/requests                    		@api.Extractions.getDTSRequests()
+GET       /api/extractions/servers_ips				      	@api.Extractions.getExtractorServersIP()
+GET       /api/extractions/extractors_names                 @api.Extractions.getExtractorNames() 
+GET       /api/extractions/supported_input_types      		@api.Extractions.getExtractorInputTypes()
+
+POST    /api/extractions/upload_url                             @api.Extractions.uploadByURL()
+POST    /api/extractions/upload_file                            @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
+GET     /api/extractions/:id/status                             @api.Extractions.checkExtractorsStatus(id:UUID)
+POST    /api/extractions/:id/submit                             @api.Extractions.submitExtraction(id:UUID)
+GET     /api/extractions/:id/metadata                           @api.Extractions.fetch(id:UUID)
+
+# End of change segment
 
 
 POST    /api/files/:id/previews/:p_id     						@api.Files.attachPreview(id: UUID, p_id: UUID)
