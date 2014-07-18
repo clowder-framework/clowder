@@ -664,7 +664,7 @@ class MongoDBFileService @Inject() (
   def comment(id: UUID, comment: Comment) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
-
+  
   def setIntermediate(id: UUID){
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
   }

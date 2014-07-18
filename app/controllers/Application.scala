@@ -39,6 +39,8 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         routes.javascript.Admin.setTheme,
         
         api.routes.javascript.Comments.comment,
+        api.routes.javascript.Comments.removeComment,
+        api.routes.javascript.Comments.editComment,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,

@@ -1317,7 +1317,6 @@ class Files @Inject()(
 
   }
 
-
   /**
    * Return whether a file is currently being processed.
    */
