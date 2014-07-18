@@ -1,0 +1,60 @@
+<style>
+.DTSSearchResultsScroll {
+    max-height: 420px;
+    overflow-y: auto;
+}
+</style>
+<div class="modal fade" id="DTSModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">
+            <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+        </button>
+        <!-- <img src="http://browndog.ncsa.illinois.edu/images/bd-running-transparent.gif" class="thumbnail col-md-2" width="50px"> -->
+        <h4 class="modal-title">DTS</h4>
+      </div>
+      <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <button type="submit" class="btn btn-default" id="DTSIndexImages">Index Images</button>
+            </div>
+            <div class="col-md-6">
+              <span class="label label-danger pull-right" id="DTSFailedExtractions">0</span>
+              <span class="label label-success pull-right" id="DTSSuccessfulExtractions">0</span>
+              <span class="label label-primary pull-right" id="DTSImageFound">0</span>
+            </div>
+          <div class="row">
+            <div class="col-md-8">
+              <!-- <form class="form-inline" role="form"> -->
+                <!-- <div class="form-group"> -->
+                  <label class="sr-only" for="DTSquery">Query</label>
+                  <input type="text" class="form-control" id="DTSquery" placeholder="Search query">
+            </div>
+            <div class="col-md-4">
+                <!-- </div> -->
+                <button type="submit" class="btn btn-default" id="DTSSearch">Search</button>
+              <!-- </form> -->
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <h4>Search Results</h4>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="DTSSearchResultsScroll">
+                <table class="table" id="DTSSearchResults">
+                  <tbody></tbody>
+                  </table>
+              </div>
+            </div>
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->

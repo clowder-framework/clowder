@@ -1,5 +1,6 @@
 package controllers
 
+import api.{Permission, WithPermission}
 import play.api.Routes
 import javax.inject.{Singleton, Inject}
 import services.FileService
@@ -26,6 +27,13 @@ class Application  @Inject() (files: FileService) extends SecuredController {
     Logger.info("---controller: PreFlight Information---")
     Ok("")
    }
+
+  /**
+   * Bookmarklet
+   */
+  def bookmarklet() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+    Ok(views.html.bookmarklet(request.host)).as("application/javascript")
+  }
 
   /**
    *  Javascript routing.

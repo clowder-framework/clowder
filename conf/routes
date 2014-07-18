@@ -28,6 +28,7 @@ GET      /extractions/supported_input_types        				   			@controllers.Extrac
 
 #DTS Bookmarklet
 GET     /bookmarklet														@controllers.ExtractionInfo.getBookmarkletPage()
+GET     /bookmarklet.js                                                     @controllers.Application.bookmarklet
 
 
 # Files

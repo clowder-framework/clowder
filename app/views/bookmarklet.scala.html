@@ -1,0 +1,436 @@
+@(host: String)
+
+var key = 'r1ek3rs';
+
+/**
+ * DTS Bookmarklet
+ *
+ * Based on: https://gist.github.com/2897748
+ */
+var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
+  // debug: true, // use debug to bust the cache on your resources
+  css: ['//@host/assets/stylesheets/dtsstylediv.css',
+  '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css',
+  '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css'
+  ],
+  js: ['//@host/assets/javascripts/DTSbookmarklet/lunr.min.js',
+  '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js',
+  '//@host/assets/javascripts/handlebars-v1.3.0.js',
+  '//@host/assets/javascripts/handlebars-loader.js'
+  ],
+  //jqpath: '@host/assets/javascripts/jquery-1.10.2.js', // defaults to google cdn-hosted jquery
+  ready: function(base) { // use base to expose a public method
+
+    base.init = function() {
+
+      var uploadsPromises = [];
+      var filesInfo = new Array();
+      var outstandingExtractions = new Array();
+      var tags = {};
+      var failedCountDown;
+      var sucessfullyDone;
+      var countDone;
+      var status = '';
+      var imgdocs = {};
+      var index = lunr(function() {
+        this.field('tags', {
+          boost : 10
+        });
+        this.field('url');
+        this.ref('id');
+      });
+
+      // compile modal template and add it to page
+      var modalTemplate = Handlebars.getTemplate('http://@host/assets/javascripts/DTSbookmarklet/modal');
+      var html = modalTemplate({ name : 'World' });
+      $(document.body).append(html);
+
+      /**
+       * Check the status of an extraction.
+       */
+      function checkfetch(fileid, g) {
+        console.log('-----[checkfetch-- ', fileid, ' --]-----');
+        $.ajax({
+          url : "//@host/api/extractions/" + fileid + "/metadata?key=" + key,
+          accepts : "application/json",
+          // contentType : "application/json",
+          success : function(data){
+            indexResults(data, g)
+          }
+        });
+
+
+        console.log('----- END -----[checkfetch-', fileid, '-]---------');
+      }
+
+      /**
+        * Index results
+        */
+      function indexResults(extraction, g) {
+        console.log(extraction);
+        // var str = JSON.parse(value);
+        console.log('----[value_status_handler]  STATUS OK  [RESPONSE]='.fontcolor("red")+ extraction);
+
+        for ( var l = 0; l < filesInfo.length; l++) {
+          console.log('filesInfo[', l, '].id=', filesInfo[l].id, '  extraction.fild_id=', extraction.file_id);
+
+          if ((filesInfo[l].id) == (extraction.file_id)) {
+
+            filesInfo[l].tags = extraction.tags;
+            console.log('[value_status_handler-', l, '-]  filesInfo[].url='+ filesInfo[l].url);
+            console.log('[value_status_handler-', l, '-]  filesInfo[].id='+ filesInfo[l].id);
+            console.log('[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status);
+            console.log('[value_status_handler-', l, '-]  filesInfo[].tags='+ filesInfo[l].tags);
+
+            if (filesInfo[l].status != 'Done') {
+              filesInfo[l].status = extraction.Status;
+              console.log('if status!=Done:[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status);
+
+              var tlen = filesInfo[l].tags.length;
+              var tagsArr = new Array();
+              for ( var m = 0; m < tlen; m++) {
+                var vlen = filesInfo[l].tags[m].values.length;
+                for ( var n = 0; n < vlen; n++) {
+                  var t = filesInfo[l].tags[m].values[n];
+                  tagsArr.push(t);
+                }
+
+                  }// end of for -m
+                  console.log("id=" + filesInfo[l].id, "    tagsArr=",tagsArr, "   url=", filesInfo[l].url);
+                  imgdocs[filesInfo[l].id] = createdoc(tagsArr, filesInfo[l].url);
+                  index.add({
+                    id : filesInfo[l].id,
+                    tags : tagsArr.join(" ")
+                  });
+                  outstandingExtractions[g] = setTimeout(checkfetch,2000, extraction.file_id,g);
+                }else{
+                  console.log("if status is Done : Do Nothing");
+                  console.log('else:[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status);
+                  
+                } // end of if-else
+                break;
+              }
+            } //end of for
+          }
+
+      /**
+        * Create document for lunr
+        */
+      function createdoc(tags, url) {
+        var x = {
+          // id:fid,
+          tags : tags,
+          url : url
+        };
+        return x;
+      }
+
+      /**
+       * Check status of uploaded files by checking promises
+       * array and set timeout for successful uploads.
+       */
+      function getMetadata(){
+        var plen=uploadsPromises.length;
+        console.log("Promises Array Length:",plen);
+        for(var g=0;g<plen;g++) {
+          console.log("Promise status: [",g,"]=", uploadsPromises[g].status);
+          // is upload successful?
+          if(uploadsPromises[g].status==200){
+            pid=uploadsPromises[g].responseText;
+            console.log("[getMetadata] responseText: =",pid," index="+g);
+            var pidstr=pid.substring(7,pid.length-2);
+            console.log("ResponseText id: " , pidstr);
+            outstandingExtractions[g] = setTimeout(checkfetch, 5000, pidstr,g);
+          } else {
+            outstandingExtractions[g] = setTimeout(doNothing,10000,pidstr);
+          }
+        }
+      }
+
+      function doNothing(id) {
+        console.log("----Doing  Nothing ---");
+      }
+
+
+      /**
+       *  Check upload promises to see if upload has complite successfully.
+       */
+       function checkUploadStatus(id) {
+        for(var u=0;u<uploadsPromises.length;u++){
+          if(uploadsPromises[u].status==200){
+            console.log("promise.responseText=", uploadsPromises[u].responseText,"  id=",id);
+            if(uploadsPromises[u].responseText.indexOf(id)!=-1){
+              console.log("[checkUploadStatus]:", uploadsPromises[u].responseText);
+              return 200;
+            }
+          }
+        }
+        return 0;
+      }
+
+
+      /**
+       * Callback after upload is successful.
+       */
+       function reqProcess(imgurl) {
+        return function(fileidjson) {
+          var str = fileidjson;
+          var furl = imgurl;
+          console.log('----[handler]----  STATUS: OK  [RESPONSE]=' + str.id
+            + '  url: ', furl);
+          var fileidObj = new Object();
+          fileidObj.url = furl;
+          fileidObj.id = str.id;
+          fileidObj.tags = '';
+          fileidObj.status = '';
+          console.log('----[handler]---- fileObj pushed to xMap');
+          filesInfo.push(fileidObj);
+
+        }
+      }
+
+      /**
+        * Submit upload.
+        */
+      function startUpload(imgurl) {
+        var fd = {};
+        fd['fileurl'] = imgurl;
+        var request = $.ajax({
+          type : "POST",
+          url : "//@host/api/extractions/upload_url?key=" + key,
+          accepts : "application/json",
+          processData : false,
+          contentType : "application/json",
+          data : JSON.stringify(fd),
+          success : reqProcess(imgurl)
+        });
+
+        uploadsPromises.push(request);
+      }
+
+      /**
+        * Search index.
+        */
+      $('#DTSSearch').click(function() {
+        var keyword = $('#DTSquery').val();
+        console.log("Searching for " + keyword);
+        if (keyword != null) {
+          console.log('------Results:--- ', index.search(keyword));
+          // clear table
+          $('#DTSSearchResults tbody tr').remove();
+          // create row template
+          var searchResults = index.search(keyword);
+          var slen = searchResults.length;
+          if (slen > 0) {
+            var r = new Array();
+            for ( var i = 0; i < slen; i++) {
+              console.log("Search result: ",imgdocs[searchResults[i].ref].tags, "   url:", imgdocs[searchResults[i].ref].url);
+              r.push(imgdocs[searchResults[i].ref].url);
+              var rowTemplate = Handlebars.getTemplate('http://@host/assets/javascripts/DTSbookmarklet/row');
+              var HTML = rowTemplate({ src : imgdocs[searchResults[i].ref].url, info : imgdocs[searchResults[i].ref].tags});
+              $('#DTSSearchResults tbody').append(HTML);
+            }
+            console.log('Total number results : ' + slen.toString() + '  Matched Image URLs=' + r);
+          } else {
+            console.log("Not Found");
+          }
+        }
+        return false;
+      });
+
+
+      /**
+        * Check for status of uploads.
+        */
+      var uploadStatus=false;
+      var uploadCount;
+      var failCount=0;
+      var undefinedStatu=0;
+      var h=0;
+      var b=0;
+
+      function trackCounts(){
+        b++;
+        console.log("Number of times Function Entered b= ",b);
+        uploadCount=0;
+        failCount=0;
+        var plen=uploadsPromises.length; 
+        console.log("Promises Array Length:",plen);
+        for(var g=0;g<plen;g++){
+          console.log("Promise status: [",g,"]=", uploadsPromises[g].status);
+          if(uploadsPromises[g].status==undefined){
+            console.log("Status undefined for g=",g);
+          }else if(uploadsPromises[g].status==200){
+            uploadCount++;
+            console.log("if: Upload sucuessful for promise p=",g)
+          }else{
+            console.log("else: Upload not Sucessful for Promise p=",g);
+            failCount++;
+          }
+        } 
+        if(plen==(uploadCount+failCount)){
+          console.log("uploadStatus becomes true");
+          uploadStatus=true;
+          getMetadata();
+        }
+        else{
+          statusTrackCounts=setTimeout(trackCounts,1000);
+          
+        }
+      }
+
+      function findImages() {
+        // find all images
+        var images = $('img').map(function(){
+          return $(this).prop('src');
+        });
+
+        // upload all images
+        for (i=0; i<images.length; i++) {
+          console.log("Uploading image " + images[i]);
+          // var rowTemplate = Handlebars.getTemplate('http://@host/assets/javascripts/DTSbookmarklet/row');
+          // var html = rowTemplate({ src : images[i], info : 'test' });
+          // $('#DTSSearchResults tbody').append(html);
+          startUpload(images[i]);
+        }
+        // update ui
+        $('#DTSImageFound').text(images.length);
+        // track submissions
+        setTimeout(trackCounts, 1000);
+      }
+      $('#DTSIndexImages').click(findImages);
+
+      // open modal
+      $('#DTSModal').modal();
+
+
+      // tracking outstanding extractions by successful and failed
+      function checkResults() {
+        console.log("Checking submission status");
+        countDone=0;
+        failedCountDown=0;
+        sucessfullyDone=0;
+
+        for ( var j = 0; j < filesInfo.length; j++) {
+          if (filesInfo[j].status == 'Processing') {
+            console.log('---[check Results]---status: Processing');
+          } else if (filesInfo[j].status == 'Done') {
+            countDone++;
+            console.log('---countDone Incremented-- ');
+            sucessfullyDone++;
+            // $('#DTSSuccessfulExtractions').text(sucessfullyDone);
+          } else if (filesInfo[j].status == 'Required Extractor is either busy or is not currently running. Try after some time.') {
+            console.log('---[check Results]---status: Required Extractor is either busy or is not currently running. Try after some time.');
+          }
+          else{
+            if(filesInfo[j].status==''){
+              console.log('[checkResults]-- Status: is empty');
+              if(checkUploadStatus(filesInfo[j].id)==200){
+                console.log("--[checkResults] ---wait for execution---");
+              }else{
+                console.log("--upload has failed, so skip the execution--");
+                countDone++;
+                failedCountDown++;
+              }
+            }
+          }
+        }
+        // TODO update ui counts
+        $('#DTSSuccessfulExtractions').text(sucessfullyDone);
+        $('#DTSFailedExtractions').text(failedCountDown);
+        console.log('Successfull: ' + sucessfullyDone);
+        console.log('Failed: ' + failedCountDown);
+        if (countDone > 0 && countDone == filesInfo.length) {
+          status = 'Done';
+          // TODO update ui done
+          clearTimeout(statusCheck);
+        } else {
+          statusCheck=setTimeout(checkResults,2000);
+        }
+      }
+
+      var statusCheck = setTimeout(checkResults, 2000);
+    }
+
+
+    base.init();
+  }
+}));
+
+function Bookmarklet(options){
+  // Avoid confusion when setting
+  // public methods.
+  var self = this;
+
+  // Merges objects. B overwrites A.
+  function extend(a, b){
+    var c = {};
+    for (var key in a) { c[key] = a[key]; }
+      for (var key in b) { c[key] = b[key]; }
+        return c;
+    }
+
+    function loadCSS(sheets) {
+    // Synchronous loop for css files
+    $.each(sheets, function(i, sheet){
+      $('<link>').attr({
+        href: (sheet + cachebuster),
+        rel: 'stylesheet'
+      }).prependTo('body');
+    });
+  }
+
+  function loadJS(scripts){
+    // Check if we've processed all
+    // of the JS files (or if there are none).
+    if (scripts.length === 0) {
+      o.ready(self);
+      return;
+    }
+
+    // Load the first js file in the array.
+    $.getScript(scripts[0] + cachebuster, function(){
+        // asyncronous recursion, courtesy Paul Irish.
+        loadJS(scripts.slice(1));
+      });
+  }
+
+  function init(callback) {
+    <!--if(!window.jQuery) {-->
+      // Create jQuery script element.
+      var script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = o.jqpath;
+      document.body.appendChild(script);
+
+      // exit on jQuery load.
+      script.onload = function(){ callback(); };
+      script.onreadystatechange = function() {
+        if (this.readyState == 'complete') callback();
+      }
+      <!--} else {-->
+        <!--callback();-->
+        <!--}-->
+      }
+
+      var defaults = {
+        debug: false
+        , css: []
+        , js: []
+        , jqpath: "//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js"
+      }
+
+  // If we don't pass options, use the defaults.
+  , o = extend(defaults, options)
+
+  , cachebuster = o.debug ?
+  ('?v=' + (new Date()).getTime()) : '';
+
+
+  // Kick it off.
+  init(function(){
+    loadCSS(o.css);
+    loadJS(o.js);
+  });
+
+};
