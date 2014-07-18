@@ -1,5 +1,6 @@
 @(host: String)
 
+var protocol = 'http:';
 var key = 'r1ek3rs';
 
 /**
@@ -9,14 +10,14 @@ var key = 'r1ek3rs';
  */
 var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
   // debug: true, // use debug to bust the cache on your resources
-  css: ['//@host/assets/stylesheets/dtsstylediv.css',
+  css: [protocol+'//@host/assets/stylesheets/dtsstylediv.css',
   '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css',
   '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css'
   ],
-  js: ['//@host/assets/javascripts/DTSbookmarklet/lunr.min.js',
+  js: [protocol+'//@host/assets/javascripts/DTSbookmarklet/lunr.min.js',
   '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js',
-  '//@host/assets/javascripts/handlebars-v1.3.0.js',
-  '//@host/assets/javascripts/handlebars-loader.js'
+  protocol+'//@host/assets/javascripts/handlebars-v1.3.0.js',
+  protocol+'//@host/assets/javascripts/handlebars-loader.js'
   ],
   //jqpath: '@host/assets/javascripts/jquery-1.10.2.js', // defaults to google cdn-hosted jquery
   ready: function(base) { // use base to expose a public method
@@ -41,7 +42,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       });
 
       // compile modal template and add it to page
-      var modalTemplate = Handlebars.getTemplate('http://@host/assets/javascripts/DTSbookmarklet/modal');
+      var modalTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/modal');
       var html = modalTemplate({ name : 'World' });
       $(document.body).append(html);
 
@@ -51,7 +52,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       function checkfetch(fileid, g) {
         console.log('-----[checkfetch-- ', fileid, ' --]-----');
         $.ajax({
-          url : "//@host/api/extractions/" + fileid + "/metadata?key=" + key,
+          url : protocol+"//@host/api/extractions/" + fileid + "/metadata?key=" + key,
           accepts : "application/json",
           // contentType : "application/json",
           success : function(data){
@@ -197,7 +198,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         fd['fileurl'] = imgurl;
         var request = $.ajax({
           type : "POST",
-          url : "//@host/api/extractions/upload_url?key=" + key,
+          url : protocol+"//@host/api/extractions/upload_url?key=" + key,
           accepts : "application/json",
           processData : false,
           contentType : "application/json",
@@ -226,7 +227,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
             for ( var i = 0; i < slen; i++) {
               console.log("Search result: ",imgdocs[searchResults[i].ref].tags, "   url:", imgdocs[searchResults[i].ref].url);
               r.push(imgdocs[searchResults[i].ref].url);
-              var rowTemplate = Handlebars.getTemplate('http://@host/assets/javascripts/DTSbookmarklet/row');
+              var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
               var HTML = rowTemplate({ src : imgdocs[searchResults[i].ref].url, info : imgdocs[searchResults[i].ref].tags});
               $('#DTSSearchResults tbody').append(HTML);
             }
@@ -279,22 +280,49 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         }
       }
 
+      /**
+       * Reset all variables to start over
+       */
+      function reset() {
+
+        clearInterval(statusCheck);
+
+        for ( var k = 0; k < outstandingExtractions.length; k++) {
+          clearInterval(outstandingExtractions[k]);
+        }
+
+        imagesSrc = [];
+        uploadsPromises = [];
+        filesInfo = new Array();
+        outstandingExtractions = new Array();
+        tags = {};
+        failedCountDown = 0;
+        sucessfullyDone = 0;
+        countDone = 0;
+        status = '';
+        imgdocs = {};
+        console.log("Reset");
+      }
+
       function findImages() {
+              
+        // reset();
+
         // find all images
-        var images = $('img').map(function(){
+        var imagesSrc = $('img').map(function(){
           return $(this).prop('src');
         });
 
         // upload all images
-        for (i=0; i<images.length; i++) {
-          console.log("Uploading image " + images[i]);
-          // var rowTemplate = Handlebars.getTemplate('http://@host/assets/javascripts/DTSbookmarklet/row');
-          // var html = rowTemplate({ src : images[i], info : 'test' });
-          // $('#DTSSearchResults tbody').append(html);
-          startUpload(images[i]);
+        for (i=0; i<imagesSrc.length; i++) {
+          console.log("Uploading image " + imagesSrc[i]);
+          var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
+          var html = rowTemplate({ src : imagesSrc[i], info : 'test' });
+          $('#DTSSearchResults tbody').append(html);
+          startUpload(imagesSrc[i]);
         }
         // update ui
-        $('#DTSImageFound').text(images.length);
+        $('#DTSImageFound').text(imagesSrc.length);
         // track submissions
         setTimeout(trackCounts, 1000);
       }
@@ -302,7 +330,6 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
       // open modal
       $('#DTSModal').modal();
-
 
       // tracking outstanding extractions by successful and failed
       function checkResults() {
