@@ -56,6 +56,7 @@ class Files @Inject() (
     files.get(id) match {
       case Some(file) => {
         val previewsFromDB = previews.findByFileId(file.id)
+        Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
         val previewsWithPreviewer = {
           val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
@@ -70,7 +71,10 @@ class Files @Inject() (
             Map(file -> ff)
           }
         }
+        Logger.debug("Previewers available: " + previewsWithPreviewer)
+
         val sectionsByFile = sections.findByFileId(file.id)
+        Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>
         	val p = previews.findBySectionId(s.id)
         	if(p.length>0)
@@ -78,6 +82,7 @@ class Files @Inject() (
         	else
         		s.copy(preview = None)
         }
+        Logger.debug("Sections available: " + sectionsWithPreviews)
 
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
