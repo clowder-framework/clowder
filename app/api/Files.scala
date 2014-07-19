@@ -265,9 +265,8 @@ class Files @Inject()(
         case Some(file) => {
           Logger.debug("******ADD Versus Metadata:*****")
           val list = request.body \ ("versus_descriptors")
-                    
-          files.addVersusMetadata(id, list)
-          
+          //files.addVersusMetadata(id, list)
+          files.addVersusMetadata(id, request.body)
           Ok("Added Versus Descriptor")
         }
         case None => {
