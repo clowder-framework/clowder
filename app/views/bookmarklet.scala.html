@@ -11,13 +11,14 @@ var key = 'r1ek3rs';
 var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
   // debug: true, // use debug to bust the cache on your resources
   css: [protocol+'//@host/assets/stylesheets/dtsstylediv.css',
-  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap.min.css',
-  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap-theme.min.css'
+  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap.bd.css',
+  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap-theme.bd.css'
   ],
-  js: [protocol+'//@host/assets/javascripts/DTSbookmarklet/lunr.min.js',
+  js: [protocol+'//@host/assets/javascripts/DTSbookmarklet/js/lunr.js',
   '//@host/assets/javascripts/DTSbookmarklet/js/bootstrap.min.js',
   protocol+'//@host/assets/javascripts/handlebars-v1.3.0.js',
-  protocol+'//@host/assets/javascripts/handlebars-loader.js'
+  protocol+'//@host/assets/javascripts/handlebars-loader.js',
+  '//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js'
   ],
   //jqpath: '@host/assets/javascripts/jquery-1.10.2.js', // defaults to google cdn-hosted jquery
   ready: function(base) { // use base to expose a public method
@@ -49,14 +50,14 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       // compile modal template and add it to page
       var modalTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/modal');
       var html = modalTemplate({});
-      $(document.body).append(html);
+      jQuery(document.body).append(html);
 
       /**
        * Check the status of an extraction.
        */
       function checkfetch(fileid, g) {
         console.log('-----[checkfetch-- ', fileid, ' --]-----');
-        $.ajax({
+        jQuery.ajax({
           url : protocol+"//@host/api/extractions/" + fileid + "/metadata?key=" + key,
           accepts : "application/json",
           success : function(data){
@@ -121,12 +122,14 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
     function getMetadataAboutFile(fileInfo, tagsArr) {
       console.log("Getting metadata about file " + fileInfo.id);
-      $.ajax({
+      jQuery.ajax({
         url : protocol+"//@host/api/files/" + fileInfo.id + "/technicalmetadatajson?key=" + key,
         accepts : "application/json",
         success : function(data){
           console.log("fileInfo " + data);
           console.log("Found metadata on file " + data);
+          console.log("Found tags on file " + tagsArr);
+          console.log("Found id on file " + fileInfo.id);
           console.log(data);
           filesInfo.metadata = data;
           // index with lunr
@@ -223,7 +226,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       function startUpload(imgurl, src) {
         var fd = {};
         fd['fileurl'] = imgurl;
-        var request = $.ajax({
+        var request = jQuery.ajax({
           type : "POST",
           url : protocol+"//@host/api/extractions/upload_url?key=" + key,
           accepts : "application/json",
@@ -239,13 +242,13 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       /**
         * Search index.
         */
-      $('#DTSSearch').click(function() {
-        var keyword = $('#DTSquery').val();
+      jQuery('#DTSSearch').click(function() {
+        var keyword = jQuery('#DTSquery').val();
         console.log("Searching for " + keyword);
         if (keyword != null) {
-          console.log('------Results:--- ', index.search(keyword));
+          // console.log('------Results:--- ', index.search(keyword));
           // clear table
-          $('#DTSSearchResults tbody tr').remove();
+          jQuery('#DTSSearchResults tbody tr').remove();
           // create row template
           var searchResults = index.search(keyword);
           var slen = searchResults.length;
@@ -256,12 +259,8 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
               console.log("Search result: ",imgdocs[searchResults[i].ref].tags, "   url:", imgdocs[searchResults[i].ref].url);
               r.push(imgdocs[searchResults[i].ref].url);
 
-
-              // var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
-              // var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, info : imgdocs[searchResults[i].ref].tags});
-
               // find image on page
-              var original = $("img[src='" + imgdocs[searchResults[i].ref].src + "']")[0];
+              var original = jQuery("img[src='" + imgdocs[searchResults[i].ref].src + "']")[0];
 
               console.log(original);
 
@@ -270,9 +269,9 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
               var image = new Image();
               image.src = original.src;
               // create html
-              var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, width: image.width, height: image.height, description: original.alt});
+              var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, width: image.width, height: image.height, description: original.alt});
               // add to table
-              $('#DTSSearchResults tbody').append(html);
+              jQuery('#DTSSearchResults tbody').append(html);
             }
             console.log('Total number results : ' + slen.toString() + '  Matched Image URLs=' + r);
           } else {
@@ -336,9 +335,9 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         }
 
         // ui counters
-        $('#DTSImageFound').text(0);
-        $('#DTSSuccessfulExtractions').text(0);
-        $('#DTSFailedExtractions').text(0);
+        jQuery('#DTSImageFound').text(0);
+        jQuery('#DTSSuccessfulExtractions').text(0);
+        jQuery('#DTSFailedExtractions').text(0);
 
         imagesSrc = [];
         uploadsPromises = [];
@@ -355,10 +354,10 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
       function showImages() {
         // clear table
-        $('#DTSSearchResults tbody tr').remove();
+        jQuery('#DTSSearchResults tbody tr').remove();
 
         // find all images
-        var images = $('img');
+        var images = jQuery('img');
 
         // upload all images
         for (i=0; i<images.length; i++) {
@@ -367,22 +366,22 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           var image = new Image();
           image.src = images[i].src;
           // create html
-          var html = rowTemplate({ src : $(images[i]).prop('src'), width: image.width, height: image.height, description: images[i].alt});
+          var html = rowTemplate({ src : jQuery(images[i]).prop('src'), width: image.width, height: image.height, description: images[i].alt});
           // add to page
-          $('#DTSSearchResults tbody').append(html);
+          jQuery('#DTSSearchResults tbody').append(html);
         }
       }
-      $('#DTSListImages').click(showImages);
+      jQuery('#DTSListImages').click(showImages);
 
       function submitImages() {
         // clear table
-        $('#DTSSearchResults tbody tr').remove();
+        jQuery('#DTSSearchResults tbody tr').remove();
 
         // reset();
 
         // find all images
-        imagesSrc = $('img').map(function(){
-          return {url: $(this).prop('src'), src: $(this).attr('src')};
+        imagesSrc = jQuery('img').map(function(){
+          return {url: jQuery(this).prop('src'), src: jQuery(this).attr('src')};
         });
 
         // upload all images
@@ -391,15 +390,19 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           startUpload(imagesSrc[i].url, imagesSrc[i].src);
         }
         // update ui
-        $('#DTSImageFound').text(imagesSrc.length);
-        $('#DTSIndexImages').toggleClass('active');
+        jQuery('#DTSImageFound').text(imagesSrc.length);
+        jQuery('#DTSIndexImages').toggleClass('active');
         // track submissions
         setTimeout(trackCounts, 1000);
       }
-      $('#DTSIndexImages').click(submitImages);
+      jQuery('#DTSIndexImages').click(submitImages);
 
       // open modal
-      $('#DTSModal').modal();
+      jQuery('#DTSModal').modal();
+
+      jQuery("#DTSModal").draggable({
+          handle: ".modal-header"
+      });
 
       // tracking outstanding extractions by successful and failed
       function checkResults() {
@@ -415,7 +418,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
             countDone++;
             console.log('---countDone Incremented-- ');
             sucessfullyDone++;
-            // $('#DTSSuccessfulExtractions').text(sucessfullyDone);
+            // jQuery('#DTSSuccessfulExtractions').text(sucessfullyDone);
           } else if (filesInfo[j].status == 'Required Extractor is either busy or is not currently running. Try after some time.') {
             console.log('---[check Results]---status: Required Extractor is either busy or is not currently running. Try after some time.');
           }
@@ -433,14 +436,14 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           }
         }
         // TODO update ui counts
-        $('#DTSSuccessfulExtractions').text(sucessfullyDone);
-        $('#DTSFailedExtractions').text(failedCountDown);
+        jQuery('#DTSSuccessfulExtractions').text(sucessfullyDone);
+        jQuery('#DTSFailedExtractions').text(failedCountDown);
         console.log('Successfull: ' + sucessfullyDone);
         console.log('Failed: ' + failedCountDown);
         if (countDone > 0 && countDone == filesInfo.length) {
           status = 'Done';
           // TODO update ui done
-          $('#DTSIndexImages').toggleClass('active');
+          jQuery('#DTSIndexImages').toggleClass('active');
           clearTimeout(statusCheck);
         } else {
           statusCheck=setTimeout(checkResults,2000);
@@ -451,7 +454,13 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
     }
 
 
-    base.init();
+        base.init();
+
+    
+
+
+
+
   }
 }));
 
@@ -470,8 +479,8 @@ function Bookmarklet(options){
 
     function loadCSS(sheets) {
     // Synchronous loop for css files
-    $.each(sheets, function(i, sheet){
-      $('<link>').attr({
+    jQuery.each(sheets, function(i, sheet){
+      jQuery('<link>').attr({
         href: (sheet + cachebuster),
         rel: 'stylesheet'
       }).prependTo('body');
@@ -487,7 +496,7 @@ function Bookmarklet(options){
     }
 
     // Load the first js file in the array.
-    $.getScript(scripts[0] + cachebuster, function(){
+    jQuery.getScript(scripts[0] + cachebuster, function(){
         // asyncronous recursion, courtesy Paul Irish.
         loadJS(scripts.slice(1));
       });
@@ -502,9 +511,28 @@ function Bookmarklet(options){
       document.body.appendChild(script);
 
       // exit on jQuery load.
-      script.onload = function(){ callback(); };
+      script.onload = function(){ 
+
+        jQuery.noConflict();
+
+                callback(); 
+ 
+
+        // callback(); 
+      };
       script.onreadystatechange = function() {
-        if (this.readyState == 'complete') callback();
+        if (this.readyState == 'complete') 
+
+        jQuery.noConflict();
+
+                callback(); 
+
+
+
+          // callback();
+
+
+
       }
       <!--} else {-->
         <!--callback();-->
@@ -515,7 +543,7 @@ function Bookmarklet(options){
         debug: false
         , css: []
         , js: []
-        , jqpath: "//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js"
+        , jqpath: "//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.js"
       }
 
   // If we don't pass options, use the defaults.

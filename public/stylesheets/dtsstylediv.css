@@ -49,6 +49,10 @@ img.small {
     overflow: auto;
 }*/
 
+.DTSSearchResultsScroll {
+    max-height: 250px;
+    overflow-y: auto;
+}
 
 .dts-thumbnail {
 	max-height: 100px;
@@ -66,7 +70,6 @@ img.small {
     margin-left: 0;
 }
 
-
 .dts-top-buffer { margin-top:20px; }
 
 .dts-spinner {
@@ -78,6 +81,12 @@ img.small {
   -moz-transition: opacity 0.25s, width 0.25s;
   -o-transition: opacity 0.25s, width 0.25s;
   transition: opacity 0.25s, width 0.25s;
+
+  -webkit-animation: spin 1s infinite linear;
+  -moz-animation: spin 1s infinite linear;
+  -o-animation: spin 1s infinite linear;*/
+  animation: spin 1s infinite linear;
+
 }
 
 .dts-has-spinner.active {
@@ -86,21 +95,43 @@ img.small {
 
 .dts-has-spinner.active .dts-spinner {
   opacity: 1;
-  width: auto; /* This doesn't work, just fix for unkown width elements */
+  width: 16px;
 }
 
-.dts-has-spinner.btn-mini.active .dts-spinner {
-    width: 10px;
+.spin {
+  -webkit-animation: spin .2s infinite linear;
+  -moz-animation: spin .2s infinite linear;
+  -o-animation: spin .2s infinite linear;
+  animation: spin .2s infinite linear;
+     -webkit-transform-origin: 50% 58%;
+         transform-origin:50% 58%;
+         -ms-transform-origin:50% 58%; /* IE 9 */
 }
 
-.dts-has-spinner.btn-small.active .dts-spinner {
-    width: 13px;
+@-moz-keyframes spin {
+  from {
+    -moz-transform: rotate(0deg);
+  }
+  to {
+    -moz-transform: rotate(360deg);
+  }
 }
 
-.dts-has-spinner.btn.active .dts-spinner {
-    width: 16px;
+@-webkit-keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
 }
 
-.dts-has-spinner.btn-large.active .dts-spinner {
-    width: 19px;
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
+

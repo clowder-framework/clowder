@@ -3,7 +3,7 @@
  */
 Handlebars.getTemplate = function(path) {
     if (Handlebars.templates === undefined || Handlebars.templates[path] === undefined) {
-        $.ajax({
+        jQuery.ajax({
             url : path + '.handlebars',
             crossDomain: true,
             success : function(data) {
