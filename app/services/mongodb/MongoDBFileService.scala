@@ -495,11 +495,37 @@ class MongoDBFileService @Inject() (
    * write it back to the versus_descriptors field of "metadata" to monoDB
    *
    */
-  def addVersusMetadata(id:UUID,json:JsValue){
+ /* def addVersusMetadata(id:UUID,json:JsValue){
     val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject]
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
     Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
-  }
+  }*/
+  
+  def addVersusMetadata(id:UUID,json:JsValue){
+    val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject]
+    val doc2=doc.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
+    //val des=VersusDAO.find(MongoDBObject("fileId" -> new ObjectId(id.stringify)))
+    VersusDAO.insert(new Versus(id,doc2))
+    /*for(d<-des){
+       VersusDAO.update(MongoDBObject("fileId" -> new ObjectId(id.stringify)), $addToSet("descriptors" -> doc), false, false, WriteConcern.Safe)
+    }*/
+    
+    Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
+  } 
+  
+ /*def getVersusMetadata0(id: UUID): JsValue = {
+    val query = MongoDBObject("fileId"->new ObjectId(id.stringify))
+    var desObjs=VersusDAO.find(query)
+    Logger.debug("REQUEST Length: "+ desObjs.length)
+    for(i<-desObjs){
+      var xd=i.descriptors
+      val x=xd["descriptors"]
+      val x=com.mongodb.util.JSON.serialize(xd.getAs[DBObject]("metadata").get
+    }
+    
+    
+  } */
+ 
   
   /**
    * This is the previous code that adds Versus descriptors to the metadata. If the Versus extraction is carried out more than once, it takes care of it
@@ -878,5 +904,12 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
+  }
+}
+
+object VersusDAO extends ModelCompanion[Versus,ObjectId]{
+    val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Versus, ObjectId](collection = x.collection("versus")) {}
   }
 }
