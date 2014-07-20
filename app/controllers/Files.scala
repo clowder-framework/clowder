@@ -17,6 +17,7 @@ import api.WithPermission
 import api.Permission
 import javax.inject.Inject
 import java.util.Date
+import scala.sys.SystemProperties
 
 /**
  * Manage files.
@@ -219,8 +220,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
               // TODO RK need to replace unknown with the server name
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-              // TODO RK : need figure out if we can use https
-              val host = "http://" + request.host
+              val host = Utils.baseUrl(request)
               val id = f.id
 	          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
               /***** Inserting DTS Requests   **/  
@@ -336,8 +336,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            
 	            // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
-	            // TODO RK : need figure out if we can use https
-	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+	            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
 
 	            val id = f.id
              
@@ -559,8 +558,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             val id = f.id
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
@@ -663,8 +661,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             
             val id = f.id
             val path=f.path
@@ -765,8 +762,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             val id = f.id
 
             // TODO replace null with None
@@ -873,8 +869,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				  	  
 					  // TODO RK need to replace unknown with the server name
 					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-							  // TODO RK : need figure out if we can use https
-							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+							  val host = Utils.baseUrl(request) + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id
 
 							  
@@ -1034,8 +1029,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   //        
   //        // TODO RK need to replace unknown with the server name
   //        val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
-  //        // TODO RK : need figure out if we can use https
-  //        val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+  //        val host = request.origin + request.path.replaceAll("upload$", "")
   //        val id = f.id.toString
   //        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
   //        current.plugin[ElasticsearchPlugin].foreach{

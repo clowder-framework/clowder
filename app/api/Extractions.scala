@@ -50,6 +50,7 @@ import scala.util.control._
 import javax.activation.MimetypesFileTypeMap
 import java.util.Calendar
 import api.WithPermission
+import controllers.Utils
 
 
 /**
@@ -135,9 +136,7 @@ class Extractions @Inject() (
                   }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  // TODO RK : need figure out if we can use https
-                  //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
-                  val host = "http://" + request.host
+                  val host = Utils.baseUrl(request)
 
                   /** Insert DTS Requests   **/
 
@@ -268,11 +267,7 @@ class Extractions @Inject() (
                   val id = f.id
                   fileType = f.contentType
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  // TODO RK : need figure out if we can use https
-                  Logger.debug("request.hosts=" + request.host)
-                  Logger.debug("request.path=" + request.path)
-                  val host = "http://" + request.host
-                  Logger.debug("hosts=" + request.host)
+                  val host = Utils.baseUrl(request)
                   current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
                   Logger.debug("After RabbitmqPlugin")
 
@@ -337,7 +332,7 @@ class Extractions @Inject() (
             case Some(file) => {
               val fileType = file.contentType
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-              val host = "http://" + request.host
+              val host = Utils.baseUrl(request)
               current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, file.length.toString, null, "")) }
               Ok("Sent for Extraction. check the status")
             }
