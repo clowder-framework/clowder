@@ -3,15 +3,12 @@
 @import collection.JavaConverters._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-<div class="page-header">
-		<h1>Bookmarklet</h1>
-</div>
-	<p> <a href="javascript:(function(){
-					document.body.appendChild(document.createElement('script')).src='http://localhost:9000/assets/javascripts/DTSbookmarklet/bookmarkletheader.js';
-  		}				
-				)();">DTS</a>
-	</p>
-<p>
+@main("Bookmarklet") {
+
+<center>
+    <h1>Data Tilling Service (DTS)</h1>
+    <h2 style="color:gray;">Drag icon to bookmark toolbar to install</h2>
+
     <!-- This implements a check to see if the bookmarklet has already been called, and if so, it simply re-runs the init function. You'll need to customize MyBookmarklet to the name of your object -->
     <a href="javascript:if(!window.DTSBookmarklet){
           (function(d,t){
@@ -23,6 +20,9 @@
       } else {
         DTSBookmarklet.init();
       }">
-        DTS Metadata Bookmarklet
+        <img src="http://browndog.ncsa.illinois.edu/graphics/browndog-large-transparent.png" width="200" alt="DTS">
     </a>
-</p>
+    <h3 style="font-family:arial;">dts_bookmarklet.js (alpha)</h3>
+</center>
+
+}
