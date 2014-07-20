@@ -11,11 +11,11 @@ var key = 'r1ek3rs';
 var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
   // debug: true, // use debug to bust the cache on your resources
   css: [protocol+'//@host/assets/stylesheets/dtsstylediv.css',
-  '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css',
-  '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css'
+  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap.min.css',
+  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap-theme.min.css'
   ],
   js: [protocol+'//@host/assets/javascripts/DTSbookmarklet/lunr.min.js',
-  '//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js',
+  '//@host/assets/javascripts/DTSbookmarklet/js/bootstrap.min.js',
   protocol+'//@host/assets/javascripts/handlebars-v1.3.0.js',
   protocol+'//@host/assets/javascripts/handlebars-loader.js'
   ],
@@ -23,6 +23,8 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
   ready: function(base) { // use base to expose a public method
 
     base.init = function() {
+
+      console.log("DTS Bookmarklet started");
 
       var uploadsPromises = [];
       var filesInfo = new Array();
@@ -46,7 +48,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
       // compile modal template and add it to page
       var modalTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/modal');
-      var html = modalTemplate({ name : 'World' });
+      var html = modalTemplate({});
       $(document.body).append(html);
 
       /**
@@ -104,9 +106,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
               getMetadataAboutFile(filesInfo[l], tagsArr);
 
               // update cache image metadata
-              imgdocs[filesInfo[l].id] = createdoc(tagsArr, filesInfo[l].url);
-
-
+              imgdocs[filesInfo[l].id] = createdoc(tagsArr, filesInfo[l].url, filesInfo[l].src);
 
               outstandingExtractions[g] = setTimeout(checkfetch,2000, extraction.file_id,g);
             } else {
@@ -142,11 +142,12 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       /**
         * Create document for lunr
         */
-      function createdoc(tags, url) {
+      function createdoc(tags, url, src) {
         var x = {
           // id:fid,
           tags : tags,
-          url : url
+          url : url,
+          src : src
         };
         return x;
       }
@@ -198,14 +199,14 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       /**
        * Callback after upload is successful.
        */
-       function reqProcess(imgurl) {
+       function reqProcess(imgurl, src) {
         return function(fileidjson) {
           var str = fileidjson;
           var furl = imgurl;
-          console.log('----[handler]----  STATUS: OK  [RESPONSE]=' + str.id
-            + '  url: ', furl);
+          console.log('----[handler]----  STATUS: OK  [RESPONSE]=' + str.id + '  url: ', furl);
           var fileidObj = new Object();
           fileidObj.url = furl;
+          fileidObj.src = src;
           fileidObj.id = str.id;
           fileidObj.tags = '';
           fileidObj.status = '';
@@ -219,7 +220,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       /**
         * Submit upload.
         */
-      function startUpload(imgurl) {
+      function startUpload(imgurl, src) {
         var fd = {};
         fd['fileurl'] = imgurl;
         var request = $.ajax({
@@ -229,7 +230,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           processData : false,
           contentType : "application/json",
           data : JSON.stringify(fd),
-          success : reqProcess(imgurl)
+          success : reqProcess(imgurl, src)
         });
 
         uploadsPromises.push(request);
@@ -251,11 +252,27 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           if (slen > 0) {
             var r = new Array();
             for ( var i = 0; i < slen; i++) {
+              var id = searchResults[i].ref;
               console.log("Search result: ",imgdocs[searchResults[i].ref].tags, "   url:", imgdocs[searchResults[i].ref].url);
               r.push(imgdocs[searchResults[i].ref].url);
+
+
+              // var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
+              // var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, info : imgdocs[searchResults[i].ref].tags});
+
+              // find image on page
+              var original = $("img[src='" + imgdocs[searchResults[i].ref].src + "']")[0];
+
+              console.log(original);
+
               var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
-              var HTML = rowTemplate({ src : imgdocs[searchResults[i].ref].url, info : imgdocs[searchResults[i].ref].tags});
-              $('#DTSSearchResults tbody').append(HTML);
+              // make copy to get rendered size
+              var image = new Image();
+              image.src = original.src;
+              // create html
+              var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, width: image.width, height: image.height, description: original.alt});
+              // add to table
+              $('#DTSSearchResults tbody').append(html);
             }
             console.log('Total number results : ' + slen.toString() + '  Matched Image URLs=' + r);
           } else {
@@ -307,7 +324,8 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       }
 
       /**
-       * Reset all variables to start over
+       * Reset all variables to start over. 
+       * ** Work in progress. Not fully functional. **
        */
       function reset() {
 
@@ -316,6 +334,11 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         for ( var k = 0; k < outstandingExtractions.length; k++) {
           clearInterval(outstandingExtractions[k]);
         }
+
+        // ui counters
+        $('#DTSImageFound').text(0);
+        $('#DTSSuccessfulExtractions').text(0);
+        $('#DTSFailedExtractions').text(0);
 
         imagesSrc = [];
         uploadsPromises = [];
@@ -333,15 +356,19 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       function showImages() {
         // clear table
         $('#DTSSearchResults tbody tr').remove();
+
         // find all images
-        var images = $('img').map(function(){
-          return $(this).prop('src');
-        });
+        var images = $('img');
 
         // upload all images
         for (i=0; i<images.length; i++) {
           var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
-          var html = rowTemplate({ src : images[i], info : '' });
+          // make copy to get rendered size
+          var image = new Image();
+          image.src = images[i].src;
+          // create html
+          var html = rowTemplate({ src : $(images[i]).prop('src'), width: image.width, height: image.height, description: images[i].alt});
+          // add to page
           $('#DTSSearchResults tbody').append(html);
         }
       }
@@ -351,17 +378,17 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         // clear table
         $('#DTSSearchResults tbody tr').remove();
 
-        // showImages();
+        // reset();
 
         // find all images
         imagesSrc = $('img').map(function(){
-          return $(this).prop('src');
+          return {url: $(this).prop('src'), src: $(this).attr('src')};
         });
 
         // upload all images
         for (i=0; i<imagesSrc.length; i++) {
-          console.log("Uploading image " + imagesSrc[i]);
-          startUpload(imagesSrc[i]);
+          console.log("Uploading image " + imagesSrc[i].url + " " + imagesSrc[i].src);
+          startUpload(imagesSrc[i].url, imagesSrc[i].src);
         }
         // update ui
         $('#DTSImageFound').text(imagesSrc.length);

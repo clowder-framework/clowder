@@ -50,7 +50,21 @@ img.small {
 }*/
 
 
+.dts-thumbnail {
+	max-height: 100px;
+	max-width: 200px;
+	width: auto;
+}
 
+.dts-dl-horizontal dt {
+    text-align: left;
+    width: auto;
+    padding-right: 1em;
+}
+
+.dts-dl-horizontal dd {
+    margin-left: 0;
+}
 
 
 .dts-top-buffer { margin-top:20px; }
