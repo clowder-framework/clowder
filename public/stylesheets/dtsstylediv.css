@@ -61,13 +61,13 @@ img.small {
 }
 
 .dts-dl-horizontal dt {
-    text-align: left;
-    width: auto;
-    padding-right: 1em;
+    text-align: left !important; 
+    width: auto !important;
+    padding-right: 1em !important;
 }
 
 .dts-dl-horizontal dd {
-    margin-left: 0;
+    margin-left: 0 !important;
 }
 
 .dts-top-buffer { margin-top:20px; }

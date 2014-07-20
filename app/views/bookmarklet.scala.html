@@ -113,7 +113,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
               getMetadataAboutFile(filesInfo[l], tagsArr);
 
               // update cache image metadata
-              imgdocs[filesInfo[l].id] = createdoc(tagsArr, filesInfo[l].url, filesInfo[l].src);
+              imgdocs[filesInfo[l].id] = createdoc(filesInfo[l].id, tagsArr, filesInfo[l].url, filesInfo[l].src);
 
               outstandingExtractions[g] = setTimeout(checkfetch,2000, extraction.file_id,g);
             } else {
@@ -151,9 +151,9 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       /**
         * Create document for lunr
         */
-      function createdoc(tags, url, src) {
+      function createdoc(fid, tags, url, src) {
         var x = {
-          // id:fid,
+          id:fid,
           tags : tags,
           url : url,
           src : src
@@ -275,7 +275,9 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
               var image = new Image();
               image.src = original.src;
               // create html
-              var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, width: image.width, height: image.height, description: original.alt});
+              var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, width: image.width, height: image.height, 
+                                       description: original.alt, 
+                                       linkback: protocol+"//@host/files/" + imgdocs[searchResults[i].ref].id});
               // add to table
               jQuery('#DTSSearchResults tbody').append(html);
             }

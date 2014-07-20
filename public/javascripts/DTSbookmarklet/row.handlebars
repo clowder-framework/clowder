@@ -8,6 +8,10 @@
 		  <dd>{{width}} x {{height}}</dd>
 		  <dt>Description</dt>
 		  <dd>{{description}}</dd>
+		  {{#if linkback}}
+		  	<dt>More info</dt>
+		    <dd><a href="{{linkback}}" alt="Click here for more info" target="_blank">DTS</a></dd>
+	      {{/if}}
 		</dl>
 	</td>
 </tr>
