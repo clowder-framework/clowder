@@ -1,6 +1,6 @@
-@(host: String)
+@(host: String, protocol: String)
 
-var protocol = 'http:';
+var protocol = '@protocol:';
 var key = 'r1ek3rs';
 
 /**
@@ -11,11 +11,11 @@ var key = 'r1ek3rs';
 var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
   // debug: true, // use debug to bust the cache on your resources
   css: [protocol+'//@host/assets/stylesheets/dtsstylediv.css',
-  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap.bd.css',
-  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap-theme.bd.css'
+  protocol+'//@host/assets/javascripts/DTSbookmarklet/css/bootstrap.bd.css',
+  protocol+'//@host/assets/javascripts/DTSbookmarklet/css/bootstrap-theme.bd.css'
   ],
   js: [protocol+'//@host/assets/javascripts/DTSbookmarklet/js/lunr.js',
-  '//@host/assets/javascripts/DTSbookmarklet/js/bootstrap.min.js',
+  protocol+'//@host/assets/javascripts/DTSbookmarklet/js/bootstrap.min.js',
   protocol+'//@host/assets/javascripts/handlebars-v1.3.0.js',
   protocol+'//@host/assets/javascripts/handlebars-loader.js',
   '//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js'
@@ -52,9 +52,9 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       var html = modalTemplate({base_url : protocol+"//@host/assets/javascripts/DTSbookmarklet"});
       jQuery(document.body).append(html);
 
-      $("#DTSquery").keyup(function(event){
+      jQuery("#DTSquery").keyup(function(event){
           if(event.keyCode == 13){
-              $("#DTSSearch").click();
+              jQuery("#DTSSearch").click();
           }
       });
 
@@ -477,17 +477,17 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       // brown dog running across page
       function addGraphic() {
         //Preload images
-        //$.get(protocol + dap + '/dap/images/browndog-small-transparent.gif');
-        //$.get(protocol + dap + '/dap/images/poweredby-transparent.gif');
+        //jQuery.get(protocol + dap + '/dap/images/browndog-small-transparent.gif');
+        //jQuery.get(protocol + dap + '/dap/images/poweredby-transparent.gif');
 
-        var graphic = $('<img>')
+        var graphic = jQuery('<img>')
           .attr('src', protocol + '//@host/assets/javascripts/DTSbookmarklet/browndog-small-transparent.gif')
           .attr('width', '25')
           .attr('id', 'graphic')
           .css('position', 'absolute')
           .css('left', '0px')
           .css('bottom', '25px')
-        $("body").append(graphic);
+        jQuery("body").append(graphic);
 
         setTimeout(moveGraphicRight, 10);
       }
@@ -496,18 +496,18 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         var graphic = document.getElementById('graphic');
         graphic.style.left = parseInt(graphic.style.left) + 25 + 'px';
 
-        if(parseInt(graphic.style.left) < $(window).width() - 50) {
+        if(parseInt(graphic.style.left) < jQuery(window).width() - 50) {
           setTimeout(moveGraphicRight, 10);
         } else {
           //graphic.remove();
           graphic.parentNode.removeChild(graphic);
 
           //Add powered by graphic
-          graphic = $('<img>')
+          graphic = jQuery('<img>')
             .attr('src', protocol + '//@host/assets/javascripts/DTSbookmarklet/poweredby-transparent.gif')
             .attr('width', '100');
 
-          var link = $('<a/>')
+          var link = jQuery('<a/>')
             .attr('href', 'http://browndog.ncsa.illinois.edu')
             .attr('id', 'poweredby')
             .css('position', 'fixed')
@@ -515,7 +515,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
             .css('bottom', '10px')
             .append(graphic);
 
-          $("body").append(link);
+          jQuery("body").append(link);
         }
       }
 
