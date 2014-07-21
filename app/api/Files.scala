@@ -1206,7 +1206,6 @@ class Files @Inject()(
                                 
                 //Modify the abbreviations if they were sent in that way
                 if (licenseText == "by-nc-nd") {
-                    Logger.info("^^^^^ Yes, correct translation occuring")
                     licenseText = "Attribution-NonCommercial-NoDerivs"
                 }
                 else if (licenseText == "by-nd") {
