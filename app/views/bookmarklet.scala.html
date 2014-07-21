@@ -1,0 +1,618 @@
+@(host: String)
+
+var protocol = 'http:';
+var key = 'r1ek3rs';
+
+/**
+ * DTS Bookmarklet
+ *
+ * Based on: https://gist.github.com/2897748
+ */
+var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
+  // debug: true, // use debug to bust the cache on your resources
+  css: [protocol+'//@host/assets/stylesheets/dtsstylediv.css',
+  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap.bd.css',
+  '//@host/assets/javascripts/DTSbookmarklet/css/bootstrap-theme.bd.css'
+  ],
+  js: [protocol+'//@host/assets/javascripts/DTSbookmarklet/js/lunr.js',
+  '//@host/assets/javascripts/DTSbookmarklet/js/bootstrap.min.js',
+  protocol+'//@host/assets/javascripts/handlebars-v1.3.0.js',
+  protocol+'//@host/assets/javascripts/handlebars-loader.js',
+  '//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js'
+  ],
+  //jqpath: '@host/assets/javascripts/jquery-1.10.2.js', // defaults to google cdn-hosted jquery
+  ready: function(base) { // use base to expose a public method
+
+    base.init = function() {
+
+      console.log("DTS Bookmarklet started");
+
+      var uploadsPromises = [];
+      var filesInfo = new Array();
+      var outstandingExtractions = new Array();
+      var tags = {};
+      var failedCountDown;
+      var sucessfullyDone;
+      var countDone;
+      var status = '';
+      var imgdocs = {};
+
+      // index definition
+      var index = lunr(function() {
+        this.field('tags', {
+          boost : 10
+        });
+        this.field('metadata', {boost : 10});
+        this.field('url');
+        this.ref('id');
+      });
+
+      // compile modal template and add it to page
+      var modalTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/modal');
+      var html = modalTemplate({});
+      jQuery(document.body).append(html);
+
+      $("#DTSquery").keyup(function(event){
+          if(event.keyCode == 13){
+              $("#DTSSearch").click();
+          }
+      });
+
+      /**
+       * Check the status of an extraction.
+       */
+      function checkfetch(fileid, g) {
+        console.log('-----[checkfetch-- ', fileid, ' --]-----');
+        jQuery.ajax({
+          url : protocol+"//@host/api/extractions/" + fileid + "/metadata?key=" + key,
+          accepts : "application/json",
+          success : function(data){
+            indexResults(data, g)
+          }
+        });
+        console.log('----- END -----[checkfetch-', fileid, '-]---------');
+      }
+
+      /**
+        * Index results
+        */
+        function indexResults(extraction, g) {
+          console.log(extraction);
+        // var str = JSON.parse(value);
+        console.log('----[value_status_handler]  STATUS OK  [RESPONSE]='.fontcolor("red")+ extraction);
+
+        for ( var l = 0; l < filesInfo.length; l++) {
+          console.log('filesInfo[', l, '].id=', filesInfo[l].id, '  extraction.fild_id=', extraction.file_id);
+
+          if ((filesInfo[l].id) == (extraction.file_id)) {
+
+            filesInfo[l].tags = extraction.tags;
+            console.log('[value_status_handler-', l, '-]  filesInfo[].url='+ filesInfo[l].url);
+            console.log('[value_status_handler-', l, '-]  filesInfo[].id='+ filesInfo[l].id);
+            console.log('[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status);
+            console.log('[value_status_handler-', l, '-]  filesInfo[].tags='+ filesInfo[l].tags);
+
+            // execution is done
+            if (filesInfo[l].status != 'Done') {
+              filesInfo[l].status = extraction.Status;
+              console.log('if status!=Done:[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status);
+
+              // parse tags even if not done
+              var tlen = filesInfo[l].tags.length;
+              var tagsArr = new Array();
+              for ( var m = 0; m < tlen; m++) {
+                var vlen = filesInfo[l].tags[m].values.length;
+                for ( var n = 0; n < vlen; n++) {
+                  var t = filesInfo[l].tags[m].values[n];
+                  tagsArr.push(t);
+                }
+              } 
+              console.log("id=" + filesInfo[l].id, "    tagsArr=",tagsArr, "   url=", filesInfo[l].url);
+
+              // check if metadata is present
+              getMetadataAboutFile(filesInfo[l], tagsArr);
+
+              // update cache image metadata
+              imgdocs[filesInfo[l].id] = createdoc(filesInfo[l].id, tagsArr, filesInfo[l].url, filesInfo[l].src);
+
+              outstandingExtractions[g] = setTimeout(checkfetch,2000, extraction.file_id,g);
+            } else {
+
+              console.log("if status is Done : Do Nothing");
+              console.log('else:[value_status_handler-', l,'-]  filesInfo[].status=' + filesInfo[l].status); 
+            } // end of if-else
+            break;
+          }
+      } //end of for
+    }
+
+    function getMetadataAboutFile(fileInfo, tagsArr) {
+      console.log("Getting metadata about file " + fileInfo.id);
+      jQuery.ajax({
+        url : protocol+"//@host/api/files/" + fileInfo.id + "/technicalmetadatajson?key=" + key,
+        accepts : "application/json",
+        success : function(data){
+          console.log("fileInfo " + data);
+          console.log("Found metadata on file " + data);
+          console.log("Found tags on file " + tagsArr);
+          console.log("Found id on file " + fileInfo.id);
+          console.log(data);
+          filesInfo.metadata = data;
+          // index with lunr
+          index.add({
+            id : fileInfo.id,
+            tags : tagsArr.join(" "),
+            metadata : data
+          });
+        }
+      });
+    }
+
+      /**
+        * Create document for lunr
+        */
+      function createdoc(fid, tags, url, src) {
+        var x = {
+          id:fid,
+          tags : tags,
+          url : url,
+          src : src
+        };
+        return x;
+      }
+
+      /**
+       * Check status of uploaded files by checking promises
+       * array and set timeout for successful uploads.
+       */
+      function getMetadata(){
+        var plen=uploadsPromises.length;
+        console.log("Promises Array Length:",plen);
+        for(var g=0;g<plen;g++) {
+          console.log("Promise status: [",g,"]=", uploadsPromises[g].status);
+          // is upload successful?
+          if(uploadsPromises[g].status==200){
+            pid=uploadsPromises[g].responseText;
+            console.log("[getMetadata] responseText: =",pid," index="+g);
+            var pidstr=pid.substring(7,pid.length-2);
+            console.log("ResponseText id: " , pidstr);
+            outstandingExtractions[g] = setTimeout(checkfetch, 5000, pidstr,g);
+          } else {
+            outstandingExtractions[g] = setTimeout(doNothing,10000,pidstr);
+          }
+        }
+      }
+
+      function doNothing(id) {
+        console.log("----Doing  Nothing ---");
+      }
+
+
+      /**
+       *  Check upload promises to see if upload has complite successfully.
+       */
+       function checkUploadStatus(id) {
+        for(var u=0;u<uploadsPromises.length;u++){
+          if(uploadsPromises[u].status==200){
+            console.log("promise.responseText=", uploadsPromises[u].responseText,"  id=",id);
+            if(uploadsPromises[u].responseText.indexOf(id)!=-1){
+              console.log("[checkUploadStatus]:", uploadsPromises[u].responseText);
+              return 200;
+            }
+          }
+        }
+        return 0;
+      }
+
+
+      /**
+       * Callback after upload is successful.
+       */
+       function reqProcess(imgurl, src) {
+        return function(fileidjson) {
+          var str = fileidjson;
+          var furl = imgurl;
+          console.log('----[handler]----  STATUS: OK  [RESPONSE]=' + str.id + '  url: ', furl);
+          var fileidObj = new Object();
+          fileidObj.url = furl;
+          fileidObj.src = src;
+          fileidObj.id = str.id;
+          fileidObj.tags = '';
+          fileidObj.status = '';
+          fileidObj.metadata = [];
+          console.log('----[handler]---- fileObj pushed to xMap');
+          filesInfo.push(fileidObj);
+
+        }
+      }
+
+      /**
+        * Submit upload.
+        */
+      function startUpload(imgurl, src) {
+        var fd = {};
+        fd['fileurl'] = imgurl;
+        var request = jQuery.ajax({
+          type : "POST",
+          url : protocol+"//@host/api/extractions/upload_url?key=" + key,
+          accepts : "application/json",
+          processData : false,
+          contentType : "application/json",
+          data : JSON.stringify(fd),
+          success : reqProcess(imgurl, src)
+        });
+
+        uploadsPromises.push(request);
+      }
+
+      /**
+        * Search index.
+        */
+      jQuery('#DTSSearch').click(function() {
+        var keyword = jQuery('#DTSquery').val();
+        console.log("Searching for " + keyword);
+        if (keyword != null) {
+          // console.log('------Results:--- ', index.search(keyword));
+          // clear table
+          jQuery('#DTSSearchResults tbody tr').remove();
+          // create row template
+          var searchResults = index.search(keyword);
+          var slen = searchResults.length;
+          if (slen > 0) {
+            var r = new Array();
+            for ( var i = 0; i < slen; i++) {
+              var id = searchResults[i].ref;
+              console.log("Search result: ",imgdocs[searchResults[i].ref].tags, "   url:", imgdocs[searchResults[i].ref].url);
+              r.push(imgdocs[searchResults[i].ref].url);
+
+              // find image on page
+              var original = jQuery("img[src='" + imgdocs[searchResults[i].ref].src + "']")[0];
+
+              console.log(original);
+
+              var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
+              // make copy to get rendered size
+              var image = new Image();
+              image.src = original.src;
+              // create html
+              var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, width: image.width, height: image.height, 
+                                       description: original.alt, 
+                                       linkback: protocol+"//@host/files/" + imgdocs[searchResults[i].ref].id});
+              // add to table
+              jQuery('#DTSSearchResults tbody').append(html);
+            }
+            console.log('Total number results : ' + slen.toString() + '  Matched Image URLs=' + r);
+          } else {
+            console.log("Not Found");
+          }
+        }
+        return false;
+      });
+
+
+      /**
+        * Check for status of uploads.
+        */
+      var uploadStatus=false;
+      var uploadCount;
+      var failCount=0;
+      var undefinedStatu=0;
+      var h=0;
+      var b=0;
+
+      function trackCounts(){
+        b++;
+        console.log("Number of times Function Entered b= ",b);
+        uploadCount=0;
+        failCount=0;
+        var plen=uploadsPromises.length; 
+        console.log("Promises Array Length:",plen);
+        for(var g=0;g<plen;g++){
+          console.log("Promise status: [",g,"]=", uploadsPromises[g].status);
+          if(uploadsPromises[g].status==undefined){
+            console.log("Status undefined for g=",g);
+          }else if(uploadsPromises[g].status==200){
+            uploadCount++;
+            console.log("if: Upload sucuessful for promise p=",g)
+          }else{
+            console.log("else: Upload not Sucessful for Promise p=",g);
+            failCount++;
+          }
+        } 
+        if(plen==(uploadCount+failCount)){
+          console.log("uploadStatus becomes true");
+          uploadStatus=true;
+          getMetadata();
+        }
+        else{
+          statusTrackCounts=setTimeout(trackCounts,1000);
+          
+        }
+      }
+
+      /**
+       * Reset all variables to start over. 
+       * ** Work in progress. Not fully functional. **
+       */
+      function reset() {
+
+        clearInterval(statusCheck);
+
+        for ( var k = 0; k < outstandingExtractions.length; k++) {
+          clearInterval(outstandingExtractions[k]);
+        }
+
+        // ui counters
+        jQuery('#DTSImageFound').text(0);
+        jQuery('#DTSSuccessfulExtractions').text(0);
+        jQuery('#DTSFailedExtractions').text(0);
+
+        imagesSrc = [];
+        uploadsPromises = [];
+        filesInfo = new Array();
+        outstandingExtractions = new Array();
+        tags = {};
+        failedCountDown = 0;
+        sucessfullyDone = 0;
+        countDone = 0;
+        status = '';
+        imgdocs = {};
+        console.log("Reset");
+      }
+
+      function showImages() {
+        // clear table
+        jQuery('#DTSSearchResults tbody tr').remove();
+
+        // find all images
+        var images = jQuery('img');
+
+        // upload all images
+        for (i=0; i<images.length; i++) {
+          var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
+          // make copy to get rendered size
+          var image = new Image();
+          image.src = images[i].src;
+          // create html
+          var html = rowTemplate({ src : jQuery(images[i]).prop('src'), width: image.width, height: image.height, description: images[i].alt});
+          // add to page
+          jQuery('#DTSSearchResults tbody').append(html);
+        }
+      }
+      jQuery('#DTSListImages').click(showImages);
+
+      function submitImages() {
+        // clear table
+        jQuery('#DTSSearchResults tbody tr').remove();
+
+        // reset();
+
+        // find all images
+        imagesSrc = jQuery('img').map(function(){
+          return {url: jQuery(this).prop('src'), src: jQuery(this).attr('src')};
+        });
+
+        // upload all images
+        for (i=0; i<imagesSrc.length; i++) {
+          console.log("Uploading image " + imagesSrc[i].url + " " + imagesSrc[i].src);
+          startUpload(imagesSrc[i].url, imagesSrc[i].src);
+        }
+        // update ui
+        jQuery('#DTSImageFound').text(imagesSrc.length);
+        jQuery('#DTSIndexImages').toggleClass('active');
+        // launch dog
+        addGraphic();
+        // track submissions
+        setTimeout(trackCounts, 1000);
+      }
+      jQuery('#DTSIndexImages').click(submitImages);
+
+      // open modal
+      jQuery('#DTSModal').modal();
+
+      jQuery("#DTSModal").draggable({
+          handle: ".modal-header"
+      });
+
+      // tracking outstanding extractions by successful and failed
+      function checkResults() {
+        console.log("Checking submission status");
+        countDone=0;
+        failedCountDown=0;
+        sucessfullyDone=0;
+
+        for ( var j = 0; j < filesInfo.length; j++) {
+          if (filesInfo[j].status == 'Processing') {
+            console.log('---[check Results]---status: Processing');
+          } else if (filesInfo[j].status == 'Done') {
+            countDone++;
+            console.log('---countDone Incremented-- ');
+            sucessfullyDone++;
+            // jQuery('#DTSSuccessfulExtractions').text(sucessfullyDone);
+          } else if (filesInfo[j].status == 'Required Extractor is either busy or is not currently running. Try after some time.') {
+            console.log('---[check Results]---status: Required Extractor is either busy or is not currently running. Try after some time.');
+          }
+          else{
+            if(filesInfo[j].status==''){
+              console.log('[checkResults]-- Status: is empty');
+              if(checkUploadStatus(filesInfo[j].id)==200){
+                console.log("--[checkResults] ---wait for execution---");
+              }else{
+                console.log("--upload has failed, so skip the execution--");
+                countDone++;
+                failedCountDown++;
+              }
+            }
+          }
+        }
+        // TODO update ui counts
+        jQuery('#DTSSuccessfulExtractions').text(sucessfullyDone);
+        jQuery('#DTSFailedExtractions').text(failedCountDown);
+        console.log('Successfull: ' + sucessfullyDone);
+        console.log('Failed: ' + failedCountDown);
+        if (countDone > 0 && countDone == filesInfo.length) {
+          status = 'Done';
+          // TODO update ui done
+          jQuery('#DTSIndexImages').toggleClass('active');
+          clearTimeout(statusCheck);
+        } else {
+          statusCheck=setTimeout(checkResults,2000);
+        }
+      }
+
+      var statusCheck = setTimeout(checkResults, 2000);
+
+      // brown dog running across page
+      function addGraphic() {
+        //Preload images
+        //$.get(protocol + dap + '/dap/images/browndog-small-transparent.gif');
+        //$.get(protocol + dap + '/dap/images/poweredby-transparent.gif');
+
+        var graphic = $('<img>')
+          .attr('src', protocol + '//@host/assets/javascripts/DTSbookmarklet/browndog-small-transparent.gif')
+          .attr('width', '25')
+          .attr('id', 'graphic')
+          .css('position', 'absolute')
+          .css('left', '0px')
+          .css('bottom', '25px')
+        $("body").append(graphic);
+
+        setTimeout(moveGraphicRight, 10);
+      }
+
+      function moveGraphicRight() {
+        var graphic = document.getElementById('graphic');
+        graphic.style.left = parseInt(graphic.style.left) + 25 + 'px';
+
+        if(parseInt(graphic.style.left) < $(window).width() - 50) {
+          setTimeout(moveGraphicRight, 10);
+        } else {
+          //graphic.remove();
+          graphic.parentNode.removeChild(graphic);
+
+          //Add powered by graphic
+          graphic = $('<img>')
+            .attr('src', protocol + '//@host/assets/javascripts/DTSbookmarklet/poweredby-transparent.gif')
+            .attr('width', '100');
+
+          var link = $('<a/>')
+            .attr('href', 'http://browndog.ncsa.illinois.edu')
+            .attr('id', 'poweredby')
+            .css('position', 'fixed')
+            .css('right', '10px')
+            .css('bottom', '10px')
+            .append(graphic);
+
+          $("body").append(link);
+        }
+      }
+
+    }
+
+
+        base.init();
+
+    
+
+
+
+
+  }
+}));
+
+function Bookmarklet(options){
+  // Avoid confusion when setting
+  // public methods.
+  var self = this;
+
+  // Merges objects. B overwrites A.
+  function extend(a, b){
+    var c = {};
+    for (var key in a) { c[key] = a[key]; }
+      for (var key in b) { c[key] = b[key]; }
+        return c;
+    }
+
+    function loadCSS(sheets) {
+    // Synchronous loop for css files
+    jQuery.each(sheets, function(i, sheet){
+      jQuery('<link>').attr({
+        href: (sheet + cachebuster),
+        rel: 'stylesheet'
+      }).prependTo('body');
+    });
+  }
+
+  function loadJS(scripts){
+    // Check if we've processed all
+    // of the JS files (or if there are none).
+    if (scripts.length === 0) {
+      o.ready(self);
+      return;
+    }
+
+    // Load the first js file in the array.
+    jQuery.getScript(scripts[0] + cachebuster, function(){
+        // asyncronous recursion, courtesy Paul Irish.
+        loadJS(scripts.slice(1));
+      });
+  }
+
+  function init(callback) {
+    <!--if(!window.jQuery) {-->
+      // Create jQuery script element.
+      var script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = o.jqpath;
+      document.body.appendChild(script);
+
+      // exit on jQuery load.
+      script.onload = function(){ 
+
+        jQuery.noConflict();
+
+                callback(); 
+ 
+
+        // callback(); 
+      };
+      script.onreadystatechange = function() {
+        if (this.readyState == 'complete') 
+
+        jQuery.noConflict();
+
+                callback(); 
+
+
+
+          // callback();
+
+
+
+      }
+      <!--} else {-->
+        <!--callback();-->
+        <!--}-->
+      }
+
+      var defaults = {
+        debug: false
+        , css: []
+        , js: []
+        , jqpath: "//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.js"
+      }
+
+  // If we don't pass options, use the defaults.
+  , o = extend(defaults, options)
+
+  , cachebuster = o.debug ?
+  ('?v=' + (new Date()).getTime()) : '';
+
+
+  // Kick it off.
+  init(function(){
+    loadCSS(o.css);
+    loadJS(o.js);
+  });
+
+};

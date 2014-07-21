@@ -1,6 +1,9 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
+#make this the first rule
+#OPTIONS        /*path                                                       @controllers.Application.options(path)
+OPTIONS        /*path                                                       api.ApiHelp.options(path)
 
 # Home page
 GET      /                                                                   @controllers.Application.index
@@ -22,6 +25,10 @@ GET      /extractions/requests          								    @controllers.ExtractionInfo.
 GET      /extractions/servers_ips								  		    @controllers.ExtractionInfo.getExtractorServersIP()
 GET      /extractions/extractors_names         					 		    @controllers.ExtractionInfo.getExtractorNames() 
 GET      /extractions/supported_input_types        				   			@controllers.ExtractionInfo.getExtractorInputTypes()
+
+#DTS Bookmarklet
+GET     /bookmarklet														@controllers.ExtractionInfo.getBookmarkletPage()
+GET     /bookmarklet.js                                                     @controllers.Application.bookmarklet
 
 
 # Files
@@ -137,12 +144,6 @@ POST    /admin/theme                                                         @co
 GET      /javascriptRoutes                                                   @controllers.Application.javascriptRoutes
 
 # API documentation using Swagger
-
-
-
-
-
-
 GET     /api-docs.json                                                      controllers.ApiHelpController.getResources
 GET     /api-docs.json/datasets           controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 GET     /api-docs.json/files              controllers.ApiHelpController.getResource(path = "/api-docs.json/files")

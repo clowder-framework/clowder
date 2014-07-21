@@ -436,8 +436,8 @@ class Extractions @Inject() (
 
                   val jpreviews = FileOP.extractPreviews(id)
 
-                  val vdescriptors = FileOP.extractVersusDescriptors(id)
-                  //val vdescriptors = ""
+                 // val vdescriptors = FileOP.extractVersusDescriptors(id)
+                  val vdescriptors = ""
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
 
