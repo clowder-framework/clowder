@@ -24,7 +24,7 @@ import akka.actor.Cancellable
  * @author Luigi Marini
  */
 
-object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
+object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSettings {
         
       var serverStartTime:Date=null
 
@@ -32,8 +32,8 @@ object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
 
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded
-    models.ServerStartTime.startTime = Calendar.getInstance().getTime()
-    serverStartTime = models.ServerStartTime.startTime
+    ServerStartTime.startTime = Calendar.getInstance().getTime()
+    serverStartTime = ServerStartTime.startTime
     Logger.debug("\n----Server Start Time----" + serverStartTime + "\n \n")
     
     current.plugin[MongoSalatPlugin].map { mongo =>
@@ -55,8 +55,8 @@ object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
     }
  
     
-    extractorTimer = Akka.system().scheduler.schedule(0.minutes,2 minutes){
-           models.ExtractionInfoSetUp.updateExtractorsInfo()
+    extractorTimer = Akka.system().scheduler.schedule(0.minutes,5 minutes){
+           ExtractionInfoSetUp.updateExtractorsInfo()
     }
      
 
