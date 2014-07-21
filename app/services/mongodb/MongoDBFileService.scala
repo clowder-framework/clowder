@@ -492,7 +492,7 @@ class MongoDBFileService @Inject() (
    * Parse each json object based on the field/key name and obtain the values and combine them as a tuple
    * Obtain the existing versus descriptors in the "metadata" as list of tuples (extraction_id,adapter_name,extractor_name,descriptor)
    * merge with the tuples obtained from descriptors received from versus
-   * write it back to the versus_descriptors field of "metadata" to monoDB
+   * write it back to the versus_descriptors field of "metadata" to mongoDB
    *
    */
  /* def addVersusMetadata(id:UUID,json:JsValue){
@@ -504,27 +504,18 @@ class MongoDBFileService @Inject() (
   def addVersusMetadata(id:UUID,json:JsValue){
     val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject]
     val doc2=doc.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
-    //val des=VersusDAO.find(MongoDBObject("fileId" -> new ObjectId(id.stringify)))
-    VersusDAO.insert(new Versus(id,doc2))
-    /*for(d<-des){
-       VersusDAO.update(MongoDBObject("fileId" -> new ObjectId(id.stringify)), $addToSet("descriptors" -> doc), false, false, WriteConcern.Safe)
-    }*/
-    
+    VersusDAO.insert(new Versus(id,doc2),WriteConcern.Safe)
     Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
   } 
   
- /*def getVersusMetadata0(id: UUID): JsValue = {
-    val query = MongoDBObject("fileId"->new ObjectId(id.stringify))
-    var desObjs=VersusDAO.find(query)
-    Logger.debug("REQUEST Length: "+ desObjs.length)
-    for(i<-desObjs){
-      var xd=i.descriptors
-      val x=xd["descriptors"]
-      val x=com.mongodb.util.JSON.serialize(xd.getAs[DBObject]("metadata").get
-    }
-    
-    
-  } */
+ def getVersusMetadata(id: UUID): JsValue = {
+    val versusDescriptor=VersusDAO.findOne(MongoDBObject("fileId" -> new ObjectId(id.stringify)))
+    versusDescriptor.map{
+      vdes=>
+      	 val x=com.mongodb.util.JSON.serialize(vdes.asInstanceOf[Versus].descriptors("versus_descriptors"))
+      	 Json.parse(x)
+    }.getOrElse(null)
+  } 
  
   
   /**
@@ -532,7 +523,10 @@ class MongoDBFileService @Inject() (
    * by merging the extractions results into single list
    * This works fine in Mac but due to some reason, it does not work in Ubuntu and gives mongodb exception
    * TODO: need to incorporate this into the current addVersusMetadata code
+   * 
+   * This code will be deleted once we figure out where to add versus metadata
    */
+ 
   /*def addVersusMetadata(id: UUID, json: JsValue) {
    
      Logger.debug("******MongoDB::::Adding Versus metadata to file " + id.toString )
@@ -609,9 +603,10 @@ class MongoDBFileService @Inject() (
   * 
   * This returns the Versus descriptors in the metadata field of the File
   * TODO: For more than one versus_descriptors object, result should return merged list
+  * This code will be deleted once we decided where the versus metadata will be added
   * */ 
   
- def getVersusMetadata(id: UUID): JsValue = {
+ /*def getVersusMetadata6(id: UUID): JsValue = {
     FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case None => {
         Logger.error("Error getting file" + id)
@@ -638,7 +633,7 @@ class MongoDBFileService @Inject() (
         }
       }
     }
-  } 
+  } */
 
   def addUserMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)

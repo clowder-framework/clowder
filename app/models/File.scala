@@ -37,6 +37,6 @@ case class File(
   notesHTML: Option[String] = None )
   
 case class Versus(
-	fileId:UUID,
+ 	fileId:UUID,
 	descriptors:Map[String,Any]=Map.empty
 )
