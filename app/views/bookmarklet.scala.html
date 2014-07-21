@@ -420,7 +420,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       jQuery('#DTSIndexImages').click(submitImages);
 
       // open modal
-      jQuery('#DTSModal').modal();
+      jQuery('#DTSModal').modal({backdrop: "static"});
 
       jQuery("#DTSModal").draggable({
           handle: ".modal-header"
