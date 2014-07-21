@@ -1,9 +1,13 @@
-function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDl, imageBase) {
+function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDownload, imageBase, authorName) {
+	
+	//Two golbally defined variables that are used in file.scala.html to check for download permissions.
+	checkAllowDownload = allowDownload;
+	checkLicenseType = licenseType;
 	
 	if (licenseType == 'license1') {
 		if (rightsHolder == null || rightsHolder.trim().length == 0){
         	//No rights holder set, so default to "Author"
-        	rightsHolder = "Author";
+        	rightsHolder = authorName;
         }
 		if (licenseText == null || licenseText.trim().length == 0) {
 			licenseText = 'All Rights Reserved';
@@ -18,34 +22,34 @@ function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, all
 	else if (licenseType == 'license2') {
 
 		//No checkboxes selected
-		if (licenseText == "Attribution-NonCommercial-NoDerivs") {
+		if (licenseText == "Attribution-NonCommercial-NoDerivs" || licenseText == "by-nc-nd") {
 			rightsHolder = '<img src="' + imageBase + '/cc-by-nc-nd.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/" target="_blank">' + licenseText + '</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/" target="_blank">Attribution-NonCommercial-NoDerivs</a>';
 		}
 		//Only commercial selected
-		else if (licenseText == "Attribution-NoDerivs") {
+		else if (licenseText == "Attribution-NoDerivs" || licenseText == "by-nd") {
 			rightsHolder = '<img src="' + imageBase + '/cc-by-nd.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-nd/3.0/" target="_blank">' + licenseText + '</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-nd/3.0/" target="_blank">Attribution-NoDerivs</a>';
 		}
 		//Only remixing selected
-		else if (licenseText == "Attribution-NonCommercial") {
+		else if (licenseText == "Attribution-NonCommercial" || licenseText == "by-nc") {
 			rightsHolder = '<img src="' + imageBase + '/cc-by-nd.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-nc/3.0/" target="_blank">' + licenseText + '</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-nc/3.0/" target="_blank">Attribution-NonCommercial</a>';
 		}
 		//Remixing and Sharealike selected
-		else if (licenseText == "Attribution-NonCommercial-ShareAlike") {
+		else if (licenseText == "Attribution-NonCommercial-ShareAlike" || licenseText == "by-nc-sa") {
 			rightsHolder = '<img src="' + imageBase + '/cc-by-nc-sa.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank">' + licenseText + '</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank">Attribution-NonCommercial-ShareAlike</a>';
 		}
 		//All checkboxes selected
-		else if (licenseText == "Attribution-ShareAlike") {
+		else if (licenseText == "Attribution-ShareAlike" || licenseText == "by-sa") {
 			rightsHolder = '<img src="' + imageBase + '/cc-by-sa.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-sa/3.0/" target="_blank">' + licenseText + '</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-sa/3.0/" target="_blank">Attribution-ShareAlike</a>';
 		}
 		//Commercial and Remixing selected
-		else if (licenseText == "Attribution") {
+		else if (licenseText == "Attribution" || licenseText == "by-nc-nd") {
 			rightsHolder = '<img src="' + imageBase + '/cc-by.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by/3.0/" target="_blank">' + licenseText + '</a>';			
+			licenseText = '<a href="http://creativecommons.org/licenses/by/3.0/" target="_blank">Attribution</a>';			
 		}
 		else {
 			rightsHolder = 'Creative Commons';
@@ -67,17 +71,17 @@ function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, all
 	//return false;
 }
 
-function updateData(id, imageBase, sourceObject) {
+function updateData(id, imageBase, sourceObject, authorName) {
 	var licenseType = $('input[name=type]:checked', '#form1').val();	        
 	var rightsHolder = $('input[name=ownername]').val();
 	var licenseText = $('input[name=licensedesc]').val();
 	var licenseUrl = $('input[name=licenseurl]').val();
-	var allowDl = $('input[name=allowdl]').prop('checked').toString(); 
+	var allowDownload = $('input[name=allowDownload]').prop('checked').toString(); 
 
 	if (licenseType == "license1") {
 		if (rightsHolder == null || rightsHolder.trim().length == 0) {
 			//for this license type, rights holder can't be null. default to Author
-			rightsHolder = "Author";
+			rightsHolder = authorName;
 			//$('#ownrights').trigger('click');
 		}
 
@@ -100,7 +104,7 @@ function updateData(id, imageBase, sourceObject) {
 		//No checkboxes selected
 		if (!commBox.prop('checked') && !remixBox.prop('checked') && !shareBox.prop('checked')) {
 			rightsHolder = "Creative Commons";
-			licenseText = "Attribution-NonCommercial-NoDerivs";
+			licenseText = "by-nc-nd";
 			licenseUrl = "http://creativecommons.org/licenses/by-nc-nd/3.0/";
 		}
 		//Only commercial selected
@@ -144,8 +148,8 @@ function updateData(id, imageBase, sourceObject) {
 		licenseUrl = "http://creativecommons.org/publicdomain/zero/1.0/";
 	}
 
-	//var jsonData = JSON.stringify({"licenseData":[licenseType, rightsHolder, licenseText, licenseUrl, allowDl]});
-	var jsonData = JSON.stringify({"licenseType":licenseType, "rightsHolder":rightsHolder, "licenseText":licenseText, "licenseUrl":licenseUrl, "allowDl":allowDl});
+	//var jsonData = JSON.stringify({"licenseData":[licenseType, rightsHolder, licenseText, licenseUrl, allowDownload]});
+	var jsonData = JSON.stringify({"licenseType":licenseType, "rightsHolder":rightsHolder, "licenseText":licenseText, "licenseUrl":licenseUrl, "allowDownload":allowDownload});
 
 	var request = null;
      
@@ -170,7 +174,7 @@ function updateData(id, imageBase, sourceObject) {
 	request.done(function (response, textStatus, jqXHR){
 		//console.log("Response " + response);
 		//Sucessful update of the DB
-		updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDl, imageBase);
+		updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDownload, imageBase, authorName);
 
 		$("#editlicense").addClass('collapsed');
 		$("#collapseSix").collapse('toggle');   

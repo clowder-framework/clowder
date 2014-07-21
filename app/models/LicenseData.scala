@@ -20,5 +20,5 @@ case class LicenseData (
         m_ccAllowCommercial: Boolean = false,
         m_ccAllowDerivative: Boolean = false,
         m_ccRequireShareAlike: Boolean = false,
-        m_allowDl: Boolean = false
+        m_allowDownload: Boolean = false
 )

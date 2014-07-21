@@ -179,9 +179,9 @@ trait DatasetService {
    * rightsHolder: A String that is the free-text describing the owner of the license. Only required for certain license types
    * licenseText: Text that describes what the license is
    * licenseUrl: A reference to the license information
-   * allowDl: true or false, to allow downloading of the file or dataset. Relevant only for certain license types
+   * allowDownload: true or false, to allow downloading of the file or dataset. Relevant only for certain license types
    */
-  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDl: String)
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
 
   def setNotesHTML(id: UUID, notesHTML: String)
 

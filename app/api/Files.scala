@@ -1142,18 +1142,19 @@ class Files @Inject()(
    *   
    *  licenseText, currently tied to the licenseType
    *        license1 - Free text that a user can enter to describe the license
-   *        license2 - 1 of 6 options that reflects the specific set of options associated with the Creative Commons license, these are:
-   *            Attribution-NonCommercial-NoDerivs
-   *            Attribution-NoDerivs
-   *            Attribution-NonCommercial
-   *            Attribution-NonCommercial-ShareAlike
-   *            Attribution-ShareAlike
-   *            Attribution
+   *        license2 - 1 of 6 options (or their abbreviations) that reflects the specific set of 
+   *        options associated with the Creative Commons license, these are:
+   *            Attribution-NonCommercial-NoDerivs (by-nc-nd)
+   *            Attribution-NoDerivs (by-nd)
+   *            Attribution-NonCommercial (by-nc)
+   *            Attribution-NonCommercial-ShareAlike (by-nc-sa)
+   *            Attribution-ShareAlike (by-sa)
+   *            Attribution (by)
    *        license3 - Public Domain Dedication
    *        
    *  licenseUrl, free text that a user can enter to go with the licenseText in the case of license1. Fixed URL's for the other 2 cases.
    *  
-   *  allowDl, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
+   *  allowDownload, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
    */
   @ApiOperation(value = "Update License information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
@@ -1168,7 +1169,7 @@ class Files @Inject()(
           var rightsHolder: String = null;
           var licenseText: String = null;
           var licenseUrl: String = null;
-          var allowDl: String = null;
+          var allowDownload: String = null;
           
           var aResult: JsResult[String] = (request.body \ "licenseType").validate[String]
           
@@ -1202,6 +1203,27 @@ class Files @Inject()(
           aResult match {
               case s: JsSuccess[String] => {                
                 licenseText = s.get
+                                
+                //Modify the abbreviations if they were sent in that way
+                if (licenseText == "by-nc-nd") {
+                    Logger.info("^^^^^ Yes, correct translation occuring")
+                    licenseText = "Attribution-NonCommercial-NoDerivs"
+                }
+                else if (licenseText == "by-nd") {
+                    licenseText = "Attribution-NoDerivs"
+                }
+                else if (licenseText == "by-nc") {
+                    licenseText = "Attribution-NonCommercial"
+                }
+                else if (licenseText == "by-nc-sa") {
+                    licenseText = "Attribution-NonCommercial-ShareAlike"
+                }
+                else if (licenseText == "by-sa") {
+                    licenseText = "Attribution-ShareAlike"
+                }
+                else if (licenseText == "by") {
+                    licenseText = "Attribution"
+                }
               }
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
@@ -1222,22 +1244,22 @@ class Files @Inject()(
               }
           }
           
-          aResult = (request.body \ "allowDl").validate[String]
+          aResult = (request.body \ "allowDownload").validate[String]
           
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {                
-                allowDl = s.get
+                allowDownload = s.get
               }
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-                BadRequest(toJson(s"allowDl data is missing."))
+                BadRequest(toJson(s"allowDownload data is missing."))
               }
           }          
           
-          Logger.debug(s"updateLicense for file with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDl")
+          Logger.debug(s"updateLicense for file with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDownload")
           
-          files.updateLicense(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDl)
+          files.updateLicense(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDownload)
           Ok(Json.obj("status" -> "success"))
       } 
       else {

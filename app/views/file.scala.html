@@ -453,7 +453,11 @@
     		
 
 		<div class="col-md-4">
+		     <!-- 
 			<a href="@routes.Files.download(UUID(id))" class="btn btn-default pull-right" target="_blank">Download</a>
+			 -->
+			 <button class="btn btn-default pull-right" title="Download the file" onclick="return downloadFile();">Download</button>
+			 
 		</div>
 
 	</div>
@@ -517,7 +521,7 @@
 				    <div class="panel panel-info">
                         <div class="panel-body">
                     @if(user.isDefined) {
-                        @licenseform(file.id.toString, file.licenseData, "file")
+                        @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
                     }
                         </div>
                     </div>   
@@ -534,13 +538,46 @@
             var fileRightsHolder = "@file.licenseData.m_rightsHolder";
             var fileLicenseText = "@file.licenseData.m_licenseText";
             var fileLicenseUrl = "@file.licenseData.m_licenseUrl";        
-            var fileAllowDl = "@file.licenseData.m_allowDl";              
+            var fileAllowDownload = "@file.licenseData.m_allowDownload";                         
             var fileImageBase = '@routes.Assets.at("images")';            
+            var fileAuthorName = '@file.author.fullName';
             
             if (!@user.isDefined){
-                updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDl, fileImageBase);
+                updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDownload, fileImageBase, fileAuthorName);
             }
-        });
+        });        
+        
+        function downloadFile() {        	        	
+        	var downloadRoute = "@routes.Files.download(UUID(id))";
+        	var owner = "@file.author.fullName";
+        	var userName = null;
+        	
+            @user match {
+            	case None => {
+            	   userName = "";
+            	}
+            	case Some(x) => {
+            	   userName = "@user.getOrElse(null).fullName";
+            	}
+            }
+        	
+            //The checkLicenseType and checkAllowDownload variables are globally defined, and referenced from
+            //updateLicenseInfo.js.
+            //
+        	//Check the license type, only type1 needs to have further checks, otherwise download should be allowed
+        	if (checkLicenseType != 'license1') {
+        		window.open(downloadRoute, '_blank');
+        	}
+        	//Check if the downloading of the file is allowed, however always allow the owner of the file to download it. 
+        	else {
+        		if (checkAllowDownload == "true" || userName == owner) {
+        			window.open(downloadRoute, '_blank');
+        		}
+        		else {
+                    alert("The license for this file does not allow it to be downloaded.");
+                }
+        	}        	
+        }
         </script>
         <!-- End License elements -->
 		

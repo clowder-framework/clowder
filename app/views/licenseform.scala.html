@@ -1,4 +1,4 @@
-@(id: String, licenseData: models.LicenseData, sourceObject: String)(implicit user: Option[securesocial.core.Identity])
+@(id: String, licenseData: models.LicenseData, sourceObject: String, authorName: String)(implicit user: Option[securesocial.core.Identity])
 
 <!--
 User interface panel that displays license options to the user and allows them to select one. Depending on the given license
@@ -42,7 +42,7 @@ Used By: dataset.scala.html, file.scala.html
 				<td><input style="width: 100%; type="text" name="licenseurl"></td>
 			</tr>
 			<tr class="license1 hidden">
-			     <td colspan="2"><input type="checkbox" name="allowdl" value="off">  Allow Downloading of the file</td>
+			     <td colspan="2"><input type="checkbox" name="allowDownload" value="off">  Allow Downloading of the file</td>
 			</tr>
 			<tr class="license2 hidden">
 				<td><input type="checkbox" id="commercial" value="yes">
@@ -58,7 +58,7 @@ Used By: dataset.scala.html, file.scala.html
 			</tr>
 		</table>		
 		<br>
-		<button class="btn btn-primary" title="Update License Information" onclick="return updateData('@id', '@routes.Assets.at("images")', '@sourceObject')">
+		<button class="btn btn-primary" title="Update License Information" onclick="return updateData('@id', '@routes.Assets.at("images")', '@sourceObject', '@authorName')">
 		  <span class="glyphicon glyphicon-edit"></span>
 		</button>
 		<!-- <button class="btn btn-default" onclick="return updateInterface();">Update</button> -->
@@ -84,7 +84,7 @@ Used By: dataset.scala.html, file.scala.html
         var rightsHolder = "@licenseData.m_rightsHolder";
         var licenseText = "@licenseData.m_licenseText";
         var licenseUrl = "@licenseData.m_licenseUrl";        
-        var allowDl = "@licenseData.m_allowDl";
+        var allowDownload = "@licenseData.m_allowDownload";
         var $radios = $('input[name=type]');       
         
         
@@ -115,7 +115,7 @@ Used By: dataset.scala.html, file.scala.html
                 if (licenseType == "license1") {                	
                     if (rightsHolder == null || rightsHolder.trim().length == 0){
                     	//No rights holder set, so default to "Author"
-                    	$('input[name=ownername]').val("Author");
+                    	$('input[name=ownername]').val(authorName);
                     }
                     else {
                         //In this case, the rightsHolder is valid free text
@@ -135,11 +135,11 @@ Used By: dataset.scala.html, file.scala.html
                 
                 $('input[name=licenseurl]').val(licenseUrl);                
                 
-                if (allowDl == "true") {
-                    $('input[name=allowdl]').attr('checked', true);
+                if (allowDownload == "true") {
+                    $('input[name=allowDownload]').attr('checked', true);
                 }
                 else {
-                    $('input[name=allowdl]').attr('checked', false);
+                    $('input[name=allowDownload]').attr('checked', false);
                 }                
             }            
             else if (licenseType == "license2") {
@@ -186,9 +186,10 @@ Used By: dataset.scala.html, file.scala.html
         rightsHolder = $('input[name=ownername]').val();
         licenseText = $('input[name=licensedesc]').val();
         licenseUrl = $('input[name=licenseurl]').val();
-        allowDl = $('input[name=allowdl]').prop('checked'); 
+        allowDownload = $('input[name=allowDownload]').prop('checked');         
         var formImageBase = '@routes.Assets.at("images")';
-        updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDl, formImageBase);
+        var authorName = "@authorName";
+        updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDownload, formImageBase, authorName);
         
     });
 	

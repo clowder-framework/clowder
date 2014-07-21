@@ -1006,7 +1006,7 @@
 	                   <div class="panel panel-info">
                            <div class="panel-body">
 	                    @if(user.isDefined) {
-	                        @licenseform(dataset.id.stringify, dataset.licenseData, "dataset")
+	                        @licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
 	                    }
 	                       </div>
 	                   </div>
@@ -1024,11 +1024,12 @@
             var datasetRightsHolder = "@dataset.licenseData.m_rightsHolder";
             var datasetLicenseText = "@dataset.licenseData.m_licenseText";
             var datasetLicenseUrl = "@dataset.licenseData.m_licenseUrl";        
-            var datasetAllowDl = "@dataset.licenseData.m_allowDl";    
+            var datasetAllowDownload = "@dataset.licenseData.m_allowDownload";    
             var datasetImageBase = '@routes.Assets.at("images")';
+            var datasetAuthorName = '@dataset.author.fullName';
             
             if (!@user.isDefined){
-                updateInterface(datasetLicenseType, datasetRightsHolder, datasetLicenseText, datasetLicenseUrl, datasetAllowDl, datasetImageBase);
+                updateInterface(datasetLicenseType, datasetRightsHolder, datasetLicenseText, datasetLicenseUrl, datasetAllowDownload, datasetImageBase, datasetAuthorName);
             }
         });
         </script>
