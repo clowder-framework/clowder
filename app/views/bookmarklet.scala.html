@@ -49,7 +49,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
       // compile modal template and add it to page
       var modalTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/modal');
-      var html = modalTemplate({});
+      var html = modalTemplate({base_url : protocol+"//@host/assets/javascripts/DTSbookmarklet"});
       jQuery(document.body).append(html);
 
       $("#DTSquery").keyup(function(event){
@@ -369,14 +369,17 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
         // upload all images
         for (i=0; i<images.length; i++) {
-          var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
-          // make copy to get rendered size
-          var image = new Image();
-          image.src = images[i].src;
-          // create html
-          var html = rowTemplate({ src : jQuery(images[i]).prop('src'), width: image.width, height: image.height, description: images[i].alt});
-          // add to page
-          jQuery('#DTSSearchResults tbody').append(html);
+          // console.log(jQuery(images[i]).prop('src') + " != " + protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png");
+          if (jQuery(images[i]).prop('src') != (protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png")) {
+            var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
+            // make copy to get rendered size
+            var image = new Image();
+            image.src = images[i].src;
+            // create html
+            var html = rowTemplate({ src : jQuery(images[i]).prop('src'), width: image.width, height: image.height, description: images[i].alt});
+            // add to page
+            jQuery('#DTSSearchResults tbody').append(html);
+          }
         }
       }
       jQuery('#DTSListImages').click(showImages);
@@ -392,13 +395,22 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           return {url: jQuery(this).prop('src'), src: jQuery(this).attr('src')};
         });
 
+        var numImages = imagesSrc.length;
+
         // upload all images
         for (i=0; i<imagesSrc.length; i++) {
-          console.log("Uploading image " + imagesSrc[i].url + " " + imagesSrc[i].src);
-          startUpload(imagesSrc[i].url, imagesSrc[i].src);
+          console.log("CHECK " + imagesSrc[i].url + " != " + protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png");
+          if (imagesSrc[i].url != protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png") {
+            console.log("Uploading image " + imagesSrc[i].url + " " + imagesSrc[i].src);
+            startUpload(imagesSrc[i].url, imagesSrc[i].src);
+          } else {
+            console.log("Skipping image: " + imagesSrc[i].url + " != " + protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png");
+            numImages -= 1;
+          }
         }
         // update ui
-        jQuery('#DTSImageFound').text(imagesSrc.length);
+        // FIXME skipping browndog icon in the count; handle 
+        jQuery('#DTSImageFound').text(numImages);
         jQuery('#DTSIndexImages').toggleClass('active');
         // launch dog
         addGraphic();
@@ -416,7 +428,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
       // tracking outstanding extractions by successful and failed
       function checkResults() {
-        console.log("Checking submission status");
+        // console.log("Checking submission status");
         countDone=0;
         failedCountDown=0;
         sucessfullyDone=0;
