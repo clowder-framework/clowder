@@ -441,12 +441,12 @@ class Extractions @Inject() (
 
                   val jpreviews = FileOP.extractPreviews(id)
 
-                  val vdescriptors = FileOP.extractVersusDescriptors(id)
-                  //val vdescriptors = ""
+                  //val vdescriptors = FileOP.extractVersusDescriptors(id)
+                  val vdescriptors=api.routes.Files.getVersusMetadataJSON(id).toString
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
 
-                  Ok(Json.obj("file_id" -> id.stringify, "filename" -> file.filename, "Status" -> status, "tags" -> jtags, "previews" -> jpreviews, "versus descriptors" -> vdescriptors))
+                  Ok(Json.obj("file_id" -> id.stringify, "filename" -> file.filename, "Status" -> status, "tags" -> jtags, "previews" -> jpreviews, "versus descriptors url" -> vdescriptors))
                 } //end of yield
 
               } //end of some file
