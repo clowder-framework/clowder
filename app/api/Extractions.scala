@@ -442,7 +442,10 @@ class Extractions @Inject() (
                   val jpreviews = FileOP.extractPreviews(id)
 
                   //val vdescriptors = FileOP.extractVersusDescriptors(id)
-                  val vdescriptors=api.routes.Files.getVersusMetadataJSON(id).toString
+                  var vdescriptors=""
+                  if(files.getVersusMetadata(id)!=null){
+                	   vdescriptors=api.routes.Files.getVersusMetadataJSON(id).toString
+                  }
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
 

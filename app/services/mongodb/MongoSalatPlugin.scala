@@ -136,6 +136,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       source.collection("extractor.names").drop()
       source.collection("extractor.inputtypes").drop()
       source.collection("dtsrequests").drop()
+      source.collection("versus").drop()
       source.collection("streams").drop()
       Logger.debug("**DANGER** Data deleted **DANGER**")
     }
