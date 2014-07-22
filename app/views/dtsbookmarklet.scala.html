@@ -1,4 +1,4 @@
-@(host: String)
+@(baseUrl: String)
 @import helper._
 @import collection.JavaConverters._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -14,13 +14,13 @@
           (function(d,t){
             var timestamp=new Date();
             var g=d.createElement(t), s=d.getElementsByTagName(t)[0];
-            g.src='//@{host}/bookmarklet.js?v=' + timestamp.getTime();
+            g.src='@{baseUrl}/bookmarklet.js?v=' + timestamp.getTime();
             s.parentNode.insertBefore(g,s)
           }(document,'script'));
       } else {
         DTSBookmarklet.init();
       }">
-        <img src="//@host/assets/javascripts/DTSbookmarklet/browndog-large-transparent.png" width="200" alt="DTS">
+        <img src="@baseUrl/assets/javascripts/DTSbookmarklet/browndog-large-transparent.png" width="200" alt="DTS">
     </a>
     <h3 style="font-family:arial;">dts_bookmarklet.js (alpha)</h3>
 </center>

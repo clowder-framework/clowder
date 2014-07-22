@@ -49,6 +49,10 @@ img.small {
     overflow: auto;
 }*/
 
+.bd .ontop {
+  z-index: 2000;
+}
+
 .DTSSearchResultsScroll {
     max-height: 250px;
     overflow-y: auto;

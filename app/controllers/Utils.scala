@@ -12,4 +12,14 @@ object Utils {
     val protocol = if (httpsPort == request.host.split(':').last)  "https" else "http"
     protocol + "://" + request.host
   }
+
+  /**
+   * Returns protocol in request stripping it of the : trailing character.
+   * @param request
+   * @return
+   */
+  def protocol(request: Request[Any]) = {
+    val httpsPort = System.getProperties().getProperty("https.port", "")
+    if (httpsPort == request.host.split(':').last)  "https" else "http"
+  }
 }
