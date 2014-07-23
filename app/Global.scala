@@ -2,7 +2,6 @@ import com.mongodb.casbah.Imports._
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.api.Play.current
-
 import services._
 import play.libs.Akka
 import java.util.concurrent.TimeUnit
@@ -13,11 +12,10 @@ import services.ExtractorService
 import java.util.Date
 import java.util.Calendar
 import models._
-
 import services.mongodb.MongoSalatPlugin
-
 import play.api.mvc.WithFilters
 import play.filters.gzip.GzipFilter
+import akka.actor.Cancellable
 
 
 /**
@@ -26,15 +24,16 @@ import play.filters.gzip.GzipFilter
  * @author Luigi Marini
  */
 
-object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
+object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSettings {
         
       var serverStartTime:Date=null
 
+  var extractorTimer: Cancellable = null
 
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded
-    models.ServerStartTime.startTime = Calendar.getInstance().getTime()
-    serverStartTime = models.ServerStartTime.startTime
+    ServerStartTime.startTime = Calendar.getInstance().getTime()
+    serverStartTime = ServerStartTime.startTime
     Logger.debug("\n----Server Start Time----" + serverStartTime + "\n \n")
     
     current.plugin[MongoSalatPlugin].map { mongo =>
@@ -56,8 +55,8 @@ object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
     }
  
     
-    Akka.system().scheduler.schedule(0.minutes,2 minutes){
-           models.ExtractionInfoSetUp.updateExtractorsInfo()
+    extractorTimer = Akka.system().scheduler.schedule(0.minutes,5 minutes){
+           ExtractionInfoSetUp.updateExtractorsInfo()
     }
      
 
@@ -66,6 +65,7 @@ object Global extends WithFilters(new GzipFilter()) with GlobalSettings {
   }
 
   override def onStop(app: Application) {
+    extractorTimer.cancel
     Logger.info("Application shutdown")
   }
 

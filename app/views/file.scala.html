@@ -1,10 +1,14 @@
-@(file: models.File, id: String, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], sections: List[models.Section], beingProcessed: Boolean, fileDataset: List[models.Dataset], datasetsOutside: List[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
+@(file: models.File, id: String, comments: List[Comment],
+  previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
+  sections: List[models.Section], beingProcessed: Boolean, fileDataset: List[models.Dataset],
+  datasetsOutside: List[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any],
+  rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {		
+@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
 		@for((key,value) <- metadata) {
 			<li><b>@(key):</b>
 			@if(value.isInstanceOf[String]) {
@@ -27,7 +31,7 @@
 			    }
 			}</li>
 		}
-	} 
+	}
 
 @showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
 	<script>
@@ -37,23 +41,23 @@
 		Configuration.previewer = "@routes.Assets.at(p._3)";
 		if("@p._2" === "Thumbnail"){
 			Configuration.fileType = "@p._6";
-			Configuration.fileSize = @p._7;			
+			Configuration.fileSize = @p._7;
 		}
-		else if("@p._2" === "X3d"){							
+		else if("@p._2" === "X3d"){
 			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1)))";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(UUID(p._1))";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(UUID(p._1))";
 			Configuration.wasPTM = "@(filename.endsWith(".ptm") || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "file";
 		}
-		else if("@p._2" === "Oni"){							
+		else if("@p._2" === "Oni"){
 		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 }
 
 @main("File") {
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
 	<script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
 	<script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
 	<script>
@@ -85,61 +89,41 @@
 		Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
 		Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
 		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-		Configuration.imagesPath = "@(routes.Assets.at("images"))";		
+		Configuration.imagesPath = "@(routes.Assets.at("images"))";
     </script>
     <script>
     	window.onload = function() {
     		isPageLoaded = true;
     	}
     </script>
-	
+
 	<div class="page-header">
 		<h1>@file.filename</h1>
 	</div>
 	<div class="row">
-	<div class="col-md-2">				
-	
-		</div>
-		
-		<div class="col-md-6">
-			<dl class="dl-horizontal">
-				<dt>Author:</dt>
-				<dd>@file.author.fullName</dd>
-				<dt>Filename:</dt>
-				<dd>@file.filename</dd>
-				<dt>Type:</dt>
-				<dd>@file.contentType</dd>
-				<dt>Uploaded on:</dt>
-				<dd>@file.uploadDate</dd>				
-			</dl>
-		</div>
-		</div>
-		
-	<div class="row">
-		<div class="col-md-12">
+		<div class="col-md-8">
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
-				  		<div class="tabbable">
-							<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
-								@for(i <- pvs.indices) {
-						    		<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
-				  				}
-							</ul>
-							<div class="tab-content"  id="previewsContent_@(f.id.toString)">
-								@for(i <- pvs.indices) {
-							  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
-							  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename, f.contentType)
+			  		<div class="tabbable">
+						<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
+							@for(i <- pvs.indices) {
+					    		<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
+			  				}
+						</ul>
+						<div class="tab-content"  id="previewsContent_@(f.id.toString)">
+							@for(i <- pvs.indices) {
+						  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
+						  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename, f.contentType)
 
-								}
-					  			<script type="text/javascript">
-									$(function () {
-										$('#myTab_@(f.id.toString) a:first').tab('show');
-					 				 })
-								</script>
-							</div>
+							}
+				  			<script type="text/javascript">
+								$(function () {
+									$('#myTab_@(f.id.toString) a:first').tab('show');
+				 				 })
+							</script>
 						</div>
-					
+					</div>
 		  		</div>
 			</div>
 			@if(pvs.length <= 1) {
@@ -147,16 +131,16 @@
 	    			$('#myTab_@(f.id.toString)').attr('style', 'display:none;');
 	    		</script>
     		}
-			
+
 			<!-- sections -->
-			@if(sections.size > 0) {	
+			@if(sections.size > 0) {
 			  	<div class="row" style="padding-top: 10px">
 			  	  <div class="col-md-6">
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@sections.map { s =>
 					  		@if(s.preview.isDefined) {
 					  			<img src="@api.routes.Previews.download(s.preview.get.id)"
-					  				class="img-polaroid" height="100px" 
+					  				class="img-polaroid" height="100px"
 					  			@if(s.startTime.isDefined) {
 					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
 					  		 	} else {
@@ -172,10 +156,8 @@
 				  	</div>
 				  </div>
 				</div>
-				  
 				<div class="row" style="padding-top: 10px">
-				  <div class="col-md-10">
-				  	<div>
+				    <div class="col-md-10">
 				  		<h5>Sections</h5>
 						<table class="table">
 							<thead>
@@ -193,7 +175,7 @@
 						  			<td>
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
-								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;" 
+								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;"
 								  			@if(s.startTime.isDefined) {
 								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
 								  		 	} else {
@@ -204,7 +186,7 @@
 								  		 		}
 								  		 	}
 								  		 	></img>
-								  		 }
+								  		}
 					  				</td>
 						  			 <td>
 						  			 @if(s.startTime.isDefined) {
@@ -222,56 +204,55 @@
 					  		}
 				  		</table>
 				  	</div>
-				  </div>
 			  	</div>
 
-				<script src="http://popcornjs.org/code/dist/popcorn-complete.min.js" type="text/javascript"></script>
+				<script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
 				<script>
 				    document.addEventListener("DOMContentLoaded", function () {
-						if ($("#ourvideo").length>0) {				    
+						if ($("#ourvideo").length>0) {
 					        var pop = Popcorn("#ourvideo");
-					       
+
 							@sections.map { s =>
 					  			@if(s.startTime.isDefined) {
 							   		pop.code({
 								        start: @s.startTime,
 								        onStart: function() {
 								          var frame = @s.order - 1;
-								          console.log("Jumping to " + frame + " " + @s.startTime); 
+								          console.log("Jumping to " + frame + " " + @s.startTime);
 								          $('#galleria').data('galleria').show(frame);
 								        },
 								        onEnd: function() {
-								          //console.log("end");   
+								          //console.log("end");
 								       }
 								    });
 								}
 						    }
-						}					    
+						}
 				    });
 		         </script>
-													
+
 			    <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
 			    <script>
 			    	$(function() {
 					    // Load the classic theme
 					    Galleria.loadTheme('@routes.Assets.at("javascripts/galleria-classic/galleria.classic.min.js")');
-					
+
 					    // Initialize Galleria
 					    Galleria.run('#galleria');
-					    
+
 					    var gallery = $('#galleria').data('galleria');
-					    
+
 						Galleria.ready(function(options) {
-						
+
 						    // 'this' is the gallery instance
 						    // 'options' is the gallery options
-						
+
 						    this.bind('image', function(e) {
 						        Galleria.log('Now viewing ' + e.imageTarget.src);
 						    });
 						});
-				      	 
-				      	
+
+
 				    });
 			    </script>
     			}
@@ -282,7 +263,7 @@
 						<button class="tech_md_" type="button">Show file technical metadata</button>
 						<div style="display:none;">
 						<ul>
-							@for(i <- 0 until file.metadata.length){								
+							@for(i <- 0 until file.metadata.length){
 								@printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
 							}
 						</ul>
@@ -305,7 +286,7 @@
 					<div id='xmlMetadata_@(file.id.toString)'>
 						<button class="tech_md_" type="button">Show XML-uploaded metadata</button>
 						<div style="display:none;">
-						<ul>								
+						<ul>
 								@printLevel(file.xmlMetadata)
 						</ul>
 						</div>
@@ -320,23 +301,166 @@
 								$("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
 								$("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
 							}
-						});	
+						});
 					</script>
-				}	
-				
-				
-				
-			</div>
-    	</div>
+				}
+		</div>
+
+        <div class="col-md-4">
+            <dl class="dl-horizontal">
+                <dt>Author:</dt>
+                <dd>@file.author.fullName</dd>
+                <dt>Filename:</dt>
+                <dd>@file.filename</dd>
+                <dt>Type:</dt>
+                <dd>@file.contentType</dd>
+                <dt>Uploaded on:</dt>
+                <dd>@file.uploadDate</dd>
+            </dl>
+            
+            <div class="row ds-section-sm">
+              <a href="@routes.Files.download(UUID(id))" class="btn btn-default pull-right" target="_blank">Download</a>
+            </div>
+
+            <div class="row ds-section-sm">
+              <h3>Tags</h3>
+              <ul id="tagList">
+                  @file.tags.map { tag =>
+                    <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
+                  }
+                  @file.sections.map { section =>
+                    @section.tags.map { tag =>
+                      <li><a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a></li>
+                    }
+                  }
+              </ul>
+              <form class="form-inline requiresLogin">
+                <div class="input-group input-group-sm col-md-8"">
+                  <input type="text" id="tagField" class="form-control">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default btn-sm" id="tagB">Tag</button>
+                  </span>
+                </div>
+              </form>
+              <script language="javascript">
+                window["userDefined"] = false;
+              </script>
+              @if(user.isDefined) {
+                <script language="javascript">
+                  window["userDefined"] = true;
+                </script>
+              }
+              <script language="javascript">
+                function removeTag() {
+                  console.log("removing tag ");
+                  //alert($(this).attr("id"));
+                  var tagId = $(this).attr("id");
+                  
+                  var request = jsRoutes.api.Files.removeTag('@file.id').ajax({
+                    data: JSON.stringify({"tagId":tagId}),
+                    type: 'POST',
+                    contentType: "application/json"
+                  });
+                  request.done(function (response, textStatus, jqXHR){
+                    console.log("Response " + textStatus);
+                    $("#" + tagId).parents("li").remove();
+                  });
+                  request.fail(function (jqXHR, textStatus, errorThrown){
+                    console.error(
+                    "The following error occured: "+
+                    textStatus, errorThrown
+                    );
+                    //alert("ERROR: " + errorThrown +". Tag not removed from file." );         
+                    window.location = "../login"; // FIXME hardcoded
+                  });
+                  
+                  return false;
+                }
+              
+                function removeIconMouseIn() {
+                  $(this).find(".glyphicon-remove").fadeIn(100);
+                }
+
+                function removeIconMouseOut() {
+                  $(this).find(".glyphicon-remove").fadeOut(100);           
+                }
+
+                $(function() {
+                  if(window["userDefined"] == true)
+                    $("#tagList").children("li").each(function(){
+                      $(this).hover(
+                        removeIconMouseIn,removeIconMouseOut
+                      );
+                    });
+                  $("#tagList").find(".glyphicon-remove").click(removeTag);
+                  
+                  $('#tagB').click(function() {
+                    var tag = $('#tagField').val();
+                     
+                    var isTagPresent = false;
+                    $("#tagList").children("li").each(function (index, tagLi) {
+                      if($(tagLi).attr("name")===tag) {
+                        isTagPresent = true;
+                      }
+                    });
+        
+                    if (tag !== "" && isTagPresent != true) {
+                      console.log("submitting tag " + tag);
+                      var request = jsRoutes.api.Files.addTags('@file.id').ajax({
+                        data: JSON.stringify({"tags":[tag]}),
+                        type: 'POST',
+                        contentType: "application/json",
+                      });
+                       
+                      request.done(function (response, textStatus, jqXHR){
+                        console.log("Response " + response);
+                        var url = "../tags/search?tag=" + tag;
+                        $newTag = $("<li><a href='" + url + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
+                          /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
+                      $newTag.find(".glyphicon-remove").click(removeTag);*/                 
+                          $newTag.hover(removeIconMouseIn,removeIconMouseOut);
+                      $newTag.find(".glyphicon-remove").click(removeTag);
+                          $('#tagField').val("");
+                       });
+                  
+                      request.fail(function (jqXHR, textStatus, errorThrown){
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        window.location = "../login"; // FIXME hardcoded
+                      });
+                      return false;
+                    }
+                  });
+                  
+                  $('#tagField').keypress(function (e) {
+                  if (e.which == 13) {
+                    console.log("enter");
+                    $('#tagB').click();
+                    return false;
+                  }
+                });
+                
+              });
+            </script>           
+            @if(!user.isDefined) {
+              <script language="javascript">
+                $(".requiresLogin").css("display","none");
+              </script>
+            }
+            </div>
+        </div>
+    </div>
+
+
+
 		@if(beingProcessed == true){
-    			<div id='beingProcessed' style='display:block;'><h5>File is being processed...</h5></div>  		
+    			<div id='beingProcessed' style='display:block;'><h5>File is being processed...</h5></div>
     		}else{
-    			<div id='beingProcessed' style='display:none;'><h5>File is being processed...</h5></div> 
+    			<div id='beingProcessed' style='display:none;'><h5>File is being processed...</h5></div>
     		}
     		<script>
-    			function updateIsBeingProcessed(){  
+    			function updateIsBeingProcessed(){
     				var request = $.ajax({
- 				       type: 'GET',  
+ 				       type: 'GET',
  				       url: "@api.routes.Files.isBeingProcessed(file.id)",
  				       contentType: "application/json"
  				     });
@@ -345,18 +469,18 @@
 							$("#beingProcessed").css('display','block');
 						else
 							$("#beingProcessed").css('display','none');
-	     			});				 
+	     			});
 				  request.fail(function (jqXHR, textStatus, errorThrown){
 	        		console.error(
 	            		"The following error occured: "+
-	            		textStatus, errorThrown		            
+	            		textStatus, errorThrown
 	        			);
 	        		//alert("ERROR: " + errorThrown +". Processing of dataset not checked." );
 	     			});
     			}
     			$(function() {
     				setInterval("updateIsBeingProcessed();", 1000);
-    			});   
+    			});
     		</script>
     		<script>
     			function addPreview(pv, fileId){
@@ -365,7 +489,7 @@
     				    var lastIndex = this.lastIndexOf(str);
     				    return (lastIndex != -1) && (lastIndex + str.length == this.length);
     				}
-    				
+
     				var prevsOfFile = parseInt($("#filePrevContainer_" + fileId).attr('data-previewsCount'))
     				var newTabLink = document.createElement('a');
     				newTabLink.setAttribute('href', '#previewer_' + fileId +  '_' + (prevsOfFile + 1));
@@ -375,14 +499,14 @@
     				var newListItem = document.createElement('li');
     				newListItem.appendChild(newTabLink);
     				$("#myTab_" + fileId).append(newListItem);
-    				
+
     				var newPrevDiv = document.createElement('div');
     				newPrevDiv.setAttribute('class', 'tab-pane previewDiv');
     				newPrevDiv.setAttribute('id', 'previewer_' + fileId +  '_' + (prevsOfFile + 1));
     				newPrevDiv.setAttribute('data-previewId', pv.pv_id);
     				newPrevDiv.setAttribute('data-previewerId', pv.p_id);
     				$("#previewsContent_" + fileId).append(newPrevDiv);
-    				
+
     				//Previewer config vars
     				Configuration.tab = '#previewer_' + fileId +  '_' + (prevsOfFile + 1);
     				Configuration.url = pv.pv_route;
@@ -390,35 +514,35 @@
     				Configuration.previewer = pv.p_path;
     				if(pv.p_id === "Thumbnail"){
     					Configuration.fileType = pv.pv_contenttype;
-    					Configuration.fileSize = pv.pv_length;			
+    					Configuration.fileSize = pv.pv_length;
     				}
-    				else if(pv.p_id === "X3d"){							
+    				else if(pv.p_id === "X3d"){
     					Configuration.annotationsEditPath = pv.pv_annotationsEditPath;
     					Configuration.annotationsListPath = pv.pv_annotationsListPath;
     					Configuration.annotationsAttachPath = pv.pv_annotationsAttachPath;
-    					if("@file.filename".endsWith(".ptm") || "@file.contentType".indexOf("ptmimages") != -1)   					
+    					if("@file.filename".endsWith(".ptm") || "@file.contentType".indexOf("ptmimages") != -1)
     						Configuration.wasPTM = 'true';
     					else
     						Configuration.wasPTM = 'false';
     					Configuration.calledFrom = "file";
     				}
     				////
-    				
+
     				var s = document.createElement("script");
     				s.type = "text/javascript";
     				s.src = pv.p_path + "/" + pv.p_main;
     				$("#previewsContent_" + fileId).append(s);
-    				
+
     				if(prevsOfFile == 1){
     					$("#myTab_" + fileId).attr('style', 'display:block;');
     				}
-    				    				
+
     				$('#myTab_' + fileId + ' a:first').tab('show');
     			}
-    		
+
     			function checkForNewPreviews(){
 	    			var request = $.ajax({
-					       type: 'GET',  
+					       type: 'GET',
 					       url: "@api.routes.Files.getPreviews(file.id)",
 					       contentType: "application/json"
 					     });
@@ -435,11 +559,11 @@
 							}
 						}
 						setTimeout("checkForNewPreviews();", 1000);
-		     		});				 
+		     		});
 					  request.fail(function (jqXHR, textStatus, errorThrown){
 		        		console.error(
 		            		"The following error occured: "+
-		            		textStatus, errorThrown		            
+		            		textStatus, errorThrown
 		        			);
 		        		//alert("ERROR: " + errorThrown +". Did not check for new previews." );
 		        		setTimeout(function(){checkForNewPreviews()}, 1000);
@@ -448,207 +572,50 @@
     			$(function() {
     				setTimeout(function(){checkForNewPreviews()}, 1000);
     			});
-    		</script> 
-    		
-    		
+    		</script>
 
 		<div class="col-md-4">
 			<a href="@routes.Files.download(UUID(id))" class="btn btn-default btn-large pull-right" target="_blank" title="Download File"><span class="glyphicon glyphicon-save"></span></a>
 		</div>
 
-	</div>
-	<div id="accordionsDiv" class="row" style="margin-top:20px; width: 750px; padding-left:15px;">
-		<div class="accordion" id="accordion5">
-			<div class="accordion-group">
-				<div class="accordian-heading">
-					<a class="accordion-toggle" data-toggle="collapse"
-						data-parent="#accordion5" href="#collapseFive">Notes</a>
-				</div>
-				<div id="collapseFive" class="accordion-body in collapse">
-			      		@notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
-				</div>
-			</div>
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Notes</h3>
+	            @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
+            </div>
 		</div>
-	
-		<div class="accordion" id="accordion1">
-			<div class="accordion-group">
-				<div class="accordian-heading">
-					<a class="accordion-toggle" data-toggle="collapse"
-						data-parent="#accordion1" href="#collapseOne">Comments</a>
-				</div>
-				<div id="collapseOne" class="accordion-body in collapse">
-			      	@if(user.isDefined) {
-			      		@commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
-			      	}
-			 		<ol class="comment-threads unstyled" id="reply_@file.id.toString">
-				    	@comment(comments)
-				    </ol>
-				</div>
-			</div>
-		</div>
-		
-		<!--Debug code-->
-		@if(false){ 
-			<div class="accordion" id="accordion2">
-				<div class="accordion-group">
-					<div class="accordian-heading">
-						<a class="accordion-toggle" data-toggle="collapse"
-							data-parent="#accordion2" href="#collapseTwo">Debug</a>
-					</div>
-					<div id="collapseTwo" class="accordion-body collapse">
-						<div class="accordion-inner">@file</div>
-						<div class="accordion-inner">Previews:
-							<ul>
-								@previews.map { p =>
-								<li>@p</li>
-							}
-							</ul>
-						</div>
-						<div class="accordion-inner">Sections:
-							<ul>
-							@sections.map { s =>
-								<li>@s</li>
-							}
-							</ul>
-						</div>
-					</div>
-				</div>
-			</div>
-		}
-		<!--End of debug code-->
-		
-			<div class="accordion" id="accordion3">
-				<div class="accordion-group">
-					<div class="accordian-heading">
-						<a class="accordion-toggle" data-toggle="collapse"
-							data-parent="#accordion3" href="#collapseThree">Community-generated metadata</a>
-					</div>
-					<div id="collapseThree" class="accordion-body in collapse">
-				      	@fileusermetadata(id, usrmd, rdfExported)
-					</div>
-				</div>
-			</div>
-			
-			<div class="accordion" id="accordion4">
-				<div class="accordion-group">
-					<div class="accordian-heading">
-						<a class="accordion-toggle" data-toggle="collapse"
-							data-parent="#accordion4" href="#collapseFour">Datasets containing the file</a>
-					</div>
-					<div id="collapseFour" class="accordion-body in collapse">
-				      	<table id="datasTable">
-						@fileDataset.map { dataset =>
-							<tr><td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-							<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a></td></tr>
-						}
-						</table>
-						<div class="ui-widget requiresLogin" id="datasetsUi">
-							<select id="datasetAddSelect" data-inputid="selectingInputDatasets" data-errorid="doesNotExistErrorDatasets">
-							@datasetsOutside.map { dataset =>
-								<option value="@(dataset.id.toString)">@(dataset.name)</option>
-							}					  
-							</select>
-							<button class="btn combobutton" id="addDatasBtn" style="vertical-align:top;">Add to dataset</button>
-							<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorDatasets" >Dataset does not exist or already added.</span>
-						</div>
-						<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
-						<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-						<script>
-							$("#datasetAddSelect").combobox();
-						</script>
-						<script>
-								$('body').on('click','#addDatasBtn',function(e){
-									if($("#doesNotExistErrorDatasets").css('display') == 'inline')
-										return;
-									if($("#selectingInputDatasets").val() == ""){
-										$("#doesNotExistErrorDatasets").css('display','inline');
-										return;
-									}
-									
-									var selectedId = $("#datasetAddSelect").val();
-									var selectedName = $("#datasetAddSelect option:selected").text();
-									var request = $.ajax({
-									       type: 'POST',
-									       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+selectedId+"/files/"+"@file.id"
-									     });
-									request.done(function (response, textStatus, jqXHR){
-								        console.log("Response " + response);	        
-								        $("#datasetAddSelect option[value=" + selectedId + "]").remove();
-								        $("#selectingInputDatasets").val("");
-								        var i = 1;
-								        var tableLength = $("#datasTable tbody tr").length;
-								        while(i <= tableLength && $("#datasTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
-								        	i++;
-								        if(i <= tableLength)	        
-									        $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-									        		);
-								        else if(tableLength > 0)
-								        	$("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-									        		);
-								        else{
-								        	if($("#datasTable tbody").length == 0)
-								        		$("#datasTable").append("<tbody></tbody>");
-								        	$("#datasTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
-									        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-									        		);
-								        	}
-									});	
-									request.fail(function (jqXHR, textStatus, errorThrown){
-							    		console.error(
-							        		"The following error occured: "+
-							        		textStatus, errorThrown		            
-							    			);
-							    		alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." );
-							 			});				
-								});
-								
-								function removeFromDataset(datasetId, datasetName,event){
-									var request = $.ajax({
-									       type: 'POST',
-									       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+datasetId+"/filesRemove/"+"@file.id"+"/True"
-									     });
-									request.done(function (response, textStatus, jqXHR){
-										console.log("Response " + response);	        
-										$(event.target.parentNode.parentNode).remove();
-										var i = 1;
-								        var selectLength = $("#datasetAddSelect option").length;
-								        while(i <= selectLength && $("#datasetAddSelect option:nth-child("+i+")").text() < datasetName)
-								        	i++;
-								        if(i <= selectLength)
-								        	$("#datasetAddSelect option:nth-child("+i+")").before("<option value='"+datasetId+"'>"+datasetName+"</option>");
-								        else if(selectLength > 0)
-								        	$("#datasetAddSelect option:nth-child("+(i-1)+")").after("<option value='"+datasetId+"'>"+datasetName+"</option>");
-								        else
-								        	$("#datasetAddSelect").append("<option value='"+datasetId+"'>"+datasetName+"</option>");
-								        
-								        $("#datasetAddSelect").combobox();
-									});	
-									request.fail(function (jqXHR, textStatus, errorThrown){
-							    		console.error(
-							        		"The following error occured: "+
-							        		textStatus, errorThrown		            
-							    			);
-							    		alert("ERROR: " + errorThrown +". File not removed from dataset." );
-							 			});
-								}
-								
-						</script>
-						 
-					</div>
-				</div>
-			</div>
-		
-		
-		
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Comments</h3>
+                @if(user.isDefined) {
+                    @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
+                }
+                <ol class="comment-threads unstyled" id="reply_@file.id.toString">
+                    @comment(comments)
+                </ol>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Community-generated metadata</h3>
+                @fileusermetadata(id, usrmd, rdfExported)
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3></h3>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Datasets containing the file</h3>
+                @datasetsContainingFile(file, fileDataset, datasetsOutside)
+            </div>
+        </div>
 	</div>
-	<script>
-	    var newOffsetLeft = $("#wrap > .container").offset().left;
-	    var newOffsetTop = $("#accordionsDiv").offset().top;
-	
-	
-		$("#accordionsDiv").offset({ top: newOffsetTop, left: newOffsetLeft })   ;	
-	
-	</script>
 }
