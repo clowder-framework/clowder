@@ -181,7 +181,7 @@ Used By: dataset.scala.html, file.scala.html
         }
         
         //No matter what, must update the data on the UI. No submission though.
-        //Reset the variables based on all the work that the ready function has done...
+        //Reset the variables based on all the work that the ready function has done. (Primarily for the first license type)
         licenseType = $('input[name=type]:checked', '#form1').val();            
         rightsHolder = $('input[name=ownername]').val();
         licenseText = $('input[name=licensedesc]').val();

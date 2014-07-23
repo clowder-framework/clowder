@@ -58,7 +58,7 @@ function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, all
 	}
 	else if (licenseType == 'license3') {
 			rightsHolder = '<img src="' + imageBase + '/cc-pd.png" alt="' + rightsHolder + '" />'
-			licenseText = '<a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">' + licenseText + '</a>';
+			licenseText = '<a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">Public Domain Dedication</a>';
 	}
 	else {
 		alert('Extra case!!');
