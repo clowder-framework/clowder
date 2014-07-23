@@ -1,8 +1,10 @@
 package controllers
 
+import api.{Permission, WithPermission}
 import play.api.Routes
 import javax.inject.{Singleton, Inject}
 import services.FileService
+import play.api.Logger
 
 /**
  * Main application controller.
@@ -19,6 +21,19 @@ class Application  @Inject() (files: FileService) extends SecuredController {
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     Ok(views.html.index(latestFiles))
+  }
+  
+  def options(path:String) = SecuredAction() { implicit request =>
+    Logger.info("---controller: PreFlight Information---")
+    Ok("")
+   }
+
+  /**
+   * Bookmarklet
+   */
+  def bookmarklet() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+    val protocol = Utils.protocol(request)
+    Ok(views.html.bookmarklet(request.host, protocol)).as("application/javascript")
   }
 
   /**
@@ -39,6 +54,8 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         routes.javascript.Admin.setTheme,
         
         api.routes.javascript.Comments.comment,
+        api.routes.javascript.Comments.removeComment,
+        api.routes.javascript.Comments.editComment,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,

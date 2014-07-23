@@ -34,6 +34,8 @@ object Permission extends Enumeration {
 		DeleteTags,
 		UpdateLicense,
 		CreateComments,
+		RemoveComments,
+		EditComments,
 		CreateNotes,
 		AddSections,
 		GetSections,
