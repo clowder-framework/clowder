@@ -32,6 +32,7 @@ import play.api.libs.json.JsError
 import scala.Some
 import models.File
 import play.api.Play.configuration
+import controllers.Utils
 
 /**
  * Dataset API.
@@ -883,7 +884,7 @@ class Datasets @Inject()(
                   rdfPreviewList = rdfPreviewList :+ currPreview
                 }
               }
-              var hostString = "http://" + request.host + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
+              var hostString = Utils.baseUrl(request) + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
               var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
 
               for (file <- dataset.files) {
@@ -906,7 +907,7 @@ class Datasets @Inject()(
               else {
                 connectionChars = "?mappingNum="
               }
-              hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/") + connectionChars
+              hostString = Utils.baseUrl(request) + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/") + connectionChars
               val mappingsQuantity = Integer.parseInt(configuration.getString("datasetsxmltordfmapping.dircount").getOrElse("1"))
 
               for (i <- 1 to mappingsQuantity) {

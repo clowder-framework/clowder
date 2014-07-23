@@ -299,8 +299,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 		//			        val key = "unknown." + "file."+ "application.x-ptm"
 					    	
-			                // TODO RK : need figure out if we can use https
-			                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
+			                val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
         
 					        // add file to dataset 
 					        val dt = dataset.copy(files = List(f), author=identity)					        
@@ -420,8 +419,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          //reindex file
 		          files.index(theFileGet.id)
 		          
-		          // TODO RK : need figure out if we can use https
-		          val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
+		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
 						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
