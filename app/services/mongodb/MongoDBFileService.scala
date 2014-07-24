@@ -33,7 +33,7 @@ import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
 import play.api.http.ContentTypes
 import play.api.libs.MimeTypes
-import scala.collection.mutable.MutableList 
+import scala.collection.mutable.MutableList
 
 
 /**
@@ -370,6 +370,9 @@ class MongoDBFileService @Inject() (
       }
     }
   }
+  
+ 
+  
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
@@ -479,6 +482,8 @@ class MongoDBFileService @Inject() (
     }
   }
 
+  
+  
   /**
    *  Add versus descriptors to the metadata
    *
@@ -490,9 +495,21 @@ class MongoDBFileService @Inject() (
    * write it back to the versus_descriptors field of "metadata" to monoDB
    *
    */
-  def addVersusMetadata(id: UUID, json: JsValue) {
-
-    Logger.debug("******MongoDB::::Adding Versus metadata to file " + id.toString )
+  def addVersusMetadata(id:UUID,json:JsValue){
+    val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject]
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
+    Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
+  }
+  
+  /**
+   * This is the previous code that adds Versus descriptors to the metadata. If the Versus extraction is carried out more than once, it takes care of it
+   * by merging the extractions results into single list
+   * This works fine in Mac but due to some reason, it does not work in Ubuntu and gives mongodb exception
+   * TODO: need to incorporate this into the current addVersusMetadata code
+   */
+  /*def addVersusMetadata(id: UUID, json: JsValue) {
+   
+     Logger.debug("******MongoDB::::Adding Versus metadata to file " + id.toString )
 
     var jsonlist = json.as[List[JsObject]] // read json as list of JSON objects
 
@@ -501,7 +518,7 @@ class MongoDBFileService @Inject() (
         Logger.debug("extraction_id=" + list \ ("extraction_id"))
         Logger.debug("adapter_name=" + list \ ("adapter_name"))
         Logger.debug("extractor_name=" + list \ ("extractor_name"))
-        Logger.debug("descriptor=" + list \ ("descriptor"))
+        //Logger.debug("descriptor=" + list \ ("descriptor"))
         (list \ ("extraction_id"), list \ ("adapter_name"), list \ ("extractor_name"), list \ ("descriptor"))
     } /* to access into the list of json objects and convert as list of tuples*/
 
@@ -515,7 +532,8 @@ class MongoDBFileService @Inject() (
             Logger.debug("-----No metadata field found: Adding meta data field and setting Versus Descriptors----")
             FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata.versus_descriptors" -> doc), false, false, WriteConcern.Safe)
             Logger.debug("-----Added metadata field ----")
-
+            
+            
           }
           case Some(map) => {
 
@@ -554,64 +572,47 @@ class MongoDBFileService @Inject() (
       }
       case None => Logger.error("Error getting file" + id)
     }
-  }		
+  }*/
 
   /*convert list of JsObject to JsArray*/
   def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
+ 
+/*
+  * 
+  * This returns the Versus descriptors in the metadata field of the File
+  * TODO: For more than one versus_descriptors object, result should return merged list
+  * */ 
   
-  def getVersusMetadata(id:UUID): JsValue= {
-    
+ def getVersusMetadata(id: UUID): JsValue = {
     FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
-      case Some(x) => {
-    	Logger.debug("FileDAO keySets==="+x.keySet().toString())
-    	Logger.debug("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
-        
-    	x.getAs[DBObject]("metadata")match {
-    	    case None => {
-            Logger.debug("--------------")
-            Logger.debug("  ")
-            Logger.debug("No metadata field found")
-            
-            Logger.debug("Class Name: "+x.getClass().getName()+ "   x=  "+x.toString())
-           // Json.obj("Message"->("No metadata for file "+id))
-           // Json.obj(""->"")
-            null
-          }
-          case Some(map) => {
-
-            Logger.debug("metadata found ")
-           
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
-            
-            Logger.debug("retmd: " + returnedMetadata)
-
-            val retmd =Json.toJson(returnedMetadata)
-            //Logger.debug("Contains Keys versus descriptors: " + map.containsKey("versus_descriptors"))
-            Logger.debug("Contains Fields versus descriptors: " + map.containsField("versus_descriptors"))
-            //if(map.containsKey("versus_descriptors")){
-            if(map.containsField("versus_descriptors")){
-              
-             val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
-             listd
-            }
-            else
-              //Json.obj(""->"")
-              null
-           
-          }
-        }
-
-      }
       case None => {
         Logger.error("Error getting file" + id)
-        Json.obj("Error in File"->id.stringify)
-
+        null
+        }
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match{
+          case Some(y)=>{
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+            Logger.debug("returned : "+ returnedMetadata)
+             val listd = Json.parse(returnedMetadata) \\ ("versus_descriptors")
+             if(listd.length>0){
+               Logger.info("metadata field found: Versus Descriptors Found")
+               listd(0)
+              }else{
+                 Logger.info("metadata field found: No versus descriptors")
+                 null
+              }
+          }
+          case None=>{
+            Logger.info("Metadata field not found")
+            null
+            }
+        }
       }
     }
-  }
-
+  } 
 
   def addUserMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
@@ -658,7 +659,7 @@ class MongoDBFileService @Inject() (
   def comment(id: UUID, comment: Comment) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
   }
-
+  
   def setIntermediate(id: UUID){
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
   }
@@ -879,3 +880,4 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
   }
 }
+

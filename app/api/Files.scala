@@ -68,6 +68,7 @@ import services.ExtractorMessage
 import scala.concurrent.Future
  
 import scala.util.control._
+import controllers.Utils
 
 
 /**
@@ -258,7 +259,8 @@ class Files @Inject()(
           Logger.debug("******ADD Versus Metadata:*****")
           val list = request.body \ ("versus_descriptors")
                     
-          files.addVersusMetadata(id, list)
+          //files.addVersusMetadata(id, list)
+          files.addVersusMetadata(id, request.body)
           
           Ok("Added Versus Descriptor")
         }
@@ -345,8 +347,8 @@ class Files @Inject()(
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  // TODO RK : need figure out if we can use https
-                  val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
+
+                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files$", "")
                   
                   /*---- Insert DTS Request to database---*/  
 
@@ -359,6 +361,7 @@ class Files @Inject()(
                   // index the file using Versus
                   current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 
+                  // TODO replace null with None 
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
 
 	            
@@ -441,8 +444,8 @@ class Files @Inject()(
             flags = flags + "+nopreviews"
 
           val key = "unknown." + "file." + fileType.replace("__", ".")
-          // TODO RK : need figure out if we can use https
-          val host = "http://" + request.host + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
+
+          val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
 
           // TODO replace null with None
           current.plugin[RabbitmqPlugin].foreach {
@@ -535,8 +538,8 @@ class Files @Inject()(
               
 	          // TODO RK need to replace unknown with the server name
 	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-	          // TODO RK : need figure out if we can use https
-	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
+	          
+	          val host = Utils.baseUrl(request) + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
 	          
 	          /*----- Insert DTS Requests  -------*/
 	          val clientIP = request.remoteAddress
@@ -625,11 +628,6 @@ class Files @Inject()(
   }
   
 
-
-
-
-////////////////////////////////////////////
-
   /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
@@ -666,8 +664,8 @@ class Files @Inject()(
                   }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  // TODO RK : need figure out if we can use https
-                  val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
+
+                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
                   val id = f.id
                   // index the file using Versus
                   current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
@@ -836,7 +834,7 @@ class Files @Inject()(
                   rdfPreviewList = rdfPreviewList :+ currPreview
                 }
               }
-              var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
+              var hostString = Utils.baseUrl(request) + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
               var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
 
               //RDF from export of file community-generated metadata to RDF
@@ -847,7 +845,7 @@ class Files @Inject()(
               else {
                 connectionChars = "?mappingNum="
               }
-              hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars
+              hostString = Utils.baseUrl(request) + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars
               val mappingsQuantity = Integer.parseInt(configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
               for (i <- 1 to mappingsQuantity) {
                 var currHostString = hostString + i
@@ -1016,8 +1014,6 @@ class Files @Inject()(
       }
   }
   
-  ////////////////
-
 
   /**
    * Find geometry file for given 3D file and geometry filename.
@@ -1373,7 +1369,6 @@ class Files @Inject()(
         "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
   
-  //////
 
   @ApiOperation(value = "Get file previews",
       notes = "Return the currently existing previews of the selected file (full description, including paths to preview files, previewer names etc).",
@@ -1605,5 +1600,3 @@ class Files @Inject()(
 }
 
 object MustBreak extends Exception {}
-
-

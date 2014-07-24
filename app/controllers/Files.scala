@@ -16,7 +16,8 @@ import fileutils.FilesUtils
 import api.WithPermission
 import api.Permission
 import javax.inject.Inject
-import java.util.Date 
+import java.util.Date
+import scala.sys.SystemProperties
 
 
 /**
@@ -55,6 +56,7 @@ class Files @Inject() (
     files.get(id) match {
       case Some(file) => {
         val previewsFromDB = previews.findByFileId(file.id)
+        Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
         val previewsWithPreviewer = {
           val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
@@ -69,7 +71,10 @@ class Files @Inject() (
             Map(file -> ff)
           }
         }
+        Logger.debug("Previewers available: " + previewsWithPreviewer) 
+        
         val sectionsByFile = sections.findByFileId(file.id)
+        Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>
           val p = previews.findBySectionId(s.id)
           if(p.length>0)
@@ -77,6 +82,7 @@ class Files @Inject() (
         	else
         		s.copy(preview = None)
         }
+        Logger.debug("Sections available: " + sectionsWithPreviews) 
 
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
@@ -218,8 +224,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
               // TODO RK need to replace unknown with the server name
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-              // TODO RK : need figure out if we can use https
-              val host = "http://" + request.host
+
+              val host = Utils.baseUrl(request)
               val id = f.id
 	          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
               /***** Inserting DTS Requests   **/  
@@ -335,8 +341,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            
 	            // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
-	            // TODO RK : need figure out if we can use https
-	            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+
+	            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
 	            val id = f.id
 	            
 	            /***** Inserting DTS Requests   **/  
@@ -553,8 +559,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+
+            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             val id = f.id
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
@@ -657,8 +663,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+
+            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             
             val id = f.id
             val path=f.path
@@ -760,8 +766,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
-            // TODO RK : need figure out if we can use https
-            val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+
+            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             val id = f.id
 
             // TODO replace null with None
@@ -868,8 +874,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				  	  
 					  // TODO RK need to replace unknown with the server name
 					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-							  // TODO RK : need figure out if we can use https
-							  val host = "http://" + request.host + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+
+							  val host = Utils.baseUrl(request) + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id
 							  
 							  /***** Inserting DTS Requests   **/  
@@ -1029,7 +1035,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   //        // TODO RK need to replace unknown with the server name
   //        val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
   //        // TODO RK : need figure out if we can use https
-  //        val host = "http://" + request.host + request.path.replaceAll("upload$", "")
+  //        val host = request.origin + request.path.replaceAll("upload$", "")
   //        val id = f.id.toString
   //        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
   //        current.plugin[ElasticsearchPlugin].foreach{

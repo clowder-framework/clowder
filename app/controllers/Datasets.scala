@@ -274,24 +274,15 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		//			        val key = "unknown." + "file."+ "application.x-ptm"
 					    	
 			                // TODO RK : need figure out if we can use https
-			                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
+			                val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
 		      
-			                //If uploaded file contains zipped files to be unzipped and added to the dataset, wait until the dataset is saved before sending extractor messages to unzip
-			                //and return the files
-			                if(!fileType.equals("multi/files-zipped")){
-						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
-						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
-					        }
-					        
 					        // add file to dataset 
 					        val dt = dataset.copy(files = List(f), author=identity)					        
 					        // TODO create a service instead of calling salat directly
 				            datasets.update(dt)				            
-				            
-				            if(fileType.equals("multi/files-zipped")){
+
 						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id, flags))}
 						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
-					        }
 					        
 					        val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 					        
@@ -409,7 +400,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          files.index(theFileGet.id)
 		          
 		          // TODO RK : need figure out if we can use https
-		          val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
+		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
 						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}

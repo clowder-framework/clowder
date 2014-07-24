@@ -38,6 +38,8 @@ object Permission extends Enumeration {
 		CreateTags,
 		DeleteTags,
 		CreateComments,
+		RemoveComments,
+		EditComments,
 		CreateNotes,
 		AddSections,
 		GetSections,
@@ -118,4 +120,3 @@ case class WithPermission(permission: Permission) extends Authorization {
 		}
 	}
 }
-

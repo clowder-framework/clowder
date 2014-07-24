@@ -102,5 +102,14 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
     var currentTime = Calendar.getInstance().getTime()
     Ok(views.html.extractionRequests(list_requests, list_requests.size, startTime, currentTime))
   }
+   
+   /**
+   * DTS Bookmarklet page
+   */
+   def getBookmarkletPage() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+
+      Ok(views.html.dtsbookmarklet(Utils.baseUrl(request)))
+  }
+
 
 }
