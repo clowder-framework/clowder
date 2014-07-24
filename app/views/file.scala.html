@@ -319,7 +319,7 @@
             </dl>
             
             <div class="row ds-section-sm">
-              <a href="@routes.Files.download(UUID(id))" class="btn btn-default pull-right" target="_blank">Download</a>
+              <a href="@routes.Files.download(UUID(id))" class="btn btn-default btn-large pull-right" target="_blank" title="Download File"><span class="glyphicon glyphicon-save"></span></a>
             </div>
 
             <div class="row ds-section-sm">
@@ -573,10 +573,6 @@
     				setTimeout(function(){checkForNewPreviews()}, 1000);
     			});
     		</script>
-
-		<div class="col-md-4">
-			<a href="@routes.Files.download(UUID(id))" class="btn btn-default btn-large pull-right" target="_blank" title="Download File"><span class="glyphicon glyphicon-save"></span></a>
-		</div>
 
         <div class="row">
             <div class="col-md-12">
