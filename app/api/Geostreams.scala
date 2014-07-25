@@ -284,12 +284,12 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sources: List[String], attributes: List[String], format: String) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String) =
     Action { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchDatapoints(since, until, geocode, stream_id, sources, attributes) match {
+          plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes) match {
             case Some(d) => {
               if (format == "csv") {
                 val configuration = play.api.Play.configuration
