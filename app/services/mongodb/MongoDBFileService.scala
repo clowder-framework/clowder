@@ -495,29 +495,22 @@ class MongoDBFileService @Inject() (
    * write it back to the versus_descriptors field of "metadata" to mongoDB
    *
    */
- /* def addVersusMetadata(id:UUID,json:JsValue){
-    val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject]
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
-    Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
-  }*/
-  
-  def addVersusMetadata(id:UUID,json:JsValue){
-    val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject]
-    val doc2=doc.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
-    VersusDAO.insert(new Versus(id,doc2),WriteConcern.Safe)
+ def addVersusMetadata(id:UUID,json:JsValue){
+    val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject].toMap
+              .asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
+    VersusDAO.insert(new Versus(id,doc),WriteConcern.Safe)
     Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
   } 
   
- def getVersusMetadata(id: UUID): JsValue = {
+ def getVersusMetadata(id: UUID): Option[JsValue] = {
     val versusDescriptor=VersusDAO.findOne(MongoDBObject("fileId" -> new ObjectId(id.stringify)))
     versusDescriptor.map{
       vdes=>
       	 val x=com.mongodb.util.JSON.serialize(vdes.asInstanceOf[Versus].descriptors("versus_descriptors"))
       	 Json.parse(x)
-    }.getOrElse(null)
+     }
   } 
  
-  
   /**
    * This is the previous code that adds Versus descriptors to the metadata. If the Versus extraction is carried out more than once, it takes care of it
    * by merging the extractions results into single list
@@ -526,8 +519,7 @@ class MongoDBFileService @Inject() (
    * 
    * This code will be deleted once we figure out where to add versus metadata
    */
- 
-  /*def addVersusMetadata(id: UUID, json: JsValue) {
+   /*def addVersusMetadata(id: UUID, json: JsValue) {
    
      Logger.debug("******MongoDB::::Adding Versus metadata to file " + id.toString )
 
@@ -598,42 +590,6 @@ class MongoDBFileService @Inject() (
   def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
- 
-/*
-  * 
-  * This returns the Versus descriptors in the metadata field of the File
-  * TODO: For more than one versus_descriptors object, result should return merged list
-  * This code will be deleted once we decided where the versus metadata will be added
-  * */ 
-  
- /*def getVersusMetadata6(id: UUID): JsValue = {
-    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
-      case None => {
-        Logger.error("Error getting file" + id)
-        null
-        }
-      case Some(x) => {
-        x.getAs[DBObject]("metadata") match{
-          case Some(y)=>{
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
-            Logger.debug("returned : "+ returnedMetadata)
-             val listd = Json.parse(returnedMetadata) \\ ("versus_descriptors")
-             if(listd.length>0){
-               Logger.info("metadata field found: Versus Descriptors Found")
-               listd(0)
-              }else{
-                 Logger.info("metadata field found: No versus descriptors")
-                 null
-              }
-          }
-          case None=>{
-            Logger.info("Metadata field not found")
-            null
-            }
-        }
-      }
-    }
-  } */
 
   def addUserMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to file " + id + " : " + json)
@@ -905,6 +861,6 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 object VersusDAO extends ModelCompanion[Versus,ObjectId]{
     val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Versus, ObjectId](collection = x.collection("versus")) {}
+    case Some(x) => new SalatDAO[Versus, ObjectId](collection = x.collection("versus.descriptors")) {}
   }
 }

@@ -95,7 +95,7 @@ trait FileService {
 
   def getTechnicalMetadataJSON(id: UUID): String
   
-  def getVersusMetadata(id:UUID): JsValue
+  def getVersusMetadata(id:UUID): Option[JsValue]
 
   def addVersusMetadata(id: UUID, json: JsValue)
 

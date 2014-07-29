@@ -431,18 +431,12 @@ class Extractions @Inject() (
                 } yield {
 
                   val status = computeStatus(rkeyResponse, file, l)
-
                   val jtags = FileOP.extractTags(file)
-
                   val jpreviews = FileOP.extractPreviews(id)
-
-
-                  //val vdescriptors = FileOP.extractVersusDescriptors(id)
-                  var vdescriptors=""
-                  if(files.getVersusMetadata(id)!=null){
-                	   vdescriptors=api.routes.Files.getVersusMetadataJSON(id).toString
-                  }
-
+                  val vdescriptors=files.getVersusMetadata(id) match {
+                  													case Some(vd)=>api.routes.Files.getVersusMetadataJSON(id).toString
+                  													case None=> ""
+                  													}
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
 

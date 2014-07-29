@@ -1271,12 +1271,10 @@ class Files @Inject()(
         case Some(file) =>
           val jtags = FileOP.extractTags(file)
           val jpreviews = FileOP.extractPreviews(id)
-          //val vdescriptors=FileOP.extractVersusDescriptors(id)
-          var vdescriptors=""
-          if(files.getVersusMetadata(id)!=null){
-              vdescriptors=api.routes.Files.getVersusMetadataJSON(id).toString
-          }
-          
+          val vdescriptors=files.getVersusMetadata(id) match {
+                  											  case Some(vd)=>api.routes.Files.getVersusMetadataJSON(id).toString
+                  										      case None=> ""
+                  											}
           Logger.debug("jtags: " + jtags.toString)
           Logger.debug("jpreviews: " + jpreviews.toString)
           Ok(Json.obj("file_id" -> id.toString, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors url"->vdescriptors))
@@ -1447,11 +1445,16 @@ class Files @Inject()(
       request =>
         files.get(id) match {
           case Some(file) => {
-            if(files.getVersusMetadata(id)!=null){
-              Ok(files.getVersusMetadata(id))
-            }else{
-            Ok("No Versus Metadata Found")
-          }
+             files.getVersusMetadata(id) match {
+             		case Some(vd)=>{
+             		    Logger.debug("versus Metadata found")
+             			Ok(files.getVersusMetadata(id).get)
+             		}
+             		case None=>{
+             		  Logger.debug("No versus Metadata found")
+             			Ok("No Versus Metadata Found")
+             		}
+              }
           }
           case None => {
             Logger.error("Error finding file" + id);
