@@ -317,7 +317,136 @@
                 <dt>Uploaded on:</dt>
                 <dd>@file.uploadDate</dd>
             </dl>
-            <a href="@routes.Files.download(UUID(id))" class="btn btn-default pull-right" target="_blank">Download</a>
+            
+            <div class="row ds-section-sm">
+              <a href="@routes.Files.download(UUID(id))" class="btn btn-default pull-right" target="_blank">Download</a>
+            </div>
+
+            <div class="row ds-section-sm">
+              <h3>Tags</h3>
+              <ul id="tagList">
+                  @file.tags.map { tag =>
+                    <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
+                  }
+                  @file.sections.map { section =>
+                    @section.tags.map { tag =>
+                      <li><a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a></li>
+                    }
+                  }
+              </ul>
+              <form class="form-inline requiresLogin">
+                <div class="input-group input-group-sm col-md-8"">
+                  <input type="text" id="tagField" class="form-control">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default btn-sm" id="tagB">Tag</button>
+                  </span>
+                </div>
+              </form>
+              <script language="javascript">
+                window["userDefined"] = false;
+              </script>
+              @if(user.isDefined) {
+                <script language="javascript">
+                  window["userDefined"] = true;
+                </script>
+              }
+              <script language="javascript">
+                function removeTag() {
+                  console.log("removing tag ");
+                  //alert($(this).attr("id"));
+                  var tagId = $(this).attr("id");
+                  
+                  var request = jsRoutes.api.Files.removeTag('@file.id').ajax({
+                    data: JSON.stringify({"tagId":tagId}),
+                    type: 'POST',
+                    contentType: "application/json"
+                  });
+                  request.done(function (response, textStatus, jqXHR){
+                    console.log("Response " + textStatus);
+                    $("#" + tagId).parents("li").remove();
+                  });
+                  request.fail(function (jqXHR, textStatus, errorThrown){
+                    console.error(
+                    "The following error occured: "+
+                    textStatus, errorThrown
+                    );
+                    //alert("ERROR: " + errorThrown +". Tag not removed from file." );         
+                    window.location = "../login"; // FIXME hardcoded
+                  });
+                  
+                  return false;
+                }
+              
+                function removeIconMouseIn() {
+                  $(this).find(".glyphicon-remove").fadeIn(100);
+                }
+
+                function removeIconMouseOut() {
+                  $(this).find(".glyphicon-remove").fadeOut(100);           
+                }
+
+                $(function() {
+                  if(window["userDefined"] == true)
+                    $("#tagList").children("li").each(function(){
+                      $(this).hover(
+                        removeIconMouseIn,removeIconMouseOut
+                      );
+                    });
+                  $("#tagList").find(".glyphicon-remove").click(removeTag);
+                  
+                  $('#tagB').click(function() {
+                    var tag = $('#tagField').val();
+                     
+                    var isTagPresent = false;
+                    $("#tagList").children("li").each(function (index, tagLi) {
+                      if($(tagLi).attr("name")===tag) {
+                        isTagPresent = true;
+                      }
+                    });
+        
+                    if (tag !== "" && isTagPresent != true) {
+                      console.log("submitting tag " + tag);
+                      var request = jsRoutes.api.Files.addTags('@file.id').ajax({
+                        data: JSON.stringify({"tags":[tag]}),
+                        type: 'POST',
+                        contentType: "application/json",
+                      });
+                       
+                      request.done(function (response, textStatus, jqXHR){
+                        console.log("Response " + response);
+                        var url = "../tags/search?tag=" + tag;
+                        $newTag = $("<li><a href='" + url + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
+                          /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
+                      $newTag.find(".glyphicon-remove").click(removeTag);*/                 
+                          $newTag.hover(removeIconMouseIn,removeIconMouseOut);
+                      $newTag.find(".glyphicon-remove").click(removeTag);
+                          $('#tagField').val("");
+                       });
+                  
+                      request.fail(function (jqXHR, textStatus, errorThrown){
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        window.location = "../login"; // FIXME hardcoded
+                      });
+                      return false;
+                    }
+                  });
+                  
+                  $('#tagField').keypress(function (e) {
+                  if (e.which == 13) {
+                    console.log("enter");
+                    $('#tagB').click();
+                    return false;
+                  }
+                });
+                
+              });
+            </script>           
+            @if(!user.isDefined) {
+              <script language="javascript">
+                $(".requiresLogin").css("display","none");
+              </script>
+            }
+            </div>
         </div>
     </div>
 

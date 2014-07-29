@@ -32,7 +32,8 @@ class Application  @Inject() (files: FileService) extends SecuredController {
    * Bookmarklet
    */
   def bookmarklet() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
-    Ok(views.html.bookmarklet(request.host)).as("application/javascript")
+    val protocol = Utils.protocol(request)
+    Ok(views.html.bookmarklet(request.host, protocol)).as("application/javascript")
   }
 
   /**

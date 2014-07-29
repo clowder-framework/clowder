@@ -20,10 +20,10 @@ case class CORSFilter() extends Filter{
     )
  
   def apply(f: (RequestHeader) => Future[SimpleResult])(request: RequestHeader): Future[SimpleResult] = {
-    Logger.info("[cors] filtering request to add cors")
+    Logger.trace("[cors] filtering request to add cors")
     if (isPreFlight(request)) {
-      Logger.info("[cors] request is preflight")
-      Logger.info(s"[cors] default allowed domain is $allowedDomain")
+      Logger.trace("[cors] request is preflight")
+      Logger.trace(s"[cors] default allowed domain is $allowedDomain")
       Future.successful(Default.Ok.withHeaders(
         "Access-Control-Allow-Origin" -> allowedDomain.orElse(request.headers.get("Origin")).getOrElse(""),
         "Access-Control-Allow-Methods" -> request.headers.get("Access-Control-Request-Method").getOrElse("*"),
@@ -31,8 +31,8 @@ case class CORSFilter() extends Filter{
         "Access-Control-Allow-Credentials" -> "true"
       ))
     } else {
-      Logger.info("[cors] request is normal")
-      Logger.info(s"[cors] default allowed domain is $allowedDomain")
+      Logger.trace("[cors] request is normal")
+      Logger.trace(s"[cors] default allowed domain is $allowedDomain")
       f(request).map{_.withHeaders(
         "Access-Control-Allow-Origin" -> allowedDomain.orElse(request.headers.get("Origin")).getOrElse(""),
         "Access-Control-Allow-Methods" -> request.headers.get("Access-Control-Request-Method").getOrElse("*"),

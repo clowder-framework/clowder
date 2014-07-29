@@ -108,7 +108,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
    */
    def getBookmarkletPage() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
 
-      Ok(views.html.dtsbookmarklet(request.host))
+      Ok(views.html.dtsbookmarklet(Utils.baseUrl(request)))
   }
 
 }
