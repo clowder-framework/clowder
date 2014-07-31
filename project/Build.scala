@@ -50,7 +50,13 @@ object ApplicationBuild extends Build {
     "postgresql" % "postgresql" % "8.1-407.jdbc3",
     "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
     "org.springframework" % "spring" % "2.5.6",
-    "org.scalatest" %% "scalatest" % "2.1.0" % "test"
+    //"org.scalatest" %% "scalatest" % "2.1.0" % "test"
+   // "org.scalatestplus" % "play_2.10" % "1.0.0" % "test"
+    "org.scalatestplus" %% "play" % "1.0.1" % "test"
+    "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
+     "org.mockito" % "mockito-core" % "1.9.5" % "test",
+     "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current % "test" exclude("org.specs2", "specs2-core_2.10") exclude("org.specs2", "specs2-junit_2.10") exclude("org.specs2", "specs2-mock_2.10") exclude("org.specs2", "specs2-matcher-extra_2.10") exclude("org.specs2", "") exclude("com.novocode", "junit-interface") exclude("com.google.guava", "guava") exclude("com.google.code.findbugs", "jsr305")
+    
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
