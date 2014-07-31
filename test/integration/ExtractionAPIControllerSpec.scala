@@ -54,13 +54,13 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
 		def onStart(app: App) { println("Fake Application Started") }
 	}))
 
-  var mockfiles = mock[FileService]
-  var mockExtractions = mock[ExtractionService]
-  var mockDTS = mock[ExtractionRequestsService]
-  var mockExtractors = mock[ExtractorService]
-  var mockPreviews = mock[PreviewService]
-  var mockRdf = mock[RdfSPARQLService]
-  var mockthumbnails = mock[ThumbnailService]
+  val mockfiles = mock[FileService]
+  val mockExtractions = mock[ExtractionService]
+  val mockDTS = mock[ExtractionRequestsService]
+  val mockExtractors = mock[ExtractorService]
+  val mockPreviews = mock[PreviewService]
+  val mockRdf = mock[RdfSPARQLService]
+  val mockthumbnails = mock[ThumbnailService]
 
   when(mockExtractors.getExtractorNames).thenReturn(List("ncsa.cv.face", "ncsa.ocr"))
   when(mockExtractors.getExtractorServerIPList).thenReturn(List("dts1.ncsa.illinois.edu", "141.142.220.244"))
@@ -74,7 +74,7 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
       app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
     }
 
-    "return List of name" in {
+    "return List of Extractors Names" in {
       val extractions_apicontroller = new api.Extractions(mockfiles, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails)
       val resultExNames = extractions_apicontroller.getExtractorNames.apply(FakeRequest())
       val bodyText = contentAsJson(resultExNames)
