@@ -27,7 +27,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Play
 
 /*
- * Integration Test for Extractions Api Controller 
+ * Integration/Unit Test for Extractions Api Controller 
  * @author Smruti Padhy 
  * 
  */
