@@ -94,12 +94,12 @@
 					@user match {
     					case Some(x) => {
     						<li>
-								<a  class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.logout" title="Logout"><span class="glyphicon glyphicon-log-out"></span> (@x.fullName)</a>
+								<a  class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.logout" title="Logout from the system"><span class="glyphicon glyphicon-log-out"></span> Logout (@x.fullName)</a>
 							</li>
 						}
     					case None => {
     						<li>
-								<a class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.login" title="Login"><span class="glyphicon glyphicon-log-in"></span></a>
+								<a class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.login" title="Login to the system"><span class="glyphicon glyphicon-log-in"></span> Login</a>
 							</li>
 						}
 					}

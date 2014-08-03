@@ -112,6 +112,7 @@
     </script>
     <script>
     	window.onload = function() {
+    		$("#selectingInputFiles").val("");
     		isPageLoaded = true;
     	}
     </script>
@@ -515,21 +516,21 @@
 							        }
 
 						        if(j <= tableLength)	    
-							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td class='file-list-cell'><a href='http://"+ window.location.host +"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' title='Delete File' onclick='removeFile(\""+fileId+"\",event,true)'><span class=\"glyphicon glyphicon-trash\"></span></a></td></tr>"
 							        		);
 						        else if(tableLength > 0)
-						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td class='file-list-cell'><a href='http://"+ window.location.host +"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' title='Delete File' onclick='removeFile(\""+fileId+"\",event,true)'><span class=\"glyphicon glyphicon-trash\"></span></a></td></tr>"
 							        		);
 						        else{
 						        	if($("#datasetFilesTable tbody").length == 0)
 						        		$("#datasetFilesTable").append("<tbody></tbody>");
-						        	$("#datasetFilesTable tbody").append("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody").append("<tr><td class='file-list-cell'><a href='http://"+ window.location.host +"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' title='Delete File' onclick='removeFile(\""+fileId+"\",event,true)'><span class=\"glyphicon glyphicon-trash\"></span></a></td></tr>"
 							        		);
 						        	}
     						}
@@ -602,8 +603,8 @@
 					var hostIp = "@play.Play.application().configuration().getString("hostIp")";
 				</script> 
 				<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
-				<a href="#myModal" class="btn btn-info btn-large" data-toggle="modal" id="fileUploadBtn" title="Add New File to Dataset">
-				    <span class="glyphicon glyphicon-export"></span>
+				<a href="#myModal" class="btn btn-info active" data-toggle="modal" id="fileUploadBtn" title="Add New File to Dataset" role="button">
+				    <span class="glyphicon glyphicon-export"></span> Add
 				</a>
 				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 				    <div class="modal-dialog">
@@ -611,7 +612,7 @@
 				      @form(action = routes.Files.uploaddnd(dataset.id), 'enctype -> "multipart/form-data", 'role -> "form") {
 				        <div class="modal-header">
 				          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				          <h4 class="modal-title">Add file</h4>
+				          <h4 class="modal-title">Upload File</h4>
 				        </div>
 				        <div class="modal-body">
 				 		  <div class="form-group">
@@ -626,7 +627,7 @@
 						  </div>
 				        </div>
 				        <div class="modal-footer">
-				          <button type="submit" class="btn btn-primary" title="Upload File"><span class="glyphicon glyphicon-open"></span></button>				          
+				          <button type="submit" class="btn btn-primary" title="Upload File"><span class="glyphicon glyphicon-open"> Upload</span></button>				          
 				        </div>
 				      }
 				      </div><!-- /.modal-content -->
@@ -634,16 +635,18 @@
 				  </div><!-- /.modal -->
 				</div>
 								
-				<div class="ui-widget requiresLogin" id="filesUi" style="padding-top:15px;">
+				<div class="ui-widget requiresLogin" id="filesUi" style="padding-top:15px;">                 
 					<select id="filesAddSelect" data-inputid="selectingInputFiles" data-errorid="doesNotExistErrorFiles">
+					<option value="" selected="selected"></option>					  
 					@filesOutside.map { file =>  
 						<option value="@(file.id)">@(file.filename)</option>
 					}					  
 					</select>
-					<button class="btn btn-primary btn-large" id="addFileBtn" style="vertical-align:center;" title="Add Existing File">
+					<button class="btn btn-primary btn-small" id="addFileBtn" style="vertical-align:center;" title="Add Existing File">
 					   <span class="glyphicon glyphicon-plus"></span>
 					</button>
 					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorFiles" >File does not exist or already added.</span>
+					
 				</div>
 					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
 					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
@@ -660,31 +663,32 @@
 							}
 							
 							var selectedId = $("#filesAddSelect").val();
-							var selectedName = $("#filesAddSelect option:selected").text();
+							var selectedName = $("#filesAddSelect option:selected").text();							
 							var request = $.ajax({
 							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
+							       url: "http://"+ window.location.host +"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
 							     });  
+							
 							request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);	        
 						        $("#filesAddSelect option[value=" + selectedId + "]").remove();
 						        $("#selectingInputFiles").val("");
-						        var i = 1;
-						        
-							});	
+						        var i = 1;	
+							});
+							
 							request.fail(function (jqXHR, textStatus, errorThrown){
 					    		console.error(
 					        		"The following error occured: "+
 					        		textStatus, errorThrown		            
 					    			);
-					    		alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." );
-					 			});				
+					    		alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." + textStatus);
+					 			});		
 						});
 						
 						function detachFile(fileId, fileName,event){
 							var request = $.ajax({
 							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
+							       url: "http://"+ window.location.host +"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
 							     });
 							request.done(function (response, textStatus, jqXHR){
 								console.log("Response " + response);	        
@@ -745,7 +749,7 @@
 							}					  
 							</select>
 							<span class="input-group-btn">
-								<button class="btn btn-primary btn-large" id="addCollBtn" titel="Add Dataset To Collection" style="vertical-align:center;">
+								<button class="btn btn-primary btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
                                     <span class="glyphicon glyphicon-plus"></span>
                                 </button>
 							</span>
@@ -949,7 +953,7 @@
 						     request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);
 						        var url = "../tags/search?tag=" + tag;
-						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
+						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
 						        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
      						$newTag.find(".glyphicon-remove").click(removeTag);*/     						
 						        $newTag.hover(removeIconMouseIn,removeIconMouseOut);

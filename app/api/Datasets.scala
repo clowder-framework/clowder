@@ -157,13 +157,21 @@ class Datasets @Inject()(
                   }
                 }
                 Logger.info("Adding file to dataset completed")
-              } else Logger.info("File was already in dataset.")
+              } else {
+                  Logger.info("File was already in dataset.")
+              }
               Ok(toJson(Map("status" -> "success")))
             }
-            case None => Logger.error("Error getting file" + fileId); InternalServerError
+            case None => {
+                Logger.error("Error getting file" + fileId)
+                BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+            }
           }
         }
-        case None => Logger.error("Error getting dataset" + dsId); InternalServerError
+        case None => {
+            Logger.error("Error getting dataset" + dsId)
+            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+        }
       }
   }
 
