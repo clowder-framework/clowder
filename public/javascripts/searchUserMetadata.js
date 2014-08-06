@@ -391,9 +391,9 @@ $(function() {
 						        	}					        	
 						        	var datasetThumbnail = "";
 						        	if(respJSON[i].thumbnail != "None")
-						        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+						        		datasetThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
 						        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
-						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
 						        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
 						        								+ "<td>" + createdDate + "</td>"
 						        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
@@ -411,9 +411,9 @@ $(function() {
 						        	}					        	
 						        	var fileThumbnail = "";
 						        	if(respJSON[i].thumbnail != "None")
-						        		fileThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+						        		fileThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
 						        							+ "alt='Thumbnail of " + respJSON[i].filename + "' height='120' width='120'>";
-						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
 						        								+ "/files/" + respJSON[i].id + "'>"+ respJSON[i].filename + "</a></td>"
 						        								+ "<td>" + respJSON[i].contentType + "</td>"
 						        								+ "<td>" + respJSON[i].dateCreated + "</td>"

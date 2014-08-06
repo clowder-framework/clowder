@@ -1,7 +1,8 @@
 (function ($, Configuration) {
 
-  var fileUrl = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.url;
-  var pathJs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.jsPath + "/";
+	var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
+	var fileUrl = hostAddress + Configuration.url;
+	var pathJs = hostAddress + Configuration.jsPath + "/";
   
   var width = 750;
   var height = 550;

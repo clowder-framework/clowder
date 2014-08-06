@@ -3,7 +3,7 @@ function removeFile(fileId,event, reloadPage){
 	
 	var request = $.ajax({
 	       type: 'POST',
-	       url: "http://"+hostIp+":"+window.location.port+"/api/files/"+fileId+"/remove"
+	       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/files/"+fileId+"/remove"
 	     });
 	request.done(function (response, textStatus, jqXHR){
         console.log("Response " + response);
