@@ -4,11 +4,13 @@ function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, all
 	checkAllowDownload = allowDownload;
 	checkLicenseType = licenseType;
 	
-	if (licenseType == 'license1') {
+	if (licenseType == 'license1' || licenseType == 'license2') {
 		if (rightsHolder == null || rightsHolder.trim().length == 0){
         	//No rights holder set, so default to "Author"
         	rightsHolder = authorName;
         }
+	}
+	if (licenseType == 'license1') {
 		if (licenseText == null || licenseText.trim().length == 0) {
 			licenseText = 'All Rights Reserved';
 		}
@@ -22,34 +24,34 @@ function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, all
 	else if (licenseType == 'license2') {
 
 		//No checkboxes selected
-		if (licenseText == "Attribution-NonCommercial-NoDerivs" || licenseText == "by-nc-nd") {
-			rightsHolder = '<img src="' + imageBase + '/cc-by-nc-nd.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/" target="_blank">Attribution-NonCommercial-NoDerivs</a>';
+		if (licenseText == "Attribution-NonCommercial-NoDerivs" || licenseText == "by-nc-nd") {			
+			licenseText = '<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/" target="_blank"><img src="' + imageBase + 
+			'/cc-by-nc-nd.png" alt="Attribution-NonCommercial-NoDerivs" title="Attribution-NonCommercial-NoDerivs" /></a>';
 		}
 		//Only commercial selected
 		else if (licenseText == "Attribution-NoDerivs" || licenseText == "by-nd") {
-			rightsHolder = '<img src="' + imageBase + '/cc-by-nd.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-nd/3.0/" target="_blank">Attribution-NoDerivs</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-nd/3.0/" target="_blank"><img src="' + imageBase + 
+			'/cc-by-nd.png" alt="Attribution-NoDerivs" title="Attribution-NoDerivs" /></a>';
 		}
 		//Only remixing selected
 		else if (licenseText == "Attribution-NonCommercial" || licenseText == "by-nc") {
-			rightsHolder = '<img src="' + imageBase + '/cc-by-nd.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-nc/3.0/" target="_blank">Attribution-NonCommercial</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-nc/3.0/" target="_blank"><img src="' + imageBase + 
+			'/cc-by-nd.png" alt="Attribution-NonCommercial" title="Attribution-NonCommercial" /></a>';
 		}
 		//Remixing and Sharealike selected
 		else if (licenseText == "Attribution-NonCommercial-ShareAlike" || licenseText == "by-nc-sa") {
-			rightsHolder = '<img src="' + imageBase + '/cc-by-nc-sa.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank">Attribution-NonCommercial-ShareAlike</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank"><img src="' + imageBase + 
+			'/cc-by-nc-sa.png" alt="Attribution-NonCommercial-ShareAlike" title="Attribution-NonCommercial-ShareAlike" /></a>';
 		}
 		//All checkboxes selected
 		else if (licenseText == "Attribution-ShareAlike" || licenseText == "by-sa") {
-			rightsHolder = '<img src="' + imageBase + '/cc-by-sa.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by-sa/3.0/" target="_blank">Attribution-ShareAlike</a>';
+			licenseText = '<a href="http://creativecommons.org/licenses/by-sa/3.0/" target="_blank"><img src="' + imageBase + 
+			'/cc-by-sa.png" alt="Attribution-ShareAlike" title="Attribution-ShareAlike" /></a>';
 		}
 		//Commercial and Remixing selected
 		else if (licenseText == "Attribution" || licenseText == "by-nc-nd") {
-			rightsHolder = '<img src="' + imageBase + '/cc-by.png" alt="' + rightsHolder + '" />';
-			licenseText = '<a href="http://creativecommons.org/licenses/by/3.0/" target="_blank">Attribution</a>';			
+			licenseText = '<a href="http://creativecommons.org/licenses/by/3.0/" target="_blank"><img src="' + imageBase + 
+			'/cc-by.png" alt="Attribution" title="Attribution" /></a>';			
 		}
 		else {
 			rightsHolder = 'Creative Commons';
@@ -57,8 +59,9 @@ function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, all
 		}
 	}
 	else if (licenseType == 'license3') {
-			rightsHolder = '<img src="' + imageBase + '/cc-pd.png" alt="' + rightsHolder + '" />'
-			licenseText = '<a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">Public Domain Dedication</a>';
+			rightsHolder = 'Public Domain Dedication';
+			licenseText = '<a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank"><img src="' + imageBase + 
+			'/cc-pd.png" alt="Public Domain Dedication" title="Public Domain Dedication" /></a>';
 	}
 	else {
 		alert('Extra case!!');
@@ -78,13 +81,15 @@ function updateData(id, imageBase, sourceObject, authorName) {
 	var licenseUrl = $('input[name=licenseurl]').val();
 	var allowDownload = $('input[name=allowDownload]').prop('checked').toString(); 
 
-	if (licenseType == "license1") {
+	if (licenseType == "license1" || licenseType == "license2") {
 		if (rightsHolder == null || rightsHolder.trim().length == 0) {
 			//for this license type, rights holder can't be null. default to Author
 			rightsHolder = authorName;
 			//$('#ownrights').trigger('click');
 		}
-
+	}
+	
+	if (licenseType == "license1") {
 		if (licenseText == null || licenseText.trim().length == 0) {
 			licenseText = "All Rights Reserved";
 		}
@@ -95,7 +100,6 @@ function updateData(id, imageBase, sourceObject, authorName) {
 		}
 	}
 	if (licenseType == "license2") {
-		//Change the rightsHolder
 
 		var commBox = $('#commercial');
 		var remixBox = $('#remixing');
@@ -103,37 +107,31 @@ function updateData(id, imageBase, sourceObject, authorName) {
 
 		//No checkboxes selected
 		if (!commBox.prop('checked') && !remixBox.prop('checked') && !shareBox.prop('checked')) {
-			rightsHolder = "Creative Commons";
 			licenseText = "by-nc-nd";
 			licenseUrl = "http://creativecommons.org/licenses/by-nc-nd/3.0/";
 		}
 		//Only commercial selected
 		else if (commBox.prop('checked') && !remixBox.prop('checked') && !shareBox.prop('checked')) {
-			rightsHolder = "Creative Commons";
 			licenseText = "Attribution-NoDerivs";
 			licenseUrl = "http://creativecommons.org/licenses/by-nd/3.0/";
 		}
 		//Only remixing selected
 		else if (!commBox.prop('checked') && remixBox.prop('checked') && !shareBox.prop('checked')) {
-			rightsHolder = "Creative Commons";
 			licenseText = "Attribution-NonCommercial";
 			licenseUrl = "http://creativecommons.org/licenses/by-nc/3.0/";
 		}
 		//Remixing and Sharealike selected
 		else if (!commBox.prop('checked') && remixBox.prop('checked') && shareBox.prop('checked')) {
-			rightsHolder = "Creative Commons";
 			licenseText = "Attribution-NonCommercial-ShareAlike";
 			licenseUrl = "http://creativecommons.org/licenses/by-nc-sa/3.0/";
 		}
 		//All checkboxes selected
 		else if (commBox.prop('checked') && remixBox.prop('checked') && shareBox.prop('checked')) {
-			rightsHolder = "Creative Commons";
 			licenseText = "Attribution-ShareAlike";
 			licenseUrl = "http://creativecommons.org/licenses/by-sa/3.0/";
 		}
 		//Commercial and Remixing selected
 		else if (commBox.prop('checked') && remixBox.prop('checked') && !shareBox.prop('checked')) {
-			rightsHolder = "Creative Commons";
 			licenseText = "Attribution";
 			licenseUrl = "http://creativecommons.org/licenses/by/3.0/";
 		}

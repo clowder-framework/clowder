@@ -15,8 +15,8 @@ Used By: dataset.scala.html, file.scala.html
 
 @if(user.isDefined) {
 	<form class="form-inline" id="form1">
-	   <table style="width: 100%;">
-	       <tr>
+	   <table class="license1 license2 hidden" style="width: 100%;">
+	       <tr class="license1 license2 hidden">
 		       <td colspan="2"><input type="checkbox" id="ownrights" value="yes">  I own the rights</td>
 		   </tr>
 		   <tr>
@@ -59,11 +59,11 @@ Used By: dataset.scala.html, file.scala.html
 		</table>		
 		<br>
 		<button class="btn btn-primary" title="Update License Information" onclick="return updateData('@id', '@routes.Assets.at("images")', '@sourceObject', '@authorName')">
-		  <span class="glyphicon glyphicon-edit"></span>
+		  <span class="glyphicon glyphicon-edit"></span> Submit
 		</button>
 		<!-- <button class="btn btn-default" onclick="return updateInterface();">Update</button> -->
 		<button class="btn btn-default" title="Close Editor" onclick="return closeEdit();">
-		  <span class="glyphicon glyphicon-chevron-up"></span>
+		  <span class="glyphicon glyphicon-chevron-up"></span> Close
 		</button>
 	</form>
 	
@@ -75,7 +75,8 @@ Used By: dataset.scala.html, file.scala.html
 	
 	var currentUserName = "@user.get.fullName"; 
     
-    $(document).ready(function() {         
+	
+    $(document).ready(function() {        
         //Will have to modify the if check to see if there is data that specifies what should be selected
         //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
         //describing the license rights, the URL for the license, and whether or not downloading is 
@@ -106,16 +107,31 @@ Used By: dataset.scala.html, file.scala.html
         else {
             //license data is present 
 
-            $radios.filter("[value=" + licenseType + "]").trigger('click');            
-            
-            if (rightsHolder == currentUserName) {
-                $('#ownrights').trigger('click');
-            }                        
+            if (licenseType != "license3") {
+            	$radios.filter("[value=license3]").trigger('click');
+            	$radios.filter("[value=" + licenseType + "]").trigger('click');	
+            }
             else {
-                if (licenseType == "license1") {                	
-                    if (rightsHolder == null || rightsHolder.trim().length == 0){
+            	$radios.filter("[value=license1]").trigger('click');
+                $radios.filter("[value=" + licenseType + "]").trigger('click');
+            }
+
+            if (rightsHolder == currentUserName) {
+            	if (!$('#ownrights').prop('checked')) {
+            	    $('#ownrights').trigger('click');
+            	}
+            }                        
+            else {            	
+                if (licenseType == "license1" || licenseType == 'license2') {
+                    if (rightsHolder == null || rightsHolder.trim().length == 0){                    	
                     	//No rights holder set, so default to "Author"
-                    	$('input[name=ownername]').val(authorName);
+                    	$('input[name=ownername]').val("@authorName");
+                    	//If Author is same as current user, trigger the box.
+                    	if ("@authorName" == currentUserName) {
+                    		if (!$('#ownrights').prop('checked')) {
+                                $('#ownrights').trigger('click');
+                            }
+                    	}
                     }
                     else {
                         //In this case, the rightsHolder is valid free text
@@ -151,31 +167,34 @@ Used By: dataset.scala.html, file.scala.html
                 
                 if (licenseText == "Attribution-NoDerivs") {
                     //Only commercial checked
-                    commBox.attr('checked', true);  
+                    commBox.attr('checked', true);
+                    localShareBox.attr("disabled", true);
                 }
                 else if (licenseText == "Attribution-NonCommercial") {
                     //Only re-mixing checked
-                    remixBox.attr('checked', true);  
+                    remixBox.attr('checked', true);
+                    localShareBox.attr("disabled", false);
                 }
                 else if (licenseText == "Attribution-NonCommercial-ShareAlike") {
                     //Only re-mixing and share-alike checked
                     remixBox.attr('checked', true);  
                     shareBox.attr('checked', true);
+                    localShareBox.attr("disabled", false);
                 } 
                 else if (licenseText == "Attribution-ShareAlike") {
                     //All checkboxes checked
                     remixBox.attr('checked', true);  
                     shareBox.attr('checked', true);
                     commBox.attr('checked', true);
+                    localShareBox.attr("disabled", false);
                 } 
                 else if (licenseText == "Attribution") {
                     //Only re-mixing and commercial checked
                     remixBox.attr('checked', true);  
                     commBox.attr('checked', true);
+                    localShareBox.attr("disabled", false);
                 } 
                 
-                //In this case, set the fields to the licenseText
-                $('input[name=ownername]').val(licenseText);
                 $('input[name=licensedesc]').val(licenseText);
             }                        
         }
@@ -218,20 +237,20 @@ Used By: dataset.scala.html, file.scala.html
       });
 	  
 	  //Handle the de-select and select of remixing which needs to alter the status of share-alike
-	  var remixBox = $('#remixing');
-	  var shareBox = $('#sharealike');
-	  remixBox.change( function() {
-		 if (!remixBox.prop('checked')) {
-			 shareBox.attr('checked', false);
-			 shareBox.attr("disabled", true);
+	  var localRemixBox = $('#remixing');
+	  var localShareBox = $('#sharealike');
+	  localRemixBox.change( function() {
+		 if (!localRemixBox.prop('checked')) {
+			 localShareBox.attr('checked', false);
+			 localShareBox.attr("disabled", true);
 		 } 
 		 else {
-			 shareBox.attr("disabled", false);
+			 localShareBox.attr("disabled", false);
 		 }
 	  });
 	  
 	  //Handle the change of selection for the license type 
-	  $('input[name=type]').change( function() {
+	  $('input[name=type]').change( function() {		  
 		  var klass = '.' + $(this).val();
 		  updateLicenseForm(klass);
 	  });
