@@ -483,6 +483,16 @@ class MongoDBDatasetService @Inject() (
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
+  /**
+   * Implementation of updateLicenseing defined in services/DatasetService.scala.
+   */
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {      
+      val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
+      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
+          $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
+          false, false, WriteConcern.Safe);      
+  }
+  
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
@@ -864,3 +874,18 @@ object DatasetXMLMetadata extends ModelCompanion[DatasetXMLMetadata, ObjectId] {
     case Some(x) => new SalatDAO[DatasetXMLMetadata, ObjectId](collection = x.collection("datasetxmlmetadata")) {}
   }
 }
+
+/**
+ * ModelCompanion object for the models.LicenseData class. Specific to MongoDB implementation, so should either
+ * be in it's own utility class within services, or, as it is currently implemented, within one of the common
+ * services classes that utilize it.
+ */
+object LicenseData extends ModelCompanion[LicenseData, ObjectId] {
+//  val collection = MongoConnection()("test-alt")("licensedata")
+//  val dao = new SalatDAO[LicenseData, ObjectId](collection = collection) {}
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[LicenseData, ObjectId](collection = x.collection("licensedata")) {}
+  }
+}
+

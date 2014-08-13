@@ -164,6 +164,7 @@ class MongoDBFileService @Inject() (
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
 
+    //No LicenseData needed here, as on creation, default arg handles it. MMF - 5/2014
     Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
   }
 
@@ -633,6 +634,16 @@ class MongoDBFileService @Inject() (
 
   def findIntermediates(): List[File] = {
     FileDAO.find(MongoDBObject("isIntermediate" -> true)).toList
+  }
+  
+  /**
+   * Implementation of updateLicenseing defined in services/FileService.scala.
+   */
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {      
+      val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
+      val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
+          $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
+          false, false, WriteConcern.Safe);      
   }
 
   // ---------- Tags related code starts ------------------
