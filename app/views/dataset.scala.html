@@ -598,11 +598,11 @@
                         <p>
                          @if(user.isDefined) {
                             <a class="btn btn-info btn-large accordion-toggle collapsed" data-toggle="collapse"
-                               data-parent="#accordion6" href="#collapseSix" id="editabout" style="padding-left:2px;"
+                               data-parent="#accordion7" href="#collapseSeven" id="editabout" style="padding-left:2px;"
                                title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
                          }
                     </div>
-                    <div id="collapseSix" class="accordion-body collapse" style="padding:5px 10px 5px 10px;">
+                    <div id="collapseSeven" class="accordion-body collapse" style="padding:5px 10px 5px 10px;">
                     <div class="panel panel-info">
                         <div class="panel-body">
                         @if(user.isDefined) {
@@ -623,8 +623,8 @@
                                 </table>
                                 <br>
                                 
-                                <button class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');" title="Update Information"><span class="glyphicon glyphicon-edit"></span></button>
-                                <button class="btn btn-default" onclick="return closeAboutEdit();" title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span></button>
+                                <button class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');" title="Update Information"><span class="glyphicon glyphicon-edit"></span> Submit</button>
+                                <button class="btn btn-default" onclick="return closeAboutEdit();" title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span> Close</button>
                              </form>
                         }
                         </div>
@@ -644,7 +644,7 @@
             	  
             	  //Close the edit form
                   $("#editabout").addClass('collapsed');
-                  $("#collapseSix").collapse('toggle');      
+                  $("#collapseSeven").collapse('toggle');      
                   return false;
               }
               
