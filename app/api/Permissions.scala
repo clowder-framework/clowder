@@ -33,6 +33,7 @@ object Permission extends Enumeration {
 		CreateTags,
 		DeleteTags,
 		UpdateDatasetInformation,
+		UpdateLicense,
 		CreateComments,
 		RemoveComments,
 		EditComments,
