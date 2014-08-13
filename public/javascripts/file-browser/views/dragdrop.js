@@ -85,7 +85,7 @@ function UploadFile(file) {
 		
 		fd.append("File",file);
 		//xhr.open("POST", "http://localhost:9000/uploadDragDrop", true);
-		xhr.open("POST", "http://"+Configuration.hostIp+":"+window.location.port+"/uploadDragDrop", true);
+		xhr.open("POST", window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/uploadDragDrop", true);
 		console.log("File ready to send ...");
 		xhr.send(fd);
 		//xhr.send(file);
@@ -156,7 +156,7 @@ function Output(msg,mgid) {
 var submitBtn=document.getElementById('submit-button-id');
 submitBtn.onclick=function(evt){
 	//window.location.href="http://localhost:9000/queries/"+fileId+"/similar";
-	window.location.href="http://"+Configuration.hostIp+":"+window.location.port+"/queries/"+fileId+"/similar";
+	window.location.href=window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/queries/"+fileId+"/similar";
 }
 
 }(jQuery, Configuration));

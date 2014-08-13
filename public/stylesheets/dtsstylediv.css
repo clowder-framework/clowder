@@ -59,9 +59,9 @@ img.small {
 }
 
 .dts-thumbnail {
-	max-height: 100px;
-	max-width: 200px;
-	width: auto;
+	max-height: 100px !important;
+	max-width: 200px !important;
+	width: auto !important;
 }
 
 .dts-dl-horizontal dt {
@@ -74,7 +74,10 @@ img.small {
     margin-left: 0 !important;
 }
 
-.dts-top-buffer { margin-top:20px; }
+.dts-top-buffer { 
+  min-width: 600px !important;
+  margin-top:20px; 
+}
 
 .dts-spinner {
   display: inline-block;
