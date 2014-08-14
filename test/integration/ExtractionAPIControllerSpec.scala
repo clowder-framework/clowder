@@ -47,10 +47,7 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
     "services.RabbitmqPlugin",
     "services.VersusPlugin")
 
-  val includedPlugins = List( //    "services.mongodb.MongoUserService"
-  )
-
-  implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins, additionalPlugins = includedPlugins,withGlobal = Some(new GlobalSettings() {
+  implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins, withGlobal = Some(new GlobalSettings() {
 		def onStart(app: App) { println("Fake Application Started") }
 	}))
 
@@ -69,12 +66,8 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
   doNothing().when(mockExtractors).insertServerIPs(List("dts1.ncsa.illinois.edu", "141.142.220.244"))
   doNothing().when(mockExtractors).insertInputTypes(List("image", "text"))
 
-  "The OneAppPerSuite trait" must {
-    "provide a FakeApplication" in {
-      app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
-    }
-
-    "return List of Extractors Names" in {
+  "The OneAppPerSuite trait for Extraction API Controller get actions" must {
+     "return List of Extractors Names" in {
       val extractions_apicontroller = new api.Extractions(mockfiles, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails)
       val resultExNames = extractions_apicontroller.getExtractorNames.apply(FakeRequest())
       val bodyText = contentAsJson(resultExNames)
@@ -100,10 +93,6 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
       info(test.toString)
       bodyText mustBe test
     }
-
-    "start the FakeApplication" in {
-      Play.maybeApplication mustBe Some(app)
-    }
-  }
+   }
 
 }
