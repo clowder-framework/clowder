@@ -9,13 +9,14 @@ import play.api.libs.json.JsSuccess
  */
 object VersusSimilarityResult {
 
-  case class VersusSimilarityResult(val docID: String, val proximity: Double)
+  case class VersusSimilarityResult(val docID: String, val proximity: Double, val maxProximity:Double)
 
   implicit object VersusSimilarityResult extends Reads[VersusSimilarityResult] {
     def reads(json: JsValue) = {
       val maybedocID: String = (json \ "docID").as[String]
       val maybeProx: Double = (json \ "proximity").as[Double]
-      JsSuccess(VersusSimilarityResult(maybedocID, maybeProx))
+       val maybeMaxProx: Double = (json \ "maxProximity").as[Double]
+      JsSuccess(VersusSimilarityResult(maybedocID, maybeProx, maybeMaxProx))
     }
   }
 }

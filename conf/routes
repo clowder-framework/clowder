@@ -90,6 +90,8 @@ GET      /searchbyURL                                                        @co
 GET      /searchbyfeature                                                    @controllers.Search.searchMultimediaIndex(section_id: UUID)
 GET      /files/:id/similar                                                  @controllers.Search.findSimilarFile(id: UUID)
 GET      /queries/:id/similar                                                @controllers.Search.findSimilar(id: UUID)
+POST 	/queries/similarWeightedIndexes						@controllers.Search.findSimilarWeightedIndexes()
+
 
 # Previewers
 GET      /previewers/list                                                    controllers.Previewers.list
