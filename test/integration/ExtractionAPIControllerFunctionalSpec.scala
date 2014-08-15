@@ -1,19 +1,11 @@
 package integration
 
-import org.scalatest.Assertions._
 import play.api.test.FakeApplication
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import org.mockito.Mockito.when
-import org.scalatest.mock.MockitoSugar._
-import org.mockito.Mockito.doNothing
-import services.ExtractorService
-import services.ExtractionService
-import services.ExtractionRequestsService
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.Logger
-import unit.UnitSpec
 import org.scalatestplus.play.OneAppPerSuite
 import org.scalatestplus.play.PlaySpec
 import play.api.Play
