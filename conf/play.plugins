@@ -15,3 +15,4 @@
 #10005:services.PostgresPlugin
 #10006:services.FileDumpService
 #10008:services.RDFUpdateService
+10009:services.irods.IRODSPlugin
