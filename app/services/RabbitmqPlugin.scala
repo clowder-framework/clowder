@@ -194,7 +194,7 @@ def getChannelInfo(cid: String): Future[Response]={
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
 
   def receive = {
-    case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags) => {
+    case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey) => {
       var theDatasetId = ""
       if(datasetId != null)
         theDatasetId = datasetId.stringify
@@ -205,7 +205,8 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
         "fileSize" -> Json.toJson(fileSize),
         "host" -> Json.toJson(host),
         "datasetId" -> Json.toJson(theDatasetId),
-        "flags" -> Json.toJson(flags)
+        "flags" -> Json.toJson(flags),
+        "secretKey" -> Json.toJson(secretKey)
       )
       // add extra fields
       metadata.foreach(kv => msgMap.put(kv._1, Json.toJson(kv._2)))
@@ -237,7 +238,9 @@ case class ExtractorMessage(
   metadata: Map[String, String],
   fileSize: String,
   datasetId: UUID,
-  flags: String)
+  flags: String,
+  secretKey: String = play.api.Play.configuration.getString("commKey").getOrElse("")
+)
 
 class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(channel) {
 
