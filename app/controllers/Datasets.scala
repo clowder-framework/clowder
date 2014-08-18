@@ -14,8 +14,10 @@ import fileutils.FilesUtils
 import api.Permission
 import javax.inject.Inject
 import scala.Some
+import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
+import org.apache.commons.lang.StringEscapeUtils
 
 
 /**
@@ -24,6 +26,7 @@ import api.WithPermission
  * @author Luigi Marini
  *
  */
+
 class Datasets @Inject()(
   datasets: DatasetService,
   files: FileService,
@@ -31,7 +34,9 @@ class Datasets @Inject()(
   comments: CommentService,
   sections: SectionService,
   extractions: ExtractionService,
+  dtsrequests:ExtractionRequestsService,
   sparql: RdfSPARQLService) extends SecuredController {
+
 
   object ActivityFound extends Exception {}
 
@@ -43,6 +48,7 @@ class Datasets @Inject()(
       "name" -> nonEmptyText,
       "description" -> nonEmptyText
     )
+      //No LicenseData needed here, as on creation, default arg handles it. MMF - 5/2014
       ((name, description) => Dataset(name = name, description = description, created = new Date, author = null))
       ((dataset: Dataset) => Some((dataset.name, dataset.description)))
   )
@@ -94,6 +100,13 @@ class Datasets @Inject()(
           next = formatter.format(datasetList.last.created)
         }
       }
+      
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part 
+      //of the datasets names or descriptions
+      val aBuilder = new StringBuilder()
+      for (aDataset <- datasetList) {
+          decodeDatasetElements(aDataset)
+      }
       Ok(views.html.datasetList(datasetList, prev, next, limit))
   }
 
@@ -108,7 +121,7 @@ class Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {
           val filesInDataset = dataset.files.map(f => files.get(f.id).get)
-
+          
           //Search whether dataset is currently being processed by extractor(s)
           var isActivity = false
           try {
@@ -124,6 +137,7 @@ class Datasets @Inject()(
 
 
           val datasetWithFiles = dataset.copy(files = filesInDataset)
+          decodeDatasetElements(datasetWithFiles)
           val previewers = Previewers.findPreviewers
           val previewslist = for (f <- datasetWithFiles.files) yield {
             val pvf = for (p <- previewers; pv <- f.previews; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield {
@@ -170,6 +184,20 @@ class Datasets @Inject()(
         }
       }
   }
+  
+  /**
+   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   * 
+   * Currently, the following dataset elements are encoded:
+   * name
+   * description
+   *  
+   */
+  def decodeDatasetElements(dataset: Dataset) {      
+      dataset.name = StringEscapeUtils.unescapeHtml(dataset.name)
+      dataset.description = StringEscapeUtils.unescapeHtml(dataset.description)
+  }
 
   /**
    * Dataset by section.
@@ -198,6 +226,7 @@ class Datasets @Inject()(
   /**
    * Upload file.
    */
+
 def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
@@ -271,25 +300,16 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 		//			        val key = "unknown." + "file."+ "application.x-ptm"
 					    	
-			                // TODO RK : need figure out if we can use https
-			                val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
-		      
-			                //If uploaded file contains zipped files to be unzipped and added to the dataset, wait until the dataset is saved before sending extractor messages to unzip
-			                //and return the files
-			                if(!fileType.equals("multi/files-zipped")){
-						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
-						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
-					        }
-					        
+			                val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
+        
 					        // add file to dataset 
 					        val dt = dataset.copy(files = List(f), author=identity)					        
 					        // TODO create a service instead of calling salat directly
 				            datasets.update(dt)				            
 				            
-				            if(fileType.equals("multi/files-zipped")){
 						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id, flags))}
 						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
-					        }
+
 					        
 					        val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 					        
@@ -317,7 +337,11 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 								  List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName","")))}
 							  }
 					    	// TODO RK need to replace unknown with the server name and dataset type		            
-		 			    	val dtkey = "unknown." + "dataset."+ "unknown"
+		 			    	
+					        // index the file using Versus for content-based retrieval
+                            current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+					        
+                            val dtkey = "unknown." + "dataset."+ "unknown"
 					        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 		 			    	
 		 			    	//add file to RDF triple store if triple store is used
@@ -331,9 +355,13 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					             }
 				             }
 		 			    	
-		 			    	var extractJobId=current.plugin[VersusPlugin].foreach{_.extract(id)} 
-		 			    	Logger.debug("Inside File: Extraction Id : "+ extractJobId)
-		 			    	
+		 			    	  	
+		 			    	/*---- Insert DTS Request to the database   ----*/
+
+		 			    	val clientIP=request.remoteAddress
+		 			    	val serverIP= request.host
+		 			    	dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+			    			/*--------------------------------------------*/
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id))
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -392,8 +420,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          //reindex file
 		          files.index(theFileGet.id)
 		          
-		          // TODO RK : need figure out if we can use https
-		          val host = "http://" + request.host + request.path.replaceAll("dataset/submit$", "")
+		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
 						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
@@ -407,6 +434,16 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					             case _ => {}
 				             }
 				   }
+		          //***** Inserting DTS Requests   **//  
+		          Logger.debug("The file already exists")
+		          val clientIP=request.remoteAddress
+		          val domain=request.domain
+		          val keysHeader=request.headers.keys
+		          Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+		          val serverIP= request.host
+		          dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
+						            
+				//****************************//
 		          
 				  // redirect to dataset page
 				  Redirect(routes.Datasets.dataset(dt.id)) 				  
@@ -417,6 +454,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		 )
         }
         case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
+
       }
   }
 

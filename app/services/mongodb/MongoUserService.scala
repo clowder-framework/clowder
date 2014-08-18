@@ -126,7 +126,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param uuid the token id
    */
   def deleteToken(uuid: String) {
-    Logger.trace("Deleting token " + uuid)
+    Logger.debug("----Deleting token " + uuid)
     TokenDAO.removeByUUID(uuid)
   }
 
@@ -138,7 +138,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    *
    */
   def deleteExpiredTokens() {
-    Logger.trace("Deleting expired tokens")
+    Logger.debug("----Deleting expired tokens")
     for (token <- TokenDAO.findAll) if (token.isExpired) TokenDAO.remove(token)
   }
 }

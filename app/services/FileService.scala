@@ -94,6 +94,8 @@ trait FileService {
   def getUserMetadataJSON(id: UUID): String
 
   def getTechnicalMetadataJSON(id: UUID): String
+  
+  def getVersusMetadata(id:UUID): JsValue
 
   def addVersusMetadata(id: UUID, json: JsValue)
 
@@ -135,5 +137,18 @@ trait FileService {
 
   def removeOldIntermediates()
   
+  /**
+   * Update the license data that is currently associated with the file.
+   * 
+   * id: The id of the file
+   * licenseType: A String representing the type of license
+   * rightsHolder: A String that is the free-text describing the owner of the license. Only required for certain license types
+   * licenseText: Text that describes what the license is
+   * licenseUrl: A reference to the license information
+   * allowDownload: true or false, to allow downloading of the file or dataset. Relevant only for certain license types
+   */
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
+
   def setNotesHTML(id: UUID, notesHTML: String)
+
 }

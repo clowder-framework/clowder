@@ -9,6 +9,7 @@ import services.ExtractorMessage
 import models.{Feature, UUID, MultimediaFeatures}
 import play.api.libs.json.JsObject
 import scala.Some
+import controllers.Utils
 
 /**
  * Index data.
@@ -29,8 +30,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
       	      case Some(p) =>
 	      	    // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
-	            // TODO RK : need figure out if we can use https
-	            val host = "http://" + request.host + request.path.replaceAll("api/indexes$", "")
+	            val host = Utils.baseUrl(request) + request.path.replaceAll("api/indexes$", "")
 	            val id = p.id
 	            current.plugin[RabbitmqPlugin].foreach{
                 // TODO replace null with None

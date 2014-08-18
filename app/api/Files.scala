@@ -1,8 +1,23 @@
 package api
-
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.OutputStream
+import java.net.URL
+import java.net.HttpURLConnection
 import java.io.FileInputStream
+
+import java.io.FileOutputStream
+import java.util.Date
+import java.util.ArrayList
+
 import java.io.BufferedWriter
 import java.io.FileWriter
+
+import java.io.FileReader
+import java.io.ByteArrayInputStream
+
+import scala.collection.mutable.MutableList
+
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -49,6 +64,17 @@ import play.api.libs.json.JsObject
 import play.api.Play.configuration
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
+import services.ExtractorMessage
+import scala.util.parsing.json.JSONArray
+
+
+import controllers.Previewers
+import scala.concurrent.Future
+ 
+import scala.util.control._
+import controllers.Utils
+
+
 /**
  * Json API for files.
  *
@@ -63,10 +89,12 @@ class Files @Inject()(
   tags: TagService,
   comments: CommentService,
   extractions: ExtractionService,
+  dtsrequests:ExtractionRequestsService,
   previews: PreviewService,
   threeD: ThreeDService,
   sqarql: RdfSPARQLService,
   thumbnails: ThumbnailService) extends ApiController {
+
 
   @ApiOperation(value = "Retrieve physical file object metadata",
       notes = "Get metadata of the file object (not the resource it describes) as JSON. For example, size of file, date created, content type, filename.",
@@ -81,6 +109,7 @@ class Files @Inject()(
           InternalServerError
         }
       }
+
   }
   /**
    * List all files.
@@ -91,6 +120,7 @@ class Files @Inject()(
       val list = for (f <- files.listFiles()) yield jsonFile(f)
 
       Ok(toJson(list))
+
   }
 
   def downloadByDatasetAndFilename(datasetId: UUID, filename: String, preview_id: UUID) =
@@ -225,13 +255,39 @@ class Files @Inject()(
 
 
   /**
+   * Add Versus metadata to file: use by Versus Extractor
+   * REST enpoint:POST api/files/:id/versus_metadata
+   */
+  def addVersusMetadata(id: UUID) =
+    SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) { request =>
+
+     Logger.debug("INSIDE ADDVersusMetadata=: "+id.toString )
+      files.get(id) match {
+        case Some(file) => {
+          Logger.debug("******ADD Versus Metadata:*****")
+          val list = request.body \ ("versus_descriptors")
+          //files.addVersusMetadata(id, list)
+          files.addVersusMetadata(id, request.body)
+          Ok("Added Versus Descriptor")
+        }
+        case None => {
+          Logger.error("Error in getting file " + id)
+          NotFound
+        }
+      }
+
+    }
+ 
+  /**
    * Upload file using multipart form enconding.
    */
+
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
+
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>        
@@ -258,6 +314,7 @@ class Files @Inject()(
 	               case None => {}
 	             }
 	         }
+
 
 	        var realUserName = realUser.fullName
 	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
@@ -295,27 +352,42 @@ class Files @Inject()(
 	            
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 
-                  val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  // TODO RK : need figure out if we can use https
-                  val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
 
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
-	            	    
-                val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
-                  
-	            //for metadata files
-	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              files.addXMLMetadata(id, xmlToJSON)
-	              
-	              Logger.debug("xmlmd=" + xmlToJSON)
-	              
-	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
-		            }
-	              
-	              //add file to RDF triple store if triple store is used
-	             configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+                  val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files$", "")
+
+
+                  /*---- Insert DTS Request to database---*/  
+
+                  val clientIP=request.remoteAddress
+                  val serverIP= request.host
+                  dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+
+                  /*---------------------------------------*/ 
+	            
+                  // index the file using Versus
+                  current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+	            
+	            
+                  current.plugin[RabbitmqPlugin].foreach {
+                    // TODO replace null with None
+                    _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
+                  }
+                  val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
+                  //for metadata files
+                  if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+                    val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+                    files.addXMLMetadata(id, xmlToJSON)
+
+                    Logger.debug("xmlmd=" + xmlToJSON)
+
+                    current.plugin[ElasticsearchPlugin].foreach {
+                      _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())),("xmlmetadata", xmlToJSON)))
+                    }
+
+                    //add file to RDF triple store if triple store is used
+                    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+
                       case "yes" => sqarql.addFileToGraph(f.id)
                       case _ => {}
                     }
@@ -373,8 +445,7 @@ class Files @Inject()(
             flags = flags + "+nopreviews"
 
           val key = "unknown." + "file." + fileType.replace("__", ".")
-          // TODO RK : need figure out if we can use https
-          val host = "http://" + request.host + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
+          val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
 
           // TODO replace null with None
           current.plugin[RabbitmqPlugin].foreach {
@@ -394,7 +465,7 @@ class Files @Inject()(
   /**
    * Upload a file to a specific dataset
    */
-  @ApiOperation(value = "Upload a file to a specific dataset",
+ @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
   def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { implicit request =>
@@ -467,9 +538,16 @@ class Files @Inject()(
               
 	          // TODO RK need to replace unknown with the server name
 	          val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-	          // TODO RK : need figure out if we can use https
-	          val host = "http://" + request.host + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
-	              
+	          val host = Utils.baseUrl(request) + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
+	          /*----- Insert DTS Requests  -------*/
+	          val clientIP = request.remoteAddress
+	          val serverIP = request.host
+	          dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
+			 /*-------------------------*/ 
+                      
+			  // index the file using Versus
+			  current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }    
+	          
 	          current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, Map.empty, f.length.toString, dataset_id, flags)) }
 	          
 	          val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -481,17 +559,20 @@ class Files @Inject()(
 
             			  Logger.debug("xmlmd=" + xmlToJSON)
 
-            			  current.plugin[ElasticsearchPlugin].foreach{
+                        current.plugin[ElasticsearchPlugin].foreach {
+            	  		     
             		  		_.index("data", "file", new UUID(id), List(("filename",f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
-            	  		  }
-              }
-              else{
-            	  current.plugin[ElasticsearchPlugin].foreach{
-            		  _.index("data", "file", new UUID(id), List(("filename",nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString),("datasetName",dataset.name)))
-            	  }
-              }
-                           
-              // add file to dataset   
+            	  		  
+                         
+                        }
+                      }
+                      else {
+                        current.plugin[ElasticsearchPlugin].foreach {
+                          _.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())),("datasetId", dataset.id.toString), ("datasetName", dataset.name)))
+                        }
+                      }
+
+               // add file to dataset   
               // TODO create a service instead of calling salat directly
               val theFile = files.get(f.id)
               if(theFile.isEmpty){
@@ -581,16 +662,15 @@ class Files @Inject()(
                   }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  // TODO RK : need figure out if we can use https
-                  val host = "http://" + request.host + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
+                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
                   val id = f.id
                   // TODO replace null with None
+                   // index the file using Versus
+                  current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+                  
                   current.plugin[RabbitmqPlugin].foreach {
                     _.extract(ExtractorMessage(UUID(originalId), id, host, key, Map.empty, f.length.toString, null, flags))
                   }
-//                  current.plugin[ElasticsearchPlugin].foreach {
-//                    _.index("files", "file", id, List(("filename", f.filename), ("contentType", f.contentType)))
-//                  }
                   Ok(toJson(Map("id" -> id.stringify)))
                 }
                 case None => {
@@ -634,10 +714,10 @@ class Files @Inject()(
     // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
       val extractor_id = if (eid.isDefined) {
-        Some(UUID(eid.get))
+        eid
       } else {
-        Logger.info("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to None.  request.body: " + request.body.toString)
-        None
+        Logger.debug("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to None.  request.body: " + request.body.toString)
+        Some("Other")
       }
       request.body match {
         case JsObject(fields) => {
@@ -749,7 +829,7 @@ class Files @Inject()(
                   rdfPreviewList = rdfPreviewList :+ currPreview
                 }
               }
-              var hostString = "http://" + request.host + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
+              var hostString = Utils.baseUrl(request) + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
               var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
 
               //RDF from export of file community-generated metadata to RDF
@@ -760,7 +840,7 @@ class Files @Inject()(
               else {
                 connectionChars = "?mappingNum="
               }
-              hostString = "http://" + request.host + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars
+              hostString = Utils.baseUrl(request) + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars
               val mappingsQuantity = Integer.parseInt(configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
               for (i <- 1 to mappingsQuantity) {
                 var currHostString = hostString + i
@@ -1037,11 +1117,161 @@ class Files @Inject()(
           case None => Logger.error("Texture file not found"); InternalServerError
         }
     }
+  
+  
+   //Update License code 
+  /**
+   * REST endpoint: POST: update the license data associated with a specific File
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with this file 
+   *  
+   *  The data contained in the request body will be containe the following key-value pairs:
+   *  
+   *  licenseType, currently:
+   *        license1 - corresponds to Limited 
+   *        license2 - corresponds to Creative Commons
+   *        license3 - corresponds to Public Domain
+   *        
+   *  rightsHolder, currently only required if licenseType is license1. Reflects the specific name of the organization or person that holds the rights
+   *   
+   *  licenseText, currently tied to the licenseType
+   *        license1 - Free text that a user can enter to describe the license
+   *        license2 - 1 of 6 options (or their abbreviations) that reflects the specific set of 
+   *        options associated with the Creative Commons license, these are:
+   *            Attribution-NonCommercial-NoDerivs (by-nc-nd)
+   *            Attribution-NoDerivs (by-nd)
+   *            Attribution-NonCommercial (by-nc)
+   *            Attribution-NonCommercial-ShareAlike (by-nc-sa)
+   *            Attribution-ShareAlike (by-sa)
+   *            Attribution (by)
+   *        license3 - Public Domain Dedication
+   *        
+   *  licenseUrl, free text that a user can enter to go with the licenseText in the case of license1. Fixed URL's for the other 2 cases.
+   *  
+   *  allowDownload, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
+   */
+  @ApiOperation(value = "Update License information to a dataset",
+      notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
+      responseClass = "None", httpMethod = "POST")
+  def updateLicense(id: UUID) = 
+    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
+    implicit request =>
+      if (UUID.isValid(id.stringify)) {         
+
+          //Set up the vars we are looking for
+          var licenseType: String = null;
+          var rightsHolder: String = null;
+          var licenseText: String = null;
+          var licenseUrl: String = null;
+          var allowDownload: String = null;
+          
+          var aResult: JsResult[String] = (request.body \ "licenseType").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                licenseType = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseType data is missing."))
+              }
+          }
+          
+          aResult = (request.body \ "rightsHolder").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                rightsHolder = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"rightsHolder data is missing."))
+              }
+          }
+          
+          aResult = (request.body \ "licenseText").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                licenseText = s.get
+                                
+                //Modify the abbreviations if they were sent in that way
+                if (licenseText == "by-nc-nd") {
+                    licenseText = "Attribution-NonCommercial-NoDerivs"
+                }
+                else if (licenseText == "by-nd") {
+                    licenseText = "Attribution-NoDerivs"
+                }
+                else if (licenseText == "by-nc") {
+                    licenseText = "Attribution-NonCommercial"
+                }
+                else if (licenseText == "by-nc-sa") {
+                    licenseText = "Attribution-NonCommercial-ShareAlike"
+                }
+                else if (licenseText == "by-sa") {
+                    licenseText = "Attribution-ShareAlike"
+                }
+                else if (licenseText == "by") {
+                    licenseText = "Attribution"
+                }
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseText data is missing."))
+              }
+          }
+          
+          aResult = (request.body \ "licenseUrl").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                licenseUrl = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseUrl data is missing."))
+              }
+          }
+          
+          aResult = (request.body \ "allowDownload").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                allowDownload = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"allowDownload data is missing."))
+              }
+          }          
+          
+          Logger.debug(s"updateLicense for file with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDownload")
+          
+          files.updateLicense(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDownload)
+          Ok(Json.obj("status" -> "success"))
+      } 
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+  
+  
+  
+  //End, Update License code
 
   // ---------- Tags related code starts ------------------
   /**
    * REST endpoint: GET: gets the tag data associated with this file.
    */
+
   @ApiOperation(value = "Gets tags of a file", notes = "Returns a list of strings, List[String].", responseClass = "None", httpMethod = "GET")
   def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
     implicit request =>
@@ -1058,6 +1288,7 @@ class Files @Inject()(
             Logger.error("The file with id " + id + " is not found.")
             NotFound(toJson("The file with id " + id + " is not found."))
           }
+
         }
       } else {
         Logger.error("The given id " + id + " is not a valid ObjectId.")
@@ -1175,7 +1406,37 @@ class Files @Inject()(
   }
 
   // ---------- Tags related code ends ------------------
-
+ 
+ /**
+  * REST endpoint: GET  api/files/:id/extracted_metadata 
+  * Returns metadata extracted so far for a file with id
+  * 
+  */
+  @ApiOperation(value = "Provides metadata extracted for a file", notes = "", responseClass = "None", httpMethod = "GET")  
+  def extract(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ExtractMetadata)) { implicit request =>
+    Logger.info("Getting extract info for file with id " + id)
+    if (UUID.isValid(id.stringify)) {
+     files.get(id) match {
+        case Some(file) =>
+          val jtags = FileOP.extractTags(file)
+          val jpreviews = FileOP.extractPreviews(id)
+          val vdescriptors=FileOP.extractVersusDescriptors(id)
+          Logger.debug("jtags: " + jtags.toString)
+          Logger.debug("jpreviews: " + jpreviews.toString)
+          Ok(Json.obj("file_id" -> id.toString, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors"->vdescriptors))
+        case None => {
+          val error_str = "The file with id " + id + " is not found." 
+          Logger.error(error_str)
+          NotFound(toJson(error_str))
+        }
+      }
+    } else {
+      val error_str ="The given id " + id + " is not a valid ObjectId." 
+      Logger.error(error_str)
+      BadRequest(toJson(error_str))
+    }
+  }
+  
   @ApiOperation(value = "Add comment to file", notes = "", responseClass = "None", httpMethod = "POST")
   def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
@@ -1198,8 +1459,8 @@ class Files @Inject()(
           Logger.error(("No user identity found in the request, request body: " + request.body))
           BadRequest(toJson("No user identity found in the request, request body: " + request.body))
       }
-  }
 
+  }
 
   /**
    * Return whether a file is currently being processed.

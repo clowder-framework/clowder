@@ -21,7 +21,7 @@ function onZoomitResponse(resp) {
 
 $.ajax({
 	url: "http://api.zoom.it/v1/content/?url=" +
-	encodeURIComponent("http://"+Configuration.hostIp+":"+window.location.port+Configuration.url),			  
+	encodeURIComponent(window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+Configuration.url),			  
 	dataType: "jsonp",
 	success: onZoomitResponse
 });

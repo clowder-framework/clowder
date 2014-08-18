@@ -183,9 +183,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(p.id.stringify)))
   }
 
-  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[UUID], json: JsValue) {
+  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue) {
     json match {
       case JsObject(fields) => {
+        Logger.debug("attachToFile: extractorId is '" + extractorId.toString + "'.")
         // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
         val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
         PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
@@ -201,14 +202,31 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     json match {
       case JsObject(fields) => {
         val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
-          $set("metadata" -> metadata, "section_id" -> new ObjectId(metadata("section_id").asInstanceOf[String]), 
-        		  //the next line adds file_id as string to Preview. Used by Versus.
-	              "file_id"->metadata("file_id").asInstanceOf[String]),
-	              
-	              false, false, WriteConcern.Safe)      
-	              
-	              Logger.debug("Updating previews.files " + previewId + " with " + metadata)
+        // TODO figure out a way to do it all together
+        // aways update metadata
+        PreviewDAO.dao.collection.update(
+          MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+          $set("metadata" -> metadata),
+          false, false, WriteConcern.Safe)
+        // update section_id if it exists
+        if (metadata.contains("section_id")) {
+          val section_id = metadata("section_id").asInstanceOf[String]
+          Logger.debug("Updating previews.files " + previewId + " with section_id=" + section_id)
+          PreviewDAO.dao.collection.update(
+            MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+            $set("section_id" -> new ObjectId(section_id)),
+            false, false, WriteConcern.Safe)
+        }
+        // update file_id if it exists
+        if (metadata.contains("file_id")) {
+          val file_id = metadata("file_id").asInstanceOf[String]
+          Logger.debug("Updating previews.files " + previewId + " with file_id=" + file_id)
+          PreviewDAO.dao.collection.update(
+            MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+            $set("file_id" -> new ObjectId(file_id)),
+            false, false, WriteConcern.Safe)
+        }
+	      Logger.debug("Updating previews.files " + previewId + " with " + metadata)
       }
       case _ => Logger.error("Expected a JSObject")
     }
