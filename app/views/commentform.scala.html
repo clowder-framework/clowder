@@ -4,7 +4,7 @@
 	<form class="form-inline">
 		<textarea id="commentField_@id" class="comment-input-box"></textarea>
 		<br />
-		<button class="btn btn-default" onclick="return postComment('@id', '@posturl');">Comment</button>
+		<button class="btn btn-primary" onclick="return postComment('@id', '@posturl');" title="Submit Comment"><span class="glyphicon glyphicon-comment"></span> Submit</button>
 	</form>
 	
 	<script language="javascript">
@@ -45,8 +45,10 @@
 				var form="<form class=\"form-inline\">";
 				form += "<textarea id=\"commentField_" + id + "\" class=\"comment-input-box\"></textarea>";
 				form += "<br />";
-				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return replyComment('" + id + "')\">Reply</button>";
-				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return cancelComment('" + id + "')\">Cancel</button>";
+				form += "<button class=\"btn btn-primary\" onclick=\"return replyComment('" + id + "')\" title=\"Confirm\" style=\"margin-right:5px;\">";
+				form += "<span class=\"glyphicon glyphicon-ok\"></span></button>";
+				form += "<button class=\"btn btn-default\" onclick=\"return cancelComment('" + id + "')\" title=\"Cancel\">";
+				form += "<span class=\"glyphicon glyphicon-remove\"></span></button>";
 				form += "</form>";
 				$("#reply_" + id).prepend("<div class=\"comment-thread\" id=\"form_" + id + "\">" + form + "</div>");
 			}
@@ -98,7 +100,7 @@
 					post += "<div style=\"clear: both;\"></div>";
 					post += "</div>";
 					post += "<div class=\"comment-body\" id=\"comment-body_" + response + "\">" + text + "</div>";
-					post += "<div class=\"comment-footer\"><a href=\"javascript:void(0)\" onclick=\"return showReplyComment('" + response + "');\">Reply</a>&nbsp;&nbsp;<a href=\"javascript:void(0)\" class=\"btn btn-info\" title=\"Edit Comment\" onclick=\"return showEditComment('" + response + "');\"><span class=\"glyphicon glyphicon-edit\"></span></a>&nbsp;&nbsp;<a href=\"javascript:void(0)\" class=\"btn btn-primary\" title=\"Delete Comment\" onclick=\"return deleteComment('" + response + "');\"><span class=\"glyphicon glyphicon-trash\"></span></a> </div>";
+					post += "<div class=\"comment-footer\"><a href=\"#\" class=\"btn btn-info\" title=\"Reply To Comment\" onclick=\"return showReplyComment('" + response + "');\"><span class=\"glyphicon glyphicon-share-alt\"></span> Reply</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-info\" title=\"Edit Comment\" onclick=\"return showEditComment('" + response + "');\"><span class=\"glyphicon glyphicon-edit\"></span> Edit</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-primary\" title=\"Delete Comment\" onclick=\"return deleteComment('" + response + "');\"><span class=\"glyphicon glyphicon-trash\"></span> Delete</a> </div>";
 					post += "<div class=\"comment-reply\">";
 					post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">";
 					post += "</div>";
