@@ -10,10 +10,7 @@ import org.irods.jargon.core.exception.JargonException
  * A concrete storage based on the iRODS file storage system. There are 7
  * required parameters to establish a connection to iRODS including a
  * host, port, username, password, user home, zone, and default storage resource
- * name. Optional parameters include the root folder to store the data in and
- * the number of levels to use when storing files to prevent to many files per
- * folder. The folder should be an absolute path since this could differ from
- * the user home folder.
+ * name. 
  * 
  * Setup iRODS connection using Jargon.
  * 
@@ -21,7 +18,6 @@ import org.irods.jargon.core.exception.JargonException
  * @author Michal Ondrejcek <ondrejce@illinois.edu>
  * 
  */
-
 class IRODSPlugin(app: Application) extends Plugin {
 
   var userhome: String = _
@@ -46,6 +42,7 @@ class IRODSPlugin(app: Application) extends Plugin {
   //Is the plugin enabled? 
   override def enabled = true
   
+  
   def openIRODSConnection() = {
     lazy val configuration = Play.current.configuration
 	// you can now access the application.conf settings
@@ -59,9 +56,7 @@ class IRODSPlugin(app: Application) extends Plugin {
 	val defaultStorageResource = configuration.getString("irods.defaultStorageResource").getOrElse("")
 	userhome = configuration.getString("irods.userhome").getOrElse("")
 		
-	// additional parameters, levels is a folder 'depth' in irods home repository, if implemented open them in application.config
-	//val usercurrent = configuration.getString("irods.usercurrent").getOrElse("")
-	//val levels = configuration.getInt("irods.levels").getOrElse(2)	
+	val usercurrent = configuration.getString("irods.usercurrent").getOrElse("")
 
   	try {
   	  account = IRODSAccount.instance(host, port, username, password, userhome, zone, defaultStorageResource)
@@ -73,7 +68,7 @@ class IRODSPlugin(app: Application) extends Plugin {
       
 	  _conn = true
 	} catch {
-	  case je: JargonException => Logger.error("irods: Error connecting to iRODS server. " + je.toString); _conn = false
+	  case je: org.irods.jargon.core.exception.JargonException => Logger.error("irods: Error connecting to iRODS server. " + je.toString); _conn = false
 	  case t: Throwable => Logger.error("irods: Unknown error connecting to iRODS server: " + t.toString); _conn = false
 	}
   }
@@ -91,7 +86,7 @@ class IRODSPlugin(app: Application) extends Plugin {
 	_conn = false
   }
  
-  //getters not needed if one can pass app to IRODSPlugin(app: Application)
+  //getters
   def getFileFactory(): IRODSFileFactory = { return irodsFileFactory }
   def conn = _conn
   // setter

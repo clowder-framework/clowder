@@ -5,7 +5,7 @@ import services._
 import javax.inject.Inject
 import play.api.{ Play, Logger }
 import play.api.Play.current
-import java.io.{ File, InputStream, FileInputStream, FileOutputStream }
+import java.io.{ File, InputStream, FileInputStream, FileOutputStream, ByteArrayInputStream }
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.MongoDBObject
@@ -16,6 +16,12 @@ import scalax.io._
 import scalax.io.Resource
 import scalax.file.Path
 
+/**
+ * Overrides 'save', 'getBytes' and 'removeFiles' of the MongoDBFileService. 
+ * 
+ * @author Michal Ondrejcek <ondrejce@illinois.edu>
+ * 
+ */
 class IRODSFileSystemDB @Inject() (
   datasets: DatasetService,
   collections: CollectionService,
@@ -31,30 +37,27 @@ class IRODSFileSystemDB @Inject() (
   threeD,
   sparql) {
   
-   /**
-   * Save a file to irods system and store metadata in Mongo.
+  val ipg = Play.application.plugin[IRODSPlugin].getOrElse(throw new RuntimeException("irods: Plugin not loaded."))
+  
+  /**
+   * Save a file to iRODS system and store metadata in Mongo.
+   * 
+   * @author Michal Ondrejcek <ondrejce@illinois.edu>
+   * 
    */
   override  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[models.File] = {
     Play.current.configuration.getString("datastorage.active") match {
       case irods => {
         val id = UUID.generate
            
-        Logger.debug("irods: Filename: " + filename)
-        
-        val pathFolder = ("/Users/mo/Public/medici")
-        val path: Path = Path.fromString(pathFolder)
-        path.createDirectory(failIfExists=false)
-        //using Commons IO:
-        val outputStream = new FileOutputStream(pathFolder + "/" + filename)
-        org.apache.commons.io.IOUtils.copy(inputStream, outputStream)
-        outputStream.close()
-        
-        //var irw = new IRODSReadWrite
-        //var sf = irw.storeFile(id.toString(), filename, inputStream)
+        Logger.debug("irods: save() - Filename: " + filename + " id: " + id.toString())
+       
+        val irw = new IRODSReadWrite
+        val sf = irw.storeFile(id.toString(), filename, inputStream)
 
         // store metadata to mongo        
         //TODO
-        // I want to store path to and in irods as well to the File.path currently not used, it needs nee metadata
+        // I want to store path to and ifrom irods to the File.path
         // def storeFileMD(id: UUID, filename: String, contentType: Option[String], author: Identity, path: String): Option[File] = {
         storeFileMD(id, filename, contentType, author)
         
@@ -68,6 +71,9 @@ class IRODSFileSystemDB @Inject() (
   
   /**
    * Get the info about a file based on id such as filename from Mongo and file itself from iRods.
+   * 
+   * @author Michal Ondrejcek <ondrejce@illinois.edu>
+   * 
    */
   override def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
     Play.current.configuration.getString("datastorage.active") match {
@@ -77,37 +83,29 @@ class IRODSFileSystemDB @Inject() (
         
        files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
          case Some(file) => {
-           val gridInputStream = file.inputStream
-           Logger.debug("irods: Grid Input stream: " + gridInputStream.available)
            val filename: String = file.getAs[String]("filename").getOrElse("unknown-name")
            
-           //TODO
-           // implement the path from metadata, it can be used in connect for example effectively bypassing the config irods server specs
-           //val path: String = file.getAs[String]("path").getOrElse("unknown-path")
-           val path = "unknown-path"
-
-           Logger.debug("irods: Serving file: " + filename)
+           Logger.debug("irods: getBytes - Serving file: " + filename)
                   
-          // var irw = new IRODSReadWrite
-           //var is: InputStream = irw.readFile(id.toString(), filename, path)
+           val irw = new IRODSReadWrite
+           val is: InputStream = irw.readFile(id.toString(), filename)
            
-           //val is:InputStream = new FileInputStream("/Users/mo/Public/test_dir/telefony.txt")
-           val is:InputStream = new FileInputStream("/Users/mo/Public/test_dir/" + filename)
-           
-           //val irt = new IRODSTest
-           //val is:InputStream = irt.inputStreamReadFile("/Users/mo/Public/test_dir/telefony.txt")
-           //irt.inputStreamRead(is);//if( is!=null ) is.close()
-           
-           Logger.debug("irods: Input stream: " + is.available)
-           
+           // HACK with an intermediary buffer - works, no errors
+           // I could not pass the InputStream is directly to Some(InputStream, String, String, Long) because, 
+           // I think the is.close does not propagate from File > downloads > Enumerator through the chain
+           // to the IRODSFileInputStream. Closing the stream here works.
+           val buffer = Array.ofDim[Byte](10240)
+           is.read(buffer)
+           is.close()
+                     
            try {
-           // last statement = return
-           Some(is, 
+             // last statement = return
+             Some(new ByteArrayInputStream(buffer),
                 filename,
                 file.getAs[String]("contentType").getOrElse("unknown"),
                 file.getAs[Long]("length").getOrElse(0))  
            } finally {
-            // if( is!=null ) is.close()
+            ipg.closeIRODSConnection()    
          }
           }
           case None => None
@@ -118,24 +116,29 @@ class IRODSFileSystemDB @Inject() (
   }
   
   /**
-   * Remove file fromIRODS and matadata from Mongo(?).
+   * Remove file fromIRODS and matadata from Mongo.
+   *
+   * @author Michal Ondrejcek <ondrejce@illinois.edu>
+   * 
+   * 
    */
   override def removeFile(id: UUID) = {
-
     val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => {
         val filename: String = file.getAs[String]("filename").getOrElse("unknown-name")
         
-        Logger.debug("irods: Filename: " + filename)
+        Logger.debug("irods: removeFile() - Filename: " + filename)
+            
+        val irw = new IRODSReadWrite
+        val success: Boolean = irw.deleteFile(id.toString(), filename)
+        Logger.info("irods: File " + filename + " deleted? " + success)
         
-        val pathFolder = ("/Users/mo/Public/medici")
-        val path: Path = Path.fromString(pathFolder + "/" + filename)
-        path.deleteIfExists()
-        Logger.debug("irods: File: " + filename + " has been deleted")
       }
+      case None => None
     }
     
+    // no change from MongoDBFileService
     get(id) match{
       case Some(file) => {
         if(file.isIntermediate.isEmpty){
@@ -167,7 +170,7 @@ class IRODSFileSystemDB @Inject() (
         }
         FileDAO.removeById(new ObjectId(file.id.stringify))
       }
-      case None => Logger.debug("File not found")
+      case None => Logger.debug("irods: removeFiles() - File not found")
     }
   }
 }

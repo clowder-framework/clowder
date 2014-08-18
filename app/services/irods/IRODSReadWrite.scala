@@ -8,13 +8,29 @@ import java.net.{ URI, URISyntaxException }
 import org.irods.jargon.core.pub.io.{IRODSFile, IRODSFileOutputStream, IRODSFileInputStream}
 import org.irods.jargon.core.exception.JargonException
 
+/**
+ * Read, delete from and write files to the iRODS repository.
+ * The number of levels is used when storing files to prevent too many files per
+ * folder.
+ * 
+ * @author Chris Navarro <cmnavarr@illinois.edu>
+ * @author Michal Ondrejcek <ondrejce@illinois.edu>
+ * 
+ */
 class IRODSReadWrite() {
 
   val ipg = Play.application.plugin[IRODSPlugin].getOrElse(throw new RuntimeException("irods: Plugin not loaded."))
   //val ipg = current.plugin[IRODSPlugin].foreach{_.openIRODSConnection()}
   val irodsFileFactory = ipg.getFileFactory
-   
-  def readFile(filename:String):InputStream = {     
+
+  /** Reads file from IRODS repository using IRODSFIleFactory with instance of IRODSFile. Calls 
+   *  folderStructure(id) if for folder structure.
+   *
+   * @param id the files' id supplied from MongoDB
+   * @param filename files' name supplied from MongoDB
+   * @return input byte stream 
+   */
+  def readFile(id: String, filename:String):InputStream = {     
  
     if (!ipg.conn) {
       ipg.openIRODSConnection()
@@ -23,10 +39,12 @@ class IRODSReadWrite() {
     
     val filePathHome: String = ipg.userhome + IRODSFile.PATH_SEPARATOR
 
-    Logger.debug("irods: readFile() - filePath: " + filePathHome + filename)
+    val filePath = filePathHome + folderStructure(id) 
+        
+    Logger.debug("irods: readFile() - filePath: " + filePath + filename)
 
     try {
-	  var file:IRODSFile = irodsFileFactory.instanceIRODSFile(filePathHome + filename)				  
+	  var file:IRODSFile = irodsFileFactory.instanceIRODSFile(filePath + filename)				  
 	  Logger.debug("irods: readFile() - File exists? " + file.exists())				  
  
 	  irodsFileFactory.instanceIRODSFileInputStream(file).asInstanceOf[InputStream]
@@ -38,7 +56,14 @@ class IRODSReadWrite() {
     }
    }
 
-  def storeFile(filename:String, is:InputStream) = { 
+  /** Writes file from Medici using IRODSFIleFactory with instance of IRODSFile. Calls 
+   *  folderStructure(id) if for folder structure.
+   *
+   * @param id the files' id generated in IRODSFileSystemDB
+   * @param filename files' name supplied by Medici
+   * @param InputStream input byte stream supplied by Medici
+   */
+  def storeFile(id: String, filename:String, is:InputStream) = { 
     var fos: IRODSFileOutputStream = null
         
     if (!ipg.conn) {
@@ -47,7 +72,7 @@ class IRODSReadWrite() {
     }
 
     val filePathHome: String = ipg.userhome + IRODSFile.PATH_SEPARATOR
-    var filePath: String = ""
+    var filePath: String = filePathHome + folderStructure(id) 
       
     Logger.debug("irods: storeFile() - Input stream bytes: " + is.available())  //Number of bytes that can be read
     
@@ -56,33 +81,16 @@ class IRODSReadWrite() {
 	is.read(buffer)
     is.close()
     
- 	/*   
- 	// create folder structure with levels from id string
-    // DataWolf logic, if implemented we need to store the relative path in metadata
-
-	var levels:Int = 2
-	var i = 0
-	while (i < 2*levels) {
-	  if (id.length() >= i+2) //break
-	  
-	  filePath = filePathHome + id.substring(i, i+2) + IRODSFile.PATH_SEPARATOR
-      i += 2
-    }
-    if (id.length() > 0) filePath = filePathHome + id + IRODSFile.PATH_SEPARATOR
-    */
-      
 	// append the filename
-     Option(filename) match {
-      case Some(filename) if (!filename.isEmpty) => filePath = filePathHome + filename
-      case _ => filePath = filePathHome + "unknown.unk"
+    if (!filename.isEmpty) {
+      filePath = filePath + filename
+    } else { filePath = filePath + "unknown.unk"
     }
 	Logger.debug("irods: storeFile - filePath: " + filePath)
 
 	try {
 	  val file = irodsFileFactory.instanceIRODSFile(filePath)
-	  //file.createNewFile()
-	  //file.setExecutable(true, true)
-	  // create medici folder if it does not exist
+	  // create folders if they do not exist
 	  if (!file.getParentFile().isDirectory()) {
 	    if (!file.getParentFile().mkdirs()) {
 		  throw new IOException("irods: storeFile() - Could not create folder to store data in.")
@@ -104,14 +112,23 @@ class IRODSReadWrite() {
     }
   }
 
-  def deleteFile(filename:String): Boolean = {
+  /** Deletes file from IRODS using IRODSFIleFactory with instance of IRODSFile. Calls 
+   *  folderStructure(id) for folder structure.
+   *
+   * @param id the files' id from MongoDB
+   * @param filename files' name supplied from Medici
+   * @return Boolean success
+   */
+  def deleteFile(id: String, filename:String): Boolean = {
     if (!ipg.conn) {
       ipg.openIRODSConnection()
       Logger.info("irods: Connected. " + ipg.conn)
     }
    try {
-      val filePathHome: String = ipg.userhome + IRODSFile.PATH_SEPARATOR      
-      val file: IRODSFile = irodsFileFactory.instanceIRODSFile(filePathHome + filename)
+      val filePathHome: String = ipg.userhome + IRODSFile.PATH_SEPARATOR 
+      val filePath: String = filePathHome + folderStructure(id)
+      
+      val file: IRODSFile = irodsFileFactory.instanceIRODSFile(filePath + filename)
       Logger.debug("irods: deleteFile() - File exists? " + file.exists())
 
       file.exists() match {
@@ -129,5 +146,29 @@ class IRODSReadWrite() {
         ipg.closeIRODSConnection()
       }
     }
+  }
+ 
+   /** creates folder structure n levels deep from two characters of an id string.
+   * This follows a DataWolf logic
+   * 
+   * @param id the files' id from MongoDB
+   * @return String path with separators
+   */
+  def folderStructure(id:String): String = { 
+ 	var folderPath: String = ""
+	  
+	var levels:Int = 2
+	var i = 0
+	while (i < 2*levels) {
+	  if (id.length() >= i+2) //break
+	  
+	  folderPath = folderPath + id.substring(i, i+2) + IRODSFile.PATH_SEPARATOR
+      i += 2
+    }
+ 	// creates id folder making the path (plus a filename) unique. The level depth and number of 
+ 	// id folders control a managable (or allowable) number of file system items 
+    if (id.length() > 0) folderPath = folderPath + id + IRODSFile.PATH_SEPARATOR
+    
+    return folderPath
   }
 }
