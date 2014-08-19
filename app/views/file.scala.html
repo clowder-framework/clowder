@@ -318,7 +318,7 @@
             </dl>
             
             <div class="row ds-section-sm">
-              <button class="btn btn-default pull-right" title="Download the file" onclick="return downloadFile();">Download</button>
+              <button class="btn btn-default pull-right" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span> Download</button>
             </div>
 
             <div class="row ds-section-sm">
@@ -337,8 +337,10 @@
                 <div class="input-group input-group-sm col-md-8"">
                   <input type="text" id="tagField" class="form-control">
                   <span class="input-group-btn">
-                    <button class="btn btn-default btn-sm" id="tagB">Tag</button>
-                  </span>
+                            <button class="btn btn-primary btn-large" id="tagB" title="Add Tag">
+                                <span class="glyphicon glyphicon-tag"></span>
+                            </button>
+                  </span>                  
                 </div>
               </form>
               <script language="javascript">

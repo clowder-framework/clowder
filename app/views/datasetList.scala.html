@@ -78,14 +78,14 @@
 						<th style="width: 25%">Name</th>
 						<th style="width: 15%">Created</th>
 						<th style="width: 40%">Description</th>
-						<th style="width: 10%"></th>
-						<th style="width: 10%"></th>
+						<th style="width: 15%">Preview</th>
+						<th style="width: 5%">Delete</th>
 					}
 					@if(!user.isDefined) {
 						<th style="width: 25%">Name</th>
 						<th style="width: 15%">Created</th>
-						<th style="width: 50%">Description</th>
-						<th style="width: 10%"></th>
+						<th style="width: 45%">Description</th>
+						<th style="width: 15%">Preview</th>
 					}
 				</tr>
 			</thead>
@@ -100,7 +100,9 @@
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
 						@if(user.isDefined) {
-							<td><a href="#" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
+							<td><a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
+							    <span class="glyphicon glyphicon-trash"></span></a>
+							</td>
 						}
 					</tr>
 				}

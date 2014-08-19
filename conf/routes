@@ -247,7 +247,8 @@ POST    /api/datasets/:id/tags                                  	@api.Datasets.a
 POST    /api/datasets/:id/tags/remove                           	@api.Datasets.removeTags(id: UUID)
 POST    /api/datasets/:id/tags/remove_all                       	@api.Datasets.removeAllTags(id: UUID)
 DELETE 	/api/datasets/:id/tags 										@api.Datasets.removeTags(id: UUID)
-POST    /api/datasets/:id/license                                 @api.Datasets.updateLicense(id: UUID)
+POST    /api/datasets/:id/editing                                   @api.Datasets.updateInformation(id: UUID)
+POST    /api/datasets/:id/license                                   @api.Datasets.updateLicense(id: UUID)
 
 GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
 GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)

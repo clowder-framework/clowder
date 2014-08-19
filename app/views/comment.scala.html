@@ -17,16 +17,20 @@
 			<div class="comment-body" id="comment-body_@c.id"></div>
 			@if(user.isDefined) {
 			<div class="comment-footer">
-				<a href="javascript:void(0)" onclick="return showReplyComment('@c.id');">Reply</a>
+				<a href="#" 
+				    onclick="return showReplyComment('@c.id');"
+				    class="btn btn-info" title="Reply To Comment">
+				    <span class="glyphicon glyphicon-share-alt"></span> Reply
+				</a>
 				&nbsp;
 				&nbsp;
-				<a href="javascript:void(0)" onclick="return showEditComment('@c.id');" class="btn btn-info" title="Edit Comment">
-                    <span class="glyphicon glyphicon-edit"></span>
+				<a href="#" onclick="return showEditComment('@c.id');" class="btn btn-info" title="Edit Comment">
+                    <span class="glyphicon glyphicon-edit"></span> Edit
                 </a>
 				&nbsp;
                 &nbsp;
-                <a href="javascript:void(0)" onclick="return deleteComment('@c.id');" class="btn btn-primary" title="Delete Comment">
-                    <span class="glyphicon glyphicon-trash"></span>
+                <a href="#" onclick="return deleteComment('@c.id');" class="btn btn-primary" title="Delete Comment">
+                    <span class="glyphicon glyphicon-trash"></span> Delete
                 </a>
 			</div>			
 			}
