@@ -1,4 +1,6 @@
-@(preview: models.Preview, results: scala.collection.mutable.HashMap[String, scala.collection.mutable.ListBuffer[util.SearchResult]]) 
+@(preview: models.Preview, results: scala.collection.mutable.HashMap[String, scala.collection.mutable.ListBuffer[_root_.util.SearchResult]])
+
+@import _root_.util.SearchResult
 
 @main("Search Results") {
 <div class="page-header">
@@ -23,7 +25,7 @@
 	<div class="col-md-4 col-md-offset-4">
 		@results.map { case (key, list) =>
 			<h2>@key</h2>
-			@list.map { case util.SearchResult(id, distance, Some(preview_id)) =>
+			@list.map { case SearchResult(id, distance, Some(preview_id)) =>
 			<div class="row">
 				<div class="col-md-12">
 					<a href="@routes.Datasets.datasetBySection(UUID(id))">

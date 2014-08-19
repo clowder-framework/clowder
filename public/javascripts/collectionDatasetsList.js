@@ -14,7 +14,7 @@
 	function addDataset(datasetId, event){
 		var request = $.ajax({
 		       type: 'POST',
-		       url: "http://"+hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasets/"+datasetId
+		       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasets/"+datasetId
 		     });
 		request.done(function (response, textStatus, jqXHR){
 	        console.log("Response " + response);	        
@@ -48,7 +48,7 @@
 				 });
 			 }
 	        datasetsInCollectionCount++;
-	        $('#collectionDatasetsTable tbody').prepend("<tr id='datasetRow1' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+	        $('#collectionDatasetsTable tbody').prepend("<tr id='datasetRow1' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
 					+ "/datasets/" + datasetId + "'>"+ event.target.innerHTML + "</a></td>"
 					+ "<td>" + inputDate + "</td>"
 					+ "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
@@ -81,7 +81,7 @@
 	function removeDataset(datasetId, event){
 		var request = $.ajax({
 		       type: 'POST',
-		       url: "http://"+hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasetsRemove/"+datasetId+"/False"
+		       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasetsRemove/"+datasetId+"/False"
 		     });
 		request.done(function (response, textStatus, jqXHR){
 	        console.log("Response " + response);
@@ -122,7 +122,7 @@
 	      + "<td>" + inputDate + "</td>"
 	      + "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 	      + "<td>" + inputThumbnail + "</td>"
-	      + "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
+	      + "<td><a target='_blank' href='" +  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')			
 	      + "/datasets/" + datasetId + "'>View</a></td></tr>";
 	      if(datasetPos > 1)
 	    	  $("#addDatasetsTable tbody tr[id='resultRow" + (datasetPos-1) + "']").after(newDatasetHTML);
@@ -265,7 +265,7 @@
 		        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
 		        	var datasetThumbnail = "";
 		        	if(respJSON[i].thumbnail != "None")
-		        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+		        		datasetThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
 		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' width='120'>";
 		        	else
 		        		datasetThumbnail = "No thumbnail available"
@@ -276,7 +276,7 @@
 		        								+ "<td>" + createdDate + "</td>"
 		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 		        								+ "<td>" + datasetThumbnail + "</td>"
-		        								+ "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
+		        								+ "<td><a target='_blank' href='" +  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')			
 		        								+ "/datasets/" + respJSON[i].id + "'>View</a></td></tr>");
 		        }
 		        $('#addDatasetsTable').show();

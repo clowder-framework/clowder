@@ -4,6 +4,8 @@ import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
+import play.api.Play.configuration
+import play.api.{Plugin, Logger, Application}
 
  /**
   * A request that adds the User for the current call
@@ -32,6 +34,8 @@ object Permission extends Enumeration {
 		ShowDatasetsMetadata,
 		CreateTags,
 		DeleteTags,
+		UpdateDatasetInformation,
+		UpdateLicense,
 		CreateComments,
 		RemoveComments,
 		EditComments,
@@ -69,37 +73,48 @@ import api.Permission._
  * @author Rob Kooper
  */
 case class WithPermission(permission: Permission) extends Authorization {
+  def isAuthorized(user: Identity): Boolean = {
+    configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
+      case "public" => return publicPermission(user, permission)
+      case "private" => return privatePermission(user, permission)        
+      case _ => return publicPermission(user, permission)
+    }
+  }
 
-	def isAuthorized(user: Identity): Boolean = {
-		// order is important
-		(user, permission) match {
-		  // anybody can list/show
-		  case (_, Public)               => true
-		  case (_, ListCollections)      => true
-		  case (_, ShowCollection)       => true
-		  case (_, ListDatasets)         => true
-		  case (_, ShowDataset)          => true
-		  case (_, SearchDatasets)       => true
-		  case (_, SearchFiles)	         => true
-		  case (_, GetSections)          => true
-		  case (_, ListFiles)            => true
-		  case (_, ShowFile)             => true
-		  case (_, ShowFilesMetadata)    => true
-		  case (_, ShowDatasetsMetadata) => true
-		  case (_, SearchStreams)        => true
-		  case (_, ListSensors)          => true
-		  case (_, GetSensors)           => true
-		  case (_, SearchSensors)        => true
-		  case (_, ExtractMetadata)		 => true
-		  
-		  // FIXME: required by ShowDataset if preview uses original file
-		  // FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
-		  case (_, DownloadFiles)        => true
-		  
-		  // all other permissions require authenticated user
-		  case (null, _)                 => false
-		  case (_, _)                    => true
-		}
-	}
+  def publicPermission(user: Identity, permission: Permission): Boolean = {
+    // order is important
+    (user, permission) match {
+      // anybody can list/show
+      case (_, Public)               => true
+      case (_, ListCollections)      => true
+      case (_, ShowCollection)       => true
+      case (_, ListDatasets)         => true
+      case (_, ShowDataset)          => true
+      case (_, SearchDatasets)       => true
+      case (_, SearchFiles)          => true
+      case (_, GetSections)          => true
+      case (_, ListFiles)            => true
+      case (_, ShowFile)             => true
+      case (_, ShowFilesMetadata)    => true
+      case (_, ShowDatasetsMetadata) => true
+      case (_, SearchStreams)        => true
+      case (_, ListSensors)          => true
+      case (_, GetSensors)           => true
+      case (_, SearchSensors)        => true
+      case (_, ExtractMetadata)      => true
+      
+      // FIXME: required by ShowDataset if preview uses original file
+      // FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
+      case (_, DownloadFiles)        => true
+      
+      // all other permissions require authenticated user
+      case (null, _)                 => false
+      case (_, _)                    => true
+    }
+  }
+
+  def privatePermission(user: Identity, permission: Permission): Boolean = {
+    return user != null
+  }
 }
 

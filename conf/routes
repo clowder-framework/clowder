@@ -183,6 +183,7 @@ GET     /api/files/:id/tags                                     @api.Files.getTa
 POST    /api/files/:id/tags                                     @api.Files.addTags(id: UUID)
 POST    /api/files/:id/tags/remove                              @api.Files.removeTags(id: UUID)
 DELETE	/api/files/:id/tags                              		@api.Files.removeTags(id: UUID)
+POST    /api/files/:id/license                                @api.Files.updateLicense(id: UUID)
 POST    /api/files/:id/tags/remove_all                          @api.Files.removeAllTags(id: UUID)
 GET     /api/files/:id/extracted_metadata                       @api.Files.extract(id:UUID)
 
@@ -247,13 +248,14 @@ POST    /api/datasets/:id/tags                                  	@api.Datasets.a
 POST    /api/datasets/:id/tags/remove                           	@api.Datasets.removeTags(id: UUID)
 POST    /api/datasets/:id/tags/remove_all                       	@api.Datasets.removeAllTags(id: UUID)
 DELETE 	/api/datasets/:id/tags 										@api.Datasets.removeTags(id: UUID)
+POST    /api/datasets/:id/editing                                   @api.Datasets.updateInformation(id: UUID)
+POST    /api/datasets/:id/license                                   @api.Datasets.updateLicense(id: UUID)
 
 GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
 GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)
 POST	/api/datasets/:ds_id/files/:file_id							@api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
 GET 	/api/datasets/:id				 							@api.Datasets.datasetFilesList(id: UUID)
 DELETE	/api/datasets/:id											@api.Datasets.deleteDataset(id: UUID)
-
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					@api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			@api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
