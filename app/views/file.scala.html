@@ -307,17 +307,13 @@
 
         <div class="col-md-4">
 
-            <div class="row ds-section-sm">
-                <dl class="dl-horizontal">
-                    <dt>Author:</dt>
-                    <dd>@file.author.fullName</dd>
-                    <dt>Filename:</dt>
-                    <dd>@file.filename</dd>
-                    <dt>Type:</dt>
-                    <dd>@file.contentType</dd>
-                    <dt>Uploaded on:</dt>
-                    <dd>@file.uploadDate</dd>
-                </dl>
+            <div class="row ds-section-sm file-info">
+                <table class="table table-condensed">
+                    <tr><td><b>Author:</b></td><td>@file.author.fullName</td></tr>
+                    <tr><td><b>Filename:</b></td><td>@file.filename</td></tr>
+                    <tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
+                    <tr><td><b>Uploaded:</b></td><td>@file.uploadDate</td></tr>
+                </table>
             </div>
             
             <div class="row ds-section-sm">

@@ -387,3 +387,8 @@ textarea, input[type='text'], input[type='password']{
 #tile-view {
 }
 
+
+.file-info .table th, .file-info .table td {
+     border-top: none;
+ }
+
