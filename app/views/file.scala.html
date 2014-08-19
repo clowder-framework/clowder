@@ -676,7 +676,26 @@
 	</div>
 	
 	<script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
-	
+
+	    <div class="row">
+            <div class="col-md-8">
+                <h3>Notes</h3>
+	            @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
+            </div>
+            <div class="col-md-4">
+                <h3>Datasets containing the file</h3>
+                @datasetsContainingFile(file, fileDataset, datasetsOutside)
+            </div>
+		</div>
+
+		<div class="row">
+            <div class="col-md-12">
+                <h3>Community-generated metadata</h3>
+                @fileusermetadata(id, usrmd, rdfExported)
+            </div>
+
+        </div>
+
         <div class="row">
             <div class="col-md-12">
                 <h3>Comments</h3>
@@ -689,33 +708,6 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-12">
-                <h3>Notes</h3>
-	            @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
-            </div>
-		</div>
-
-        <div class="row">
-            <div class="col-md-12">
-                <h3>Community-generated metadata</h3>
-                @fileusermetadata(id, usrmd, rdfExported)
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-12">
-                <h3></h3>
-
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-12">
-                <h3>Datasets containing the file</h3>
-                @datasetsContainingFile(file, fileDataset, datasetsOutside)
-            </div>
-        </div>
 	</div>
 
 }
