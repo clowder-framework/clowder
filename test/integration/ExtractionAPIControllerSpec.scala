@@ -70,29 +70,26 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
      "return List of Extractors Names" in {
       val extractions_apicontroller = new api.Extractions(mockfiles, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails)
       val resultExNames = extractions_apicontroller.getExtractorNames.apply(FakeRequest())
-      val bodyText = contentAsJson(resultExNames)
-      val test = Json.toJson(Map("Extractors" -> List("ncsa.cv.face", "ncsa.ocr")))
-      info(test.toString)
-      bodyText mustBe test
-    }
+      contentType(resultExNames) mustEqual Some("application/json")
+      contentAsString(resultExNames) must include ("Extractors")
+      info("Extractors names "+contentAsString(resultExNames))
+     }
 
     "return List of Extractors' Servers IPs/hostname" in {
       val extractions_apicontroller = new api.Extractions(mockfiles, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails)
       val resultExIPs = extractions_apicontroller.getExtractorServersIP.apply(FakeRequest())
-      val bodyText = contentAsJson(resultExIPs)
-      val test = Json.toJson(Map("Servers" -> List("dts1.ncsa.illinois.edu", "141.142.220.244")))
-      info(test.toString)
-      bodyText mustBe test
-    }
+      contentType(resultExIPs) mustEqual Some("application/json")
+      contentAsString(resultExIPs) must include ("Servers")
+      info("Extractors Servers IPs: "+ contentAsString(resultExIPs))
+      }
 
     "return List of Extractors supported Input Types" in {
       val extractions_apicontroller = new api.Extractions(mockfiles, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails)
       val resultExInputTypes = extractions_apicontroller.getExtractorInputTypes.apply(FakeRequest())
-      val bodyText = contentAsJson(resultExInputTypes)
-      val test = Json.toJson(Map("InputTypes" -> List("image", "text")))
-      info(test.toString)
-      bodyText mustBe test
-    }
+      contentType(resultExInputTypes) mustEqual Some("application/json")
+      contentAsString(resultExInputTypes) must include ("InputTypes")
+      info("Extractors Supported Input Types: "+ contentAsString(resultExInputTypes))
+     }
    }
 
 }
