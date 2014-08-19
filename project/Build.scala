@@ -50,8 +50,7 @@ object ApplicationBuild extends Build {
     "postgresql" % "postgresql" % "8.1-407.jdbc3",
     "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
     "org.springframework" % "spring" % "2.5.6",
-    //"org.scalatest" %% "scalatest" % "2.1.0" % "test"
-     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test"
+    "org.scalatestplus" % "play_2.10" % "1.0.0" % "test"
     )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
