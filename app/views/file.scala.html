@@ -467,7 +467,7 @@
               <script language="javascript">
                 function removeTag() {
                   var tagId = $(this).attr("id");
-                  console.log("removing tag " + tagId);
+                  console.log("Removing tag " + tagId);
                   
                   var request = jsRoutes.api.Files.removeTags('@file.id').ajax({
                     data: JSON.stringify({"tags":[tagId]}),
