@@ -96,9 +96,6 @@
     	}
     </script>
 
-	<div class="page-header">
-		<h1>@file.filename</h1>
-	</div>
 	<div class="row">
 		<div class="col-md-8">
 		@for((f, pvs) <- previews) {
@@ -130,6 +127,20 @@
 	    			$('#myTab_@(f.id.toString)').attr('style', 'display:none;');
 	    		</script>
     		}
+
+        <div class="row">
+            <div class="col-md-12 button-margins">
+                <button class="btn btn-primary" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span>Download</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 border-top">
+                <h3>Notes</h3>
+                @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
+            </div>
+        </div>
+
 
 			<!-- sections -->
 			@if(sections.size > 0) {
@@ -305,7 +316,7 @@
 				}
 		</div>
 
-        <div class="col-md-4">
+        <div class="col-md-4 col-left-border">
 
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
@@ -315,12 +326,98 @@
                     <tr><td><b>Uploaded:</b></td><td>@file.uploadDate</td></tr>
                 </table>
             </div>
-            
-            <div class="row ds-section-sm">
-              <button class="btn btn-default pull-right" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span> Download</button>
-            </div>
 
-            <div class="row ds-section-sm">
+            <!-- License elements-->
+            <div class="row ds-section-sm border-top">
+                <div class="accordion" id="accordion6">
+                    <div class="accordion-group">
+                        <div class="accordian-heading">
+                            <h3>License Information</h3>
+                            <table>
+                                <tr>
+                                    <td><b>License Holder: </b></td>
+                                    <td id="rightsholderdata" style="padding-left:10px;">blank</td>
+                                </tr>
+                                <tr>
+                                    <td><b>License Text: </b></td>
+                                    <td id="licensetextdata" style="padding-left:10px;">blank</td>
+                                </tr>
+                            </table>
+                            <p>
+                                @if(user.isDefined) {
+                                <a class="btn btn-info accordion-toggle collapsed" data-toggle="collapse"
+                                   data-parent="#accordion6" href="#collapseSix" id="editlicense"
+                                   title="Edit License Information">
+                                    <span class="glyphicon glyphicon-chevron-down"></span> Edit
+                                </a>
+                                }
+                        </div>
+                        <div id="collapseSix" class="accordion-body collapse">
+                            <div class="panel panel-info">
+                                <div class="panel-body">
+                                    @if(user.isDefined) {
+                                    @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script type="text/javascript" language="javascript">
+                $(document).ready(function() {
+                    //Will have to modify the if check to see if there is data that specifies what should be selected
+                    //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
+                    //describing the license rights, the URL for the license, and whether or not downloading is
+                    //allowed.
+                    var fileLicenseType = "@file.licenseData.m_licenseType";
+                    var fileRightsHolder = "@file.licenseData.m_rightsHolder";
+                    var fileLicenseText = "@file.licenseData.m_licenseText";
+                    var fileLicenseUrl = "@file.licenseData.m_licenseUrl";
+                    var fileAllowDownload = "@file.licenseData.m_allowDownload";
+                    var fileImageBase = '@routes.Assets.at("images")';
+                    var fileAuthorName = '@file.author.fullName';
+
+                    if (!@user.isDefined){
+                        updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDownload, fileImageBase, fileAuthorName);
+                    }
+                });
+
+                function downloadFile() {
+                    var downloadRoute = "@routes.Files.download(UUID(id))";
+                    var owner = "@file.author.fullName";
+                    var userName = null;
+
+                    @user match {
+                        case None => {
+                           userName = "";
+                        }
+                        case Some(x) => {
+                           userName = "@user.getOrElse(null).fullName";
+                        }
+                    }
+
+                    //The checkLicenseType and checkAllowDownload variables are globally defined, and referenced from
+                    //updateLicenseInfo.js.
+                    //
+                    //Check the license type, only type1 needs to have further checks, otherwise download should be allowed
+                    if (checkLicenseType != 'license1') {
+                        window.open(downloadRoute, '_blank');
+                    }
+                    //Check if the downloading of the file is allowed, however always allow the owner of the file to download it.
+                    else {
+                        if (checkAllowDownload == "true" || userName == owner) {
+                            window.open(downloadRoute, '_blank');
+                        }
+                        else {
+                            alert("The license for this file does not allow it to be downloaded.");
+                        }
+                    }
+                }
+                </script>
+            </div>
+            <!-- End License elements -->
+
+            <div class="row ds-section-sm border-top">
               <h3>Tags</h3>
               <ul id="tagList">
                   @file.tags.map { tag =>
@@ -449,97 +546,10 @@
             </div>
 
 
-
-
-      <!-- License elements-->
-      <div class="row ds-section-sm">
-        <div class="accordion" id="accordion6">
-            <div class="accordion-group">
-                <div class="accordian-heading">
-                    <h3>License Information</h3>
-                    <table>
-                        <tr>
-                            <td><b>License Holder: </b></td>
-                            <td id="rightsholderdata" style="padding-left:10px;">blank</td>
-                        </tr>
-                        <tr>
-                            <td><b>License Text: </b></td>
-                            <td id="licensetextdata" style="padding-left:10px;">blank</td>
-                        </tr>
-                    </table>
-                    <p>
-                        @if(user.isDefined) {
-                        <a class="btn btn-info accordion-toggle collapsed" data-toggle="collapse"
-                           data-parent="#accordion6" href="#collapseSix" id="editlicense"
-                           title="Edit License Information">
-                            <span class="glyphicon glyphicon-chevron-down"></span> Edit
-                        </a>
-                        }
-                </div>
-                <div id="collapseSix" class="accordion-body collapse">
-                    <div class="panel panel-info">
-                        <div class="panel-body">
-                            @if(user.isDefined) {
-                            @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="row ds-section-sm border-top">
+            <h3>Datasets containing the file</h3>
+            @datasetsContainingFile(file, fileDataset, datasetsOutside)
         </div>
-        <script type="text/javascript" language="javascript">
-        $(document).ready(function() {
-            //Will have to modify the if check to see if there is data that specifies what should be selected
-            //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
-            //describing the license rights, the URL for the license, and whether or not downloading is
-            //allowed.
-            var fileLicenseType = "@file.licenseData.m_licenseType";
-            var fileRightsHolder = "@file.licenseData.m_rightsHolder";
-            var fileLicenseText = "@file.licenseData.m_licenseText";
-            var fileLicenseUrl = "@file.licenseData.m_licenseUrl";
-            var fileAllowDownload = "@file.licenseData.m_allowDownload";
-            var fileImageBase = '@routes.Assets.at("images")';
-            var fileAuthorName = '@file.author.fullName';
-
-            if (!@user.isDefined){
-                updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDownload, fileImageBase, fileAuthorName);
-            }
-        });
-
-        function downloadFile() {
-        	var downloadRoute = "@routes.Files.download(UUID(id))";
-        	var owner = "@file.author.fullName";
-        	var userName = null;
-
-            @user match {
-            	case None => {
-            	   userName = "";
-            	}
-            	case Some(x) => {
-            	   userName = "@user.getOrElse(null).fullName";
-            	}
-            }
-
-            //The checkLicenseType and checkAllowDownload variables are globally defined, and referenced from
-            //updateLicenseInfo.js.
-            //
-        	//Check the license type, only type1 needs to have further checks, otherwise download should be allowed
-        	if (checkLicenseType != 'license1') {
-        		window.open(downloadRoute, '_blank');
-        	}
-        	//Check if the downloading of the file is allowed, however always allow the owner of the file to download it.
-        	else {
-        		if (checkAllowDownload == "true" || userName == owner) {
-        			window.open(downloadRoute, '_blank');
-        		}
-        		else {
-                    alert("The license for this file does not allow it to be downloaded.");
-                }
-        	}
-        }
-        </script>
-      </div>
-      <!-- End License elements -->
 
     </div> @* End of small right hand side column *@
 
@@ -673,26 +683,7 @@
 	
 	<script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
 
-	    <div class="row">
-            <div class="col-md-8">
-                <h3>Notes</h3>
-	            @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
-            </div>
-            <div class="col-md-4">
-                <h3>Datasets containing the file</h3>
-                @datasetsContainingFile(file, fileDataset, datasetsOutside)
-            </div>
-		</div>
-
-		<div class="row">
-            <div class="col-md-12">
-                <h3>Community-generated metadata</h3>
-                @fileusermetadata(id, usrmd, rdfExported)
-            </div>
-
-        </div>
-
-        <div class="row">
+        <div class="row border-top">
             <div class="col-md-12">
                 <h3>Comments</h3>
                 @if(user.isDefined) {
