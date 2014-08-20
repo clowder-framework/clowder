@@ -48,17 +48,17 @@ class IRODSFileSystemDB @Inject() (
   override  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[models.File] = {
     Play.current.configuration.getString("datastorage.active") match {
       case irods => {
-        val pathId = UUID.generate
+        val pathUUID = UUID.generate
            
-        Logger.debug("irods: save() - Filename: " + filename + " pathId: " + pathId.toString())
+        Logger.debug("irods: save() - Filename: " + filename + " pathId: " + pathUUID.toString())
        
         val irw = new IRODSReadWrite
-        val sf = irw.storeFile(pathId.toString(), filename, inputStream)
+        val sf = irw.storeFile(pathUUID.toString(), filename, inputStream)
 
         // store metadata to mongo        
         //TODO
         // Store full path (not only generated id) to and from irods to the File.path
-        storeFileMD(pathId, filename, contentType, author)
+        storeFileMD(pathUUID, filename, contentType, author)
         
       }
       case _ => {
