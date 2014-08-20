@@ -436,7 +436,9 @@
               <h4>Tags</h4>
               <ul id="tagList">
                   @file.tags.map { tag =>
-                    <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
+                    <li><a href="@routes.Tags.search(tag.name)" id="@tag.name">@tag.name [File]</a>
+                        <a href='javascript:void(0);'>
+                            <i style='display:none;' id='@tag.name' class='glyphicon glyphicon-remove'></i></a></li>
                   }
                   @file.sections.map { section =>
                     @section.tags.map { tag =>
@@ -448,9 +450,9 @@
                 <div class="input-group input-group-sm col-md-8"">
                   <input type="text" id="tagField" class="form-control">
                   <span class="input-group-btn">
-                            <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-                                <span class="glyphicon glyphicon-tag"></span>
-                            </button>
+                        <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+                            <span class="glyphicon glyphicon-tag"></span>
+                        </button>
                   </span>                  
                 </div>
               </form>
@@ -464,25 +466,22 @@
               }
               <script language="javascript">
                 function removeTag() {
-                  console.log("removing tag ");
-                  //alert($(this).attr("id"));
                   var tagId = $(this).attr("id");
+                  console.log("removing tag " + tagId);
                   
-                  var request = jsRoutes.api.Files.removeTag('@file.id').ajax({
-                    data: JSON.stringify({"tagId":tagId}),
+                  var request = jsRoutes.api.Files.removeTags('@file.id').ajax({
+                    data: JSON.stringify({"tags":[tagId]}),
                     type: 'POST',
                     contentType: "application/json"
                   });
-                  request.done(function (response, textStatus, jqXHR){
+
+                  request.done(function (response, textStatus, jqXHR) {
                     console.log("Response " + textStatus);
                     $("#" + tagId).parents("li").remove();
                   });
+
                   request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error(
-                    "The following error occured: "+
-                    textStatus, errorThrown
-                    );
-                    //alert("ERROR: " + errorThrown +". Tag not removed from file." );         
+                    console.error("The following error occured: " + textStatus, errorThrown);
                     window.location = "../login"; // FIXME hardcoded
                   });
                   
@@ -527,12 +526,10 @@
                       request.done(function (response, textStatus, jqXHR){
                         console.log("Response " + response);
                         var url = "../tags/search?tag=" + tag;
-                        $newTag = $("<li><a href='" + url + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
-                          /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
-                      $newTag.find(".glyphicon-remove").click(removeTag);*/                 
-                          $newTag.hover(removeIconMouseIn,removeIconMouseOut);
-                      $newTag.find(".glyphicon-remove").click(removeTag);
-                          $('#tagField').val("");
+                        $newTag = $("<li><a href='" + url + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+                        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
+                        $newTag.find(".glyphicon-remove").click(removeTag);
+                        $('#tagField').val("");
                        });
                   
                       request.fail(function (jqXHR, textStatus, errorThrown){

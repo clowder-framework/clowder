@@ -989,10 +989,9 @@
 				<script language="javascript">
 					function removeTag(){
 							console.log("removing tag ");
-							//alert($(this).attr("id"));
 							var tagId = $(this).attr("id");
 							
-							var request = jsRoutes.api.Datasets.removeTag('@dataset.id').ajax({
+							var request = jsRoutes.api.Datasets.removeTags('@dataset.id').ajax({
 								data: JSON.stringify({"tagId":tagId}),
 								type: 'POST',
 								contentType: "application/json"
@@ -1053,19 +1052,13 @@
 						        console.log("Response " + response);
 						        var url = "../tags/search?tag=" + tag;
 						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
-						        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
-     						$newTag.find(".glyphicon-remove").click(removeTag);*/     						
 						        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
-     						$newTag.find(".glyphicon-remove").click(removeTag);
+     						    $newTag.find(".glyphicon-remove").click(removeTag);
 						        $('#tagField').val("");
 						     });
 				    
 						     request.fail(function (jqXHR, textStatus, errorThrown){
-						        console.error(
-						            "The following error occured: "+
-						            textStatus, errorThrown
-						            
-						        );
+						        console.error("The following error occured: " + textStatus, errorThrown);
 						        window.location = "../login"; // FIXME hardcoded
 						     });
 						     return false;
