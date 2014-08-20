@@ -580,7 +580,7 @@
           <div id="aboutDiv" class="row ds-section-sm" style="margin-top:20px; width: 370px; padding-left:15px;">        
             <div class="accordion" id="accordion5" style="width: 370px;">
                 <div class="accordion-group">
-                    <h3>About</h3>
+                    <h4>About</h4>
                     <div class="accordian-heading" style="padding-left:20px;">                        
                         <table>
                            <tr>
@@ -691,7 +691,7 @@
 			 
 
 			<div class="row ds-section-sm">
-				<h3>Files</h3>
+				<h4>Files</h4>
 				<table id="datasetFilesTable">
 				@dataset.files.map { file =>				
 					<tr><td  class="file-list-cell"><a href="@(routes.Files.file(file.id))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
@@ -831,7 +831,7 @@
 					</script>
 	
 			<div class="row ds-section-sm">
-				<h3>Collections</h3>
+				<h4>Collections</h4>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
 					<tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
@@ -949,7 +949,7 @@
 			</div>
 			
 			<div class="row ds-section-sm">
-				<h3>Tags</h3>
+				<h4>Tags</h4>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
 					  <li name='@tag.name'>
@@ -1094,7 +1094,7 @@
 	        <div class="accordion" id="accordion6" style="width: 370px; padding:5px 10px 5px 10px;">
 	            <div class="accordion-group">
 	                <div class="accordian-heading">
-	                    <h3>License Information</h3>
+	                    <h4>License Information</h4>
 	                    <table>
 	                       <tr>
 	                        <td><b>License Holder: </b></td>

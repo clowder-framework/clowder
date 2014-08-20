@@ -396,6 +396,10 @@ textarea, input[type='text'], input[type='password']{
   border-left: 1px solid #E1E1E8;
 }
 
+.col-right-border {
+  border-right: 1px solid #E1E1E8;
+}
+
 .border-top {
   border-top: 1px solid #E1E1E8;
 }

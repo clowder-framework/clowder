@@ -97,7 +97,7 @@
     </script>
 
 	<div class="row">
-		<div class="col-md-8">
+		<div class="col-md-8 col-right-border">
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
@@ -136,7 +136,7 @@
 
         <div class="row">
             <div class="col-md-12 border-top">
-                <h3>Notes</h3>
+                <h4>Notes</h4>
                 @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
             </div>
         </div>
@@ -314,9 +314,24 @@
 						});
 					</script>
 				}
+
+
+            <div class="row border-top">
+                <div class="col-md-12">
+                    <h4>Comments</h4>
+                    @if(user.isDefined) {
+                    @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
+                    }
+                    <ol class="comment-threads unstyled" id="reply_@file.id.toString">
+                        @comment(comments)
+                    </ol>
+                </div>
+            </div>
+
+
 		</div>
 
-        <div class="col-md-4 col-left-border">
+        <div class="col-md-4">
 
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
@@ -332,7 +347,7 @@
                 <div class="accordion" id="accordion6">
                     <div class="accordion-group">
                         <div class="accordian-heading">
-                            <h3>License Information</h3>
+                            <h4>License Information</h4>
                             <table>
                                 <tr>
                                     <td><b>License Holder: </b></td>
@@ -418,7 +433,7 @@
             <!-- End License elements -->
 
             <div class="row ds-section-sm border-top">
-              <h3>Tags</h3>
+              <h4>Tags</h4>
               <ul id="tagList">
                   @file.tags.map { tag =>
                     <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
@@ -547,7 +562,7 @@
 
 
         <div class="row ds-section-sm border-top">
-            <h3>Datasets containing the file</h3>
+            <h4>Datasets containing the file</h4>
             @datasetsContainingFile(file, fileDataset, datasetsOutside)
         </div>
 
@@ -681,18 +696,6 @@
 	</div>
 	
 	<script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
-
-        <div class="row border-top">
-            <div class="col-md-12">
-                <h3>Comments</h3>
-                @if(user.isDefined) {
-                    @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
-                }
-                <ol class="comment-threads unstyled" id="reply_@file.id.toString">
-                    @comment(comments)
-                </ol>
-            </div>
-        </div>
 
 	</div>
 
