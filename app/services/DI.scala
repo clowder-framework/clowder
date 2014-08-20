@@ -30,8 +30,8 @@ object DI {
 class ProdModule extends AbstractModule {
   protected def configure() {
     bind(classOf[DatasetService]).to(classOf[MongoDBDatasetService])
-    //bind(classOf[FileService]).to(classOf[MongoDBFileService])
-    bind(classOf[FileService]).to(classOf[IRODSFileSystemDB])
+    bind(classOf[FileService]).to(classOf[MongoDBFileService])
+    //bind(classOf[FileService]).to(classOf[IRODSFileSystemDB])
     bind(classOf[MultimediaQueryService]).to(classOf[MongoDBMultimediaQueryService])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
@@ -57,8 +57,8 @@ class ProdModule extends AbstractModule {
 class DevModule extends AbstractModule {
   protected def configure() {
     bind(classOf[DatasetService]).to(classOf[MongoDBDatasetService])
-    //bind(classOf[FileService]).to(classOf[MongoDBFileService])
-    bind(classOf[FileService]).to(classOf[IRODSFileSystemDB])
+    bind(classOf[FileService]).to(classOf[MongoDBFileService])
+    //bind(classOf[FileService]).to(classOf[IRODSFileSystemDB])
     bind(classOf[MultimediaQueryService]).to(classOf[MongoDBMultimediaQueryService])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
