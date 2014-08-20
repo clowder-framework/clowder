@@ -130,7 +130,7 @@
 
         <div class="row">
             <div class="col-md-12 button-margins">
-                <button class="btn btn-primary" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span>Download</button>
+                <button class="btn btn-primary" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span> Download</button>
             </div>
         </div>
 
@@ -320,10 +320,10 @@
 
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
-                    <tr><td><b>Author:</b></td><td>@file.author.fullName</td></tr>
                     <tr><td><b>Filename:</b></td><td>@file.filename</td></tr>
                     <tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
-                    <tr><td><b>Uploaded:</b></td><td>@file.uploadDate</td></tr>
+                    <tr><td><b>Uploaded on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+                    <tr><td><b>Uploaded by:</b></td><td>@file.author.fullName</td></tr>
                 </table>
             </div>
 
@@ -345,7 +345,7 @@
                             </table>
                             <p>
                                 @if(user.isDefined) {
-                                <a class="btn btn-info accordion-toggle collapsed" data-toggle="collapse"
+                                <a class="btn btn-default btn-sm accordion-toggle collapsed" data-toggle="collapse"
                                    data-parent="#accordion6" href="#collapseSix" id="editlicense"
                                    title="Edit License Information">
                                     <span class="glyphicon glyphicon-chevron-down"></span> Edit
@@ -433,7 +433,7 @@
                 <div class="input-group input-group-sm col-md-8"">
                   <input type="text" id="tagField" class="form-control">
                   <span class="input-group-btn">
-                            <button class="btn btn-primary btn-large" id="tagB" title="Add Tag">
+                            <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
                                 <span class="glyphicon glyphicon-tag"></span>
                             </button>
                   </span>                  
@@ -669,7 +669,6 @@
 		            		"The following error occured: "+
 		            		textStatus, errorThrown
 		        			);
-		        		//alert("ERROR: " + errorThrown +". Did not check for new previews." );
 		        		setTimeout(function(){checkForNewPreviews()}, 1000);
 		     			});
 				}
