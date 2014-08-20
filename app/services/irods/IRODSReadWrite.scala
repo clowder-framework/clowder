@@ -4,7 +4,7 @@ import play.api.{ Play, Logger }
 import play.api.Play.current
 import java.io.{ IOException, InputStream }
 import java.net.{ URI, URISyntaxException }
-
+import scala.util.control._
 import org.irods.jargon.core.pub.io.{IRODSFile, IRODSFileOutputStream, IRODSFileInputStream}
 import org.irods.jargon.core.exception.JargonException
 
@@ -15,12 +15,12 @@ import org.irods.jargon.core.exception.JargonException
  * 
  * @author Chris Navarro <cmnavarr@illinois.edu>
  * @author Michal Ondrejcek <ondrejce@illinois.edu>
+ * @date 2014-08-18
  * 
  */
 class IRODSReadWrite() {
 
   val ipg = Play.application.plugin[IRODSPlugin].getOrElse(throw new RuntimeException("irods: Plugin not loaded."))
-  //val ipg = current.plugin[IRODSPlugin].foreach{_.openIRODSConnection()}
   val irodsFileFactory = ipg.getFileFactory
 
   /** Reads file from IRODS repository using IRODSFIleFactory with instance of IRODSFile. Calls 
@@ -30,7 +30,7 @@ class IRODSReadWrite() {
    * @param filename files' name supplied from MongoDB
    * @return input byte stream 
    */
-  def readFile(id: String, filename:String):InputStream = {     
+  def readFile(id: String, filename:String):Array[Byte] = {     
  
     if (!ipg.conn) {
       ipg.openIRODSConnection()
@@ -38,23 +38,35 @@ class IRODSReadWrite() {
     }
     
     val filePathHome: String = ipg.userhome + IRODSFile.PATH_SEPARATOR
-
     val filePath = filePathHome + folderStructure(id) 
         
     Logger.debug("irods: readFile() - filePath: " + filePath + filename)
 
     try {
-	  var file:IRODSFile = irodsFileFactory.instanceIRODSFile(filePath + filename)				  
+	  val file:IRODSFile = irodsFileFactory.instanceIRODSFile(filePath + filename)				  
 	  Logger.debug("irods: readFile() - File exists? " + file.exists())				  
  
-	  irodsFileFactory.instanceIRODSFileInputStream(file).asInstanceOf[InputStream]
+	  val is:InputStream = irodsFileFactory.instanceIRODSFileInputStream(file).asInstanceOf[InputStream]
+	  
+	  // HACK with an intermediary buffer - works, no errors
+      // I could not pass the InputStream is directly to Some(InputStream, String, String, Long) because, 
+      // I think the is.close does not propagate from File > downloads > Enumerator through the chain
+      // to the IRODSFileInputStream. Closing the stream here works.
+      val buffer = Array.ofDim[Byte](10240)
+      if (is != null) {
+	    is.read(buffer)
+	    is.close()
+      }
+	  return buffer
       
     } catch {
     // exceptions return String, need to return null object as an is 
-	  case e : IOException => Logger.error("irods: readFile() - Resource failure.." + e.toString()); return null
-	  case je: JargonException => Logger.error("irods: readFile() - Error getting an IRODS stream" + je.toString()); return null
+	  case e : IOException => Logger.error("irods: readFile() - Resource failure: " + e.toString()); return null
+	  case je: JargonException => Logger.error("irods: readFile() - Error getting an IRODS stream: " + je.toString()); return null
+    } finally {
+      ipg.closeIRODSConnection()    
     }
-   }
+  }
 
   /** Writes file from Medici using IRODSFIleFactory with instance of IRODSFile. Calls 
    *  folderStructure(id) if for folder structure.
@@ -64,7 +76,6 @@ class IRODSReadWrite() {
    * @param InputStream input byte stream supplied by Medici
    */
   def storeFile(id: String, filename:String, is:InputStream) = { 
-    var fos: IRODSFileOutputStream = null
         
     if (!ipg.conn) {
       ipg.openIRODSConnection()
@@ -97,18 +108,19 @@ class IRODSReadWrite() {
 		}
 	  }
 
-	  var fos = irodsFileFactory.instanceIRODSFileOutputStream(file)
-	  fos.write(buffer)        
-             
+	  val fos = irodsFileFactory.instanceIRODSFileOutputStream(file)
+	  fos.write(buffer) 
+	         
+	  if (fos != null) {
+          fos.close()
+      }
+         
     } catch {
 	  case je: JargonException => Logger.error("irods: storeFile() - Error saving dataset to iRODS storage. " + je.toString())
 	  case e : IOException => Logger.error("irods: storeFile() - Error saving dataset to iRODS storage." + e.toString())
 	  case _: Throwable => Logger.error("irods: storeFile() - Error saving to iRODS storage.")
 	} finally {
-       if (fos != null) {
-          fos.close()
-       }
-       // no need to close connection since upload/save is immediately followed by download/getBytes
+       ipg.closeIRODSConnection()
     }
   }
 
@@ -126,14 +138,33 @@ class IRODSReadWrite() {
     }
    try {
       val filePathHome: String = ipg.userhome + IRODSFile.PATH_SEPARATOR 
-      val filePath: String = filePathHome + folderStructure(id)
+      var folderlevel = folderStructure(id)
+      val filePath: String = filePathHome + folderlevel
+      Logger.debug("irods: deleteFile() - File path? " + filePath + filename)
       
       val file: IRODSFile = irodsFileFactory.instanceIRODSFile(filePath + filename)
       Logger.debug("irods: deleteFile() - File exists? " + file.exists())
 
       file.exists() match {
         case true => file.deleteWithForceOption() match {
-          case true => Logger.info("irods: The file " + filename + " has been deleted."); return true
+          case true => {
+            
+            // delete all empty directories as well
+            val loop = new Breaks
+            loop.breakable {
+              while (folderlevel.lastIndexOf(IRODSFile.PATH_SEPARATOR) >= 0) {
+                // check for PATH_SEPARATOR in folderlevel recursively
+                folderlevel = folderlevel.substring(0, folderlevel.lastIndexOf(IRODSFile.PATH_SEPARATOR))
+                val fileDir: IRODSFile = irodsFileFactory.instanceIRODSFile(filePathHome + IRODSFile.PATH_SEPARATOR +folderlevel)
+                // delete folder if empty
+                if (fileDir.list().length == 0) {             
+                  fileDir.deleteWithForceOption()
+                  Logger.debug("irods: deleteFile() - Folder deleted " + fileDir)
+                } else loop.break      
+              } 
+            }
+            Logger.info("irods: The file " + filename + " has been deleted."); return true
+          }
           case false => Logger.debug("irods: deleteFile() - Error deleting a file " + filename); return false
         }
         case false => Logger.debug("irods: deleteFile() - The file " +  filename + " does not exist."); return false
@@ -148,8 +179,8 @@ class IRODSReadWrite() {
     }
   }
  
-   /** creates folder structure n levels deep from two characters of an id string.
-   * This follows a DataWolf logic
+  /** Creates folder structure n levels deep from two characters of an id string.
+   * The last folder is the id itself. This follows a DataWolf logic.
    * 
    * @param id the files' id from MongoDB
    * @return String path with separators
@@ -157,14 +188,18 @@ class IRODSReadWrite() {
   def folderStructure(id:String): String = { 
  	var folderPath: String = ""
 	  
-	var levels:Int = 2
+	val levels:Int = 2
 	var i = 0
-	while (i < 2*levels) {
-	  if (id.length() >= i+2) //break
+	val loop = new Breaks
+    loop.breakable {
+	  while (i < 2*levels) {
+	    // run out of chars in id if levels too deep
+	    if (id.length() <= i) loop.break
 	  
-	  folderPath = folderPath + id.substring(i, i+2) + IRODSFile.PATH_SEPARATOR
-      i += 2
-    }
+	    folderPath = folderPath + id.substring(i, i+2) + IRODSFile.PATH_SEPARATOR
+        i += 2
+      }
+ 	}
  	// creates id folder making the path (plus a filename) unique. The level depth and number of 
  	// id folders control a managable (or allowable) number of file system items 
     if (id.length() > 0) folderPath = folderPath + id + IRODSFile.PATH_SEPARATOR

@@ -20,7 +20,8 @@ import scalax.file.Path
  * Overrides 'save', 'getBytes' and 'removeFiles' of the MongoDBFileService. 
  * 
  * @author Michal Ondrejcek <ondrejce@illinois.edu>
- * 
+ * @date 2014-08-18
+ *    
  */
 class IRODSFileSystemDB @Inject() (
   datasets: DatasetService,
@@ -36,30 +37,28 @@ class IRODSFileSystemDB @Inject() (
   previews,
   threeD,
   sparql) {
-  
-  val ipg = Play.application.plugin[IRODSPlugin].getOrElse(throw new RuntimeException("irods: Plugin not loaded."))
-  
+   
   /**
-   * Save a file to iRODS system and store metadata in Mongo.
+   * Save a file to iRODS system and store metadata in Mongo. Generates pathID, an id number which is part of the path.
+   * It is different from file id stored in MongoDB
    * 
-   * @author Michal Ondrejcek <ondrejce@illinois.edu>
+   * @author Michal Ondrejcek <ondrejce@illinois.edu
    * 
    */
   override  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[models.File] = {
     Play.current.configuration.getString("datastorage.active") match {
       case irods => {
-        val id = UUID.generate
+        val pathId = UUID.generate
            
-        Logger.debug("irods: save() - Filename: " + filename + " id: " + id.toString())
+        Logger.debug("irods: save() - Filename: " + filename + " pathId: " + pathId.toString())
        
         val irw = new IRODSReadWrite
-        val sf = irw.storeFile(id.toString(), filename, inputStream)
+        val sf = irw.storeFile(pathId.toString(), filename, inputStream)
 
         // store metadata to mongo        
         //TODO
-        // I want to store path to and ifrom irods to the File.path
-        // def storeFileMD(id: UUID, filename: String, contentType: Option[String], author: Identity, path: String): Option[File] = {
-        storeFileMD(id, filename, contentType, author)
+        // Store full path (not only generated id) to and from irods to the File.path
+        storeFileMD(pathId, filename, contentType, author)
         
       }
       case _ => {
@@ -70,7 +69,7 @@ class IRODSFileSystemDB @Inject() (
   }
   
   /**
-   * Get the info about a file based on id such as filename from Mongo and file itself from iRods.
+   * Get the info about a file based on file id such as filename from Mongo and file itself from iRods.
    * 
    * @author Michal Ondrejcek <ondrejce@illinois.edu>
    * 
@@ -84,29 +83,21 @@ class IRODSFileSystemDB @Inject() (
        files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
          case Some(file) => {
            val filename: String = file.getAs[String]("filename").getOrElse("unknown-name")
-           
-           Logger.debug("irods: getBytes - Serving file: " + filename)
+           val pathId: String = file.getAs[String]("path").getOrElse("")
+
+           Logger.debug("irods: getBytes - Serving file: " + filename + " pathId: " + pathId)
                   
            val irw = new IRODSReadWrite
-           val is: InputStream = irw.readFile(id.toString(), filename)
+           val buffer: Array[Byte] = irw.readFile(pathId.toString(), filename)
            
-           // HACK with an intermediary buffer - works, no errors
-           // I could not pass the InputStream is directly to Some(InputStream, String, String, Long) because, 
-           // I think the is.close does not propagate from File > downloads > Enumerator through the chain
-           // to the IRODSFileInputStream. Closing the stream here works.
-           val buffer = Array.ofDim[Byte](10240)
-           is.read(buffer)
-           is.close()
-                     
+                      
            try {
              // last statement = return
              Some(new ByteArrayInputStream(buffer),
                 filename,
                 file.getAs[String]("contentType").getOrElse("unknown"),
                 file.getAs[Long]("length").getOrElse(0))  
-           } finally {
-            ipg.closeIRODSConnection()    
-         }
+           } 
           }
           case None => None
         }
@@ -127,11 +118,12 @@ class IRODSFileSystemDB @Inject() (
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => {
         val filename: String = file.getAs[String]("filename").getOrElse("unknown-name")
+        val pathId: String = file.getAs[String]("path").getOrElse("")        
         
-        Logger.debug("irods: removeFile() - Filename: " + filename)
+        Logger.debug("irods: removeFile() - Filename: " + filename + " pathId: " + pathId)
             
         val irw = new IRODSReadWrite
-        val success: Boolean = irw.deleteFile(id.toString(), filename)
+        val success: Boolean = irw.deleteFile(pathId, filename)
         Logger.info("irods: File " + filename + " deleted? " + success)
         
       }
