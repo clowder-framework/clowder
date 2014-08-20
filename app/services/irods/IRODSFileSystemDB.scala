@@ -5,7 +5,7 @@ import services._
 import javax.inject.Inject
 import play.api.{ Play, Logger }
 import play.api.Play.current
-import java.io.{ File, InputStream, FileInputStream, FileOutputStream, ByteArrayInputStream }
+import java.io.{ File, InputStream, FileInputStream, FileOutputStream }
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.MongoDBObject
@@ -87,13 +87,10 @@ class IRODSFileSystemDB @Inject() (
 
            Logger.debug("irods: getBytes - Serving file: " + filename + " pathId: " + pathId)
                   
-           val irw = new IRODSReadWrite
-           val buffer: Array[Byte] = irw.readFile(pathId.toString(), filename)
-           
-                      
+           val irw = new IRODSReadWrite                      
            try {
              // last statement = return
-             Some(new ByteArrayInputStream(buffer),
+             Some(irw.readFile(pathId, filename),
                 filename,
                 file.getAs[String]("contentType").getOrElse("unknown"),
                 file.getAs[Long]("length").getOrElse(0))  

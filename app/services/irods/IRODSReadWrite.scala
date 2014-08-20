@@ -2,7 +2,7 @@ package services.irods
 
 import play.api.{ Play, Logger }
 import play.api.Play.current
-import java.io.{ IOException, InputStream }
+import java.io.{ IOException, InputStream, ByteArrayInputStream }
 import java.net.{ URI, URISyntaxException }
 import scala.util.control._
 import org.irods.jargon.core.pub.io.{IRODSFile, IRODSFileOutputStream, IRODSFileInputStream}
@@ -30,8 +30,9 @@ class IRODSReadWrite() {
    * @param filename files' name supplied from MongoDB
    * @return input byte stream 
    */
-  def readFile(id: String, filename:String):Array[Byte] = {     
- 
+  def readFile(id: String, filename:String): InputStream = {  
+    
+    var is: InputStream = null
     if (!ipg.conn) {
       ipg.openIRODSConnection()
       Logger.info("irods: Connected. " + ipg.conn)
@@ -46,24 +47,26 @@ class IRODSReadWrite() {
 	  val file:IRODSFile = irodsFileFactory.instanceIRODSFile(filePath + filename)				  
 	  Logger.debug("irods: readFile() - File exists? " + file.exists())				  
  
-	  val is:InputStream = irodsFileFactory.instanceIRODSFileInputStream(file).asInstanceOf[InputStream]
+	  is = irodsFileFactory.instanceIRODSFileInputStream(file)
 	  
 	  // HACK with an intermediary buffer - works, no errors
       // I could not pass the InputStream is directly to Some(InputStream, String, String, Long) because, 
       // I think the is.close does not propagate from File > downloads > Enumerator through the chain
       // to the IRODSFileInputStream. Closing the stream here works.
       val buffer = Array.ofDim[Byte](10240)
-      if (is != null) {
-	    is.read(buffer)
-	    is.close()
-      }
-	  return buffer
-      
+	  is.read(buffer)	  
+	  is = new ByteArrayInputStream(buffer)
+
+      return is
     } catch {
     // exceptions return String, need to return null object as an is 
 	  case e : IOException => Logger.error("irods: readFile() - Resource failure: " + e.toString()); return null
 	  case je: JargonException => Logger.error("irods: readFile() - Error getting an IRODS stream: " + je.toString()); return null
     } finally {
+      if (is != null) {
+        is.close()
+      }	       
+
       ipg.closeIRODSConnection()    
     }
   }
@@ -84,14 +87,7 @@ class IRODSReadWrite() {
 
     val filePathHome: String = ipg.userhome + IRODSFile.PATH_SEPARATOR
     var filePath: String = filePathHome + folderStructure(id) 
-      
-    Logger.debug("irods: storeFile() - Input stream bytes: " + is.available())  //Number of bytes that can be read
-    
-    // fill a buffer Array
-    val buffer = Array.ofDim[Byte](10240)
-	is.read(buffer)
-    is.close()
-    
+          
 	// append the filename
     if (!filename.isEmpty) {
       filePath = filePath + filename
@@ -107,6 +103,12 @@ class IRODSReadWrite() {
 		  throw new IOException("irods: storeFile() - Could not create folder to store data in.")
 		}
 	  }
+    
+	  Logger.debug("irods: storeFile() - Input stream bytes: " + is.available())  //Number of bytes that can be read
+    
+      // fill a buffer Array
+      val buffer = Array.ofDim[Byte](10240)
+	  is.read(buffer)
 
 	  val fos = irodsFileFactory.instanceIRODSFileOutputStream(file)
 	  fos.write(buffer) 
@@ -120,7 +122,10 @@ class IRODSReadWrite() {
 	  case e : IOException => Logger.error("irods: storeFile() - Error saving dataset to iRODS storage." + e.toString())
 	  case _: Throwable => Logger.error("irods: storeFile() - Error saving to iRODS storage.")
 	} finally {
-       ipg.closeIRODSConnection()
+	  if (is != null) {
+        is.close()
+      }	       
+      ipg.closeIRODSConnection()
     }
   }
 
