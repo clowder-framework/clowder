@@ -131,7 +131,7 @@ class MongoDBFileService @Inject() (
       ct = MimeTypes.forFileName(filename).getOrElse(ContentTypes.BINARY)
     }
     mongoFile.contentType = ct
-    mongoFile.put("path", id)
+    mongoFile.put("path", id.stringify)
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
