@@ -135,7 +135,7 @@
         </div>
 
         <div class="row">
-            <div class="col-md-12 border-top">
+            <div class="col-md-12 border-top col-section">
                 <h4>Notes</h4>
                 @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
             </div>
@@ -347,20 +347,20 @@
                 <div class="accordion" id="accordion6">
                     <div class="accordion-group">
                         <div class="accordian-heading">
-                            <h4>License Information</h4>
+                            <h4>License</h4>
+
                             <table>
                                 <tr>
-                                    <td><b>License Holder: </b></td>
-                                    <td id="rightsholderdata" style="padding-left:10px;">blank</td>
-                                </tr>
-                                <tr>
-                                    <td><b>License Text: </b></td>
+                                    <td><b>Type: </b></td>
                                     <td id="licensetextdata" style="padding-left:10px;">blank</td>
                                 </tr>
+                                <tr>
+                                    <td><b>Holder: </b></td>
+                                    <td id="rightsholderdata" style="padding-left:10px;">blank</td>
+                                </tr>
                             </table>
-                            <p>
                                 @if(user.isDefined) {
-                                <a class="btn btn-default btn-sm accordion-toggle collapsed" data-toggle="collapse"
+                                <a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
                                    data-parent="#accordion6" href="#collapseSix" id="editlicense"
                                    title="Edit License Information">
                                     <span class="glyphicon glyphicon-chevron-down"></span> Edit
@@ -368,10 +368,10 @@
                                 }
                         </div>
                         <div id="collapseSix" class="accordion-body collapse">
-                            <div class="panel panel-info">
+                            <div class="panel panel-primary">
                                 <div class="panel-body">
                                     @if(user.isDefined) {
-                                    @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
+                                      @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
                                     }
                                 </div>
                             </div>

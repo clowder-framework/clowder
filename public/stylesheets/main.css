@@ -407,3 +407,7 @@ textarea, input[type='text'], input[type='password']{
 .button-margins {
   margin: 20px 0px;
 }
+
+.col-section {
+  margin: 20px 0px;
+}
