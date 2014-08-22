@@ -41,8 +41,11 @@
 					
 				});
 				request.fail(function (jqXHR, textStatus, errorThrown){
-					console.error("The following error occured: " + textStatus, errorThrown);
-					alert("The note was not posted due to : " + errorThrown);
+					console.error("The following error occured: "+textStatus, errorThrown);
+                    var errMsg = "You must be logged in to submit a note.";                    
+                    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                        alert("The note was not posted due to : " + errorThrown);
+                    }					
 				});						
 				return false;			
 			}

@@ -1,6 +1,9 @@
 @(files: List[models.File], prev: String, next: String, limit: Int)(implicit user: Option[securesocial.core.Identity])
 
 @main("Files") {
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
+
 <div class="page-header">
   <h1>Files</h1>
 </div>
@@ -47,5 +50,4 @@
 		</ul>
 	</div>
 </div>
-<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 }

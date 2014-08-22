@@ -56,10 +56,15 @@
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 }
 
-@main("File") {
-	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
-	<script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
-	<script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
+@main("File") {	
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+    <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
+    
 	<script>
 		tinymce.init({selector:'.notesArea',
 	    	theme: "modern",
@@ -204,8 +209,7 @@
 				  		</table>
 				  	</div>
 			  	</div>
-
-				<script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
+				
 				<script>
 				    document.addEventListener("DOMContentLoaded", function () {
 						if ($("#ourvideo").length>0) {
@@ -229,8 +233,7 @@
 						}
 				    });
 		         </script>
-
-			    <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
+			    
 			    <script>
 			    	$(function() {
 					    // Load the classic theme
@@ -367,12 +370,11 @@
                     $("#" + tagId).parents("li").remove();
                   });
                   request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error(
-                    "The following error occured: "+
-                    textStatus, errorThrown
-                    );
-                    //alert("ERROR: " + errorThrown +". Tag not removed from file." );         
-                    window.location = "../login"; // FIXME hardcoded
+                	  console.error("The following error occured: " + textStatus, errorThrown);
+                      var errMsg = "You must be logged in to remove a tag from a file.";                                
+                      if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                          alert("The tag was not removed from the file due to : " + errorThrown);
+                      }    
                   });
                   
                   return false;
@@ -425,8 +427,11 @@
                        });
                   
                       request.fail(function (jqXHR, textStatus, errorThrown){
-                        console.error("The following error occured: " + textStatus, errorThrown);
-                        window.location = "../login"; // FIXME hardcoded
+                    	  console.error("The following error occured: " + textStatus, errorThrown);
+                          var errMsg = "You must be logged in to add a tag to a file.";                                
+                          if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                              alert("The tag was not added to the file due to : " + errorThrown);
+                          }    
                       });
                       return false;
                     }
@@ -599,21 +604,21 @@
 						<td id="licensetextdata" style="padding-left:10px;">blank</td>
 					   </tr>
 					</table>
-					<p>
+					<p>					
 					@if(user.isDefined) {
 					<a class="btn btn-info accordion-toggle collapsed" data-toggle="collapse"
 						data-parent="#accordion6" href="#collapseSix" id="editlicense" 
 						title="Edit License Information">
 						<span class="glyphicon glyphicon-chevron-down"></span> Edit
-				    </a>
+				    </a>				    
 				    }
 				</div>
 				<div id="collapseSix" class="accordion-body collapse">
 				    <div class="panel panel-info">
                         <div class="panel-body">
-                    @if(user.isDefined) {
-                        @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
-                    }
+                            @if(user.isDefined) {
+                                @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
+                            }
                         </div>
                     </div>   
                 </div>
@@ -679,16 +684,14 @@
 	
 		$("#accordionsDiv").offset({ top: newOffsetTop, left: newOffsetLeft })   ;	
 	
-	</script>
-	
-	<script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
+	</script>		
 	
         <div class="row">
             <div class="col-md-12">
                 <h3>Comments</h3>
-                @if(user.isDefined) {
-                    @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
-                }
+                    @if(user.isDefined) {
+                        @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
+                    }
                 <ol class="comment-threads unstyled" id="reply_@file.id.toString">
                     @comment(comments)
                 </ol>
@@ -716,5 +719,4 @@
             </div>
         </div>
 	</div>
-
 }

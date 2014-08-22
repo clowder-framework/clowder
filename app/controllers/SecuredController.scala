@@ -71,8 +71,12 @@ trait SecuredController extends Controller {
                 if (authorization.isAuthorized(null))
                   f(RequestWithUser(None, request))
                 else {
-                    Logger.info("SecuredController - Authentication failure")
-                  Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not logged in.")
+                    //Modified to return a message specifying that authentication is necessary, so that 
+                    //callers can handle it appropriately.
+                    Logger.debug("SecuredController - Authentication failure")
+                  //Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not logged in.")                               
+                  Unauthorized("Authentication Required")
+                
                 }
               }
             }

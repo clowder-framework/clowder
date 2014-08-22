@@ -28,8 +28,9 @@ trait ApiController extends Controller {
             if (key.length > 0) {
               // TODO Check for key in database
               if (key(0).equals(play.Play.application().configuration().getString("commKey"))) {
-                if (authorization.isAuthorized(anonymous))
+                if (authorization.isAuthorized(anonymous)) {
                   f(RequestWithUser(Some(anonymous), request))
+                }
                 else
                   Unauthorized("Not authorized")
               } else {
@@ -51,8 +52,10 @@ trait ApiController extends Controller {
                 if (authorization.isAuthorized(null))
                   f(RequestWithUser(None, request))
                 else {
-                    Logger.info("ApiController - Authentication failure")
-                  Unauthorized("Authentication Required")
+                    Logger.debug("ApiController - Authentication failure")
+                    //Modified to return a message specifying that authentication is necessary, so that 
+                    //callers can handle it appropriately.
+                    Unauthorized("Authentication Required")
                 }
               }
             }

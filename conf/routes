@@ -21,8 +21,8 @@ GET      /users/create/:username                                             con
 GET      /users/view/:id                                                     controllers.Users.view(id)
 
 # Utilities
-GET     /utils/authenticationRequired                   @controllers.RedirectUtility.authenticationRequired
-GET     /utils/authenticationRequiredMessage/:msg       @controllers.RedirectUtility.authenticationRequiredMessage(msg)
+GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
+GET     /utils/authenticationRequiredMessage/:msg/:url       @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
 
 # DTS Information
 GET      /extractions/requests          								    @controllers.ExtractionInfo.getDTSRequests()
