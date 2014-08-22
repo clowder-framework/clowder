@@ -2,7 +2,7 @@ package services.irods
 
 import play.api.{ Play, Logger }
 import play.api.Play.current
-import java.io.{ IOException, InputStream, OutputStream, ByteArrayInputStream }
+import java.io.{ IOException, InputStream, OutputStream, ByteArrayOutputStream, ByteArrayInputStream }
 import java.net.{ URI, URISyntaxException }
 import scala.util.control._
 import org.irods.jargon.core.pub.io.{IRODSFile, IRODSFileOutputStream, IRODSFileInputStream}
@@ -53,12 +53,16 @@ class IRODSReadWrite() {
       // I could not pass the InputStream is directly to Some(InputStream, String, String, Long) because, 
       // I think the is.close does not propagate from File > downloads > Enumerator through the chain
       // to the IRODSFileInputStream. Closing the stream here works.
-	  val buffer = new Array[Byte](10240)
-  	  var count: Int  = -1
-	  while({count = is.read(buffer); count > 0})
-	  new ByteArrayInputStream(buffer)
+	  val buffer: ByteArrayOutputStream = new ByteArrayOutputStream()
+	  var count: Int = -1
+      val data = new Array[Byte](16384)     
 
-      return is
+      while ({count = is.read(data, 0, data.length); count > 0}) {
+        buffer.write(data, 0, count)
+      }
+	  
+	  new ByteArrayInputStream(buffer.toByteArray())			// return
+
     } catch {
     // exceptions return String, need to return null object as an is 
 	  case e : IOException => Logger.error("irods: readFile() - Resource failure: " + e.toString()); return null
@@ -109,7 +113,7 @@ class IRODSReadWrite() {
 	  val fos = irodsFileFactory.instanceIRODSFileOutputStream(file)
  
 	  // fill a buffer Array
-	  val buffer = new Array[Byte](10240)
+	  val buffer = new Array[Byte](16384)
   	  var count: Int  = -1
 	  while({count = is.read(buffer); count > 0}) {
 	    fos.write(buffer, 0, count)
