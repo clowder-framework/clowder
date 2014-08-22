@@ -1420,10 +1420,13 @@ class Files @Inject()(
         case Some(file) =>
           val jtags = FileOP.extractTags(file)
           val jpreviews = FileOP.extractPreviews(id)
-          val vdescriptors=FileOP.extractVersusDescriptors(id)
+          val vdescriptors=files.getVersusMetadata(id) match {
+                  											  case Some(vd)=>api.routes.Files.getVersusMetadataJSON(id).toString
+                  										      case None=> ""
+                  											}
           Logger.debug("jtags: " + jtags.toString)
           Logger.debug("jpreviews: " + jpreviews.toString)
-          Ok(Json.obj("file_id" -> id.toString, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors"->vdescriptors))
+          Ok(Json.obj("file_id" -> id.toString, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors url"->vdescriptors))
         case None => {
           val error_str = "The file with id " + id + " is not found." 
           Logger.error(error_str)
@@ -1577,6 +1580,30 @@ class Files @Inject()(
         files.get(id) match {
           case Some(file) => {
             Ok(files.getTechnicalMetadataJSON(id))
+          }
+          case None => {
+            Logger.error("Error finding file" + id);
+            InternalServerError
+          }
+        }
+    }
+     @ApiOperation(value = "Get Versus metadata of the resource described by the file",
+          notes = "",
+          responseClass = "None", httpMethod = "GET")
+    def getVersusMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+      request =>
+        files.get(id) match {
+          case Some(file) => {
+             files.getVersusMetadata(id) match {
+             		case Some(vd)=>{
+             		    Logger.debug("versus Metadata found")
+             			Ok(files.getVersusMetadata(id).get)
+             		}
+             		case None=>{
+             		  Logger.debug("No versus Metadata found")
+             			Ok("No Versus Metadata Found")
+             		}
+              }
           }
           case None => {
             Logger.error("Error finding file" + id);
