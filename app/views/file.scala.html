@@ -138,18 +138,11 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-12 border-top col-section">
-                <h4>Notes</h4>
-                @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
-            </div>
-        </div>
-
-
 			<!-- sections -->
 			@if(sections.size > 0) {
-			  	<div class="row" style="padding-top: 10px">
-			  	  <div class="col-md-6">
+			  	<div class="row border-top" style="padding-top: 10px">
+			  	  <div class="col-md-12">
+                    <h4>Sections</h4>
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@sections.map { s =>
 					  		@if(s.preview.isDefined) {
@@ -172,7 +165,6 @@
 				</div>
 				<div class="row" style="padding-top: 10px">
 				    <div class="col-md-10">
-				  		<h5>Sections</h5>
 						<table class="table">
 							<thead>
 								<tr>
@@ -185,7 +177,7 @@
 							<tbody>
 					  		@sections.map { s =>
 					  			<tr>
-						  			<td>@s.order</td>
+						  			<td>@(if (s.order > 0) s.order else "")</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
@@ -207,7 +199,7 @@
 						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
 						  		 	 } else {
 						  		 		@if(s.area.isDefined) {
-						  		 			@s.area.toString
+						  		 			@s.area.get.toString
 						  		 		} else {
 											Unknown info
 						  		 		}
@@ -271,6 +263,13 @@
 			    </script>
     			}
     		}
+
+            <div class="row">
+                <div class="col-md-12 border-top col-section">
+                    <h4>Notes</h4>
+                    @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
+                </div>
+            </div>
 
             <div class="row border-top">
                 <div class="col-md-12">
