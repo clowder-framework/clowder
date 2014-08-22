@@ -580,7 +580,7 @@
           <div id="aboutDiv" class="row ds-section-sm" style="margin-top:20px; width: 370px; padding-left:15px;">        
             <div class="accordion" id="accordion5" style="width: 370px;">
                 <div class="accordion-group">
-                    <h3>About</h3>
+                    <h4>About</h4>
                     <div class="accordian-heading" style="padding-left:20px;">                        
                         <table>
                            <tr>
@@ -691,7 +691,7 @@
 			 
 
 			<div class="row ds-section-sm">
-				<h3>Files</h3>
+				<h4>Files</h4>
 				<table id="datasetFilesTable">
 				@dataset.files.map { file =>				
 					<tr><td  class="file-list-cell"><a href="@(routes.Files.file(file.id))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
@@ -745,93 +745,92 @@
 					   <span class="glyphicon glyphicon-plus"></span>
 					</button>
 					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorFiles" >File does not exist or already added.</span>
-					
 				</div>
-					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
-					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-					<script>
-						$("#filesAddSelect").combobox();
-					</script>
-					<script>
-						$('body').on('click','#addFileBtn',function(e){
-							if($("#doesNotExistErrorFiles").css('display') == 'inline')
-								return;
-							if($("#selectingInputFiles").val() == ""){
-								$("#doesNotExistErrorFiles").css('display','inline');
-								return;
-							}
-							
-							var selectedId = $("#filesAddSelect").val();
-							var selectedName = $("#filesAddSelect option:selected").text();							
-							var request = $.ajax({
-							       type: 'POST',
-							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
-							     });  
-							
-							request.done(function (response, textStatus, jqXHR){
-						        console.log("Response " + response);	        
-						        $("#filesAddSelect option[value=" + selectedId + "]").remove();
-						        $("#selectingInputFiles").val("");
-						        var i = 1;	
-							});
-							
-							request.fail(function (jqXHR, textStatus, errorThrown){
-					    		console.error(
-					        		"The following error occured: "+
-					        		textStatus, errorThrown		            
-					    			);
-					    		alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." + textStatus);
-					 			});		
-						});
-						
-						function detachFile(fileId, fileName,event){
-							var request = $.ajax({
-							       type: 'POST',
-							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
-							     });
-							request.done(function (response, textStatus, jqXHR){
-								console.log("Response " + response);	        
-								$(event.target.parentNode.parentNode).remove();
-								var i = 1;
-						        var selectLength = $("#filesAddSelect option").length;
-						        while(i <= selectLength && $("#filesAddSelect option:nth-child("+i+")").text() < fileName)
-						        	i++;
-						        if(i <= selectLength)
-						        	$("#filesAddSelect option:nth-child("+i+")").before("<option value='"+fileId+"'>"+fileName+"</option>");
-						        else if(selectLength > 0)
-						        	$("#filesAddSelect option:nth-child("+(i-1)+")").after("<option value='"+fileId+"'>"+fileName+"</option>");
-						        else
-						        	$("#filesAddSelect").append("<option value='"+fileId+"'>"+fileName+"</option>");
-						        
-						        $("#filesAddSelect").combobox();
-							        var nextHRs = $("#previewedFileName_"+fileId).nextAll("hr");
-							        if(nextHRs.length > 0){
-							        	nextHRs.first().remove();
-							        }
-							        else{
-							        	var prevHRs = $("#previewedFileName_"+fileId).prevAll("hr");
-							        	if(prevHRs.length > 0){
-							        		prevHRs.first().remove();
-								        }
-							        }						        
-						        $("#previewedFileName_"+fileId).remove();
-						        $("#filePrevContainer_"+fileId).remove();
-						        $("#technicalMetadata_"+fileId).remove();						        						        
-						        $("#fileUserMetadata_"+fileId).remove();						        
-							});	
-							request.fail(function (jqXHR, textStatus, errorThrown){
-					    		console.error(
-					        		"The following error occured: "+
-					        		textStatus, errorThrown		            
-					    			);
-					    		alert("ERROR: " + errorThrown +". File not detached from dataset." );
-					 			});
-						}
-						
-					</script>
+
+                <script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
+                <script>
+                    $("#filesAddSelect").combobox();
+                </script>
+                <script>
+                    $('body').on('click','#addFileBtn',function(e){
+                        if($("#doesNotExistErrorFiles").css('display') == 'inline')
+                            return;
+                        if($("#selectingInputFiles").val() == ""){
+                            $("#doesNotExistErrorFiles").css('display','inline');
+                            return;
+                        }
+
+                        var selectedId = $("#filesAddSelect").val();
+                        var selectedName = $("#filesAddSelect option:selected").text();
+                        var request = $.ajax({
+                               type: 'POST',
+                               url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
+                             });
+
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("Response " + response);
+                            $("#filesAddSelect option[value=" + selectedId + "]").remove();
+                            $("#selectingInputFiles").val("");
+                            var i = 1;
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error(
+                                "The following error occured: "+
+                                textStatus, errorThrown
+                                );
+                            alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." + textStatus);
+                            });
+                    });
+
+                    function detachFile(fileId, fileName,event){
+                        var request = $.ajax({
+                               type: 'POST',
+                               url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
+                             });
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("Response " + response);
+                            $(event.target.parentNode.parentNode).remove();
+                            var i = 1;
+                            var selectLength = $("#filesAddSelect option").length;
+                            while(i <= selectLength && $("#filesAddSelect option:nth-child("+i+")").text() < fileName)
+                                i++;
+                            if(i <= selectLength)
+                                $("#filesAddSelect option:nth-child("+i+")").before("<option value='"+fileId+"'>"+fileName+"</option>");
+                            else if(selectLength > 0)
+                                $("#filesAddSelect option:nth-child("+(i-1)+")").after("<option value='"+fileId+"'>"+fileName+"</option>");
+                            else
+                                $("#filesAddSelect").append("<option value='"+fileId+"'>"+fileName+"</option>");
+
+                            $("#filesAddSelect").combobox();
+                                var nextHRs = $("#previewedFileName_"+fileId).nextAll("hr");
+                                if(nextHRs.length > 0){
+                                    nextHRs.first().remove();
+                                }
+                                else{
+                                    var prevHRs = $("#previewedFileName_"+fileId).prevAll("hr");
+                                    if(prevHRs.length > 0){
+                                        prevHRs.first().remove();
+                                    }
+                                }
+                            $("#previewedFileName_"+fileId).remove();
+                            $("#filePrevContainer_"+fileId).remove();
+                            $("#technicalMetadata_"+fileId).remove();
+                            $("#fileUserMetadata_"+fileId).remove();
+                        });
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error(
+                                "The following error occured: "+
+                                textStatus, errorThrown
+                                );
+                            alert("ERROR: " + errorThrown +". File not detached from dataset." );
+                            });
+                    }
+
+                </script>
 	
 			<div class="row ds-section-sm">
-				<h3>Collections</h3>
+				<h4>Collections</h4>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
 					<tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
@@ -949,21 +948,25 @@
 			</div>
 			
 			<div class="row ds-section-sm">
-				<h3>Tags</h3>
+				<h4>Tags</h4>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
 					  <li name='@tag.name'>
 					  	<a href="@routes.Tags.search(tag.name)">@tag.name [Dataset]</a>
-					  	<a href="javascript:void(0);"><span id="@tag.id" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
+					  	<a href="javascript:void(0);"><span id="@tag.name" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
 					  </li>
 					}
   				    @dataset.files.map { file =>
 						@file.tags.map { tag =>
-						  <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
+						  <li>
+                              <a href="@routes.Tags.search(tag.name)">@tag.name [File]</a>
+                          </li>
 						}
 				    	@file.sections.map { section =>
 							@section.tags.map { tag =>
-							  <li><a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a></li>
+							  <li>
+                                  <a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a>
+                              </li>
 							}
 						}
 				   }
@@ -988,57 +991,55 @@
 		      	}
 				<script language="javascript">
 					function removeTag(){
-							console.log("removing tag ");
-							//alert($(this).attr("id"));
-							var tagId = $(this).attr("id");
-							
-							var request = jsRoutes.api.Datasets.removeTag('@dataset.id').ajax({
-								data: JSON.stringify({"tagId":tagId}),
-								type: 'POST',
-								contentType: "application/json"
-							});
-							request.done(function (response, textStatus, jqXHR){
-								console.log("Response " + textStatus);
-								$("#" + tagId).parents("li").remove();
-							});
-							request.fail(function (jqXHR, textStatus, errorThrown){
-								console.error(
-								"The following error occured: "+
-								textStatus, errorThrown
-								);
-								//alert("ERROR: " + errorThrown +". Tag not removed from dataset." );					
-								window.location = "../login"; // FIXME hardcoded
-							});
-							
-							return false;
-						}
+                        var tagId = $(this).attr("id");
+                        console.log("Removing tag " + tagId);
+
+                        var request = jsRoutes.api.Datasets.removeTags('@dataset.id').ajax({
+                            data: JSON.stringify({"tags":[tagId]}),
+                            type: 'POST',
+                            contentType: "application/json"
+                        });
+
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("Response " + textStatus);
+                            $("#" + tagId).parents("li").remove();
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error(
+                            "The following error occured: "+
+                            textStatus, errorThrown
+                            );
+                            window.location = "../login"; // FIXME hardcoded
+                        });
+
+                        return false;
+                    }
 				
 					function removeIconMouseIn() {
 				   		$(this).find(".glyphicon-remove").fadeIn(100);
 					}
+
 					function removeIconMouseOut() {
 				   		$(this).find(".glyphicon-remove").fadeOut(100);				   	
 					}
+
 					$(function() {
-						if(window["userDefined"] == true)
-							$("#tagList").children("li").each(function(){
-								$(this).hover(
-				   						//function(){$(this).find(".glyphicon-remove").fadeIn(100);},
-				   						//function(){$(this).find(".glyphicon-remove").fadeOut(100);}
-								removeIconMouseIn,removeIconMouseOut
-								);
-							});
-						$("#tagList").find(".glyphicon-remove").click(removeTag);
+                       if(window["userDefined"] == true)
+                         $("#tagList").children("li").each(function(){
+                           $(this).hover(removeIconMouseIn,removeIconMouseOut);
+                         });
+                       $("#tagList").find(".glyphicon-remove").click(removeTag);
 						
 					   $('#tagB').click(function() {
 					     var tag = $('#tagField').val();
 					     
 					     var isTagPresent = false;
 					     $("#tagList").children("li").each(function (index, tagLi) {
-					     if($(tagLi).attr("name")===tag){
-					     isTagPresent = true;
-					     alert(true);
-					     }
+					       if($(tagLi).attr("name")===tag){
+					         isTagPresent = true;
+					         alert(true);
+					       }
 					     });
 	
 					     if (tag !== "" && isTagPresent != true) {
@@ -1052,20 +1053,14 @@
 						     request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);
 						        var url = "../tags/search?tag=" + tag;
-						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
-						        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
-     						$newTag.find(".glyphicon-remove").click(removeTag);*/     						
+						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
 						        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
-     						$newTag.find(".glyphicon-remove").click(removeTag);
+     						    $newTag.find(".glyphicon-remove").click(removeTag);
 						        $('#tagField').val("");
 						     });
 				    
 						     request.fail(function (jqXHR, textStatus, errorThrown){
-						        console.error(
-						            "The following error occured: "+
-						            textStatus, errorThrown
-						            
-						        );
+						        console.error("The following error occured: " + textStatus, errorThrown);
 						        window.location = "../login"; // FIXME hardcoded
 						     });
 						     return false;
@@ -1094,7 +1089,7 @@
 	        <div class="accordion" id="accordion6" style="width: 370px; padding:5px 10px 5px 10px;">
 	            <div class="accordion-group">
 	                <div class="accordian-heading">
-	                    <h3>License Information</h3>
+	                    <h4>License Information</h4>
 	                    <table>
 	                       <tr>
 	                        <td><b>License Holder: </b></td>

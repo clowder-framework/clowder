@@ -96,11 +96,8 @@
     	}
     </script>
 
-	<div class="page-header">
-		<h1>@file.filename</h1>
-	</div>
 	<div class="row">
-		<div class="col-md-8">
+		<div class="col-md-8 col-right-border">
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
@@ -131,10 +128,21 @@
 	    		</script>
     		}
 
+        <div class="row">
+            <div class="col-md-12 button-margins">
+                @if(user.isDefined) {
+                <button class="btn btn-primary" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span> Download</button>
+                } else {
+                <button class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
+                }
+            </div>
+        </div>
+
 			<!-- sections -->
 			@if(sections.size > 0) {
-			  	<div class="row" style="padding-top: 10px">
-			  	  <div class="col-md-6">
+			  	<div class="row border-top" style="padding-top: 10px">
+			  	  <div class="col-md-12">
+                    <h4>Sections</h4>
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@sections.map { s =>
 					  		@if(s.preview.isDefined) {
@@ -157,7 +165,6 @@
 				</div>
 				<div class="row" style="padding-top: 10px">
 				    <div class="col-md-10">
-				  		<h5>Sections</h5>
 						<table class="table">
 							<thead>
 								<tr>
@@ -170,7 +177,7 @@
 							<tbody>
 					  		@sections.map { s =>
 					  			<tr>
-						  			<td>@s.order</td>
+						  			<td>@(if (s.order > 0) s.order else "")</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
@@ -192,7 +199,7 @@
 						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
 						  		 	 } else {
 						  		 		@if(s.area.isDefined) {
-						  		 			@s.area.toString
+						  		 			@s.area.get.toString
 						  		 		} else {
 											Unknown info
 						  		 		}
@@ -257,75 +264,195 @@
     			}
     		}
 
-			@if(!file.metadata.isEmpty) {
-					<div id='technicalMetadata_@(file.id)'>
-						<button class="tech_md_" type="button">Show file technical metadata</button>
-						<div style="display:none;">
-						<ul>
-							@for(i <- 0 until file.metadata.length){
-								@printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-							}
-						</ul>
-						</div>
-					</div>
-					<script>
-						$("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
-							if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-								$("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-								$("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
-							}
-							else{
-								$("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-								$("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
-							}
-						});
-					</script>
-				}
+            <div class="row">
+                <div class="col-md-12 border-top col-section">
+                    <h4>Notes</h4>
+                    @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
+                </div>
+            </div>
+
+            <div class="row border-top">
+                <div class="col-md-12">
+                    <h4>Community-generated metadata</h4>
+                    @fileusermetadata(id, usrmd, rdfExported)
+                </div>
+            </div>
+
+            <div class="row border-top">
+                <div class="col-md-12">
+                    <h4>System-generated metadata</h4>
+                    <div id='technicalMetadata_@(file.id)'>
+                        <button class="tech_md_" type="button">Show file technical metadata</button>
+                        <div style="display:none;">
+                        <ul>
+                            @for(i <- 0 until file.metadata.length){
+                                @printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+                            }
+                        </ul>
+                        </div>
+                    </div>
+                    <script>
+                        $("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
+                            if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+                                $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+                                $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
+                            }
+                            else{
+                                $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+                                $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+
 			@if(!file.xmlMetadata.isEmpty) {
-					<div id='xmlMetadata_@(file.id.toString)'>
-						<button class="tech_md_" type="button">Show XML-uploaded metadata</button>
-						<div style="display:none;">
-						<ul>
-								@printLevel(file.xmlMetadata)
-						</ul>
-						</div>
-					</div>
-					<script>
-						$("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
-							if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-								$("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-								$("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
-							}
-							else{
-								$("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-								$("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
-							}
-						});
-					</script>
-				}
+                <div id='xmlMetadata_@(file.id.toString)'>
+                    <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
+                    <div style="display:none;">
+                    <ul>
+                            @printLevel(file.xmlMetadata)
+                    </ul>
+                    </div>
+                </div>
+                <script>
+                    $("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
+                        if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+                            $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+                            $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
+                        }
+                        else{
+                            $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+                            $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
+                        }
+                    });
+                </script>
+            }
+
+
+            <div class="row border-top">
+                <div class="col-md-12">
+                    <h4>Comments</h4>
+                    @if(user.isDefined) {
+                    @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
+                    }
+                    <ol class="comment-threads unstyled" id="reply_@file.id.toString">
+                        @comment(comments)
+                    </ol>
+                </div>
+            </div>
+
+
 		</div>
 
         <div class="col-md-4">
-            <dl class="dl-horizontal">
-                <dt>Author:</dt>
-                <dd>@file.author.fullName</dd>
-                <dt>Filename:</dt>
-                <dd>@file.filename</dd>
-                <dt>Type:</dt>
-                <dd>@file.contentType</dd>
-                <dt>Uploaded on:</dt>
-                <dd>@file.uploadDate</dd>
-            </dl>
-            
-            <div class="row ds-section-sm">
-              <button class="btn btn-default pull-right" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span> Download</button>
+
+            <div class="row ds-section-sm file-info">
+                <table class="table table-condensed">
+                    <tr><td><b>Filename:</b></td><td>@file.filename</td></tr>
+                    <tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
+                    <tr><td><b>Uploaded on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+                    <tr><td><b>Uploaded by:</b></td><td>@file.author.fullName</td></tr>
+                </table>
             </div>
 
-            <div class="row ds-section-sm">
-              <h3>Tags</h3>
+            <!-- License elements-->
+            <div class="row ds-section-sm border-top">
+                <div class="accordion" id="accordion6">
+                    <div class="accordion-group">
+                        <div class="accordian-heading">
+                            <h4>License</h4>
+
+                            <table>
+                                <tr>
+                                    <td><b>Type: </b></td>
+                                    <td id="licensetextdata" style="padding-left:10px;">blank</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Holder: </b></td>
+                                    <td id="rightsholderdata" style="padding-left:10px;">blank</td>
+                                </tr>
+                            </table>
+                                @if(user.isDefined) {
+                                <a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
+                                   data-parent="#accordion6" href="#collapseSix" id="editlicense"
+                                   title="Edit License Information">
+                                    <span class="glyphicon glyphicon-chevron-down"></span> Edit
+                                </a>
+                                }
+                        </div>
+                        <div id="collapseSix" class="accordion-body collapse">
+                            <div class="panel panel-primary">
+                                <div class="panel-body">
+                                    @if(user.isDefined) {
+                                      @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script type="text/javascript" language="javascript">
+                $(document).ready(function() {
+                    //Will have to modify the if check to see if there is data that specifies what should be selected
+                    //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
+                    //describing the license rights, the URL for the license, and whether or not downloading is
+                    //allowed.
+                    var fileLicenseType = "@file.licenseData.m_licenseType";
+                    var fileRightsHolder = "@file.licenseData.m_rightsHolder";
+                    var fileLicenseText = "@file.licenseData.m_licenseText";
+                    var fileLicenseUrl = "@file.licenseData.m_licenseUrl";
+                    var fileAllowDownload = "@file.licenseData.m_allowDownload";
+                    var fileImageBase = '@routes.Assets.at("images")';
+                    var fileAuthorName = '@file.author.fullName';
+
+                    if (!@user.isDefined){
+                        updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDownload, fileImageBase, fileAuthorName);
+                    }
+                });
+
+                function downloadFile() {
+                    var downloadRoute = "@routes.Files.download(UUID(id))";
+                    var owner = "@file.author.fullName";
+                    var userName = null;
+
+                    @user match {
+                        case None => {
+                           userName = "";
+                        }
+                        case Some(x) => {
+                           userName = "@user.getOrElse(null).fullName";
+                        }
+                    }
+
+                    //The checkLicenseType and checkAllowDownload variables are globally defined, and referenced from
+                    //updateLicenseInfo.js.
+                    //
+                    //Check the license type, only type1 needs to have further checks, otherwise download should be allowed
+                    if (checkLicenseType != 'license1') {
+                        window.open(downloadRoute, '_blank');
+                    }
+                    //Check if the downloading of the file is allowed, however always allow the owner of the file to download it.
+                    else {
+                        if (checkAllowDownload == "true" || userName == owner) {
+                            window.open(downloadRoute, '_blank');
+                        }
+                        else {
+                            alert("The license for this file does not allow it to be downloaded.");
+                        }
+                    }
+                }
+                </script>
+            </div>
+            <!-- End License elements -->
+
+            <div class="row ds-section-sm border-top">
+              <h4>Tags</h4>
               <ul id="tagList">
                   @file.tags.map { tag =>
-                    <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
+                    <li><a href="@routes.Tags.search(tag.name)" id="@tag.name">@tag.name [File]</a>
+                        <a href='javascript:void(0);'>
+                            <i style='display:none;' id='@tag.name' class='glyphicon glyphicon-remove'></i></a></li>
                   }
                   @file.sections.map { section =>
                     @section.tags.map { tag =>
@@ -337,9 +464,9 @@
                 <div class="input-group input-group-sm col-md-8"">
                   <input type="text" id="tagField" class="form-control">
                   <span class="input-group-btn">
-                            <button class="btn btn-primary btn-large" id="tagB" title="Add Tag">
-                                <span class="glyphicon glyphicon-tag"></span>
-                            </button>
+                        <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+                            <span class="glyphicon glyphicon-tag"></span>
+                        </button>
                   </span>                  
                 </div>
               </form>
@@ -353,25 +480,22 @@
               }
               <script language="javascript">
                 function removeTag() {
-                  console.log("removing tag ");
-                  //alert($(this).attr("id"));
                   var tagId = $(this).attr("id");
+                  console.log("Removing tag " + tagId);
                   
-                  var request = jsRoutes.api.Files.removeTag('@file.id').ajax({
-                    data: JSON.stringify({"tagId":tagId}),
+                  var request = jsRoutes.api.Files.removeTags('@file.id').ajax({
+                    data: JSON.stringify({"tags":[tagId]}),
                     type: 'POST',
                     contentType: "application/json"
                   });
-                  request.done(function (response, textStatus, jqXHR){
+
+                  request.done(function (response, textStatus, jqXHR) {
                     console.log("Response " + textStatus);
                     $("#" + tagId).parents("li").remove();
                   });
+
                   request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error(
-                    "The following error occured: "+
-                    textStatus, errorThrown
-                    );
-                    //alert("ERROR: " + errorThrown +". Tag not removed from file." );         
+                    console.error("The following error occured: " + textStatus, errorThrown);
                     window.location = "../login"; // FIXME hardcoded
                   });
                   
@@ -416,12 +540,10 @@
                       request.done(function (response, textStatus, jqXHR){
                         console.log("Response " + response);
                         var url = "../tags/search?tag=" + tag;
-                        $newTag = $("<li><a href='" + url + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
-                          /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
-                      $newTag.find(".glyphicon-remove").click(removeTag);*/                 
-                          $newTag.hover(removeIconMouseIn,removeIconMouseOut);
-                      $newTag.find(".glyphicon-remove").click(removeTag);
-                          $('#tagField').val("");
+                        $newTag = $("<li><a href='" + url + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+                        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
+                        $newTag.find(".glyphicon-remove").click(removeTag);
+                        $('#tagField').val("");
                        });
                   
                       request.fail(function (jqXHR, textStatus, errorThrown){
@@ -448,8 +570,15 @@
               </script>
             }
             </div>
+
+
+        <div class="row ds-section-sm border-top">
+            <h4>Datasets containing the file</h4>
+            @datasetsContainingFile(file, fileDataset, datasetsOutside)
         </div>
-    </div>
+
+    </div> @* End of small right hand side column *@
+
 
 
 
@@ -566,7 +695,6 @@
 		            		"The following error occured: "+
 		            		textStatus, errorThrown
 		        			);
-		        		//alert("ERROR: " + errorThrown +". Did not check for new previews." );
 		        		setTimeout(function(){checkForNewPreviews()}, 1000);
 		     			});
 				}
@@ -575,146 +703,11 @@
     			});
     		</script>
 
-        <div class="row">
-            <div class="col-md-12">
-                <h3>Notes</h3>
-	            @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
-            </div>
-		</div>
 
-		<!-- License elements 
-		<div id="accordionsDiv" class="row" style="margin-top:20px; width: 750px; padding-left:15px;">
-		-->
-        <div class="accordion" id="accordion6" style="width: 370px; padding:5px 10px 5px 10px;">
-            <div class="accordion-group">
-				<div class="accordian-heading">
-				    <h3>License Information</h3>
-					<table>
-					   <tr>
-						<td><b>License Holder: </b></td>
-						<td id="rightsholderdata" style="padding-left:10px;">blank</td>
-					   </tr>
-					   <tr>
-						<td><b>License Text: </b></td>
-						<td id="licensetextdata" style="padding-left:10px;">blank</td>
-					   </tr>
-					</table>
-					<p>
-					@if(user.isDefined) {
-					<a class="btn btn-info accordion-toggle collapsed" data-toggle="collapse"
-						data-parent="#accordion6" href="#collapseSix" id="editlicense" 
-						title="Edit License Information">
-						<span class="glyphicon glyphicon-chevron-down"></span> Edit
-				    </a>
-				    }
-				</div>
-				<div id="collapseSix" class="accordion-body collapse">
-				    <div class="panel panel-info">
-                        <div class="panel-body">
-                    @if(user.isDefined) {
-                        @licenseform(file.id.toString, file.licenseData, "file", file.author.fullName)
-                    }
-                        </div>
-                    </div>   
-                </div>
-            </div>
-        </div>
-        <script type="text/javascript" language="javascript">
-        $(document).ready(function() {         
-            //Will have to modify the if check to see if there is data that specifies what should be selected
-            //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
-            //describing the license rights, the URL for the license, and whether or not downloading is 
-            //allowed.        
-            var fileLicenseType = "@file.licenseData.m_licenseType";
-            var fileRightsHolder = "@file.licenseData.m_rightsHolder";
-            var fileLicenseText = "@file.licenseData.m_licenseText";
-            var fileLicenseUrl = "@file.licenseData.m_licenseUrl";        
-            var fileAllowDownload = "@file.licenseData.m_allowDownload";                         
-            var fileImageBase = '@routes.Assets.at("images")';            
-            var fileAuthorName = '@file.author.fullName';
-            
-            if (!@user.isDefined){
-                updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDownload, fileImageBase, fileAuthorName);
-            }
-        });        
-        
-        function downloadFile() {        	        	
-        	var downloadRoute = "@routes.Files.download(UUID(id))";
-        	var owner = "@file.author.fullName";
-        	var userName = null;
-        	
-            @user match {
-            	case None => {
-            	   userName = "";
-            	}
-            	case Some(x) => {
-            	   userName = "@user.getOrElse(null).fullName";
-            	}
-            }
-        	
-            //The checkLicenseType and checkAllowDownload variables are globally defined, and referenced from
-            //updateLicenseInfo.js.
-            //
-        	//Check the license type, only type1 needs to have further checks, otherwise download should be allowed
-        	if (checkLicenseType != 'license1') {
-        		window.open(downloadRoute, '_blank');
-        	}
-        	//Check if the downloading of the file is allowed, however always allow the owner of the file to download it. 
-        	else {
-        		if (checkAllowDownload == "true" || userName == owner) {
-        			window.open(downloadRoute, '_blank');
-        		}
-        		else {
-                    alert("The license for this file does not allow it to be downloaded.");
-                }
-        	}        	
-        }
-        </script>
-        <!-- End License elements -->						
 	</div>
-	<script>
-	    var newOffsetLeft = $("#wrap > .container").offset().left;
-	    var newOffsetTop = $("#accordionsDiv").offset().top;
-	
-	
-		$("#accordionsDiv").offset({ top: newOffsetTop, left: newOffsetLeft })   ;	
-	
-	</script>
 	
 	<script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
-	
-        <div class="row">
-            <div class="col-md-12">
-                <h3>Comments</h3>
-                @if(user.isDefined) {
-                    @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
-                }
-                <ol class="comment-threads unstyled" id="reply_@file.id.toString">
-                    @comment(comments)
-                </ol>
-            </div>
-        </div>
 
-        <div class="row">
-            <div class="col-md-12">
-                <h3>Community-generated metadata</h3>
-                @fileusermetadata(id, usrmd, rdfExported)
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-12">
-                <h3></h3>
-
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-12">
-                <h3>Datasets containing the file</h3>
-                @datasetsContainingFile(file, fileDataset, datasetsOutside)
-            </div>
-        </div>
 	</div>
 
 }
