@@ -9,49 +9,49 @@ body {
 }
 
 /* Wrapper for page content to push down footer */
-      #wrap {
-        min-height: 100%;
-        height: auto !important;
-        height: 100%;
-        /* Negative indent footer by it's height */
-        margin: 0 auto -60px;
-      }
+#wrap {
+  min-height: 100%;
+  height: auto !important;
+  height: 100%;
+  /* Negative indent footer by it's height */
+  margin: 0 auto -60px;
+}
 
-      /* Set the fixed height of the footer here */
-      #push, #footer {
-        height: 60px;
-      }
-      #footer {
-        background-color: #f5f5f5;
-      }
+/* Set the fixed height of the footer here */
+#push, #footer {
+  height: 60px;
+}
 
-      /* Lastly, apply responsive CSS fixes as necessary */
-      @media (max-width: 767px) {
-        #footer {
-          margin-left: -20px;
-          margin-right: -20px;
-          padding-left: 20px;
-          padding-right: 20px;
-        }
-      }
-      
-            /* Custom page CSS
-      -------------------------------------------------- */
-      /* Not required for template or sticky footer method. */
+#footer {
+  background-color: #f5f5f5;
+}
 
-      #wrap > .container {
-        padding-top: 60px;
-      }
-      .container .credit {
-        margin: 20px 0;
-      }
+/* Lastly, apply responsive CSS fixes as necessary */
+@media (max-width: 767px) {
+  #footer {
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
 
-      code {
-        font-size: 80%;
-      }
-      
-      
-      #nwthumbs {
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+#wrap > .container {
+  padding-top: 60px;
+}
+
+.container .credit {
+  margin: 20px 0;
+}
+
+code {
+  font-size: 80%;
+}
+
+#nwthumbs {
   text-align:center;
 }
 
@@ -246,8 +246,6 @@ button.tech_md_ {
 	left:20px;
 }
 
-
-
 #nameDescrFieldSet .control-group .controls textarea{
 	width:208px;
 }
@@ -283,8 +281,6 @@ fieldset #email_field .controls #email{
 	width:208px;
 	height:30px;
 }
-
-
 
 :-webkit-full-screen x3d {
   width: 100%;
@@ -377,11 +373,17 @@ textarea, input[type='text'], input[type='password']{
 	margin-bottom:10px;
 }
 
-
 .truncate {
   width: 150px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+#list-view {
+  padding-top: 20px;
+}
+
+#tile-view {
 }
 
