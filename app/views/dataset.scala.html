@@ -745,90 +745,89 @@
 					   <span class="glyphicon glyphicon-plus"></span>
 					</button>
 					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorFiles" >File does not exist or already added.</span>
-					
 				</div>
-					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
-					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-					<script>
-						$("#filesAddSelect").combobox();
-					</script>
-					<script>
-						$('body').on('click','#addFileBtn',function(e){
-							if($("#doesNotExistErrorFiles").css('display') == 'inline')
-								return;
-							if($("#selectingInputFiles").val() == ""){
-								$("#doesNotExistErrorFiles").css('display','inline');
-								return;
-							}
-							
-							var selectedId = $("#filesAddSelect").val();
-							var selectedName = $("#filesAddSelect option:selected").text();							
-							var request = $.ajax({
-							       type: 'POST',
-							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
-							     });  
-							
-							request.done(function (response, textStatus, jqXHR){
-						        console.log("Response " + response);	        
-						        $("#filesAddSelect option[value=" + selectedId + "]").remove();
-						        $("#selectingInputFiles").val("");
-						        var i = 1;	
-							});
-							
-							request.fail(function (jqXHR, textStatus, errorThrown){
-					    		console.error(
-					        		"The following error occured: "+
-					        		textStatus, errorThrown		            
-					    			);
-					    		alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." + textStatus);
-					 			});		
-						});
-						
-						function detachFile(fileId, fileName,event){
-							var request = $.ajax({
-							       type: 'POST',
-							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
-							     });
-							request.done(function (response, textStatus, jqXHR){
-								console.log("Response " + response);	        
-								$(event.target.parentNode.parentNode).remove();
-								var i = 1;
-						        var selectLength = $("#filesAddSelect option").length;
-						        while(i <= selectLength && $("#filesAddSelect option:nth-child("+i+")").text() < fileName)
-						        	i++;
-						        if(i <= selectLength)
-						        	$("#filesAddSelect option:nth-child("+i+")").before("<option value='"+fileId+"'>"+fileName+"</option>");
-						        else if(selectLength > 0)
-						        	$("#filesAddSelect option:nth-child("+(i-1)+")").after("<option value='"+fileId+"'>"+fileName+"</option>");
-						        else
-						        	$("#filesAddSelect").append("<option value='"+fileId+"'>"+fileName+"</option>");
-						        
-						        $("#filesAddSelect").combobox();
-							        var nextHRs = $("#previewedFileName_"+fileId).nextAll("hr");
-							        if(nextHRs.length > 0){
-							        	nextHRs.first().remove();
-							        }
-							        else{
-							        	var prevHRs = $("#previewedFileName_"+fileId).prevAll("hr");
-							        	if(prevHRs.length > 0){
-							        		prevHRs.first().remove();
-								        }
-							        }						        
-						        $("#previewedFileName_"+fileId).remove();
-						        $("#filePrevContainer_"+fileId).remove();
-						        $("#technicalMetadata_"+fileId).remove();						        						        
-						        $("#fileUserMetadata_"+fileId).remove();						        
-							});	
-							request.fail(function (jqXHR, textStatus, errorThrown){
-					    		console.error(
-					        		"The following error occured: "+
-					        		textStatus, errorThrown		            
-					    			);
-					    		alert("ERROR: " + errorThrown +". File not detached from dataset." );
-					 			});
-						}
-						
-					</script>
+
+                <script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
+                <script>
+                    $("#filesAddSelect").combobox();
+                </script>
+                <script>
+                    $('body').on('click','#addFileBtn',function(e){
+                        if($("#doesNotExistErrorFiles").css('display') == 'inline')
+                            return;
+                        if($("#selectingInputFiles").val() == ""){
+                            $("#doesNotExistErrorFiles").css('display','inline');
+                            return;
+                        }
+
+                        var selectedId = $("#filesAddSelect").val();
+                        var selectedName = $("#filesAddSelect option:selected").text();
+                        var request = $.ajax({
+                               type: 'POST',
+                               url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
+                             });
+
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("Response " + response);
+                            $("#filesAddSelect option[value=" + selectedId + "]").remove();
+                            $("#selectingInputFiles").val("");
+                            var i = 1;
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error(
+                                "The following error occured: "+
+                                textStatus, errorThrown
+                                );
+                            alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." + textStatus);
+                            });
+                    });
+
+                    function detachFile(fileId, fileName,event){
+                        var request = $.ajax({
+                               type: 'POST',
+                               url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
+                             });
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("Response " + response);
+                            $(event.target.parentNode.parentNode).remove();
+                            var i = 1;
+                            var selectLength = $("#filesAddSelect option").length;
+                            while(i <= selectLength && $("#filesAddSelect option:nth-child("+i+")").text() < fileName)
+                                i++;
+                            if(i <= selectLength)
+                                $("#filesAddSelect option:nth-child("+i+")").before("<option value='"+fileId+"'>"+fileName+"</option>");
+                            else if(selectLength > 0)
+                                $("#filesAddSelect option:nth-child("+(i-1)+")").after("<option value='"+fileId+"'>"+fileName+"</option>");
+                            else
+                                $("#filesAddSelect").append("<option value='"+fileId+"'>"+fileName+"</option>");
+
+                            $("#filesAddSelect").combobox();
+                                var nextHRs = $("#previewedFileName_"+fileId).nextAll("hr");
+                                if(nextHRs.length > 0){
+                                    nextHRs.first().remove();
+                                }
+                                else{
+                                    var prevHRs = $("#previewedFileName_"+fileId).prevAll("hr");
+                                    if(prevHRs.length > 0){
+                                        prevHRs.first().remove();
+                                    }
+                                }
+                            $("#previewedFileName_"+fileId).remove();
+                            $("#filePrevContainer_"+fileId).remove();
+                            $("#technicalMetadata_"+fileId).remove();
+                            $("#fileUserMetadata_"+fileId).remove();
+                        });
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error(
+                                "The following error occured: "+
+                                textStatus, errorThrown
+                                );
+                            alert("ERROR: " + errorThrown +". File not detached from dataset." );
+                            });
+                    }
+
+                </script>
 	
 			<div class="row ds-section-sm">
 				<h4>Collections</h4>
