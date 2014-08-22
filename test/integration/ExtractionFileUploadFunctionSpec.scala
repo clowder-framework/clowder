@@ -33,39 +33,7 @@ import play.api.http._
  * @author Smruti Padhy
  */
 
-trait FakeMultipartUpload {
-  case class WrappedFakeRequest[A](fr: FakeRequest[A]) {
-    def withMultipart(parts: (String, ContentBody)*) = {
-      // create a multipart form
-      val entity = new MultipartEntity()
-      parts.foreach { part =>
-        Logger.debug("part 1=="+part._1)
-        entity.addPart(part._1, part._2)
-      }
-
-      // serialize the form
-      val outputStream = new ByteArrayOutputStream
-      entity.writeTo(outputStream)
-      val bytes = outputStream.toByteArray
-
-      // inject the form into our request
-      val headerContentType = entity.getContentType.getValue
-      Logger.debug("hearderContentType ---- "+headerContentType)
-      fr.withBody(bytes).withHeaders(CONTENT_TYPE -> headerContentType)
-    }
-
-    def withFileUpload(fileParam: String, file: java.io.File, contentType: String) = {
-      withMultipart(fileParam -> new FileBody(file, contentType))
-    }
-  }
-
-  implicit def toWrappedFakeRequest[A](fr: FakeRequest[A]) = WrappedFakeRequest(fr)
-
-  // override Play's equivalent Writeable so that the content-type header from the FakeRequest is used instead of application/octet-stream  
-  implicit val wBytes: Writeable[Array[Byte]] = Writeable(identity, None)
-}
-
-trait FakeUpload{
+trait FakeMultipartUpload{
 implicit def writeableOf_multiPartFormData(implicit codec: Codec): Writeable[MultipartFormData[TemporaryFile]] = {
     val builder = MultipartEntityBuilder.create().setBoundary("12345678")
 
@@ -106,8 +74,8 @@ case class WrappedFakeRequest[A](fr: FakeRequest[A]) {
 
 
 
-
-class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with FakeUpload{
+@DoNotDiscover
+class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpload{
  val excludedPlugins = List(
     "services.RabbitmqPlugin",
     "services.VersusPlugin")
