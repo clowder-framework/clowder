@@ -4,6 +4,8 @@
 @import org.apache.commons.io._
 
 @main("Files") {
+
+@util.masonry()
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 
@@ -124,7 +126,5 @@
         </ul>
     </div>
 </div>
-
-@util.masonry()
 
 }
