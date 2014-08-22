@@ -11,7 +11,6 @@ function deleteComment(commentId, reloadPage){
     });
     
     request.done(function (response, textStatus, jqXHR){
-        ///console.log("Response " + response);
         //Sucessful update of the DB - update the interface             	
         deleteCommentCallback(commentId);
     });

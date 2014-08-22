@@ -53,6 +53,7 @@ object ApplicationBuild extends Build {
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test"
   )
 
+
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
   def customLessEntryPoints(base: File): PathFinder = (
     (base / "app" / "assets" / "stylesheets" / "bootstrap" * "bootstrap.less") +++
