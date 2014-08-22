@@ -130,7 +130,11 @@
 
         <div class="row">
             <div class="col-md-12 button-margins">
+                @if(user.isDefined) {
                 <button class="btn btn-primary" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span> Download</button>
+                } else {
+                <button class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
+                }
             </div>
         </div>
 
