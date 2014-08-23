@@ -36,4 +36,8 @@ case class File(
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None )
-
+  
+case class Versus(
+  fileId: UUID,
+  descriptors: Map[String,Any]= Map.empty
+)

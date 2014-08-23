@@ -870,7 +870,7 @@ class MongoDBDatasetService @Inject() (
   }
 }
 
-object  Dataset extends ModelCompanion[Dataset, ObjectId] {
+object Dataset extends ModelCompanion[Dataset, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}

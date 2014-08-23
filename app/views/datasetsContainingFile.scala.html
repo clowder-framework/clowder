@@ -8,20 +8,21 @@
         <td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a></td></tr>
     }
 </table>
+
 <div class="ui-widget requiresLogin" id="datasetsUi">
     <select id="datasetAddSelect" data-inputid="selectingInputDatasets" data-errorid="doesNotExistErrorDatasets">
         @datasetsOutside.map { dataset =>
         <option value="@(dataset.id.toString)">@dataset.name</option>
         }
     </select>
-    <button class="btn btn-primary" id="addDatasBtn" style="vertical-align:top;" title="Add File to Dataset"><span class="glyphicon glyphicon-plus"></span> Add</button>
+    <button class="btn btn-default btn-xs" id="addDatasBtn" style="vertical-align:top;" title="Add File to Dataset"><span class="glyphicon glyphicon-plus"></span> Add</button>
     <span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorDatasets" >Dataset does not exist or already added.</span>
 </div>
-<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>
-						<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
+
+<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
 <script>
-							$("#datasetAddSelect").combobox();
-						</script>
+    $("#datasetAddSelect").combobox();
+</script>
 <script>
         $('body').on('click','#addDatasBtn',function(e){
             if($("#doesNotExistErrorDatasets").css('display') == 'inline')

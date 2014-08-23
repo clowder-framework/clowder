@@ -387,3 +387,27 @@ textarea, input[type='text'], input[type='password']{
 #tile-view {
 }
 
+
+.file-info .table th, .file-info .table td {
+  border-top: none;
+}
+
+.col-left-border {
+  border-left: 1px solid #E1E1E8;
+}
+
+.col-right-border {
+  border-right: 1px solid #E1E1E8;
+}
+
+.border-top {
+  border-top: 1px solid #E1E1E8;
+}
+
+.button-margins {
+  margin: 20px 0px;
+}
+
+.col-section {
+  margin: 20px 0px;
+}
