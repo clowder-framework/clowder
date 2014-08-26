@@ -7,8 +7,6 @@ import play.api.libs.json._
 import play.api.libs.json.Reads
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsResult
-import play.api.Logger
-
 
 case class VersusIndex( 
       val id :String, 
@@ -22,11 +20,8 @@ object VersusIndex {
   /**
    * Serializer for VersusIndex type.
    	*/
-	implicit object IndexWrites extends Writes[VersusIndex] {
-	 		    			   Logger.debug("VersusIndex: writes")
-
+	implicit object VersusIndexWrites extends Writes[VersusIndex] {
 		def writes(index: VersusIndex) = Json.obj(
-
 				"id" -> index.id,
 				"mimetype" -> index.MIMEtype,
 				"extr"->index.extractorID,
@@ -38,9 +33,8 @@ object VersusIndex {
 	/**
 	 * Deserializer for VersusIndex type.
 	 */
-	implicit object IndexReads extends Reads[VersusIndex] {    
+	implicit object VersusIndexReads extends Reads[VersusIndex] {    
 			def reads(json: JsValue) ={  
-			   Logger.debug("VersusIndex: reads")
 				val maybeID:String = (json \"indexID").as[String]
 				val maybeMimeType:String=(json\"MIMEtype").as[String]
 				val exType:String=(json\"Extractor").as[String]
