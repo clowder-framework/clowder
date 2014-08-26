@@ -15,7 +15,7 @@ import org.irods.jargon.core.exception.JargonException
  * 
  * @author Chris Navarro <cmnavarr@illinois.edu>
  * @author Michal Ondrejcek <ondrejce@illinois.edu>
- * @date 2014-08-18
+ * @date 2014-08-26
  * 
  */
 class IRODSReadWrite() {
@@ -82,7 +82,7 @@ class IRODSReadWrite() {
    * @param filename files' name supplied by Medici
    * @param InputStream input byte stream supplied by Medici
    */
-  def storeFile(id: String, filename:String, is:InputStream) = { 
+  def storeFile(id: String, filename:String, is:InputStream): Boolean = { 
         
     if (!ipg.conn) {
       ipg.openIRODSConnection()
@@ -122,11 +122,13 @@ class IRODSReadWrite() {
 	  if (fos != null) {
           fos.close()
       }
+	  Logger.debug("irods: storeFile() - File exists? " + file.exists())	
+	  file.exists()
          
     } catch {
-	  case je: JargonException => Logger.error("irods: storeFile() - Error saving dataset to iRODS storage. " + je.toString())
-	  case e : IOException => Logger.error("irods: storeFile() - Error saving dataset to iRODS storage." + e.toString())
-	  case _: Throwable => Logger.error("irods: storeFile() - Error saving to iRODS storage.")
+	  case je: JargonException => Logger.error("irods: storeFile() - Error saving dataset to iRODS storage. " + je.toString()); return false
+	  case e : IOException => Logger.error("irods: storeFile() - Error saving dataset to iRODS storage." + e.toString()); return false
+	  case _: Throwable => Logger.error("irods: storeFile() - Error saving to iRODS storage."); return false
 	} finally {
 	  if (is != null) {
         is.close()

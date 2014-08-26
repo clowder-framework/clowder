@@ -20,7 +20,7 @@ import scalax.file.Path
  * Overrides 'save', 'getBytes' and 'removeFiles' of the MongoDBFileService. 
  * 
  * @author Michal Ondrejcek <ondrejce@illinois.edu>
- * @date 2014-08-18
+ * @date 2014-08-26
  *    
  */
 class IRODSFileSystemDB @Inject() (
@@ -53,13 +53,14 @@ class IRODSFileSystemDB @Inject() (
         Logger.debug("irods: save() - Filename: " + filename + " pathId: " + pathUUID.toString())
        
         val irw = new IRODSReadWrite
-        val sf = irw.storeFile(pathUUID.toString(), filename, inputStream)
+        val fileExist: Boolean = irw.storeFile(pathUUID.toString(), filename, inputStream)
 
         // store metadata to mongo        
-        //TODO
-        // Store full path (not only generated id) to and from irods to the File.path
-        storeFileMD(pathUUID, filename, contentType, author)
-        
+        if (fileExist) {
+          storeFileMD(pathUUID, filename, contentType, author)
+        } else {
+          None
+        }
       }
       case _ => {
         Logger.error("irods: Could not store file on IRODS")
