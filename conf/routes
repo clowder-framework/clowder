@@ -171,6 +171,7 @@ GET     /api/files/:id/metadata           						@api.Files.get(id: UUID)
 POST    /api/files/:id/metadata           						@api.Files.addMetadata(id: UUID)
 POST    /api/files/:id/versus_metadata                          @api.Files.addVersusMetadata(id:UUID) 
 POST    /api/files/:id/usermetadata	  							@api.Files.addUserMetadata(id: UUID)
+GET     /api/files/:id/versus_metadata                          @api.Files.getVersusMetadataJSON(id:UUID)
 GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnicalMetadataJSON(id: UUID)
 GET     /api/files/:id/xmlmetadatajson           				@api.Files.getXMLMetadataJSON(id: UUID)
 GET     /api/files/:id/usermetadatajson           				@api.Files.getUserMetadataJSON(id: UUID)
@@ -184,6 +185,7 @@ POST    /api/files/:id/tags                                     @api.Files.addTa
 POST    /api/files/:id/tags/remove                              @api.Files.removeTags(id: UUID)
 POST    /api/files/:id/tags/remove_all                          @api.Files.removeAllTags(id: UUID)
 DELETE	/api/files/:id/tags                              		@api.Files.removeTags(id: UUID)
+POST    /api/files/:id/license                                	@api.Files.updateLicense(id: UUID)
 GET     /api/files/:id/extracted_metadata                       @api.Files.extract(id:UUID)
 
 #This may change depending on our discussion on identifying the details of extraction in DTS service
@@ -254,6 +256,9 @@ POST    /api/datasets/:id/tags                                  	@api.Datasets.a
 POST    /api/datasets/:id/tags/remove                           	@api.Datasets.removeTags(id: UUID)
 POST    /api/datasets/:id/tags/remove_all                       	@api.Datasets.removeAllTags(id: UUID)
 DELETE 	/api/datasets/:id/tags 										@api.Datasets.removeTags(id: UUID)
+
+POST    /api/datasets/:id/editing                                   @api.Datasets.updateInformation(id: UUID)
+POST    /api/datasets/:id/license                                   @api.Datasets.updateLicense(id: UUID)  
 
 GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
 GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)

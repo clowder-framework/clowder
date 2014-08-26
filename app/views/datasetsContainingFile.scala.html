@@ -6,20 +6,21 @@
         <td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a></td></tr>
     }
 </table>
+
 <div class="ui-widget requiresLogin" id="datasetsUi">
     <select id="datasetAddSelect" data-inputid="selectingInputDatasets" data-errorid="doesNotExistErrorDatasets">
         @datasetsOutside.map { dataset =>
         <option value="@(dataset.id.toString)">@(dataset.name)</option>
         }
     </select>
-    <button class="btn combobutton" id="addDatasBtn" style="vertical-align:top;">Add to dataset</button>
+    <button class="btn btn-default btn-xs combobutton" id="addDatasBtn" style="vertical-align:top;">Add to dataset</button>
     <span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorDatasets" >Dataset does not exist or already added.</span>
 </div>
-<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>
-						<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
+
+<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
 <script>
-							$("#datasetAddSelect").combobox();
-						</script>
+    $("#datasetAddSelect").combobox();
+</script>
 <script>
         $('body').on('click','#addDatasBtn',function(e){
             if($("#doesNotExistErrorDatasets").css('display') == 'inline')
@@ -34,7 +35,7 @@
             alert("http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+selectedId+"/files/"+"@file.id");
             var request = $.ajax({
                    type: 'POST',
-                   url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+selectedId+"/files/"+"@file.id"
+                   url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+selectedId+"/files/"+"@file.id"
                  });
             request.done(function (response, textStatus, jqXHR){
                 console.log("Response " + response);
@@ -45,17 +46,17 @@
                 while(i <= tableLength && $("#datasTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
                     i++;
                 if(i <= tableLength)
-                    $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
+                    $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                 else if(tableLength > 0)
-                    $("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
+                    $("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                 else{
                     if($("#datasTable tbody").length == 0)
                         $("#datasTable").append("<tbody></tbody>");
-                    $("#datasTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
+                    $("#datasTable tbody").append("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                     }
@@ -72,7 +73,7 @@
         function removeFromDataset(datasetId, datasetName,event){
             var request = $.ajax({
                    type: 'POST',
-                   url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+datasetId+"/filesRemove/"+"@file.id"+"/True"
+                   url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+datasetId+"/filesRemove/"+"@file.id"+"/True"
                  });
             request.done(function (response, textStatus, jqXHR){
                 console.log("Response " + response);

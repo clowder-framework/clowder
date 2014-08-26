@@ -37,23 +37,19 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSett
     serverStartTime = ServerStartTime.startTime
     Logger.debug("\n----Server Start Time----" + serverStartTime + "\n \n")
     
-    current.plugin[MongoSalatPlugin].map {
-      mongo =>
-        mongo.sources.values.map {
-          source =>
-            Logger.debug("Ensuring indexes on " + source.uri)
-            source.collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
-            source.collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
-            source.collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-            source.collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-            source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
-            source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
-            source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
-            source.collection("extractor.servers").ensureIndex(MongoDBObject("server" -> ""))
-	        source.collection("extractor.names").ensureIndex(MongoDBObject("name" -> ""))
-	        source.collection("extractor.inputtypes").ensureIndex(MongoDBObject("inputType" -> ""))
-	        source.collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
-        }
+    current.plugin[MongoSalatPlugin].map { mongo =>
+      mongo.sources.values.map { source =>
+        Logger.debug("Ensuring indexes on " + source.uri)
+        source.collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
+        source.collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
+        source.collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
+        source.collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
+        source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+        source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+        source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+        source.collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
+        source.collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
+      }
     }
     
   //Add permanent admins to app if not already included

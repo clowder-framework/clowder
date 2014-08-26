@@ -3,11 +3,17 @@ function removeDataset(datasetId,event, reloadPage){
 	
 	var request = $.ajax({
 	       type: 'POST',
-	       url: "http://"+hostIp+":"+window.location.port+"/api/datasets/"+datasetId+"/remove"
+	       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+datasetId+"/remove"
 	     });
 	request.done(function (response, textStatus, jqXHR){
         console.log("Response " + response);
-        $(event.target.parentNode.parentNode).remove();
+        if($(event.target).is("span")){
+        	$(event.target.parentNode.parentNode.parentNode).remove();
+        }
+        else{
+        	$(event.target.parentNode.parentNode).remove();
+        }
+        
         
         if(reloadPage == true)
         	location.reload(true);

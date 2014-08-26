@@ -13,7 +13,6 @@
     	var Configuration = {};
     	Configuration.id  = "@id";
 		Configuration.authenticated = @user.isDefined;
-		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
 		Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
 		Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
