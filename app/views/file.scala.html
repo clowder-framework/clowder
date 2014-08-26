@@ -56,10 +56,15 @@
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 }
 
-@main("File") {
-	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
-	<script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
-	<script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
+@main("File") {	
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+    <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
+    
 	<script>
 		tinymce.init({selector:'.notesArea',
 	    	theme: "modern",
@@ -211,8 +216,7 @@
 				  		</table>
 				  	</div>
 			  	</div>
-
-				<script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
+				
 				<script>
 				    document.addEventListener("DOMContentLoaded", function () {
 						if ($("#ourvideo").length>0) {
@@ -236,8 +240,7 @@
 						}
 				    });
 		         </script>
-
-			    <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
+			    
 			    <script>
 			    	$(function() {
 					    // Load the classic theme
@@ -495,8 +498,11 @@
                   });
 
                   request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error("The following error occured: " + textStatus, errorThrown);
-                    window.location = "../login"; // FIXME hardcoded
+                	  console.error("The following error occured: " + textStatus, errorThrown);
+                      var errMsg = "You must be logged in to remove a tag from a file.";                                
+                      if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                          alert("The tag was not removed from the file due to : " + errorThrown);
+                      }    
                   });
                   
                   return false;
@@ -547,8 +553,11 @@
                        });
                   
                       request.fail(function (jqXHR, textStatus, errorThrown){
-                        console.error("The following error occured: " + textStatus, errorThrown);
-                        window.location = "../login"; // FIXME hardcoded
+                    	  console.error("The following error occured: " + textStatus, errorThrown);
+                          var errMsg = "You must be logged in to add a tag to a file.";                                
+                          if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                              alert("The tag was not added to the file due to : " + errorThrown);
+                          }    
                       });
                       return false;
                     }
@@ -702,12 +711,5 @@
     				setTimeout(function(){checkForNewPreviews()}, 1000);
     			});
     		</script>
-
-
 	</div>
-	
-	<script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
-
-	</div>
-
 }

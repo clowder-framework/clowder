@@ -20,6 +20,10 @@ GET      /users/by-country/:country                                          con
 GET      /users/create/:username                                             controllers.Users.create(username)
 GET      /users/view/:id                                                     controllers.Users.view(id)
 
+# Utilities
+GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
+GET     /utils/authenticationRequiredMessage/:msg/:url       @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
+
 # DTS Information
 GET      /extractions/requests          								    @controllers.ExtractionInfo.getDTSRequests()
 GET      /extractions/servers_ips								  		    @controllers.ExtractionInfo.getExtractorServersIP()
