@@ -69,12 +69,12 @@
 	        currentFirstDatasets = 1;
 		});	
 		request.fail(function (jqXHR, textStatus, errorThrown){
-    		console.error(
-        		"The following error occured: "+
-        		textStatus, errorThrown		            
-    			);
-    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection or dataset was possibly removed from the system." );
- 			});
+			console.error("The following error occured: "+textStatus, errorThrown);
+	        var errMsg = "You must be logged in to add a dataset to a collection.";
+	        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+	            alert("The dataset was not added to the collection due to : " + errorThrown);
+	        }    		
+ 		});
 		
 	}
 	
@@ -143,12 +143,12 @@
 	      }       
 		});  	
 		request.fail(function (jqXHR, textStatus, errorThrown){
-    		console.error(
-        		"The following error occured: "+
-        		textStatus, errorThrown		            
-    			);
-    		alert("ERROR: " + errorThrown +". Dataset not removed from collection. The collection was possibly removed from the system." );
- 			});	
+			console.error("The following error occured: "+textStatus, errorThrown);
+	        var errMsg = "You must be logged in to remove a dataset from a collection.";
+	        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+	            alert("The dataset was not removed from the collection due to : " + errorThrown);
+	        }
+ 		});	
 	}
 	
 	function findPos(reqNode){
@@ -298,14 +298,13 @@
 		        return false;
  			});
 			request.fail(function (jqXHR, textStatus, errorThrown){
-        		console.error(
-            		"The following error occured: "+
-            		textStatus, errorThrown		            
-        			);
-        		alert("ERROR: " + errorThrown +". The collection was possibly removed." );
-        		
+				console.error("The following error occured: "+textStatus, errorThrown);
+		        var errMsg = "You must be logged in to add a dataset to a collection.";
+		        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+		            alert("The dataset was not added to the collection due to : " + errorThrown);
+		        }        		        		
         		return false;
-     			});		 
+     		});		 
 	 });
 	 $('body').on('click','#hideAddDatasetBtn',function(e){
 		 $('#addPagerPrev').css('visibility','hidden');
