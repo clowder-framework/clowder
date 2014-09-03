@@ -300,7 +300,7 @@ object Geostreams extends ApiController {
                   computeAverageArea(data, geocode)
                 }
                 case Some("count") => {
-                  Logger.debug("Computing average of data.")
+                  Logger.debug("Computing count of data.")
                   computeCountSensor(data)
                 }
                 case Some(x) => {
@@ -349,8 +349,8 @@ object Geostreams extends ApiController {
       val counter = collection.mutable.HashMap.empty[String, Int]
       val properties = collection.mutable.HashMap.empty[String, JsValue]
       val sensor = data(rowcount)
-      var startdate = sensor.\("start_time")
-      var enddate = sensor.\("end_time")
+      var startdate = Parsers.parseString(sensor.\("start_time"))
+      var enddate = Parsers.parseString(sensor.\("end_time"))
       var streams = collection.mutable.ListBuffer[String](Parsers.parseString(sensor.\("stream_id")))
       sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
         counter(f._1) = 1
@@ -363,11 +363,11 @@ object Geostreams extends ApiController {
       })
       while (rowcount < data.length && sensor.\("sensor_name").equals(data(rowcount).\("sensor_name"))) {
         val nextsensor = data(rowcount)
-        if (startdate.toString.compareTo(nextsensor.\("start_time").toString()) > 0) {
-          startdate = nextsensor.\("start_time")
+        if (startdate.compareTo(Parsers.parseString(nextsensor.\("start_time"))) > 0) {
+          startdate = Parsers.parseString(nextsensor.\("start_time"))
         }
-        if (enddate.toString.compareTo(nextsensor.\("end_time").toString()) < 0) {
-          enddate = nextsensor.\("end_time")
+        if (enddate.compareTo(Parsers.parseString(nextsensor.\("end_time").toString())) < 0) {
+          enddate = Parsers.parseString(nextsensor.\("end_time"))
         }
         if (!streams.contains(Parsers.parseString(nextsensor.\("stream_id")))) {
           streams += Parsers.parseString(nextsensor.\("stream_id"))
@@ -456,11 +456,11 @@ object Geostreams extends ApiController {
     var sensors = collection.mutable.ListBuffer.empty[String]
     data.foreach(sensor => {
       sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
-        if (startdate.isEmpty || startdate.compareTo(sensor.\("start_time").toString()) > 0) {
-          startdate = sensor.\("start_time").toString();
+        if (startdate.isEmpty() || startdate.compareTo(Parsers.parseString(sensor.\("start_time"))) > 0) {
+          startdate = Parsers.parseString(sensor.\("start_time"))
         }
-        if (enddate.isEmpty || enddate.compareTo(sensor.\("end_time").toString()) < 0) {
-          enddate = sensor.\("end_time").toString();
+        if (enddate.isEmpty() || enddate.compareTo(Parsers.parseString(sensor.\("end_time").toString())) < 0) {
+          enddate = Parsers.parseString(sensor.\("end_time"))
         }
         if (!sensors.contains(Parsers.parseString(sensor.\("sensor_id")))) {
           sensors += Parsers.parseString(sensor.\("sensor_id"))
@@ -531,19 +531,19 @@ object Geostreams extends ApiController {
       val counter = collection.mutable.HashMap.empty[String, Int]
       val properties = collection.mutable.HashMap.empty[String, JsValue]
       val sensor = data(rowcount)
-      var startdate = sensor.\("start_time")
-      var enddate = sensor.\("end_time")
+      var startdate = Parsers.parseString(sensor.\("start_time"))
+      var enddate = Parsers.parseString(sensor.\("end_time"))
       var streams = collection.mutable.ListBuffer[String](Parsers.parseString(sensor.\("stream_id")))
       sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
         counter(f._1) = 1
       })
       while (rowcount < data.length && sensor.\("sensor_name").equals(data(rowcount).\("sensor_name"))) {
         val nextsensor = data(rowcount)
-        if (startdate.toString.compareTo(nextsensor.\("start_time").toString()) > 0) {
-          startdate = nextsensor.\("start_time")
+        if (startdate.compareTo(Parsers.parseString(nextsensor.\("start_time"))) > 0) {
+          startdate = Parsers.parseString(nextsensor.\("start_time"))
         }
-        if (enddate.toString.compareTo(nextsensor.\("end_time").toString()) < 0) {
-          enddate = nextsensor.\("end_time")
+        if (enddate.compareTo(Parsers.parseString(nextsensor.\("end_time").toString())) < 0) {
+          enddate = Parsers.parseString(nextsensor.\("end_time"))
         }
         if (!streams.contains(Parsers.parseString(nextsensor.\("stream_id")))) {
           streams += Parsers.parseString(nextsensor.\("stream_id"))
