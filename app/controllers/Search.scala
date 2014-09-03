@@ -441,6 +441,7 @@ class Search @Inject() (
   }
    							
   
+
  /**
    *   Pass a list of indexes and a list of weights to this method. Will calculate the weighted combination
    * of the indexes.
