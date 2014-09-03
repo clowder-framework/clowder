@@ -261,7 +261,7 @@ class Search @Inject() (
     			listOfResults<-futureListResults   			    		
     		} yield {
     		  //added a placeholder for UUID, to work with the new version of template
-    		  Ok(views.html.multimediaSearchResults(queryURL, UUID("123"), listOfResults))     
+    		  Ok(views.html.multimediaSearchResults(queryURL, null, listOfResults))     
     		}              
         } //case some
                     
