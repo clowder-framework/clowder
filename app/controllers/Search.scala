@@ -441,10 +441,10 @@ class Search @Inject() (
   }
    							
   
-  /* Pass a list of indexes and a list of weights to this method
-   * for now only works for two indexes
-   * will need to be generalized in the future
-   */      
+ /**
+   *   Pass a list of indexes and a list of weights to this method. Will calculate the weighted combination
+   * of the indexes.
+   */  
      def findSimilarWeightedIndexes() = 
     						SecuredAction(parse.multipartFormData, 
     								authorization = WithPermission(Permission.SearchDatasets)){
