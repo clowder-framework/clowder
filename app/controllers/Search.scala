@@ -386,7 +386,7 @@ class Search @Inject() (
 	  var inputErrors = false
 	  var errorMessage=""
 	  var weightsList = List(0.0)
-	  Logger.debug("validate 397 input = " + input.toString)
+	  Logger.debug("Search.validateInput = " + input.toString)
     
 	  if(  !input.contains( "FileID" ) || !input.contains("IndexID") || !input.contains("Weight") ){  
 	    inputErrors = true
@@ -398,7 +398,7 @@ class Search @Inject() (
 	  }catch {
 	   		case e:Exception => return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))
 	   }
-	  Logger.debug("390 validate weightsList = " + weightsList)    
+	  Logger.debug("Search.validateInput  weightsList = " + weightsList)    
      
 	   var sum=0.0 	
 	   for (w<- weightsList){
