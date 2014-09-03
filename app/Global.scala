@@ -48,6 +48,8 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSett
         source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
         source.collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
         source.collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
+        
+        source.collection("censusIndex").ensureIndex(MongoDBObject("uploadDate" -> -1))
       }
 
     }
