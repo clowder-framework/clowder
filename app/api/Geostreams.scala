@@ -3,6 +3,7 @@
  */
 package api
 
+import _root_.util.Parsers
 import play.api.mvc.Action
 import play.api.mvc.Request
 import play.api.mvc.AnyContent
@@ -14,9 +15,6 @@ import java.text.SimpleDateFormat
 import play.api.Logger
 import java.sql.Timestamp
 import services.PostgresPlugin
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.ListMap
 import scala.collection.mutable.ListBuffer
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
@@ -284,22 +282,42 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sources: List[String], attributes: List[String], format: String) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sources: List[String], attributes: List[String], format: String, calculate: Option[String]) =
     Action { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchDatapoints(since, until, geocode, stream_id, sources, attributes) match {
+          plugin.searchDatapoints(since, until, geocode, stream_id, sources, attributes, calculate.isDefined) match {
             case Some(d) => {
+              val data = Json.parse(d).as[List[JsObject]]
+              val calculated = calculate match {
+                case Some("average") => {
+                  Logger.debug("Computing average of data.")
+                  computeAverageSensor(data)
+                }
+                case Some("count") => {
+                  Logger.debug("Computing average of data.")
+                  computeCountSensor(data)
+                }
+                case Some(x) => {
+                  Logger.warn("Don't know how to compute " + x)
+                  data
+                }
+                case None => {
+                  Logger.trace("Returning raw data.")
+                  data
+                }
+              }
+
               if (format == "csv") {
                 val configuration = play.api.Play.configuration
                 val hideprefix = configuration.getBoolean("json2csv.hideprefix").getOrElse(false)
                 val ignore = configuration.getString("json2csv.ignore").getOrElse("").split(",")
                 val seperator = configuration.getString("json2csv.seperator").getOrElse("|")
                 val fixgeometry = configuration.getBoolean("json2csv.fixgeometry").getOrElse(true)
-                Ok.chunked(jsonToCSV(Json.parse(d), ignore, seperator, hideprefix, fixgeometry)).as("text/csv")
+                Ok.chunked(jsonToCSV(calculated, ignore, seperator, hideprefix, fixgeometry)).as("text/csv")
               } else {
-                Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+                Ok(jsonp(calculated, request)).as("application/json")
               }
             }
             case None => Ok(Json.toJson("""{"status":"No data found"}""")).as("application/json")
@@ -308,6 +326,85 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
+
+  def computeAverageSensor(data: List[JsObject]) = {
+    var rowcount = 0
+    val result = collection.mutable.ListBuffer.empty[JsObject]
+
+    while (rowcount < data.length) {
+      val counter = collection.mutable.HashMap.empty[String, Int]
+      val properties = collection.mutable.HashMap.empty[String, JsValue]
+      val sensor = data(rowcount)
+      sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+        counter(f._1) = 1
+        properties(f._1) = f._2
+      })
+      while (rowcount < data.length && sensor.\("sensor_name").equals(data(rowcount).\("sensor_name"))) {
+        val nextsensor = data(rowcount)
+        nextsensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+          if (properties contains f._1) {
+            val v1 = Parsers.parseDouble(properties(f._1).toString)
+            val v2 = Parsers.parseDouble(f._2.toString)
+            if (v1.isDefined && v2.isDefined) {
+              counter(f._1) = counter(f._1) + 1
+              properties(f._1) = Json.toJson(v1.get + v2.get)
+            }
+          } else {
+            counter(f._1) = 1
+            properties(f._1) = f._2
+          }
+        })
+        rowcount += 1
+      }
+
+      // compute average
+      properties.foreach(f => {
+        if (counter(f._1) != 1) {
+          properties(f._1) = Json.toJson(Parsers.parseDouble(f._2.toString).getOrElse(0.0) / counter(f._1))
+        }
+      })
+
+      // update sensor
+      result += (sensor ++ Json.obj("properties" -> Json.toJson(properties.toMap)))
+    }
+
+    result.toList
+  }
+
+  def computeCountSensor(data: List[JsObject]) = {
+    var rowcount = 0
+    val result = collection.mutable.ListBuffer.empty[JsObject]
+
+    while (rowcount < data.length) {
+      val counter = collection.mutable.HashMap.empty[String, Int]
+      val properties = collection.mutable.HashMap.empty[String, JsValue]
+      val sensor = data(rowcount)
+      sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+        counter(f._1) = 1
+      })
+      while (rowcount < data.length && sensor.\("sensor_name").equals(data(rowcount).\("sensor_name"))) {
+        val nextsensor = data(rowcount)
+        nextsensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+          if (counter contains f._1) {
+            counter(f._1) = counter(f._1) + 1
+          } else {
+            counter(f._1) = 1
+          }
+        })
+        rowcount += 1
+      }
+
+      // compute average
+      counter.foreach(f => {
+        properties(f._1) = Json.toJson(counter(f._1))
+      })
+
+      // update sensor
+      result += (sensor ++ Json.obj("properties" -> Json.toJson(properties.toMap)))
+    }
+
+    result.toList
+  }
 
   def getDatapoint(id: String) =
     Action { request =>
@@ -330,40 +427,46 @@ object Geostreams extends ApiController {
     }
   }
 
+  def jsonp(json: List[JsObject], request: Request[AnyContent]) = {
+    request.getQueryString("callback") match {
+      case Some(callback) => callback + "([" + json.mkString(",\n") + "]);"
+      case None => json.mkString(",\n")
+    }
+  }
+
   // ----------------------------------------------------------------------
   // Convert JSON data to CSV data.
   // This code is generic and could be moved to special module, right now
   // it is used to take a geostream output and convert it to CSV.
   // ----------------------------------------------------------------------  
   /**
-   * Returns the JSON formated as CSV.
+   * Returns the JSON formatted as CSV.
    *
    * This will take the first json element and create a header from this. All
    * additional rows will be parsed based on this first header. Any fields not
    * in the first row, will not be outputed.
    * @param data the json to be converted to CSV.
    * @param ignore fields to ignore.
-   * @param prefixSeperator set this to the value to seperate elements in json
+   * @param prefixSeperator set this to the value to separate elements in json
    * @param hidePrefix set this to true to not print the prefix in header.
-   * @param fixGeometry set this to true to convert an array of geomtry to lat, lon, alt
-   * @param 
-   * @returns Enumarator[String]
+   * @param fixGeometry set this to true to convert an array of geometry to lat, lon, alt
+   * @return Enumarator[String]
    */
-  def jsonToCSV(data: JsValue, ignore: Array[String] = Array[String](), prefixSeperator: String = " - ", hidePrefix: Boolean = false, fixGeometry:Boolean = true) = {
-    val values = data.as[List[JsObject]]
+  def jsonToCSV(data: List[JsObject], ignore: Array[String] = Array[String](), prefixSeperator: String = " - ", hidePrefix: Boolean = false, fixGeometry:Boolean = true): Enumerator[String] = {
     val headers = ListBuffer.empty[Header]
 
-    // find all headers
+    // load all values, we need to iterate over this list twice, once for headers, once for the data
+    // create a new enumerator to return strings chunked.
     var rowcount = 0
-    val runtime = Runtime.getRuntime()
-    
-    Enumerator.generateM(Future[Option[String]] {
+    Enumerator .generateM(Future[Option[String]] {
       if (headers.isEmpty) {
-	    for(row <- values)
-	      addHeaders(row, headers, ignore, "", prefixSeperator, hidePrefix, fixGeometry)
+        // find all headers first
+        for (row <- data)
+          addHeaders(row, headers, ignore, "", prefixSeperator, hidePrefix, fixGeometry)
         Some(printHeader(headers).substring(1) + "\n")
-      } else if (rowcount < values.length) {
-        val x = Some(printRow(values(rowcount), headers, "", prefixSeperator) + "\n")
+      } else if (rowcount < data.length) {
+        // return data
+        val x = Some(printRow(data(rowcount), headers, "", prefixSeperator) + "\n")
         rowcount += 1
         x
       } else {

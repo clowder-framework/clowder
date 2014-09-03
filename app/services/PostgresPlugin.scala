@@ -5,14 +5,13 @@ package services
 
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
-import com.typesafe.config.ConfigFactory
 import java.sql.DriverManager
 import java.util.Properties
 import java.util.Date
 import java.text.SimpleDateFormat
 import java.sql.Timestamp
 import java.sql.Statement
-import play.api.libs.json.{Json, JsObject, JsArray, JsValue}
+import play.api.libs.json.{Json, JsObject, JsArray}
 
 /**
  * Postgres connection and simple geoindex methods.
@@ -384,7 +383,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     counts
   }
   
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], source: List[String], attributes: List[String]): Option[String] = {
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], source: List[String], attributes: List[String], sortByStation: Boolean): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
@@ -423,7 +422,11 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     //stream
     if (stream_id.isDefined) query += " AND stream_id = ?"
-    query += " order by start_time asc) As t;"
+    query += " order by "
+    if (sortByStation) {
+      query += "sensor_name, "
+    }
+    query += "start_time asc) As t;"
     val st = conn.prepareStatement(query)
     var i = 0
     if (since.isDefined) {
@@ -533,6 +536,6 @@ class PostgresPlugin(application: Application) extends Plugin {
 
   def test() {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
-    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, List.empty, List.empty))
+    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, List.empty, List.empty, false))
   }
 }
