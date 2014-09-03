@@ -415,7 +415,6 @@ object Geostreams extends ApiController {
         } else {
           counter(f._1) = 1
           val v1 = Parsers.parseDouble(f._2.toString)
-          Logger.debug(f._1.toString + " : " + f._2.toString + " = " + v1)
           if (v1.isDefined) {
             properties(f._1) = Json.toJson(v1.get)
           } else {
