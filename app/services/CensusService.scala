@@ -22,11 +22,10 @@ trait CensusService {
   	
 	def insertName(indexId:UUID, indexName:String)
 	
-	//def insertNameType(indexId:UUID, indexName:String, indexType:String)
 	/**
 	 * Check if given index is in the collection
 	 */
-	def isFound888(indexId: UUID): Boolean 
+	def isFound(indexId: UUID): Boolean 
 	
 	def getType(indexId:UUID):Option[String]
 	 
@@ -39,7 +38,7 @@ trait CensusService {
 	
 	/**
 	 * Deletes index with the given id. Returns true is index was found and deleted. Returns false if index was not found.
-	 * In any case, after complation of the method, index will not be in the collection.
+	 * In any case, after completion of the method, index will not be in the collection.
 	 */
 	def delete(id:UUID):Boolean
 	
