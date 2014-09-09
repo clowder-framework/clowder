@@ -1,11 +1,9 @@
 package services.irods
 
-import services.mongodb.MongoDBFileService
 import services._
 import javax.inject.Inject
-import play.api.{ Play, Logger }
-import play.api.Play.current
-import java.io.{ File, InputStream, FileInputStream, FileOutputStream }
+import play.api.Logger
+import java.io.InputStream
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.MongoDBObject
@@ -14,13 +12,12 @@ import models.UUID
 import services.mongodb.{FileDAO, SocialUserDAO, MongoDBFileService, Thumbnail, ThreeDTextureDAO }
 import scalax.io._
 import scalax.io.Resource
-import scalax.file.Path
 
 /**
  * Overrides 'save', 'getBytes' and 'removeFiles' of the MongoDBFileService. 
  * 
  * @author Michal Ondrejcek <ondrejce@illinois.edu>
- * @date 2014-08-26
+ * @date 2014-09-09
  *    
  */
 class IRODSFileSystemDB @Inject() (
@@ -68,29 +65,23 @@ class IRODSFileSystemDB @Inject() (
    * 
    */
   override def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    Play.current.configuration.getString("datastorage.active") match {
-      case irods => {
-
-       val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
+    val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
         
-       files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-         case Some(file) => {
-           val filename: String = file.getAs[String]("filename").getOrElse("unknown-name")
-           val pathId: String = file.getAs[String]("path").getOrElse("")
+    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
+      case Some(file) => {
+        val filename: String = file.getAs[String]("filename").getOrElse("unknown-name")
+        val pathId: String = file.getAs[String]("path").getOrElse("")
 
-           Logger.debug("irods: getBytes - Serving file: " + filename + " pathId: " + pathId)
+        Logger.debug("irods: getBytes - Serving file: " + filename + " pathId: " + pathId)
                   
-           val irw = new IRODSReadWrite                      
-           try {
-             // last statement = return
-             Some(irw.readFile(pathId, filename),
-                filename,
-                file.getAs[String]("contentType").getOrElse("unknown"),
-                file.getAs[Long]("length").getOrElse(0))  
-           } 
-          }
-          case None => None
-        }
+        val irw = new IRODSReadWrite                      
+        try {
+          // last statement = return
+          Some(irw.readFile(pathId, filename),
+            filename,
+            file.getAs[String]("contentType").getOrElse("unknown"),
+            file.getAs[Long]("length").getOrElse(0))  
+        } 
       }
       case None => None
     }
