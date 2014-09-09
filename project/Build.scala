@@ -51,9 +51,9 @@ object ApplicationBuild extends Build {
     "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
     "org.springframework" % "spring" % "2.5.6",
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
-    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
-    "org.scalatest" %% "scalatest" % "2.1.0" % "test"
+    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1"
   )
+
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
   def customLessEntryPoints(base: File): PathFinder = (

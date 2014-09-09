@@ -482,6 +482,15 @@ class MongoDBDatasetService @Inject() (
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
+  
+  /**
+   * Implementation of updateInformation defined in services/DatasetService.scala.
+   */
+  def updateInformation(id: UUID, description: String, name: String) {
+      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
+          $set("description" -> description, "name" -> name), 
+          false, false, WriteConcern.Safe);
+  }
 
   /**
    * Implementation of updateLicenseing defined in services/DatasetService.scala.
@@ -861,7 +870,7 @@ class MongoDBDatasetService @Inject() (
   }
 }
 
-object  Dataset extends ModelCompanion[Dataset, ObjectId] {
+object Dataset extends ModelCompanion[Dataset, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}

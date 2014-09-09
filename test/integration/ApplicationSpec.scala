@@ -2,6 +2,7 @@ package integration
 
 import play.api.test._
 import play.api.test.Helpers._
+import org.scalatest._
 
 /**
  * Functional test. This throws an java.lang.IllegalStateException: cannot enqueue after timer shutdown due to the Akka timer
@@ -11,6 +12,7 @@ import play.api.test.Helpers._
  *
  * @author Luigi Marini
  */
+@DoNotDiscover
 class ApplicationSpec extends IntegrationSpec with ServerFixture {
 
   implicit val user: Option[securesocial.core.Identity] = None

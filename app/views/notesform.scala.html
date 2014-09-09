@@ -9,9 +9,12 @@
 			<div id="noteEditor_@id" style="display:none;">
 				<textarea name="content" class="notesArea" id="noteField_@id" style="width:100%;">@currentHTML</textarea>
 			</div>
-			<button class="btn btn-default" onclick="return openForEdit();" style="display:inline;" id="noteEdit_@id">Edit</button>		
-			<button class="btn btn-default" onclick="return postNote('@id', '@posturl');" style="display:none;" id="notePost_@id">Post</button>
-			<button class="btn btn-default" onclick="return cancelEdit();" style="display:none;" id="noteCancel_@id">Cancel</button>
+			<button class="btn btn-link btn-sm" onclick="return openForEdit();" style="display:inline;" id="noteEdit_@id" title="Edit Note">
+                <span class="glyphicon glyphicon-chevron-down"></span> Edit</button>
+			<button class="btn btn-primary" onclick="return postNote('@id', '@posturl');" style="display:none; margin-top:5px;" id="notePost_@id" title="Submit">
+                <span class="glyphicon glyphicon-ok"></span> Submit</button>
+			<button class="btn btn-default" onclick="return cancelEdit();" style="display:none; margin-top:5px;" id="noteCancel_@id" title="Cancel">
+                <span class="glyphicon glyphicon-remove"></span> Cancel</button>
 		}
 	</form>
 	@if(user.isDefined) {
@@ -41,8 +44,11 @@
 					
 				});
 				request.fail(function (jqXHR, textStatus, errorThrown){
-					console.error("The following error occured: " + textStatus, errorThrown);
-					alert("The note was not posted due to : " + errorThrown);
+					console.error("The following error occured: "+textStatus, errorThrown);
+                    var errMsg = "You must be logged in to submit a note.";                    
+                    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                        alert("The note was not posted due to : " + errorThrown);
+                    }					
 				});						
 				return false;			
 			}

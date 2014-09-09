@@ -29,6 +29,9 @@ import java.io.FileInputStream
 import play.api.libs.concurrent.Execution.Implicits._
 import services._
 import play.api.libs.json.JsString
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsError
 import scala.Some
 import models.File
 import play.api.Play.configuration
@@ -160,13 +163,21 @@ class Datasets @Inject()(
                   }
                 }
                 Logger.info("Adding file to dataset completed")
-              } else Logger.info("File was already in dataset.")
+              } else {
+                  Logger.info("File was already in dataset.")
+              }
               Ok(toJson(Map("status" -> "success")))
             }
-            case None => Logger.error("Error getting file" + fileId); InternalServerError
+            case None => {
+                Logger.error("Error getting file" + fileId)
+                BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+            }
           }
         }
-        case None => Logger.error("Error getting dataset" + dsId); InternalServerError
+        case None => {
+            Logger.error("Error getting dataset" + dsId)
+            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+        }
       }
   }
 
@@ -289,7 +300,74 @@ class Datasets @Inject()(
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
                "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
+  
+  //Update Dataset Information code starts
 
+  /**
+   * REST endpoint: POST: update the administrative information associated with a specific Dataset
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with this dataset 
+   *  
+   *  The data contained in the request body will contain data to be updated associated by the following String key-value pairs:
+   *  
+   *  description -> The text for the updated description for the dataset
+   *  name -> The text for the updated name for this dataset
+   *  
+   *  Currently description and owner are the only fields that can be modified, however this api is extensible enough to add other existing
+   *  fields, or new fields, in the future.  
+   *  
+   */
+  @ApiOperation(value = "Update dataset administrative information",
+      notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
+      responseClass = "None", httpMethod = "POST")
+  def updateInformation(id: UUID) = 
+    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
+    implicit request =>
+      if (UUID.isValid(id.stringify)) {          
+
+          //Set up the vars we are looking for
+          var description: String = null;
+          var name: String = null;
+          
+          var aResult: JsResult[String] = (request.body \ "description").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                description = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"description data is missing."))
+              }                            
+          }
+          
+          aResult = (request.body \ "name").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                name = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"name data is missing."))
+              }                            
+          }
+          Logger.debug(s"updateInformation for dataset with id  $id. Args are $description and $name")
+          
+          datasets.updateInformation(id, description, name)
+          Ok(Json.obj("status" -> "success"))
+      } 
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+  //End, Update Dataset Information code
+  
   //Update License code 
   /**
    * REST endpoint: POST: update the license data associated with a specific Dataset
@@ -339,7 +417,6 @@ class Datasets @Inject()(
           var allowDownload: String = null;
           
           var aResult: JsResult[String] = (request.body \ "licenseType").validate[String]
-          
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {
@@ -352,7 +429,7 @@ class Datasets @Inject()(
           }
           
           aResult = (request.body \ "rightsHolder").validate[String]
-          
+                  
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {
@@ -432,10 +509,7 @@ class Datasets @Inject()(
         Logger.error(s"The given id $id is not a valid ObjectId.")
         BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
-  }
-  
-  
-  
+  }  
   //End, Update License code
   
   // ---------- Tags related code starts ------------------

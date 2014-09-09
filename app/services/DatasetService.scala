@@ -172,6 +172,17 @@ trait DatasetService {
   def update(dataset: Dataset)
   
   /**
+   * Update the administrative information associated with the dataset. This information includes the owner, the 
+   * description, and the date created. Currently, only the description is editable. In the future, other items
+   * or new data may be added that will be editable.
+   * 
+   * id: The id of the dataset
+   * description: A String that represents the updated information for the dataset description.
+   * name: A String that represents the updated name for this dataset.
+   */
+  def updateInformation(id: UUID, description: String, name: String)
+
+  /**
    * Update the license data that is currently associated with the dataset.
    * 
    * id: The id of the dataset

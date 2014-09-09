@@ -142,6 +142,11 @@ class CassandraDataset extends DatasetService {
   def removeXMLMetadata(id: UUID, fileId: UUID) {}
 
   /**
+   * Implementation of updateInformation defined in services/DatasetService.scala.
+   */
+  def updateInformation(id: UUID, description: String, name: String) {}
+
+  /**
    * Implementation of updateLicenseing defined in services/DatasetService.scala.
    */
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {}

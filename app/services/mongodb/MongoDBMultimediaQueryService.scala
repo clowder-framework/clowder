@@ -96,7 +96,7 @@ def getFile(id: UUID): Option[TempFile] = {
   }
 
   def findFeatureBySection(sectionId: UUID): Option[MultimediaFeatures] = {
-    MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"-> sectionId))
+    MultimediaFeaturesDAO.findOne(MongoDBObject("section_id"-> new ObjectId(sectionId.stringify)))
   }
 
   def updateFeatures(multimediaFeature: MultimediaFeatures, sectionId: UUID, features: List[JsObject]) {
