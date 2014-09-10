@@ -13,10 +13,10 @@ function removeCollection(collectionId,event){
         }    
     });
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error(
-    		"The following error occured: "+
-    		textStatus, errorThrown		            
-			);
-		alert("ERROR: " + errorThrown +". Collection not removed. Maybe it was already removed." );
-			});
+		console.error("The following error occured: "+textStatus, errorThrown);
+        var errMsg = "You must be logged in to remove a collection from the system.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            alert("The collection was not removed due to : " + errorThrown);
+        }   		
+	});
 }

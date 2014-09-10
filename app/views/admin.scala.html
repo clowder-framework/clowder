@@ -1,5 +1,8 @@
 @(theme: Int, appAppearance: models.AppAppearance, appConfiguration: AppConfiguration)(implicit user: Option[securesocial.core.Identity])
 @main("Administration") {
+
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    
 	<div class="page-header">
 		<h1>Administration</h1>
 	</div>
@@ -713,7 +716,11 @@ var createBtn=document.getElementById('create');
                 //alert("Sucessfully created");
             },
             error : function(xhr, textStatus, errorThrown) {
-                console.log('Make call failed - createIndex ' +  errorThrown);
+            	console.error("The following error occured: "+textStatus, errorThrown);
+                var errMsg = "You must be logged in to create an index.";                    
+                if (!checkErrorAndRedirect(xhr, errMsg)) {
+                    alert("The index was not created due to : " + errorThrown);
+                }                
             }
         });
         
@@ -729,13 +736,22 @@ var createBtn=document.getElementById('create');
     	var id=indexselected;
     
     	var request=jsRoutes.controllers.Admin.buildIndex(id).ajax({
-   					 type:'POST'
-    				});
-    				request.done(function (response, textStatus, jqXHR){
-    				$('#buildIndex').text(response);
-					console.log("Response =" + response);
-   					 });
-    	    }						
+    		   type:'POST'
+    	});
+    	
+    	request.done(function (response, textStatus, jqXHR){
+    	    $('#buildIndex').text(response);
+    	    console.log("Response =" + response);
+    	});
+    	
+    	request.fail(function (jqXHR, textStatus, errorThrown){         
+            console.error("The following error occured: "+textStatus, errorThrown);
+            var errMsg = "You must be logged in to build an index.";                    
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                alert("The index was not built due to : " + errorThrown);
+            }
+        });
+     }						
     	
 var listBtn=document.getElementById('list');
     listBtn.onclick=function(evt){
@@ -748,6 +764,7 @@ var listBtn=document.getElementById('list');
    					 type:'GET',
    					 dataType: "json",
     				});
+    	
     				request.done(function (json, textStatus, jqXHR){
 						console.log("Response =" + json);
 						var availableIndexes = "";
@@ -773,6 +790,14 @@ var listBtn=document.getElementById('list');
 					
 					
    					 });
+    				
+    				request.fail(function (jqXHR, textStatus, errorThrown){         
+                        console.error("The following error occured: "+textStatus, errorThrown);
+                        var errMsg = "You must be logged in to list the available indexes.";                    
+                        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                            alert("The indexes were not listed due to : " + errorThrown);
+                        }
+                    });
     	    }		
 
 
@@ -787,10 +812,19 @@ var deleteBtn=document.getElementById('delete');
     	var request=jsRoutes.controllers.Admin.deleteIndex(id).ajax({
    					 type:'DELETE'
     				});
+    	
     				request.done(function (response, textStatus, jqXHR){
     				$('#deleteIndex').text(response);
 					console.log("Response =" + response);
    					 });
+    				
+    				request.fail(function (jqXHR, textStatus, errorThrown){         
+                        console.error("The following error occured: "+textStatus, errorThrown);
+                        var errMsg = "You must be logged in to delete an index.";                    
+                        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                            alert("The index was not deleted due to : " + errorThrown);
+                        }
+                    });
     }		
     
    var deleteAllBtn=document.getElementById('deleteAll');
@@ -801,10 +835,19 @@ var deleteBtn=document.getElementById('delete');
     	var request=jsRoutes.controllers.Admin.deleteAllIndexes().ajax({
    					 type:'DELETE'
     				});
+    	
     				request.done(function (response, textStatus, jqXHR){
     				$('#deleteAllIndex').text(response);
 					console.log("Response =" + response);
    					 });
+    				
+    				request.fail(function (jqXHR, textStatus, errorThrown){         
+                        console.error("The following error occured: "+textStatus, errorThrown);
+                        var errMsg = "You must be logged in to delete all indexes.";                    
+                        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                            alert("The indexes were not deleted due to : " + errorThrown);
+                        }
+                    });
     
     }	 
    

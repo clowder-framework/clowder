@@ -1,3 +1,8 @@
+//File that consolidates updating the interface elements related to license information, as well as updating the data 
+//for the license information in the system.
+//
+//Referenced in dataset.scala.html and file.scala.html
+
 function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDownload, imageBase, authorName) {
 	
 	//Two golbally defined variables that are used in file.scala.html to check for download permissions.
@@ -180,12 +185,11 @@ function updateData(id, imageBase, sourceObject, authorName) {
 
 
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error(
-				"The following error occured: "+
-				textStatus, errorThrown
-
-		);
-		alert("Updating the license information failed.");
+		console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to edit license information.";                                
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+        	alert("The license information was not modified due to : " + errorThrown);
+        }  
 	});
 
 	return false;	        	           	       	       

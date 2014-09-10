@@ -3,6 +3,11 @@
 @import _root_.util.Formatters.ellipsize
 
 @main("Datasets") {
+
+@util.masonry()
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+
 <div class="page-header">
   <h1>Datasets</h1>
 </div>
@@ -119,7 +124,5 @@
 	</div>
 </div>
 
-
-<script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
 @util.masonry()
 }

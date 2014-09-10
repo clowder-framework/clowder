@@ -168,7 +168,7 @@ class Search @Inject() (
    * Search MultimediaFeatures.
    */
   def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
-    Logger.debug("Searching multimedia index")
+     Logger.debug("Searching multimedia index " + section_id.stringify)
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
     queries.findFeatureBySection(section_id) match {
