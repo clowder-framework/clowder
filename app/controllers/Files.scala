@@ -1,7 +1,7 @@
 package controllers
 
 import java.io._
-import models.{UUID, FileMD, Thumbnail}
+import models.{UUID, FileMD, File, Thumbnail}
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
@@ -18,6 +18,7 @@ import api.Permission
 import javax.inject.Inject
 import java.util.Date
 import scala.sys.SystemProperties
+import securesocial.core.Identity
 
 /**
  * Manage files.
@@ -67,7 +68,14 @@ class Files @Inject() (
             Map(file -> pvf)
           } else {
             val ff = for (p <- previewers; if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
-              (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                if (checkLicenseForDownload(file, user)) {
+                    (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                }
+                else {
+                    (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length)
+                }
             }
             Map(file -> ff)
           }
@@ -422,48 +430,97 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   ////////////////////////////////////////////////
   
   /**
-   * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+   * Utility method to check a given file and a given identity for permissions from the license 
+   * to allow the raw bytes to be downloaded. 
+   * 
+   * @param aFile The models.File object representing the actual data being queried
+   * @param anIdentity An Option, possibly contianing the securesocial information for a user
+   * 
+   * @return A boolean, true if the license allows the bytes to be downloaded, false otherwise
+   *   
    */
-  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>
-    files.getBytes(id) match {
-      case Some((inputStream, filename, contentType, contentLength)) => {
-        request.headers.get(RANGE) match {
-          case Some(value) => {
-            val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-              case x => (x(0).toLong, x(1).toLong)
-            }
-	            range match { case (start,end) =>
-
-                inputStream.skip(start)
-                import play.api.mvc.{ SimpleResult, ResponseHeader }
-                SimpleResult(
-                  header = ResponseHeader(PARTIAL_CONTENT,
-                    Map(
-                      CONNECTION -> "keep-alive",
-                      ACCEPT_RANGES -> "bytes",
-                      CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                      CONTENT_LENGTH -> (end - start + 1).toString,
-                      CONTENT_TYPE -> contentType
-                    )
-                  ),
-                  body = Enumerator.fromStream(inputStream)
-                )
-            }
+  def checkLicenseForDownload(aFile: File, anIdentity: Option[Identity]): Boolean = {
+      
+      var license = aFile.licenseData
+      var userName = ""
+      
+      anIdentity match {
+          case Some(aUser) => { 
+              userName = aUser.fullName 
           }
           case None => {
-	            Ok.chunked(Enumerator.fromStream(inputStream))
-              .withHeaders(CONTENT_TYPE -> contentType)
-              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
-
+              userName = ""
           }
-        }
+      }               
+
+      return (license.isDownloadAllowed() || license.isRightsOwner(userName))
+  }
+  
+  /**
+   * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+   */
+  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>    
+      if (UUID.isValid(id.stringify)) {
+          //Check the license type before doing anything. 
+          files.get(id) match {
+              case Some(file) => {                                                                                                             
+                  if (checkLicenseForDownload(file, request.user)) {
+                      files.getBytes(id) match {
+                      case Some((inputStream, filename, contentType, contentLength)) => {
+                          request.headers.get(RANGE) match {
+                          case Some(value) => {
+                              val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
+                              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+                              case x => (x(0).toLong, x(1).toLong)
+                          }
+                          range match { case (start,end) =>
+
+                          inputStream.skip(start)
+                          import play.api.mvc.{ SimpleResult, ResponseHeader }
+                          SimpleResult(
+                                  header = ResponseHeader(PARTIAL_CONTENT,
+                                          Map(
+                                                  CONNECTION -> "keep-alive",
+                                                  ACCEPT_RANGES -> "bytes",
+                                                  CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
+                                                  CONTENT_LENGTH -> (end - start + 1).toString,
+                                                  CONTENT_TYPE -> contentType
+                                                  )
+                                          ),
+                                          body = Enumerator.fromStream(inputStream)
+                                  )
+                          }
+                          }
+                          case None => {
+                              Ok.chunked(Enumerator.fromStream(inputStream))
+                              .withHeaders(CONTENT_TYPE -> contentType)
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+
+                          }
+                          }
+                      }
+                      case None => {
+                          Logger.error("Error getting file" + id)
+                          BadRequest("Invalid file ID")
+                      }
+                      }   
+                  }
+                  else {
+                      Logger.error("The file is not able to be downloaded")
+                      BadRequest("The license for this file does not allow it to be downloaded.")
+                  }
+              }
+              case None => {
+                  Logger.info(s"Error getting the file with id $id.")
+                  BadRequest("Invalid file ID")
+              }
+          }
+               
       }
-      case None => {
-        Logger.error("Error getting file" + id)
-        NotFound
+      else {
+          Logger.error(s"The given id $id is not a valid ObjectId.")
+          BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
-    }
   }
 
   def thumbnail(id: UUID) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>
