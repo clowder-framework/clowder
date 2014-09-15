@@ -35,7 +35,6 @@
 
 @showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
 	<script>
-	    console.info("--- B ---");
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
 		Configuration.fileid = "@p._1";
@@ -138,8 +137,7 @@
 		  		</div>
 			</div>
 			@if(pvs.length <= 1) {
-				<script>
-				console.info("-- A --");
+				<script>				
 	    			$('#myTab_@(f.id.toString)').attr('style', 'display:none;');
 	    		</script>
     		}

@@ -70,7 +70,7 @@ class Files @Inject() (
             val ff = for (p <- previewers; if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
                 //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
                 //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-                if (checkLicenseForDownload(file, user)) {
+                if (file.checkLicenseForDownload(user)) {
                     (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                 }
                 else {
@@ -427,34 +427,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }
   }
 
-  ////////////////////////////////////////////////
-  
-  /**
-   * Utility method to check a given file and a given identity for permissions from the license 
-   * to allow the raw bytes to be downloaded. 
-   * 
-   * @param aFile The models.File object representing the actual data being queried
-   * @param anIdentity An Option, possibly contianing the securesocial information for a user
-   * 
-   * @return A boolean, true if the license allows the bytes to be downloaded, false otherwise
-   *   
-   */
-  def checkLicenseForDownload(aFile: File, anIdentity: Option[Identity]): Boolean = {
-      
-      var license = aFile.licenseData
-      var userName = ""
-      
-      anIdentity match {
-          case Some(aUser) => { 
-              userName = aUser.fullName 
-          }
-          case None => {
-              userName = ""
-          }
-      }               
-
-      return (license.isDownloadAllowed() || license.isRightsOwner(userName))
-  }
+  ////////////////////////////////////////////////  
   
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
@@ -464,7 +437,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
           //Check the license type before doing anything. 
           files.get(id) match {
               case Some(file) => {                                                                                                             
-                  if (checkLicenseForDownload(file, request.user)) {
+                  if (file.checkLicenseForDownload(request.user)) {
                       files.getBytes(id) match {
                       case Some((inputStream, filename, contentType, contentLength)) => {
                           request.headers.get(RANGE) match {
