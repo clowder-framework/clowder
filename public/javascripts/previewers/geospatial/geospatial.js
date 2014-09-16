@@ -68,11 +68,10 @@
 										coord[i] = parseFloat(coord[i]);
 									}
 
-									// create base layer
+									// create base layer by using OSM
+									// TODO: create a dropdown box for different backdrop
 									var baseLayer = new ol.layer.Tile({
-										source : new ol.source.MapQuest({
-											layer : 'sat'
-										})
+										source : new ol.source.OSM()
 									});
 
 									// create wms layer
