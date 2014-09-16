@@ -1,4 +1,6 @@
-@(file: models.File, fileDataset: List[models.Dataset], datasetsOutside: List[models.Dataset])
+@(file: models.File, fileDataset: List[models.Dataset], datasetsOutside: List[models.Dataset])(implicit user: Option[securesocial.core.Identity])
+
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 
 <table id="datasTable">
     @fileDataset.map { dataset =>
@@ -10,10 +12,10 @@
 <div class="ui-widget requiresLogin" id="datasetsUi">
     <select id="datasetAddSelect" data-inputid="selectingInputDatasets" data-errorid="doesNotExistErrorDatasets">
         @datasetsOutside.map { dataset =>
-        <option value="@(dataset.id.toString)">@(dataset.name)</option>
+        <option value="@(dataset.id.toString)">@dataset.name</option>
         }
     </select>
-    <button class="btn btn-default btn-xs combobutton" id="addDatasBtn" style="vertical-align:top;">Add to dataset</button>
+    <button class="btn btn-default btn-xs" id="addDatasBtn" style="vertical-align:top;" title="Add File to Dataset"><span class="glyphicon glyphicon-plus"></span> Add</button>
     <span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorDatasets" >Dataset does not exist or already added.</span>
 </div>
 
@@ -61,12 +63,12 @@
                     }
             });
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error(
-                    "The following error occured: "+
-                    textStatus, errorThrown
-                    );
-                alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." );
-                });
+            	console.error("The following error occured: "+textStatus, errorThrown);
+                var errMsg = "You must be logged in to add a file to a dataset.";                    
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    alert("The file was not added to the dataset due to : " + errorThrown);
+                }
+            });
         });
 
         function removeFromDataset(datasetId, datasetName,event){
@@ -91,12 +93,18 @@
                 $("#datasetAddSelect").combobox();
             });
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error(
-                    "The following error occured: "+
-                    textStatus, errorThrown
-                    );
-                alert("ERROR: " + errorThrown +". File not removed from dataset." );
-                });
+            	console.error("The following error occured: "+textStatus, errorThrown);
+                var errMsg = "You must be logged in to remove a file from a dataset.";                    
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    alert("The file was not removed from the dataset due to : " + errorThrown);
+                }
+            });
         }
 
 </script>
+
+@if(!user.isDefined) {
+    <script language="javascript">
+	    $(".requiresLogin").css("display", "none");
+    </script>
+}

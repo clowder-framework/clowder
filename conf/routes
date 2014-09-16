@@ -20,6 +20,10 @@ GET      /users/by-country/:country                                          con
 GET      /users/create/:username                                             controllers.Users.create(username)
 GET      /users/view/:id                                                     controllers.Users.view(id)
 
+# Utilities
+GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
+GET     /utils/authenticationRequiredMessage/:msg/:url       @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
+
 # DTS Information
 GET      /extractions/requests          								    @controllers.ExtractionInfo.getDTSRequests()
 GET      /extractions/servers_ips								  		    @controllers.ExtractionInfo.getExtractorServersIP()
@@ -87,7 +91,7 @@ GET      /advanced                                                           @co
 GET      /SearchByText                                                       @controllers.Search.SearchByText(query: String ?= "")
 POST     /uploadquery                                                        @controllers.Search.uploadquery	
 GET      /searchbyURL                                                        @controllers.Search.searchbyURL(query:String?="")
-GET      /searchbyfeature                                                    @controllers.Search.searchMultimediaIndex(section_id: UUID)
+GET      /searchbyfeature/:section_id                                        @controllers.Search.searchMultimediaIndex(section_id: UUID)
 GET      /files/:id/similar                                                  @controllers.Search.findSimilarFile(id: UUID)
 GET      /queries/:id/similar                                                @controllers.Search.findSimilar(id: UUID)
 

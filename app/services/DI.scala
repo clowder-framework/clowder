@@ -5,6 +5,7 @@ import play.api.Play
 import com.google.inject.Guice
 import com.google.inject.AbstractModule
 import services.mongodb._
+import services.irods._
 import services.fourstore.FourStoreRdfSPARQLService
 
 
@@ -30,6 +31,7 @@ class ProdModule extends AbstractModule {
   protected def configure() {
     bind(classOf[DatasetService]).to(classOf[MongoDBDatasetService])
     bind(classOf[FileService]).to(classOf[MongoDBFileService])
+    //bind(classOf[FileService]).to(classOf[IRODSFileSystemDB])
     bind(classOf[MultimediaQueryService]).to(classOf[MongoDBMultimediaQueryService])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
@@ -56,6 +58,7 @@ class DevModule extends AbstractModule {
   protected def configure() {
     bind(classOf[DatasetService]).to(classOf[MongoDBDatasetService])
     bind(classOf[FileService]).to(classOf[MongoDBFileService])
+    //bind(classOf[FileService]).to(classOf[IRODSFileSystemDB])
     bind(classOf[MultimediaQueryService]).to(classOf[MongoDBMultimediaQueryService])
     bind(classOf[CollectionService]).to(classOf[MongoDBCollectionService])
     bind(classOf[TagService]).to(classOf[MongoDBTagService])
