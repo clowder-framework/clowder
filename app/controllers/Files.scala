@@ -60,6 +60,7 @@ class Files @Inject() (
         val previewsFromDB = previews.findByFileId(file.id)
         Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
+        //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
           val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
@@ -479,11 +480,13 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                       }   
                   }
                   else {
+                      //Case where the checkLicenseForDownload fails
                       Logger.error("The file is not able to be downloaded")
                       BadRequest("The license for this file does not allow it to be downloaded.")
                   }
               }
               case None => {
+                  //Case where the file could not be found
                   Logger.info(s"Error getting the file with id $id.")
                   BadRequest("Invalid file ID")
               }

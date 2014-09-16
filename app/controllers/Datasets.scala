@@ -139,6 +139,7 @@ class Datasets @Inject()(
           val datasetWithFiles = dataset.copy(files = filesInDataset)
           decodeDatasetElements(datasetWithFiles)
           val previewers = Previewers.findPreviewers
+          //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
           val previewslist = for (f <- datasetWithFiles.files) yield {
             val pvf = for (p <- previewers; pv <- f.previews; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield {
               (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
