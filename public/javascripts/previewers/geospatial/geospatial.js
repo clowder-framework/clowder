@@ -110,6 +110,14 @@
 
 									// zoom into the layer extent
 									map.setView(view);
+									
+									// fix for MMDB-1617
+									// force to redraw the map
+									// TODO the dom selector needs to select the current selector instead of this selection 
+									$('a[data-toggle="tab"]').on(
+											'shown.bs.tab', function(e) {
+												map.updateSize()
+											})
 								});
 
 			});
