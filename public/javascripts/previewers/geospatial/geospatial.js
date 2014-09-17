@@ -68,11 +68,10 @@
 										coord[i] = parseFloat(coord[i]);
 									}
 
-									// create base layer
+									// create base layer by using OSM
+									// TODO: create a dropdown box for different backdrop
 									var baseLayer = new ol.layer.Tile({
-										source : new ol.source.MapQuest({
-											layer : 'sat'
-										})
+										source : new ol.source.OSM()
 									});
 
 									// create wms layer
@@ -110,6 +109,14 @@
 
 									// zoom into the layer extent
 									map.setView(view);
+									
+									// fix for MMDB-1617
+									// force to redraw the map
+									// TODO the dom selector needs to select the current selector instead of this selection 
+									$('a[data-toggle="tab"]').on(
+											'shown.bs.tab', function(e) {
+												map.updateSize()
+											})
 								});
 
 			});
