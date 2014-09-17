@@ -38,7 +38,7 @@
 	  <p>Your browser does not support TagCanvas. If it did, you would see a tag cloud of dataset tags.</p>
 	  <ul id="weightedTags">
 		@for(weightedTag <- weightedTags) {
-			<li><a href="@routes.Tags.search(weightedTag._1)" data-weight="@(weightedTag._2 * 30)">@weightedTag._1</a></li>
+			<li><a href="@routes.Tags.search(weightedTag._1)" data-weight="@(weightedTag._2 * 10)">@weightedTag._1</a></li>
 		}
 	  </ul>
 	 </canvas>
