@@ -26,6 +26,10 @@ body {
     text-overflow: ellipsis;
 }
 
+.fit-in-space {
+    max-width: 100%;
+    max-height: 100%;
+}
 /* Set the fixed height of the footer here */
 #push, #footer {
   height: 60px;
@@ -143,7 +147,7 @@ ol.comment-threads {
 .rubberbandCanvas {
   border: thin solid #aaaaaa;
 }
- 
+
 .rubberbandFormDiv {
   width: 400px;
   background: white;
