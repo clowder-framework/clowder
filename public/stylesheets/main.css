@@ -17,6 +17,15 @@ body {
   margin: 0 auto -60px;
 }
 
+.oneline {
+    white-space: nowrap;
+}
+
+.no-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Set the fixed height of the footer here */
 #push, #footer {
   height: 60px;
