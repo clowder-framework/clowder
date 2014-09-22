@@ -139,9 +139,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           // only show previewers that have a matching preview object associated with collection
           val filteredPreviewers = for (
             previewer <- Previewers.findCollectionPreviewers;
-            preview <- previews.findByCollectionId(id);
-            if (previewer.collection);
-            if (previewer.supportedPreviews.contains(preview.preview_type))
+//            preview <- previews.findByCollectionId(id);
+            if (previewer.collection)
+//            if (previewer.supportedPreviews.contains(preview.preview_type))
           ) yield {
             previewer
           }
