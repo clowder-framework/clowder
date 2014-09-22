@@ -1,5 +1,6 @@
 { "name" : "geospatial-collection",
   "main" : "geospatial.js",
   "contentType" : ["application/zip","application/x-zip","application/x-7z-compressed", "image/tif", "image/tiff"],
-  "collection" : true
+  "collection" : true,
+  "supported_previews" : ["geo.layers.collection"]
   }

@@ -47,7 +47,8 @@ object Previewers extends Controller with SecuredController {
             previewer.replace("public/", "").replace("/package.json", ""),
             (json \ "main").as[String],
             (json \ "contentType").as[List[String]],
-            (json \ "collection").as[Boolean]
+            (json \ "supported_previews").asOpt[List[String]].getOrElse(List.empty[String]),
+            (json \ "collection").asOpt[Boolean].getOrElse(false)
           )
         }
         case None => {
@@ -72,6 +73,7 @@ object Previewers extends Controller with SecuredController {
             previewer.replace("public/", "").replace("/package.json", ""),
             (json \ "main").as[String],
             (json \ "contentType").as[List[String]],
+            (json \ "supported_previews").asOpt[List[String]].getOrElse(List.empty[String]),
             (json \ "collection").asOpt[Boolean].getOrElse(false)
           )
           if (preview.collection) result +:= preview

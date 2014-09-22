@@ -136,10 +136,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collections.get(id) match {
         case Some(collection) => {
           Logger.debug(s"Found collection $id")
-          val previewsFromDB = previews.findByCollectionId(id)
-          val previewers = Previewers.findCollectionPreviewers
-
-          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.toString(), previewers.toList))
+          // only show previewers that have a matching preview object associated with collection
+          val filteredPreviewers = for (
+            previewer <- Previewers.findCollectionPreviewers;
+            preview <- previews.findByCollectionId(id);
+            if (previewer.supportedPreviews.contains(preview.preview_type)))
+          yield {
+            previewer
+          }
+          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.toString(), filteredPreviewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
