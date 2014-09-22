@@ -140,8 +140,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           val filteredPreviewers = for (
             previewer <- Previewers.findCollectionPreviewers;
             preview <- previews.findByCollectionId(id);
-            if (previewer.supportedPreviews.contains(preview.preview_type)))
-          yield {
+            if (previewer.collection);
+            if (previewer.supportedPreviews.contains(preview.preview_type))
+          ) yield {
             previewer
           }
           Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.toString(), filteredPreviewers.toList))

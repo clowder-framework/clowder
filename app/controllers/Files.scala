@@ -60,13 +60,21 @@ class Files @Inject() (
         Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
         val previewsWithPreviewer = {
-          val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
+          val pvf = for (
+            p <- previewers; pv <- previewsFromDB;
+            if (!p.collection);
+            if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
+          ) yield {
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
           }
           if (pvf.length > 0) {
             Map(file -> pvf)
           } else {
-            val ff = for (p <- previewers; if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
+            val ff = for (
+              p <- previewers;
+              if (!p.collection);
+              if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
+            ) yield {
               (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
             }
             Map(file -> ff)
