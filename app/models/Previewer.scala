@@ -9,4 +9,5 @@ case class Previewer(
   id: String,
   path: String,
   main: String,
-  contentType: List[String])
+  contentType: List[String],
+  collection: Boolean = false)

@@ -49,6 +49,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     PreviewDAO.find(MongoDBObject("dataset_id" -> new ObjectId(id.stringify))).toList
   }
 
+  def findByCollectionId(id: UUID): List[Preview] = {
+    PreviewDAO.find(MongoDBObject("collection_id" -> new ObjectId(id.stringify))).toList
+  }
+
   /**
    * Save blob.
    */

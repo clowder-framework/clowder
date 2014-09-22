@@ -13,13 +13,12 @@ import api.WithPermission
 import api.Permission
 import play.api.Play.current
 import javax.inject.{Singleton, Inject}
-import services.{DatasetService, CollectionService}
-import services.ElasticsearchPlugin
+import services.{PreviewService, DatasetService, CollectionService, ElasticsearchPlugin}
 
 object ThumbnailFound extends Exception {}
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService) extends SecuredController {
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previews: PreviewService) extends SecuredController {
 
   /**
    * New dataset form.
@@ -137,7 +136,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collections.get(id) match {
         case Some(collection) => {
           Logger.debug(s"Found collection $id")
-          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.toString()))
+          val previewsFromDB = previews.findByCollectionId(id)
+          val previewers = Previewers.findCollectionPreviewers
+
+          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.toString(), previewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

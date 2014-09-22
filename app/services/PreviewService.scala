@@ -19,6 +19,8 @@ trait PreviewService {
 
   def findByDatasetId(id: UUID): List[Preview]
 
+  def findByCollectionId(id: UUID): List[Preview]
+
   /**
    * Save blob.
    */
