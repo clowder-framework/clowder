@@ -34,7 +34,15 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def tagList() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
     implicit val user = request.user
 
-    Ok(views.html.tagList(computeTagWeights))
+    val tags = computeTagWeights
+
+    val minFont = current.configuration.getDouble("tag.list.minFont").getOrElse(1.0)
+    val maxFont = current.configuration.getDouble("tag.list.maxFont").getOrElse(5.0)
+    val maxWeight =  tags.maxBy(_._2)._2
+    val minWeight =  tags.minBy(_._2)._2
+    val divide = (maxFont - minFont) / (maxWeight - minWeight)
+
+    Ok(views.html.tagList(tags.map{case (k, v) => (k, minFont + (v - minWeight) * divide) }))
   }
 
   def computeTagWeights() = {
