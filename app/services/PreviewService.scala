@@ -47,5 +47,7 @@ trait PreviewService {
 
   def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue)
 
+  def attachToCollection(previewId: UUID, collectionId: UUID, previewType: String, extractorId: Option[String], json: JsValue)
+
   def updateMetadata(previewId: UUID, json: JsValue)
 }

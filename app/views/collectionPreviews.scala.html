@@ -1,0 +1,77 @@
+@(collection_id: String, previews: List[Preview], previewers: Array[Previewer])
+
+@main("Collection Previews") {
+<div class="page-header">
+  <h1>Collection Previews</h1>
+</div>
+<div class="row">
+    <div class="col-md-12">
+    <h3>Previews available for this collection</h3>
+    <ul>
+    @for(p <- previews) {
+      <li><b>Preview type:</b> @p.preview_type.get (preview id: @p.id)</li>
+    }
+    </ul>
+    @if(previews.size == 0) {
+      <h4>No previews currently associated with this collection</h4>
+    }
+    </div>
+    <div class="col-md-12">
+    <h3>Previewers available for this collection</h3>
+    <ul>
+    @for(p <- previewers; supported <- p.supportedPreviews) {
+      <li>
+        <button type="button" class="btn btn-default btn-xs addPreviewer" data-id="@p.id" data-preview-type="@supported">
+           <span class="glyphicon glyphicon-plus"></span> Add
+        </button>
+        <b>Supported Type:</b> @supported (<b>Previewer:</b> @p.id)
+      </li>
+    }
+    </ul>
+    </div>
+</div>
+
+<script>
+$(".addPreviewer").click(function() {
+    var id = $(this).data("id");
+    var preview_type = $(this).data("preview-type");
+    // empty file
+    var data = new FormData();
+    data.append("File", new Blob([new Uint8Array([])], {type: "*/*"}), "preview");
+
+    // upload empty file as preview
+    var request = window.jsRoutes.api.Previews.upload().ajax({
+            type:        "POST",
+            data:        data,
+            contentType: false,
+            processData: false
+        });
+
+    request.done(function(response, textStatus, jqXHR) {
+      var preview_id = response.id;
+      console.log("Preview created " + preview_id);
+
+      var request = window.jsRoutes.api.Collections.attachPreview("@collection_id", preview_id).ajax({
+        data: JSON.stringify({"preview_type": preview_type}),
+        type: 'POST',
+        contentType: "application/json"
+      });
+
+        request.done(function(response, textStatus, jqXHR) {
+          console.log("Preview associated " + preview_type);
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+        });
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+    });
+
+
+
+});
+</script>
+}

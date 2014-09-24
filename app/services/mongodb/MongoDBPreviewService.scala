@@ -202,6 +202,22 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     }
   }
 
+  def attachToCollection(previewId: UUID, collectionId: UUID, previewType: String, extractorId: Option[String], json: JsValue) {
+    json match {
+      case JsObject(fields) => {
+        Logger.debug("attachToCollection: extractorId is '" + extractorId.toString + "'.")
+        // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
+        val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+          $set("metadata" -> metadata, "collection_id" -> new ObjectId(collectionId.stringify),
+            "extractor_id" -> extractorId, "preview_type" -> previewType),
+          false, false, WriteConcern.Safe)
+        Logger.debug("Updating previews.collections " + previewId + " with " + metadata)
+      }
+      case _ => Logger.error(s"Received something else: $json")
+    }
+  }
+
   def updateMetadata(previewId: UUID, json: JsValue) {
     json match {
       case JsObject(fields) => {
