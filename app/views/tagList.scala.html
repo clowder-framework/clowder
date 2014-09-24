@@ -1,10 +1,10 @@
-@(weightedTags: List[(String,Integer)])(implicit user: Option[securesocial.core.Identity])
+@(weightedTags: List[(String, Double)])(implicit user: Option[securesocial.core.Identity])
 
 @main("Tag list") {
     <div class="row">
-        <div id="tagList" class="col-md-12">
+        <div id="tagList" class="col-md-12" style="text-align: justify">
         @for(weightedTag <- weightedTags) {
-            <a href="@routes.Tags.search(weightedTag._1)" data-weight="@(weightedTag._2*10)" style="font-size: @(weightedTag._2)ex">@weightedTag._1</a>
+            <a href="@routes.Tags.search(weightedTag._1)" style="font-size: @(weightedTag._2)em">@weightedTag._1</a>
         }
         </div>
     </div>
