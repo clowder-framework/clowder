@@ -21,7 +21,7 @@
         @for((p,i) <- previewers.zipWithIndex) {
             <h3>@p.id</h3>
             <div class="previewDiv" id="previewer_@(p.id)_@i"></div>
-            @showPreview(p.id + "_" + i, routes.Assets.at("javascripts/previewers/") + "/" + p.id + "/" + p.main, collectionId)
+            @showPreview(p.id + "_" + i, routes.Assets.at("javascripts/previewers") + "/" + p.id + "/" + p.main, collectionId)
         }
     </div>
 </div>
