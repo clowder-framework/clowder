@@ -78,6 +78,8 @@ GET      /collection/:id                                                     @co
 
 # Tags
 GET     /tags/search                      @controllers.Tags.search(tag)
+GET     /tags/cloud                       @controllers.Tags.tagCloud
+GET     /tags/list                        @controllers.Tags.tagList
 
 # Authentication
 GET      /loginTest                                                          controllers.Authentication.login

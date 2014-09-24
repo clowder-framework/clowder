@@ -411,3 +411,12 @@ textarea, input[type='text'], input[type='password']{
 .col-section {
   margin: 20px 0px;
 }
+
+#tagCloudCanvas {
+    border:1px solid #e6e6e6;
+}
+
+#tagList > a {
+    color: black;
+    text-decoration: none;
+}
