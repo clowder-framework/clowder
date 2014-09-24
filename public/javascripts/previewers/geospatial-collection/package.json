@@ -1,5 +1,5 @@
 { "name" : "geospatial-collection",
-  "main" : "geospatial.js",
+  "main" : "geospatial-collection.js",
   "contentType" : [],
   "collection" : true,
   "supported_previews" : ["geo.layers.collection"]
