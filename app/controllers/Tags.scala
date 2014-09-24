@@ -28,41 +28,26 @@ class Tags @Inject()(datasets: DatasetService, files: FileService, sections: Sec
     val sectionsWithFiles = for (s <- sectionsByTag; f <- files.get(s.file_id)) yield (s, f)
     Ok(views.html.searchByTag(tag, taggedDatasets, taggedFiles, sectionsWithFiles))
   }
+
   def tagCloud() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
-    
-      implicit val user = request.user	
-	  var weightedTags: Map[String, Integer] = Map()
+    implicit val user = request.user
 
-      for(dataset <- datasets.listDatasets){
-        for(tag <- dataset.tags){
-          var tagName = tag.name
-          if(weightedTags.contains(tagName))
-        	  weightedTags(tagName) = weightedTags(tagName) + 4
-          else
-              weightedTags += ((tagName, 4))
-        }
-      }
-      for(file <- files.listFiles){
-        for(tag <- file.tags){
-          var tagName = tag.name
-          if(weightedTags.contains(tagName))
-        	  weightedTags(tagName) = weightedTags(tagName) + 2
-          else
-              weightedTags += ((tagName, 2))
-        }
-      }
-      for(section <- sections.listSections){
-        for(tag <- section.tags){
-          var tagName = tag.name
-          if(weightedTags.contains(tagName))
-        	  weightedTags(tagName) = weightedTags(tagName) + 1
-          else
-              weightedTags += ((tagName, 1))
-        }
-      }
-      
-      Logger.debug("thelist: "+ weightedTags.toList.toString)
+	  val weightedTags = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
 
-      Ok(views.html.tagCloud(weightedTags.toList))
+    for(dataset <- datasets.listDatasets; tag <- dataset.tags) {
+      weightedTags(tag.name) = weightedTags(tag.name) + 4
+    }
+
+    for(file <- files.listFiles; tag <- file.tags) {
+      weightedTags(tag.name) = weightedTags(tag.name) + 2
+    }
+
+    for(section <- sections.listSections; tag <- section.tags) {
+      weightedTags(tag.name) = weightedTags(tag.name) + 1
+    }
+
+    Logger.debug("thelist: "+ weightedTags.toList.toString)
+
+    Ok(views.html.tagCloud(weightedTags.toList))
   }  
 }
