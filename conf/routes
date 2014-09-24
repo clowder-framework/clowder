@@ -292,7 +292,7 @@ DELETE	/api/sections/:id/tags			                        @api.Sections.removeTags
 
 POST    /api/geostreams/datapoints           api.Geostreams.addDatapoint
 GET     /api/geostreams/datapoints/:id       api.Geostreams.getDatapoint(id: String)
-GET     /api/geostreams/datapoints           api.Geostreams.searchDatapoints(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json")
+GET     /api/geostreams/datapoints           api.Geostreams.searchDatapoints(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json")
 
 
 POST    /api/geostreams/sensors			     api.Geostreams.createSensor

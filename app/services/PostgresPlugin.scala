@@ -384,7 +384,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     counts
   }
   
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], source: List[String], attributes: List[String]): Option[String] = {
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], source: List[String], attributes: List[String]): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
@@ -423,6 +423,8 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     //stream
     if (stream_id.isDefined) query += " AND stream_id = ?"
+    //sensor
+    if (sensor_id.isDefined) query += " AND sensor_id = ?"
     query += " order by start_time asc) As t;"
     val st = conn.prepareStatement(query)
     var i = 0
@@ -468,6 +470,10 @@ class PostgresPlugin(application: Application) extends Plugin {
     if (stream_id.isDefined) {
       i = i + 1
       st.setInt(i, stream_id.get.toInt)
+    }
+    if (sensor_id.isDefined) {
+      i = i + 1
+      st.setInt(i, sensor_id.get.toInt)
     }
     st.setFetchSize(50)
     Logger.debug("Geostream search: " + st)
@@ -533,6 +539,6 @@ class PostgresPlugin(application: Application) extends Plugin {
 
   def test() {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
-    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, List.empty, List.empty))
+    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, None, List.empty, List.empty))
   }
 }
