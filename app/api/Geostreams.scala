@@ -283,7 +283,7 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sources: List[String], attributes: List[String], format: String, calculate: Option[String]) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, calculate: Option[String]) =
     Action { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
       var querySince = since
@@ -294,7 +294,7 @@ object Geostreams extends ApiController {
       }
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchDatapoints(querySince, queryUntil, geocode, stream_id, sources, attributes, calculate.isDefined) match {
+          plugin.searchDatapoints(querySince, queryUntil, geocode, stream_id, sensor_id, sources, attributes, calculate.isDefined) match {
             case Some(d) => {
               val data = Json.parse(d).as[List[JsObject]]
               val calculated = calculate match {

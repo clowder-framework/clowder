@@ -55,7 +55,7 @@
                             </a>
                         }
                         <div class="caption">
-                            <h4><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
+                            <h4 class="no-overflow oneline"><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
                             <p>@ellipsize(dataset.description, 200)</p>
                         </div>
                   </div>
@@ -113,15 +113,20 @@
 				}
 			</tbody>
 		</table>
-		<ul class="pager">
-			@if(prev != "") {
-  			<li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
-  			}
-  			@if(next != "") {
-  			<li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
-  			}
-		</ul>
 	</div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <ul class="pager">
+            @if(prev != "") {
+            <li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
+            }
+            @if(next != "") {
+            <li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
+            }
+        </ul>
+    </div>
 </div>
 
 }

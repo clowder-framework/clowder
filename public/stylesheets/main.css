@@ -17,6 +17,19 @@ body {
   margin: 0 auto -60px;
 }
 
+.oneline {
+    white-space: nowrap;
+}
+
+.no-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fit-in-space {
+    max-width: 100%;
+    max-height: 100%;
+}
 /* Set the fixed height of the footer here */
 #push, #footer {
   height: 60px;
@@ -134,7 +147,7 @@ ol.comment-threads {
 .rubberbandCanvas {
   border: thin solid #aaaaaa;
 }
- 
+
 .rubberbandFormDiv {
   width: 400px;
   background: white;
@@ -410,4 +423,13 @@ textarea, input[type='text'], input[type='password']{
 
 .col-section {
   margin: 20px 0px;
+}
+
+#tagCloudCanvas {
+    border:1px solid #e6e6e6;
+}
+
+#tagList > a {
+    color: black;
+    text-decoration: none;
 }
