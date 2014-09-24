@@ -34,7 +34,7 @@
 
 				// add map div for ol3
 				$(Configuration.tab).append(
-						"<div id='map' style='height:400px;width:100%'></div>");
+						"<div id='map' class='fit-in-space' style='height:400px;width:100%'></div>");
 
 				// loading the ol3 javascript
 				$
