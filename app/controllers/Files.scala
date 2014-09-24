@@ -155,7 +155,16 @@ class Files @Inject() (
         next = formatter.format(fileList.last.uploadDate)
       }
     }
-    Ok(views.html.filesList(fileList, prev, next, limit))
+
+    val commentMap = fileList.map{file =>
+      var allComments = comments.findCommentsByFileId(file.id)
+      sections.findByFileId(file.id).map { section =>
+        allComments ++= comments.findCommentsBySectionId(section.id)
+      }
+      file.id -> allComments.size
+    }.toMap
+
+    Ok(views.html.filesList(fileList, commentMap, prev, next, limit))
   }
 
   /**

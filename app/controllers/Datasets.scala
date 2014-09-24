@@ -100,14 +100,26 @@ class Datasets @Inject()(
           next = formatter.format(datasetList.last.created)
         }
       }
-      
+
+      val commentMap = datasetList.map{dataset =>
+        var allComments = comments.findCommentsByDatasetId(dataset.id)
+        dataset.files.map { file =>
+          allComments ++= comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+        }
+        dataset.id -> allComments.size
+      }.toMap
+
+
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
       val aBuilder = new StringBuilder()
       for (aDataset <- datasetList) {
           decodeDatasetElements(aDataset)
       }
-      Ok(views.html.datasetList(datasetList, prev, next, limit))
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
   }
 
 
