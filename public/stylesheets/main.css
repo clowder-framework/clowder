@@ -415,3 +415,8 @@ textarea, input[type='text'], input[type='password']{
 #tagCloudCanvas {
     border:1px solid #e6e6e6;
 }
+
+#tagList > a {
+    color: black;
+    text-decoration: none;
+}
