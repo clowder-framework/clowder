@@ -35,12 +35,16 @@
 				// add map div for ol3
 				$(Configuration.tab).append(
 						"<div id='map' style='height:400px;width:100%'></div>");
-
+			
 				// loading the ol3 javascript
 				$
 						.getScript(
 								"http://openlayers.org/en/v3.0.0/build/ol.js",
 								function() {
+									// add layer opacity control
+									$(Configuration.tab).append(
+											"<div id='layer-opacity-control'><label>Layer Opacity: </label><input id='opacity' type='range' min='0' max='1' value='1' step='0.01' style='width:200px;' /></div>");
+									
 									// drawing the map
 									console.log("ol3js loaded");
 
@@ -86,6 +90,11 @@
 										}))
 									});
 
+									$('#opacity').change( function(e) {
+										wmsLayer.setOpacity($(this).val());
+									});
+
+									
 									// create map object
 									var map = new ol.Map({
 										target : 'map'
