@@ -1,8 +1,7 @@
 @(datasetsInCollection: List[models.Dataset], collectionName: String, collectionId: String)(implicit user: Option[securesocial.core.Identity])
 
 @main("Collection") {
-<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
+
 
 <div class="page-header">
   <h1>@collectionName</h1>
@@ -62,6 +61,8 @@
 		</ul>
 	</div>
 </div>
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
 <script language="javascript">	
 	var queryIp = "@api.routes.Datasets.listOutsideCollection(UUID(collectionId))";
 	var collectionId = "@collectionId";
