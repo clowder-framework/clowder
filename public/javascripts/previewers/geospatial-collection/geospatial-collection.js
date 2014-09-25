@@ -24,7 +24,7 @@
 			$(Configuration.tab).append(mapDiv);
 			
 			var layerControlDiv = "<div id='toolbox' style='position:absolute; top:45px; right:20px; padding:3px; border-radius:4px; color:#fff; background: rgba(255, 255, 255, 0.4); z-index:100;' >";
-			layerControlDiv += "<div id='control-title' style='color:black;'><span class='glyphicon glyphicon-tasks'></span>&nbsp;Geospatial Layers</div>";
+			layerControlDiv += "<div id='control-title' style='color:black; cursor:pointer;'><span class='glyphicon glyphicon-tasks'></span>&nbsp;Geospatial Layers</div>";
 			layerControlDiv += "<div id='layer-control' style='margin:0; padding:10px; border-radius:4px; background:rgba(0, 60, 136, 0.5);'></div></div>";
 			$(Configuration.tab).append(layerControlDiv);
 
