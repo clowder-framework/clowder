@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], prev: String, next: String, limit: Int)(implicit user: Option[securesocial.core.Identity])
+@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int)(implicit user: Option[securesocial.core.Identity])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -62,9 +62,10 @@
                   <!-- Dataset Info -->
                   <ul class="list-group">
                     <li class="list-group-item">
-                          <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
-                          <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
-                          <span class="glyphicon glyphicon glyphicon-list" title="@dataset.userMetadata.keys.size metadata fields"></span>  @dataset.userMetadata.keys.size
+                      <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
+                      <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
+                      <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span>  @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
+                      <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span>  @(comments.get(dataset.id))
                     </li>
                   </ul>
               </div>
