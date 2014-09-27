@@ -26,21 +26,16 @@ import play.api.http._
 /*
  * Based on http://stackoverflow.com/questions/15133794/writing-a-test-case-for-file-uploads-in-play-2-1-and-scala
  *
- * Functional Test for File Upload
+ * Functional Test for DTS File Upload
  * 
  * @author Smruti Padhy
  */
 
 trait FakeMultipartUpload {
   implicit def writeableOf_multiPartFormData(implicit codec: Codec): Writeable[MultipartFormData[TemporaryFile]] = {
-    val builder = MultipartEntityBuilder.create().setBoundary("12345678")
+    val builder = MultipartEntityBuilder.create().setBoundary("--boundary---")
 
     def transform(multipart: MultipartFormData[TemporaryFile]): Array[Byte] = {
-      multipart.dataParts.foreach { part =>
-        part._2.foreach { p2 =>
-          builder.addPart(part._1, new StringBody(p2, ContentType.create("text/plain", "UTF-8")))
-        }
-      }
       multipart.files.foreach { file =>
         val part = new FileBody(file.ref.file, ContentType.create(file.contentType.getOrElse("application/octet-stream")), file.filename)
         builder.addPart(file.key, part)
@@ -61,13 +56,16 @@ trait FakeMultipartUpload {
       badParts = Seq(),
       missingFileParts = Seq())
   }
+
   case class WrappedFakeRequest[A](fr: FakeRequest[A]) {
     def withFileUpload(key: String, file: File, contentType: String) = {
       fr.withBody(fileUpload(key, file, contentType))
     }
   }
+
   implicit def toWrappedFakeRequest[A](fr: FakeRequest[A]) = WrappedFakeRequest(fr)
 }
+
 class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpload {
   val excludedPlugins = List(
     "services.RabbitmqPlugin",
@@ -85,8 +83,8 @@ class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with
       status(result) mustEqual OK
       info("contentType=" + contentType(result))
       contentType(result) mustEqual Some("application/json")
-      contentAsString(result) must include ("id")
-      info("contentAsString"+ contentAsString(result))
+      contentAsString(result) must include("id")
+      info("contentAsString" + contentAsString(result))
 
     }
     "respond to the Upload File" in {
@@ -105,8 +103,8 @@ class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with
       status(result) mustEqual OK
       info("contentType=" + contentType(result))
       contentType(result) mustEqual Some("application/json")
-      contentAsString(result) must include ("id")
-      info("contentAsString"+ contentAsString(result))
+      contentAsString(result) must include("id")
+      info("contentAsString" + contentAsString(result))
     }
 
   }
