@@ -173,7 +173,7 @@
 							
 							// add checkbox and range input
 							var layerControl = '<div><input id="'+visVar+'" type="checkbox" checked="checked" />'+title+':&nbsp;&nbsp';
-							layerControl += '<input id="'+opVar+'" type="range" min="0" max="1" step="0.01" value="1" style="width:100px;"/></div>';
+							layerControl += '<input id="'+opVar+'" type="range" min="0" max="1" step="0.01" value="'+defaultOpacity+'" style="width:100px;"/></div>';
 							
 							// prepend the layer not "append" since the top item means the layer on top
 							$('#layer-control').prepend(layerControl);
