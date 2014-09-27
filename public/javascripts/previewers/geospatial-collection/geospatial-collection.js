@@ -3,6 +3,8 @@
 
     console.log("Updating tab " + Configuration.tab);
 
+    var defaultOpacity = 0.5;
+    
     var col_id = Configuration.collection_id;
     
     // setting up ajax call to get list of datasets from the collections
@@ -156,7 +158,8 @@
 										'TILED' : true
 									},
 									serverType : 'geoserver'
-								}))
+								})),
+								opacity: defaultOpacity
 							});
 							
 							// add wms layer to the map
