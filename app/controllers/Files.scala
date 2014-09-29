@@ -74,6 +74,7 @@ class Files @Inject() (
         }
         Logger.debug("Previewers available: " + previewsWithPreviewer)
 
+        // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>

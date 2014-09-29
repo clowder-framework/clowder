@@ -193,7 +193,7 @@
 							<thead>
 								<tr>
 									<th>#</th>
-									<th>Thumbail</th>
+									<th>Thumbnail</th>
 									<th>Information</th>
 									<th>Find</th>
 								</tr>
@@ -201,13 +201,7 @@
 							<tbody>
 					  		@f.sections.map { s =>
 					  			<tr>
-						  			<td>
-						  				@if(s.order != -1) {
-						  					@s.order
-						  				} else {
-						  					*
-						  				}
-						  			</td>
+						  			<td>@(if (s.order > 0) s.order else "")</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
