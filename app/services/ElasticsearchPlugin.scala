@@ -26,12 +26,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {    var clie
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-
+  var node: Option[Node] = None
   override def onStart() {
     val configuration = application.configuration
     try {
+      node = Some(nodeBuilder().clusterName("medici").client(true).node())
       val settings = ImmutableSettings.settingsBuilder()
-      //settings.put("cluster.name","medici") //uncomment this if the cluster name is "medici"
+      settings.put("cluster.name","medici") //uncomment this if the cluster name is "medici"
       settings.put("client.transport.sniff", true)
       settings.build();
       client = Some(new TransportClient(settings))
@@ -42,11 +43,21 @@ class ElasticsearchPlugin(application: Application) extends Plugin {    var clie
 	      x.prepareIndex("data", "dataset").execute()  
 	      x.prepareIndex("data", "collection").execute()
         }
+        case None=>{
+          node match {
+          case Some(x) => x.close
+        }
+        node = None
+        }
       }
      Logger.info("ElasticsearchPlugin has started")
     } catch {
       case nn: NoNodeAvailableException => {Logger.error("Error connecting to elasticsearch: " + nn)
         client = None
+        node match {
+          case Some(x) => x.close
+        }
+        node = None
       }
       
       case _: Throwable => {
@@ -173,6 +184,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {    var clie
       case Some(x) => x.close
     }
     client = None
+    node match {
+          case Some(x) => x.close
+        }
+        node = None
     Logger.info("ElasticsearchPlugin has stopped")
    }
     
