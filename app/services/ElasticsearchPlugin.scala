@@ -22,10 +22,7 @@ import java.text.SimpleDateFormat
  * @author Luigi Marini
  *
  */
-class ElasticsearchPlugin(application: Application) extends Plugin {
-
-  var node: Node = null
-  var client: TransportClient = null
+class ElasticsearchPlugin(application: Application) extends Plugin {    var client: Option[TransportClient] = null
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
@@ -33,38 +30,57 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   override def onStart() {
     val configuration = application.configuration
     try {
-      node = nodeBuilder().clusterName("medici").client(true).node()
       val settings = ImmutableSettings.settingsBuilder()
+      //settings.put("cluster.name","medici") //uncomment this if the cluster name is "medici"
       settings.put("client.transport.sniff", true)
       settings.build();
-      client = new TransportClient(settings)
-      client.addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
-
-      client.prepareIndex("data", "file")
-      client.prepareIndex("data", "dataset")
-      client.prepareIndex("data", "collection")
-
-      Logger.info("ElasticsearchPlugin has started")
+      client = Some(new TransportClient(settings))
+      client match {
+        case Some(x) => {
+	      x.addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
+	      x.prepareIndex("data", "file").execute()
+	      x.prepareIndex("data", "dataset").execute()  
+	      x.prepareIndex("data", "collection").execute()
+        }
+      }
+     Logger.info("ElasticsearchPlugin has started")
     } catch {
-      case nn: NoNodeAvailableException => Logger.error("Error connecting to elasticsearch: " + nn)
-      case _: Throwable => Logger.error("Unknown exception connecting to elasticsearch")
+      case nn: NoNodeAvailableException => {Logger.error("Error connecting to elasticsearch: " + nn)
+        client = None
+      }
+      
+      case _: Throwable => {
+        Logger.error("Unknown exception connecting to elasticsearch")
+        client = None
+       }
     }
   }
 
   def search(index: String, query: String): SearchResponse = {
     Logger.info("Searching ElasticSearch for " + query)
 
-    val response = client.prepareSearch(index)
-      .setTypes("file","dataset","collection")
-      .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-      .setQuery(QueryBuilders.queryString(query))
-      .setFrom(0).setSize(60).setExplain(true)
-      .execute()
-      .actionGet()
-
-    Logger.info("Search hits: " + response.getHits().getTotalHits())
-    response
-  }
+    client match {
+      case Some(x) => {
+	    Logger.info("Searching ElasticSearch for " + query)
+	    val response = x.prepareSearch(index)
+	      .setTypes("file","dataset")
+	      .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+	     // .setQuery(QueryBuilders.matchQuery("_all", query))
+	      .setQuery(QueryBuilders.queryString(query))
+	       .setFrom(0).setSize(60).setExplain(true)
+	      .execute()
+	      .actionGet()
+	      
+	    Logger.info("Search hits: " + response.getHits().getTotalHits())
+	    response
+      }
+      case None => {
+        Logger.error("Could not call search because we are not connected.")
+        new SearchResponse()
+      }
+   }
+  }  
+    
 
   /**
    * Index document using an arbitrary map of fields.
@@ -74,18 +90,33 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       .startObject()
     fields.map(fv => builder.field(fv._1, fv._2))
     builder.endObject()
-    val response = client.prepareIndex(index, docType, id.stringify)
-      .setSource(builder)
-      .execute()
-      .actionGet()
-    Logger.info("Indexing document: " + response.getId())
+    
+    client match {
+     case Some(x) => {
+	    val builder = jsonBuilder()
+	      .startObject()
+	      fields.map(fv => builder.field(fv._1, fv._2))
+	      builder.endObject()
+	    val response = x.prepareIndex(index, docType, id.toString)
+	      .setSource(builder)
+	      .execute()
+	      .actionGet()
+	    Logger.info("Indexing document: " + response.getId())
+      }
+     case None => Logger.error("Could not call index because we are not connected.")
+    }
   }
 
-  def delete(index: String, docType: String, id: String) {    
-    val response = client.prepareDelete(index, docType, id)
-      .execute()
-      .actionGet()
-    Logger.info("Deleting document: " + response.getId())
+  def delete(index: String, docType: String, id: String) {   
+    client match {
+      case Some(x)=>{
+         val response = x.prepareDelete(index,docType,id).execute().actionGet()
+         Logger.info("Deleting document: " + response.getId())
+        
+      }
+      case None=> Logger.error("Could not call index because we are not connected.")
+    }
+       
   }
 
   def indexDataset(dataset: Dataset) {
@@ -138,8 +169,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   override def onStop() {
-    client.close()
-    node.close()
+    client match {
+      case Some(x) => x.close
+    }
+    client = None
     Logger.info("ElasticsearchPlugin has stopped")
-  }
+   }
+    
+    
 }
