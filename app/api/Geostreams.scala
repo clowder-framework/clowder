@@ -3,6 +3,8 @@
  */
 package api
 
+import _root_.util.Parsers
+import org.joda.time.DateTime
 import play.api.mvc.Action
 import play.api.mvc.Request
 import play.api.mvc.AnyContent
@@ -14,9 +16,6 @@ import java.text.SimpleDateFormat
 import play.api.Logger
 import java.sql.Timestamp
 import services.PostgresPlugin
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.ListMap
 import scala.collection.mutable.ListBuffer
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
@@ -284,22 +283,60 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, calculate: Option[String]) =
     Action { request =>
       Logger.debug("Search " + since + " " + until + " " + geocode)
+      var querySince = since
+      var queryUntil = until
+      if (calculate.getOrElse("") == "trend") {
+        querySince = None
+        queryUntil = None
+      }
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes) match {
+          plugin.searchDatapoints(querySince, queryUntil, geocode, stream_id, sensor_id, sources, attributes, calculate.isDefined) match {
             case Some(d) => {
+              val data = Json.parse(d).as[List[JsObject]]
+              val calculated = calculate match {
+                case Some("average") => {
+                  Logger.debug("Computing average of data.")
+                  computeAverageSensor(data)
+                }
+                case Some("average-area") => {
+                  Logger.debug("Computing area average of data.")
+                  computeAverageArea(data, geocode)
+                }
+                case Some("trend") => {
+                  Logger.debug("Computing trend of data.")
+                  computeTrend(data, since, until)
+                }
+                case Some("count") => {
+                  Logger.debug("Computing count of data.")
+                  computeCountSensor(data)
+                }
+                case Some(x) => {
+                  Logger.warn("Don't know how to compute " + x)
+                  data
+                }
+                case None => {
+                  Logger.trace("Returning raw data.")
+                  data
+                }
+              }
+
               if (format == "csv") {
                 val configuration = play.api.Play.configuration
                 val hideprefix = configuration.getBoolean("json2csv.hideprefix").getOrElse(false)
                 val ignore = configuration.getString("json2csv.ignore").getOrElse("").split(",")
                 val seperator = configuration.getString("json2csv.seperator").getOrElse("|")
                 val fixgeometry = configuration.getBoolean("json2csv.fixgeometry").getOrElse(true)
-                Ok.chunked(jsonToCSV(Json.parse(d), ignore, seperator, hideprefix, fixgeometry)).as("text/csv")
+                Ok.chunked(jsonToCSV(calculated, ignore, seperator, hideprefix, fixgeometry)).as("text/csv")
+              } else if (format == "geojson") {
+                val geojson = Json.obj("type"     -> Json.toJson("FeatureCollection"),
+                                       "features" -> Json.toJson(calculated));
+                Ok(jsonp(geojson.toString, request)).as("application/json")
               } else {
-                Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
+                Ok(jsonp(calculated, request)).as("application/json")
               }
             }
             case None => Ok(Json.toJson("""{"status":"No data found"}""")).as("application/json")
@@ -308,6 +345,462 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
+
+  /**
+   * Compute the average value for each sensor. This will an object per sensor
+   * that contains the average data for a point, as well as an array of
+   * values for all data that is not a number.
+   *
+   * @param data list of data for all sensors
+   * @return an array with a all sensors and the average values.
+   */
+  def computeAverageSensor(data: List[JsObject]) = {
+    var rowCount = 0
+    val result = collection.mutable.ListBuffer.empty[JsObject]
+
+    while (rowCount < data.length) {
+      val counter = collection.mutable.HashMap.empty[String, Int]
+      val properties = collection.mutable.HashMap.empty[String, Either[collection.mutable.ListBuffer[String], Double]]
+      val sensor = data(rowCount)
+      var startDate = Parsers.parseString(sensor.\("start_time"))
+      var endDate = Parsers.parseString(sensor.\("end_time"))
+      var streams = collection.mutable.ListBuffer[String](Parsers.parseString(sensor.\("stream_id")))
+      sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+        counter(f._1) = 1
+        val s = Parsers.parseString(f._2)
+        val v = Parsers.parseDouble(s)
+        if (v.isDefined) {
+          properties(f._1) = Right(v.get)
+        } else {
+          properties(f._1) = Left(collection.mutable.ListBuffer[String](s))
+        }
+      })
+      val sensorName = sensor.\("sensor_name")
+      while (rowCount < data.length && sensorName.equals(data(rowCount).\("sensor_name"))) {
+        val nextSensor = data(rowCount)
+        if (startDate.compareTo(Parsers.parseString(nextSensor.\("start_time"))) > 0) {
+          startDate = Parsers.parseString(nextSensor.\("start_time"))
+        }
+        if (endDate.compareTo(Parsers.parseString(nextSensor.\("end_time").toString())) < 0) {
+          endDate = Parsers.parseString(nextSensor.\("end_time"))
+        }
+        if (!streams.contains(Parsers.parseString(nextSensor.\("stream_id")))) {
+          streams += Parsers.parseString(nextSensor.\("stream_id"))
+        }
+        nextSensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+          if (properties contains f._1) {
+            properties(f._1) match {
+              case Left(l) => {
+                val s = Parsers.parseString(f._2)
+                if (counter(f._1) == 1) {
+                  val v = Parsers.parseDouble(s)
+                  if (v.isDefined) {
+                    properties(f._1) = Right(v.get)
+                  }
+                } else {
+                  if (!l.contains(s)) {
+                    counter(f._1) = counter(f._1) + 1
+                    l += s
+                  }
+                }
+              }
+              case Right(d) => {
+                val v2 = Parsers.parseDouble(f._2)
+                if (v2.isDefined) {
+                  counter(f._1) = counter(f._1) + 1
+                  properties(f._1) = Right(d + v2.get)
+                }
+              }
+            }
+          } else {
+            val s = Parsers.parseString(f._2)
+            val v = Parsers.parseDouble(s)
+            counter(f._1) = 1
+            if (v.isDefined) {
+              properties(f._1) = Right(v.get)
+            } else {
+              properties(f._1) = Left(collection.mutable.ListBuffer[String](s))
+            }
+          }
+        })
+        rowCount += 1
+      }
+
+      // compute average
+      val jsProperties = collection.mutable.HashMap.empty[String, JsValue]
+      properties.foreach(f => {
+        jsProperties(f._1) = properties(f._1) match {
+          case Left(l) => {
+            if (counter(f._1) == 1) {
+              Json.toJson(l.head)
+            } else {
+              Json.toJson(l.toArray)
+            }
+          }
+          case Right(d) => Json.toJson(d / counter(f._1))
+        }
+      })
+
+      // update sensor
+      result += (sensor ++ Json.obj("properties" -> Json.toJson(jsProperties.toMap),
+        "start_time" -> startDate,
+        "end_time"   -> endDate,
+        "stream_id"  -> Json.toJson(streams)))
+    }
+
+    result.toList
+  }
+  /**
+   * Compute the average value for each sensor. This will an object per sensor
+   * that contains the average data for a point, as well as an array of
+   * values for all data that is not a number.
+   *
+   * @param data list of data for all sensors
+   * @return an array with a all sensors and the average values.
+   */
+  def computeTrend(data: List[JsObject], since: Option[String], until: Option[String]) = {
+    var rowCount = 0
+    val result = collection.mutable.ListBuffer.empty[JsObject]
+
+    // what time frame is the trend over
+    var trendStart: DateTime = null
+    var trendEnd: DateTime = null
+    if (!since.isDefined) {
+      if (!until.isDefined) {
+        trendStart = DateTime.now().minusYears(10)
+        trendEnd = DateTime.now()
+      } else {
+        trendEnd = DateTime.parse(until.get)
+        trendStart = trendEnd.minusYears(10)
+      }
+    } else {
+      if (!until.isDefined) {
+        trendStart = DateTime.parse(since.get)
+        trendEnd = trendStart.plusYears(10)
+      } else {
+        trendStart = DateTime.parse(since.get)
+        trendEnd = DateTime.parse(until.get)
+      }
+    }
+
+    // compute sensors
+    while (rowCount < data.length) {
+      val counterTrend = collection.mutable.HashMap.empty[String, Int]
+      val counterAll = collection.mutable.HashMap.empty[String, Int]
+      val propertiesTrend = collection.mutable.HashMap.empty[String, Either[collection.mutable.ListBuffer[String], Double]]
+      val propertiesAll = collection.mutable.HashMap.empty[String, Either[collection.mutable.ListBuffer[String], Double]]
+      val sensor = data(rowCount)
+      var startDate = Parsers.parseString(sensor.\("start_time"))
+      var endDate = Parsers.parseString(sensor.\("end_time"))
+      var streams = collection.mutable.ListBuffer[String](Parsers.parseString(sensor.\("stream_id")))
+      sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+        counterTrend(f._1) = 1
+        counterAll(f._1) = 1
+        val s = Parsers.parseString(f._2)
+        val v = Parsers.parseDouble(s)
+        if (v.isDefined) {
+          propertiesTrend(f._1) = Right(v.get)
+          propertiesAll(f._1) = Right(v.get)
+        } else {
+          propertiesTrend(f._1) = Left(collection.mutable.ListBuffer[String](s))
+          propertiesAll(f._1) = Left(collection.mutable.ListBuffer[String](s))
+        }
+      })
+      val sensorName = sensor.\("sensor_name")
+      while (rowCount < data.length && sensorName.equals(data(rowCount).\("sensor_name"))) {
+        val nextSensor = data(rowCount)
+        val sensorStart = Parsers.parseString(nextSensor.\("start_time"))
+        val sensorEnd = Parsers.parseString(nextSensor.\("end_time"))
+        if (startDate.compareTo(sensorStart) > 0) {
+          startDate = sensorStart
+        }
+        if (endDate.compareTo(sensorEnd) < 0) {
+          endDate = sensorEnd
+        }
+        if (!streams.contains(Parsers.parseString(nextSensor.\("stream_id")))) {
+          streams += Parsers.parseString(nextSensor.\("stream_id"))
+        }
+        nextSensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+          if (propertiesAll contains f._1) {
+            propertiesAll(f._1) match {
+              case Left(l) => {
+                val s = Parsers.parseString(f._2)
+                if (counterAll(f._1) == 1) {
+                  val v = Parsers.parseDouble(s)
+                  if (v.isDefined) {
+                    propertiesAll(f._1) = Right(v.get)
+                  }
+                } else {
+                  if (!l.contains(s)) {
+                    counterAll(f._1) = counterAll(f._1) + 1
+                    l += s
+                  }
+                }
+              }
+              case Right(d) => {
+                val v2 = Parsers.parseDouble(f._2)
+                if (v2.isDefined) {
+                  counterAll(f._1) = counterAll(f._1) + 1
+                  propertiesAll(f._1) = Right(d + v2.get)
+                }
+              }
+            }
+          } else {
+            val s = Parsers.parseString(f._2)
+            val v = Parsers.parseDouble(s)
+            counterAll(f._1) = 1
+            if (v.isDefined) {
+              propertiesAll(f._1) = Right(v.get)
+            } else {
+              propertiesAll(f._1) = Left(collection.mutable.ListBuffer[String](s))
+            }
+          }
+        })
+        if ((trendStart.compareTo(DateTime.parse(sensorEnd.replace(" ", "T"))) <= 0) && (trendEnd.compareTo(DateTime.parse(sensorStart.replace(" ", "T"))) >= 0)) {
+          nextSensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+            if (propertiesTrend contains f._1) {
+              propertiesTrend(f._1) match {
+                case Left(l) => {
+                  val s = Parsers.parseString(f._2)
+                  if (counterTrend(f._1) == 1) {
+                    val v = Parsers.parseDouble(s)
+                    if (v.isDefined) {
+                      propertiesTrend(f._1) = Right(v.get)
+                    }
+                  } else {
+                    if (!l.contains(s)) {
+                      counterTrend(f._1) = counterTrend(f._1) + 1
+                      l += s
+                    }
+                  }
+                }
+                case Right(d) => {
+                  val v2 = Parsers.parseDouble(f._2)
+                  if (v2.isDefined) {
+                    counterTrend(f._1) = counterTrend(f._1) + 1
+                    propertiesTrend(f._1) = Right(d + v2.get)
+                  }
+                }
+              }
+            } else {
+              val s = Parsers.parseString(f._2)
+              val v = Parsers.parseDouble(s)
+              counterTrend(f._1) = 1
+              if (v.isDefined) {
+                propertiesTrend(f._1) = Right(v.get)
+              } else {
+                propertiesTrend(f._1) = Left(collection.mutable.ListBuffer[String](s))
+              }
+            }
+          })
+        }
+        rowCount += 1
+      }
+
+      // compute trend
+      // (( Average of time - Average of life) / Average over life) * 100
+      val jsProperties = collection.mutable.HashMap.empty[String, JsValue]
+      propertiesTrend.foreach(f => {
+        jsProperties(f._1) = propertiesTrend(f._1) match {
+          case Left(l) => {
+            if (counterTrend(f._1) == 1) {
+              Json.toJson(l.head)
+            } else {
+              Json.toJson(l.toArray)
+            }
+          }
+          case Right(d) => {
+            if (propertiesAll(f._1).isRight) {
+              val avgAll = propertiesAll(f._1).right.get / counterAll(f._1)
+              val avgTrend = d / counterTrend(f._1)
+              Json.toJson(((avgTrend - avgAll) / avgAll) * 100.0)
+            } else {
+              Json.toJson("no data")
+            }
+          }
+        }
+      })
+
+      // update sensor
+      result += (sensor ++ Json.obj("properties" -> Json.toJson(jsProperties.toMap),
+        "start_time" -> startDate,
+        "end_time"   -> endDate,
+        "stream_id"  -> Json.toJson(streams)))
+    }
+
+    result.toList
+  }
+
+  /**
+   * Compute the average values over an area. This will return a single object
+   * that contains the average data for a point, as well as an array of
+   * values for all data that is not a number.
+   *
+   * @param data list of sensors inside the area
+   * @param geocode the actual area definition
+   * @return an array with a single sensor that has the average values.
+   */
+  def computeAverageArea(data: List[JsObject], geocode: Option[String]) = {
+    val coordinates = geocode match {
+      case Some(x) => {
+        val points = x.split(",")
+        val coordinates = collection.mutable.ListBuffer.empty[JsValue]
+        var index = 0
+        while (index < points.length - 1) {
+          val lat = Parsers.parseDouble(points(index))
+          val lon = Parsers.parseDouble(points(index+1))
+          if (lat.isDefined && lon.isDefined) {
+            coordinates += Json.toJson(Array(lon.get, lat.get))
+          }
+          index += 2
+        }
+        Json.toJson(coordinates.toArray)
+      }
+      case None => Json.toJson(Array.empty[Double])
+    }
+    val geometry = Map("type" -> Json.toJson("Polygon"), "coordinates" -> Json.toJson(Array(coordinates)))
+
+    var startDate = ""
+    var endDate = ""
+    val counter = collection.mutable.HashMap.empty[String, Int]
+    val properties = collection.mutable.HashMap.empty[String, Either[collection.mutable.ListBuffer[String], Double]]
+    var streams = collection.mutable.ListBuffer.empty[String]
+    var sensors = collection.mutable.ListBuffer.empty[String]
+    data.foreach(sensor => {
+      sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+        if (startDate.isEmpty || startDate.compareTo(Parsers.parseString(sensor.\("start_time"))) > 0) {
+          startDate = Parsers.parseString(sensor.\("start_time"))
+        }
+        if (endDate.isEmpty || endDate.compareTo(Parsers.parseString(sensor.\("end_time"))) < 0) {
+          endDate = Parsers.parseString(sensor.\("end_time"))
+        }
+        if (!sensors.contains(Parsers.parseString(sensor.\("sensor_id")))) {
+          sensors += Parsers.parseString(sensor.\("sensor_id"))
+        }
+        if (!streams.contains(Parsers.parseString(sensor.\("stream_id")))) {
+          streams += Parsers.parseString(sensor.\("stream_id"))
+        }
+        if (properties contains f._1) {
+          properties(f._1) match {
+            case Left(l) => {
+              val s = Parsers.parseString(f._2)
+              if (counter(f._1) == 1) {
+                val v = Parsers.parseDouble(s)
+                if (v.isDefined) {
+                  properties(f._1) = Right(v.get)
+                }
+              } else {
+                if (!l.contains(s)) {
+                  counter(f._1) = counter(f._1) + 1
+                  l += s
+                }
+              }
+            }
+            case Right(d) => {
+              val v = Parsers.parseDouble(f._2)
+              if (v.isDefined) {
+                counter(f._1) = counter(f._1) + 1
+                properties(f._1) = Right(d + v.get)
+              }
+            }
+          }
+        } else {
+          counter(f._1) = 1
+          val s = Parsers.parseString(f._2)
+          val v = Parsers.parseDouble(s)
+          if (v.isDefined) {
+            properties(f._1) = Right(v.get)
+          } else {
+            properties(f._1) = Left(collection.mutable.ListBuffer[String](s))
+          }
+        }
+      })
+    })
+
+    // compute average
+    val jsProperties = collection.mutable.HashMap.empty[String, JsValue]
+    properties.foreach(f => {
+      jsProperties(f._1) = f._2 match {
+        case Left(l) => {
+          if (counter(f._1) == 1) {
+            Json.toJson(l.head)
+          } else {
+            Json.toJson(l.toArray)
+          }
+        }
+        case Right(d) => Json.toJson(d / counter(f._1))
+      }
+    })
+
+    val sensor = Json.obj("id"          -> Json.toJson(-1),
+                          "start_time"  -> Json.toJson(startDate),
+                          "end_time"    -> Json.toJson(endDate),
+                          "type"        -> Json.toJson("Feature"),
+                          "geometry"    -> Json.toJson(geometry),
+                          "sensor_id"   -> Json.toJson(sensors.toArray),
+                          "stream_id"   -> Json.toJson(streams.toArray),
+                          "sensor_name" -> Json.toJson("area"),
+                          "properties"  -> Json.toJson(jsProperties.toMap))
+
+    List[JsObject](sensor)
+  }
+
+  /**
+   * Compute the number of times a specific property is found in the data.
+   *
+   * @param data list of sensors found
+   * @return list of sensors where properties show the number of times a
+   *         specific property has been seen for that sensor.
+   */
+  def computeCountSensor(data: List[JsObject]) = {
+    var rowCount = 0
+    val result = collection.mutable.ListBuffer.empty[JsObject]
+
+    while (rowCount < data.length) {
+      val counter = collection.mutable.HashMap.empty[String, Int]
+      val sensor = data(rowCount)
+      var startDate = Parsers.parseString(sensor.\("start_time"))
+      var endDate = Parsers.parseString(sensor.\("end_time"))
+      var streams = collection.mutable.ListBuffer[String](Parsers.parseString(sensor.\("stream_id")))
+      sensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+        counter(f._1) = 1
+      })
+      while (rowCount < data.length && sensor.\("sensor_name").equals(data(rowCount).\("sensor_name"))) {
+        val nextSensor = data(rowCount)
+        if (startDate.compareTo(Parsers.parseString(nextSensor.\("start_time"))) > 0) {
+          startDate = Parsers.parseString(nextSensor.\("start_time"))
+        }
+        if (endDate.compareTo(Parsers.parseString(nextSensor.\("end_time"))) < 0) {
+          endDate = Parsers.parseString(nextSensor.\("end_time"))
+        }
+        if (!streams.contains(Parsers.parseString(nextSensor.\("stream_id")))) {
+          streams += Parsers.parseString(nextSensor.\("stream_id"))
+        }
+        nextSensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+          if (counter contains f._1) {
+            counter(f._1) = counter(f._1) + 1
+          } else {
+            counter(f._1) = 1
+          }
+        })
+        rowCount += 1
+      }
+
+      // compute average
+      val jsProperties = collection.mutable.HashMap.empty[String, JsValue]
+      counter.foreach(f => {
+        jsProperties(f._1) = Json.toJson(counter(f._1))
+      })
+
+      // update sensor
+      result += (sensor ++ Json.obj("properties" -> Json.toJson(jsProperties.toMap),
+                                    "start_time" -> startDate,
+                                    "end_time"   -> endDate,
+                                    "stream_id"  -> Json.toJson(streams)))
+    }
+
+    result.toList
+  }
 
   def getDatapoint(id: String) =
     Action { request =>
@@ -330,40 +823,46 @@ object Geostreams extends ApiController {
     }
   }
 
+  def jsonp(json: List[JsObject], request: Request[AnyContent]) = {
+    request.getQueryString("callback") match {
+      case Some(callback) => callback + "([" + json.mkString(",\n") + "]);"
+      case None => "[" + json.mkString(",\n") + "]"
+    }
+  }
+
   // ----------------------------------------------------------------------
   // Convert JSON data to CSV data.
   // This code is generic and could be moved to special module, right now
   // it is used to take a geostream output and convert it to CSV.
   // ----------------------------------------------------------------------  
   /**
-   * Returns the JSON formated as CSV.
+   * Returns the JSON formatted as CSV.
    *
    * This will take the first json element and create a header from this. All
    * additional rows will be parsed based on this first header. Any fields not
    * in the first row, will not be outputed.
    * @param data the json to be converted to CSV.
    * @param ignore fields to ignore.
-   * @param prefixSeperator set this to the value to seperate elements in json
+   * @param prefixSeperator set this to the value to separate elements in json
    * @param hidePrefix set this to true to not print the prefix in header.
-   * @param fixGeometry set this to true to convert an array of geomtry to lat, lon, alt
-   * @param 
-   * @returns Enumarator[String]
+   * @param fixGeometry set this to true to convert an array of geometry to lat, lon, alt
+   * @return Enumarator[String]
    */
-  def jsonToCSV(data: JsValue, ignore: Array[String] = Array[String](), prefixSeperator: String = " - ", hidePrefix: Boolean = false, fixGeometry:Boolean = true) = {
-    val values = data.as[List[JsObject]]
+  def jsonToCSV(data: List[JsObject], ignore: Array[String] = Array[String](), prefixSeperator: String = " - ", hidePrefix: Boolean = false, fixGeometry:Boolean = true): Enumerator[String] = {
     val headers = ListBuffer.empty[Header]
 
-    // find all headers
+    // load all values, we need to iterate over this list twice, once for headers, once for the data
+    // create a new enumerator to return strings chunked.
     var rowcount = 0
-    val runtime = Runtime.getRuntime()
-    
-    Enumerator.generateM(Future[Option[String]] {
+    Enumerator .generateM(Future[Option[String]] {
       if (headers.isEmpty) {
-	    for(row <- values)
-	      addHeaders(row, headers, ignore, "", prefixSeperator, hidePrefix, fixGeometry)
+        // find all headers first
+        for (row <- data)
+          addHeaders(row, headers, ignore, "", prefixSeperator, hidePrefix, fixGeometry)
         Some(printHeader(headers).substring(1) + "\n")
-      } else if (rowcount < values.length) {
-        val x = Some(printRow(values(rowcount), headers, "", prefixSeperator) + "\n")
+      } else if (rowcount < data.length) {
+        // return data
+        val x = Some(printRow(data(rowcount), headers, "", prefixSeperator) + "\n")
         rowcount += 1
         x
       } else {
