@@ -3,6 +3,8 @@
  */
 package api
 
+import java.io.File
+
 import _root_.util.Parsers
 import org.joda.time.DateTime
 import play.api.mvc.Action
@@ -32,14 +34,14 @@ object Geostreams extends ApiController {
 
   val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssXXX")
   val pluginNotEnabled = InternalServerError(toJson("Geostreaming not enabled"))
-  
+
   implicit val sensors = (
     (__ \ 'name).read[String] and
     (__ \ 'type).read[String] and
     (__ \ 'geometry \ 'coordinates).read[List[Double]] and
     (__ \ 'properties).read[JsValue]
   ) tupled
-  
+
   implicit val streams = (
     (__ \ 'name).read[String] and
     (__ \ 'type).read[String] and
@@ -47,7 +49,7 @@ object Geostreams extends ApiController {
     (__ \ 'properties).read[JsValue] and
     (__ \ 'sensor_id).read[String]
   ) tupled
-  
+
   implicit val datapoints = (
     (__ \ 'start_time).read[String] and
     (__ \ 'end_time).readNullable[String] and
@@ -87,7 +89,7 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
-  
+
   def getSensor(id: String) =
     Action { request =>
       Logger.debug("Get sensor " + id)
@@ -101,8 +103,7 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
-  
-  
+
   def getSensorStreams(id: String) =
     Action { request =>
       Logger.debug("Get sensor streams" + id)
@@ -116,8 +117,8 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
-  
-  def updateStatisticsSensor(id: String) = 
+
+  def updateStatisticsSensor(id: String) =
     Action { request =>
       Logger.debug("update sensor statistics for " + id)
 	  current.plugin[PostgresPlugin] match {
@@ -128,8 +129,8 @@ object Geostreams extends ApiController {
 	    case None => pluginNotEnabled
 	  }
   }
-  
-  def updateStatisticsStream(id: String) = 
+
+  def updateStatisticsStream(id: String) =
     Action { request =>
       Logger.debug("update stream statistics for " + id)
 	  current.plugin[PostgresPlugin] match {
@@ -140,8 +141,8 @@ object Geostreams extends ApiController {
 	    case None => pluginNotEnabled
 	  }
   }
-  
-  def updateStatisticsStreamSensor() = 
+
+  def updateStatisticsStreamSensor() =
     Action { request =>
       Logger.debug("update all sensor/stream statistics")
 	  current.plugin[PostgresPlugin] match {
@@ -152,8 +153,8 @@ object Geostreams extends ApiController {
 	    case None => pluginNotEnabled
 	  }
   }
-  
-  def getSensorStatistics(id: String) =  
+
+  def getSensorStatistics(id: String) =
     Action { request =>
       Logger.debug("Get sensor statistics " + id)
       current.plugin[PostgresPlugin] match {
@@ -162,9 +163,10 @@ object Geostreams extends ApiController {
             case Some(d) => {
               val data = Json.parse(d)
               Json.obj(
-                  "range" -> Map[String, JsValue]("min_start_time" -> data \ "min_start_time", "max_start_time" -> data \ "max_start_time"),
-                  "parameters" -> data \ "parameters"
-                  )
+                "range" -> Map[String, JsValue]("min_start_time" -> data \ "min_start_time",
+                                                "max_start_time" -> data \ "max_start_time"),
+                "parameters" -> data \ "parameters"
+              )
             }
             case None => Json.obj("range" -> Map.empty[String, String], "parameters" -> Array.empty[String])
           }
@@ -173,7 +175,7 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
   }
-  
+
   def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
       Logger.info("Creating stream: " + request.body)
       request.body.validate[(String, String, List[Double], JsValue, String)].map {
@@ -181,7 +183,7 @@ object Geostreams extends ApiController {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
               val id = plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
-              Ok(toJson(Json.obj("status"->"ok","id"->id)))              
+              Ok(toJson(Json.obj("status"->"ok","id"->id)))
             }
             case None => pluginNotEnabled
           }
@@ -204,7 +206,7 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
-  
+
   def getStream(id: String) =
     Action { request =>
       Logger.debug("Get stream " + id)
@@ -218,7 +220,7 @@ object Geostreams extends ApiController {
         case None => pluginNotEnabled
       }
     }
-  
+
   def deleteStream(id: String) = Authenticated {
     Action(parse.empty) { request =>
       Logger.debug("Delete stream " + id)
@@ -231,7 +233,7 @@ object Geostreams extends ApiController {
       }
     }
   }
-  
+
   def deleteAll() = Authenticated {
     Action(parse.empty) { request =>
       Logger.debug("Drop all")
@@ -244,7 +246,7 @@ object Geostreams extends ApiController {
       }
     }
   }
-  
+
   def counts() =  Action { request =>
       Logger.debug("Counting entries")
       current.plugin[PostgresPlugin] match {
@@ -283,68 +285,132 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, calculate: Option[String]) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String) =
     Action { request =>
-      Logger.debug("Search " + since + " " + until + " " + geocode)
-      var querySince = since
-      var queryUntil = until
-      if (calculate.getOrElse("") == "trend") {
-        querySince = None
-        queryUntil = None
-      }
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchDatapoints(querySince, queryUntil, geocode, stream_id, sensor_id, sources, attributes, calculate.isDefined) match {
-            case Some(d) => {
-              val data = Json.parse(d).as[List[JsObject]]
-              val calculated = calculate match {
-                case Some("average") => {
-                  Logger.debug("Computing average of data.")
-                  computeAverageSensor(data)
-                }
-                case Some("average-area") => {
-                  Logger.debug("Computing area average of data.")
-                  computeAverageArea(data, geocode)
-                }
-                case Some("trend") => {
-                  Logger.debug("Computing trend of data.")
-                  computeTrend(data, since, until)
-                }
-                case Some("count") => {
-                  Logger.debug("Computing count of data.")
-                  computeCountSensor(data)
-                }
-                case Some(x) => {
-                  Logger.warn("Don't know how to compute " + x)
-                  data
-                }
-                case None => {
-                  Logger.trace("Returning raw data.")
-                  data
-                }
-              }
+          val data = plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes, false)
 
-              if (format == "csv") {
-                val configuration = play.api.Play.configuration
-                val hideprefix = configuration.getBoolean("json2csv.hideprefix").getOrElse(false)
-                val ignore = configuration.getString("json2csv.ignore").getOrElse("").split(",")
-                val seperator = configuration.getString("json2csv.seperator").getOrElse("|")
-                val fixgeometry = configuration.getBoolean("json2csv.fixgeometry").getOrElse(true)
-                Ok.chunked(jsonToCSV(calculated, ignore, seperator, hideprefix, fixgeometry)).as("text/csv")
-              } else if (format == "geojson") {
-                val geojson = Json.obj("type"     -> Json.toJson("FeatureCollection"),
-                                       "features" -> Json.toJson(calculated));
-                Ok(jsonp(geojson.toString, request)).as("application/json")
-              } else {
-                Ok(jsonp(calculated, request)).as("application/json")
+          if (format == "csv") {
+            Ok.chunked(jsonToCSV(data)).as("text/csv")
+          } else {
+            var status = 0
+            Ok.chunked(Enumerator.generateM(Future[Option[String]] {
+              status match {
+                case 0 => {
+                  status = 1
+                  if (format == "geojson") {
+                    Some("{ \"type\": \"FeatureCollection\", \"features\": [")
+                  } else {
+                    Some("[")
+                  }
+                }
+                case 1 => {
+                  if (data.hasNext) {
+                    val v = data.next.toString()
+                    if (data.hasNext) {
+                      Some(v + ",\n")
+                    } else {
+                      Some(v + "\n")
+                    }
+                  } else {
+                    status = 2
+                    if (format == "geojson") {
+                      Some("] }")
+                    } else {
+                      Some("]")
+                    }
+                  }
+                }
+                case 2 => {
+                  None
+                }
               }
-            }
-            case None => Ok(Json.toJson("""{"status":"No data found"}""")).as("application/json")
+            })).as("application/json")
           }
         }
         case None => pluginNotEnabled
       }
     }
+
+  def filterData(obj: JsObject, filterString: Option[String]): Boolean = {
+    val filter = Json.parse(filterString.getOrElse("{}"))
+
+    val season = filter.\("season")
+    if (!season.isInstanceOf[JsUndefined]) {
+      Parsers.parseDate(obj.\("start_time")) match {
+        case Some(startDate) => {
+          Parsers.parseDate(obj.\("end_time")) match {
+            case Some(endDate) => {
+            }
+            case None => return false
+          }
+        }
+        case None => return false
+      }
+    }
+
+    val semi = filter.\("semi")
+    if (!semi.isInstanceOf[JsUndefined]) {
+      Parsers.parseDate(obj.\("start_time")) match {
+        case Some(startDate) => {
+          Parsers.parseDate(obj.\("end_time")) match {
+            case Some(endDate) => {
+              if (startDate.getYear == endDate.getYear) {
+                if (Parsers.parseString(semi).equals("spring")) {
+                  return (startDate.getMonthOfYear < 6)
+                } else {
+                  return (endDate.getMonthOfYear > 5)
+                }
+              } else {
+                return true
+              }
+            }
+            case None => return false
+          }
+        }
+        case None => return false
+      }
+    }
+
+    true
+  }
+
+  def binData(data: Iterator[JsObject], binningString: Option[String], inclRaw: Boolean) = {
+    data
+  }
+
+  def calculateData(data: Iterator[JsObject], calculate: Option[String]) = {
+    calculate match {
+      case Some("average") => {
+        Logger.debug("Computing average of data.")
+        data
+      }
+      case Some(x) => {
+        Logger.warn("Don't know how to compute " + x)
+        data
+      }
+      case None => {
+        Logger.debug("Returning raw data.")
+        data
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------------
+  // CACHE RESULTS
+  // ----------------------------------------------------------------------
+  def getCache(name: String) = {
+    val cacheFile = new File("/tmp/medici/" + name)
+    if (cacheFile.exists)
+      Some(Enumerator.fromFile(cacheFile))
+    else
+      None
+  }
+
+  // ----------------------------------------------------------------------
+  // Calculations
+  // ----------------------------------------------------------------------
 
   /**
    * Compute the average value for each sensor. This will an object per sensor
@@ -823,18 +889,10 @@ object Geostreams extends ApiController {
     }
   }
 
-  def jsonp(json: List[JsObject], request: Request[AnyContent]) = {
-    request.getQueryString("callback") match {
-      case Some(callback) => callback + "([" + json.mkString(",\n") + "]);"
-      case None => "[" + json.mkString(",\n") + "]"
-    }
-  }
-
   // ----------------------------------------------------------------------
-  // Convert JSON data to CSV data.
-  // This code is generic and could be moved to special module, right now
-  // it is used to take a geostream output and convert it to CSV.
-  // ----------------------------------------------------------------------  
+  // JSON -> CSV
+  // ----------------------------------------------------------------------
+
   /**
    * Returns the JSON formatted as CSV.
    *
@@ -842,27 +900,30 @@ object Geostreams extends ApiController {
    * additional rows will be parsed based on this first header. Any fields not
    * in the first row, will not be outputed.
    * @param data the json to be converted to CSV.
-   * @param ignore fields to ignore.
-   * @param prefixSeperator set this to the value to separate elements in json
-   * @param hidePrefix set this to true to not print the prefix in header.
-   * @param fixGeometry set this to true to convert an array of geometry to lat, lon, alt
    * @return Enumarator[String]
    */
-  def jsonToCSV(data: List[JsObject], ignore: Array[String] = Array[String](), prefixSeperator: String = " - ", hidePrefix: Boolean = false, fixGeometry:Boolean = true): Enumerator[String] = {
+  def jsonToCSV(data: Iterator[JsObject]): Enumerator[String] = {
     val headers = ListBuffer.empty[Header]
+
+    val configuration = play.api.Play.configuration
+    val hidePrefix = configuration.getBoolean("json2csv.hideprefix").getOrElse(false)
+    val ignore = configuration.getString("json2csv.ignore").getOrElse("").split(",")
+    val prefixSeperator = configuration.getString("json2csv.seperator").getOrElse(" -> ")
+    val fixGeometry = configuration.getBoolean("json2csv.fixgeometry").getOrElse(true)
 
     // load all values, we need to iterate over this list twice, once for headers, once for the data
     // create a new enumerator to return strings chunked.
     var rowcount = 0
+    val dataList = data.toList
     Enumerator .generateM(Future[Option[String]] {
       if (headers.isEmpty) {
         // find all headers first
-        for (row <- data)
+        for (row <- dataList)
           addHeaders(row, headers, ignore, "", prefixSeperator, hidePrefix, fixGeometry)
         Some(printHeader(headers).substring(1) + "\n")
-      } else if (rowcount < data.length) {
+      } else if (rowcount < dataList.length) {
         // return data
-        val x = Some(printRow(data(rowcount), headers, "", prefixSeperator) + "\n")
+        val x = Some(printRow(dataList(rowcount), headers, "", prefixSeperator) + "\n")
         rowcount += 1
         x
       } else {

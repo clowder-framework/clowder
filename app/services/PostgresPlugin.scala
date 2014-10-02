@@ -3,6 +3,7 @@
  */
 package services
 
+import play.api.libs.iteratee.Enumerator
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import java.sql.DriverManager
@@ -12,6 +13,8 @@ import java.text.SimpleDateFormat
 import java.sql.Timestamp
 import java.sql.Statement
 import play.api.libs.json.{Json, JsObject, JsArray}
+
+import scala.concurrent.Future
 
 /**
  * Postgres connection and simple geoindex methods.
@@ -383,13 +386,13 @@ class PostgresPlugin(application: Application) extends Plugin {
     counts
   }
   
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], source: List[String], attributes: List[String], sortByStation: Boolean): Option[String] = {
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], source: List[String], attributes: List[String], sortByStation: Boolean): Iterator[JsObject] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
     }
     var data = ""
-    var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
+    var query = "SELECT to_json(t) As datapoint FROM " +
       "(SELECT datapoints.gid As id, datapoints.start_time, datapoints.end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
       " WHERE sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid"
 //    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
@@ -481,24 +484,32 @@ class PostgresPlugin(application: Application) extends Plugin {
     st.setFetchSize(50)
     Logger.debug("Geostream search: " + st)
     val rs = st.executeQuery()
-    while (rs.next()) {
-      if (rs.getString(1) != null) {
-        if (!attributes.isEmpty) {
-          val jsdata = Json.parse(rs.getString(1)) match {
-            case v : JsObject => data += filterProperties(v, attributes)
-            case v : JsArray => data += "[" + (for(t <- v.as[List[JsObject]]) yield filterProperties(t, attributes)).mkString(",") + "]"
-            case v => data += rs.getString(1)
-		  }
+
+    new Iterator[JsObject] {
+      var nextObject: Option[JsObject] = None
+
+      def hasNext = {
+        if (nextObject.isDefined) {
+          true
+        } else if (rs.isClosed) {
+          false
+        } else if (!rs.next) {
+          rs.close
+          st.close
+          false
         } else {
-          data += rs.getString(1)
+          nextObject = Some(filterProperties(Json.parse(rs.getString(1)).as[JsObject], attributes))
+          true
         }
       }
+
+      def next = {
+        hasNext
+        val x = nextObject.get
+        nextObject = None
+        x
+      }
     }
-    rs.close()
-    st.close()
-    Logger.trace("Searching datapoints result: " + data)
-    if (data == "") None // FIXME
-    else Some(data)
   }
   
   def filterProperties(obj: JsObject, attributes: List[String]) = {
@@ -510,9 +521,9 @@ class PostgresPlugin(application: Application) extends Plugin {
 	        props = props + f
 	      }
 	    }
-	    (obj - ("properties") + ("properties", props)).toString
+	    (obj - ("properties") + ("properties", props))
 	  }
-	  case None => obj.toString
+	  case None => obj
     }
   }
   
