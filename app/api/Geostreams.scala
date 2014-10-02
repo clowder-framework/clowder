@@ -542,7 +542,9 @@ object Geostreams extends ApiController {
    * @param data list of data for all sensors
    * @return an array with a all sensors and the average values.
    */
-  def computeTrends(data: PeekIterator[JsObject], since: DateTime, until: DateTime) = {
+  def computeTrends(data: PeekIterator[JsObject], since: DateTime, until: DateTime): Option[JsObject] = {
+    if (!data.hasNext) return None
+
     val counterTrend = collection.mutable.HashMap.empty[String, Int]
     val counterAll = collection.mutable.HashMap.empty[String, Int]
     val propertiesTrend = collection.mutable.HashMap.empty[String, Either[collection.mutable.ListBuffer[String], Double]]
