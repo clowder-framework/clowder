@@ -504,10 +504,13 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
 
       def next = {
-        hasNext
-        val x = nextObject.get
-        nextObject = None
-        x
+        if (hasNext) {
+          val x = nextObject.get
+          nextObject = None
+          x
+        } else {
+          null
+        }
       }
     }
   }
