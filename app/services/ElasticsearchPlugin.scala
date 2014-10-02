@@ -1,24 +1,20 @@
 package services
 
-import play.api.{ Plugin, Logger, Application }
+import play.api.{Plugin, Logger, Application}
 import org.elasticsearch.node.NodeBuilder._
 import org.elasticsearch.node.Node
-import org.elasticsearch.client.Client
 import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
-import org.elasticsearch.index.query.QueryBuilders._
 import org.elasticsearch.common.xcontent.XContentFactory._
-import java.util.Date
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.index.query.QueryBuilders
-import models.Dataset
+import models.{UUID, Dataset}
 import scala.collection.mutable.ListBuffer
-import models.Comment
 import scala.util.parsing.json.JSONArray
-
+import java.text.SimpleDateFormat
 
 /**
  * Elasticsearch plugin.
@@ -30,6 +26,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   var node: Node = null
   var client: TransportClient = null
+  val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
+  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
 
   override def onStart() {
     val configuration = application.configuration
@@ -43,26 +42,26 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
       client.prepareIndex("data", "file")
       client.prepareIndex("data", "dataset")
-      
+      client.prepareIndex("data", "collection")
+
       Logger.info("ElasticsearchPlugin has started")
     } catch {
       case nn: NoNodeAvailableException => Logger.error("Error connecting to elasticsearch: " + nn)
-      case _ : Throwable => Logger.error("Unknown exception connecting to elasticsearch")
+      case _: Throwable => Logger.error("Unknown exception connecting to elasticsearch")
     }
   }
 
   def search(index: String, query: String): SearchResponse = {
     Logger.info("Searching ElasticSearch for " + query)
-    
+
     val response = client.prepareSearch(index)
-      .setTypes("file","dataset")
+      .setTypes("file","dataset","collection")
       .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-      //.setQuery(QueryBuilders.matchQuery("_all", query))
       .setQuery(QueryBuilders.queryString(query))
-       .setFrom(0).setSize(60).setExplain(true)
+      .setFrom(0).setSize(60).setExplain(true)
       .execute()
       .actionGet()
-      
+
     Logger.info("Search hits: " + response.getHits().getTotalHits())
     response
   }
@@ -70,61 +69,72 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /**
    * Index document using an arbitrary map of fields.
    */
-  def index(index: String, docType: String, id: String, fields: List[(String, String)]) {
+  def index(index: String, docType: String, id: UUID, fields: List[(String, String)]) {
     var builder = jsonBuilder()
       .startObject()
-      fields.map(fv => builder.field(fv._1, fv._2))
-      builder.endObject()
-    val response = client.prepareIndex(index, docType, id)
+    fields.map(fv => builder.field(fv._1, fv._2))
+    builder.endObject()
+    val response = client.prepareIndex(index, docType, id.stringify)
       .setSource(builder)
       .execute()
       .actionGet()
     Logger.info("Indexing document: " + response.getId())
   }
-  
+
+  def delete(index: String, docType: String, id: String) {    
+    val response = client.prepareDelete(index, docType, id)
+      .execute()
+      .actionGet()
+    Logger.info("Deleting document: " + response.getId())
+  }
+
   def indexDataset(dataset: Dataset) {
     var tagListBuffer = new ListBuffer[String]()
 
-        for (tag <- dataset.tags) {
-          tagListBuffer += tag.name
-        }
+    for (tag <- dataset.tags) {
+      tagListBuffer += tag.name
+    }
 
-        val tagsJson = new JSONArray(tagListBuffer.toList)
+    val tagsJson = new JSONArray(tagListBuffer.toList)
 
-        Logger.debug("tagStr=" + tagsJson);
+    Logger.debug("tagStr=" + tagsJson);
 
-        val comments = for (comment <- Comment.findCommentsByDatasetId(dataset.id.toString, false)) yield {
-          comment.text
-        }
-        val commentJson = new JSONArray(comments)
+    val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(dataset.id, false)) yield {
+      comment.text
+    }
+    val commentJson = new JSONArray(commentsByDataset)
 
-        Logger.debug("commentStr=" + commentJson.toString())
+    Logger.debug("commentStr=" + commentJson.toString())
+    
+    val usrMd = datasets.getUserMetadataJSON(dataset.id)
+    Logger.debug("usrmd=" + usrMd)
 
-        index("data", "dataset", dataset.id.toString,
-            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
-  }
+    val techMd = datasets.getTechnicalMetadataJSON(dataset.id)
+    Logger.debug("techmd=" + techMd)
 
-  def testQuery() {
-    val response = client.prepareSearch("twitter")
-      .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-      .setQuery(termQuery("user", "kimchy"))
-      .setFrom(0).setSize(60).setExplain(true)
-      .execute()
-      .actionGet();
-    Logger.info(response.toString())
-  }
+    val xmlMd = datasets.getXMLMetadataJSON(dataset.id)
+    Logger.debug("xmlmd=" + xmlMd)
+    
+    var fileDsId = ""
+    var fileDsName = ""          
+    for(file <- dataset.files){
+    	fileDsId = fileDsId + file.id.stringify + "  "
+    	fileDsName = fileDsName + file.filename + "  "
+    }
 
-  def testIndex() {
-    val response = client.prepareIndex("twitter", "tweet", "1")
-      .setSource(jsonBuilder()
-        .startObject()
-        .field("user", "kimchy")
-        .field("postDate", new Date())
-        .field("message", "trying out Elastic Search")
-        .endObject())
-      .execute()
-      .actionGet();
-    Logger.info(response.toString())
+    var dsCollsId = ""
+    var dsCollsName = ""
+      
+    for(collection <- collections.listInsideDataset(dataset.id)){
+    	dsCollsId = dsCollsId + collection.id.stringify + " %%% "
+    	dsCollsName = dsCollsName + collection.name + " %%% "
+    }
+
+    val formatter = new SimpleDateFormat("dd/MM/yyyy")
+
+    index("data", "dataset", dataset.id,
+    		List(("name", dataset.name), ("description", dataset.description), ("author",dataset.author.fullName),("created",formatter.format(dataset.created)), ("fileId",fileDsId),("fileName",fileDsName), ("collId",dsCollsId),("collName",dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
+
   }
 
   override def onStop() {

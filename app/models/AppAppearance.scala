@@ -1,12 +1,13 @@
 package models
 
 import org.bson.types.ObjectId
-import services.MongoSalatPlugin
 import com.novus.salat.dao.{ ModelCompanion, SalatDAO }
 import com.mongodb.casbah.Imports._
-import MongoContext.context
 import play.api.Play.current
 import play.api.Logger
+import services.mongodb.MongoSalatPlugin
+import services.mongodb.MongoContext
+import services.mongodb.MongoContext.context
 
 
 /**

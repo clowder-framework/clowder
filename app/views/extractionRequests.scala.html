@@ -1,0 +1,55 @@
+@(dtsrequests:List[models.ExtractionRequests], size:Integer,startTime: java.util.Date,currentTime:java.util.Date)
+@import helper._
+@import collection.JavaConverters._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
+@main("Extraction Requests"){
+	<div class="page-header">
+		<h1>DTS Requests</h1>
+	</div>
+	@if(size == 0) {
+		<div class="row">
+			<div class="col-md-12">
+				No Requests found. Sorry!
+			</div>
+		</div>
+	}
+	<div>
+	<div class="row">
+		<div class="col-md-12">
+			<p>Server Start Time: @startTime</p>
+			<br>
+			<p>Current Time     : @currentTime</p>
+			<br>
+		</div>
+	</div>
+	</div>
+  <div class="container" > 
+		<div class="row-fluid" >
+		  <div>
+			<table id='tablec'  style="table-layout: fixed;width: 100%" cellpadding="10"  cellspacing="0" border="1">
+			<thead>
+				<tr>
+				<th>Client IP</th><th>File Name</th><th>File Type</th><th>File Size</th><th>Upload Date</th>
+				<th>Extractors</th><th>Start Time</th><th>End Time </th>
+				</tr>
+			</thead>
+			<tbody>
+				@for(req <- dtsrequests){
+					<tr>
+					<td>@req.clientIP</td>
+					<td>@req.fileName</td>
+					<td>@req.fileType</td>
+					<td>@req.fileSize</td>
+					<td>@req.uploadDate</td>
+					<td>@req.extractors</td>
+					<td>@req.startTime</td>
+					<td>@req.endTime</td>
+					</tr>	
+				}
+		   </tbody>
+	       </table>
+	    </div>
+    </div>
+ </div>
+}

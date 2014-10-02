@@ -118,13 +118,13 @@
 								  z.className="left";
 								  z.innerHTML="@i.count";
 								  
-								  t.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
+								  t.innerHTML="<a href=@routes.Files.file(UUID(ele._1))>@ele._4</a>";
 								  @for((f, pvs) <- ele._5) {
 								  	@if(pvs.isEmpty){
 								  	    u.innerHTML="";
 								  	   }else{ 
 								  	    u.align="center";
- 										u.innerHTML="<a href=@routes.Files.file(ele._1)><img class='mmd-img' src='@api.routes.Previews.download(pvs(0)._1)' alt='@ele._4' Title='Click here for the original image'</img></a><br><br><a href=@routes.Search.findSimilarFile(ele._1)><p>Find Similar</p></a>"; 
+ 										u.innerHTML="<a href=@routes.Files.file(UUID(ele._1))><img class='mmd-img' src='@api.routes.Previews.download(UUID(pvs(0)._1))' alt='@ele._4' Title='Click here for the original image'</img></a><br><br><a href=@routes.Search.findSimilarFile(UUID(ele._1))><p>Find Similar</p></a>";
  										
  									
 
@@ -153,12 +153,12 @@
 								var s=col3.insertCell(@{3*c.count});
 								
 								
-								 z.innerHTML="<a href=@routes.Files.file(ele._1)>@ele._4</a>";
+								 z.innerHTML="<a href=@routes.Files.file(UUID(ele._1))>@ele._4</a>";
 								 
 								 @for((f, pvs) <- ele._5) {
 									
 								  y.align="center";
- 								 y.innerHTML="<a href=@routes.Files.file(ele._1)><img class='mmd-img' src='@api.routes.Previews.download(pvs(0)._1)'  alt='@ele._4' </img></a><br><br><a href=@routes.Search.findSimilarFile(ele._1)><p>Find Similar</p></a>"; 
+ 								 y.innerHTML="<a href=@routes.Files.file(UUID(ele._1))><img class='mmd-img' src='@api.routes.Previews.download(UUID(pvs(0)._1))'  alt='@ele._4' </img></a><br><br><a href=@routes.Search.findSimilarFile(UUID(ele._1))><p>Find Similar</p></a>";
 								  
 								  }
 								  s.className="right";

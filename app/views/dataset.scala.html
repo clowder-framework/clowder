@@ -66,9 +66,9 @@
 			Configuration.fileSize = @p._7;			
 		}
 		else if("@p._2" === "X3d"){							
-			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(p._1)";
-			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(p._1)";
-			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(p._1)";
+			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1))";
+			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(UUID(p._1))";
+			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(UUID(p._1))";
 			Configuration.wasPTM = "@(filename.endsWith(".ptm")  || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "dataset";
 		}
@@ -76,15 +76,37 @@
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 }
 
-@main("Dataset") {
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+@main("Dataset") {    
+
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>    
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
+	<script>
+		tinymce.init({selector:'.notesArea',
+	    	theme: "modern",
+	    	plugins: [
+	    	          "advlist autolink lists link image charmap print preview hr anchor pagebreak",
+	    	          "searchreplace wordcount visualblocks visualchars code fullscreen",
+	    	          "insertdatetime media nonbreaking save table contextmenu directionality",
+	    	          "template paste textcolor"
+	    	      ],
+	    	      toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
+	    	      toolbar2: "print preview media | forecolor backcolor emoticons",
+	    	      image_advtab: true,
+	    	      templates: [
+	    	          {title: 'Test template 1', content: 'Test 1'},
+	    	          {title: 'Test template 2', content: 'Test 2'}
+	    	      ]
+	    });
+	</script>
     <script>
     	var isPageLoaded = false;
     	var isx3dActive = false;
     	var Configuration = {};
     	Configuration.id  = "@dataset.id";
 		Configuration.authenticated = @user.isDefined;
-		Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
 		Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
 		Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
 		Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
@@ -93,12 +115,13 @@
     </script>
     <script>
     	window.onload = function() {
+    		$("#selectingInputFiles").val("");
     		isPageLoaded = true;
     	}
     </script>
     
 	<div class="page-header">
-		<h1>@dataset.name</h1>
+		<h1 id="aboutname">@dataset.name</h1>
 	</div>
 	
 	<div class="row">	
@@ -144,7 +167,7 @@
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@f.sections.map { s =>
 					  		@if(s.preview.isDefined) {
-					  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
+					  			<img src="@api.routes.Previews.download(s.preview.get.id)"
 					  				class="img-polaroid" height="100px" 
 					  			@if(s.startTime.isDefined) {
 					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -187,7 +210,7 @@
 						  			</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
-								  			<img src="@api.routes.Previews.download(s.preview.get.id.toString)"
+								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
 								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;" 
 								  			@if(s.startTime.isDefined) {
 								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -212,7 +235,7 @@
 						  		 		}
 						  		 	}
 						  			 </td>
-						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id.toString)">Similar</a></td>
+						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
 					  			 </tr>
 					  		}
 				  		</table>
@@ -220,7 +243,7 @@
 				  </div>
 			  	</div>
 
-				<script src="http://popcornjs.org/code/dist/popcorn-complete.min.js" type="text/javascript"></script>
+				<script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
 				<script>
 				    document.addEventListener("DOMContentLoaded", function () {
 						if ($("#ourvideo").length>0) {				    
@@ -355,7 +378,7 @@
     			function updateIsBeingProcessed(){
     				var request = $.ajax({
  				       type: 'GET',  
- 				       url: "@api.routes.Datasets.isBeingProcessed(dataset.id.toString)",
+ 				       url: "@api.routes.Datasets.isBeingProcessed(dataset.id)",
  				       contentType: "application/json"
  				     });
     				request.done(function (respJSON){
@@ -448,7 +471,7 @@
     			function checkForNewPreviews(){
 	    			var request = $.ajax({
 					       type: 'GET',  
-					       url: "@api.routes.Datasets.getPreviews(dataset.id.toString)",
+					       url: "@api.routes.Datasets.getPreviews(dataset.id)",
 					       contentType: "application/json"
 					     });
 					request.done(function (respJSON){
@@ -477,7 +500,7 @@
     			function updateFiles(){
     				var request = $.ajax({
  				       type: 'GET',  
- 				       url: "@api.routes.Datasets.datasetFilesList(dataset.id.toString)",
+ 				       url: "@api.routes.Datasets.datasetFilesList(dataset.id)",
  				       contentType: "application/json"
  				     });
     				request.done(function (respJSON){
@@ -496,21 +519,21 @@
 							        }
 
 						        if(j <= tableLength)	    
-							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+							        $("#datasetFilesTable tbody tr:nth-child("+j+")").before("<tr><td class='file-list-cell'><a href='"+  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' title='Delete File' onclick='removeFile(\""+fileId+"\",event,true)'><span class=\"glyphicon glyphicon-trash\"></span></a></td></tr>"
 							        		);
 						        else if(tableLength > 0)
-						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody tr:nth-child("+(j-1)+")").after("<tr><td class='file-list-cell'><a href='"+  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' title='Delete File' onclick='removeFile(\""+fileId+"\",event,true)'><span class=\"glyphicon glyphicon-trash\"></span></a></td></tr>"
 							        		);
 						        else{
 						        	if($("#datasetFilesTable tbody").length == 0)
 						        		$("#datasetFilesTable").append("<tbody></tbody>");
-						        	$("#datasetFilesTable tbody").append("<tr><td class='file-list-cell'><a href='http://"+Configuration.hostIp+":"+window.location.port+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
+						        	$("#datasetFilesTable tbody").append("<tr><td class='file-list-cell'><a href='"+  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/files/"+fileId+"'>"+respJSON[i].filename+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='detachFile(\""+fileId+"\",\""+respJSON[i].filename+"\",event)'>Detach</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFile(\""+fileId+"\",event,true)'>Delete</a></td></tr>"
+							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' title='Delete File' onclick='removeFile(\""+fileId+"\",event,true)'><span class=\"glyphicon glyphicon-trash\"></span></a></td></tr>"
 							        		);
 						        	}
     						}
@@ -531,18 +554,22 @@
 			  <ul class="nav nav-tabs">
 			    <li class="active"><a href="#tab1" data-toggle="tab">Comments</a></li>
 			    <li><a href="#tab2" data-toggle="tab">Metadata</a></li>
+			    <li><a href="#tab3" data-toggle="tab">Notes</a></li>
 			  </ul>
 			  <div class="tab-content">
 			    <div class="tab-pane active" id="tab1">
 				      @if(user.isDefined) {
-				      	  @commentform(dataset.id.toString, api.routes.Datasets.comment(dataset.id.toString).toString)
+				      	  @commentform(dataset.id.stringify, api.routes.Datasets.comment(dataset.id).toString)
 				      }
 			 		  <div class="comment-threads unstyled" id="reply_@dataset.id.toString">
 				      	 @comment(comments)
 				      </div> 
 			    </div>
-			    <div class="tab-pane" id="tab2">	
-			      @metadata(dataset.id.toString, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
+			    <div class="tab-pane" id="tab2">
+			      @metadata(dataset.id.stringify, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
+			    </div>
+			    <div class="tab-pane" id="tab3">
+			      @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
 			    </div>
 			  </div>
 			</div>	
@@ -552,39 +579,144 @@
 
 		<!-- right column -->
 		<div class="col-md-4">
-		    <div class="row ds-section-sm">
-		    	<h3>About</h3>
-				<dl class="dl-horizontal">
-					<dt>Owner:</dt>
-					<dd>@dataset.author.fullName</dd>
-					<dt>Description:</dt>
-					<dd style="white-space:pre-line">@dataset.description</dd>
-				    <dt>Created:</dt>
-					<dd>@dataset.created.format("MMM dd, yyyy")</dd>
-				</dl>
-			</div>
-			
+		
+		  <!-- Dataset information elements --> 
+          <div id="aboutDiv" class="row ds-section-sm" style="margin-top:20px; width: 370px; padding-left:15px;">        
+            <div class="accordion" id="accordion5" style="width: 370px;">
+                <div class="accordion-group">
+                    <h4>About</h4>
+                    <div class="accordian-heading" style="padding-left:20px;">                        
+                        <table>
+                           <tr>
+                            <td><b>Owner: </b></td>
+                            <td id="aboutowner" style="padding-left:10px;">@dataset.author.fullName</td>
+                           </tr>
+                           <tr>
+                            <td style="vertical-align:top;"><b>Description: </b></td>
+                            <td id="aboutdesc" style="padding-left:10px;">@dataset.description</td>
+                           </tr>
+                           <tr>
+                            <td><b>Created: </b></td>
+                            <td id="aboutcreate" style="padding-left:10px;">@dataset.created.format("MMM dd, yyyy")</td>
+                           </tr>
+                        </table>
+                        <p>
+                         @if(user.isDefined) {
+                            <a class="btn btn-info btn-large accordion-toggle collapsed" data-toggle="collapse"
+                               data-parent="#accordion7" href="#collapseSeven" id="editabout" style="padding-left:2px;"
+                               title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
+                         }
+                    </div>
+                    <div id="collapseSeven" class="accordion-body collapse" style="padding:5px 10px 5px 10px;">
+                    <div class="panel panel-info">
+                        <div class="panel-body">
+                        @if(user.isDefined) {
+                            <form class="form-inline" id="form2">
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="width: 30%; vertical-align:top;">Name:</td>
+                                        <td>
+                                            <textarea cols=30 rows=4 type="text" id="editname">@dataset.name</textarea>                                            
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 30%; vertical-align:top;">Description:</td>
+                                        <td>
+                                            <textarea cols=30 rows=4 type="text" id="editdesc">@dataset.description</textarea>                                            
+                                        </td>
+                                    </tr>
+                                </table>
+                                <br>
+                                
+                                <button class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');" title="Update Information"><span class="glyphicon glyphicon-edit"></span> Submit</button>
+                                <button class="btn btn-default" onclick="return closeAboutEdit();" title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span> Close</button>
+                             </form>
+                        }
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+          
+          <script type="text/javascript" language="javascript">
+              function closeAboutEdit() {
+            	  //Reset the data to the current values
+            	  var text = $("#aboutdesc").text();
+            	  $("#editdesc").val(text);
+            	  text = $("#aboutname").text();
+            	  $("#editname").val(text);
+            	  
+            	  //Close the edit form
+                  $("#editabout").addClass('collapsed');
+                  $("#collapseSeven").collapse('toggle');      
+                  return false;
+              }
+              
+              function updateAboutData(datasetId) {            	  
+            	  var description = $("#editdesc").val();
+            	  var name = $("#editname").val();            	  
+            	  var encName = htmlEncode(name);
+            	  var encDescription = htmlEncode(description);
+            	  var jsonData = JSON.stringify({"description":encDescription, "name":encName});                 
+                  
+                  var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
+                	  data: jsonData,
+                      type: 'POST',
+                      contentType: "application/json",
+                  });
+                  
+                  request.done(function (response, textStatus, jqXHR){
+                      ///console.log("Response " + response);
+                      //Sucessful update of the DB - update the interface
+
+                      $("#aboutdesc").text(htmlDecode(encDescription));
+                      $("#aboutname").text(htmlDecode(encName));
+                      
+                      closeAboutEdit();
+                   });
+          
+                   
+                   request.fail(function (jqXHR, textStatus, errorThrown){
+                	   console.error("The following error occured: "+textStatus, errorThrown);
+                       var errMsg = "You must be logged in to update the information about a dataset.";
+                       if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                           alert("The dataset information was not updated due to : " + errorThrown);
+                       }   
+                   });
+                  
+            	  return false;
+              }                            
+          </script>
+          
+          <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+          <!-- End dataset information elements -->          
+			 
+
 			<div class="row ds-section-sm">
-				<h3>Files</h3>
+				<h4>Files</h4>
 				<table id="datasetFilesTable">
 				@dataset.files.map { file =>				
-					<tr><td  class="file-list-cell"><a href="@(routes.Files.file(file.id.toString))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="detachFile('@(file.id.toString)','@(file.filename)',event)">Detach</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-					<td><a class="requiresLogin" href="#" style="font-style:italic;" onclick="removeFile('@(file.id.toString)',event,true);">Delete</a></td></tr>				
+					<tr><td  class="file-list-cell"><a href="@(routes.Files.file(file.id))" title="@file.contentType">@file.filename</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="detachFile('@(file.id)','@(file.filename)',event)">Detach</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a class="requiresLogin btn btn-link" href="#" title="Delete File" onclick="removeFile('@(file.id)',event,true);">
+					    <span class="glyphicon glyphicon-trash"></span>
+					</a></td></tr>
 				}
 				</table>
-				<script language="javascript">	
-					var hostIp = "@play.Play.application().configuration().getString("hostIp")";
-				</script> 
 				<script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
-				<a href="#myModal" class="btn btn-default btn-sm" data-toggle="modal" id="fileUploadBtn">Add file</a>
+				@if(user.isDefined) {
+				<a href="#myModal" class="btn btn-info active" data-toggle="modal" id="fileUploadBtn" title="Add New File to Dataset" role="button">
+				    <span class="glyphicon glyphicon-export"></span> Add
+				</a>
+				}
 				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 				    <div class="modal-dialog">
 				      <div class="modal-content">
-				      @form(action = routes.Files.uploaddnd(dataset.id.toString), 'enctype -> "multipart/form-data", 'role -> "form") {
+				      @form(action = routes.Files.uploaddnd(dataset.id), 'enctype -> "multipart/form-data", 'role -> "form") {
 				        <div class="modal-header">
 				          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				          <h4 class="modal-title">Add file</h4>
+				          <h4 class="modal-title">Upload File</h4>
 				        </div>
 				        <div class="modal-body">
 				 		  <div class="form-group">
@@ -599,7 +731,7 @@
 						  </div>
 				        </div>
 				        <div class="modal-footer">
-				          <input type="submit" class="btn btn-default" value="Upload"/>
+				          <button type="submit" class="btn btn-primary" title="Upload File"><span class="glyphicon glyphicon-open"> Upload</span></button>				          
 				        </div>
 				      }
 				      </div><!-- /.modal-content -->
@@ -607,116 +739,121 @@
 				  </div><!-- /.modal -->
 				</div>
 								
-				<div class="ui-widget requiresLogin" id="filesUi" style="padding-top:15px;">
+				<div class="ui-widget requiresLogin" id="filesUi" style="padding-top:15px;">                 
 					<select id="filesAddSelect" data-inputid="selectingInputFiles" data-errorid="doesNotExistErrorFiles">
+					<option value="" selected="selected"></option>					  
 					@filesOutside.map { file =>  
-						<option value="@(file.id.toString)">@(file.filename)</option>
+						<option value="@(file.id)">@(file.filename)</option>
 					}					  
-					</select>
-					<button class="btn combobutton" id="addFileBtn" style="vertical-align:top;">Add existing file</button>
+					</select>					
+					<button class="btn btn-primary btn-small" id="addFileBtn" style="vertical-align:center;" title="Add Existing File">
+					   <span class="glyphicon glyphicon-plus"></span>
+					</button>
 					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorFiles" >File does not exist or already added.</span>
 				</div>
-					<script src="@routes.Assets.at("javascripts/book.js")" type="text/javascript"></script>	
-					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-					<script>
-						$("#filesAddSelect").combobox();
-					</script>
-					<script>
-						$('body').on('click','#addFileBtn',function(e){
-							if($("#doesNotExistErrorFiles").css('display') == 'inline')
-								return;
-							if($("#selectingInputFiles").val() == ""){
-								$("#doesNotExistErrorFiles").css('display','inline');
-								return;
-							}
-							
-							var selectedId = $("#filesAddSelect").val();
-							var selectedName = $("#filesAddSelect option:selected").text();
-							var request = $.ajax({
-							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
-							     });  
-							request.done(function (response, textStatus, jqXHR){
-						        console.log("Response " + response);	        
-						        $("#filesAddSelect option[value=" + selectedId + "]").remove();
-						        $("#selectingInputFiles").val("");
-						        var i = 1;
-						        
-							});	
-							request.fail(function (jqXHR, textStatus, errorThrown){
-					    		console.error(
-					        		"The following error occured: "+
-					        		textStatus, errorThrown		            
-					    			);
-					    		alert("ERROR: " + errorThrown +". File not added to dataset. The dataset or file was possibly removed." );
-					 			});				
-						});
-						
-						function detachFile(fileId, fileName,event){
-							var request = $.ajax({
-							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
-							     });
-							request.done(function (response, textStatus, jqXHR){
-								console.log("Response " + response);	        
-								$(event.target.parentNode.parentNode).remove();
-								var i = 1;
-						        var selectLength = $("#filesAddSelect option").length;
-						        while(i <= selectLength && $("#filesAddSelect option:nth-child("+i+")").text() < fileName)
-						        	i++;
-						        if(i <= selectLength)
-						        	$("#filesAddSelect option:nth-child("+i+")").before("<option value='"+fileId+"'>"+fileName+"</option>");
-						        else if(selectLength > 0)
-						        	$("#filesAddSelect option:nth-child("+(i-1)+")").after("<option value='"+fileId+"'>"+fileName+"</option>");
-						        else
-						        	$("#filesAddSelect").append("<option value='"+fileId+"'>"+fileName+"</option>");
-						        
-						        $("#filesAddSelect").combobox();
-							        var nextHRs = $("#previewedFileName_"+fileId).nextAll("hr");
-							        if(nextHRs.length > 0){
-							        	nextHRs.first().remove();
-							        }
-							        else{
-							        	var prevHRs = $("#previewedFileName_"+fileId).prevAll("hr");
-							        	if(prevHRs.length > 0){
-							        		prevHRs.first().remove();
-								        }
-							        }						        
-						        $("#previewedFileName_"+fileId).remove();
-						        $("#filePrevContainer_"+fileId).remove();
-						        $("#technicalMetadata_"+fileId).remove();						        						        
-						        $("#fileUserMetadata_"+fileId).remove();						        
-							});	
-							request.fail(function (jqXHR, textStatus, errorThrown){
-					    		console.error(
-					        		"The following error occured: "+
-					        		textStatus, errorThrown		            
-					    			);
-					    		alert("ERROR: " + errorThrown +". File not detached from dataset." );
-					 			});
-						}
-						
-					</script>
+                
+                <script>
+                    $("#filesAddSelect").combobox();
+                </script>
+                <script>
+                    $('body').on('click','#addFileBtn',function(e){
+                        if($("#doesNotExistErrorFiles").css('display') == 'inline')
+                            return;
+                        if($("#selectingInputFiles").val() == ""){
+                            $("#doesNotExistErrorFiles").css('display','inline');
+                            return;
+                        }
+
+                        var selectedId = $("#filesAddSelect").val();
+                        var selectedName = $("#filesAddSelect option:selected").text();
+                        var request = $.ajax({
+                               type: 'POST',
+                               url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
+                             });
+
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("Response " + response);
+                            $("#filesAddSelect option[value=" + selectedId + "]").remove();
+                            $("#selectingInputFiles").val("");
+                            var i = 1;
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                        	console.error("The following error occured: "+textStatus, errorThrown);
+                            var errMsg = "You must be logged in to add a file to a dataset.";
+                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                                alert("The file was not added to the dataset due to : " + errorThrown);
+                            }
+                        });
+                    });
+
+                    function detachFile(fileId, fileName,event){
+                        var request = $.ajax({
+                               type: 'POST',
+                               url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
+                             });
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("Response " + response);
+                            $(event.target.parentNode.parentNode).remove();
+                            var i = 1;
+                            var selectLength = $("#filesAddSelect option").length;
+                            while(i <= selectLength && $("#filesAddSelect option:nth-child("+i+")").text() < fileName)
+                                i++;
+                            if(i <= selectLength)
+                                $("#filesAddSelect option:nth-child("+i+")").before("<option value='"+fileId+"'>"+fileName+"</option>");
+                            else if(selectLength > 0)
+                                $("#filesAddSelect option:nth-child("+(i-1)+")").after("<option value='"+fileId+"'>"+fileName+"</option>");
+                            else
+                                $("#filesAddSelect").append("<option value='"+fileId+"'>"+fileName+"</option>");
+
+                            $("#filesAddSelect").combobox();
+                                var nextHRs = $("#previewedFileName_"+fileId).nextAll("hr");
+                                if(nextHRs.length > 0){
+                                    nextHRs.first().remove();
+                                }
+                                else{
+                                    var prevHRs = $("#previewedFileName_"+fileId).prevAll("hr");
+                                    if(prevHRs.length > 0){
+                                        prevHRs.first().remove();
+                                    }
+                                }
+                            $("#previewedFileName_"+fileId).remove();
+                            $("#filePrevContainer_"+fileId).remove();
+                            $("#technicalMetadata_"+fileId).remove();
+                            $("#fileUserMetadata_"+fileId).remove();
+                        });
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                        	console.error("The following error occured: "+textStatus, errorThrown);
+                            var errMsg = "You must be logged in to remove a file from a dataset.";
+                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                                alert("The file was not removed from the dataset due to : " + errorThrown);
+                            }       
+                        });
+                    }
+
+                </script>
 	
 			<div class="row ds-section-sm">
-				<h3>Collections</h3>
+				<h4>Collections</h4>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
-					<tr><td><a href="@(routes.Collections.collection(collection.id.toString))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id.toString)','@(collection.name)',event)">Remove</a></td></tr>
+					<tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					<td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id)','@(collection.name)',event)">Remove</a></td></tr>
 				}
 				</table>
 
 				<div class="requiresLogin ui-widget" id="collectionsUi">			
 
 						<div class="input-group input-group-sm col-md-8"">
-							<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections">
+							<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
 							@collectionsOutside.map { collection =>
-								<option value="@(collection.id.toString)">@(collection.name)</option>
+								<option value="@(collection.id)">@(collection.name)</option>
 							}					  
 							</select>
 							<span class="input-group-btn">
-								<button class="btn btn-default btn-sm" id="addCollBtn">Add</button>
+								<button class="btn btn-primary btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
+                                    <span class="glyphicon glyphicon-plus"></span>
+                                </button>
 							</span>
 						</div>
 						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif"  id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
@@ -746,7 +883,7 @@
 							var selectedName = $("#collectionAddSelect option:selected").text();
 							var request = $.ajax({
 							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/collections/"+selectedId+"/datasets/"+"@dataset.id"
+							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+selectedId+"/datasets/"+"@dataset.id"
 							     });
 							request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);	        
@@ -757,34 +894,34 @@
 						        while(i <= tableLength && $("#collTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
 						        	i++;
 						        if(i <= tableLength)	        
-							        $("#collTable tbody tr:nth-child("+i+")").before("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+							        $("#collTable tbody tr:nth-child("+i+")").before("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
 							        		);
 						        else if(tableLength > 0)
-						        	$("#collTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+						        	$("#collTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
 							        		);
 						        else{
 						        	if($("#collTable tbody").length == 0)
 						        		$("#collTable").append("<tbody></tbody>");
-						        	$("#collTable tbody").append("<tr><td><a href='http://"+Configuration.hostIp+":"+window.location.port+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+						        	$("#collTable tbody").append("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
 							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
 							        		);
 						        	}
 							});	
 							request.fail(function (jqXHR, textStatus, errorThrown){
-					    		console.error(
-					        		"The following error occured: "+
-					        		textStatus, errorThrown		            
-					    			);
-					    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection or dataset was possibly removed." );
-					 			});				
+								console.error("The following error occured: " + textStatus, errorThrown);
+                                var errMsg = "You must be logged in to add a dataset to a collection.";                                
+                                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                                    alert("The dataset was not added to the collection due to the following : " + errorThrown);
+                                }  
+					 		});				
 						});
 						
 						function removeCollection(collectionId, collectionName,event){
 							var request = $.ajax({
 							       type: 'POST',
-							       url: "http://"+Configuration.hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasetsRemove/"+"@dataset.id"+"/True"
+							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasetsRemove/"+"@dataset.id"+"/True"
 							     });
 							request.done(function (response, textStatus, jqXHR){
 								console.log("Response " + response);	        
@@ -803,33 +940,37 @@
 						        $("#collectionAddSelect").combobox();
 							});	
 							request.fail(function (jqXHR, textStatus, errorThrown){
-					    		console.error(
-					        		"The following error occured: "+
-					        		textStatus, errorThrown		            
-					    			);
-					    		alert("ERROR: " + errorThrown +". Dataset not removed from collection." );
-					 			});
+								console.error("The following error occured: " + textStatus, errorThrown);
+                                var errMsg = "You must be logged in to remove a dataset from a collection.";                                
+                                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                                    alert("The dataset was not removed from the collection due to : " + errorThrown);
+                                }  
+					 		});
 						}
 						
 					</script>
 			</div>
 			
 			<div class="row ds-section-sm">
-				<h3>Tags</h3>
+				<h4>Tags</h4>
 				<ul id="tagList">
 					@dataset.tags.map { tag =>
 					  <li name='@tag.name'>
 					  	<a href="@routes.Tags.search(tag.name)">@tag.name [Dataset]</a>
-					  	<a href="javascript:void(0);"><span id="@tag.id" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
+					  	<a href="javascript:void(0);"><span id="@tag.name" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
 					  </li>
 					}
   				    @dataset.files.map { file =>
 						@file.tags.map { tag =>
-						  <li><a href="@routes.Tags.search(tag.name)">@tag.name [File]</a></li>
+						  <li>
+                              <a href="@routes.Tags.search(tag.name)">@tag.name [File]</a>
+                          </li>
 						}
 				    	@file.sections.map { section =>
 							@section.tags.map { tag =>
-							  <li><a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a></li>
+							  <li>
+                                  <a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a>
+                              </li>
 							}
 						}
 				   }
@@ -838,7 +979,9 @@
 					<div class="input-group input-group-sm col-md-8"">
 						<input type="text" id="tagField" class="form-control">
 						<span class="input-group-btn">
-							<button class="btn btn-default btn-sm" id="tagB">Tag</button>
+							<button class="btn btn-primary btn-large" id="tagB" title="Add Tag">
+							    <span class="glyphicon glyphicon-tag"></span>
+							</button>
 						</span>
 					</div>
 				</form>
@@ -852,57 +995,55 @@
 		      	}
 				<script language="javascript">
 					function removeTag(){
-							console.log("removing tag ");
-							//alert($(this).attr("id"));
-							var tagId = $(this).attr("id");
-							
-							var request = jsRoutes.api.Datasets.removeTag('@dataset.id').ajax({
-								data: JSON.stringify({"tagId":tagId}),
-								type: 'POST',
-								contentType: "application/json"
-							});
-							request.done(function (response, textStatus, jqXHR){
-								console.log("Response " + textStatus);
-								$("#" + tagId).parents("li").remove();
-							});
-							request.fail(function (jqXHR, textStatus, errorThrown){
-								console.error(
-								"The following error occured: "+
-								textStatus, errorThrown
-								);
-								//alert("ERROR: " + errorThrown +". Tag not removed from dataset." );					
-								window.location = "../login"; // FIXME hardcoded
-							});
-							
-							return false;
-						}
+                        var tagId = $(this).attr("id");
+                        console.log("Removing tag " + tagId);
+
+                        var request = jsRoutes.api.Datasets.removeTags('@dataset.id').ajax({
+                            data: JSON.stringify({"tags":[tagId]}),
+                            type: 'POST',
+                            contentType: "application/json"
+                        });
+
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("Response " + textStatus);
+                            $("#" + tagId).parents("li").remove();
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                        	console.error("The following error occured: " + textStatus, errorThrown);
+                            var errMsg = "You must be logged in to remove a tag from a dataset.";                                
+                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                                alert("The tag was not removed from the dataset due to : " + errorThrown);
+                            }     
+                        });
+
+                        return false;
+                    }
 				
 					function removeIconMouseIn() {
 				   		$(this).find(".glyphicon-remove").fadeIn(100);
 					}
+
 					function removeIconMouseOut() {
 				   		$(this).find(".glyphicon-remove").fadeOut(100);				   	
 					}
+
 					$(function() {
-						if(window["userDefined"] == true)
-							$("#tagList").children("li").each(function(){
-								$(this).hover(
-				   						//function(){$(this).find(".glyphicon-remove").fadeIn(100);},
-				   						//function(){$(this).find(".glyphicon-remove").fadeOut(100);}
-								removeIconMouseIn,removeIconMouseOut
-								);
-							});
-						$("#tagList").find(".glyphicon-remove").click(removeTag);
+                       if(window["userDefined"] == true)
+                         $("#tagList").children("li").each(function(){
+                           $(this).hover(removeIconMouseIn,removeIconMouseOut);
+                         });
+                       $("#tagList").find(".glyphicon-remove").click(removeTag);
 						
 					   $('#tagB').click(function() {
 					     var tag = $('#tagField').val();
 					     
 					     var isTagPresent = false;
 					     $("#tagList").children("li").each(function (index, tagLi) {
-					     if($(tagLi).attr("name")===tag){
-					     isTagPresent = true;
-					     alert(true);
-					     }
+					       if($(tagLi).attr("name")===tag){
+					         isTagPresent = true;
+					         alert(true);
+					       }
 					     });
 	
 					     if (tag !== "" && isTagPresent != true) {
@@ -916,21 +1057,18 @@
 						     request.done(function (response, textStatus, jqXHR){
 						        console.log("Response " + response);
 						        var url = "../tags/search?tag=" + tag;
-						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + response +"' class='glyphicon-remove'></i></a></li>").appendTo('#tagList');
-						        /*$newTag.children("li").each(function(){$(this).hover(removeIconMouseIn,removeIconMouseOut);});
-     						$newTag.find(".glyphicon-remove").click(removeTag);*/     						
+						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
 						        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
-     						$newTag.find(".glyphicon-remove").click(removeTag);
+     						    $newTag.find(".glyphicon-remove").click(removeTag);
 						        $('#tagField').val("");
 						     });
 				    
 						     request.fail(function (jqXHR, textStatus, errorThrown){
-						        console.error(
-						            "The following error occured: "+
-						            textStatus, errorThrown
-						            
-						        );
-						        window.location = "../login"; // FIXME hardcoded
+						        console.error("The following error occured: "+textStatus, errorThrown);
+						        var errMsg = "You must be logged in to add a tag to a dataset.";
+						        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                                    alert("The tag was not added to the dataset due to : " + errorThrown);
+                                } 
 						     });
 						     return false;
 					     }
@@ -953,6 +1091,64 @@
 			       </script>
 		      	}
 			</div>
+			     <!-- License elements --> 
+          <div id="accordionsDiv" class="row ds-section-sm" style="margin-top:20px; width: 370px; padding-left:15px;">        
+	        <div class="accordion" id="accordion6" style="width: 370px; padding:5px 10px 5px 10px;">
+	            <div class="accordion-group">
+	                <div class="accordian-heading">
+	                    <h4>License Information</h4>
+	                    <table>
+	                       <tr>
+	                        <td><b>License Holder: </b></td>
+	                        <td id="rightsholderdata" style="padding-left:10px;">blank</td>
+	                       </tr>
+	                       <tr>
+	                        <td><b>License Text: </b></td>
+	                        <td id="licensetextdata" style="padding-left:10px;">blank</td>
+	                       </tr>
+	                    </table>
+	                    <p>
+	                    @if(user.isDefined) {
+	                    <a class="btn btn-info accordion-toggle collapsed" data-toggle="collapse"
+	                        data-parent="#accordion6" href="#collapseSix" id="editlicense"
+	                        title="Edit License Information">
+	                        <span class="glyphicon glyphicon-chevron-down"></span> Edit
+	                    </a>
+	                    }
+	                </div>
+	                <div id="collapseSix" class="accordion-body collapse">
+	                   <div class="panel panel-info">
+                           <div class="panel-body">
+	                    @if(user.isDefined) {
+	                        @licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
+	                    }
+	                       </div>
+	                   </div>
+	                </div>
+	            </div>
+	        </div>
+	      </div>
+	      
+        <script type="text/javascript" language="javascript">
+        $(document).ready(function() {                 	
+            //Will have to modify the if check to see if there is data that specifies what should be selected
+            //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
+            //describing the license rights, the URL for the license, and whether or not downloading is 
+            //allowed.        
+            var datasetLicenseType = "@dataset.licenseData.m_licenseType";
+            var datasetRightsHolder = "@dataset.licenseData.m_rightsHolder";
+            var datasetLicenseText = "@dataset.licenseData.m_licenseText";
+            var datasetLicenseUrl = "@dataset.licenseData.m_licenseUrl";        
+            var datasetAllowDownload = "@dataset.licenseData.m_allowDownload";    
+            var datasetImageBase = '@routes.Assets.at("images")';
+            var datasetAuthorName = '@dataset.author.fullName';
+            
+            if (!@user.isDefined){
+                updateInterface(datasetLicenseType, datasetRightsHolder, datasetLicenseText, datasetLicenseUrl, datasetAllowDownload, datasetImageBase, datasetAuthorName);
+            }
+        });
+        </script>
+        <!-- End License elements -->
 		</div>
-	</div>
+	</div>	
 }

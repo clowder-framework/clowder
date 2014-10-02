@@ -1,12 +1,10 @@
 package models
 
 /**
- * User credentials.
- * 
- * @author Luigi Marini
+ * User credentials. Used for login form.
  *
+ * @author Luigi Marini
  */
-case class Credentials (
-    email: String, 
-    password: String
-)
+case class Credentials(
+  email: String,
+  password: String)

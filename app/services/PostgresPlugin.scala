@@ -5,13 +5,13 @@ package services
 
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
-import com.typesafe.config.ConfigFactory
 import java.sql.DriverManager
 import java.util.Properties
 import java.util.Date
 import java.text.SimpleDateFormat
 import java.sql.Timestamp
 import java.sql.Statement
+import play.api.libs.json.{Json, JsObject, JsArray}
 
 /**
  * Postgres connection and simple geoindex methods.
@@ -83,29 +83,58 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
 
   def searchSensors(geocode: Option[String]): Option[String] = {
-    var data = ""
-    var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM sensors"
-    if (geocode.isDefined) query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+    val parts = geocode match {
+      case Some(x) => x.split(",")
+      case None => Array[String]()
+    }
+    var i = 0
+    var query = "WITH stream_info AS (" +
+    			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams" +
+    			") " +
+    			"SELECT row_to_json(t, true) FROM (" +
+    			"SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, min(stream_info.start_time) as min_start_time, max(stream_info.end_time) as max_end_time, array_agg(distinct stream_info.param) as parameters " + 
+    			"FROM sensors " +
+    			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid "
+	if (parts.length == 3) {
+      query += "WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+    } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
+      query += "WHERE ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
+      i = 0
+      while (i < parts.length) {
+        query += "ST_MakePoint(?, ?), "
+        i += 2
+      }
+      query += "ST_MakePoint(?, ?)])), geog)"
+    }
+    query += " GROUP BY id"
+    query += " ORDER BY name"
     query += ") As t;"
     val st = conn.prepareStatement(query)
-    var i = 0
-    if (geocode.isDefined) {
-      val parts = geocode.get.split(",")
+    i = 0
+    if (parts.length == 3) {
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
       st.setDouble(i + 3, parts(2).toDouble * 1000)
+    } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
+      while (i < parts.length) {
+        st.setDouble(i + 1, parts(i+1).toDouble)
+        st.setDouble(i + 2, parts(i).toDouble)
+        i += 2
+      }
+      st.setDouble(i + 1, parts(1).toDouble)
+      st.setDouble(i + 2, parts(0).toDouble)
     }
     st.setFetchSize(50)
     Logger.debug("Sensors search statement: " + st)
     val rs = st.executeQuery()
+    var data = "[ "
     while (rs.next()) {
+      if (data != "[ ") data += ","
       data += rs.getString(1)
-      Logger.debug("Sensor found: " + data)
     }
+    data += "]"
     rs.close()
     st.close()
-    Logger.debug("Searching sensors result: " + data)
     if (data == "null") { // FIXME
       Logger.debug("Searching NONE")
       None
@@ -113,22 +142,30 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
   
   def getSensor(id: String): Option[String] = {
-    var data = ""
-    val query = "SELECT row_to_json(t,true) As my_sensor FROM " +
-      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM sensors WHERE gid=?) As t;"
+    val query = "WITH stream_info AS (" +
+    			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
+    			") " +
+    			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
+    			"SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, min(stream_info.start_time) as min_start_time, max(stream_info.end_time) as max_end_time, array_agg(distinct stream_info.param) as parameters " + 
+    			"FROM sensors " +
+    			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid " +
+    			"WHERE sensors.gid=?" +
+    			"GROUP BY gid) AS t"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
+    st.setInt(2, id.toInt)
     Logger.debug("Sensors get statement: " + st)
     val rs = st.executeQuery()
+    var data = ""
     while (rs.next()) {
       data += rs.getString(1)
-      Logger.debug("Sensor found: " + data)
     }
     rs.close()
     st.close()
-    Logger.debug("Searching sensors result: " + data)
-    if (data == "null") { // FIXME
-      Logger.debug("Searching NONE")
+    if (data == "") {
+      None
+    } else if (data == "null") { // FIXME
+      Logger.debug("Result is NULL")
       None
     } else Some(data)
   }
@@ -136,66 +173,63 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getSensorStreams(id: String): Option[String] = {
     var data = ""
     val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT streams.gid As stream_id FROM sensors, streams WHERE sensors.gid = ? AND sensors.gid = streams.sensor_id GROUP BY streams.gid) As t;"
+      "(SELECT streams.gid As stream_id FROM streams WHERE sensor_id=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Get streams by sensor statement: " + st)
     val rs = st.executeQuery()
     while (rs.next()) {
       data += rs.getString(1)
-      Logger.debug("Sensors found: " + data)
     }
     rs.close()
     st.close()
-    Logger.debug("Searching streams by sensor result: " + data)
-    if (data == "null") { // FIXME
-      Logger.debug("Searching NONE")
+    if (data == "") {
+      None
+    } else if (data == "null") { // FIXME
+      Logger.debug("Result is NULL")
       None
     } else Some(data)
   }
   
-  def getSensorDateRange(id: String): Option[String] = {
-    var data = ""
-    val query = "SELECT to_json(t) FROM " + 
-    			"(SELECT min(datapoints.start_time) As min_start_time, max(datapoints.start_time) As max_start_time FROM " +
-    			"sensors, streams, datapoints WHERE sensors.gid = ? AND sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid) As t;"
+  def updateSensorStats(sensor_id: Option[String]) {
+    var query = "WITH stream_sub1 AS (" +
+    			"SELECT stream_id, start_time, end_time, json_object_keys(data) AS param FROM datapoints" +
+    			")," +
+    			"stream_sub2 AS (" +
+    			"SELECT stream_id, min(start_time) AS start_time, max(end_time) AS end_time, array_agg(distinct param) as params FROM stream_sub1 GROUP BY stream_id" +
+    			")" +
+    			"UPDATE streams SET start_time=stream_sub2.start_time, end_time=stream_sub2.end_time, params=stream_sub2.params FROM stream_sub2  WHERE gid=stream_id"
+    if (sensor_id.isDefined) query += " AND sensor_id = ?"
+    val st = conn.prepareStatement(query)
+    if (sensor_id.isDefined) st.setInt(1, sensor_id.get.toInt)
+    Logger.debug("updateSensorStats statement: " + st)
+    st.execute();
+	st.close();
+  }
+  
+  def getSensorStats(id: String): Option[String] = {
+    val query = "WITH stream_info AS (" +
+    			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
+    			") " +
+    			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
+    			"SELECT min(start_time) As min_start_time, max(start_time) As max_start_time, array_agg(distinct param) AS parameters FROM stream_info" +
+    			") As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Get streams by sensor statement: " + st)
     val rs = st.executeQuery()
-    while (rs.next()) {
-      data += rs.getString(1)
-      Logger.debug("Sensor date range: " + data)
-    }
-    rs.close()
-    st.close()
-    Logger.debug("Getting sensors statistics: " + data)
-    if (data == "null") { // FIXME
-      Logger.debug("Searching NONE")
-      None
-    } else Some(data)
-  }
-  
-  def getSensorParameters(id: String): Option[String] = {
     var data = ""
-    val query = "SELECT to_json(unique_values) FROM (SELECT array(SELECT json_object_keys(datapoints.data) As key " +
-                "FROM sensors, streams, datapoints WHERE sensors.gid = ? AND sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid GROUP BY key) As parameters) As unique_values;"
-    val st = conn.prepareStatement(query)
-    st.setInt(1, id.toInt)
-    Logger.debug("Get streams by parameter statement: " + st)
-    val rs = st.executeQuery()
     while (rs.next()) {
       data += rs.getString(1)
-      Logger.debug("Sensors parameters: " + data)
     }
     rs.close()
     st.close()
-    Logger.debug("Getting sensors parameters: " + data)
-    if (data == "null") { // FIXME
-      Logger.debug("Searching NONE")
+    if (data == "") {
+      None
+    } else if (data == "null") { // FIXME
+      Logger.debug("Result is NULL")
       None
     } else Some(data)
-  
   }
 
   def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String): String = {
@@ -211,25 +245,63 @@ class PostgresPlugin(application: Application) extends Plugin {
     val rs = ps.getGeneratedKeys()
     rs.next()
     val generatedKey = rs.getInt(1)
-    Logger.debug("Key returned from getGeneratedKeys():"+ generatedKey);
+    Logger.debug("Key returned from getGeneratedKeys(): "+ generatedKey);
     rs.close();
     ps.close()
     return generatedKey.toString()
   }
 
+  def updateStreamStats(stream_id: Option[String]) {
+    var query = "WITH stream_sub1 AS (" +
+    			"SELECT stream_id, start_time, end_time, json_object_keys(data) AS param FROM datapoints";
+    if (stream_id.isDefined) query += " WHERE stream_id = ?"    
+	query += ")," +
+			 "stream_sub2 AS (" +
+			 "SELECT stream_id, min(start_time) AS start_time, max(end_time) AS end_time, array_agg(distinct param) as params FROM stream_sub1 GROUP BY stream_id" +
+			 ")" +
+			 "UPDATE streams SET start_time=stream_sub2.start_time, end_time=stream_sub2.end_time, params=stream_sub2.params FROM stream_sub2  WHERE gid=stream_id"
+    val st = conn.prepareStatement(query)
+    if (stream_id.isDefined) st.setInt(1, stream_id.get.toInt)
+    Logger.debug("updateStreamStats statement: " + st)
+    st.execute();
+	st.close();
+  }
+
   def searchStreams(geocode: Option[String]): Option[String] = {
+    val parts = geocode match {
+      case Some(x) => x.split(",")
+      case None => Array[String]()
+    }
     var data = ""
+    var i = 0
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text FROM streams"
-    if (geocode.isDefined) query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text, start_time, end_time, params FROM streams"
+    if (parts.length == 3) {
+      query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+    } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
+      query += " WHERE ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
+      i = 0
+      while (i < parts.length) {
+        query += "ST_MakePoint(?, ?), "
+        i += 2
+      }
+      query += "ST_MakePoint(?, ?)])), geog)"
+    }
     query += ") As t;"
     val st = conn.prepareStatement(query)
-    var i = 0
-    if (geocode.isDefined) {
-      val parts = geocode.get.split(",")
+    i = 0
+    if (parts.length == 3) {
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
       st.setDouble(i + 3, parts(2).toDouble * 1000)
+    } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
+      while (i < parts.length) {
+        st.setDouble(i + 1, parts(i+1).toDouble)
+        st.setDouble(i + 2, parts(i).toDouble)
+        i += 2
+      }
+      st.setDouble(i + 1, parts(1).toDouble)
+      st.setDouble(i + 2, parts(0).toDouble)
     }
     st.setFetchSize(50)
     Logger.debug("Sensors search statement: " + st)
@@ -248,14 +320,13 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getStream(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_stream FROM " +
-      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text FROM streams WHERE gid=?) As t;"
+      "(SELECT gid As id, name, created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text, start_time, end_time, params FROM streams WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Streams get statement: " + st)
     val rs = st.executeQuery()
     while (rs.next()) {
       data += rs.getString(1)
-      Logger.debug("Streams found: " + data)
     }
     rs.close()
     st.close()
@@ -312,18 +383,52 @@ class PostgresPlugin(application: Application) extends Plugin {
     counts
   }
   
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String]): Option[String] = {
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], source: List[String], attributes: List[String], sortByStation: Boolean): Option[String] = {
+    val parts = geocode match {
+      case Some(x) => x.split(",")
+      case None => Array[String]()
+    }
     var data = ""
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id::text FROM datapoints"
-    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
-    if (since.isDefined) query += "start_time >= ? "
-    if (since.isDefined && (until.isDefined || geocode.isDefined)) query += " AND "
-    if (until.isDefined) query += "start_time <= ? "
-    if ((since.isDefined || until.isDefined) && geocode.isDefined) query += " AND "
-    if (geocode.isDefined) query += "ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
-    if (stream_id.isDefined) query += "stream_id = ?"
-    query += " order by start_time asc) As t;"
+      "(SELECT datapoints.gid As id, datapoints.start_time, datapoints.end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
+      " WHERE sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid"
+//    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
+    if (since.isDefined) query += " AND datapoints.start_time >= ?"
+    if (until.isDefined) query += " AND datapoints.end_time <= ?"
+    if (parts.length == 3) {
+      query += " AND ST_DWithin(datapoints.geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+    } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
+      query += " AND ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
+      var j = 0
+      while (j < parts.length) {
+        query += "ST_MakePoint(?, ?), "
+        j += 2
+      }
+      query += "ST_MakePoint(?, ?)])), datapoints.geog)"
+    }
+    // attributes
+    if (!attributes.isEmpty) {
+      query += " AND (? = ANY(SELECT json_object_keys(datapoints.data))"
+      for (x <- 1 until attributes.size)
+        query += " OR ? = ANY(SELECT json_object_keys(datapoints.data))"
+      query += ")"
+    }
+    // data source
+    if (!source.isEmpty) {
+      query += " AND (? = json_extract_path_text(sensors.metadata,'type','id')"
+      for (x <- 1 until source.size)
+        query += " OR ? = json_extract_path_text(sensors.metadata,'type','id')"
+      query += ")"
+    }
+    //stream
+    if (stream_id.isDefined) query += " AND stream_id = ?"
+    //sensor
+    if (sensor_id.isDefined) query += " AND sensor_id = ?"
+    query += " order by "
+    if (sortByStation) {
+      query += "sensor_name, "
+    }
+    query += "start_time asc) As t;"
     val st = conn.prepareStatement(query)
     var i = 0
     if (since.isDefined) {
@@ -334,28 +439,81 @@ class PostgresPlugin(application: Application) extends Plugin {
       i = i + 1
       st.setTimestamp(i, new Timestamp(formatter.parse(until.get).getTime))
     }
-    if (geocode.isDefined) {
-      val parts = geocode.get.split(",")
+    if (parts.length == 3) {
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
       st.setDouble(i + 3, parts(2).toDouble * 1000)
+      i += 3
+    } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
+      var j = 0
+      while (j < parts.length) {
+        st.setDouble(i + 1, parts(j+1).toDouble)
+        st.setDouble(i + 2, parts(j).toDouble)
+        i += 2
+        j += 2
+      }
+      st.setDouble(i + 1, parts(1).toDouble)
+      st.setDouble(i + 2, parts(0).toDouble)
+      i += 2
+    }
+    // attributes
+    if (!attributes.isEmpty) {
+      for (x <- 0 until attributes.size) {
+      i = i + 1
+      st.setString(i, attributes(x))
+      }
+    }
+    // sources
+    if (!source.isEmpty) {
+      for (x <- 0 until source.size) {
+        i = i + 1
+        st.setString(i, source(x))
+      }
     }
     if (stream_id.isDefined) {
       i = i + 1
       st.setInt(i, stream_id.get.toInt)
     }
+    if (sensor_id.isDefined) {
+      i = i + 1
+      st.setInt(i, sensor_id.get.toInt)
+    }
     st.setFetchSize(50)
-    Logger.trace("Geostream search: " + st)
+    Logger.debug("Geostream search: " + st)
     val rs = st.executeQuery()
     while (rs.next()) {
-      data += rs.getString(1)
-      System.out.println(data)
+      if (rs.getString(1) != null) {
+        if (!attributes.isEmpty) {
+          val jsdata = Json.parse(rs.getString(1)) match {
+            case v : JsObject => data += filterProperties(v, attributes)
+            case v : JsArray => data += "[" + (for(t <- v.as[List[JsObject]]) yield filterProperties(t, attributes)).mkString(",") + "]"
+            case v => data += rs.getString(1)
+		  }
+        } else {
+          data += rs.getString(1)
+        }
+      }
     }
     rs.close()
     st.close()
-    data
-    if (data == "null") None // FIXME
+    Logger.trace("Searching datapoints result: " + data)
+    if (data == "") None // FIXME
     else Some(data)
+  }
+  
+  def filterProperties(obj: JsObject, attributes: List[String]) = {
+    var props = JsObject(Seq.empty)
+    (obj \ "properties").asOpt[JsObject] match {
+	  case Some(x) => {
+	    for (f <- x.fieldSet) {
+	      if (("source" == f._1) || attributes.contains(f._1)) {
+	        props = props + f
+	      }
+	    }
+	    (obj - ("properties") + ("properties", props)).toString
+	  }
+	  case None => obj.toString
+    }
   }
   
   def getDatapoint(id: String): Option[String] = {
@@ -368,7 +526,6 @@ class PostgresPlugin(application: Application) extends Plugin {
     val rs = st.executeQuery()
     while (rs.next()) {
       data += rs.getString(1)
-      Logger.debug("Datapoints found: " + data)
     }
     rs.close()
     st.close()
@@ -385,6 +542,6 @@ class PostgresPlugin(application: Application) extends Plugin {
 
   def test() {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
-    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None))
+    Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, None, List.empty, List.empty, false))
   }
 }

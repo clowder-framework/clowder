@@ -1,5 +1,5 @@
 import com.mongodb.casbah.Imports._
-import play.api.{ GlobalSettings, Application }
+import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.api.Play.current
 import services._
@@ -7,16 +7,35 @@ import play.libs.Akka
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
+import models.ExtractionInfoSetUp
+import services.ExtractorService
+import java.util.Date
+import java.util.Calendar
+import models._
+import services.mongodb.MongoSalatPlugin
+import play.api.mvc.WithFilters
+import play.filters.gzip.GzipFilter
+import akka.actor.Cancellable
+
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
  *
  * @author Luigi Marini
  */
-object Global extends GlobalSettings {
+
+object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSettings {
+        
+      var serverStartTime:Date=null
+
+  var extractorTimer: Cancellable = null
 
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded
+    ServerStartTime.startTime = Calendar.getInstance().getTime()
+    serverStartTime = ServerStartTime.startTime
+    Logger.debug("\n----Server Start Time----" + serverStartTime + "\n \n")
+    
     current.plugin[MongoSalatPlugin].map { mongo =>
       mongo.sources.values.map { source =>
         Logger.debug("Ensuring indexes on " + source.uri)
@@ -27,30 +46,30 @@ object Global extends GlobalSettings {
         source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
         source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
         source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+        source.collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
+        source.collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
       }
+
     }
         
     //Add permanent admins to app if not already included
-    models.AppConfiguration.getDefault()
+    val appConfObj = new services.mongodb.MongoDBAppConfigurationService{}    
+    appConfObj.getDefault()
     for(initialAdmin <- play.Play.application().configuration().getString("initialAdmins").split(","))
-    	models.AppConfiguration.addAdmin(initialAdmin)
+    	appConfObj.addAdmin(initialAdmin)
     
-    //Delete garbage files (ie past intermediate extractor results files) from DB
-    var timeInterval = play.Play.application().configuration().getInt("intermediateCleanup.checkEvery")
-    Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours){
-      models.FileDAO.removeOldIntermediates()
+    extractorTimer = Akka.system().scheduler.schedule(0.minutes,5 minutes){
+           ExtractionInfoSetUp.updateExtractorsInfo()
     }
-  //Clean temporary RDF files if RDF exporter is activated
-    if(play.Play.application().configuration().getString("rdfexporter").equals("on")){
-	    timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
-	    Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
-	      models.FileDAO.removeTemporaries()
-	    }
-    }
-    
+     
+
+    Logger.info("Application has started")
+
   }
 
   override def onStop(app: Application) {
+    extractorTimer.cancel
+    Logger.info("Application shutdown")
   }
 
   private lazy val injector = services.DI.injector
@@ -59,5 +78,4 @@ object Global extends GlobalSettings {
   override def getControllerInstance[A](clazz: Class[A]) = {
     injector.getInstance(clazz)
   }
-
 }

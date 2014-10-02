@@ -1,10 +1,13 @@
-@(query: String, files: Array[models.File], datasets: Array[models.Dataset], mapdatasetIds:scala.collection.mutable.HashMap[String,(String,String)])
+@(query: String, files: Array[models.File], datasets: Array[models.Dataset], collections: Array[models.Collection], mapdatasetIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]], mapcollectionIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]])(implicit user: Option[securesocial.core.Identity])
+
+
+@import scala.collection.mutable.ListBuffer
 
 @main("Search Results") {
 	<div class="page-header">
 		<h1>Search Results <small>@query</small></h1>
 	</div>
-	@if(files.size == 0 && datasets.size == 0) {
+	@if(files.size == 0 && datasets.size == 0 && collections.size == 0) {
 	<div class="row">
 		<div class="col-md-12">
 			No results found. Sorry!
@@ -12,56 +15,119 @@
 	</div>
 	}
 	<div class="row">
-	    <div class="col-md-6">
-	   
-	    <h3>Files</h3>
-	    @for(file <- files) {
-		  <div class="row">
-			<div class="col-md-2">
-				@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(file.filename)" width="120">}
+	  @if(files.size!=0){
+	  		@if(files.size != 0 && datasets.size != 0 && collections.size != 0) {
+		    	<div class="col-md-4">
+		    }
+		    @if(files.size == 0 || datasets.size == 0 || collections.size == 0) {
+		    	<div class="col-md-6">
+		    }
+		   
+		    <h3>Files</h3>
+		    @for(file <- files) {
+			  <div class="row elasticsearchResult" id="filediv_@file.id.toString">
+				<div class="col-md-2">
+					@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120" style="margin-bottom:20%;">}
+				</div>
+				<div class="col-md-10">
+					<dl class="dl-horizontal">
+						<dt>Filename:</dt>
+						<dd><a href="@(routes.Files.file(file.id))">@file.filename</a></dd>
+						<dt>Type:</dt>
+						<dd>@file.contentType</dd>
+						<dt>Uploaded on:</dt>
+						<dd>@file.uploadDate</dd>
+						<dt>Dataset name(s):</dt>
+						<dd>
+							@for(currMapping <- mapdatasetIds.get(file.id.toString).get){
+								<a href="@(routes.Datasets.dataset(UUID(currMapping._1.trim)))">@currMapping._2.trim</a><br/>
+							}
+						</dd>
+					</dl>
+				</div>
 			</div>
-			<div class="col-md-10">
-				<dl class="dl-horizontal">
-					<dt>Filename:</dt>
-					<dd><a href="@(routes.Files.file(file.id.toString))">@file.filename</a></dd>
-					<dt>Type:</dt>
-					<dd>@file.contentType</dd>
-					<dt>Uploaded on:</dt>
-					<dd>@file.uploadDate</dd>
-					<dt>Dataset name:</dt>
-					<dd><a href="@(routes.Datasets.dataset(mapdatasetIds.get(file.id.toString).get._1.trim))">@mapdatasetIds.get(file.id.toString).get._2.trim</a></dd>
-				</dl>
+			<script>
+				$("#filediv_@file.id.stringify br").last().remove();
+			</script>
+			}
 			</div>
-		</div>
 		}
-		</div>
-		@if(datasets.size!=0){
-
-
-			
-
-			<div class="col-md-6">
-	    
-	       <h3> Datasets</h3>
-
+	@if(datasets.size!=0){
+			@if(files.size != 0 && datasets.size != 0 && collections.size != 0) {
+		    	<div class="col-md-4">
+		    }
+		    @if(files.size == 0 || datasets.size == 0 || collections.size == 0) {
+		    	<div class="col-md-6">
+		    }
+						    
+	       <h3>Datasets</h3>
 	    @for(dataset <- datasets) {
-		  <div class="row">
+		  <div class="row elasticsearchResult" id="datasetdiv_@dataset.id.toString">
 		    <div class="col-md-2">
-				@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" width="120">}
+				@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120" style="margin-bottom:20%;">}
 			</div>
 			<div class="col-md-10">
 				<dl class="dl-horizontal">
 					<dt> Name:</dt>
-					<dd><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></dd>
-					<dt>  Descriptions:</dt>
+					<dd><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></dd>
+					<dt>  Description:</dt>
 					<dd> @dataset.description</dd>
+					<dt>Collection name(s):</dt>
+					<dd>
+						@for(currMapping <- mapcollectionIds.get(dataset.id.toString).get){
+							<a href="@(routes.Collections.collection(UUID(currMapping._1.trim)))">@currMapping._2.trim</a><br/>
+						}
+					</dd>
+				</dl>
+			</div>
+		</div>
+		<script>
+				$("#datasetdiv_@dataset.id.stringify br").last().remove();
+		</script>
+		}
+		</div>
+	}
+	
+	@if(collections.size!=0){
+			@if(files.size != 0 && datasets.size != 0 && collections.size != 0) {
+		    	<div class="col-md-4">
+		    }
+		    @if(files.size == 0 || datasets.size == 0 || collections.size == 0) {
+		    	<div class="col-md-6">
+		    }
+			    
+	       <h3>Collections</h3>
+	    @for(collection <- collections) {
+		  <div class="row elasticsearchResult">
+		    <div class="col-md-2">  
+				@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(collection.name)" width="120" style="margin-bottom:30%;">}
+			</div>
+			<div class="col-md-10">
+				<dl class="dl-horizontal">
+					<dt> Name:</dt>
+					<dd><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></dd>
+					<dt>  Description:</dt>
+					<dd> @collection.description</dd>
 				</dl>
 			</div>
 		</div>
 		}
 		</div>
-	
-	
 	}
+	
+	
 	</div>
+	<script>
+		$(".col-md-4 > div > div > img").css("width", "100");
+		
+		$(".dl-horizontal").css("position", "relative");
+		
+		$(".col-md-4 .dl-horizontal").each(function () {
+	        this.style.top = (-parseInt(this.parentNode.clientHeight * 9/100)) + "px"   ;
+	    });
+		$(".col-md-6 .dl-horizontal").each(function () {
+	        this.style.top = (-parseInt(this.parentNode.clientHeight * 12/100)) + "px"   ;
+	    });
+		
+	</script>
 }

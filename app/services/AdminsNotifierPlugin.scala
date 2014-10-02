@@ -2,13 +2,16 @@ package services
 
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
-import models.AppConfiguration
+import services._
+import models.UUID
 
 class AdminsNotifierPlugin(application:Application) extends Plugin {
 
   val files: FileService =  DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService =  DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService =  DI.injector.getInstance(classOf[CollectionService])
+  
+  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
   
   val hostUrl = "http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
   
@@ -30,13 +33,13 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
     var resourceUrl = ""
     val mailSubject = resourceType + " " + eventType + ": " + resourceName
     if(resourceType.equals("File")){
-      resourceUrl = hostUrl + controllers.routes.Files.file(resourceId)
+      resourceUrl = hostUrl + controllers.routes.Files.file(UUID(resourceId))
     }
     else if(resourceType.equals("Dataset")){
-      resourceUrl = hostUrl + controllers.routes.Datasets.dataset(resourceId)
+      resourceUrl = hostUrl + controllers.routes.Datasets.dataset(UUID(resourceId))
     }
     else if(resourceType.equals("Collection")){
-      resourceUrl = hostUrl + controllers.routes.Collections.collection(resourceId)
+      resourceUrl = hostUrl + controllers.routes.Collections.collection(UUID(resourceId))
     }
     
     resourceUrl match{
@@ -56,7 +59,7 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
           }
           case _=>{
 	        var adminsNotSent = ""
-	        for(admin <- AppConfiguration.getDefault.get.admins){
+	        for(admin <- appConfiguration.getDefault.get.admins){
 	          var wasSent = false
 	          current.plugin[MailerPlugin].foreach{currentPlugin => {
 		    	  			    		 	wasSent = wasSent || currentPlugin.sendMail(admin, mailHTML, mailSubject)}}

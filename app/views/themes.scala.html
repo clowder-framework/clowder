@@ -30,9 +30,11 @@
 		     });
 		     
 		     request.fail(function (jqXHR, textStatus, errorThrown){
-		        console.error(
-		            "The following error occured: "+textStatus, errorThrown      
-		        );
+		    	 console.error("The following error occured: "+textStatus, errorThrown);
+                 var errMsg = "You must be logged in to change the theme.";                    
+                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                     alert("The theme was not changed due to : " + errorThrown);
+                 }
 		     });
 		   });
 	});

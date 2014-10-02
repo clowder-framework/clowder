@@ -4,12 +4,16 @@
   console.log("Updating tab " + Configuration.tab);
   var height = 600;  
   var width = 750;
+  
+  $(Configuration.tab).append("<br/>");
+  
+  var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
   $(Configuration.tab).append(
 		  "<object name='ptmApplet' type='application/x-java-applet' height='"+ height +"' width='"+ width +"'>"+
 		  "<param name='code' value='jpview.gui.Standalone' />"+
 		  "<param name='archive' value='"+  Configuration.ptmAppletPath +"' />"+
 //		  "<param name='ptmfile' value='"+ Configuration.url +"' />"+
-		  "<param name='ptmfile' value='" + "http://"+Configuration.hostIp+":"+window.location.port+ Configuration.url   +"' />"+
+		  "<param name='ptmfile' value='" + hostAddress+ Configuration.url   +"' />"+
 		  "<param name='bg_red' value='100' />"+
 		  "<param name='bg_green' value='100' />"+
 		  "<param name='bg_blue' value='100' />"+

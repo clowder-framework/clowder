@@ -1,5 +1,5 @@
 package models
 
 class IncrementCounter {
-	var count = 0
+  var count = 0
 }

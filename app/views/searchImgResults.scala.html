@@ -27,7 +27,7 @@
 			<tbody>
 			    @name.map{   re=> 
 	               <tr>
-						<td><a href=@routes.Files.file(re._1)> @re._4</a></td>
+						<td><a href=@routes.Files.file(UUID(re._1))> @re._4</a></td>
 						<td>@re._3</td>
 					</tr>
 				}

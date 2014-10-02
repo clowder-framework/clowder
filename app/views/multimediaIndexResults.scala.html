@@ -38,7 +38,7 @@
 			@list.map { case (id,link, distance, fname) =>
 			<tr>
 			 <td>@{i.count+=1;i.count}</td> 
-			<td><a href=@routes.Files.file(id)> @fname</a></td>
+			<td><a href=@routes.Files.file(UUID(id))> @fname</a></td>
 			<td>@distance</td>
 			</tr>	
 			}

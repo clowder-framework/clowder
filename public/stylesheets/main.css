@@ -9,49 +9,62 @@ body {
 }
 
 /* Wrapper for page content to push down footer */
-      #wrap {
-        min-height: 100%;
-        height: auto !important;
-        height: 100%;
-        /* Negative indent footer by it's height */
-        margin: 0 auto -60px;
-      }
+#wrap {
+  min-height: 100%;
+  height: auto !important;
+  height: 100%;
+  /* Negative indent footer by it's height */
+  margin: 0 auto -60px;
+}
 
-      /* Set the fixed height of the footer here */
-      #push, #footer {
-        height: 60px;
-      }
-      #footer {
-        background-color: #f5f5f5;
-      }
+.oneline {
+    white-space: nowrap;
+}
 
-      /* Lastly, apply responsive CSS fixes as necessary */
-      @media (max-width: 767px) {
-        #footer {
-          margin-left: -20px;
-          margin-right: -20px;
-          padding-left: 20px;
-          padding-right: 20px;
-        }
-      }
-      
-            /* Custom page CSS
-      -------------------------------------------------- */
-      /* Not required for template or sticky footer method. */
+.no-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-      #wrap > .container {
-        padding-top: 60px;
-      }
-      .container .credit {
-        margin: 20px 0;
-      }
+.fit-in-space {
+    max-width: 100%;
+    max-height: 100%;
+}
+/* Set the fixed height of the footer here */
+#push, #footer {
+  height: 60px;
+}
 
-      code {
-        font-size: 80%;
-      }
-      
-      
-      #nwthumbs {
+#footer {
+  background-color: #f5f5f5;
+}
+
+/* Lastly, apply responsive CSS fixes as necessary */
+@media (max-width: 767px) {
+  #footer {
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+#wrap > .container {
+  padding-top: 60px;
+}
+
+.container .credit {
+  margin: 20px 0;
+}
+
+code {
+  font-size: 80%;
+}
+
+#nwthumbs {
   text-align:center;
 }
 
@@ -134,7 +147,7 @@ ol.comment-threads {
 .rubberbandCanvas {
   border: thin solid #aaaaaa;
 }
- 
+
 .rubberbandFormDiv {
   width: 400px;
   background: white;
@@ -246,8 +259,6 @@ button.tech_md_ {
 	left:20px;
 }
 
-
-
 #nameDescrFieldSet .control-group .controls textarea{
 	width:208px;
 }
@@ -284,6 +295,7 @@ fieldset #email_field .controls #email{
 	height:30px;
 }
 
+
 #adminMailFieldSet .control-group .controls input[type='text']{
 	width:208px;
 	height:30px;
@@ -295,12 +307,10 @@ fieldset #email_field .controls #email{
 }
 
 
-
 :-webkit-full-screen x3d {
   width: 100%;
   height: 100%;
 }
-
 
 .mmd-img {
 	width: 80px;
@@ -318,8 +328,59 @@ fieldset #email_field .controls #email{
     margin: 0 auto;
 }
 
+.img-thumbnail {
+    padding: 10px;
+}
+
+.post-box {
+    margin: 15px 0 15px 0;
+}
+
+.file-type {
+	display:block;
+	font-size: 20px;
+    font-weight: 500;
+	color: white;
+	background-color: #0B61A4;
+	width: 100%;
+	min-height: 150px;
+	border: 1px solid;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.file-type:hover {
+	color: white;
+	text-decoration: none;
+}
+
+.wordwrap {
+   white-space: pre-wrap;      /* CSS3 */
+   white-space: -moz-pre-wrap; /* Firefox */
+   white-space: -pre-wrap;     /* Opera <7 */
+   white-space: -o-pre-wrap;   /* Opera 7 */
+   word-wrap: break-word;      /* IE */
+   /* line-height: 200px; */
+}
+
+.panel .bookmark-link {
+    padding: 0px;
+    margin: 0px;
+}
+
+.panel .bookmark {
+    padding-right: 2px;
+}
+
+.panel .panel-body .img-responsive {
+    margin: 0 auto;
+}
+
+.panel .panel-body .pic {
+    vertical-align: middle;
+}
 .accordion{
-	margin-bottom: 20px;
+	margin-bottom: 30px;
 }
 
 textarea:focus, input[type='text']:focus, input[type='password']:focus{
@@ -328,7 +389,59 @@ textarea:focus, input[type='text']:focus, input[type='password']:focus{
 	box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset, 0px 0px 8px rgba(102, 175, 233, 0.6);
 	
 }
+
 textarea, input[type='text'], input[type='password']{
 	transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
 }
 
+.elasticsearchResult{
+	margin-bottom:10px;
+}
+
+.truncate {
+  width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#list-view {
+  padding-top: 20px;
+}
+
+#tile-view {
+}
+
+
+.file-info .table th, .file-info .table td {
+  border-top: none;
+}
+
+.col-left-border {
+  border-left: 1px solid #E1E1E8;
+}
+
+.col-right-border {
+  border-right: 1px solid #E1E1E8;
+}
+
+.border-top {
+  border-top: 1px solid #E1E1E8;
+}
+
+.button-margins {
+  margin: 20px 0px;
+}
+
+.col-section {
+  margin: 20px 0px;
+}
+
+#tagCloudCanvas {
+    border:1px solid #e6e6e6;
+}
+
+#tagList > a {
+    color: black;
+    text-decoration: none;
+}
