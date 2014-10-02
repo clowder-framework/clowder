@@ -37,7 +37,7 @@ object Parsers {
    * @param s the string to parse
    * @return returns Some(DateTime) if it worked, or None if not.
    */
-  def parseDate(s: String) : Option[DateTime] = try { Some(DateTime.parse(parseString(s))) } catch { case _ : Exception => None }
+  def parseDate(s: String) : Option[DateTime] = try { Some(DateTime.parse(parseString(s).replace(" ", "T"))) } catch { case x: Exception => None }
 
   /**
    * Given the JsValue, strip off any quotes from beginning and end.

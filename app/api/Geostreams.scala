@@ -285,95 +285,83 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String) =
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String]) =
     Action { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          val data = plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes, false)
-
+          val raw = plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes, false)
+          val data = raw.filter(p => filterDataBySemi(p, semi))
           if (format == "csv") {
             Ok.chunked(jsonToCSV(data)).as("text/csv")
           } else {
-            var status = 0
-            Ok.chunked(Enumerator.generateM(Future[Option[String]] {
-              status match {
-                case 0 => {
-                  status = 1
-                  if (format == "geojson") {
-                    Some("{ \"type\": \"FeatureCollection\", \"features\": [")
-                  } else {
-                    Some("[")
-                  }
-                }
-                case 1 => {
-                  if (data.hasNext) {
-                    val v = data.next.toString()
-                    if (data.hasNext) {
-                      Some(v + ",\n")
-                    } else {
-                      Some(v + "\n")
-                    }
-                  } else {
-                    status = 2
-                    if (format == "geojson") {
-                      Some("] }")
-                    } else {
-                      Some("]")
-                    }
-                  }
-                }
-                case 2 => {
-                  None
-                }
-              }
-            })).as("application/json")
+            Ok.chunked(formatResult(data, format)).as("application/json")
           }
+
         }
         case None => pluginNotEnabled
       }
     }
 
-  def filterData(obj: JsObject, filterString: Option[String]): Boolean = {
-    val filter = Json.parse(filterString.getOrElse("{}"))
-
-    val season = filter.\("season")
-    if (!season.isInstanceOf[JsUndefined]) {
-      Parsers.parseDate(obj.\("start_time")) match {
-        case Some(startDate) => {
-          Parsers.parseDate(obj.\("end_time")) match {
-            case Some(endDate) => {
-            }
-            case None => return false
+  def formatResult(data :Iterator[JsObject], format: String) = {
+    var status = 0
+    Enumerator.generateM(Future[Option[String]] {
+      status match {
+        case 0 => {
+          status = 1
+          if (format == "geojson") {
+            Some("{ \"type\": \"FeatureCollection\", \"features\": [")
+          } else {
+            Some("[")
           }
         }
-        case None => return false
-      }
-    }
-
-    val semi = filter.\("semi")
-    if (!semi.isInstanceOf[JsUndefined]) {
-      Parsers.parseDate(obj.\("start_time")) match {
-        case Some(startDate) => {
-          Parsers.parseDate(obj.\("end_time")) match {
-            case Some(endDate) => {
-              if (startDate.getYear == endDate.getYear) {
-                if (Parsers.parseString(semi).equals("spring")) {
-                  return (startDate.getMonthOfYear < 6)
-                } else {
-                  return (endDate.getMonthOfYear > 5)
-                }
-              } else {
-                return true
-              }
+        case 1 => {
+          if (data.hasNext) {
+            val v = data.next.toString()
+            if (data.hasNext) {
+              Some(v + ",\n")
+            } else {
+              Some(v + "\n")
             }
-            case None => return false
+          } else {
+            status = 2
+            if (format == "geojson") {
+              Some("] }")
+            } else {
+              Some("]")
+            }
           }
         }
-        case None => return false
+        case 2 => {
+          None
+        }
       }
+    })
+  }
+
+  def filterDataBySemi(obj: JsObject, semi: Option[String]): Boolean = {
+    if (!semi.isDefined) return true
+
+    // get start/end
+    val startTime = Parsers.parseDate(obj.\("start_time")) match {
+      case Some(x) => x
+      case None => return false
+    }
+    val endTime = Parsers.parseDate(obj.\("end_time")) match {
+      case Some(x) => x
+      case None => return false
     }
 
-    true
+    // see if start end dates are a year apart, if so it is ok
+    if (startTime.getYear != endTime.getYear) return true
+
+    // otherwise see if start is before Jul 1st in case of spring
+    if (semi.get.toLowerCase == "spring" && startTime.getMonthOfYear < 7) return true
+
+    // otherwise see if end is after Jul 1st in case of summer
+    if (semi.get.toLowerCase == "summer" && endTime.getMonthOfYear > 6) return true
+
+    // wrong time
+    return false
   }
 
   def binData(data: Iterator[JsObject], binningString: Option[String], inclRaw: Boolean) = {
