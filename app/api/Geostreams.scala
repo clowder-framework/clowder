@@ -927,18 +927,9 @@ object Geostreams extends ApiController {
           val filename = MessageDigest.getInstance("MD5").digest(description.toString().getBytes).map("%02X".format(_)).mkString
           new PrintStream(new File(cacheFolder, filename + ".json")).print(description.toString())
           val writer = new PrintStream(new File(cacheFolder, filename))
-          val save: Enumeratee[String, String] = Enumeratee.mapInputFlatten {
-            case Input.El(s) => {
-              writer.print(s)
-              Enumerator(s)
-            }
-            case Input.Empty => {
-              Enumerator.enumInput(Input.Empty)
-            }
-            case Input.EOF => {
-              writer.close()
-              Enumerator.enumInput(Input.EOF)
-            }
+          val save: Enumeratee[String, String] = Enumeratee.map { s =>
+            writer.print(s)
+            s
           }
           data.through(save)
         } else {
