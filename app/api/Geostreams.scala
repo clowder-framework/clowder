@@ -302,8 +302,7 @@ object Geostreams extends ApiController {
             "sensor_id" -> sensor_id.getOrElse("").toString,
             "sources" -> Json.toJson(sources),
             "attributes" -> Json.toJson(sources),
-            "semi" -> semi.getOrElse("").toString,
-            "created" -> ISODateTimeFormat.dateTime.print(DateTime.now))
+            "semi" -> semi.getOrElse("").toString)
           getCache(name) match {
             case Some(data) => {
               if (format == "csv") {
@@ -472,7 +471,8 @@ object Geostreams extends ApiController {
           val jsonfile = new File(file.getAbsolutePath + ".json")
           if (jsonfile.exists()) {
             val data = Json.parse(Source.fromFile(jsonfile).mkString)
-            files.put(file.getName, data.as[JsObject] ++ Json.obj("filesize" -> jsonfile.length))
+            files.put(file.getName, data.as[JsObject] ++ Json.obj("filesize" -> jsonfile.length,
+              "created" -> ISODateTimeFormat.dateTime.print(new DateTime(jsonfile.lastModified))))
           }
         }
         Ok(Json.obj("files" -> Json.toJson(files.toMap))).as("application/json")
