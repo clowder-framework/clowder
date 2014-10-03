@@ -8,6 +8,7 @@ import java.security.MessageDigest
 
 import _root_.util.{PeekIterator, Parsers}
 import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
 import play.api.mvc.Action
 import play.api.mvc.Request
 import play.api.mvc.AnyContent
@@ -301,7 +302,8 @@ object Geostreams extends ApiController {
             "sensor_id" -> sensor_id.getOrElse("").toString,
             "sources" -> Json.toJson(sources),
             "attributes" -> Json.toJson(sources),
-            "semi" -> semi.getOrElse("").toString)
+            "semi" -> semi.getOrElse("").toString,
+            "created" -> ISODateTimeFormat.dateTime.print(DateTime.now))
           getCache(name) match {
             case Some(data) => {
               if (format == "csv") {
