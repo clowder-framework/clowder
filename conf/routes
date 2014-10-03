@@ -296,6 +296,10 @@ GET     /api/geostreams/datapoints/averages  api.Geostreams.searchDatapoints(ope
 GET     /api/geostreams/datapoints/trends    api.Geostreams.searchDatapoints(operator = "trends", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET     /api/geostreams/datapoints/:id       api.Geostreams.getDatapoint(id: String)
 
+GET     /api/geostreams/cache                api.Geostreams.cacheList
+GET     /api/geostreams/cache/invalidate     api.Geostreams.cacheInvalidate
+GET     /api/geostreams/cache/:id            api.Geostreams.cacheFetch(id)
+
 POST    /api/geostreams/sensors			     api.Geostreams.createSensor
 GET     /api/geostreams/sensors/update       api.Geostreams.updateStatisticsStreamSensor()
 GET     /api/geostreams/sensors/:id          api.Geostreams.getSensor(id: String)

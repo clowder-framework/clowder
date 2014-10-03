@@ -3,7 +3,8 @@
  */
 package api
 
-import java.io.File
+import java.io.{PrintStream, BufferedWriter, FileOutputStream, File}
+import java.security.MessageDigest
 
 import _root_.util.{PeekIterator, Parsers}
 import org.joda.time.DateTime
@@ -19,7 +20,7 @@ import play.api.Logger
 import java.sql.Timestamp
 import services.PostgresPlugin
 import scala.collection.mutable.ListBuffer
-import play.api.libs.iteratee.Enumerator
+import play.api.libs.iteratee.{Input, Enumeratee, Enumerator}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -275,6 +276,7 @@ object Geostreams extends ApiController {
               } else {
                 plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
               }
+              clearCache
               Ok(toJson("success"))
             }
             case None => pluginNotEnabled
@@ -289,22 +291,34 @@ object Geostreams extends ApiController {
     Action { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          // if computing trends need all data
-          val raw = if (operator == "trends") {
-            plugin.searchDatapoints(None, None, geocode, stream_id, sensor_id, sources, attributes, (operator != ""))
-          } else {
-            plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes, (operator != ""))
+          val name = operator + since.getOrElse("X") + until.getOrElse("X") + geocode.getOrElse("X") + stream_id.getOrElse("X") + sensor_id.getOrElse("X") + sources.mkString("-") + attributes.mkString("-") + semi.getOrElse("X") + format
+          getCache(name) match {
+            case Some(data) => {
+              if (format == "csv") {
+                Ok.chunked(data).as("text/csv")
+              } else {
+                Ok.chunked(data).as("text/json")
+              }
+            }
+            case None => {
+              // if computing trends need all data
+              val raw = if (operator == "trends") {
+                plugin.searchDatapoints(None, None, geocode, stream_id, sensor_id, sources, attributes, (operator != ""))
+              } else {
+                plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes, (operator != ""))
+              }
+
+              val filtered = raw.filter(p => filterDataBySemi(p, semi))
+              val data = calculate(operator, filtered, since, until)
+
+              if (format == "csv") {
+                Ok.chunked(cacheResult(name, jsonToCSV(data))).as("text/csv")
+              } else {
+                Ok.chunked(cacheResult(name, formatResult(data, format))).as("application/json")
+              }
+
+            }
           }
-
-          val filtered = raw.filter(p => filterDataBySemi(p, semi))
-          val data = calculate(operator, filtered, since, until)
-
-          if (format == "csv") {
-            Ok.chunked(jsonToCSV(data)).as("text/csv")
-          } else {
-            Ok.chunked(formatResult(data, format)).as("application/json")
-          }
-
         }
         case None => pluginNotEnabled
       }
@@ -380,11 +394,101 @@ object Geostreams extends ApiController {
   // CACHE RESULTS
   // ----------------------------------------------------------------------
   def getCache(name: String) = {
-    val cacheFile = new File("/tmp/medici/" + name)
-    if (cacheFile.exists)
-      Some(Enumerator.fromFile(cacheFile))
-    else
-      None
+    play.api.Play.configuration.getString("medici.cache") match {
+      case Some(x) => {
+        val filename = MessageDigest.getInstance("MD5").digest(name.getBytes).map("%02X".format(_)).mkString
+        val cacheFile = new File(x, filename)
+        if (cacheFile.exists)
+          Some(Enumerator.fromFile(cacheFile))
+        else
+          None
+      }
+      case None => None
+    }
+  }
+
+  def cacheResult(name: String, data:Enumerator[String]): Enumerator[String] = {
+    play.api.Play.configuration.getString("medici.cache") match {
+      case Some(x) => {
+        val cacheFolder = new File(x)
+        if (cacheFolder.isDirectory || cacheFolder.mkdirs) {
+          val filename = MessageDigest.getInstance("MD5").digest(name.getBytes).map("%02X".format(_)).mkString
+          val writer = new PrintStream(new File(cacheFolder, filename))
+          val save: Enumeratee[String, String] = Enumeratee.mapInputFlatten {
+            case Input.El(s) => {
+              writer.print(s)
+              Enumerator(s)
+            }
+            case Input.Empty => {
+              Enumerator.enumInput(Input.Empty)
+            }
+            case Input.EOF => {
+              writer.close
+              Enumerator.enumInput(Input.EOF)
+            }
+          }
+          data.through(save)
+        } else {
+          data
+        }
+      }
+      case None => data
+    }
+  }
+
+  def clearCache() = {
+    play.api.Play.configuration.getString("medici.cache") match {
+      case Some(x) => {
+        val files = new File(x).listFiles
+        for (f <- new File(x).listFiles) {
+          if (!f.delete) {
+            Logger.error("Could not delete cache file " + f.getAbsolutePath)
+          }
+        }
+        files.map { s => s.getAbsolutePath}
+      }
+      case None => Array.empty[String]
+    }
+  }
+
+  def cacheList() = Action { request =>
+    play.api.Play.configuration.getString("medici.cache") match {
+      case Some(x) => {
+        val files = new File(x).listFiles.map { s => s.getAbsolutePath}
+        Ok(Json.obj("files" -> Json.toJson(files))).as("application/json")
+      }
+      case None => {
+        NotFound("Cache is not enabled")
+      }
+    }
+  }
+
+  def cacheFetch(filename: String) = Action { request =>
+    play.api.Play.configuration.getString("medici.cache") match {
+      case Some(x) => {
+        val file = new File(x, filename)
+        if (file.exists) {
+          Ok.chunked(Enumerator.fromFile(file))
+        } else {
+          NotFound("File not found in cache")
+        }
+      }
+      case None => {
+        NotFound("Cache is not enabled")
+      }
+    }
+  }
+
+  def cacheInvalidate() = Action { request =>
+    play.api.Play.configuration.getString("medici.cache") match {
+      case Some(x) => {
+        val files = clearCache
+        Ok(Json.obj("files" -> Json.toJson(files))).as("application/json")
+      }
+      case None => {
+        NotFound("Cache is not enabled")
+      }
+    }
   }
 
   // ----------------------------------------------------------------------
