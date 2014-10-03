@@ -301,7 +301,7 @@ object Geostreams extends ApiController {
             "stream_id" -> stream_id.getOrElse("").toString,
             "sensor_id" -> sensor_id.getOrElse("").toString,
             "sources" -> Json.toJson(sources),
-            "attributes" -> Json.toJson(sources),
+            "attributes" -> Json.toJson(attributes),
             "semi" -> semi.getOrElse("").toString)
           getCache(name) match {
             case Some(data) => {
