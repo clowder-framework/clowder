@@ -469,10 +469,10 @@ object Geostreams extends ApiController {
       case Some(x) => {
         val files = collection.mutable.Map.empty[String, JsValue]
         for (file <- new File(x).listFiles) {
-          val filename = file.getName
-          if (filename.endsWith(".json")) {
-            val data = Json.parse(Source.fromFile(file).mkString)
-            files.put(filename.replace(".json", ""), data)
+          val jsonfile = new File(file.getAbsolutePath + ".json")
+          if (jsonfile.exists()) {
+            val data = Json.parse(Source.fromFile(jsonfile).mkString)
+            files.put(file.getName, data.as[JsObject] ++ Json.obj("filesize" -> jsonfile.length))
           }
         }
         Ok(Json.obj("files" -> Json.toJson(files.toMap))).as("application/json")
