@@ -104,7 +104,7 @@ class Files @Inject() (
         var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
         var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
         
-        val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         
         Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }

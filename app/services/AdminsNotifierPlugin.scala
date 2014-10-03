@@ -29,7 +29,6 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
   
   def sendAdminsNotification(resourceType: String = "Dataset", eventType: String = "added", resourceId: String, resourceName: String) = {
     
-    val hostUrl = "http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
     var resourceUrl = ""
     val mailSubject = resourceType + " " + eventType + ": " + resourceName
     if(resourceType.equals("File")){

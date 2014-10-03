@@ -85,6 +85,7 @@ GET     /tags/list                        @controllers.Tags.tagList
 # Authentication
 GET      /loginTest                                                          controllers.Authentication.login
 POST     /loginTest                                                          controllers.Authentication.loginSubmit
+GET		 /notAuthorized														 controllers.Authentication.notAuthorized
 
 # Search
 GET      /search                                                             @controllers.Search.search(query: String ?= "")
