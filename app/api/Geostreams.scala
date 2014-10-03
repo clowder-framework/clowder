@@ -471,7 +471,7 @@ object Geostreams extends ApiController {
           val jsonfile = new File(file.getAbsolutePath + ".json")
           if (jsonfile.exists()) {
             val data = Json.parse(Source.fromFile(jsonfile).mkString)
-            files.put(file.getName, data.as[JsObject] ++ Json.obj("filesize" -> jsonfile.length,
+            files.put(file.getName, data.as[JsObject] ++ Json.obj("filesize" -> file.length,
               "created" -> ISODateTimeFormat.dateTime.print(new DateTime(jsonfile.lastModified))))
           }
         }
