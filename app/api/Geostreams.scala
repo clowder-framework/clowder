@@ -941,9 +941,10 @@ object Geostreams extends ApiController {
    * Return a list of all files and their descriptions in the cache.
    */
   def cacheListAction() = Action { request =>
-    play.api.Play.configuration.getString("medici.cache") match {
+    play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
         val files = collection.mutable.Map.empty[String, JsValue]
+        var total = 0l
         for (file <- new File(x).listFiles) {
           val jsonFile = new File(file.getAbsolutePath + ".json")
           if (jsonFile.exists()) {
@@ -951,8 +952,10 @@ object Geostreams extends ApiController {
             files.put(file.getName, data.as[JsObject] ++ Json.obj("filesize" -> file.length,
               "created" -> ISODateTimeFormat.dateTime.print(new DateTime(jsonFile.lastModified))))
           }
+          total += file.length()
         }
-        Ok(Json.obj("files" -> Json.toJson(files.toMap))).as("application/json")
+        Ok(Json.obj("files" -> Json.toJson(files.toMap),
+                    "size" -> total)).as("application/json")
       }
       case None => {
         NotFound("Cache is not enabled")
@@ -965,7 +968,7 @@ object Geostreams extends ApiController {
    * will return a Enumerator of that file, otherwise it will return None.
    */
   def cacheFetch(description: JsObject) = {
-    play.api.Play.configuration.getString("medici.cache") match {
+    play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
         val filename = MessageDigest.getInstance("MD5").digest(description.toString().getBytes).map("%02X".format(_)).mkString
         val cacheFile = new File(x, filename)
@@ -982,7 +985,7 @@ object Geostreams extends ApiController {
    * Return the file with the given name.
    */
   def cacheFetchAction(filename: String) = Action { request =>
-    play.api.Play.configuration.getString("medici.cache") match {
+    play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
         val file = new File(x, filename)
         if (file.exists) {
@@ -1008,7 +1011,7 @@ object Geostreams extends ApiController {
    * the associated json file.
    */
   def cacheInvalidate(description: JsObject) {
-    play.api.Play.configuration.getString("medici.cache") match {
+    play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
         val filename = MessageDigest.getInstance("MD5").digest(description.toString().getBytes).map("%02X".format(_)).mkString
         val cacheFile = new File(x, filename)
@@ -1025,7 +1028,7 @@ object Geostreams extends ApiController {
    * Removes all files from the cache
    */
   def cacheInvalidate = {
-    play.api.Play.configuration.getString("medici.cache") match {
+    play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
         val files = new File(x).listFiles
         for (f <- new File(x).listFiles) {
@@ -1043,7 +1046,7 @@ object Geostreams extends ApiController {
    * Removes all files from the cache
    */
   def cacheInvalidateAction() = Action { request =>
-    play.api.Play.configuration.getString("medici.cache") match {
+    play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
         val files = cacheInvalidate
         Ok(Json.obj("files" -> Json.toJson(files))).as("application/json")
