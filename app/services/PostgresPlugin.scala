@@ -498,7 +498,11 @@ class PostgresPlugin(application: Application) extends Plugin {
           st.close
           false
         } else {
-          nextObject = Some(filterProperties(Json.parse(rs.getString(1)).as[JsObject], attributes))
+          if (attributes.isEmpty) {
+            nextObject = Some(Json.parse(rs.getString(1)).as[JsObject])
+          } else {
+            nextObject = Some(filterProperties(Json.parse(rs.getString(1)).as[JsObject], attributes))
+          }
           true
         }
       }

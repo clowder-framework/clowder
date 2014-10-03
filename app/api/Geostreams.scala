@@ -9,9 +9,7 @@ import java.security.MessageDigest
 import _root_.util.{PeekIterator, Parsers}
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
-import play.api.mvc.Action
-import play.api.mvc.Request
-import play.api.mvc.AnyContent
+import play.api.mvc.{SimpleResult, Action, Request, AnyContent}
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
@@ -85,8 +83,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchSensors(geocode) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
-            case None => Ok(Json.parse("""{"status":"No data found"}""")).as("application/json")
+            case Some(d) => Ok(Json.parse(d))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
           }
         }
         case None => pluginNotEnabled
@@ -99,8 +97,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getSensor(id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
-            case None => Ok(Json.parse("""{"status":"No data found"}""")).as("application/json")
+            case Some(d) => Ok(Json.parse(d))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
           }
         }
         case None => pluginNotEnabled
@@ -113,8 +111,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getSensorStreams(id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
-            case None => Ok(Json.parse("""{"status":"No data found"}""")).as("application/json")
+            case Some(d) => Ok(Json.parse(d))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
           }
         }
         case None => pluginNotEnabled
@@ -127,7 +125,7 @@ object Geostreams extends ApiController {
 	  current.plugin[PostgresPlugin] match {
 	    case Some(plugin) => {
 	      plugin.updateSensorStats(Some(id))
-	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	      Ok(Json.parse("""{"status":"updated"}"""))
 	    }
 	    case None => pluginNotEnabled
 	  }
@@ -139,7 +137,7 @@ object Geostreams extends ApiController {
 	  current.plugin[PostgresPlugin] match {
 	    case Some(plugin) => {
 	      plugin.updateStreamStats(Some(id))
-	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	      Ok(Json.parse("""{"status":"updated"}"""))
 	    }
 	    case None => pluginNotEnabled
 	  }
@@ -151,7 +149,7 @@ object Geostreams extends ApiController {
 	  current.plugin[PostgresPlugin] match {
 	    case Some(plugin) => {
 	      plugin.updateSensorStats(None)
-	      Ok(Json.parse("""{"status":"updated"}""")).as("application/json")
+	      Ok(Json.parse("""{"status":"updated"}"""))
 	    }
 	    case None => pluginNotEnabled
 	  }
@@ -173,7 +171,7 @@ object Geostreams extends ApiController {
             }
             case None => Json.obj("range" -> Map.empty[String, String], "parameters" -> Array.empty[String])
           }
-          Ok(jsonp(Json.prettyPrint(json), request)).as("application/json")
+          Ok(json)
         }
         case None => pluginNotEnabled
       }
@@ -186,7 +184,7 @@ object Geostreams extends ApiController {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
               val id = plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
-              Ok(toJson(Json.obj("status"->"ok","id"->id)))
+              Ok(Json.obj("status"->"ok","id"->id))
             }
             case None => pluginNotEnabled
           }
@@ -202,8 +200,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchStreams(geocode) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
-            case None => Ok(Json.parse("""{"status":"No data found"}""")).as("application/json")
+            case Some(d) => Ok(Json.parse(d))
+            case None => Ok(Json.parse("""{"status":"No data found"}"""))
           }
         }
         case None => pluginNotEnabled
@@ -216,8 +214,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getStream(id) match {
-            case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
-            case None => Ok(Json.parse("""{"status":"No stream found"}""")).as("application/json")
+            case Some(d) => Ok(Json.parse(d))
+            case None => Ok(Json.parse("""{"status":"No stream found"}"""))
           }
         }
         case None => pluginNotEnabled
@@ -229,8 +227,8 @@ object Geostreams extends ApiController {
       Logger.debug("Delete stream " + id)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          if (plugin.deleteStream(id.toInt)) Ok(Json.parse("""{"status":"ok"}""")).as("application/json")
-          else Ok(Json.parse("""{"status":"error"}""")).as("application/json")
+          if (plugin.deleteStream(id.toInt)) Ok(Json.parse("""{"status":"ok"}"""))
+          else Ok(Json.parse("""{"status":"error"}"""))
         }
         case None => pluginNotEnabled
       }
@@ -242,8 +240,8 @@ object Geostreams extends ApiController {
       Logger.debug("Drop all")
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          if (plugin.dropAll()) Ok(Json.parse("""{"status":"ok"}""")).as("application/json")
-          else Ok(Json.parse("""{"status":"error"}""")).as("application/json")
+          if (plugin.dropAll()) Ok(Json.parse("""{"status":"ok"}"""))
+          else Ok(Json.parse("""{"status":"error"}"""))
         }
         case None => pluginNotEnabled
       }
@@ -255,8 +253,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.counts() match {
-          	case (sensors, streams, datapoints) => Ok(toJson(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints))).as("application/json")
-          	case _ => Ok(Json.parse("""{"status":"error"}""")).as("application/json")
+          	case (sensors, streams, datapoints) => Ok(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints))
+          	case _ => Ok(Json.parse("""{"status":"error"}"""))
           }
         }
         case None => pluginNotEnabled
@@ -306,9 +304,9 @@ object Geostreams extends ApiController {
           cacheFetch(description) match {
             case Some(data) => {
               if (format == "csv") {
-                Ok.chunked(data).as("text/csv")
+                Ok.chunked(data).as(withCharset("text/csv"))
               } else {
-                Ok.chunked(data).as("text/json")
+                jsonp(data, request)
               }
             }
             case None => {
@@ -323,9 +321,9 @@ object Geostreams extends ApiController {
               val data = calculate(operator, filtered, since, until)
 
               if (format == "csv") {
-                Ok.chunked(cacheWrite(description, jsonToCSV(data))).as("text/csv")
+                Ok.chunked(cacheWrite(description, jsonToCSV(data))).as(withCharset("text/csv"))
               } else {
-                Ok.chunked(cacheWrite(description, formatResult(data, format))).as("application/json")
+                jsonp(request, cacheWrite(description, formatResult(data, format)))
               }
 
             }
@@ -340,8 +338,8 @@ object Geostreams extends ApiController {
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
         plugin.getDatapoint(id) match {
-          case Some(d) => Ok(jsonp(Json.prettyPrint(Json.parse(d)), request)).as("application/json")
-          case None => Ok(Json.parse("""{"status":"No stream found"}""")).as("application/json")
+          case Some(d) => Ok(Json.parse(d))
+          case None => Ok(Json.parse("""{"status":"No stream found"}"""))
         }
       }
       case None => pluginNotEnabled
@@ -887,10 +885,24 @@ object Geostreams extends ApiController {
     result.toList
   }
 
-  def jsonp(json: String, request: Request[AnyContent]) = {
+  /**
+   * Tries to transform a response into a JavaScript expression.
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(data:Enumerator[Array[Byte]], request: Request[AnyContent]): SimpleResult = {
+    jsonp(request, data.through(Enumeratee.map(new String(_))))
+  }
+
+  /**
+   * Tries to transform a response into a JavaScript expression.
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(request: Request[AnyContent], data:Enumerator[String]) = {
     request.getQueryString("callback") match {
-      case Some(callback) => callback + "(" + json + ");"
-      case None => json
+      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");")).as(JAVASCRIPT)
+      case None => Ok.chunked(data).as(JSON)
     }
   }
 
@@ -908,7 +920,7 @@ object Geostreams extends ApiController {
    * @return an enumerator that will save data as data is being enumerated.
    */
   def cacheWrite(description: JsObject, data:Enumerator[String]): Enumerator[String] = {
-    play.api.Play.configuration.getString("medici.cache") match {
+    play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
         val cacheFolder = new File(x)
         if (cacheFolder.isDirectory || cacheFolder.mkdirs) {
@@ -955,7 +967,7 @@ object Geostreams extends ApiController {
           total += file.length()
         }
         Ok(Json.obj("files" -> Json.toJson(files.toMap),
-                    "size" -> total)).as("application/json")
+                    "size" -> total))
       }
       case None => {
         NotFound("Cache is not enabled")
@@ -991,10 +1003,10 @@ object Geostreams extends ApiController {
         if (file.exists) {
           val data = Json.parse(Source.fromFile(new File(x, filename + ".json")).mkString)
           Parsers.parseString(data.\("format")) match {
-            case "csv" => Ok.chunked(Enumerator.fromFile(file)).as("text/csv")
-            case "json" => Ok.chunked(Enumerator.fromFile(file)).as("application/json")
-            case "geojson" => Ok.chunked(Enumerator.fromFile(file)).as("application/json")
-            case _ => Ok.chunked(Enumerator.fromFile(file)).as("text/plain")
+            case "csv" => Ok.chunked(Enumerator.fromFile(file)).as(withCharset("text/csv"))
+            case "json" => Ok.chunked(Enumerator.fromFile(file)).as(JSON)
+            case "geojson" => Ok.chunked(Enumerator.fromFile(file)).as(JSON)
+            case _ => Ok.chunked(Enumerator.fromFile(file)).as(TEXT)
           }
         } else {
           NotFound("File not found in cache")
@@ -1049,7 +1061,7 @@ object Geostreams extends ApiController {
     play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
         val files = cacheInvalidate
-        Ok(Json.obj("files" -> Json.toJson(files))).as("application/json")
+        Ok(Json.obj("files" -> Json.toJson(files)))
       }
       case None => {
         NotFound("Cache is not enabled")
