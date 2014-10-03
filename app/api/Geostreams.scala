@@ -23,6 +23,7 @@ import scala.collection.mutable.ListBuffer
 import play.api.libs.iteratee.{Input, Enumeratee, Enumerator}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.io.Source
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced
@@ -291,7 +292,16 @@ object Geostreams extends ApiController {
     Action { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          val name = operator + since.getOrElse("X") + until.getOrElse("X") + geocode.getOrElse("X") + stream_id.getOrElse("X") + sensor_id.getOrElse("X") + sources.mkString("-") + attributes.mkString("-") + semi.getOrElse("X") + format
+          val name = Json.obj("format" -> format,
+            "operator" -> operator,
+            "since" -> since.getOrElse("").toString,
+            "until" -> until.getOrElse("").toString,
+            "geocode" -> geocode.getOrElse("").toString,
+            "stream_id" -> stream_id.getOrElse("").toString,
+            "sensor_id" -> sensor_id.getOrElse("").toString,
+            "sources" -> Json.toJson(sources),
+            "attributes" -> Json.toJson(sources),
+            "semi" -> semi.getOrElse("").toString)
           getCache(name) match {
             case Some(data) => {
               if (format == "csv") {
@@ -393,10 +403,10 @@ object Geostreams extends ApiController {
   // ----------------------------------------------------------------------
   // CACHE RESULTS
   // ----------------------------------------------------------------------
-  def getCache(name: String) = {
+  def getCache(name: JsObject) = {
     play.api.Play.configuration.getString("medici.cache") match {
       case Some(x) => {
-        val filename = MessageDigest.getInstance("MD5").digest(name.getBytes).map("%02X".format(_)).mkString
+        val filename = MessageDigest.getInstance("MD5").digest(name.toString.getBytes).map("%02X".format(_)).mkString
         val cacheFile = new File(x, filename)
         if (cacheFile.exists)
           Some(Enumerator.fromFile(cacheFile))
@@ -407,12 +417,13 @@ object Geostreams extends ApiController {
     }
   }
 
-  def cacheResult(name: String, data:Enumerator[String]): Enumerator[String] = {
+  def cacheResult(name: JsObject, data:Enumerator[String]): Enumerator[String] = {
     play.api.Play.configuration.getString("medici.cache") match {
       case Some(x) => {
         val cacheFolder = new File(x)
         if (cacheFolder.isDirectory || cacheFolder.mkdirs) {
-          val filename = MessageDigest.getInstance("MD5").digest(name.getBytes).map("%02X".format(_)).mkString
+          val filename = MessageDigest.getInstance("MD5").digest(name.toString.getBytes).map("%02X".format(_)).mkString
+          new PrintStream(new File(cacheFolder, filename + ".json")).print(name.toString)
           val writer = new PrintStream(new File(cacheFolder, filename))
           val save: Enumeratee[String, String] = Enumeratee.mapInputFlatten {
             case Input.El(s) => {
@@ -454,8 +465,15 @@ object Geostreams extends ApiController {
   def cacheList() = Action { request =>
     play.api.Play.configuration.getString("medici.cache") match {
       case Some(x) => {
-        val files = new File(x).listFiles.map { s => s.getAbsolutePath}
-        Ok(Json.obj("files" -> Json.toJson(files))).as("application/json")
+        val files = collection.mutable.Map.empty[String, JsValue]
+        for (file <- new File(x).listFiles) {
+          val filename = file.getName
+          if (filename.endsWith(".json")) {
+            val data = Json.parse(Source.fromFile(file).mkString)
+            files.put(filename.replace(".json", ""), data)
+          }
+        }
+        Ok(Json.obj("files" -> Json.toJson(files.toMap))).as("application/json")
       }
       case None => {
         NotFound("Cache is not enabled")
@@ -468,7 +486,13 @@ object Geostreams extends ApiController {
       case Some(x) => {
         val file = new File(x, filename)
         if (file.exists) {
-          Ok.chunked(Enumerator.fromFile(file))
+          val data = Json.parse(Source.fromFile(new File(x, filename + ".json")).mkString)
+          Parsers.parseString(data.\("format")) match {
+            case "csv" => Ok.chunked(Enumerator.fromFile(file)).as("text/csv")
+            case "json" => Ok.chunked(Enumerator.fromFile(file)).as("application/json")
+            case "geojson" => Ok.chunked(Enumerator.fromFile(file)).as("application/json")
+            case _ => Ok.chunked(Enumerator.fromFile(file)).as("text/plain")
+          }
         } else {
           NotFound("File not found in cache")
         }
