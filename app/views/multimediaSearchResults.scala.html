@@ -94,15 +94,15 @@
 					  	<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
 					  	@oneResult.searchResultPreview.datasetIdList.map{id=>					   
 					     		<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
-					     		<br>
-					     	<a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
+					     		<br>					     		
+					    	}  						  	 
+					    }					    
+					    
+					    <a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
 					     		View File @oneResult.searchResultPreview.fileTitle</a>
 					     		<br>
 					     		Shot start time: @oneResult.searchResultPreview.shotStartTime
 					     		
-					    	}  						  	 
-					    }					    
-					    
 						}@* end of If Preview *@
 											     
 
