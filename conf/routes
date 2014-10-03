@@ -5,6 +5,8 @@
 #OPTIONS        /*path                                                       @controllers.Application.options(path)
 OPTIONS        /*path                                                       api.ApiHelp.options(path)
 
+GET  /*path/                                                                 @controllers.Application.untrail(path: String)
+
 # Home page
 GET      /                                                                   @controllers.Application.index
 
