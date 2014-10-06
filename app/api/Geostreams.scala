@@ -8,7 +8,7 @@ import java.security.MessageDigest
 
 import _root_.util.{PeekIterator, Parsers}
 import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import play.api.mvc.{SimpleResult, Action, Request, AnyContent}
 import play.api.libs.json._
 import play.api.libs.json.Json._
@@ -287,6 +287,253 @@ object Geostreams extends ApiController {
     }
   }
 
+  // need to create the following datastructure
+  // {
+  //   sensor_name: <sensor name>
+  //   properties: [
+  //     <property>: [
+  //       <time specific fields>
+  //       depth: <depth>
+  //       label: <label based on time>
+  //       source: [ sources ]
+  //       average: <average value>
+  //       count: <raw.length>
+  //       doubles: <all raw double data> iff (keepRaw)
+  //       strings: <all non double data> iff (keepRaw)
+  //     ]
+  //   ]
+  // }
+  def binDatapoints(time: String, depth: Double, keepRaw: Boolean, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String]) = Action { request =>
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        val description = Json.obj("time" -> time,
+          "depth" -> depth,
+          "since" -> since.getOrElse("").toString,
+          "until" -> until.getOrElse("").toString,
+          "geocode" -> geocode.getOrElse("").toString,
+          "stream_id" -> stream_id.getOrElse("").toString,
+          "sensor_id" -> sensor_id.getOrElse("").toString,
+          "sources" -> Json.toJson(sources),
+          "attributes" -> Json.toJson(attributes))
+        cacheFetch(description) match {
+          case Some(data) => jsonp(data, request)
+          case None => {
+            val raw = new PeekIterator(plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes, true))
+            val data = new Iterator[JsObject] {
+              var nextObject: Option[JsObject] = None
+
+              def hasNext = {
+                if (nextObject.isDefined) {
+                  true
+                } else {
+                  nextObject = binData(raw, time, depth, keepRaw)
+                  nextObject.isDefined
+                }
+              }
+
+              def next() = {
+                if (hasNext) {
+                  val x = nextObject.get
+                  nextObject = None
+                  x
+                } else {
+                  null
+                }
+              }
+            }
+
+            jsonp(request, cacheWrite(description, formatResult(data, "json")))
+          }
+        }
+      }
+      case None => pluginNotEnabled
+    }
+  }
+
+  /**
+   * Compute the average value for a sensor. This will return a single
+   * sensor with the average values for that sensor. The next object is
+   * waiting in the peekIterator.
+   *
+   * @param data list of data for all sensors
+   * @return a single JsObject which is the average for that sensor
+   */
+  def binData(data: PeekIterator[JsObject], time: String, depth: Double, keepRaw: Boolean): Option[JsObject] = {
+    if (!data.hasNext) return None
+
+    // TODO list of special properties
+    val groupBy = List("DEPTH_CODE")
+    val addAll = List("source")
+    val ignore = groupBy ++ addAll
+
+    // list of result
+    val properties = collection.mutable.HashMap.empty[String, collection.mutable.HashMap[String, BinHelper]]
+
+    // loop over all values
+    var count = 0
+    var timer = System.currentTimeMillis()
+    val sensorName = data.peek.get.\("sensor_name")
+    do {
+      val sensor = data.next
+
+      // get depth code
+      val depthCode = sensor.\("DEPTH_CODE") match {
+        case x: JsUndefined => "NA"
+        case x => Parsers.parseString(x)
+      }
+      val extras = Json.obj("depth_code" -> depthCode)
+
+      // get source
+      val source = sensor.\("source") match {
+        case x: JsUndefined => ""
+        case x => Parsers.parseString(x)
+      }
+
+      // get depth
+      val coordinates = sensor.\("geometry").\("coordinates").as[JsArray]
+      val depthBin = depth * Math.ceil(Parsers.parseDouble(coordinates(2)).getOrElse(0.0) / depth)
+
+      // bin time
+      val startTime = Parsers.parseDate(sensor.\("start_time")).getOrElse(DateTime.now)
+      val endTime = Parsers.parseDate(sensor.\("end_time")).getOrElse(DateTime.now)
+      val times = timeBins(time, startTime, endTime)
+
+      // each property is either added to all, or is new result
+      sensor.\("properties").as[JsObject].fieldSet.filter(p => !ignore.contains(p._1)).foreach(f => {
+        // add to list of properies
+        val prop = Parsers.parseString(f._1)
+        val propertyBin = properties.getOrElseUpdate(prop, collection.mutable.HashMap.empty[String, BinHelper])
+
+        // add value to all bins
+        times.foreach(t => {
+          val key = prop + t._1 + depthBin + depthCode
+
+          // add data object
+          val bin = propertyBin.getOrElseUpdate(key, BinHelper(depthBin, t._1, extras, t._2))
+
+          // add source to result
+          if (source != "") {
+            bin.sources += source
+          }
+
+          // add values to array
+          Parsers.parseDouble(f._2) match {
+            case Some(v) => bin.doubles += v
+            case None => {
+              val s = Parsers.parseString(f._2)
+              if (s != "") {
+                bin.strings += s
+              }
+            }
+          }
+        })
+      })
+      count += 1
+    } while (data.hasNext() && sensorName.equals(data.peek().get.\("sensor_name")))
+    timer = System.currentTimeMillis() - timer
+    Logger.debug(s"Took ${timer}ms to bin ${count} values for ${sensorName.toString}")
+
+    // combine results
+    val result = properties.map{p =>
+      val elements = for(bin <- p._2.values) yield {
+        val base = Json.obj("depth" -> bin.depth, "label" -> bin.label, "sources" -> bin.sources.toList)
+
+        val raw = if (keepRaw) {
+          Json.obj("doubles" -> bin.doubles.toList, "strings" -> bin.strings.toList)
+        } else {
+          Json.obj()
+        }
+
+        val dlen = bin.doubles.length
+        val average = if (dlen == 0) {
+          // JSON does not allow for Double.NaN, one option is 0/0
+          // see http://stackoverflow.com/a/1424034
+          Json.obj("average" -> "NaN", "count" -> 0)
+        } else {
+          Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
+        }
+
+        // return object combining all pieces
+        base ++ bin.timeInfo ++ bin.extras ++ raw ++ average
+      }
+      (p._1, elements)
+    }
+
+    Some(Json.obj("sensor_name" -> Parsers.parseString(sensorName), "properties" -> Json.toJson(result.toMap)))
+  }
+
+  case class BinHelper(depth: Double,
+                       label: String,
+                       extras: JsObject,
+                       timeInfo: JsObject,
+                       doubles: collection.mutable.ListBuffer[Double] = collection.mutable.ListBuffer.empty[Double],
+                       strings: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String],
+                       sources: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String])
+
+  def timeBins(time: String, startTime: DateTime, endTime: DateTime): Map[String, JsObject] = {
+    val iso = ISODateTimeFormat.dateTime()
+    val result = collection.mutable.HashMap.empty[String, JsObject]
+
+    time.toLowerCase match {
+      case "decade" => {
+        var counter = new DateTime((startTime.getYear / 10) * 10, 1, 1, 0, 0, 0)
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val year = counter.getYear
+          val date = new DateTime(year+5,7,1,12,0,0)
+          result.put(year.toString, Json.obj("year" -> year, "date" -> iso.print(date)))
+          counter = counter.plusYears(10)
+        }
+      }
+      case "lustrum" => {
+        var counter = new DateTime((startTime.getYear / 5) * 5, 1, 1, 0, 0, 0)
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val year = counter.getYear
+          val date = new DateTime(year+2,7,1,12,0,0)
+          result.put(year.toString, Json.obj("year" -> year, "date" -> iso.print(date)))
+          counter = counter.plusYears(10)
+        }
+      }
+      case "year" => {
+        var counter = new DateTime(startTime.getYear, 1, 1, 0, 0, 0)
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val year = counter.getYear
+          val date = new DateTime(year,7,1,12,0,0,0)
+          result.put(year.toString, Json.obj("year" -> year, "date" -> iso.print(date)))
+          counter = counter.plusYears(1)
+        }
+      }
+      case "semi" => {
+        var counter = startTime
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val year = counter.getYear
+          if (counter.getMonthOfYear < 7) {
+            result.put(year + " spring", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 3, 1, 12, 0, 0))))
+
+          } else {
+            result.put(year + " summer", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 9, 1, 12, 0, 0))))
+          }
+          counter = counter.plusMonths(6)
+        }
+      }
+      case "month" => {
+        var counter = startTime
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val label = DateTimeFormat.forPattern("YYYY MMMM").print(counter)
+          val year = counter.getYear
+          val month = counter.getMonthOfYear
+          val date = new DateTime(year,month,15,12,0,0,0)
+          result.put(label, Json.obj("year" -> year, "month" -> month, "date" -> iso.print(date)))
+          counter = counter.plusYears(1)
+        }
+      }
+      case _ => // do nothing
+    }
+
+    result.toMap
+  }
+
   def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String]) =
     Action { request =>
       current.plugin[PostgresPlugin] match {
@@ -407,10 +654,6 @@ object Geostreams extends ApiController {
 
     // wrong time
     false
-  }
-
-  def binData(data: Iterator[JsObject], binningString: Option[String], inclRaw: Boolean) = {
-    data
   }
 
   // ----------------------------------------------------------------------
@@ -1024,6 +1267,7 @@ object Geostreams extends ApiController {
         if (cacheFileJson.exists)
           cacheFileJson.delete
       }
+      case None => // do nothing
     }
   }
 
