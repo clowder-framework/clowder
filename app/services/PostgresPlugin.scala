@@ -89,7 +89,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams" +
     			") " +
     			"SELECT row_to_json(t, true) FROM (" +
-    			"SELECT gid As id, name, to_char(created,'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, min(stream_info.start_time) as min_start_time, max(stream_info.end_time) as max_end_time, array_agg(distinct stream_info.param) as parameters " +
+    			"SELECT gid As id, name, to_char(created,'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, to_char(min(stream_info.start_time),'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS min_start_time, to_char(max(stream_info.end_time),'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS max_end_time, array_agg(distinct stream_info.param) as parameters " +
     			"FROM sensors " +
     			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid "
 	if (parts.length == 3) {
@@ -143,7 +143,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
     			") " +
     			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
-    			"SELECT gid As id, name, to_char(created,'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, min(stream_info.start_time) as min_start_time, max(stream_info.end_time) as max_end_time, array_agg(distinct stream_info.param) as parameters " +
+    			"SELECT gid As id, name, to_char(created,'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, to_char(min(stream_info.start_time),'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS created as min_start_time, to_char(max(stream_info.end_time),'YYYY-MM-DD\"T\"HH:MI:SSTZ') as max_end_time, array_agg(distinct stream_info.param) as parameters " +
     			"FROM sensors " +
     			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid " +
     			"WHERE sensors.gid=?" +
@@ -209,7 +209,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
     			") " +
     			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
-    			"SELECT min(start_time) As min_start_time, max(start_time) As max_start_time, array_agg(distinct param) AS parameters FROM stream_info" +
+    			"SELECT to_char(min(start_time),'YYYY-MM-DD\"T\"HH:MI:SSTZ') As min_start_time, to_char(max(start_time),'YYYY-MM-DD\"T\"HH:MI:SSTZ') As max_start_time, array_agg(distinct param) AS parameters FROM stream_info" +
     			") As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
@@ -529,7 +529,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getDatapoint(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +
-      "(SELECT gid As id, start_time, end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id:text FROM datapoints WHERE gid=?) As t;"
+      "(SELECT gid As id, to_char(start_time,'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS start_time, to_char(end_time,'YYYY-MM-DD\"T\"HH:MI:SSTZ') AS end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id:text FROM datapoints WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Datapoints get statement: " + st)
