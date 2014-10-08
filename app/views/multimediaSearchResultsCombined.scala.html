@@ -1,0 +1,56 @@
+@(fileName:String, resultsList:List[(models.UUID, String, String, Double)])   		
+
+@********************************************************************@
+@****   Template to display combined weighted search results    ***@
+@********************************************************************@
+				
+@**** List contains: (result_id, oneFileName, oneThumbnlId, prox) 	****@
+
+@main("Search Results") {		
+	<div class="page-header">
+		<h2>Combined Weighted Search Results For <medium>@fileName</medium></h2>
+	</div>
+	@if(resultsList.size == 0) {
+	<div class="row">
+		<div class="col-md-12">
+			No results found
+		</div>
+	</div>
+	} else {
+	<table>
+	<tr>  
+  <td>		
+		<table>			
+			
+  @for((file_id, fileName, thumbnailId, proximity) <- resultsList) {
+		<tr>		
+				<td style="vertical-align:middle; height:150px;">
+					<div class="media">				  
+													
+							@if(!thumbnailId.isEmpty){
+								<img class='mmd-img media-object' 
+									src='@(routes.Files.thumbnail(UUID(thumbnailId)))'
+									alt='Thumbnail of @fileName' 
+									title='Thumbnail of @fileName'>
+								</img>
+							}
+							@if(thumbnailId.isEmpty){No thumbnail available}						
+							</a>
+					  <div class="media-body">
+					    <h4 class="media-heading">@fileName</h4>
+					    Combined weighted proximity (normalized): @proximity			    
+					    <br> 	<a href="@(routes.Files.file( file_id  ))">View File @fileName</a>    
+					  </div>
+					</div>
+					</td></tr>
+	} @***//end of  @for((file_id, fileName, thumbnailId, proximity) <- resultsList)***@
+			
+		</table></td>
+		
+	</tr>
+	</table>
+	}
+}
+  
+		
+	
