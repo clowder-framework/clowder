@@ -8,8 +8,9 @@ object ApplicationBuild extends Build {
   val appVersion = "1.0-SNAPSHOT"
 
   val appDependencies = Seq(
-    "com.novus" %% "salat" % "1.9.2" exclude("org.scala-stm", "scala-stm_2.10.0"),
-    "securesocial" %% "securesocial" % "master-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    filters,
+    "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "com.rabbitmq" % "amqp-client" % "3.0.0",
     "org.elasticsearch" % "elasticsearch" % "0.90.2",
     "com.spatial4j" % "spatial4j" % "0.3",
@@ -25,8 +26,34 @@ object ApplicationBuild extends Build {
     "org.openrdf.sesame" % "sesame-rio-rdfxml" % "2.7.8",
     "org.openrdf.sesame" % "sesame-rio-trig" % "2.7.8",
     "org.openrdf.sesame" % "sesame-rio-trix" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-turtle" % "2.7.8"
+    "org.openrdf.sesame" % "sesame-rio-turtle" % "2.7.8",
+    "info.aduna.commons" % "aduna-commons-io" % "2.8.0",
+    "info.aduna.commons" % "aduna-commons-lang" % "2.9.0",
+    "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
+    "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
+    "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
+    "commons-io" % "commons-io" % "2.4",
+    "commons-logging" % "commons-logging" % "1.1.1",
+    "gr.forth.ics" % "flexigraph" % "1.0",
+    "com.google.inject" % "guice" % "3.0",
+    "com.google.inject.extensions" % "guice-assistedinject" % "3.0",
+    "com.netflix.astyanax" % "astyanax-core" % "1.56.43",
+    "com.netflix.astyanax" % "astyanax-thrift" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12"),
+    "com.netflix.astyanax" % "astyanax-cassandra" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12"),
+    "com.netflix.astyanax" % "astyanax-recipes" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12"),
+    "org.apache.httpcomponents" % "httpclient" % "4.2.3",
+    "org.apache.httpcomponents" % "httpcore" % "4.2.3",
+    "org.apache.httpcomponents" % "httpmime" % "4.2.3",
+    "com.googlecode.json-simple" % "json-simple" % "1.1.1",
+    "log4j" % "log4j" % "1.2.14",
+    "org.codeartisans" % "org.json" % "20131017",
+    "postgresql" % "postgresql" % "8.1-407.jdbc3",
+    "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
+    "org.springframework" % "spring" % "2.5.6",
+    "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
+    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1"
   )
+
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
   def customLessEntryPoints(base: File): PathFinder = (
@@ -37,10 +64,17 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
+    testOptions in Test := Nil, // overwrite spec2 config to use scalatest instead
+    routesImport += "models._",
     routesImport += "Binders._",
     templatesImport += "org.bson.types.ObjectId",
     resolvers += Resolver.url("sbt-plugin-releases", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("sbt-plugin-snapshots", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
-    resolvers += "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+    resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
+    resolvers += "Forth" at "http://139.91.183.63/repository",
+    resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",   
+    resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public"
+   
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }

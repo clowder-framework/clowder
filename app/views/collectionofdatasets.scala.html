@@ -1,6 +1,8 @@
 @(datasetsInCollection: List[models.Dataset], collectionName: String, collectionId: String)(implicit user: Option[securesocial.core.Identity])
 
 @main("Collection") {
+
+
 <div class="page-header">
   <h1>@collectionName</h1>
 </div>
@@ -20,11 +22,11 @@
 			<tbody>
 				@datasetsInCollection.map { dataset =>
 					<tr style="display:none;" data-datasetId="@(dataset.id.toString)">
-						<td><a href="@(routes.Datasets.dataset(dataset.id.toString))">@dataset.name</a></td>
+						<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
-						<td>@dataset.description</td>
+						<td style="white-space:pre-line;">@dataset.description</td>
 						<td>
-							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)))" alt="Thumbnail of @(dataset.name)" width="120">}
+							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
 						<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a></td>
@@ -36,8 +38,8 @@
 			<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
   			<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
-		<button id="addDatasetBtn" class="btn btn-default" type="button">Add dataset</button>
-		<button id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display:none;">Done</button>
+		<button id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span> Add</button>
+		<button id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display:none;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
 		<br />
 		<br />		
 		<table id='addDatasetsTable' class="table table-bordered table-hover" style="display:none;">
@@ -59,10 +61,11 @@
 		</ul>
 	</div>
 </div>
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
 <script language="javascript">	
-	var queryIp = "@api.routes.Datasets.listOutsideCollection(collectionId)";
-	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
+	var queryIp = "@api.routes.Datasets.listOutsideCollection(UUID(collectionId))";
 	var collectionId = "@collectionId";
 </script>
-<script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
+
 }

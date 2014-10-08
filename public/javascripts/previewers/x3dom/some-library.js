@@ -781,6 +781,7 @@ function clearConfigTabAnnotations(prNum){
     }
     
     function leaveFullscreen(prNum){
+    	
     	$("#annotFields"+prNum).removeClass("fullscreenSubelement");
 		
 		var theDisplay = "";
@@ -812,14 +813,19 @@ function clearConfigTabAnnotations(prNum){
                 document.cancelFullScreen();
             } else if (document.mozCancelFullScreen) {
                 document.mozCancelFullScreen();
-            } else if (navigator.userAgent.indexOf("hrome") != -1) {
-            	if (document.webkitCancelFullScreen)
-            		document.webkitCancelFullScreen();
+            } else if (navigator.userAgent.indexOf("hrome") != -1) {            	
+            	if (document.webkitCancelFullScreen){            		
+            			document.webkitCancelFullScreen();
+            		}
                 
                 $("#x3dElement" + prNum).css("height", window["x3dNormalHeight" + prNum]);
 				$("#x3dElement" + prNum).css("width", window["x3dNormalWidth" + prNum]);
 				$("#x3dElement" + prNum).css("background-color", window["x3dNormalBgColor" + prNum]);
 				$("#x3dElement" + prNum).css("top", window["x3dNormalTop" + prNum]);
+							
+				if(document.activeElement == $("#x3dElement" + prNum + " > canvas").get(0)){
+					document.activeElement.blur();
+				}
             }
 		 window["annotTrackingDiff" + prNum] = 0.000;
 		 window["annotTrackingDiff2" + prNum] = 0.000;	
@@ -829,7 +835,7 @@ function clearConfigTabAnnotations(prNum){
 
   console.log("X3D previewer for " + Configuration.id);
   
-  var pathJs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.jsPath + "/";
+  var pathJs = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + Configuration.jsPath + "/";
   
   width = 750;
   height = 550;
@@ -1209,8 +1215,7 @@ function clearConfigTabAnnotations(prNum){
 		  }
 	  });
 	  	  
-	  $("body").on('keydown',function(e){
-
+	  $("body").on('keydown',function(e){		  		  
 		  if(e.which == 16){
 			  window["isShiftClicked" + prNum] = true;
 		  }
@@ -1222,9 +1227,10 @@ function clearConfigTabAnnotations(prNum){
 		  }
 		  else if(e.which == 17){
 			  window["isCtrlClicked" + prNum] = true;
-		  }
+		  }		  
 		  else if((e.which == 27 || (e.which == 81 && window["isShiftClicked" + prNum])) && (document.fullscreenElement || 
 			       document.mozFullScreenElement || document.webkitFullscreenElement)){
+			  
 			  if(document.activeElement.tagName.toLowerCase() !=  "canvas"){
 				  console.log(document.activeElement.tagName);
 				  var fullScreenElem;
@@ -1240,7 +1246,7 @@ function clearConfigTabAnnotations(prNum){
 				  if(fullScreenElem.getAttribute('id').indexOf("x3dElement") != -1){
 					 if(e.which != 27 && e.target !== undefined)
 						 if(e.target.getAttribute('id') !== null)
-							 if(navigator.userAgent.indexOf("hrome") == -1){
+							 if(navigator.userAgent.indexOf("hrome") == -1 || true){
 								 e.preventDefault();
 								  return false;
 							 }
@@ -1249,10 +1255,12 @@ function clearConfigTabAnnotations(prNum){
 					  
 					  window["fullscreenExitedProperly"] = true;
 					  
+					  
 					  leaveFullscreen(prNumber);
 					  
 					  window["exFullscreenElemExited"] = "#x3dElement" + prNumber;
-					  				  
+			  
+					  
 					  e.preventDefault();
 					  return false;
 				  }

@@ -14,7 +14,7 @@
 	function addDataset(datasetId, event){
 		var request = $.ajax({
 		       type: 'POST',
-		       url: "http://"+hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasets/"+datasetId
+		       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasets/"+datasetId
 		     });
 		request.done(function (response, textStatus, jqXHR){
 	        console.log("Response " + response);	        
@@ -48,10 +48,10 @@
 				 });
 			 }
 	        datasetsInCollectionCount++;
-	        $('#collectionDatasetsTable tbody').prepend("<tr id='datasetRow1' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+	        $('#collectionDatasetsTable tbody').prepend("<tr id='datasetRow1' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
 					+ "/datasets/" + datasetId + "'>"+ event.target.innerHTML + "</a></td>"
 					+ "<td>" + inputDate + "</td>"
-					+ "<td>" + inputDescr + "</td>"
+					+ "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 					+ "<td>" + inputThumbnail + "</td>"
 					+ "<td><a href='#!' onclick='removeDataset(\"" + datasetId + "\",event)'>Remove</a></td></tr>");
 	        $('#collectionDatasetsTable tbody tr').css('display','none');
@@ -69,19 +69,19 @@
 	        currentFirstDatasets = 1;
 		});	
 		request.fail(function (jqXHR, textStatus, errorThrown){
-    		console.error(
-        		"The following error occured: "+
-        		textStatus, errorThrown		            
-    			);
-    		alert("ERROR: " + errorThrown +". Dataset not added to collection. The collection or dataset was possibly removed from the system." );
- 			});
+			console.error("The following error occured: "+textStatus, errorThrown);
+	        var errMsg = "You must be logged in to add a dataset to a collection.";
+	        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+	            alert("The dataset was not added to the collection due to : " + errorThrown);
+	        }    		
+ 		});
 		
 	}
 	
 	function removeDataset(datasetId, event){
 		var request = $.ajax({
 		       type: 'POST',
-		       url: "http://"+hostIp+":"+window.location.port+"/api/collections/"+collectionId+"/datasetsRemove/"+datasetId+"/False"
+		       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasetsRemove/"+datasetId+"/False"
 		     });
 		request.done(function (response, textStatus, jqXHR){
 	        console.log("Response " + response);
@@ -120,9 +120,9 @@
 	      + "onclick='addDataset(\"" + datasetId + "\",event)' "
 	      + ">"+ event.target.parentNode.parentNode.children[0].children[0].innerHTML + "</a></td>"
 	      + "<td>" + inputDate + "</td>"
-	      + "<td>" + inputDescr + "</td>"
+	      + "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 	      + "<td>" + inputThumbnail + "</td>"
-	      + "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
+	      + "<td><a target='_blank' href='" +  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')			
 	      + "/datasets/" + datasetId + "'>View</a></td></tr>";
 	      if(datasetPos > 1)
 	    	  $("#addDatasetsTable tbody tr[id='resultRow" + (datasetPos-1) + "']").after(newDatasetHTML);
@@ -143,12 +143,12 @@
 	      }       
 		});  	
 		request.fail(function (jqXHR, textStatus, errorThrown){
-    		console.error(
-        		"The following error occured: "+
-        		textStatus, errorThrown		            
-    			);
-    		alert("ERROR: " + errorThrown +". Dataset not removed from collection. The collection was possibly removed from the system." );
- 			});	
+			console.error("The following error occured: "+textStatus, errorThrown);
+	        var errMsg = "You must be logged in to remove a dataset from a collection.";
+	        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+	            alert("The dataset was not removed from the collection due to : " + errorThrown);
+	        }
+ 		});	
 	}
 	
 	function findPos(reqNode){
@@ -265,7 +265,7 @@
 		        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
 		        	var datasetThumbnail = "";
 		        	if(respJSON[i].thumbnail != "None")
-		        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+		        		datasetThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
 		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' width='120'>";
 		        	else
 		        		datasetThumbnail = "No thumbnail available"
@@ -274,9 +274,9 @@
 		        								+ "onclick='addDataset(\"" + respJSON[i].id + "\",event)' "
 		        								+ ">"+ respJSON[i].datasetname + "</a></td>"
 		        								+ "<td>" + createdDate + "</td>"
-		        								+ "<td>" + respJSON[i].description + "</td>"
+		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 		        								+ "<td>" + datasetThumbnail + "</td>"
-		        								+ "<td><a target='_blank' href='" +  "http://" + hostIp + ":" + window.location.port			
+		        								+ "<td><a target='_blank' href='" +  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')			
 		        								+ "/datasets/" + respJSON[i].id + "'>View</a></td></tr>");
 		        }
 		        $('#addDatasetsTable').show();
@@ -298,14 +298,13 @@
 		        return false;
  			});
 			request.fail(function (jqXHR, textStatus, errorThrown){
-        		console.error(
-            		"The following error occured: "+
-            		textStatus, errorThrown		            
-        			);
-        		alert("ERROR: " + errorThrown +". The collection was possibly removed." );
-        		
+				console.error("The following error occured: "+textStatus, errorThrown);
+		        var errMsg = "You must be logged in to add a dataset to a collection.";
+		        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+		            alert("The dataset was not added to the collection due to : " + errorThrown);
+		        }        		        		
         		return false;
-     			});		 
+     		});		 
 	 });
 	 $('body').on('click','#hideAddDatasetBtn',function(e){
 		 $('#addPagerPrev').css('visibility','hidden');

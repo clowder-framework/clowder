@@ -1,31 +1,17 @@
 package api
 
 import play.api.mvc.Action
-import play.api.mvc.Result
 import play.api.mvc.Request
 import play.api.Logger
-import views.html.defaultpages.unauthorized
 import play.api.mvc.Results.Unauthorized
-import play.api.libs.Crypto
 import org.apache.commons.codec.binary.Base64
-import securesocial.core.providers.utils.DefaultPasswordValidator
 import securesocial.core.SocialUser
-import models.SocialUserDAO
-import securesocial.core.providers.utils.BCryptPasswordHasher
 import org.mindrot.jbcrypt.BCrypt
 import securesocial.core.UserService
 import securesocial.core.providers.UsernamePasswordProvider
-import play.api.mvc.Session
-import org.joda.time.DateTime
 import securesocial.core.SecureSocial
-import securesocial.core.Identity
-import play.api.mvc.Controller
-import securesocial.core.Authorization
-import play.api.mvc.BodyParser
 import securesocial.core.SecuredRequest
 import securesocial.core.AuthenticationMethod
-import play.api.mvc.EssentialAction
-import play.api.mvc.RequestHeader
 import play.api.mvc.SimpleResult
 import scala.concurrent.Future
 import securesocial.core.IdentityId
@@ -77,7 +63,10 @@ case class Authenticated[A](action: Action[A]) extends Action[A] {
             
             SecureSocial.currentUser(request) match { // calls from browser
 		      case Some(identity) => action(SecuredRequest(identity, request))
-		      case None => Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
+		      case None => {
+		           Logger.info("Authenticated - Authentication failure")
+		           Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
+		      }
 		    }
           }
         }

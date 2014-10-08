@@ -10,7 +10,7 @@
 	if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png" || Configuration.fileType === "image/gif"
 		|| Configuration.fileType === "image/bmp"){
 		$(Configuration.tab).append(
-			"<canvas class='rubberbandCanvas' id='rubberbandCanvas"+prNum+"'>" +
+			"<canvas class='fit-in-space rubberbandCanvas' id='rubberbandCanvas"+prNum+"'>" +
 			"<img src='" + Configuration.url + "' class='rubberbandimage' id='rubberbandimage"+prNum+"'></img>" +
 			"</canvas>" +
 			"<div class='rubberbandDiv' id='rubberbandDiv"+prNum+"'></div>"
@@ -274,11 +274,13 @@
 
 				// add tag to section
 				if (tag != "") {
-					request = window.jsRoutes.api.Sections.tag(sectionid).ajax({
+					var tagsArray = new Array(1);
+					tagsArray[0] = tag;
+					request = window.jsRoutes.api.Sections.addTags(sectionid).ajax({
 						type:        "POST",
 						contentType: "application/json",
 						data:		 JSON.stringify({
-										tag: tag, 
+										tags: tagsArray,
 								  	 }),
 					});
 					request.done(function (response, textStatus, jqXHR){ 

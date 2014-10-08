@@ -1,24 +1,22 @@
-/**
- *
- */
 package models
 
 import org.bson.types.ObjectId
-import com.novus.salat.annotations.raw.Key
 import java.util.Date
 import com.novus.salat.dao.ModelCompanion
-import services.MongoSalatPlugin
-import MongoContext.context
+import services.mongodb.MongoContext.context
 import play.api.Play.current
 import com.novus.salat.dao.SalatDAO
+import services.mongodb.MongoSalatPlugin
 
 /**
  * A stream is a sequence of objects with potentially no beginning and no end.
- * @author Luigi Marini
+ * This is currently not being used and is being replaced by the PostGIS Geotemporal API.
+ * The case classes could be updated and used for the Geotemporal API.
  *
+ * @author Luigi Marini
  */
 case class Stream(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   name: String)
 
 case class Geometry(
@@ -31,17 +29,15 @@ case class GeoJSON(
   features: List[Geometry])
 
 case class Datapoint(
-  id: ObjectId = new ObjectId,
+  id: UUID = UUID.generate,
   time: Option[Date], location: Option[Geometry],
   data: Option[Map[String, String]],
   source: Option[String])
-  
-  
+
 object Stream extends ModelCompanion[Stream, ObjectId] {
-  // TODO RK handle exception for instance if we switch to other DB
   val dao = current.plugin[MongoSalatPlugin] match {
-    case None    => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) =>  new SalatDAO[Stream, ObjectId](collection = x.collection("streams")) {}
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Stream, ObjectId](collection = x.collection("streams")) {}
   }
 }
-  
+

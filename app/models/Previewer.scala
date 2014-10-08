@@ -1,19 +1,12 @@
-/**
- *
- */
 package models
-import org.bson.types.ObjectId
-import java.util.Date
 
 /**
- * Previewers.
- * 
- * @author Luigi Marini
+ * Previewers are javascripts library to visualize information on the web interface.
  *
+ * @author Luigi Marini
  */
 case class Previewer(
-    id: String, 
-    path: String,
-    main: String,
-    contentType: List[String]
-)
+  id: String,
+  path: String,
+  main: String,
+  contentType: List[String])
