@@ -1,0 +1,787 @@
+@(theme: Int)(implicit user: Option[securesocial.core.Identity])
+@main("Administration") {
+	<div class="page-header">
+		<h1>Index Administration</h1>
+	</div>	
+		
+	<legend>Create an Index</legend>
+	
+	<div class="container-fluid">        
+      <div class="row">      
+       <div class="col-md-12">
+       
+       <div class="col-md-3" style="margin-right:5px;">
+				<h5>Choose a Name for Index (optional)</h5>
+				<input type="text" id="nameTextArea" onchange="setNameForIndex()">						
+			</div>
+			
+			<div class="col-md-3">	  
+       			<h5>Choose file type</h5>
+					<select id="fileTypeDropDown" onchange="setFileTypeAndAvailableAdapters()">
+					<option value="invalid">--File Type--</option>					
+					<option value="image">Image</option>
+					<option value="jpeg">Image-jpeg</option>
+					<option value="png">Image-png</option>
+					<option value="pdf">PDF</option>
+					<option value="doc">Doc</option>
+					<option value="rtf">RTF</option>
+					<option value="sectionCensus">Section of Census Image</option>
+					<option value="sectionFace">Face extractor section</option>
+					</select>
+			</div>
+					       
+			<div class="col-md-3">
+				<h5>Choose an Adapter</h5>
+				<select id="adapterDropDown" onchange="setAdapterTypeAndAvailableExtractors()">
+					<option value="invalid">--Adapter--</option>
+				</select>
+				
+				<div style="text-align: left;">			
+				<!------------------------------------->
+				<!------    Create new index     ------>
+				<!------------------------------------->
+      			 <input id="create" type="submit" class="btn btn-default btn-sm" value="Create" />
+      			 </div>    			 
+      			 
+      			 <br>
+      			 <br>
+      			 <!--- placeholder for feedback message -->
+      			 <div id="createIndexFeedback"style="text-align: right;">
+      			 </div>				
+			</div>		
+				
+		<div class="col-md-3">	
+			<h5>Choose an Extractor</h5>
+				<select id="extractorDropDown" onchange="setExtractorTypeAndAvailableMeasures()">
+					<option value="invalid">--Extractor--</option>
+				</select>	
+	 		</div>
+	 		
+	 		<div class="col-md-3" style="margin-right:5px;">
+				<h5>Choose a Measure</h5>
+				<select id="measureDropDown" onchange="setMeasureType()">
+					<option value="invalid">--Measure--</option>
+				</select>				
+			</div>
+						
+			
+			<div class="col-md-3">
+				<h5>Choose an Indexer </h5>
+				<select id="indexerDropDown" onchange="setIndexerState()">
+					<option value="invalid">--Indexer--</option>
+				</select>				
+			</div>
+			
+  		</div>
+	</div>
+</div>
+<br>
+<br>
+
+ 
+
+<br>
+<br>
+<!------------------------------------->
+<!------    Build an index       ------>
+<!------------------------------------->
+<legend> Build an Index</legend>
+<div class="row">
+	   <div class="col-md-12">
+	   	<div class="col-md-3">
+				<h5>Choose an Index </h5>
+				<select id="index" onchange="setIndexState()">
+					<option value="invalid">--Index--</option>
+				</select>
+				<div style="text-align: left;">
+				<input id="build" class="btn btn-default btn-sm" type="submit" value="Build Index">
+				</div>
+				<div id="buildIndex"style="text-align: left;">
+      			 </div>
+		</div>		
+	</div>	
+</div>
+
+<br>
+<br>
+
+<!------------------------------------->
+<!------    List all indexes     ------>
+<!------------------------------------->
+<legend> List All Indexes</legend>
+<div class="row">
+<div class="col-md-12">
+	   <div style="text-align: left;">			
+       <input id="list" type="submit" class="btn btn-default btn-sm" value="List All Indexes" />
+       </div>
+       <div id="list1">
+       </div>
+    </div>
+</div>
+<br>
+<br>
+
+
+<!------------------------------------->
+<!------    Delete one index     ------>
+<!------------------------------------->
+<legend> Delete an Index</legend>
+<div class="row">
+	   <div class="col-md-12">
+	   	<div class="col-md-3">
+				<h5>Choose an Index </h5>
+				<select id="indexDel" onchange="setIndexDelState()">
+					<option value="invalid">--Index--</option>
+				</select>
+				<div style="text-align: left;">
+				<input id="delete" class="btn btn-default btn-sm" type="submit" value="Delete Index">
+				</div>
+				<br>
+				<br>
+				<div id="deleteIndex"style="text-align: left;">
+      			 </div>
+		</div>		
+	</div>
+</div>
+<br>
+
+<!------------------------------------->
+<!------    Delete all indexes   ------>
+<!------------------------------------->
+<div class="row">
+<div class="col-md-12">
+	   <div style="text-align: left;">			
+       <input id="deleteAll" type="submit" class="btn btn-default btn-sm btn-danger" value="Delete All" />
+       </div>
+         <div id="deleteAllIndex"style="text-align: left;">
+      </div>
+   </div>  
+</div>
+	
+
+
+<script language="javascript">
+
+var fileTypeList = [];
+var fileTypeState = false;
+var fileTypeSelected;
+
+var isCensusIndex = false;
+var isFaceIndex = false;
+
+var indexName="";
+var indexNameSet = false;
+
+var allAdapterList=[];
+var shortAdapterList=[];
+
+var allExtractorList=[];
+var shortExtractorList=[];
+
+var allMeasureList=[];
+var shortMeasureList=[];
+
+var adapterState= false;
+var extractorState=false;
+var measureState= false;
+
+var adapterSelected;
+var extractorSelected;
+var measureSelected;
+
+var indexerState=false;
+var indexState=false;
+var indexerSelected;
+var indexSelected="";
+
+var indexerList=[];
+var indexList=[];
+
+$(document).ready(function (){
+	getAllAdapters();//global car adapterList is now set
+	getAllExtractors();//global var allExtractorList is now set
+	getAllMeasures();//global  allMeasureList is now set
+	getIndexers();//global  indexerList is now set
+	getIndexes();//global  indexerList is now set
+	//tempor - sections
+	//getAllSections();
+});
+
+
+function getAllSections() {
+$.ajax({
+          type: "GET",
+          url : "@routes.Admin.getSections()",
+          //url: "@routes.Admin.getAdapters()",
+          dataType : "json",
+          
+          // code to run if the request succeeds;
+          // the response is passed to the function
+          success : function(json) {   
+        	console.log('getAllSections - Make call succeeded')
+          	setAllSectionList(json);
+          },
+          
+          error : function(xhr, textStatus, errorThrown) {
+              console.log('getAllSections - Make call failed - getAllSections ' +  errorThrown);
+              console.log( 'Status: ' + status );
+          },
+          
+          // code to run regardless of success or failure
+          complete: function( xhr, status ) {
+              console.log( "getAllSections - The request is complete!" );
+          }
+      });
+}
+
+
+function setAllSectionList(json){	
+	console.log("=======setAllSectionList - top");
+	console.log("text received: " + json + ", len = "+ json.length)
+	for(var i=0; i<json.length; i++){
+		console.log("json = " + json[i])
+	}
+	console.log("=======setAllSectionList - bottom");
+}
+
+
+function setNameForIndex(){
+	indexNameSet = true;
+	indexName = nameTextArea.value
+	console.log("inside setNameForIndex = " + indexName)	
+}
+
+
+
+//Called when page is loaded
+function getAllAdapters() {
+$.ajax({
+            type : "GET",
+            url : "@routes.Admin.getAdapters()",
+            dataType : "json",
+            
+            success : function(json) {            	             
+               // setAllAdapterList(data);
+            	console.log("=======setAllAdapterList - top");
+            	var mimeTypes = "";	
+            	for(var i=0; i<json.length; i++){
+            		mimeTypes = json[i].supportedMimeTypes;		
+            		console.log('. ');	
+            		allAdapterList.push({name:json[i].name,id:json[i].id,mimeTypes:json[i].supportedMimeTypes, interfaces:json[i].interfaces});			
+            	}	
+            	console.log("=======setAllAdapterList - bottom");            	
+            },
+            
+            error : function(xhr, textStatus, errorThrown) {
+                console.log('Make call failed - getAllAdapters ' +  errorThrown);
+            }
+        });          
+}
+
+//set the adapter options, pulled from the versus server
+/*
+ function setAllAdapterList(json){	
+	console.log("=======setAllAdapterList - top");
+	var mimeTypes = "";	
+	for(var i=0; i<json.length; i++){
+		mimeTypes = json[i].supportedMimeTypes;		
+		console.log('. ');	
+		allAdapterList.push({name:json[i].name,id:json[i].id,mimeTypes:json[i].supportedMimeTypes, interfaces:json[i].interfaces});			
+	}	
+	console.log("=======setAllAdapterList - bottom");
+}
+*/
+
+//Called when page is loaded
+function getAllExtractors() {
+		$.ajax({
+            type: 'GET',
+            url: "@routes.Admin.getExtractors()",            
+            dataType: "json",
+            
+            success: function(data) {
+            	console.log('Call succeeded');
+            	console.log("=======setAllExtractorList - top"); 	
+            	for(var i=0; i<data.length; i++){
+            		//console.log("extractor id = " + data[i].id)
+            		allExtractorList.push({name:data[i].name, 
+            									id:data[i].id, 
+            									supportedFeature:data[i].supportedFeature, 
+            									supportedAdapters:data[i].supportedAdapters});					
+            	}
+            	console.log("=======setAllExtractorList - bottom");                
+            },
+            
+            error: function(xhr, textStatus, errorThrown) {
+                console.log('Make call failed - getAllExtractors' +  errorThrown);
+            }
+        });
+}
+
+
+	
+
+//Called when page is loaded
+function getAllMeasures() {
+$.ajax({
+            type : 'GET',
+            url : "@routes.Admin.getMeasures()",
+            dataType : "json",
+            success : function(data) {
+            	console.log('Call succeeded');
+            	
+              //  $('#test1').text(data.message);
+                
+                setAllMeasureList(data);
+            },
+            error : function(xhr, textStatus, errorThrown) {
+                console.log('Make call failed - getMeasures123' +  errorThrown);
+            }
+        });	
+}
+
+function setAllMeasureList(json){
+	console.log("=======setAllMeasureList - top");
+	for(var i=0; i<json.length; i++){
+			console.log(". ");
+			allMeasureList.push({name:json[i].name,id:json[i].id,supportedFeatureType:json[i].supportedFeatureType});
+	}
+	console.log("=======setAllMeasureList - bottom");
+}
+
+//Called when page is loaded
+function getIndexers() {
+$.ajax({
+            type : 'GET',
+            url : "@routes.Admin.getIndexers()",
+            dataType : "json",
+            success : function(data) {
+            	console.log('Call succeeded');
+                setIndexerList(data);
+            },
+            error : function(xhr, textStatus, errorThrown) {
+                console.log('Make call failed -getIndexers ' +  errorThrown);
+            }
+        });	
+}
+
+function setIndexerList(json){
+	var availableIndexers = "";
+	for(var i=0; i<json.length; i++){
+		availableIndexers = availableIndexers+'<option value="'+json[i].id+'" >'+json[i].name+'</option>';
+		//adapterList[i] = {id:json[i].id,mimeTypes:json[i].supportedMimeTypes};
+	    indexerList[i] = {name:json[i].name,id:json[i].id};
+	}
+	$("#indexerDropDown").html('<option value="invalid">--Indexer--</option>'+availableIndexers);
+}
+
+
+//Called when page is loaded
+function getIndexes() {
+	console.log('from getIndexes');
+	$.ajax({
+            type : 'GET',
+            url : "@routes.Admin.getIndexes()",
+            dataType : "json",
+            success : function(data) {
+            	console.log(' Admin.getIndexes - Call succeeded ');                
+                setIndexList(data);
+            },
+            error : function(xhr, textStatus, errorThrown) {
+                console.log('Admin.getIndexes - Make call failed ' +  errorThrown);
+            }
+        });	
+}
+
+function setIndexList(json){	
+	var availableIndexes = "";
+	for(var i=0; i<json.length; i++){		
+		availableIndexes = availableIndexes+'<option value="'+json[i].indexID+'" >'+json[i].indexID+'</option>';
+		indexList[i] = {indexID:json[i].indexID,MIMEtype:json[i].MIMEtype,Extractor:json[i].Extractor, Measure:json[i].Measure,Indexer:json[i].Indexer};
+	}
+	$("#index").html('<option value="invalid">--Index--</option>'+availableIndexes);
+	$("#indexDel").html('<option value="invalid">--Index--</option>'+availableIndexes);
+}
+
+/*
+ * Called when a file type is selected from drop down list
+ */
+function setFileTypeAndAvailableAdapters(){
+	console.log("=======setFileTypeAndAvailableAdapters - top");
+	//
+	//started creating a new index - first reset everything
+	//
+	document.getElementById("createIndexFeedback").innerHTML = "";
+	//$('#createIndexFeedback').text( "Hello");
+	adapterSelected=null;
+	extractorSelected=null;
+	measureSelected=null;
+	indexerSelected=null;
+	
+	$("#extractorDropDown").html('<option value="invalid">--Extractor--</option>');	
+	$("#measureDropDown").html('<option value="invalid">--Measure--</option>');
+	document.getElementById("indexerDropDown").selectedIndex = 0;
+	
+	//$("#indexerDropDown").val()="invalid";	
+	//
+	//process new file type
+	//
+	if($("#fileTypeDropDown").val() == "invalid"){
+		fileTypeState = false;
+	}
+	else{
+		fileTypeState    = true;
+		fileTypeSelected =  $("#fileTypeDropDown").val();
+	
+		//set global var isCensusIndex
+		//if census index then set the global variable, and then process as regular image.
+  		if (fileTypeSelected == "sectionCensus"){
+       		 isCensusIndex = true;  
+       		 indexType = "censusIndex"
+       		 fileTypeSelected = "image"
+       	} else if (fileTypeSelected == "sectionFace"){
+       		 isFaceIndex = true;
+       		 indexType = "faceIndex"
+       		 fileTypeSelected = "image"
+       	}   else {
+       		isCensusIndex=false;
+      		 isFaceIndex = false;   
+      		indexType=""
+       	} 
+  		
+		setShortAdapterList(fileTypeSelected);
+						
+		
+	}	
+}
+
+/*
+ * Create and set list of adapters that can process the given type of file.
+ */
+function setShortAdapterList(type)
+{
+	console.log("=======setShortAdapterList - top - type = " + type);	
+	var availableAdapters="";	
+		for(var i=0; i<allAdapterList.length; i++){
+			var mimeTypes = allAdapterList[i].mimeTypes;					
+			var bool = false;
+			for (var j=0; j< mimeTypes.length; j++){
+				console.log('mimeTypes[j] = ' + mimeTypes[j]);
+				if (mimeTypes[j].indexOf(type) != -1){
+					bool = true;
+				}
+			}		
+			if (bool) {			
+				console.log('match found: adapter  name = ' + allAdapterList[i].name + ', mimeTypes = ' + allAdapterList[i].mimeTypes);		
+				availableAdapters  = availableAdapters+'<option value="'+allAdapterList[i].id+'" >'+allAdapterList[i].name+'</option>';			
+				shortAdapterList.push(allAdapterList[i]);	
+			}			
+		}	
+	$("#adapterDropDown").html('<option value="invalid">--Adapter--</option>'+availableAdapters);
+}
+
+
+
+/*
+ * Called once selected an adapter from drop down list.
+ * For selected adapter, will set adapterSelected variable and list of adapter interfaces
+ */
+function setAdapterTypeAndAvailableExtractors(){
+	console.log("============================adapter drop down on change: from set adapter state")	
+	var adapterInterfaces =[];	
+	if($("#adapterDropDown").val() == "invalid"){
+		adapterState = false;$("#extractorDropDown").html('<option value="invalid">--Extractor--</option>'+availableExtractors);
+	} else{
+		adapterState    = true;
+		for( var i=0; i<shortAdapterList.length; i++){
+			if($("#adapterDropDown").val() == shortAdapterList[i].id ){
+				//console.log("AdapterDropdown",$("#adapterDropDown").val());
+				//console.log("Adapter name selected",shortAdapterList[i].name,"shortAdapterList[i].id=",shortAdapterList[i].id);
+				//console.log("shortAdapterList[i].interfaces = " + shortAdapterList[i].interfaces);
+				adapterInterfaces = shortAdapterList[i].interfaces;
+				adapterSelected=shortAdapterList[i].id.split(" ")[1];
+				//adapterSelected=shortAdapterList[i];
+				console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=adapterSelected = " + adapterSelected);
+			}
+		}		
+		setShortExtractorList(adapterInterfaces);
+	}
+	//toggleSubmitButton();
+}
+
+/*
+ * Finds extractors that match given array of interfaces. 
+ * For selected adapter, will display all matching extractors.
+ */
+function setShortExtractorList(interfacesArray){
+	console.log("==================top of setShortExtractorList");	
+	//interfaces that this adapter is extending
+	//var interfacesArray = adapter.interfaces;
+	console.log("`````````interfaces array = " + interfacesArray);
+	var availableExtractors ="";
+	console.log("allExtractorList.length = " + allExtractorList.length);
+	for(var i=0; i<allExtractorList.length; i++){
+		//console.log("i=" + i);
+		//extractor->get supportedAdapters
+		var supportedAdaptersArray = allExtractorList[i].supportedAdapters;
+		//console.log("        supported adapters = " + supportedAdaptersArray);
+		
+		//need to find intersection of two arrays - interfaces and supportedAdapters.
+		//if intersection is not emptsupported adapters =y then this extractor supports this adapter.
+		
+		//for i's extractor, go through all the interfaces that adapter is extending and find 
+		//which of these interfaces the extractor supports.
+		var results = [];
+		for (var k = 0; k < interfacesArray.length; k++) {
+    		if (supportedAdaptersArray.indexOf(interfacesArray[k]) !== -1) {
+    			//console.log("found intersection " + interfacesArray[k]);
+        		results.push(interfacesArray[k]);
+    		}
+		}
+		
+		if (results.length ==0){
+			console.log("+++no intersection found => no extactors for this adapter found.");
+		} else {
+			//intersection is non empty => this extractor supports this adapter, so add it to the short list.
+			//console.log("+++++++intersection has length " + results.length + "...results[0] = " + results[0]);
+			availableExtractors  = availableExtractors+'<option value="'+allExtractorList[i].id+'" >'+allExtractorList[i].name+'</option>';			
+			shortExtractorList.push(allExtractorList[i]);
+		}		
+	}
+	//console.log("++++++++availableExtractors = " + availableExtractors);
+	$("#extractorDropDown").html('<option value="invalid">--Extractor--</option>'+availableExtractors);
+}
+
+/*
+ * Called when an extractor is selected from drop down list.
+ */
+function setExtractorTypeAndAvailableMeasures(){
+	var supportedFeature;	
+	if($("#extractorDropDown").val() == "invalid"){
+		extractorState = false;
+	} else {
+		extractorState    = true;
+		for( var i=0; i<shortExtractorList.length; i++){
+			if($("#extractorDropDown").val() == shortExtractorList[i].id ){
+				//console.log("extractorList",$("#extractorDropDown").val());
+				console.log("Extractor name selected",shortExtractorList[i].name,"shortExtractorList[i].id=",shortExtractorList[i].id);
+				supportedFeature = shortExtractorList[i].supportedFeature;
+				extractorSelected=shortExtractorList[i].id.split(" ")[1];
+			}
+		}
+		//console.log("selected extractor supports feature: ",supportedFeature);
+		//console.log(extractorList[1]);
+		setShortMeasureList(supportedFeature);
+	}
+	//toggleSubmitButton();
+}
+
+/*
+ * List of measures that match given feature type
+ */
+function setShortMeasureList(featureType)
+{
+	console.log('====== setting short measures list for featureType ' + featureType );
+	
+	var availableMeasures="";
+	for(var i=0; i<allMeasureList.length; i++){
+		var featureTypes = allMeasureList[i].supportedFeatureType;
+		//go through list of all features this measure supports
+		//console.log ("feature types = " + featureTypes);
+		var bool = false; 		
+		for (var j=0; j<featureTypes.length; j++){
+		if (featureTypes[j].indexOf(featureType) != -1){
+				bool = true;
+			}		
+		}		
+		if (bool) {			
+			//console.log('match found: measure  name = ' + allMeasureList[i].name + ', featureType = ' + allMeasureList[i].supportedFeatureType);		
+			availableMeasures  = availableMeasures+'<option value="'+allMeasureList[i].id+'" >'+allMeasureList[i].name+'</option>';	
+			//console.log(	"availableMeasures = "  + availableMeasures);	
+			shortMeasureList.push(allMeasureList[i]);	
+		}			
+	}		
+	$("#measureDropDown").html('<option value="invalid">--Measure--</option>'+availableMeasures);
+}
+
+
+
+/*
+ * Called when a measure is selected from drop down list
+ */
+function setMeasureType(){
+	console.log("=====top of setMeasureType()");
+	if($("#measureDropDown").val() == "invalid"){
+		console.log("measure not selected");
+		measureState = false;
+	} else{
+		console.log("measure is selected, val = " + $("#measureDropDown").val());
+		measureState    = true;
+		for( var i=0; i<shortMeasureList.length; i++){
+			//console.log("shortMeasureList[i].id = " + shortMeasureList[i].id);
+			if($("#measureDropDown").val() == shortMeasureList[i].id ){
+				//console.log("shortMeasureList",$("#measureDropDown").val());
+				console.log("Measure name selected: ",shortMeasureList[i].name," shortMeasureList[i].id=",shortMeasureList[i].id);
+				measureSelected=shortMeasureList[i].id.split(" ")[1];
+				console.log("-=-=-=-=-=-=-=-=-=measureSelected = " + measureSelected);
+			}
+		}
+		//console.log("MeasureSupportedFeatureType:",measureSupportedFeatureType);		
+	}
+	//toggleSubmitButton();
+}
+
+
+function setIndexerState(){
+	if($("#indexerDropDown").val() == "invalid"){
+		indexerState = false;
+	}
+	else{
+		indexerState    = true;
+		for( var i=0; i<indexerList.length; i++){
+			if($("#indexerDropDown").val() == indexerList[i].id ){
+				console.log("indexerList",$("#indexerDropDown").val());
+				console.log("Indexer name selected: ",indexerList[i].name," indexerList[i].id=",indexerList[i].id);
+				//measureSupportedFeatureType = measureList[i].supportedFeatureType;
+				indexerSelected=indexerList[i].id;
+			}
+		}
+		//console.log("MeasureSupportedFeatureType:",measureSupportedFeatureType);
+		console.log(indexerSelected);
+	}
+	//toggleSubmitButton();
+}
+
+
+
+function setIndexState(){
+	if($("#index").val() == "invalid"){
+		indexState = false;
+	}
+	else{
+		indexState    = true;
+		for( var i=0; i<indexList.length; i++){
+			if($("#index").val() == indexList[i].indexID ){
+				console.log("indexList",$("#index").val());
+				console.log("Index name selected: ",indexList[i].indexID);				
+				indexSelected=indexList[i].indexID;
+			}
+		}		
+		console.log("indexSelected=",indexSelected);
+	}	
+}
+
+function setIndexDelState(){
+	if($("#indexDel").val() == "invalid"){
+		indexState = false;
+	}
+	else{
+		indexState    = true;
+		for( var i=0; i<indexList.length; i++){
+			if($("#indexDel").val() == indexList[i].indexID ){
+				console.log("indexList",$("#indexDel").val());
+				console.log("Index name selected: ",indexList[i].indexID);				
+				indexSelected=indexList[i].indexID;
+			}
+		}		
+		console.log("indexSelected=",indexSelected);
+	}	
+}
+
+
+var createBtn=document.getElementById('create');
+    createBtn.onclick=function(evt){
+    console.log("========Inside click function");
+      	$.ajax({
+            type : 'POST',
+            url : "@routes.Admin.createIndex()",
+            contentType: "application/json",
+            data:JSON.stringify({"name":indexName, "adapter":adapterSelected, "extractor":extractorSelected, "measure":measureSelected, "indexer":indexerSelected,"indexType":indexType}),
+           
+            success : function(data1) {            
+                console.log("data1:", data1);
+                console.log("Sucessfully created");
+                $('#createIndexFeedback').text( data1);                
+            },
+            error : function(xhr, textStatus, errorThrown) {
+                console.log('Make call failed ' +  errorThrown);
+                $('#createIndexFeedback').text( "Index could not be created");
+            }
+        });        
+}	    
+    			
+var buildBtn=document.getElementById('build');
+    buildBtn.onclick=function(evt){    
+    	console.log("I am inside Build click function", indexSelected);    
+    	var request=jsRoutes.controllers.Admin.buildIndexNew(indexSelected).ajax({
+   					 type:'POST'
+    	});
+    	request.done(function (response, textStatus, jqXHR){
+    				$('#buildIndex').text(response);
+					console.log("Response =" + response);
+    	});
+}	
+        
+    	
+var listBtn=document.getElementById('list');
+    listBtn.onclick=function(evt){    
+    	console.log("I am inside list click function123");        
+    	var request=jsRoutes.controllers.Admin.getIndexes().ajax({
+   					 type:'GET',
+   					 dataType: "json",
+    				});
+    				request.done(function (json, textStatus, jqXHR){
+						console.log("Response =" + json);
+						var availableIndexes = "";
+						var tab=[];
+						tab.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>Name of Index</th><th>Type of Index</th><th>IndexId</th><th>Extractor</th><th>Measure</th><th>Indexer</th>');
+                        
+						console.log("+++ length of json = " +json.length )
+						for(var i=0; i<json.length; i++){
+								//availableIndexes = availableIndexes+'<option value="'+json[i].indexID+'" >'+json[i].indexID+'</option>';
+							
+								indexList[i] = {indexID:json[i].indexID,MIMEtype:json[i].MIMEtype,Extractor:json[i].Extractor, Measure:json[i].Measure,Indexer:json[i].Indexer};
+									tab.push('<tr id=i >',
+							      	'<td>',  json[i].indexName, '</td>',
+							      	'<td>',  json[i].indexType, '</td>',
+							    	'<td>', json[i].indexID, '</td>',
+							      	'<td>',json[i].Extractor,' </td>',
+							      	'<td>',json[i].Measure,'</td>',
+							      	'<td>',json[i].Indexer,'</td>',
+							      	'</tr>');
+							
+							}
+						tab.push('</table>');
+						document.getElementById('list1').innerHTML=tab.join('');
+					  // $("#list1").html(tab);	
+					
+   					 });
+    	    }		
+
+
+var deleteBtn=document.getElementById('delete');
+    deleteBtn.onclick=function(evt){ 
+    	console.log("I am inside delete click function");
+    	var request=jsRoutes.controllers.Admin.deleteIndex(indexSelected).ajax({
+   					 type:'DELETE'
+    				});
+    				request.done(function (response, textStatus, jqXHR){
+    				$('#deleteIndex').text(response);
+					console.log("Response =" + response);
+   					 });
+}		
+    
+var deleteAllBtn=document.getElementById('deleteAll');
+    deleteAllBtn.onclick=function(evt){    
+    	console.log("I am inside delete All click function");    	
+    	var request=jsRoutes.controllers.Admin.deleteAllIndexes().ajax({
+   					 type:'DELETE'
+    				});
+    				request.done(function (response, textStatus, jqXHR){
+    				$('#deleteAllIndex').text(response);
+					console.log("Response =" + response);
+   					 });
+}	 
+   
+</script>
+}
