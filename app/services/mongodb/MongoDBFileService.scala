@@ -152,7 +152,7 @@ class MongoDBFileService @Inject() (
     files.db.setWriteConcern(WriteConcern.Safe)
 
     val mongoFile = files.createFile(inputStream)
-    Logger.debug("Uploading file " + filename)
+    Logger.debug("file service - save - Uploading file " + filename)
     mongoFile.filename = filename
     var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
     if (ct == play.api.http.ContentTypes.BINARY) {
@@ -393,8 +393,10 @@ class MongoDBFileService @Inject() (
   }
 
   def get(id: UUID): Option[File] = {
+    Logger.debug("MongoDBFileService - top of get")
     FileDAO.findOneById(new ObjectId(id.stringify)) match {
       case Some(file) => {
+        Logger.debug("MongoDBFileService -found file")
         val previewsByFile = previews.findByFileId(file.id)
         val sectionsByFile = sections.findByFileId(file.id)
         val sectionsWithPreviews = sectionsByFile.map { s =>
@@ -403,7 +405,10 @@ class MongoDBFileService @Inject() (
         }
         Some(file.copy(sections = sectionsWithPreviews, previews = previewsByFile))
       }
-      case None => None
+      case None =>{ 
+        Logger.debug("MongoDBFileService -none found")
+        None
+      }
     }
   }
 

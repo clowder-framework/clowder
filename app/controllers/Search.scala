@@ -261,7 +261,7 @@ class Search @Inject() (
     			listOfResults<-futureListResults   			    		
     		} yield {
     		  //added a placeholder for UUID, to work with the new version of template
-    		  Ok(views.html.multimediaSearchResults(queryURL, null, listOfResults))     
+    		  Ok(views.html.multimediaSearchResults(queryURL, null, null, listOfResults))     
     		}              
         } //case some
                     
@@ -273,37 +273,48 @@ class Search @Inject() (
   }
 
   /** 
-   * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is NOT id db, just uploaded by user)
+   * Finds similar objects(images, pdfs, etc) in Multiple index for a temporary file 
+   * Input file is NOT in db, just uploaded by user.
    **/
-  def findSimilar(fileID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
-   	Logger.debug("Finding similar files")
+  //  def findSimilar(fileID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
+
+ // def findSimilarToNewFile(fileID:UUID, dataParts:Map[String, Seq[String]])=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
+  def findSimilarToQueryFile(fileID:UUID, typeToSearch:String, sectionsSelected:List[String])=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
+  
+  Logger.debug("====22222==== Search.findSimilarToNewFile typeToSearch = " + typeToSearch)
+  Logger.debug("====22222==== Search.findSimilarToNewFile sectionsSelected = " + sectionsSelected)
     Async{ 
-   		//query file will be stored in MultimediaQueryService
+    
+   		//query file is a new/temp file, it will be stored in MultimediaQueryService
    		//in controllers/Files -> uploadSelectQuery
-   		var contentTypeStr="";
+   		//var contentTypeStr="";
    		queries.get(fileID) match {
-   			case Some((inputStream, filename, contentType, length)) => {                
-   				contentTypeStr=contentType;
-   				current.plugin[VersusPlugin] match {    		
-   					case Some(plugin)=>{          	
-   						val futureFutureListResults = for {    	  
-   							indexList<-plugin.getIndexesForContentTypeAsFutureList(contentTypeStr)
-   						} yield { 	      				
-   							val resultListOfFutures=indexList.map{
-   								index=>    
-   									plugin.queryIndexForNewFile(fileID, index.id).map{
-   										queryResult=>(index, queryResult)
-   									}    								  
-   							}  	
-   							//convert list of futures into a Future[list]
+   			case Some((inputStream, filename, contentType, length)) => { 
+  				current.plugin[VersusPlugin] match {    		
+   					case Some(plugin)=>{   
+   					 
+   					 var indexesToSeachFuture =  for {
+   					    indexesForContent<-plugin.getIndexesForContentTypeAsFutureList(contentType)
+   					    indexesForType<- plugin.getIndexesForType(typeToSearch, sectionsSelected)
+   					  } yield indexesForContent.intersect(indexesForType)
+   										     					  
+   					   val futureFutureListResults = for {    						 
+   						  indexesToSeach <- indexesToSeachFuture
+   					  } yield {    					    
+   						  val resultListOfFutures=indexesToSeach.map{
+   							  index=> plugin.queryIndexForNewFile(fileID, index.id).map{queryResult=>(index, queryResult)}    								  
+   							} 	
+   						 
+   					    //convert list of futures into a Future[list]
    							scala.concurrent.Future.sequence(resultListOfFutures)    			
    						}//End yield    		
     		
    						for{
    							futureListResults<-futureFutureListResults
-   							listOfResults<-futureListResults      		
+   							listOfResults<-futureListResults
    						} yield {  
-   							Ok(views.html.multimediaSearchResults(filename, fileID, listOfResults))             		
+   						  // var thumb_id = file.thumbnail_id.getOrElse("")	
+   							Ok(views.html.multimediaSearchResults(filename, fileID, null, listOfResults))             		
    						}    		            
    					} //end of case Some(plugin)   
 
@@ -325,12 +336,14 @@ class Search @Inject() (
   * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is already in db)
   *  
   **/
-  def findSimilarFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+    //def findSimilarFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+
+  def findSimilarToExistingFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
   	//
     //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
   	//also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
   	//
-    Logger.debug("Finding similar file for " + inputFileId)
+    Logger.debug("Search.findSimilarToExistingFile file id = " + inputFileId)
     
   Async{       	   
   		//file will be stored in FileService
@@ -357,7 +370,7 @@ class Search @Inject() (
    	   						futureListResults<-futureFutureListResults
    	   						listOfResults<-futureListResults      		
    	   					} yield {     			             
-   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  listOfResults))          
+   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  null, listOfResults))          
    	   					}    		             
    	   				} //end of case Some(plugin)                   
 
@@ -386,8 +399,7 @@ class Search @Inject() (
 	  var inputErrors = false
 	  var errorMessage=""
 	  var weightsList = List(0.0)
-	  Logger.debug("validate 397 input = " + input.toString)
-    
+	  Logger.debug("Search. validateInput  input = " + input.toString)    
 	  if(  !input.contains( "FileID" ) || !input.contains("IndexID") || !input.contains("Weight") ){  
 	    inputErrors = true
 	    return(inputErrors, "Not all fields are present", List(0.0))
@@ -398,7 +410,7 @@ class Search @Inject() (
 	  }catch {
 	   		case e:Exception => return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))
 	   }
-	  Logger.debug("390 validate weightsList = " + weightsList)    
+	  Logger.debug("Search.validateInput validate weightsList = " + weightsList)    
      
 	   var sum=0.0 	
 	   for (w<- weightsList){
@@ -418,13 +430,13 @@ class Search @Inject() (
   def mergeMaps(maps:List[scala.collection.immutable.HashMap[String, Double]], 
       weights:List[Double]):scala.collection.immutable.HashMap[String, Double]={
 
-    Logger.debug("Longth of maps = " + maps.length)
+    Logger.debug("Length of maps = " + maps.length)
     //merge the first two maps
     var mergedMap = mergeTwoMaps(maps(0), maps(1), weights(0), weights(1))
-   						  //merge the rest of the maps
-   						  for( ind <- 2 to weights.length-1){
-   						    mergedMap = mergeTwoMaps(mergedMap, maps(ind), 1.0, weights(ind))
-   						  }    
+   	//merge the rest of the maps
+   	for( ind <- 2 to weights.length-1){
+   	   mergedMap = mergeTwoMaps(mergedMap, maps(ind), 1.0, weights(ind))
+   	}    
     mergedMap
   }
   
@@ -525,6 +537,7 @@ class Search @Inject() (
    		}//end of queries.get(imageID) match 
        }//end of if no validation errors
          else {Future(Ok("Form validation errors: " + errorMessage))}
+                
     } //Async
   }
      

@@ -47,6 +47,13 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
     implicit val user = request.user
     Ok(views.html.admin(themeId))
   }
+  
+  def indexAdmin = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
+    val themeId = themes.indexOf(getTheme)
+    Logger.debug("Theme id " + themeId)
+    implicit val user = request.user
+    Ok(views.html.adminIndex(themeId))
+  }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
     Ok("Reindexing")
@@ -81,6 +88,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
             for {
               adapterList <- adapterListResponse
             } yield {
+              Logger.debug("Admin getAdapters adapterList.json = " + adapterList.json)
               Ok(adapterList.json)
             }
 
@@ -90,10 +98,25 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
             Future(Ok("No Versus Service"))
           }
         } //match
-
       } //Async
-
   }
+  
+  
+  //get the available Adapters from Versus
+  def getSections() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
+    request=>
+        val types = census.getDistinctTypes
+        Logger.debug("Admin getSections distinct index types are " + types)     
+       
+		val json = Json.toJson(types)		
+		Logger.debug("Admin getSections json = " + json)
+        Logger.debug("Admin getSections Json.stringify(json) = " + Json.stringify(json))
+        
+        //both seem to work
+        //Ok(Json.stringify(json))
+        Ok(json)
+  }
+  
 
   // Get available extractors from Versus
   def getExtractors() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
@@ -223,6 +246,10 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
       } //Async
   }
   
+  /**
+   * Gets indexes from Versus, using VersusPlugin. Checks in mongo on Medici side if these indexes
+   * have type and/or name. Adds type and/or name to json object and calls view template to display.
+   */
   def getIndexes() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
       Async {
@@ -246,10 +273,10 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
                   var finalJson :JsValue=null
                   val jsArray = indexList.json
                   Logger.debug("Admin.getIndexes jsarray = " + jsArray)
-                
+                  //make sure we got correctly formatted list of values
                   jsArray.validate[List[VersusIndexTypeName]].fold(
                 		  // Handle the case for invalid incoming JSON.
-                		  // Note: JSON created in Versus IndexResource.listJson must have same names as Medici models.VersusIndexTypeName 
+                		  // Note: JSON created in Versus IndexResource.listJson must have the same names as Medici models.VersusIndexTypeName 
                 		  error => {
                 		    Logger.debug("Admin.getIndexes - validation error")
                 		    InternalServerError("Received invalid JSON response from remote service.")
@@ -258,19 +285,21 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
                 		    // Handle a deserialized array of List[VersusIndexTypeName]
                 		    indexes => {
                 		    	Logger.debug("Admin.getIndexes indexes received = " + indexes)   								  
-                		    	val indexesWithName = indexes.map{
+                		    	val indexesWithNameType = indexes.map{
                 		    		index=>
-                		    			val name = census.getName(UUID(index.indexID)).getOrElse("")
-                		    			Logger.debug("Admin.getIndexes name  from census = " + name)
-                		    			//val name = census.getName(UUID(index.indexID)).getOrElse("")
-                		    			Logger.debug("Admin.getIndexes index = " + index + "\nindex.indexID = " + UUID(index.indexID) )
-                		    			VersusIndexTypeName.addName(index, name)
+                		    		  	//check in mongo for name/type of each index
+                		    			val indType = census.getType(UUID(index.indexID)).getOrElse("")
+                		    			val indName = census.getName(UUID(index.indexID)).getOrElse("")
+
+                		    			Logger.debug("Admin.getIndexes type  from census = " + indType + "name = " + indName)
+                		    			//add type/name to index
+                		    			VersusIndexTypeName.addTypeAndName(index, indType, indName)
    								  }                		    
-                		    	indexesWithName.map(i=> Logger.debug("Admin.getIndexes index iwth name = " + i))
+                		    	indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index iwth name = " + i))
                 		    
                 		    	// Serialize as JSON, requires the implicit `format` defined earlier in VersusIndexTypeName
-                		    	finalJson = Json.toJson(indexesWithName)    			
-                		    	Logger.debug("Admin.getIndexes finalJson = " + finalJson)	                	            		    		
+                		    	finalJson = Json.toJson(indexesWithNameType)    			
+                		    	Logger.debug("Admin.getIndexes finalJson = " + finalJson)	
                 		    }
                 		  ) //end of fold                
                 		  Ok(finalJson)
@@ -284,7 +313,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
         } //match
       } //Async
   }
-
+  
   //build a specific index in Versus
   def buildIndex(id: String) = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
@@ -302,7 +331,6 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
             } yield {
               Ok(buildRes.body)
             }
-
           } //case some
 
           case None => {
@@ -311,7 +339,6 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
         } //match
 
       }
-
   }
   
   //Delete a specific index in Versus

@@ -71,9 +71,7 @@ class VersusPlugin(application:Application) extends Plugin{
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
   val queries: MultimediaQueryService = DI.injector.getInstance(classOf[MultimediaQueryService])
-
-  val census: CensusService = DI.injector.getInstance(classOf[CensusService])
-  
+  val census: CensusService = DI.injector.getInstance(classOf[CensusService])  
    
   override def onStart() {
     Logger.debug("Starting Versus Plugin")
@@ -82,8 +80,6 @@ class VersusPlugin(application:Application) extends Plugin{
 /*
  * This method sends the file's url to Versus for the extraction of descriptors from the file
  */
-
-
   def extract(fileid: UUID): Future[Response] = {
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
@@ -210,23 +206,106 @@ class VersusPlugin(application:Application) extends Plugin{
     Logger.debug("VersusPlugin: Getting indexes as a future list")
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
-    val indexurl = host + "/indexes"
-   
-    val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
-        
+    val indexurl = host + "/indexes"   
+    val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()        
     indexList.map {
       response =>       
         val json: JsValue = Json.parse(response.body)          
         val seqOfIndexes = json.as[Seq[models.VersusIndex]]   
-       
-
         seqOfIndexes.toList
     } 
   }
   
+   
+       
+   /**
+    * From all existing Versus indexes, select
+    * a subset based on typeToSearch and (optionally) sectionsSelected.
+    * 
+    * If typeToSearch is...
+    * 		both - return all the indexes
+    * 		sectionsSome - return selected sections
+    * 		sectionsAll - return all sections
+    * 		images - return indexes of whole images
+    */
+   def getIndexesForType(typeToSearch:String, sectionsSelected:List[String]):Future[List[models.VersusIndex]]= {	   
+	   Logger.debug("VP getIndexesForType")
+		   //get all the indexes from versus
+	   val configuration = play.api.Play.configuration;
+	   val host = configuration.getString("versus.host").getOrElse("");
+	   val indexurl = host + "/indexes";
+   
+	   var matchingIndexes = new ListBuffer[models.VersusIndex];
+	   val futureResponse: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
+	   futureResponse.map {
+      response =>     
+        val json: JsValue = Json.parse(response.body)         
+        //all the indexes from Versus
+        val allIndexes = json.as[List[models.VersusIndex]]  
+        
+        //select indexes subset based on the value of typeToSearch
+        val indexesBuf =new ListBuffer[models.VersusIndex]
+        
+           Logger.debug("VP getIndexesForType 111")
+           
+        if (typeToSearch.equals("images")){
+    	  Logger.debug("images only, no sections")
+    	  allIndexes.map{
+    	    index =>
+    	      //return all indexes that contain whole images. Filter out indexes of sections.
+    	      //if index is in the census mongodb collection AND it has 'type' - it contains sections, NOT needed here
+    	      //if 'type' field is empty (could have name only, or not be in the mongodb collection) - it's index of a whole image, saving it.
+    	      census.getType(UUID(index.id)) match {
+    	      	case Some(t) =>
+    	      	case None => indexesBuf += index
+    	      }    	       
+    	  }     	  
+        } else if (typeToSearch.equals("sectionsAll")){
+          Logger.debug("typeToSearch.equals sectionsAll")
+          //return all indexes that contain sections. These are in the census mongodb collection, with
+          // 'type' field not-empty
+          allIndexes.map{
+    	    index =>
+    	    	census.getType(UUID(index.id)) match {
+    	    	  case Some(t) => indexesBuf += index
+    	    	  case None =>    	    	  
+    	    	}
+          }    	 
+        } else if (typeToSearch.equals("sectionsSome")){
+                    Logger.debug("typeToSearch.equals sectionsSome, sectionsSelected = " + sectionsSelected)
+
+          //return indexes that contain sections of the selected type(s), contained in the sectionsSelected variable
+          allIndexes.map{
+    	    index =>
+    	    	census.getType(UUID(index.id)) match {
+    	    	  case Some(sectionType) => 
+    	    	    if (sectionsSelected.contains(sectionType)) {indexesBuf += index}
+    	    	  case None =>    	    	  
+    	    	}
+          }     	 
+        } else if (typeToSearch.equals("both")){
+                              Logger.debug("typeToSearch.equals both")
+
+           allIndexes.map{
+        	index => 
+        	  indexesBuf +=index
+          }
+               indexesBuf.toList               
+        } else {
+             Logger.debug("VP getIndexesForType 3333 ")
+          Logger.error("Invalid input")  // the default, catch-all
+        }
+        Logger.debug("VP - for typetosearch = " +typeToSearch + " got list of indexes: " +indexesBuf )
+        indexesBuf.toList          
+        
+	   } // futureResponse.map {     
+   }
+   
+   
+   
+   
    /* 
    * Get all indexes from Versus web server THAT MATCH THE FILE CONTENT TYPE as a future list
-   * 
    */
   def getIndexesForContentTypeAsFutureList(contentType: String): Future[List[models.VersusIndex]]= {    
    Logger.debug("VersusPlugin,getIndexesForContentTypeAsFutureList")
@@ -297,12 +376,9 @@ class VersusPlugin(application:Application) extends Plugin{
 /*
  * Sends a request to Versus to delete an index based on its id
  * If censusindex - delete entry from censusIndex db collection
- */
-  
-  def deleteIndex(indexId: UUID): Future[Response] = {
-    
-    Logger.debug("top of deleteIndex for indexid = " + indexId)
-     
+ */  
+  def deleteIndex(indexId: UUID): Future[Response] = {    
+    Logger.debug("top of deleteIndex for indexid = " + indexId)     
     //also delete from mongo collection
     //will search mongo for given id, if found - will delete, if not found - will do nothing
      val res =  census.delete(indexId)
@@ -431,7 +507,7 @@ class VersusPlugin(application:Application) extends Plugin{
   		//
   		//called from app/api/Files->removeFile()
   		//
-  		Logger.debug("removeFromIndexes for fileId = " + fileId)
+  		Logger.debug("VersusPlugin: removeFromIndexes for fileId = " + fileId)
       
   		val configuration = play.api.Play.configuration
   		val host = configuration.getString("versus.host").getOrElse("")   
@@ -568,21 +644,12 @@ class VersusPlugin(application:Application) extends Plugin{
     
     responseFuture.map {      
       response =>
-      	Logger.debug("571 resp body = " + response.body)
-        val json: JsValue = Json.parse(response.body)
-        
-        var maxProximity=1.0
-        if (!(json\\"maxProximity").isEmpty) {
-          maxProximity = (json\\"maxProximity").head.toString().toDouble
-        }
-            
-        val similarity_value = json.as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]     
-      	Logger.debug("query index 11")
-      	
+      	Logger.debug("VP queryIndex resp body = " + response.body)
+        val similarityResults = Json.parse(response.body).as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]  
+            	
         var resultList = new ListBuffer[PreviewFilesSearchResult]    
-              	Logger.debug("query index 22")
 
-        similarity_value.map {      
+        similarityResults.map {      
           result =>            
             //example: result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
             //or
@@ -591,24 +658,21 @@ class VersusPlugin(application:Application) extends Plugin{
             //parse docID to get preivew id or file id - string between '/' and '?'
             val end = result.docID.lastIndexOf("?")
             val begin = result.docID.lastIndexOf("/");                       
-            val result_id_str = result.docID.substring(begin + 1, end);
-            val result_id = UUID(result_id_str);
+            val resultId = UUID(result.docID.substring(begin + 1, end));
           
             //
-            //check if this is a file or a preview
+            //check if this is a file or a video preview
             //
             val isFile = result.docID.contains("files")
             val isPreview = result.docID.contains("previews")
-                   	Logger.debug("query index 33")
 
             //when searching for videos - might get previews search results
             if (isPreview){ 
-              Logger.debug("query index 44")
-               previews.getBlob(result_id) match{                            	
+               previews.getBlob(resultId) match{                            	
                 case Some (blob)=>{   
               	  val previewName =blob._2
               	   //use helper method to get the results
-              		getPrevSearchResult(result_id, previewName, result)  match {
+              		getPrevSearchResult(resultId, previewName, result)  match {
               	    	case Some (previewResult) => {
               	    		resultList += new PreviewFilesSearchResult("preview", null, previewResult) 
               	    	}
@@ -625,11 +689,10 @@ class VersusPlugin(application:Application) extends Plugin{
             
             //in case of still images AND non-image file formats
             if (isFile) {
-              Logger.debug("query index 55")
-              files.get(result_id) match {               	  
+              files.get(resultId) match {               	  
                 case Some (file)=>{  
                 	//use helper method to get the results
-               	    val oneFileResult = getFileSeachResult(result_id, file, result)
+               	    val oneFileResult = getFileSeachResult(resultId, file, result)
                	    resultList += new PreviewFilesSearchResult("file", oneFileResult, null  )                  	                  	  
                	    }               	  
                 case None => {}                 }
@@ -639,8 +702,8 @@ class VersusPlugin(application:Application) extends Plugin{
     	}   
     }
   
-  /*
-   *Used to display resutls with weighted combined indexes 
+  /**
+   *Used to display resutls with weighted combined indexes. 
    * For a given index and file, will query index and return results
    * the results are reorganized as a hash map of (file url, proximity) touples.
    * Note: might be reorganized in the future to use queryIndex method
@@ -713,12 +776,11 @@ class VersusPlugin(application:Application) extends Plugin{
 			  dataset=>dataset.id.stringify             		  		  
 		  }           
               
-		  val formatter = new DecimalFormat("#.###")
-		  // resultArray += ((subStr, result.docID, result.proximity, file.filename,previews))
-		  val proxvalue = formatter.format(result.proximity).toDouble     
-		  val normalizedProxvalue = formatter.format(result.proximity/result.maxProximity).toDouble  
+		  val formatter = new DecimalFormat("#.#####")
+		  val normalizedProxvalue = formatter.format(result.proximity/result.maxProximity).toDouble 
            
 		  var thumb_id = file.thumbnail_id.getOrElse("")		  
+		  
 		  val oneFileResult = new SearchResultFile(result_id, result.docID, normalizedProxvalue, file.filename, dataset_id_list.toList, thumb_id)
 		  return oneFileResult			            
    }
@@ -729,7 +791,7 @@ class VersusPlugin(application:Application) extends Plugin{
   	def getPrevSearchResult(preview_id:UUID, prevName:String, result:models.VersusSimilarityResult.VersusSimilarityResult):Option[SearchResultPreview]=
   	{                           
 		  Logger.debug("VersusPlugin: top of getPrevSearchRes")
-		  val formatter = new DecimalFormat("0.##########E0")                
+		  val formatter = new DecimalFormat("#.#####")                
 		  val proxvalue = formatter.format(result.proximity).toDouble
 		  val normalizedProxvalue =    formatter.format(result.proximity/result.maxProximity).toDouble    
 		  previews.get(preview_id) match {
@@ -738,41 +800,37 @@ class VersusPlugin(application:Application) extends Plugin{
 			  var startTime=0                   
 			  var fileName = ""
 			  var datasetIdList=new ListBuffer[String]
-			  var fileIdString = ""                    
-                  
-			  //===get section for this preview and its start/end time                    
+			  var fileIdString = ""		                     
+		    
+		    //===get section for this preview and its start/end time     -  AND FILE ID               
 			  preview.section_id match {
 			  	case Some(section_id)=>{
 			  		sections.get(section_id)match {
 			  			case Some(section)=>{
                             startTime = section.startTime.getOrElse(0)
-                        }
+                            
+                            var file_id = section.file_id 
+                            fileIdString = file_id.stringify 
+                            files.get(file_id) match {
+                            	case Some(file)=>{
+                            		fileName = file.filename			  				
+                            		for(dataset <- datasets.findByFileId(file_id)){                  				               
+                            			datasetIdList+= dataset.id.stringify	             
+                            		} 
+                            	}
+                            	case None =>{}
+                            }// end of files.get(file_id) match   
+                            
+                        }//end of 	case Some(section)=>{
                         case None =>{}                          
                      }
 			  	} 
 			  	case None =>{}                      
 			  }
 			  //===done: finding section
-                    
-			  //=== get file for this preview
-			  // get file's id, name, and all datasets it belongs to.
-		    Logger.debug("VersusPlugin:  getPrevSearchRes 22")
-			  preview.file_id match{
-			  	case Some(file_id)=>{
-			  		fileIdString = file_id.stringify                   
-			  		files.get(file_id) match {
-			  			case Some(file)=>{
-			  				fileName = file.filename			  				
-			  				for(dataset <- datasets.findByFileId(file_id)){                  				               
-			  					datasetIdList+= dataset.id.stringify	             
-			  				} 
-			  			}
-			  			case None =>{}
-			  		}// end of files.get(file_id) match                        
-			  	} //end of case Some(file_id)=>{
-			  	
-			  	case None=>{}
-			  } //== done: file for this preview
+			  
+			  
+		
 			 
 			 var onePreviewResult = new SearchResultPreview(preview_id, result.docID, normalizedProxvalue, 
 					  prevName, datasetIdList.toList, fileIdString, fileName, startTime) 			 

@@ -11,6 +11,9 @@ import play.api.libs.json.JsObject
 import scala.Some
 import controllers.Utils
 
+import play.api.Logger
+
+
 /**
  * Index data.
  * 
@@ -24,10 +27,13 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
    * Submit section, preview, file for indexing.
    */
   def index() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
+          	            Logger.debug("top of indexes index")
+
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
             previews.get(UUID(preview_id)) match {
       	      case Some(p) =>
+
 	      	    // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
 	            val host = Utils.baseUrl(request) + request.path.replaceAll("api/indexes$", "")

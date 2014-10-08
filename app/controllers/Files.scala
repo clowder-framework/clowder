@@ -18,7 +18,6 @@ import api.Permission
 import javax.inject.Inject
 import java.util.Date
 import scala.sys.SystemProperties
-
 /**
  * Manage files.
  *
@@ -198,7 +197,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              }
 	          }
 	        
-	        Logger.debug("Uploading file " + nameOfFile)
+	        Logger.debug("contr 200 Uploading file " + nameOfFile)
 
 	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
@@ -299,7 +298,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              }
 	          }
 	        
-	        Logger.debug("Uploading file " + nameOfFile)
+	        Logger.debug("contr 301 Uploading file " + nameOfFile)
 
 	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
@@ -362,6 +361,9 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 	           /****************************/ 
 	             // TODO replace null with None
+	            Logger.debug("contr/Files 364 host = " + host + ", key =  " + key)
+
+	            
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
 
 	            
@@ -526,7 +528,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              }
       	}
         
-        Logger.debug("Uploading file " + nameOfFile)
+        Logger.debug("contr 528 Uploading file " + nameOfFile)
         
         // store file       
         // TODO is this still used? if so replace null with user
@@ -598,7 +600,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             // redirect to file page]
             // val query="http://localhost:9000/files/"+id+"/blob"  
            //  var slashindex=query.lastIndexOf('/')
-             Redirect(routes.Search.findSimilar(f.id))
+             Redirect(routes.Search.findSimilarToQueryFile(f.id, null, List.empty))
          }
           case None => {
             Logger.error("Could not retrieve file that was just saved.")
@@ -610,10 +612,55 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }
   }
 
+  def validateInput(input: Map[String, Seq[String]]):( String)={
+    if(  !input.contains( "indexType" ) || !input.contains("sectionName") || !input.contains("MyText") ){  
+	    
+	    return("Not all fields are present")
+	  } 
+    "Done"
+  }
   /**
    * Upload query to temporary folder
   */
   def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+    
+    //================ testing searching within just images or just sections or both=====
+    
+    //dataParts are from the form in multimediasearch.scala.html
+    //pass them on to Search.findSimilarToNewFile - will be processed there
+    //
+    Logger.debug("Files.uploadSelectQuery request.body.dataParts = " + request.body)
+
+    var dataParts = request.body.dataParts
+    
+   // Logger.debug("Files.uploadSelectQuery request.body.dataParts index type = " + request.body.dataParts("indexType"))
+    //indexType in dataParts is a sequence of just one element
+    //validateInput(request.body.dataParts)
+    val typeToSearch = dataParts("indexType").head
+    Logger.debug("Files.uploadSelectQuery typeToSearch = " + typeToSearch)
+    
+    var sections:List[String] = List.empty[String]
+    
+    if  ( typeToSearch.equals("sectionsSome")  &&  dataParts.contains("sections") )
+    {
+        Logger.debug("=== Files.uploadSelectQuery type is  some sections ")
+        sections = dataParts("sections").toList
+    }
+               
+    Logger.debug(" Files.uploadSelectQuery  sections = " + sections)
+    /*var sections:List[String] = List.empty[String]
+    if (typeToSearch.equals("sectionsSome")){     
+    	sections = dataParts("sections").toList
+    	Logger.debug("Files.uploadSelectQuery sections = " + sections)      
+    }*/
+    //sectionName in dataParts is a sequence of several elements
+    //val sectionName = request.body.dataParts("sectionName")
+    //val text = request.body.dataParts("MyText")
+    //Logger.debug("Files.uploadSelectQuery section name = " + sectionName)
+     //Logger.debug("Files.uploadSelectQuery text = " + text)
+   Logger.debug("====1111==== Files.uploadSelectQuery request = " + request.body)
+    //============== END OF: testing searching within just images or just sections or both=====
+    
     request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
@@ -665,9 +712,18 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ fileType.replace("/", ".")
-            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
+//            val key = "unknown." + "file."+ fileType.replace("/", ".")
+            val key = "unknown." + "query."+ fileType.replace("/", ".")
+
             
+            //things break in thumbnail extractor. quick fix for now.
+            //val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
+            
+            
+            val host = Utils.baseUrl(request)
+
+             Logger.debug("Utils.baseUrl(request) = " + Utils.baseUrl(request) )
+             Logger.debug("request.path.replaceAll(...) " + request.path.replaceAll("upload$", ""))
             val id = f.id
             val path=f.path
 
@@ -703,8 +759,10 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // redirect to file page]
             Logger.debug("Query file id= "+id+ " path= "+path);
-             Redirect(routes.Search.findSimilar(f.id))
-             //Redirect(routes.Search.findSimilar(path.toString())) 
+             //Redirect(routes.Search.findSimilarToNewFile(f.id, request.body.dataParts))
+             Redirect(routes.Search.findSimilarToQueryFile(f.id, typeToSearch, sections))
+
+             //Redirect(routes.Search.findSimilarToNewFile(path.toString())) 
          }
           case None => {
             Logger.error("Could not retrieve file that was just saved.")
@@ -731,7 +789,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              }
       	}
         
-        Logger.debug("Uploading file " + nameOfFile)
+        Logger.debug("contr 789 Uploading file " + nameOfFile)
         
         // store file
         Logger.info("uploadDragDrop")
@@ -833,7 +891,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		              }
 			      }	
 			    
-				  Logger.debug("Uploading file " + nameOfFile)
+				  Logger.debug("contr 891 Uploading file " + nameOfFile)
 				  val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 				  // store file
 				  val file = files.save(new FileInputStream(f.ref.file), nameOfFile,f.contentType, identity, showPreviews)

@@ -28,6 +28,11 @@ trait CensusService {
 	def isFound(indexId: UUID): Boolean 
 	
 	def getType(indexId:UUID):Option[String]
+	
+	/**
+	 * Returns an array of all distinct values of the field indexType
+	 */
+	def getDistinctTypes:List[String]
 	 
 	def getName(indexId:UUID):Option[String]
 		

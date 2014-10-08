@@ -9,7 +9,11 @@ import play.api.libs.json.JsSuccess
  */
 object VersusSimilarityResult {
 
-  case class VersusSimilarityResult(val docID: String, val proximity: Double, val maxProximity:Double)
+  case class VersusSimilarityResult(
+      val docID: String, 
+      val proximity: Double, 
+      val maxProximity:Double
+     )
 
   implicit object VersusSimilarityResult extends Reads[VersusSimilarityResult] {
     def reads(json: JsValue) = {

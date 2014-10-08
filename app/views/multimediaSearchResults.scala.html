@@ -1,9 +1,9 @@
-@(fileName:String, fileId:models.UUID, resultsList:List[(VersusIndex,  List[PreviewFilesSearchResult])])   						
+@(fileName:String="Query file", fileId:models.UUID, thumbnailId:models.UUID, resultsList:List[(VersusIndex,  List[PreviewFilesSearchResult])])   						
 
 @**********************************************************************@
-@****   Template to display search results for each index                  ***@
+@****   Template to display search results for each index           ***@
 @****    User can enter weights to combine search results into one  ***@
-@***********************************************************************@
+@**********************************************************************@
 
 
 @import helper._
@@ -22,6 +22,12 @@
 
 	<div class="page-header">
 		<h1>Search Results For <medium>@fileName</medium></h1>
+		@***<img class='mmd-img media-object' 
+			src='@(routes.Files.thumbnail(UUID("5432f3b7e4b0318a5155742a")))'
+			title='Thumbnail of query file'>
+		</img>***@
+		 <h4> All distances are normalized to be between 0.0 and 1.0</h4>
+		
 	</div>
 	@if(resultsList.size == 0) {
 	<div class="row">
@@ -31,15 +37,17 @@
 	</div>
 	} else {
 	<table>
-	<tr>
-  
-	@for((index, previewsAndFiles) <- resultsList) {
+	@** Fix for Chrome - otherwise tbody tag would be automatically inserted and valign set to "middle"**@
+	<tbody valign="top">	
+	<tr>  
+	@for((index, previewsAndFiles) <- resultsList) {		
 		<td>
-		<h3>@index.extractorID / @index.measureID / @index.indexerType</h3>
-		<table>
+		<h3>Index name</h3>
+		Extractor:@index.extractorID<br>Measure:@index.measureID<br>Indexer:@index.indexerType<p><p>
+		<table >		
 		@for(oneResult <- previewsAndFiles) {			
-			<tr>
-				<td style="vertical-align:middle; height:150px;">
+			<tr >			
+				<td style="vertical-align:middle; height:150px;">			
 					<div class="media">
 					  
 						@****** result is File ******@
@@ -59,7 +67,7 @@
 							</a>
 					  <div class="media-body">
 					    <h4 class="media-heading">@oneResult.searchResultFile.title</h4>
-					    <p>Distance (normalized): @oneResult.searchResultFile.distance</p>			    
+					    <p>Distance: @oneResult.searchResultFile.distance</p>			    
 						
 					    @if(oneResult.searchResultFile.datasetIdList.size==0){
 					    	No dataset associated with this image 
@@ -72,9 +80,9 @@
 					    }	 
 					    
 					    <br>					    	
-					    	<a href=@routes.Search.findSimilarFile(oneResult.searchResultFile.id)>Find Similar</a>					 
+					    	<a href=@routes.Search.findSimilarToExistingFile(oneResult.searchResultFile.id)>Find Similar</a>					 
 					     	<br>
-					     	<a href="@(routes.Files.file(oneResult.searchResultFile.id))">View File @oneResult.searchResultFile.title</a>
+					     	<a href="@(routes.Files.file(oneResult.searchResultFile.id))">View File </a>
 					     	
 						}	@*end of is File*@		
 						
@@ -92,52 +100,119 @@
 					  <div class="media-body">
 
 					    <h4 class="media-heading">@oneResult.searchResultPreview.previewName</h4>
-					    <p>Distance (normalized): @oneResult.searchResultPreview.distance</p>				    
+					    <p>Distance: @oneResult.searchResultPreview.distance</p>				    
 						
+					    @*** displaying datasets ***@
 					    @if(oneResult.searchResultPreview.datasetIdList.size==0){
 					    	No dataset associated with this image 
 					    }
-					  @if(oneResult.searchResultPreview.datasetIdList.size>0){
-					  	<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
-					  	@oneResult.searchResultPreview.datasetIdList.map{id=>					   
-					     		<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
-					     		<br>
-					     	<a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
+					  
+					    @if(oneResult.searchResultPreview.datasetIdList.size>0){
+					    	<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
+					    	@oneResult.searchResultPreview.datasetIdList.map{ id=>					   
+					     			<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
+					    	}
+					    }
+					    @*** END OF: displaying datasets ***@
+					  
+					    <br>
+					     <a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
 					     		View File @oneResult.searchResultPreview.fileTitle</a>
-					     		<br>
+					     	<br>
 					     		Shot start time: @oneResult.searchResultPreview.shotStartTime					     		
-					    	}  						  	 
-					    }						    
+					    						    
 						}@* end of If Preview *@											     
 
 					  </div>
 					</div>
-					</td></tr>
-		}  @** END OF @for(oneResult <- previewsAndFiles) { **@
+				</td>
+			</tr>
+		}  @** END OF for(oneResult <- previewsAndFiles)  **@
+		</tbody>	
 		</table>
 		</td>		
 	}
 	</tr>
-</table>
+</tbody> </table>
 	@***********  End of search results for each index  ******************@
 	
 	
 <br>@************ form to combine search results ************@
-		 @form(action = routes.Search.findSimilarWeightedIndexes, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
-			    <fieldset>
+		 @form(action = routes.Search.findSimilarWeightedIndexes,  'id->"form-weights", 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+				 <div id="validation"></div>
+				 
+				 <fieldset>
 			      <legend>Combine search results</legend>			     
-			    	 <input type="hidden" name="FileID" value="@fileId">			    
+			    	 <input type="hidden" name="FileID" value="@fileId" id="file_hidden">			    
 			     	@for((index, previewsAndFiles) <- resultsList) {	
 			     		<p>Please select weight for index @index.extractorID / @index.measureID  			
-			     		<input type="text" name="Weight" >			
+			     		<input type="text" name="Weight" id="@index.id">			
 						<input	type="hidden" name="IndexID" value="@index.id">														
-					}			     
+					}			     <div id="checkboxes" style="padding-left:15px">
 			    	</fieldset>
 		        	<div class="form-actions">
 		          		<input type="submit" class="btn btn-primary" value="Combine Results"/>
 		        	</div>
 		}
 		@************ end of form ************@
+
+<script language="javascript">
+		//============================================================================
+		//validate input on submit
+		//============================================================================
+		document.getElementById('form-weights').onsubmit =function(){
+			alert('top of vaLIDATION');
+			
+			var errors = "";
+			
+			//reset errors display
+			document.getElementById("validation").innerHTML = "";
+	        
+			console.log("hidden file = " + document.getElementById('file_hidden'));
+			
+			
+			var w;
+			var sum = 0.0;
+			var floatVal=0.0;			
+			@for((index, previewsAndFiles) <- resultsList) {
+				//get weight for index
+				w = document.getElementById("@index.id");
+				w.style.backgroundColor = "#FFFFFF";
+				//make sure weight is a number
+				floatVal = parseFloat( w.value);
+				
+				if (isNaN(floatVal)){	
+				 //not a number
+				 w.style.backgroundColor = "#FFCCCC";				 
+				 w.setSelectionRange(0, w.value.length);				 
+				 errors += "<li>Weights must be numbers</li>";
+				}
+				else if (floatVal <0 || floatVal >1){
+				 //not within 0..1
+				 w.style.backgroundColor = "#FFCCCC";				 
+				 w.setSelectionRange(0, w.value.length);				 
+				 errors += "<li>Weights must be between 0 and 1</li>";
+				}				
+				sum += floatVal;
+				
+			}//end of for((index, previewsAndFiles) <- resultsList) 
+			//alert ("sum = " + sum);
+			if (sum != 1.0) {
+				 errors += "<li>Sum of weights must be 1 </li>";
+			}
+				
+			if (errors.length > 0) {
+		        document.getElementById("validation").innerHTML = "Please correct the following errors:<ul>" + errors + "</ul>";
+		        document.getElementById("validation").style.backgroundColor = "#FFCCCC";
+		        return false;
+		    } else {
+		    	alert("input OK");
+		    	return true;
+		    }
+			//return false;
+		}
+			
+</script>
 
 	}		
 }

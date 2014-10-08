@@ -56,10 +56,20 @@ class MongoDBCensusService extends CensusService {
     name
   }
   
+  /**
+   * Returns type string if found, otherwise returns none.
+   */
   def getType(indexId:UUID):Option[String]={    
     CensusIndexDAO.findOne(MongoDBObject("indexId" -> indexId.stringify)).flatMap(_.indexType)   
   }
    
+  /**
+   * Returns an array of all distinct values of the field indexType
+   */
+  def getDistinctTypes():List[String]={
+	val listOfOptions = (for (index <- CensusIndexDAO.find(MongoDBObject())) yield index.indexType).toList.distinct
+    listOfOptions.flatten[String]
+  }
   
   def isFound(indexId: UUID): Boolean ={ 
 		Logger.debug("MongnDBCensusIndServ - top of isFound, indexId = " + indexId)
@@ -78,7 +88,7 @@ class MongoDBCensusService extends CensusService {
           //return false   
   }
   
-    /*
+    /**
      * Removes collection from mongo db
      */
   def deleteAll(){
