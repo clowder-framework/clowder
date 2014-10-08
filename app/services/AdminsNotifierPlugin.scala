@@ -2,19 +2,15 @@ package services
 
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
-import services._
+import services.DI.injector
 import models.UUID
 
 class AdminsNotifierPlugin(application:Application) extends Plugin {
 
-  val files: FileService =  DI.injector.getInstance(classOf[FileService])
-  val datasets: DatasetService =  DI.injector.getInstance(classOf[DatasetService])
-  val collections: CollectionService =  DI.injector.getInstance(classOf[CollectionService])
-  
-  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
-  
-  val hostUrl = "http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
-  
+  val files: FileService =  injector.getInstance(classOf[FileService])
+  val collections: CollectionService =  injector.getInstance(classOf[CollectionService])
+  val appConfiguration: AppConfigurationService = injector.getInstance(classOf[AppConfigurationService])
+
   override def onStart() {
     Logger.debug("Starting Admins Notifier Plugin")
 
@@ -27,19 +23,18 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
     !application.configuration.getString("adminnotifierservice").filter(_ == "disabled").isDefined
   }
   
-  def sendAdminsNotification(resourceType: String = "Dataset", eventType: String = "added", resourceId: String, resourceName: String) = {
-    
-    val hostUrl = "http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
+  def sendAdminsNotification(baseURL: String, resourceType: String = "Dataset", eventType: String = "added", resourceId: String, resourceName: String) = {
+
     var resourceUrl = ""
     val mailSubject = resourceType + " " + eventType + ": " + resourceName
     if(resourceType.equals("File")){
-      resourceUrl = hostUrl + controllers.routes.Files.file(UUID(resourceId))
+      resourceUrl = baseURL + controllers.routes.Files.file(UUID(resourceId))
     }
     else if(resourceType.equals("Dataset")){
-      resourceUrl = hostUrl + controllers.routes.Datasets.dataset(UUID(resourceId))
+      resourceUrl = baseURL + controllers.routes.Datasets.dataset(UUID(resourceId))
     }
     else if(resourceType.equals("Collection")){
-      resourceUrl = hostUrl + controllers.routes.Collections.collection(UUID(resourceId))
+      resourceUrl = baseURL + controllers.routes.Collections.collection(UUID(resourceId))
     }
     
     resourceUrl match{

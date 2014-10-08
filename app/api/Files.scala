@@ -401,7 +401,8 @@ class Files @Inject()(
 	            
 
 	            Ok(toJson(Map("id"->id.stringify)))
-	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",id.stringify, nameOfFile)}
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id.stringify, nameOfFile)}
 	            Ok(toJson(Map("id"->id.stringify)))
 	          }
 	          case None => {
@@ -611,7 +612,8 @@ class Files @Inject()(
 
               //sending success message
               Ok(toJson(Map("id" -> id)))
-              current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",id, nameOfFile)}
+              current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id, nameOfFile)}
               Ok(toJson(Map("id" -> id)))
              }
             }
@@ -1646,7 +1648,8 @@ class Files @Inject()(
             case _ => {}
           }
           Ok(toJson(Map("status"->"success")))
-          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","removed",id.stringify, file.filename)}
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "File","removed",id.stringify, file.filename)}
           Ok(toJson(Map("status"->"success")))
         }
         case None => Ok(toJson(Map("status" -> "error", "msg" -> "file not found")))

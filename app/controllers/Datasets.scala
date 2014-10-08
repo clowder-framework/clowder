@@ -386,7 +386,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				            datasets.update(dt) 
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id))
-				            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",dt.id.stringify, dt.name)}
+				            current.plugin[AdminsNotifierPlugin].foreach{
+                      _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
 				            Redirect(routes.Datasets.dataset(dt.id))
 
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -462,7 +463,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          
 				  // redirect to dataset page
 				  Redirect(routes.Datasets.dataset(dt.id))
-				  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",dt.id.stringify, dt.name)}
+				  current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
 				  Redirect(routes.Datasets.dataset(dt.id)) 
 	            }	            
 	          }  

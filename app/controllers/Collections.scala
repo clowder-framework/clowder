@@ -125,7 +125,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 		                List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
           
           Redirect(routes.Collections.collection(collection.id))
-          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Collection","added",collection.id.toString,collection.name)}
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
 		  Redirect(routes.Collections.collection(collection.id))
         })
   }

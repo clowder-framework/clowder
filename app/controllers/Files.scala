@@ -411,7 +411,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	                        
 	            // redirect to file page]
 	            Redirect(routes.Files.file(f.id))
-	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",f.id.stringify, nameOfFile)}
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
 	            Redirect(routes.Files.file(f.id))
 	         }
 	         case None => {

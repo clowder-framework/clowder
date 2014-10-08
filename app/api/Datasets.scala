@@ -120,8 +120,8 @@ class Datasets @Inject()(
                             }
                        }
 
-                       Ok(toJson(Map("id" -> id)))
-                       current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",id, name)}
+                       current.plugin[AdminsNotifierPlugin].foreach {
+                         _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",id, name)}
                        Ok(toJson(Map("id" -> id)))
 		      	     }
 		      	     case None => Ok(toJson(Map("status" -> "error")))
@@ -956,7 +956,8 @@ class Datasets @Inject()(
         }
 
         Ok(toJson(Map("status"->"success")))
-        current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","removed",dataset.id.toString, dataset.name)}
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.toString, dataset.name)}
         Ok(toJson(Map("status"->"success")))
       }
   }
