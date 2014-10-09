@@ -106,18 +106,26 @@
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
+		    	<!-- 
+		    	First check if there is only one previewer, and if the value of the URL for it is "null". If so
+		    	that means there was no preview generated and the file is not allowed to be used due to the license
+		    	that is on the file.
+		    	 -->
+		    	@if(pvs.length == 1 && pvs(0)._5 == "null") {
+                    <h4>No previews currently available for this file</h4>
+                } else {
 			  		<div class="tabbable">
 						<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 							@for(i <- pvs.indices) {
 					    		<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
 			  				}
 						</ul>
-						<div class="tab-content"  id="previewsContent_@(f.id.toString)">
-							@for(i <- pvs.indices) {
+						<div class="tab-content"  id="previewsContent_@(f.id.toString)">						    						    
+						    @for(i <- pvs.indices) {
 						  		<div class="tab-pane previewDiv" id="previewer_@(f.id.toString)_@i" data-previewId="@(pvs(i)._1)" data-previewerId="@(pvs(i)._2)"></div>
 						  		@showPreview(f.id.toString + "_" + i, pvs(i), f.filename, f.contentType)
 
-							}
+							}							
 				  			<script type="text/javascript">
 								$(function () {
 									$('#myTab_@(f.id.toString) a:first').tab('show');
@@ -125,21 +133,18 @@
 							</script>
 						</div>
 					</div>
+			    }
 		  		</div>
 			</div>
 			@if(pvs.length <= 1) {
-				<script>
+				<script>				
 	    			$('#myTab_@(f.id.toString)').attr('style', 'display:none;');
 	    		</script>
     		}
 
         <div class="row">
             <div class="col-md-12 button-margins">
-                @if(user.isDefined) {
-                <button class="btn btn-primary" title="Download the file" onclick="return downloadFile();"><span class="glyphicon glyphicon-save"></span> Download</button>
-                } else {
-                <button class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
-                }
+                <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>                
             </div>
         </div>
 
@@ -412,10 +417,8 @@
                     if (!@user.isDefined){
                         updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDownload, fileImageBase, fileAuthorName);
                     }
-                });
-
-                function downloadFile() {
-                    var downloadRoute = "@routes.Files.download(UUID(id))";
+                    
+                    //Now, set the DownloadButton correctly (disabled or enabled as determined by the license)
                     var owner = "@file.author.fullName";
                     var userName = null;
 
@@ -432,18 +435,27 @@
                     //updateLicenseInfo.js.
                     //
                     //Check the license type, only type1 needs to have further checks, otherwise download should be allowed
-                    if (checkLicenseType != 'license1') {
-                        window.open(downloadRoute, '_blank');
+                    if (fileLicenseType != 'license1') {
+                        $("#downloadButton").removeAttr("disabled");
+                        $("#downloadButton").attr("title", "Download the file");
                     }
                     //Check if the downloading of the file is allowed, however always allow the owner of the file to download it.
                     else {
-                        if (checkAllowDownload == "true" || userName == owner) {
-                            window.open(downloadRoute, '_blank');
+                        if (fileAllowDownload == "true" || userName == owner) {
+                        	$("#downloadButton").removeAttr("disabled");
+                            $("#downloadButton").attr("title", "Download the file");    
                         }
                         else {
-                            alert("The license for this file does not allow it to be downloaded.");
+                        	$("#downloadButton").attr("disabled", "disabled");
+                            $("#downloadButton").attr("title", "You don't have permission to download this file");
                         }
                     }
+                    
+                });
+
+                function downloadFile() {
+                    var downloadRoute = "@routes.Files.download(UUID(id))";
+                    window.open(downloadRoute, '_blank');                    
                 }
                 </script>
             </div>
