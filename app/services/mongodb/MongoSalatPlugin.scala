@@ -130,9 +130,15 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       source.collection("sections").drop()
       source.collection("uploads.chunks").drop()
       source.collection("uploads.files").drop()
-      source.collection("uploadquery").drop()
+      source.collection("uploadquery.files").drop()
       source.collection("extractions").drop()
+      source.collection("extractor.servers").drop()
+      source.collection("extractor.names").drop()
+      source.collection("extractor.inputtypes").drop()
+      source.collection("dtsrequests").drop()
+      source.collection("versus.descriptors").drop()
       source.collection("streams").drop()
+      source.collection("multimedia.features").drop()
       Logger.debug("**DANGER** Data deleted **DANGER**")
     }
   }

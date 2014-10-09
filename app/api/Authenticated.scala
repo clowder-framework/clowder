@@ -63,7 +63,10 @@ case class Authenticated[A](action: Action[A]) extends Action[A] {
             
             SecureSocial.currentUser(request) match { // calls from browser
 		      case Some(identity) => action(SecuredRequest(identity, request))
-		      case None => Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
+		      case None => {
+		           Logger.info("Authenticated - Authentication failure")
+		           Future.successful(Unauthorized(views.html.defaultpages.unauthorized()))
+		      }
 		    }
           }
         }

@@ -14,7 +14,7 @@
   $(Configuration.tab).append("<br/>");
   
   $(Configuration.tab).append(
-	        "<div id='pdfview" + Configuration.tab.replace("#previewer","") + "' class='pdfview'>If you are seeing this, " +
+	        "<div id='pdfview" + Configuration.tab.replace("#previewer","") + "' class='fit-in-space pdfview'>If you are seeing this, " +
 	        "your browser does not support Adobe Reader or PDF.</div>");
   
   new PDFObject({ url: fileUrl }).embed("pdfview" + Configuration.tab.replace("#previewer",""));

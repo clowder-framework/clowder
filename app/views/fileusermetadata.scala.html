@@ -32,9 +32,9 @@
 	<div id='generalUserMetadata_@(file.id.stringify)' class='usr_md_'>
 		<button class="usr_md_" type="button">Add property</button>
 		@printLevelUserMetadata(userMetadata)
-		<button class="usr_md_submit btn" type="button">Submit</button>
+		<button class="usr_md_submit btn btn-primary btn-sm">Submit</button>
 		@if(rdfExported){
-			<button class="usr_md_submit btn rdfbtn" type="button">Get as RDF</button>
+			<button class="usr_md_submit btn btn-default btn-sm rdfbtn">Get as RDF</button>
 		}
 	</div>		
 </form>

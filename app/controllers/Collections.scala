@@ -11,10 +11,11 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
-import javax.inject.{ Singleton, Inject }
-import services.{ DatasetService, CollectionService }
-import services.AdminsNotifierPlugin
 import play.api.Play.current
+import javax.inject.{Singleton, Inject}
+import services.{DatasetService, CollectionService}
+import services.ElasticsearchPlugin
+import services.AdminsNotifierPlugin
 
 object ThumbnailFound extends Exception {}
 
@@ -103,6 +104,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 	        collection => {
 	          Logger.debug("Saving collection " + collection.name)
 	          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity)))
+	          
+	          // index collection
+		            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id, 
+		            List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
 	                    
 	          // redirect to collection page
 	          Redirect(routes.Collections.collection(collection.id))

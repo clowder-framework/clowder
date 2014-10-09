@@ -1,14 +1,15 @@
 package integration
 
-import integration.IntegrationSpec
 import play.api.test._
 import play.api.test.Helpers._
+import org.scalatest._
 
 /**
  * Application functional test. Load the full application.
  *
  * @author Luigi Marini
  */
+@DoNotDiscover
 class ApplicationFunctionalTest extends IntegrationSpec {
 
   "Application" should "load home page" in {
@@ -31,6 +32,7 @@ class ApplicationFunctionalTest extends IntegrationSpec {
  * in securesocial.core.UserServicePlugin.onStart(UserService.scala:129). Running a test server for each test
  * avoids this (see above).
  */
+@DoNotDiscover
 class ApplicationFunctionalTest2 extends IntegrationSpec with ServerFixture {
 
   "Application" should "load home page" in {

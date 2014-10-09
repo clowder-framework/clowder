@@ -9,6 +9,9 @@ import com.wordnik.swagger.annotations.ApiOperation
 import models._
 import play.api.Logger
 import play.api.libs.json.JsValue
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import jsonutils.JsonUtil
@@ -26,9 +29,13 @@ import java.io.FileInputStream
 import play.api.libs.concurrent.Execution.Implicits._
 import services._
 import play.api.libs.json.JsString
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsError
 import scala.Some
 import models.File
 import play.api.Play.configuration
+import controllers.Utils
 
 /**
  * Dataset API.
@@ -94,7 +101,7 @@ class Datasets @Inject()(
       	    (request.body \ "file_id").asOpt[String].map { file_id =>
       	      files.get(UUID(file_id)) match {
       	        case Some(file) =>
-      	           val d = Dataset(name=name,description=description, created=new Date(), files=List(file), author=request.user.get)
+      	           val d = Dataset(name=name,description=description, created=new Date(), files=List(file), author=request.user.get, licenseData = new LicenseData())
 		      	   datasets.insert(d) match {
 		      	     case Some(id) => {
                        files.index(UUID(file_id))
@@ -171,16 +178,24 @@ class Datasets @Inject()(
                   }
                 }
                 Logger.info("Adding file to dataset completed")
-              } else Logger.info("File was already in dataset.")
+              } else {
+                  Logger.info("File was already in dataset.")
+              }
               Ok(toJson(Map("status" -> "success")))
             }
-            case None => Logger.error("Error getting file" + fileId); InternalServerError
+            case None => {
+                Logger.error("Error getting file" + fileId)
+                BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+            }
           }
         }
-        case None => Logger.error("Error getting dataset" + dsId); InternalServerError
+        case None => {
+            Logger.error("Error getting dataset" + dsId)
+            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+        }
       }
   }
-  
+
   @ApiOperation(value = "Detach file from dataset",
       notes = "File is not deleted, only separated from the selected dataset. If the file is an XML metadata file, the metadata are removed from the dataset.",
       responseClass = "None", httpMethod = "POST")
@@ -243,6 +258,7 @@ class Datasets @Inject()(
   
   //////////////////
 
+
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection)) {
     request =>
@@ -278,8 +294,8 @@ class Datasets @Inject()(
       }
       Ok(toJson(Map("status" -> "success")))
   }
-
-
+  
+  
   def datasetFilesGetIdByDatasetAndFilename(datasetId: UUID, filename: String): Option[String] = {
     datasets.get(datasetId) match {
       case Some(dataset) => {
@@ -313,7 +329,216 @@ class Datasets @Inject()(
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
                "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
+  
+  //Update Dataset Information code starts
 
+  /**
+   * REST endpoint: POST: update the administrative information associated with a specific Dataset
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with this dataset 
+   *  
+   *  The data contained in the request body will contain data to be updated associated by the following String key-value pairs:
+   *  
+   *  description -> The text for the updated description for the dataset
+   *  name -> The text for the updated name for this dataset
+   *  
+   *  Currently description and owner are the only fields that can be modified, however this api is extensible enough to add other existing
+   *  fields, or new fields, in the future.  
+   *  
+   */
+  @ApiOperation(value = "Update dataset administrative information",
+      notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
+      responseClass = "None", httpMethod = "POST")
+  def updateInformation(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
+	 implicit request =>
+      if (UUID.isValid(id.stringify)) {          
+
+          //Set up the vars we are looking for
+          var description: String = null;
+          var name: String = null;
+          
+          var aResult: JsResult[String] = (request.body \ "description").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                description = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"description data is missing."))
+              }                            
+          }
+          
+          aResult = (request.body \ "name").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                name = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"name data is missing."))
+              }                            
+          }
+          Logger.debug(s"updateInformation for dataset with id  $id. Args are $description and $name")
+          
+          datasets.updateInformation(id, description, name)
+          Ok(Json.obj("status" -> "success"))
+      } 
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+  //End, Update Dataset Information code
+  
+  //Update License code 
+  /**
+   * REST endpoint: POST: update the license data associated with a specific Dataset
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with this dataset 
+   *  
+   *  The data contained in the request body will be containe the following key-value pairs:
+   *  
+   *  licenseType, currently:
+   *        license1 - corresponds to Limited 
+   *        license2 - corresponds to Creative Commons
+   *        license3 - corresponds to Public Domain
+   *        
+   *  rightsHolder, currently only required if licenseType is license1. Reflects the specific name of the organization or person that holds the rights
+   *   
+   *  licenseText, currently tied to the licenseType
+   *        license1 - Free text that a user can enter to describe the license
+   *        license2 - 1 of 6 options (or their abbreviations) that reflects the specific set of 
+   *        options associated with the Creative Commons license, these are:
+   *            Attribution-NonCommercial-NoDerivs (by-nc-nd)
+   *            Attribution-NoDerivs (by-nd)
+   *            Attribution-NonCommercial (by-nc)
+   *            Attribution-NonCommercial-ShareAlike (by-nc-sa)
+   *            Attribution-ShareAlike (by-sa)
+   *            Attribution (by)
+   *        license3 - Public Domain Dedication
+   *        
+   *  licenseUrl, free text that a user can enter to go with the licenseText in the case of license1. Fixed URL's for the other 2 cases.
+   *  
+   *  allowDownload, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
+   */
+  @ApiOperation(value = "Update license information to a dataset",
+      notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
+      responseClass = "None", httpMethod = "POST")
+  def updateLicense(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
+    implicit request =>
+      if (UUID.isValid(id.stringify)) {          
+
+          //Set up the vars we are looking for
+          var licenseType: String = null;
+          var rightsHolder: String = null;
+          var licenseText: String = null;
+          var licenseUrl: String = null;
+          var allowDownload: String = null;
+          
+          var aResult: JsResult[String] = (request.body \ "licenseType").validate[String]
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                licenseType = s.get                
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseType data is missing."))
+              }                            
+          }
+          
+          aResult = (request.body \ "rightsHolder").validate[String]
+                  
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                rightsHolder = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"rightsHolder data is missing.")) 
+              }              
+          }
+          
+          aResult = (request.body \ "licenseText").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                licenseText = s.get
+                
+                //Modify the abbreviations if they were sent in that way
+                if (licenseText == "by-nc-nd") {
+                    licenseText = "Attribution-NonCommercial-NoDerivs"
+                }
+                else if (licenseText == "by-nd") {
+                    licenseText = "Attribution-NoDerivs"
+                }
+                else if (licenseText == "by-nc") {
+                    licenseText = "Attribution-NonCommercial"
+                }
+                else if (licenseText == "by-nc-sa") {
+                    licenseText = "Attribution-NonCommercial-ShareAlike"
+                }
+                else if (licenseText == "by-sa") {
+                    licenseText = "Attribution-ShareAlike"
+                }
+                else if (licenseText == "by") {
+                    licenseText = "Attribution"
+                }
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseText data is missing."))
+              }              
+          }
+          
+          aResult = (request.body \ "licenseUrl").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                licenseUrl = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"licenseUrl data is missing."))
+              }
+          }
+          
+          aResult = (request.body \ "allowDownload").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {                
+                allowDownload = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson(s"allowDownload data is missing."))
+              }
+          }          
+          
+          Logger.debug(s"updateLicense for dataset with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDownload")
+          
+          datasets.updateLicense(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDownload)
+          Ok(Json.obj("status" -> "success"))
+      } 
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }  
+  //End, Update License code
+  
   // ---------- Tags related code starts ------------------
   /**
    * REST endpoint: GET: get the tag data associated with this section.
@@ -352,6 +577,7 @@ class Datasets @Inject()(
         tagId =>
           Logger.debug(s"Removing $tagId from $id.")
           datasets.removeTag(id, UUID(tagId))
+          datasets.index(id)
       }
       Ok(toJson(""))
   }
@@ -379,7 +605,7 @@ class Datasets @Inject()(
     implicit request =>
       removeTagsHelper(TagCheck_Dataset, id, request)
   }
-
+  				
   /*
  *  Helper function to handle adding and removing tags for files/datasets/sections.
  *  Input parameters:
@@ -441,7 +667,10 @@ class Datasets @Inject()(
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
       (obj_type) match {
         case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Dataset => datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Dataset => {
+        	datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        	datasets.index(id)
+          }
         case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }
       Ok(Json.obj("status" -> "success"))
@@ -551,6 +780,7 @@ class Datasets @Inject()(
         datasets.get(id) match {
           case Some(dataset) => {
             datasets.removeAllTags(id)
+            datasets.index(id)
             Ok(Json.obj("status" -> "success"))
           }
           case None => {
@@ -739,6 +969,13 @@ class Datasets @Inject()(
             case _ => Logger.debug("userdfSPARQLStore not enabled")
           }
           datasets.removeDataset(id)
+          current.plugin[ElasticsearchPlugin].foreach {
+        	  _.delete("data", "dataset", id.stringify)
+          }
+          
+          for(file <- dataset.files)
+        	  files.index(file.id)
+          
           Ok(toJson(Map("status" -> "success")))
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","removed",dataset.id.stringify, dataset.name)}
           Ok(toJson(Map("status"->"success")))
@@ -838,7 +1075,32 @@ class Datasets @Inject()(
       case Some(dataset) => {
         Ok(datasets.getUserMetadataJSON(id))
       }
-      case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
+      case None => {
+        Logger.error("Error finding dataset" + id);
+        InternalServerError
+      }      
+    }
+  }
+  
+  def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNotes))  { implicit request =>
+	  request.user match {
+	    case Some(identity) => {
+		    request.body.\("notesHTML").asOpt[String] match {
+			    case Some(html) => {
+			        datasets.setNotesHTML(id, html)
+			        //index(id)
+			        Ok(toJson(Map("status"->"success")))
+			    }
+			    case None => {
+			    	Logger.error("no html specified.")
+			    	BadRequest(toJson("no html specified."))
+			    }
+		    }
+	    }
+	    case None => {
+	      Logger.error(("No user identity found in the request, request body: " + request.body))
+	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+	    }
     }
   }
 }

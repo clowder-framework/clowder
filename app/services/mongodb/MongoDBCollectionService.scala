@@ -13,12 +13,13 @@ import javax.inject.{Singleton, Inject}
 import scala.util.Failure
 import scala.Some
 import scala.util.Success
-
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import MongoContext.context
 import play.api.Play.current
 import services.AdminsNotifierPlugin
+import services.ElasticsearchPlugin
+
 
 
 /**
@@ -98,8 +99,8 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
       None
   }
 
-  def insert(collection: Collection) {
-    Collection.save(collection)
+  def insert(collection: Collection): Option[String] = {
+    Collection.insert(collection).map(_.toString)
   }
 
   /**
@@ -159,7 +160,10 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
                   Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
                   $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
               }
-              
+
+              datasets.index(dataset.id)
+              index(collection.id)
+
               Logger.debug("Adding dataset to collection completed")
             }
             else{
@@ -198,6 +202,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
 	        	  }		                        
 	          }
               
+              datasets.index(dataset.id)
+              index(collection.id)
+
               Logger.info("Removing dataset from collection completed")
             }
             else{
@@ -233,9 +240,15 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
         for(dataset <- collection.datasets){
           //remove collection from dataset
           datasets.removeCollection(dataset.id, collection.id)
+          datasets.index(dataset.id)
         }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
+
         current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Collection","removed",collection.id.stringify, collection.name)}
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.delete("data", "collection", collection.id.stringify)
+        }
+
         Success
       }
       case None => Success
@@ -273,7 +286,31 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
 			    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
 	    }
 	    case None =>
-    }  
+    }
+  }
+
+
+  def index(id: UUID) {
+    Collection.findOneById(new ObjectId(id.stringify)) match {
+      case Some(collection) => {
+        
+        var dsCollsId = ""
+        var dsCollsName = ""
+          
+        for(dataset <- collection.datasets){
+          dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
+          dsCollsName = dsCollsName + dataset.name + " %%% "
+        }
+	    
+	    val formatter = new SimpleDateFormat("dd/MM/yyyy")
+
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.index("data", "collection", id,
+            List(("name", collection.name), ("description", collection.description), ("created",formatter.format(collection.created)), ("datasetId",dsCollsId),("datasetName",dsCollsName)))
+        }
+      }
+      case None => Logger.error("Collection not found: " + id.stringify)
+    }
   }
 }
 

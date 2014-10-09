@@ -19,8 +19,7 @@
             @if( provider.authMethod == UserPassword ) {
                 <form action = "@securesocial.core.providers.utils.RoutesHelper.authenticateByPost("userpass").absoluteURL(IdentityProvider.sslEnabled)"
                       class="form-horizontal" autocomplete="off" method="POST">
-                    <fieldset>
-
+                    <fieldset>                                                    
                         @if( UsernamePasswordProvider.withUserNameSupport ) {
                             @helper.inputText(
                                 loginForm.get("username"),
@@ -28,15 +27,15 @@
                                 'class -> "input-xlarge",
                                 'autofocus -> "autofocus"
                             )
-                        } else {
+                        } else {                                                   
                             @helper.inputText(
                                 loginForm.get("username"),
                                 '_label -> Messages("securesocial.signup.email1"),
                                 'class -> "input-xlarge",
                                 'autofocus -> "autofocus"
-                            )
+                            )                                                   
                         }
-
+                        
                         @helper.inputPassword(
                             loginForm.get("password"),
                             '_label -> Messages("securesocial.signup.password1"),
@@ -44,7 +43,7 @@
                         )
 
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">@Messages("securesocial.login.title")</button>
+                            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-log-in"></span> @Messages("securesocial.login.title")</button>
                         </div>
                         <div class="clearfix">
                             <a href="@securesocial.core.providers.utils.RoutesHelper.startResetPassword()"><p>@Messages("securesocial.login.forgotPassword") </a></p>

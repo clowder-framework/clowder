@@ -8,6 +8,7 @@ import play.api.test._
  *
  * @author Luigi Marini
  */
+@DoNotDiscover
 trait ServerFixture extends SuiteMixin { this: Suite =>
 
   implicit val server: TestServer = TestServer(3333)

@@ -141,6 +141,16 @@ class CassandraDataset extends DatasetService {
 
   def removeXMLMetadata(id: UUID, fileId: UUID) {}
 
+  /**
+   * Implementation of updateInformation defined in services/DatasetService.scala.
+   */
+  def updateInformation(id: UUID, description: String, name: String) {}
+
+  /**
+   * Implementation of updateLicenseing defined in services/DatasetService.scala.
+   */
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {}
+  
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean) {}
@@ -166,6 +176,8 @@ class CassandraDataset extends DatasetService {
   def newThumbnail(datasetId: UUID) {}
 
   def update(dataset: Dataset) {}
+  
+  def setNotesHTML(id: UUID, notesHTML: String) {}
 
 
 }

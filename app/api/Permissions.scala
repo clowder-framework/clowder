@@ -10,7 +10,8 @@ import models.UUID
 import services.FileService
 import services.DatasetService
 import services.CollectionService
-import play.api.Logger
+import play.api.Play.configuration
+import play.api.{Plugin, Logger, Application}
 
  /**
   * A request that adds the User for the current call
@@ -39,7 +40,13 @@ object Permission extends Enumeration {
 		ShowDatasetsMetadata,
 		CreateTagsDatasets,
 		DeleteTagsDatasets,
+		ShowTags,
+		UpdateDatasetInformation,
+		UpdateLicense,
 		CreateComments,
+		RemoveComments,
+		EditComments,
+		CreateNotes,
 		AddSections,
 		GetSections,
 		CreateTagsSections,
@@ -47,6 +54,7 @@ object Permission extends Enumeration {
 		CreateFiles,
 		DeleteFiles,
 		ListFiles,
+		ExtractMetadata,
 		AddFilesMetadata,
 		ShowFilesMetadata,
 		ShowFile,
@@ -88,27 +96,29 @@ case class WithPermission(permission: Permission) extends Authorization {
 
 	def isAuthorized(user: Identity, resourceId: Option[UUID] = None): Boolean = {
 	  
+	  	val permissionsShow = configuration(play.api.Play.current).getString("permissions").getOrElse("private").equals("public") || user != null
+	  
 		// order is important
 		(user, permission) match {
 		  		  
 		  // anybody can list/show
-		  case (_, Public)               => true
-		  case (_, ListCollections)      => true
-		  case (_, ShowCollection)       => true
-		  case (_, ListDatasets)         => true
-		  case (_, ShowDataset)          => true
-		  case (_, SearchDatasets)       => true
-		  case (_, SearchFiles)	         => true
-		  case (_, GetSections)          => true
-		  case (_, ListFiles)            => true
-		  case (_, ShowFile)             => true
-		  case (_, ShowFilesMetadata)    => true
-		  case (_, ShowDatasetsMetadata) => true
-		  case (_, SearchStreams)        => true
-		  case (_, ListSensors)          => true
-		  case (_, GetSensors)           => true
-		  case (_, SearchSensors)        => true
-		  case (_, DownloadFiles)        => true
+		  case (_, Public)               => permissionsShow 
+		  case (_, ListCollections)      => permissionsShow
+		  case (_, ShowCollection)       => permissionsShow
+		  case (_, ListDatasets)         => permissionsShow
+		  case (_, ShowDataset)          => permissionsShow
+		  case (_, SearchDatasets)       => permissionsShow
+		  case (_, SearchFiles)	         => permissionsShow
+		  case (_, GetSections)          => permissionsShow
+		  case (_, ListFiles)            => permissionsShow
+		  case (_, ShowFile)             => permissionsShow
+		  case (_, ShowFilesMetadata)    => permissionsShow
+		  case (_, ShowDatasetsMetadata) => permissionsShow
+		  case (_, SearchStreams)        => permissionsShow
+		  case (_, ListSensors)          => permissionsShow
+		  case (_, GetSensors)           => permissionsShow
+		  case (_, SearchSensors)        => permissionsShow
+		  case (_, DownloadFiles)        => permissionsShow
 		  
 		  // all other permissions require authenticated user
 		  case (null, _)                 => false
@@ -186,5 +196,6 @@ case class WithPermission(permission: Permission) extends Authorization {
 		  }
 		}
 	}
+
 }
 

@@ -39,6 +39,10 @@ object TokenDAO extends ModelCompanion[MongoToken, ObjectId] {
   def findByUUID(uuid: String): Option[MongoToken] = {
     dao.findOne(MongoDBObject("uuid" -> uuid))
   }
+  
+  def removeByUUID(uuid: String) {
+    dao.remove(MongoDBObject("uuid" -> uuid), WriteConcern.Normal)
+  }
 }
 
 class MongoUserService(application: Application) extends UserServicePlugin(application) {
@@ -76,11 +80,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
   def save(user: Identity): Identity = {
     Logger.trace("Saving user " + user)
     val query = MongoDBObject("identityId.userId"->user.identityId.userId, "identityId.providerId"->user.identityId.providerId)
-    SocialUserDAO.findOne(query) match {
-      case Some(user) => SocialUserDAO.update(query, user, true, false, WriteConcern.Normal)
-      case None => SocialUserDAO.save(user)
-    }
-
+    SocialUserDAO.update(query, user, true, false, WriteConcern.Normal)
     user
   }
 
@@ -126,8 +126,8 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param uuid the token id
    */
   def deleteToken(uuid: String) {
-    Logger.trace("Deleting token " + uuid)
-    TokenDAO.removeById(new ObjectId(uuid), WriteConcern.Normal)
+    Logger.debug("----Deleting token " + uuid)
+    TokenDAO.removeByUUID(uuid)
   }
 
   /**
@@ -138,7 +138,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    *
    */
   def deleteExpiredTokens() {
-    Logger.trace("Deleting expired tokens")
+    Logger.debug("----Deleting expired tokens")
     for (token <- TokenDAO.findAll) if (token.isExpired) TokenDAO.remove(token)
   }
 }

@@ -69,6 +69,13 @@
 						   	<li><a href="@routes.Files.generalMetadataSearch">General metadata search</a></li>
 						   </ul>
 						</li>
+						<li class="dropdown">
+						   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags<b class="caret"></b></a>
+						   <ul class="dropdown-menu">
+                               <li><a href="@routes.Tags.tagCloud">Tag cloud</a></li>
+                               <li><a href="@routes.Tags.tagList">Tag list</a></li>
+						   </ul>
+						</li>
                         <li><a href="@routes.Assets.at("docs/api/index.html")">API</a></li>
 					</ul>
 					
@@ -96,12 +103,12 @@
 					@user match {
     					case Some(x) => {
     						<li>
-								<a  class="navbar-link" href="@securesocial.controllers.routes.LoginPage.logout">Logout (@x.fullName)</a>
+								<a  class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.logout" title="Logout from the system"><span class="glyphicon glyphicon-log-out"></span> Logout (@x.fullName)</a>
 							</li>
 						}
     					case None => {
     						<li>
-								<a class="navbar-link" href="@securesocial.controllers.routes.LoginPage.login">Login</a>
+								<a class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.login" title="Login to the system"><span class="glyphicon glyphicon-log-in"></span> Login</a>
 							</li>
 						}
 					}
@@ -114,14 +121,8 @@
 						   	<li><a href="@routes.Admin.newAdmin">Add admin</a></li>	
 						   	<li><a href="@routes.Admin.listAdmins">List admins</a></li>					   	
 						   </ul>
-						</li>
-					
+						</li>					
 					</ul>
-					
-
-					
-					
-					
 				</div>
 		</div>
 	</div>

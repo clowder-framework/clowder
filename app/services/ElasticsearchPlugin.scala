@@ -15,6 +15,7 @@ import org.elasticsearch.index.query.QueryBuilders
 import models.{UUID, Dataset}
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
+import java.text.SimpleDateFormat
 
 /**
  * Elasticsearch plugin.
@@ -27,6 +28,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   var node: Node = null
   var client: TransportClient = null
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
+  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
 
   override def onStart() {
     val configuration = application.configuration
@@ -44,6 +47,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
       client.prepareIndex("data", "file")
       client.prepareIndex("data", "dataset")
+      client.prepareIndex("data", "collection")
 
       Logger.info("ElasticsearchPlugin has started")
     } catch {
@@ -56,7 +60,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     Logger.info("Searching ElasticSearch for " + query)
 
     val response = client.prepareSearch(index)
-      .setTypes("file", "dataset")
+      .setTypes("file","dataset","collection")
       .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
       .setQuery(QueryBuilders.queryString(query))
       .setFrom(0).setSize(60).setExplain(true)
@@ -82,6 +86,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     Logger.info("Indexing document: " + response.getId())
   }
 
+  def delete(index: String, docType: String, id: String) {    
+    val response = client.prepareDelete(index, docType, id)
+      .execute()
+      .actionGet()
+    Logger.info("Deleting document: " + response.getId())
+  }
+
   def indexDataset(dataset: Dataset) {
     var tagListBuffer = new ListBuffer[String]()
 
@@ -99,9 +110,36 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val commentJson = new JSONArray(commentsByDataset)
 
     Logger.debug("commentStr=" + commentJson.toString())
+    
+    val usrMd = datasets.getUserMetadataJSON(dataset.id)
+    Logger.debug("usrmd=" + usrMd)
+
+    val techMd = datasets.getTechnicalMetadataJSON(dataset.id)
+    Logger.debug("techmd=" + techMd)
+
+    val xmlMd = datasets.getXMLMetadataJSON(dataset.id)
+    Logger.debug("xmlmd=" + xmlMd)
+    
+    var fileDsId = ""
+    var fileDsName = ""          
+    for(file <- dataset.files){
+    	fileDsId = fileDsId + file.id.stringify + "  "
+    	fileDsName = fileDsName + file.filename + "  "
+    }
+
+    var dsCollsId = ""
+    var dsCollsName = ""
+      
+    for(collection <- collections.listInsideDataset(dataset.id)){
+    	dsCollsId = dsCollsId + collection.id.stringify + " %%% "
+    	dsCollsName = dsCollsName + collection.name + " %%% "
+    }
+
+    val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
     index("data", "dataset", dataset.id,
-      List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString)))
+    		List(("name", dataset.name), ("description", dataset.description), ("author",dataset.author.fullName),("created",formatter.format(dataset.created)), ("fileId",fileDsId),("fileName",fileDsName), ("collId",dsCollsId),("collName",dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
+
   }
 
   override def onStop() {
