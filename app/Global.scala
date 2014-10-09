@@ -1,15 +1,11 @@
 import com.mongodb.casbah.Imports._
-import julienrf.play.jsonp.Jsonp
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.api.Play.current
-import services._
 import play.libs.Akka
-import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 import models.ExtractionInfoSetUp
-import services.ExtractorService
 import java.util.Date
 import java.util.Calendar
 import models._
@@ -25,7 +21,7 @@ import akka.actor.Cancellable
  * @author Luigi Marini
  */
 
-object Global extends WithFilters(new GzipFilter(),CORSFilter(), new Jsonp) with GlobalSettings {
+object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSettings {
         
       var serverStartTime:Date=null
 
@@ -33,7 +29,7 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter(), new Jsonp) with
 
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded
-    ServerStartTime.startTime = Calendar.getInstance().getTime()
+    ServerStartTime.startTime = Calendar.getInstance().getTime
     serverStartTime = ServerStartTime.startTime
     Logger.debug("\n----Server Start Time----" + serverStartTime + "\n \n")
     
@@ -69,7 +65,7 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter(), new Jsonp) with
   }
 
   override def onStop(app: Application) {
-    extractorTimer.cancel
+    extractorTimer.cancel()
     Logger.info("Application shutdown")
   }
 
