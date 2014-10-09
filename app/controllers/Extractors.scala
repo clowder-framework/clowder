@@ -16,6 +16,7 @@ import services.ExtractionService
 class Extractors  @Inject() (extractions: ExtractionService) extends Controller with SecuredController {
 
   def listAllExtractions = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
     val allExtractions = extractions.findAll()
     Ok(views.html.extractions(allExtractions))
   }

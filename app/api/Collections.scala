@@ -2,6 +2,10 @@ package api
 
 import models.{UUID, Collection}
 import play.api.Logger
+import play.api.Play.current
+import services.DatasetService
+import services.CollectionService
+import services.AdminsNotifierPlugin
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }

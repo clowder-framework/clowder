@@ -17,6 +17,7 @@
 			<th>Title</th>
 			<th>Created</th>
 			<th>Description</th>
+			<th></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -25,6 +26,10 @@
 			<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name [dataset]</a></td>
 			<td>@dataset.created</td>
 			<td>@dataset.description</td>
+			<td>
+				@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
+				@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
+			</td>
 		</tr>
 	}
     @for(file <- files) {
@@ -32,6 +37,10 @@
 			<td><a href="@(routes.Files.file(file.id))">@file.filename [file]</a></td>
 			<td>@file.uploadDate</td>
 			<td></td>
+			<td>
+				@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
+				@if(file.thumbnail_id.isEmpty){No thumbnail available}
+			</td>
 		</tr>
 	}
     @for(sf <- sectionsWithFiles) {

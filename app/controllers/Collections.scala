@@ -13,7 +13,7 @@ import api.WithPermission
 import api.Permission
 import play.api.Play.current
 import javax.inject.{Singleton, Inject}
-import services.{PreviewService, DatasetService, CollectionService, ElasticsearchPlugin}
+import services._
 
 object ThumbnailFound extends Exception {}
 
@@ -114,7 +114,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collectionForm.bindFromRequest.fold(
         errors => BadRequest(views.html.newCollection(errors)),
         collection => {
-          Logger.debug("Saving dataset " + collection.name)
+          Logger.debug("Saving collection " + collection.name)
           collections.insert(collection)
           
           // index collection
@@ -123,6 +123,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 		                List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
           
           Redirect(routes.Collections.collection(collection.id))
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
+		  Redirect(routes.Collections.collection(collection.id))
         })
   }
 

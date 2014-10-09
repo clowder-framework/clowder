@@ -67,8 +67,11 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import services.ExtractorMessage
 import scala.util.parsing.json.JSONArray
 
-
 import controllers.Previewers
+
+import java.io.BufferedInputStream
+import javax.imageio.ImageIO
+
 import scala.concurrent.Future
  
 import scala.util.control._
@@ -141,8 +144,11 @@ class Files @Inject()(
   def download(id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
       request =>
-
-        files.getBytes(id) match {
+      //Check the license type before doing anything. 
+      files.get(id) match {
+          case Some(file) => {    
+              if (file.checkLicenseForDownload(request.user)) {
+        files.getBytes(id) match {            
           case Some((inputStream, filename, contentType, contentLength)) => {
 
             request.headers.get(RANGE) match {
@@ -181,6 +187,19 @@ class Files @Inject()(
             NotFound
           }
         }
+              }
+              else {
+                  //Case where the checkLicenseForDownload fails
+                  Logger.error("The file is not able to be downloaded")
+                  BadRequest("The license for this file does not allow it to be downloaded.")
+              }
+              }
+          case None => {
+                  //Case where the file could not be found
+                  Logger.info(s"Error getting the file with id $id.")
+                  BadRequest("Invalid file ID")
+              }
+          }
     }
 
   /**
@@ -281,13 +300,11 @@ class Files @Inject()(
   /**
    * Upload file using multipart form enconding.
    */
-
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>        
@@ -315,8 +332,8 @@ class Files @Inject()(
 	             }
 	         }
 
-
 	        var realUserName = realUser.fullName
+
 	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
 	        val uploadedFile = f
 	        file match {
@@ -398,6 +415,10 @@ class Files @Inject()(
 		            }
 	            }
 	            
+
+	            Ok(toJson(Map("id"->id.stringify)))
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id.stringify, nameOfFile)}
 	            Ok(toJson(Map("id"->id.stringify)))
 	          }
 	          case None => {
@@ -497,7 +518,9 @@ class Files @Inject()(
                case None => {}
              }
          }          
+
           var realUserName = realUser.fullName
+
           val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
           val uploadedFile = f         
           
@@ -604,6 +627,9 @@ class Files @Inject()(
 	              }
 
               //sending success message
+              Ok(toJson(Map("id" -> id)))
+              current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id, nameOfFile)}
               Ok(toJson(Map("id" -> id)))
              }
             }
@@ -1047,6 +1073,7 @@ class Files @Inject()(
                     }
                   }
                   case None => {
+                    //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!                  
                     Ok.chunked(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
@@ -1057,7 +1084,6 @@ class Files @Inject()(
               case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
 
             }
-
           }
           case None => Logger.error("Geometry file not found"); InternalServerError
         }
@@ -1525,6 +1551,7 @@ class Files @Inject()(
             val previewers = Previewers.findPreviewers
             //Logger.info("Number of previews " + previews.length);
             val files = List(file)
+            //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
             val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
               val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
                 (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
@@ -1533,7 +1560,14 @@ class Files @Inject()(
                 (file -> pvf)
               } else {
                 val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                  (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                    //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                    if (f.checkLicenseForDownload(request.user)) {
+                        (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    }
+                    else {
+                        (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                    }
                 }
                 (file -> ff)
               }
@@ -1637,7 +1671,10 @@ class Files @Inject()(
             }
             case _ => {}
           }
-          Ok(toJson(Map("status" -> "success")))
+          Ok(toJson(Map("status"->"success")))
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "File","removed",id.stringify, file.filename)}
+          Ok(toJson(Map("status"->"success")))
         }
         case None => Ok(toJson(Map("status" -> "error", "msg" -> "file not found")))
       }

@@ -18,4 +18,10 @@ trait AppConfigurationService {
   def setTheme(theme: String)
 
   def getTheme(): String
+  
+  def addAdmin(newAdminEmail: String)
+  
+  def removeAdmin(adminEmail: String)
+  
+  def adminExists(adminEmail: String): Boolean
 }

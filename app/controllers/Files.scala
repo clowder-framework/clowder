@@ -1,7 +1,7 @@
 package controllers
 
 import java.io._
-import models.{UUID, FileMD, Thumbnail}
+import models.{UUID, FileMD, File, Thumbnail}
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
@@ -18,6 +18,7 @@ import api.Permission
 import javax.inject.Inject
 import java.util.Date
 import scala.sys.SystemProperties
+import securesocial.core.Identity
 
 /**
  * Manage files.
@@ -59,6 +60,7 @@ class Files @Inject() (
         val previewsFromDB = previews.findByFileId(file.id)
         Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
+        //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
           val pvf = for (
             p <- previewers; pv <- previewsFromDB;
@@ -75,13 +77,19 @@ class Files @Inject() (
               if (!p.collection);
               if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
             ) yield {
-              (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+              if (file.checkLicenseForDownload(user)) {
+                (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+              }
+              else {
+                (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length)
+              }
             }
             Map(file -> ff)
           }
         }
         Logger.debug("Previewers available: " + previewsWithPreviewer)
 
+        // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>
@@ -163,7 +171,16 @@ class Files @Inject() (
         next = formatter.format(fileList.last.uploadDate)
       }
     }
-    Ok(views.html.filesList(fileList, prev, next, limit))
+
+    val commentMap = fileList.map{file =>
+      var allComments = comments.findCommentsByFileId(file.id)
+      sections.findByFileId(file.id).map { section =>
+        allComments ++= comments.findCommentsBySectionId(section.id)
+      }
+      file.id -> allComments.size
+    }.toMap
+
+    Ok(views.html.filesList(fileList, commentMap, prev, next, limit))
   }
 
   /**
@@ -409,9 +426,10 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	             }
 	                        
 	            // redirect to file page]
-
 	            Redirect(routes.Files.file(f.id))
-
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
+	            Redirect(routes.Files.file(f.id))
 	         }
 	         case None => {
 	           Logger.error("Could not retrieve file that was just saved.")
@@ -427,51 +445,75 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }
   }
 
-  ////////////////////////////////////////////////
+  ////////////////////////////////////////////////  
   
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>
-    files.getBytes(id) match {
-      case Some((inputStream, filename, contentType, contentLength)) => {
-        request.headers.get(RANGE) match {
-          case Some(value) => {
-            val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-              case x => (x(0).toLong, x(1).toLong)
-            }
-	            range match { case (start,end) =>
+  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>    
+      if (UUID.isValid(id.stringify)) {
+          //Check the license type before doing anything. 
+          files.get(id) match {
+              case Some(file) => {                                                                                                             
+                  if (file.checkLicenseForDownload(request.user)) {
+                      files.getBytes(id) match {
+                      case Some((inputStream, filename, contentType, contentLength)) => {
+                          request.headers.get(RANGE) match {
+                          case Some(value) => {
+                              val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
+                              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+                              case x => (x(0).toLong, x(1).toLong)
+                          }
+                          range match { case (start,end) =>
 
-                inputStream.skip(start)
-                import play.api.mvc.{ SimpleResult, ResponseHeader }
-                SimpleResult(
-                  header = ResponseHeader(PARTIAL_CONTENT,
-                    Map(
-                      CONNECTION -> "keep-alive",
-                      ACCEPT_RANGES -> "bytes",
-                      CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                      CONTENT_LENGTH -> (end - start + 1).toString,
-                      CONTENT_TYPE -> contentType
-                    )
-                  ),
-                  body = Enumerator.fromStream(inputStream)
-                )
-            }
-          }
-          case None => {
-	            Ok.chunked(Enumerator.fromStream(inputStream))
-              .withHeaders(CONTENT_TYPE -> contentType)
-              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+                          inputStream.skip(start)
+                          import play.api.mvc.{ SimpleResult, ResponseHeader }
+                          SimpleResult(
+                                  header = ResponseHeader(PARTIAL_CONTENT,
+                                          Map(
+                                                  CONNECTION -> "keep-alive",
+                                                  ACCEPT_RANGES -> "bytes",
+                                                  CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
+                                                  CONTENT_LENGTH -> (end - start + 1).toString,
+                                                  CONTENT_TYPE -> contentType
+                                                  )
+                                          ),
+                                          body = Enumerator.fromStream(inputStream)
+                                  )
+                          }
+                          }
+                          case None => {
+                              Ok.chunked(Enumerator.fromStream(inputStream))
+                              .withHeaders(CONTENT_TYPE -> contentType)
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 
+                          }
+                          }
+                      }
+                      case None => {
+                          Logger.error("Error getting file" + id)
+                          BadRequest("Invalid file ID")
+                      }
+                      }   
+                  }
+                  else {
+                      //Case where the checkLicenseForDownload fails
+                      Logger.error("The file is not able to be downloaded")
+                      BadRequest("The license for this file does not allow it to be downloaded.")
+                  }
+              }
+              case None => {
+                  //Case where the file could not be found
+                  Logger.info(s"Error getting the file with id $id.")
+                  BadRequest("Invalid file ID")
+              }
           }
-        }
+               
       }
-      case None => {
-        Logger.error("Error getting file" + id)
-        NotFound
+      else {
+          Logger.error(s"The given id $id is not a valid ObjectId.")
+          BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
-    }
   }
 
   def thumbnail(id: UUID) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>
