@@ -25,7 +25,8 @@ case class RequestWithUser[A](user: Option[Identity], request: Request[A]) exten
  */
 object Permission extends Enumeration {
 	type Permission = Value
-	val Public,					// Page is public accessible, i.e. no login needed 
+	val Public,					// Page is public accessible, i.e. no login needed
+		PublicOpen,				//Page always accessible
 		Admin,
 		CreateCollections,
 		DeleteCollections,
@@ -102,6 +103,7 @@ case class WithPermission(permission: Permission) extends Authorization {
 		(user, permission) match {
 		  		  
 		  // anybody can list/show
+		  case (_, PublicOpen)           => true	
 		  case (_, Public)               => permissionsShow 
 		  case (_, ListCollections)      => permissionsShow
 		  case (_, ShowCollection)       => permissionsShow

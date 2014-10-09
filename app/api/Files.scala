@@ -140,8 +140,11 @@ class Files @Inject()(
   def download(id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
       request =>
-
-        files.getBytes(id) match {
+      //Check the license type before doing anything. 
+      files.get(id) match {
+          case Some(file) => {    
+              if (file.checkLicenseForDownload(request.user)) {
+        files.getBytes(id) match {            
           case Some((inputStream, filename, contentType, contentLength)) => {
 
             request.headers.get(RANGE) match {
@@ -180,6 +183,19 @@ class Files @Inject()(
             NotFound
           }
         }
+              }
+              else {
+                  //Case where the checkLicenseForDownload fails
+                  Logger.error("The file is not able to be downloaded")
+                  BadRequest("The license for this file does not allow it to be downloaded.")
+              }
+              }
+          case None => {
+                  //Case where the file could not be found
+                  Logger.info(s"Error getting the file with id $id.")
+                  BadRequest("Invalid file ID")
+              }
+          }
     }
 
   /**
@@ -1482,6 +1498,7 @@ class Files @Inject()(
             val previewers = Previewers.findPreviewers
             //Logger.info("Number of previews " + previews.length);
             val files = List(file)
+            //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
             val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
               val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
                 (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
@@ -1490,7 +1507,14 @@ class Files @Inject()(
                 (file -> pvf)
               } else {
                 val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                  (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                    //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                    if (f.checkLicenseForDownload(request.user)) {
+                        (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    }
+                    else {
+                        (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                    }
                 }
                 (file -> ff)
               }

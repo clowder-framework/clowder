@@ -1,4 +1,4 @@
 { "name" : "Thumbnail",
-  "main" : "some-library.js",
+  "main" : "thumbnail-previewer.js",
   "contentType" : ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp"]
   }

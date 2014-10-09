@@ -51,7 +51,8 @@ object ApplicationBuild extends Build {
     "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
     "org.springframework" % "spring" % "2.5.6",
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
-    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1"
+    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
+    "org.julienrf" %% "play-jsonp-filter" % "1.1"
   )
 
 
