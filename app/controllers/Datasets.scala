@@ -410,7 +410,11 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					        val dt = dataset.copy(author=identity)
 				            datasets.update(dt) 
 				            // redirect to dataset page
-				            Redirect(routes.Datasets.dataset(dt.id))				            
+				            Redirect(routes.Datasets.dataset(dt.id))
+				            current.plugin[AdminsNotifierPlugin].foreach{
+                      _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+				            Redirect(routes.Datasets.dataset(dt.id))
+
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
 					    }   	                 
@@ -460,7 +464,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
-						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
+				  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 
 		          //link file to dataset in RDF triple store if triple store is used
 		          if(theFileGet.filename.endsWith(".xml")){
@@ -483,7 +487,10 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				//****************************//
 		          
 				  // redirect to dataset page
-				  Redirect(routes.Datasets.dataset(dt.id)) 				  
+				  Redirect(routes.Datasets.dataset(dt.id))
+				  current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+				  Redirect(routes.Datasets.dataset(dt.id)) 
 	            }	            
 	          }  
 	        }

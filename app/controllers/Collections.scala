@@ -15,6 +15,7 @@ import play.api.Play.current
 import javax.inject.{Singleton, Inject}
 import services.{DatasetService, CollectionService}
 import services.ElasticsearchPlugin
+import services.AdminsNotifierPlugin
 
 object ThumbnailFound extends Exception {}
 
@@ -115,7 +116,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collectionForm.bindFromRequest.fold(
         errors => BadRequest(views.html.newCollection(errors)),
         collection => {
-          Logger.debug("Saving dataset " + collection.name)
+          Logger.debug("Saving collection " + collection.name)
           collections.insert(collection)
           
           // index collection
@@ -124,6 +125,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 		                List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
           
           Redirect(routes.Collections.collection(collection.id))
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
+		  Redirect(routes.Collections.collection(collection.id))
         })
   }
 
@@ -137,7 +141,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collections.get(id) match {
         case Some(collection) => {
           Logger.debug(s"Found collection $id")
-          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.toString()))
+          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.stringify))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

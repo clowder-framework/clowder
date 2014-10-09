@@ -1,5 +1,7 @@
 @(title: String)(content: Html)(implicit user: Option[securesocial.core.Identity] = None)
 
+@import models.AppAppearance._
+
 <!DOCTYPE html>
 
 <html lang="en">
@@ -38,7 +40,7 @@
 				      <span class="glyphicon-bar"></span>
 				      <span class="glyphicon-bar"></span>
 				    </button>
-					<a class="navbar-brand" href="@routes.Application.index">Medici</a>
+					<a class="navbar-brand" href="@routes.Application.index">@(AppAppearance.getDefault.get.displayedName)</a>
 				</div>
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
@@ -115,7 +117,9 @@
 						   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
 						   <ul class="dropdown-menu">
 						   	<li><a href="@routes.Admin.main">Main</a></li>	
-						   	<li><a href="@routes.Extractors.listAllExtractions">Extractors events</a></li>				   	
+						   	<li><a href="@routes.Extractors.listAllExtractions">Extractors events</a></li>
+						   	<li><a href="@routes.Admin.newAdmin">Add admin</a></li>	
+						   	<li><a href="@routes.Admin.listAdmins">List admins</a></li>					   	
 						   </ul>
 						</li>
 					

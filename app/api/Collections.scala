@@ -2,11 +2,13 @@ package api
 
 import models.{UUID, Collection}
 import play.api.Logger
+import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
 import services.DatasetService
 import services.CollectionService
+import services.AdminsNotifierPlugin
 import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation

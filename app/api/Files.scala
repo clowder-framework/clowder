@@ -67,8 +67,11 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import services.ExtractorMessage
 import scala.util.parsing.json.JSONArray
 
-
 import controllers.Previewers
+
+import java.io.BufferedInputStream
+import javax.imageio.ImageIO
+
 import scala.concurrent.Future
  
 import scala.util.control._
@@ -297,13 +300,11 @@ class Files @Inject()(
   /**
    * Upload file using multipart form enconding.
    */
-
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>        
@@ -331,8 +332,8 @@ class Files @Inject()(
 	             }
 	         }
 
-
 	        var realUserName = realUser.fullName
+
 	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
 	        val uploadedFile = f
 	        file match {
@@ -414,6 +415,10 @@ class Files @Inject()(
 		            }
 	            }
 	            
+
+	            Ok(toJson(Map("id"->id.stringify)))
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id.stringify, nameOfFile)}
 	            Ok(toJson(Map("id"->id.stringify)))
 	          }
 	          case None => {
@@ -513,7 +518,9 @@ class Files @Inject()(
                case None => {}
              }
          }          
+
           var realUserName = realUser.fullName
+
           val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
           val uploadedFile = f         
           
@@ -620,6 +627,9 @@ class Files @Inject()(
 	              }
 
               //sending success message
+              Ok(toJson(Map("id" -> id)))
+              current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id, nameOfFile)}
               Ok(toJson(Map("id" -> id)))
              }
             }
@@ -1063,6 +1073,7 @@ class Files @Inject()(
                     }
                   }
                   case None => {
+                    //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!                  
                     Ok.chunked(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
@@ -1073,7 +1084,6 @@ class Files @Inject()(
               case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
 
             }
-
           }
           case None => Logger.error("Geometry file not found"); InternalServerError
         }
@@ -1661,7 +1671,10 @@ class Files @Inject()(
             }
             case _ => {}
           }
-          Ok(toJson(Map("status" -> "success")))
+          Ok(toJson(Map("status"->"success")))
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "File","removed",id.stringify, file.filename)}
+          Ok(toJson(Map("status"->"success")))
         }
         case None => Ok(toJson(Map("status" -> "error", "msg" -> "file not found")))
       }

@@ -119,6 +119,9 @@ class Datasets @Inject()(
                                 List(("name", d.name), ("description", d.description)))
                             }
                        }
+
+                       current.plugin[AdminsNotifierPlugin].foreach {
+                         _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",id, name)}
                        Ok(toJson(Map("id" -> id)))
 		      	     }
 		      	     case None => Ok(toJson(Map("status" -> "error")))
@@ -322,8 +325,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update dataset administrative information",
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
-  def updateInformation(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
+  def updateInformation(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -404,8 +406,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update license information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
-  def updateLicense(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
+  def updateLicense(id: UUID) =  SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -961,7 +962,11 @@ class Datasets @Inject()(
           
           Ok(toJson(Map("status" -> "success")))
         }
-        case None => Ok(toJson(Map("status" -> "success")))
+
+        Ok(toJson(Map("status"->"success")))
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.toString, dataset.name)}
+        Ok(toJson(Map("status"->"success")))
       }
   }
 
@@ -1105,6 +1110,7 @@ class Datasets @Inject()(
       case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
     }
   }
+
   def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
     datasets.get(id)  match {
       case Some(dataset) => {
@@ -1116,6 +1122,7 @@ class Datasets @Inject()(
       }      
     }
   }
+
   
   def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNotes))  { implicit request =>
 	  request.user match {

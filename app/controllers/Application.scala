@@ -2,6 +2,10 @@ package controllers
 
 import api.{Permission, WithPermission}
 import play.api.Routes
+import play.api.mvc.Action
+import play.api.mvc.Controller
+import api.Sections
+import models.AppAppearance
 import javax.inject.{Singleton, Inject}
 import play.api.mvc.Action
 import services.FileService
@@ -30,7 +34,8 @@ class Application  @Inject() (files: FileService) extends SecuredController {
   def index = SecuredAction() { request =>
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
-    Ok(views.html.index(latestFiles))
+    val appAppearance = AppAppearance.getDefault.get
+    Ok(views.html.index(latestFiles, appAppearance.displayedName, appAppearance.welcomeMessage))
   }
   
   def options(path:String) = SecuredAction() { implicit request =>
