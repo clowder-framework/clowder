@@ -3,12 +3,13 @@ package api
 import models.{UUID, Collection}
 import play.api.Logger
 import play.api.Play.current
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json.toJson
-import javax.inject.{ Singleton, Inject }
 import services.DatasetService
 import services.CollectionService
 import services.AdminsNotifierPlugin
+import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.Json.toJson
+import javax.inject.{ Singleton, Inject }
+import services.{PreviewService, DatasetService, CollectionService}
 import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
@@ -21,7 +22,7 @@ import java.util.Date
  */
 @Api(value = "/collections", listingPath = "/api-docs.json/collections", description = "Collections are groupings of datasets")
 @Singleton
-class Collections @Inject() (datasets: DatasetService, collections: CollectionService) extends ApiController {
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService) extends ApiController {
 
   @ApiOperation(value = "Create a collection",
       notes = "",
@@ -90,4 +91,51 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
                "created" -> collection.created.toString))
   }
+
+  /**
+   * Add preview to file.
+   */
+  @ApiOperation(value = "Attach existing preview to collection",
+    notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def attachPreview(collection_id: UUID, preview_id: UUID) = SecuredAction(authorization = WithPermission(Permission.EditCollection)) {
+    request =>
+      // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
+      val eid = (request.body \ "extractor_id").asOpt[String]
+      val extractor_id = if (eid.isDefined) {
+        eid
+      } else {
+        Logger.debug("api.Files.attachPreview(): No \"extractor_id\" specified in request, set it to None.  request.body: " + request.body.toString)
+        Some("Other")
+      }
+      val preview_type = (request.body \ "preview_type").asOpt[String].getOrElse("")
+      request.body match {
+        case JsObject(fields) => {
+          collections.get(collection_id) match {
+            case Some(collection) => {
+              previews.get(preview_id) match {
+                case Some(preview) =>
+                  // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
+                  // TODO replace null with None
+                  previews.attachToCollection(preview_id, collection_id, preview_type, extractor_id, request.body)
+                  Ok(toJson(Map("status" -> "success")))
+                case None => BadRequest(toJson("Preview not found"))
+              }
+            }
+            //If file to be previewed is not found, just delete the preview
+            case None => {
+              previews.get(preview_id) match {
+                case Some(preview) =>
+                  Logger.debug("Collection not found. Deleting previews.files " + preview_id)
+                  previews.removePreview(preview)
+                  BadRequest(toJson("Collection not found. Preview deleted."))
+                case None => BadRequest(toJson("Preview not found"))
+              }
+            }
+          }
+        }
+        case _ => Ok("received something else: " + request.body + '\n')
+      }
+  }
+
 }
