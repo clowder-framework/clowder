@@ -1,4 +1,5 @@
 import com.mongodb.casbah.Imports._
+import julienrf.play.jsonp.Jsonp
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.api.Play.current
@@ -25,8 +26,8 @@ import akka.actor.Cancellable
  *
  * @author Luigi Marini
  */
-object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSettings {
-
+object Global extends WithFilters(new GzipFilter(),CORSFilter(), new Jsonp) with GlobalSettings {
+        
   var serverStartTime:Date=null
   
   var extractorTimer: Cancellable = null

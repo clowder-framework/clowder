@@ -4,13 +4,10 @@ import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
-
 import models.AppConfiguration
-
-import services.AppConfigurationService
-
 import play.api.Play.configuration
 import play.api.{Plugin, Logger, Application}
+import services.AppConfigurationService
 
  /**
   * A request that adds the User for the current call
@@ -79,9 +76,9 @@ import api.Permission._
  * @author Rob Kooper
  */
 case class WithPermission(permission: Permission) extends Authorization {
-  
-  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
 
+  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
+	
   def isAuthorized(user: Identity): Boolean = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
       case "public" => return publicPermission(user, permission)

@@ -1,6 +1,7 @@
 (function($, Configuration) {
 	console.log("geospatial data previewer for " + Configuration.id);
 
+	var defaultOpacity = 0.8;
 	// retrieve the metadata
 	var metadataApiUrl = "/api/files/" + Configuration.fileid
 			+ "/technicalmetadatajson";
@@ -42,7 +43,7 @@
 								function() {
 									// add layer opacity control
 									$(Configuration.tab).append(
-											"<div id='layer-opacity-control'><label>Layer Opacity: </label><input id='opacity' type='range' min='0' max='1' value='1' step='0.01' style='width:200px;' /></div>");
+											"<div id='layer-opacity-control'><label>Layer Opacity: </label><input id='opacity' type='range' min='0' max='1' value='"+defaultOpacity+"' step='0.01' style='width:200px;' /></div>");
 									
 									// drawing the map
 									console.log("ol3js loaded");
@@ -86,7 +87,8 @@
 												'TILED' : true
 											},
 											serverType : 'geoserver'
-										}))
+										})),
+										opacity: defaultOpacity
 									});
 
 									$('#opacity').change( function(e) {

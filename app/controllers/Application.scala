@@ -8,6 +8,7 @@ import api.WithPermission
 import api.Permission
 import models.AppAppearance
 import javax.inject.{Singleton, Inject}
+import play.api.mvc.Action
 import services.FileService
 import services.AppAppearanceService
 import play.api.Logger
@@ -21,7 +22,16 @@ import play.api.Logger
 class Application  @Inject() (files: FileService) extends SecuredController {
   
   val appAppearance: AppAppearanceService = services.DI.injector.getInstance(classOf[AppAppearanceService])
-  
+
+  /**
+   * Redirect any url's that have a trailing /
+   * @param path the path minus the slash
+   * @return moved permanently to path without /
+   */
+  def untrail(path: String) = Action {
+    MovedPermanently("/" + path)
+  }
+
   /**
    * Main page.
    */

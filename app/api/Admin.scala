@@ -3,7 +3,9 @@ package api
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
+import models.AppConfiguration
 import services._
+import models.AppAppearance
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 

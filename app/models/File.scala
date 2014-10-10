@@ -29,7 +29,34 @@ case class File(
   xmlMetadata: Map[String, Any] = Map.empty,
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
-  notesHTML: Option[String] = None )
+  notesHTML: Option[String] = None ) {
+    
+  /**
+   * Utility method to check a given file and a given identity for permissions from the license 
+   * to allow the raw bytes to be downloaded. 
+   * 
+   * @param anIdentity An Option, possibly contianing the securesocial information for a user
+   * 
+   * @return A boolean, true if the license allows the bytes to be downloaded, false otherwise
+   *   
+   */
+  def checkLicenseForDownload(anIdentity: Option[Identity]): Boolean = {
+      
+      var license = licenseData
+      var userName = ""
+      
+      anIdentity match {
+          case Some(aUser) => { 
+              userName = aUser.fullName 
+          }
+          case None => {
+              userName = ""
+          }
+      }               
+
+      return (license.isDownloadAllowed() || license.isRightsOwner(userName))
+  }
+}
   
 case class Versus(
   fileId: UUID,

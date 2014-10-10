@@ -375,4 +375,5 @@ def getTheme(): String = appConfiguration.getTheme()
       
     }  
   }
+
 }

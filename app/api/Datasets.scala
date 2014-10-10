@@ -117,7 +117,7 @@ class Datasets @Inject()(
                             }
                           }
                           Ok(toJson(Map("id" -> id)))
-                          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",id, name)} 
+                          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)} 
                           Ok(toJson(Map("id" -> id)))
                         }
                         case None => Ok(toJson(Map("status" -> "error")))
@@ -315,8 +315,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update dataset administrative information",
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
-  def updateInformation(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
+  def updateInformation(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -397,8 +396,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update license information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
-  def updateLicense(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
+  def updateLicense(id: UUID) =  SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -906,6 +904,7 @@ class Datasets @Inject()(
           val innerFiles = dataset.files map {f => files.get(f.id).get}
           val datasetWithFiles = dataset.copy(files = innerFiles)
           val previewers = Previewers.findPreviewers
+          //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
           val previewslist = for (f <- datasetWithFiles.files; if (f.showPreviews.equals("DatasetLevel"))) yield {
             val pvf = for (p <- previewers; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
               (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
@@ -914,7 +913,14 @@ class Datasets @Inject()(
               (f -> pvf)
             } else {
               val ff = for (p <- previewers; if (p.contentType.contains(f.contentType))) yield {
-                (f.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(f.id) + "/blob", f.contentType, f.length)
+                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                if (f.checkLicenseForDownload(request.user)) {
+                    (f.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(f.id) + "/blob", f.contentType, f.length)
+                }
+                else {
+                    (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                }
               }
               (f -> ff)
             }
@@ -947,14 +953,14 @@ class Datasets @Inject()(
           
           for(file <- dataset.files)
         	  files.index(file.id)
-          
 
-          Ok(toJson(Map("status" -> "success")))
-          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","removed",dataset.id.stringify, dataset.name)}
-          Ok(toJson(Map("status" -> "success")))
-        }
-        case None => Ok(toJson(Map("status" -> "success")))
+        Ok(toJson(Map("status"->"success")))
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
+        Ok(toJson(Map("status"->"success")))
       }
+      case None => Ok(toJson(Map("status" -> "success")))
+     }
   }
 
   @ApiOperation(value = "Get the user-generated metadata of the selected dataset in an RDF file",
@@ -1098,6 +1104,7 @@ class Datasets @Inject()(
       case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
     }
   }
+
   def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
     datasets.get(id)  match {
       case Some(dataset) => {

@@ -1,4 +1,0 @@
-{ "name" : "Pdf",
-  "main" : "some-library.js",
-  "contentType" : ["application/pdf","application/x-pdf","application/x-bzpdf","application/x-gzpdf"]
-  }
