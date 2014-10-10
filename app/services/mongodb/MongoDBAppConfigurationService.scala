@@ -41,8 +41,10 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
   }
   
   def addAdmin(newAdminEmail: String) {
-	  Logger.debug("Adding admin: "+ newAdminEmail)
-	  AppConfiguration.update(MongoDBObject("name" -> "default"), $addToSet("admins" ->  newAdminEmail), false, false, WriteConcern.Safe)
+    if (newAdminEmail.nonEmpty) {
+      Logger.debug("Adding admin: " + newAdminEmail)
+      AppConfiguration.update(MongoDBObject("name" -> "default"), $addToSet("admins" -> newAdminEmail), false, false, WriteConcern.Safe)
+    }
   }
   
   def removeAdmin(adminEmail: String) {
@@ -50,7 +52,7 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
   }
 
   def adminExists(adminEmail: String): Boolean =  {
-		  !AppConfiguration.findOne(MongoDBObject("admins" -> adminEmail)).isEmpty
+		  AppConfiguration.findOne(MongoDBObject("admins" -> adminEmail)).nonEmpty
   }
   
 }

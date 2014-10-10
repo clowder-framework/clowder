@@ -13,13 +13,13 @@
         @Messages(msg)
     </div>
     }
-	@if(!play.Play.application().configuration().getBoolean("securesocial.registerThroughAdmins")){
+	@if(!play.Play.application().configuration().getBoolean("registerThroughAdmins")){
 	    <form action="@securesocial.core.providers.utils.RoutesHelper.handleStartSignUp().absoluteURL(IdentityProvider.sslEnabled)"
 	          class="form-horizontal"
 	          autocomplete="off" method="post"
 	    >
     }
-    @if(play.Play.application().configuration().getBoolean("securesocial.registerThroughAdmins")){
+    @if(play.Play.application().configuration().getBoolean("registerThroughAdmins")){
 	    <form action="@routes.Users.handleStartSignUp().absoluteURL(IdentityProvider.sslEnabled)"
 	          class="form-horizontal"
 	          autocomplete="off" method="post"

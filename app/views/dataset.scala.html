@@ -133,7 +133,15 @@
 			
 				<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename" style="margin-left:0px;">
 		    		<div class="span12">
-				  		<div class="tabbable">
+				<!-- 
+                First check if there is only one previewer, and if the value of the URL for it is "null". If so
+                that means there was no preview generated and the file is not allowed to be used due to the license
+                that is on the file.
+                 -->
+				@if(pvs.length == 1 && pvs(0)._5 == "null") {
+				    <h4>No previews currently viewable by you for this file. You have no viewing license.</h4>
+				} else {
+				        <div class="tabbable">
 							<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 								@for(i <- pvs.indices) {
 						    		<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
@@ -151,7 +159,8 @@
 					 				 })
 								</script>
 							</div>
-						</div>					
+						</div>	
+				}				
 		  		</div>
 			</div>
 			@if(pvs.length <= 1) {
@@ -193,7 +202,7 @@
 							<thead>
 								<tr>
 									<th>#</th>
-									<th>Thumbail</th>
+									<th>Thumbnail</th>
 									<th>Information</th>
 									<th>Find</th>
 								</tr>
@@ -201,13 +210,7 @@
 							<tbody>
 					  		@f.sections.map { s =>
 					  			<tr>
-						  			<td>
-						  				@if(s.order != -1) {
-						  					@s.order
-						  				} else {
-						  					*
-						  				}
-						  			</td>
+						  			<td>@(if (s.order > 0) s.order else "")</td>
 						  			<td>
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id)"

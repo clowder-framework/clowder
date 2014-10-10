@@ -7,6 +7,7 @@ import play.api.mvc.Controller
 import api.Sections
 import models.AppAppearance
 import javax.inject.{Singleton, Inject}
+import play.api.mvc.Action
 import services.FileService
 import play.api.Logger
 
@@ -17,7 +18,16 @@ import play.api.Logger
  */
 @Singleton
 class Application  @Inject() (files: FileService) extends SecuredController {
-  
+
+  /**
+   * Redirect any url's that have a trailing /
+   * @param path the path minus the slash
+   * @return moved permanently to path without /
+   */
+  def untrail(path: String) = Action {
+    MovedPermanently("/" + path)
+  }
+
   /**
    * Main page.
    */
@@ -86,7 +96,8 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
         api.routes.javascript.Geostreams.getSensorStreams,
-        api.routes.javascript.Geostreams.searchDatapoints
+        api.routes.javascript.Geostreams.searchDatapoints,
+        api.routes.javascript.Collections.attachPreview
       )
     ).as(JSON) 
   }

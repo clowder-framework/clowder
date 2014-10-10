@@ -68,7 +68,7 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSett
   }
 
   override def onStop(app: Application) {
-    extractorTimer.cancel
+    extractorTimer.cancel()
     Logger.info("Application shutdown")
   }
 
