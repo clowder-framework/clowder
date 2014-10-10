@@ -100,7 +100,8 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
         api.routes.javascript.Geostreams.getSensorStreams,
-        api.routes.javascript.Geostreams.searchDatapoints
+        api.routes.javascript.Geostreams.searchDatapoints,
+        api.routes.javascript.Collections.attachPreview
       )
     ).as(JSON) 
   }

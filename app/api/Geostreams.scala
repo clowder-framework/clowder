@@ -67,7 +67,7 @@ object Geostreams extends ApiController {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
               plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata))
-              Ok(toJson("success"))
+              jsonp(toJson("success"), request)
             }
             case None => pluginNotEnabled
           }
@@ -83,8 +83,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchSensors(geocode) match {
-            case Some(d) => Ok(Json.parse(d))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+            case Some(d) => jsonp(d, request)
+            case None => jsonp("""{"status":"No data found"}""", request)
           }
         }
         case None => pluginNotEnabled
@@ -97,8 +97,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getSensor(id) match {
-            case Some(d) => Ok(Json.parse(d))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+            case Some(d) => jsonp(d, request)
+            case None => jsonp(Json.parse("""{"status":"No data found"}"""), request)
           }
         }
         case None => pluginNotEnabled
@@ -111,8 +111,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getSensorStreams(id) match {
-            case Some(d) => Ok(Json.parse(d))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+            case Some(d) => jsonp(d, request)
+            case None => jsonp("""{"status":"No data found"}""", request)
           }
         }
         case None => pluginNotEnabled
@@ -125,7 +125,7 @@ object Geostreams extends ApiController {
 	  current.plugin[PostgresPlugin] match {
 	    case Some(plugin) => {
 	      plugin.updateSensorStats(Some(id))
-	      Ok(Json.parse("""{"status":"updated"}"""))
+	      jsonp("""{"status":"updated"}""", request)
 	    }
 	    case None => pluginNotEnabled
 	  }
@@ -137,7 +137,7 @@ object Geostreams extends ApiController {
 	  current.plugin[PostgresPlugin] match {
 	    case Some(plugin) => {
 	      plugin.updateStreamStats(Some(id))
-	      Ok(Json.parse("""{"status":"updated"}"""))
+	      jsonp("""{"status":"updated"}""", request)
 	    }
 	    case None => pluginNotEnabled
 	  }
@@ -149,7 +149,7 @@ object Geostreams extends ApiController {
 	  current.plugin[PostgresPlugin] match {
 	    case Some(plugin) => {
 	      plugin.updateSensorStats(None)
-	      Ok(Json.parse("""{"status":"updated"}"""))
+	      jsonp("""{"status":"updated"}""", request)
 	    }
 	    case None => pluginNotEnabled
 	  }
@@ -171,7 +171,7 @@ object Geostreams extends ApiController {
             }
             case None => Json.obj("range" -> Map.empty[String, String], "parameters" -> Array.empty[String])
           }
-          Ok(json)
+          jsonp(json, request)
         }
         case None => pluginNotEnabled
       }
@@ -184,7 +184,7 @@ object Geostreams extends ApiController {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
               val id = plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
-              Ok(Json.obj("status"->"ok","id"->id))
+              jsonp(Json.obj("status"->"ok","id"->id), request)
             }
             case None => pluginNotEnabled
           }
@@ -200,8 +200,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchStreams(geocode) match {
-            case Some(d) => Ok(Json.parse(d))
-            case None => Ok(Json.parse("""{"status":"No data found"}"""))
+            case Some(d) => jsonp(d, request)
+            case None => jsonp("""{"status":"No data found"}""", request)
           }
         }
         case None => pluginNotEnabled
@@ -214,37 +214,33 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.getStream(id) match {
-            case Some(d) => Ok(Json.parse(d))
-            case None => Ok(Json.parse("""{"status":"No stream found"}"""))
+            case Some(d) => jsonp(d, request)
+            case None => jsonp("""{"status":"No stream found"}""", request)
           }
         }
         case None => pluginNotEnabled
       }
     }
 
-  def deleteStream(id: String) = Authenticated {
-    Action(parse.empty) { request =>
-      Logger.debug("Delete stream " + id)
-      current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
-          if (plugin.deleteStream(id.toInt)) Ok(Json.parse("""{"status":"ok"}"""))
-          else Ok(Json.parse("""{"status":"error"}"""))
-        }
-        case None => pluginNotEnabled
+  def deleteStream(id: String) = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+    Logger.debug("Delete stream " + id)
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        if (plugin.deleteStream(id.toInt)) jsonp("""{"status":"ok"}""", request)
+        else jsonp("""{"status":"error"}""", request)
       }
+      case None => pluginNotEnabled
     }
   }
 
-  def deleteAll() = Authenticated {
-    Action(parse.empty) { request =>
-      Logger.debug("Drop all")
-      current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
-          if (plugin.dropAll()) Ok(Json.parse("""{"status":"ok"}"""))
-          else Ok(Json.parse("""{"status":"error"}"""))
-        }
-        case None => pluginNotEnabled
+  def deleteAll() = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+    Logger.debug("Drop all")
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        if (plugin.dropAll()) jsonp("""{"status":"ok"}""", request)
+        else jsonp("""{"status":"error"}""", request)
       }
+      case None => pluginNotEnabled
     }
   }
 
@@ -253,37 +249,35 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.counts() match {
-          	case (sensors, streams, datapoints) => Ok(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints))
-          	case _ => Ok(Json.parse("""{"status":"error"}"""))
+          	case (sensors, streams, datapoints) => jsonp(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints), request)
+          	case _ => jsonp("""{"status":"error"}""", request)
           }
         }
         case None => pluginNotEnabled
       }
     }
 
-  def addDatapoint() = Authenticated {
-    Action(parse.json) { request =>
-      Logger.info("Adding datapoint: " + request.body)
-      request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
-        case (start_time, end_time, geoType, longlat, data, streamId) =>
-          current.plugin[PostgresPlugin] match {
-            case Some(plugin) => {
-              Logger.info("GEOSTREAM TIME: " + start_time + " " + end_time)
-              val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
-              val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
-              if (longlat.length == 3) {
-                plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId)
-              } else {
-                plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
-              }
-              cacheInvalidate
-              Ok(toJson("success"))
+  def addDatapoint()  = SecuredAction(authorization=WithPermission(Permission.AddDataPoints)) { request =>
+    Logger.info("Adding datapoint: " + request.body)
+    request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
+      case (start_time, end_time, geoType, longlat, data, streamId) =>
+        current.plugin[PostgresPlugin] match {
+          case Some(plugin) => {
+            Logger.info("GEOSTREAM TIME: " + start_time + " " + end_time)
+            val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
+            val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
+            if (longlat.length == 3) {
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId)
+            } else {
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
             }
-            case None => pluginNotEnabled
+            cacheInvalidate
+            jsonp(toJson("success"), request)
           }
-      }.recoverTotal {
-        e => Logger.debug("Error parsing json: " + e); BadRequest("Detected error:" + JsError.toFlatJson(e))
-      }
+          case None => pluginNotEnabled
+        }
+    }.recoverTotal {
+      e => Logger.debug("Error parsing json: " + e); BadRequest("Detected error:" + JsError.toFlatJson(e))
     }
   }
 
@@ -316,7 +310,7 @@ object Geostreams extends ApiController {
           "sources" -> Json.toJson(sources),
           "attributes" -> Json.toJson(attributes))
         cacheFetch(description) match {
-          case Some(data) => jsonp(data, request)
+          case Some(data) => jsonp(data.through(Enumeratee.map(new String(_))), request)
           case None => {
             val raw = new PeekIterator(plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes, true))
             val data = new Iterator[JsObject] {
@@ -342,7 +336,7 @@ object Geostreams extends ApiController {
               }
             }
 
-            jsonp(request, cacheWrite(description, formatResult(data, "json")))
+            jsonp(cacheWrite(description, formatResult(data, "json")), request)
           }
         }
       }
@@ -553,7 +547,7 @@ object Geostreams extends ApiController {
               if (format == "csv") {
                 Ok.chunked(data).as(withCharset("text/csv"))
               } else {
-                jsonp(data, request)
+                jsonp(data.through(Enumeratee.map(new String(_))), request)
               }
             }
             case None => {
@@ -570,7 +564,7 @@ object Geostreams extends ApiController {
               if (format == "csv") {
                 Ok.chunked(cacheWrite(description, jsonToCSV(data))).as(withCharset("text/csv"))
               } else {
-                jsonp(request, cacheWrite(description, formatResult(data, format)))
+                jsonp(cacheWrite(description, formatResult(data, format)), request)
               }
 
             }
@@ -585,8 +579,8 @@ object Geostreams extends ApiController {
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
         plugin.getDatapoint(id) match {
-          case Some(d) => Ok(Json.parse(d))
-          case None => Ok(Json.parse("""{"status":"No stream found"}"""))
+          case Some(d) => jsonp(d, request)
+          case None => jsonp("""{"status":"No stream found"}""", request)
         }
       }
       case None => pluginNotEnabled
@@ -1129,12 +1123,21 @@ object Geostreams extends ApiController {
   }
 
   /**
-   * Tries to transform a response into a JavaScript expression.
+   * Returns the request potentially as jsonp
    * @param data Result to transform
    * @param request request made to server
    */
-  def jsonp(data:Enumerator[Array[Byte]], request: Request[AnyContent]): SimpleResult = {
-    jsonp(request, data.through(Enumeratee.map(new String(_))))
+  def jsonp(data:String, request: Request[Any]): SimpleResult = {
+    jsonp(Enumerator(data), request)
+  }
+
+  /**
+   * Returns the request potentially as jsonp
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(data:JsValue, request: Request[Any]): SimpleResult = {
+    jsonp(Enumerator(data.toString), request)
   }
 
   /**
@@ -1142,7 +1145,7 @@ object Geostreams extends ApiController {
    * @param data Result to transform
    * @param request request made to server
    */
-  def jsonp(request: Request[AnyContent], data:Enumerator[String]) = {
+  def jsonp(data:Enumerator[String], request: Request[Any]) = {
     request.getQueryString("callback") match {
       case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");")).as(JAVASCRIPT)
       case None => Ok.chunked(data).as(JSON)

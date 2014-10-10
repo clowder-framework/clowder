@@ -46,7 +46,9 @@ object Previewers extends Controller with SecuredController {
           result +:= Previewer((json \ "name").as[String],
             previewer.replace("public/", "").replace("/package.json", ""),
             (json \ "main").as[String],
-            (json \ "contentType").as[List[String]]
+            (json \ "contentType").as[List[String]],
+            (json \ "supported_previews").asOpt[List[String]].getOrElse(List.empty[String]),
+            (json \ "collection").asOpt[Boolean].getOrElse(false)
           )
         }
         case None => {
@@ -56,4 +58,32 @@ object Previewers extends Controller with SecuredController {
     }
     return result
   }
+
+  def findCollectionPreviewers(): Array[Previewer] = {
+    val configuration = ConfigurationBuilder.build("public", new ResourcesScanner())
+    val reflections = new Reflections(configuration)
+    val previewers = JavaConversions.asScalaSet(reflections.getResources(Pattern.compile("package.json")))
+
+    var result = Array[Previewer]()
+    for (previewer <- previewers) {
+      Play.resourceAsStream(previewer) match {
+        case Some(stream) => {
+          val json = Json.parse(Source.fromInputStream(stream).mkString)
+          val preview = Previewer((json \ "name").as[String],
+            previewer.replace("public/", "").replace("/package.json", ""),
+            (json \ "main").as[String],
+            (json \ "contentType").as[List[String]],
+            (json \ "supported_previews").asOpt[List[String]].getOrElse(List.empty[String]),
+            (json \ "collection").asOpt[Boolean].getOrElse(false)
+          )
+          if (preview.collection) result +:= preview
+        }
+        case None => {
+          Logger.warn("Thought I saw previewer " + previewer)
+        }
+      }
+    }
+    return result
+  }
+
 }

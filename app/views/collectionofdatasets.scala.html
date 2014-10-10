@@ -1,14 +1,33 @@
-@(datasetsInCollection: List[models.Dataset], collectionName: String, collectionId: String)(implicit user: Option[securesocial.core.Identity])
+@(datasetsInCollection: List[models.Dataset], collectionName: String, collectionId: String, previewers: List[Previewer])(implicit user: Option[securesocial.core.Identity])
+
+
+@showPreview(name: String, url: String, collection_id: String) = {
+<script>
+    var Configuration = {};
+    Configuration.tab = "#previewer_@name";
+    Configuration.url = "@url";
+    Configuration.collection_id = "@collection_id";
+</script>
+<script type="text/javascript" src="@(url)"></script>
+}
 
 @main("Collection") {
-
 
 <div class="page-header">
   <h1>@collectionName</h1>
 </div>
 <div class="row">
+    <div class="col-md-12">
+        @for((p,i) <- previewers.zipWithIndex) {
+            <h3>@p.id</h3>
+            <div class="previewDiv" id="previewer_@(p.id)_@i"></div>
+            @showPreview(p.id + "_" + i, routes.Assets.at("javascripts/previewers") + "/" + p.id + "/" + p.main, collectionId)
+        }
+    </div>
+</div>
+
 	<div class="col-md-12">
-		<h5>Datasets in the collection</h5>
+		<h3>Datasets in the collection</h3>
 		<table id='collectionDatasetsTable' class="table table-bordered table-hover">
 			<thead>
 				<tr>
