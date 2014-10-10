@@ -1,0 +1,7 @@
+extract.py
+
+	Pass a file to the Medici extraction bus for metadata extraction.  Prints returned JSON to the screen.
+	
+	Usage:
+
+		> ./extract.py [file|URL]
