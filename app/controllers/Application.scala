@@ -2,6 +2,8 @@ package controllers
 
 import api.{Permission, WithPermission}
 import play.api.Routes
+import play.api.mvc.Controller
+import api.Sections
 import models.AppAppearance
 import javax.inject.{Singleton, Inject}
 import play.api.mvc.Action
@@ -94,7 +96,8 @@ class Application  @Inject() (files: FileService, appAppearance: AppAppearanceSe
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
         api.routes.javascript.Geostreams.getSensorStreams,
-        api.routes.javascript.Geostreams.searchDatapoints
+        api.routes.javascript.Geostreams.searchDatapoints,
+        api.routes.javascript.Collections.attachPreview
       )
     ).as(JSON) 
   }

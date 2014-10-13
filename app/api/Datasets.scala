@@ -119,8 +119,10 @@ class Datasets @Inject()(
                                 List(("name", d.name), ("description", d.description)))
                             }
                        }
-                       Ok(toJson(Map("id" -> id)))
-                       current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",id, name)} 
+
+					   Ok(toJson(Map("id" -> id)))
+                       current.plugin[AdminsNotifierPlugin].foreach {
+                         _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",id, name)}
                        Ok(toJson(Map("id" -> id)))
 		      	     }
 		      	     case None => Ok(toJson(Map("status" -> "error")))
@@ -352,7 +354,7 @@ class Datasets @Inject()(
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
   def updateInformation(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
-	 implicit request =>
+    implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
           //Set up the vars we are looking for
@@ -985,7 +987,7 @@ class Datasets @Inject()(
         	  files.index(file.id)
           
           Ok(toJson(Map("status" -> "success")))
-          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","removed",dataset.id.stringify, dataset.name)}
+          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
           Ok(toJson(Map("status"->"success")))
         }
         case None => Ok(toJson(Map("status" -> "success")))
@@ -1078,6 +1080,7 @@ class Datasets @Inject()(
       case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
     }
   }
+
   def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
     datasets.get(id)  match {
       case Some(dataset) => {

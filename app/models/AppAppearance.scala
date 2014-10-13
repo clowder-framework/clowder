@@ -7,6 +7,7 @@ import play.api.Play.current
 import play.api.Logger
 import services.mongodb.MongoSalatPlugin
 import services.mongodb.MongoContext
+import services.mongodb.MongoContext.context
 
 
 /**
@@ -22,3 +23,4 @@ case class AppAppearance(
   displayedName: String = "Medici 2",
   welcomeMessage: String = "Welcome to Medici 2.0, a scalable data repository where you can share, organize and analyze data."  
   )
+

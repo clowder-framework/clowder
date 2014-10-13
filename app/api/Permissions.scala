@@ -30,6 +30,7 @@ object Permission extends Enumeration {
 		Admin,
 		CreateCollections,
 		DeleteCollections,
+    EditCollection,
 		ListCollections,
 		ShowCollection,
 		CreateDatasets,

@@ -407,8 +407,10 @@ class Datasets @Inject()(
 				            datasets.update(dt) 
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id))
-				            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",dt.id.stringify, dt.name)}
-				            Redirect(routes.Datasets.dataset(dt.id))				            
+				            current.plugin[AdminsNotifierPlugin].foreach{
+                      _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+				            Redirect(routes.Datasets.dataset(dt.id))
+
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
 					    }   	                 
@@ -439,7 +441,7 @@ class Datasets @Inject()(
 				  datasets.update(dt)
 		  
 				  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
- 
+
 		          if(!theFileGet.xmlMetadata.isEmpty){
 		            val xmlToJSON = files.getXMLMetadataJSON(UUID(fileId))
 		            datasets.addXMLMetadata(dt.id, UUID(fileId), xmlToJSON)
@@ -458,7 +460,8 @@ class Datasets @Inject()(
 		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
-						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
+
+				  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 
 		          //link file to dataset in RDF triple store if triple store is used
 		          if(theFileGet.filename.endsWith(".xml")){
@@ -482,8 +485,9 @@ class Datasets @Inject()(
 		          
 				  // redirect to dataset page
 				  Redirect(routes.Datasets.dataset(dt.id))
-				  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Dataset","added",dt.id.stringify, dt.name)}
-				  Redirect(routes.Datasets.dataset(dt.id)) 				  
+				  current.plugin[AdminsNotifierPlugin].foreach{
+					  _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+				  Redirect(routes.Datasets.dataset(dt.id)) 
 	            }	            
 	          }  
 	        }

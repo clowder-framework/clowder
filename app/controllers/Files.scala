@@ -62,21 +62,27 @@ class Files @Inject() (
         val previewers = Previewers.findPreviewers
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
-          val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
+          val pvf = for (
+            p <- previewers; pv <- previewsFromDB;
+            if (!p.collection);
+            if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
+          ) yield {
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
           }
           if (pvf.length > 0) {
             Map(file -> pvf)
           } else {
-            val ff = for (p <- previewers; if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
-                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
-                //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-                if (file.checkLicenseForDownload(user)) {
-                    (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
-                }
-                else {
-                    (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length)
-                }
+            val ff = for (
+              p <- previewers;
+              if (!p.collection);
+              if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
+            ) yield {
+              if (file.checkLicenseForDownload(user)) {
+                (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+              }
+              else {
+                (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length)
+              }
             }
             Map(file -> ff)
           }
@@ -420,9 +426,9 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	             }
 	                        
 	            // redirect to file page]
-
 	            Redirect(routes.Files.file(f.id))
-	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",f.id.stringify, nameOfFile)}
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
 	            Redirect(routes.Files.file(f.id))
 	         }
 	         case None => {

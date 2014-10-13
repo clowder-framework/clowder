@@ -1,30 +1,15 @@
 package api
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.OutputStream
-import java.net.URL
-import java.net.HttpURLConnection
 import java.io.FileInputStream
 
-import java.io.FileOutputStream
-import java.util.Date
-import java.util.ArrayList
 
 import java.io.BufferedWriter
 import java.io.FileWriter
-
-import java.io.FileReader
-import java.io.ByteArrayInputStream
-
-import scala.collection.mutable.MutableList
-
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.bson.types.ObjectId
 
-import com.mongodb.WriteConcern
 import com.mongodb.casbah.Imports._
 
 import models._
@@ -49,14 +34,9 @@ import jsonutils.JsonUtil
 import services._
 import fileutils.FilesUtils
 
-import controllers.Previewers
-
 import play.api.libs.json.JsString
-import scala.Some
 import services.DumpOfFile
-import services.ExtractorMessage
 import play.api.mvc.ResponseHeader
-import scala.util.parsing.json.JSONArray
 import models.Preview
 import play.api.mvc.SimpleResult
 import models.File
@@ -67,8 +47,10 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import services.ExtractorMessage
 import scala.util.parsing.json.JSONArray
 
-
 import controllers.Previewers
+
+import javax.imageio.ImageIO
+
 import scala.concurrent.Future
  
 import scala.util.control._
@@ -137,66 +119,65 @@ class Files @Inject()(
   @ApiOperation(value = "Download file",
       notes = "Can use Chunked transfer encoding if the HTTP header RANGE is set.",
       responseClass = "None", httpMethod = "GET")
-  def download(id: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
-      request =>
-      //Check the license type before doing anything. 
-      files.get(id) match {
-          case Some(file) => {    
-              if (file.checkLicenseForDownload(request.user)) {
-        files.getBytes(id) match {            
-          case Some((inputStream, filename, contentType, contentLength)) => {
+  def download(id: UUID) = SecuredAction(parse.anyContent) { request =>
+    files.get(id) match {
+      case Some(file) => {
+        //Check the license type before doing anything.
+        if (file.checkLicenseForDownload(request.user)) {
+          files.getBytes(id) match {
+            case Some((inputStream, filename, contentType, contentLength)) => {
+              request.headers.get(RANGE) match {
+                // user requested a range of an image
+                case Some(value) => {
+                  val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
+                    case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+                    case x => (x(0).toLong, x(1).toLong)
+                  }
 
-            request.headers.get(RANGE) match {
-              case Some(value) => {
-                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-                  case x => (x(0).toLong, x(1).toLong)
+                  range match {
+                    case (start, end) =>
+                      inputStream.skip(start)
+                      SimpleResult(
+                        header = ResponseHeader(PARTIAL_CONTENT,
+                          Map(
+                            CONNECTION -> "keep-alive",
+                            ACCEPT_RANGES -> "bytes",
+                            CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
+                            CONTENT_LENGTH -> (end - start + 1).toString,
+                            CONTENT_TYPE -> contentType
+                          )
+                        ),
+                        body = Enumerator.fromStream(inputStream)
+                      )
+                  }
                 }
-
-                range match {
-                  case (start, end) =>
-                    inputStream.skip(start)
-                    SimpleResult(
-                      header = ResponseHeader(PARTIAL_CONTENT,
-                        Map(
-                          CONNECTION -> "keep-alive",
-                          ACCEPT_RANGES -> "bytes",
-                          CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                          CONTENT_LENGTH -> (end - start + 1).toString,
-                          CONTENT_TYPE -> contentType
-                        )
-                      ),
-                      body = Enumerator.fromStream(inputStream)
-                    )
+                // return full image
+                case None => {
+                  Ok.chunked(Enumerator.fromStream(inputStream))
+                    .withHeaders(CONTENT_TYPE -> contentType)
+                    .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
                 }
-              }
-              case None => {
-                Ok.chunked(Enumerator.fromStream(inputStream))
-                  .withHeaders(CONTENT_TYPE -> contentType)
-                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
               }
             }
-          }
-          case None => {
-            Logger.error("Error getting file" + id)
-            NotFound
+            case None => {
+              Logger.error("Error getting file" + id)
+              NotFound
+            }
           }
         }
-              }
-              else {
-                  //Case where the checkLicenseForDownload fails
-                  Logger.error("The file is not able to be downloaded")
-                  BadRequest("The license for this file does not allow it to be downloaded.")
-              }
-              }
-          case None => {
-                  //Case where the file could not be found
-                  Logger.info(s"Error getting the file with id $id.")
-                  BadRequest("Invalid file ID")
-              }
-          }
+        else {
+          //Case where the checkLicenseForDownload fails
+          Logger.error("The file is not able to be downloaded")
+          BadRequest("The license for this file does not allow it to be downloaded.")
+        }
+      }
+      case None => {
+        //Case where the file could not be found
+        Logger.info(s"Error getting the file with id $id.")
+        BadRequest("Invalid file ID")
+      }
     }
+  }
 
   /**
    *
@@ -296,13 +277,11 @@ class Files @Inject()(
   /**
    * Upload file using multipart form enconding.
    */
-
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-
       request.user match {
         case Some(user) => {
         	request.body.file("File").map { f =>        
@@ -331,6 +310,7 @@ class Files @Inject()(
 	          }
 
 	        var realUserName = realUser.fullName
+
 	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
 	        val uploadedFile = f
 	        file match {
@@ -408,10 +388,11 @@ class Files @Inject()(
 		            current.plugin[ElasticsearchPlugin].foreach{
 		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
 		            }
-	            }
-	            
+	            }	            
+
 	            Ok(toJson(Map("id"->id.stringify)))
-	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",id.stringify, nameOfFile)}
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id.stringify, nameOfFile)}
 	            Ok(toJson(Map("id"->id.stringify)))
 	          }
 	          case None => {
@@ -618,7 +599,8 @@ class Files @Inject()(
 
               //sending success message
               Ok(toJson(Map("id" -> id)))
-              current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","added",id, nameOfFile)}
+              current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id, nameOfFile)}
               Ok(toJson(Map("id" -> id)))
              }
             }
@@ -1020,6 +1002,7 @@ class Files @Inject()(
                     }
                   }
                   case None => {
+                    //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!                  
                     Ok.chunked(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
@@ -1030,7 +1013,6 @@ class Files @Inject()(
               case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
 
             }
-
           }
           case None => Logger.error("Geometry file not found"); InternalServerError
         }
@@ -1619,8 +1601,9 @@ class Files @Inject()(
             case _ => {}
           }
           Ok(toJson(Map("status"->"success")))
-	      current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("File","removed",id.stringify, file.filename)}
-	      Ok(toJson(Map("status"->"success")))
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "File","removed",id.stringify, file.filename)}
+          Ok(toJson(Map("status"->"success")))
         }
         case None => Ok(toJson(Map("status" -> "success")))
       }

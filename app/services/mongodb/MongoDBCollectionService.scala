@@ -244,7 +244,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
         }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
 
-        current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification("Collection","removed",collection.id.stringify, collection.name)}
         current.plugin[ElasticsearchPlugin].foreach {
           _.delete("data", "collection", collection.id.stringify)
         }

@@ -78,6 +78,7 @@ GET      /collections                                                        @co
 GET      /collections/new                                                    @controllers.Collections.newCollection
 POST     /collection/submit                                                  @controllers.Collections.submit
 GET      /collection/:id                                                     @controllers.Collections.collection(id: UUID)
+GET      /collections/:collection_id/previews                                           @controllers.Collections.previews(collection_id: UUID)
 
 # Tags
 GET     /tags/search                      @controllers.Tags.search(tag)
@@ -130,24 +131,23 @@ POST     /authenticate/:provider                                             sec
 GET      /not-authorized                                                     securesocial.controllers.ProviderController.notAuthorized
 
 # Administration pages
-GET      /admin                                                              @controllers.Admin.main
-GET      /admin/test                                                         @controllers.Admin.test
-GET      /admin/secureTest                                                   @controllers.Admin.secureTest
-GET      /admin/reindexFiles                                                 @controllers.Admin.reindexFiles
-GET     /admin/adapters             @controllers.Admin.getAdapters
-GET		/admin/extractors			@controllers.Admin.getExtractors
-GET		/admin/measures				@controllers.Admin.getMeasures
-GET		/admin/indexers				@controllers.Admin.getIndexers
-GET 	/admin/index				@controllers.Admin.getIndexes
-GET		/admin/addAdmin				@controllers.Admin.newAdmin
-GET		/admin/listAdmins			@controllers.Admin.listAdmins
-POST    /admin/submitNew 			@controllers.Admin.submitNew
-POST    /admin/createIndex  		@controllers.Admin.createIndex
-POST  	 /admin/index/:id/build     @controllers.Admin.buildIndex(id:String)
-DELETE   /admin/index/:id/delete    @controllers.Admin.deleteIndex(id:String)
-DELETE  /admin/index/:id            @controllers.Admin.deleteIndex(id:String)
-DELETE 	/admin/index/deleteAll		@controllers.Admin.deleteAllIndexes
-
+GET     /admin                                                               @controllers.Admin.main
+GET     /admin/test                                                          @controllers.Admin.test
+GET     /admin/secureTest                                                    @controllers.Admin.secureTest
+GET     /admin/reindexFiles                                                  @controllers.Admin.reindexFiles
+GET     /admin/adapters                                                      @controllers.Admin.getAdapters
+GET		/admin/extractors			                                         @controllers.Admin.getExtractors
+GET		/admin/measures				                                         @controllers.Admin.getMeasures
+GET		/admin/indexers				                                         @controllers.Admin.getIndexers
+GET 	/admin/index				                                         @controllers.Admin.getIndexes
+GET		/admin/addAdmin														 @controllers.Admin.newAdmin
+GET		/admin/listAdmins													 @controllers.Admin.listAdmins
+POST    /admin/submitNew 													 @controllers.Admin.submitNew
+POST    /admin/createIndex  		                                         @controllers.Admin.createIndex
+POST  	/admin/index/:id/build                                               @controllers.Admin.buildIndex(id:String)
+DELETE  /admin/index/:id/delete                                              @controllers.Admin.deleteIndex(id:String)
+DELETE  /admin/index/:id                                              		 @controllers.Admin.deleteIndex(id:String)
+DELETE 	/admin/index/deleteAll		                                         @controllers.Admin.deleteAllIndexes
 
 GET     /admin/extractions                                                   @controllers.Extractors.listAllExtractions
 POST    /admin/theme                                                         @controllers.Admin.setTheme
@@ -172,6 +172,7 @@ GET     /api/files                        						@api.Files.list
 POST    /api/files                        						@api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "")
 POST	/api/files/searchusermetadata							@api.Files.searchFilesUserMetadata
 POST	/api/files/searchmetadata								@api.Files.searchFilesGeneralMetadata
+
 POST    /api/uploadToDataset/:id                        		@api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "")
 POST	/api/files/uploadIntermediate/:idAndFlags				@api.Files.uploadIntermediate(idAndFlags)
 
@@ -238,12 +239,12 @@ DELETE	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.remove
 POST	/api/collections/:coll_id/remove											@api.Collections.removeCollection(coll_id: UUID)
 GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id: UUID)
 DELETE	/api/collections/:coll_id													@api.Collections.removeCollection(coll_id: UUID)
+POST    /api/collections/:c_id/previews/:p_id     						            @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
 
 GET    	/api/datasets					  							@api.Datasets.list
 POST    /api/datasets                                           	@api.Datasets.createDataset
 POST	/api/datasets/searchusermetadata							@api.Datasets.searchDatasetsUserMetadata
 POST	/api/datasets/searchmetadata								@api.Datasets.searchDatasetsGeneralMetadata
-
 
 GET		/api/datasets/listOutsideCollection/:coll_id				@api.Datasets.listOutsideCollection(coll_id: UUID)
 POST	/api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound	@api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
