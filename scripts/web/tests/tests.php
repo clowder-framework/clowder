@@ -96,13 +96,14 @@
 			function test(id, file, output, SPAWN_NEXT_TASK) {
 				var row = document.getElementById(id.toString());
 				$(row).addClass('info');
+				$(row).attr('class', 'info');		//Set it again in case this is a second attempt
 
 				var dts = document.getElementById('dts').value;
 				var url = 'test.php?dts=' + encodeURIComponent(dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
 	
-				$.get(url, function(size) {
+				$.get(url, function(success) {
 					//Check result
-					if(size > 0) {
+					if(success > 0) {
 						$(row).attr('class', 'success');
 						successes++;
 					} else {
