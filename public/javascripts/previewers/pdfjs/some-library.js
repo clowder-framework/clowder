@@ -14,7 +14,7 @@
 	$(Configuration.tab).append(
 		"<button id='prevPage"+prNum+"' value='prev'>&lt;</button>" + 
 		"<button id='nextPage"+prNum+"' value='prev'>&gt;</button><br/>" + 
-		"<canvas id='rubberbandCanvas"+prNum+"'/>" +
+		"<canvas class='fit-in-space' id='rubberbandCanvas"+prNum+"'/>" +
 		"<div id='rubberbandDiv"+prNum+"'></div>"
 		);
 

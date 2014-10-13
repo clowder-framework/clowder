@@ -1,9 +1,15 @@
-@(fileName:String, resultsList:List[(VersusIndex.VersusIndex,  List[PreviewFilesSearchResult])])   						
+@(fileName:String, fileId:models.UUID, resultsList:List[(VersusIndex,  List[PreviewFilesSearchResult])])   						
+
+@**********************************************************************@
+@****   Template to display search results for each index                  ***@
+@****    User can enter weights to combine search results into one  ***@
+@***********************************************************************@
+
 
 @import helper._
 @import collection.JavaConverters._
 
-@import models.VersusIndex.VersusIndex
+@import models.VersusIndex
 @import models.PreviewFilesSearchResult
 @import models.SearchResultFile
 @import models.SearchResultPreview
@@ -11,7 +17,9 @@
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @main("Search Results") {	
-	
+
+	@***********  Display search results for each index  ******************@
+
 	<div class="page-header">
 		<h1>Search Results For <medium>@fileName</medium></h1>
 	</div>
@@ -26,7 +34,6 @@
 	<tr>
   
 	@for((index, previewsAndFiles) <- resultsList) {
-		
 		<td>
 		<h3>@index.extractorID / @index.measureID / @index.indexerType</h3>
 		<table>
@@ -52,7 +59,7 @@
 							</a>
 					  <div class="media-body">
 					    <h4 class="media-heading">@oneResult.searchResultFile.title</h4>
-					    <p>Distance: @oneResult.searchResultFile.distance</p>				    
+					    <p>Distance (normalized): @oneResult.searchResultFile.distance</p>			    
 						
 					    @if(oneResult.searchResultFile.datasetIdList.size==0){
 					    	No dataset associated with this image 
@@ -85,34 +92,62 @@
 					  <div class="media-body">
 
 					    <h4 class="media-heading">@oneResult.searchResultPreview.previewName</h4>
-					    <p>Distance: @oneResult.searchResultPreview.distance</p>				    
+					    <p>Distance (normalized): @oneResult.searchResultPreview.distance</p>				    
 						
 					    @if(oneResult.searchResultPreview.datasetIdList.size==0){
 					    	No dataset associated with this image 
 					    }
 					  @if(oneResult.searchResultPreview.datasetIdList.size>0){
-					  	<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
-					  	@oneResult.searchResultPreview.datasetIdList.map{id=>					   
-					     		<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
-					     		<br>					     		
+					  		<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
+					  		@oneResult.searchResultPreview.datasetIdList.map{id=>					   
+					     			<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
+					     			<br>					     		
 					    	}  						  	 
 					    }					    
 					    
 					    <a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
 					     		View File @oneResult.searchResultPreview.fileTitle</a>
-					     		<br>
+					     <br>
+
+
+
 					     		Shot start time: @oneResult.searchResultPreview.shotStartTime
 					     		
 						}@* end of If Preview *@
 											     
 
+
+
+
+
 					  </div>
 					</div>
 					</td></tr>
 		}  @** END OF @for(oneResult <- previewsAndFiles) { **@
-		</table></td>
+		</table>
+		</td>		
 	}
 	</tr>
-	</table>
-	}
+</table>
+	@***********  End of search results for each index  ******************@
+	
+	
+<br>@************ form to combine search results ************@
+		 @form(action = routes.Search.findSimilarWeightedIndexes, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+			    <fieldset>
+			      <legend>Combine search results</legend>			     
+			    	 <input type="hidden" name="FileID" value="@fileId">			    
+			     	@for((index, previewsAndFiles) <- resultsList) {	
+			     		<p>Please select weight for index @index.extractorID / @index.measureID  			
+			     		<input type="text" name="Weight" >			
+						<input	type="hidden" name="IndexID" value="@index.id">														
+					}			     
+			    	</fieldset>
+		        	<div class="form-actions">
+		          		<input type="submit" class="btn btn-primary" value="Combine Results"/>
+		        	</div>
+		}
+		@************ end of form ************@
+
+	}		
 }
