@@ -1,13 +1,8 @@
 package models
 
 import java.util.Date
+import api.{WithPermission, Permission}
 import securesocial.core.Identity
-import scala.collection.mutable.MutableList
-import services._
-import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json
-import play.api.libs.json.JsValue
-import play.api.Logger
 
 
 /**
@@ -41,26 +36,16 @@ case class File(
    * Utility method to check a given file and a given identity for permissions from the license 
    * to allow the raw bytes to be downloaded. 
    * 
-   * @param anIdentity An Option, possibly contianing the securesocial information for a user
+   * @param anIdentity An Option, possibly containing the securesocial information for a user
    * 
    * @return A boolean, true if the license allows the bytes to be downloaded, false otherwise
    *   
    */
   def checkLicenseForDownload(anIdentity: Option[Identity]): Boolean = {
-      
-      var license = licenseData
-      var userName = ""
-      
-      anIdentity match {
-          case Some(aUser) => { 
-              userName = aUser.fullName 
-          }
-          case None => {
-              userName = ""
-          }
-      }               
-
-      return (license.isDownloadAllowed() || license.isRightsOwner(userName))
+    licenseData.isDownloadAllowed || (anIdentity match {
+      case Some(x) => WithPermission(Permission.DownloadFiles).isAuthorized(x) || licenseData.isRightsOwner(x.fullName)
+      case None => false
+    })
   }
 }
 

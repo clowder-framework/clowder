@@ -1,30 +1,15 @@
 package api
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.OutputStream
-import java.net.URL
-import java.net.HttpURLConnection
 import java.io.FileInputStream
 
-import java.io.FileOutputStream
-import java.util.Date
-import java.util.ArrayList
 
 import java.io.BufferedWriter
 import java.io.FileWriter
-
-import java.io.FileReader
-import java.io.ByteArrayInputStream
-
-import scala.collection.mutable.MutableList
-
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.bson.types.ObjectId
 
-import com.mongodb.WriteConcern
 import com.mongodb.casbah.Imports._
 
 import models._
@@ -49,14 +34,9 @@ import jsonutils.JsonUtil
 import services._
 import fileutils.FilesUtils
 
-import controllers.Previewers
-
 import play.api.libs.json.JsString
-import scala.Some
 import services.DumpOfFile
-import services.ExtractorMessage
 import play.api.mvc.ResponseHeader
-import scala.util.parsing.json.JSONArray
 import models.Preview
 import play.api.mvc.SimpleResult
 import models.File

@@ -1,18 +1,10 @@
 package models
 
-import com.novus.salat.dao.ModelCompanion
-import com.mongodb.casbah.MongoConnection
-import services.mongodb.MongoContext.context
-import com.novus.salat.dao.SalatDAO
-import org.bson.types.ObjectId
-import play.api.Play.current
-import services.mongodb.MongoSalatPlugin
-
 /**
  * case class to handle specific license information. Currently attached to individual Datasets and Files.  
  */
 case class LicenseData (
-        id: UUID = UUID.generate,
+        id: UUID = UUID.generate(),
         m_licenseType: String = "license1",
         m_licenseUrl: String = "",
         m_licenseText: String = "All Rights Reserved",
@@ -24,18 +16,13 @@ case class LicenseData (
 ) {
     /**
      * Utility method to check if the license allows the file to be downloaded. Currently, if the license type is NOT
-     * "license1", or if it is "license1" and the "allowDOwnload" flag is set, the file can be downloaded.
+     * "license1", or if it is "license1" and the "allowDownload" flag is set, the file can be downloaded.
      * 
      * @return A boolean, true if the license type allows the file to be downloaded, false otherwise.
      * 
      */
-    def isDownloadAllowed(): Boolean = {
-        if (m_licenseType != "license1") {
-            return true;
-        }
-        else {
-            return m_allowDownload;
-        }
+    def isDownloadAllowed = {
+        (m_licenseType != "license1") || m_allowDownload
     }
     
     /**
@@ -43,11 +30,11 @@ case class LicenseData (
      * 
      * @param aName A String that represents the name of a user to compare to the current rights holder.
      * 
-     * @return A boolean, true if the parameter matches the owner, fales otherwise.
+     * @return A boolean, true if the parameter matches the owner, false otherwise.
      * 
      */
-    def isRightsOwner(aName: String): Boolean = {
-        return m_rightsHolder == aName;
+    def isRightsOwner(aName: String) = {
+        m_rightsHolder == aName
     }
 }
 
