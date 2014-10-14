@@ -46,6 +46,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
     val updateStatus = current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         val configuration = play.api.Play.configuration
+        val consumerTag=configuration.getString("consumerTag").getOrElse("ctag")
         var futureIPs = plugin.getChannelsList() /* Get Channel IPs*/
         var ips = for {
           ipsResponse <- futureIPs /* Convert Future Response to Response*/
@@ -109,7 +110,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
                 for (xt <- consumer_tags) {
                   var str = xt
                   var substr = str.substring(1, str.length - 1)
-                  if (substr == ("ctag1.0")) {
+                  if (substr.contains(consumerTag)) {
                     Logger.debug(substr + " :::  CONSUMER")
                     flag = true
                   } else {
@@ -142,6 +143,11 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
           var qlist = List[String]()
           var subi: String = ""
           var subq: String = ""
+          //--- Temporary Fix  
+          var ipQnolist=List[ExtractorDetail]() 
+          var hostIp=""
+          //--- End of Temporary Fix  
+            
           for (i <- finalResponse) { /*(ip,flag,queue name)*/
             if (i._2 == true) { /* extractor running in server is a consumer*/
 
@@ -149,6 +155,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
               subq = i._3.substring(1, i._3.length - 1) /*to get rid of quotation marks in queue name,i.e., extractor name*/
                            
               val hostname=InetAddress.getLocalHost().getCanonicalHostName()
+              
                                                        
               if (subi.contains("[::1]") || subi.contains("127.0.0.1") ) {
                  Logger.debug("LocalHost: The Extractor is running local to Rabbitmq Server")
@@ -158,26 +165,40 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
                                            
                  if (!kslist.contains(host) && !kslist.contains("127.0.0.1") && !kslist.contains(hostname)){
                   
-                   Logger.info("!contains hostname:= "+ !kslist.contains(hostname))
+                  Logger.info("!contains hostname:= "+ !kslist.contains(hostname))
                   //kslist = "127.0.0.1" :: kslist
                   kslist = hostname :: kslist
                   Logger.info("Appended ---HOSTNAME:  "+hostname)
                   Logger.info("-------kslist = "+kslist.toString)
                  } 
-
+                 hostIp=hostname //<-- Temporary Fix
               } else {
                 var iparr = subi.split('-')(0).split(':')
                 if (!kslist.contains(iparr(0)))
                   kslist = iparr(0) :: kslist
+                
+                hostIp=iparr(0)  //<-- Temporary Fix  
               }
               if (!qlist.contains(subq))
-                qlist = subq :: qlist
+                 qlist = subq :: qlist
+             //------- Temporary Fix   
+              var ed=ipQnolist.find(l=>l.IP==hostIp && l.name==subq)
+              ed match {
+                 case Some(x)=>
+                        x.count=x.count+1
+                 case None=>
+                        ipQnolist= new ExtractorDetail(hostIp,subq,1) :: ipQnolist 
+               }
+            //------ End of Temporary Fix  
             }
           }
+          
           extractors.insertServerIPs(kslist)
 
           extractors.insertExtractorNames(qlist)
-
+          
+          extractors.insertExtractorDetail(ipQnolist) // Temporary Fix
+          
           var rktypelist = qlist.map {
             qn =>
               var rktype = for {

@@ -24,6 +24,9 @@ import scala.Some
 import scala.util.parsing.json.JSONArray
 import services.mongodb.MongoContext.context
 import services.mongodb.MongoSalatPlugin
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsString
+import play.api.libs.json.JsNumber
 
 @Singleton
 class MongoDBExtractorService extends ExtractorService {
@@ -89,7 +92,38 @@ class MongoDBExtractorService extends ExtractorService {
      
     }
   }
-
+//------------------------Temporary fix--------------------------------
+ /**
+ * 
+ *This is a temporary fix for keeping track of extractor servers IPs, names and the extractors' counts 
+ * This will be omitted in future version 
+ * 
+ * * 
+ */
+ def insertExtractorDetail(exDetails: List[ExtractorDetail]) = {
+    val qcoll = ExtractorDetailDAO.dao.collection
+    qcoll.drop()
+    Logger.debug("[mongodbextractorservice]--extractor.details: collection dropped")
+    for (qn <- exDetails) {
+      Logger.debug("[mongodbextractorservice]--extractor.details: document inserted: " + qn)
+      ExtractorDetailDAO.insert(qn,WriteConcern.Safe)
+     
+    }
+  }
+ 
+ def getExtractorDetail():  Option[JsValue]={
+    var edArray = new JsArray()
+    Logger.debug("[MongoDBExtractorService]- getExtractorDetails")
+    var allDocs = ExtractorDetailDAO.findAll
+    for (doc <- allDocs) {
+      edArray = edArray :+ JsObject(Seq("Server IP"->JsString(doc.IP),"Extractor Name"->JsString(doc.name),"Count"->JsNumber(doc.count)))
+    }
+    Logger.debug("[MongoDBExtractorService]- Extractor Detail List-")
+    Logger.debug(edArray.toString)
+    Some(edArray)
+ }
+ //------------------------------------------End of Temporary fix-------------  
+   
   def getExtractorInputTypes() = {
     var list_inputs = List[String]()
 
@@ -142,4 +176,16 @@ object ExtractorInputType extends ModelCompanion[ExtractorInputType, ObjectId] {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[ExtractorInputType, ObjectId](collection = x.collection("extractor.inputtypes")) {}
   }
-}
+} 
+
+/**
+ * Temporary Fix: Creating a mongodb collection for keeping track of extractors details
+ */
+ object ExtractorDetailDAO extends ModelCompanion[ExtractorDetail, ObjectId] {
+  // TODO RK handle exception for instance if we switch to other DB
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[ExtractorDetail, ObjectId](collection = x.collection("extractor.details")) {}
+  } 
+ }
+

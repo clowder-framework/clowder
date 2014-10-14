@@ -209,6 +209,9 @@ GET       /api/extractions/servers_ips				      	@api.Extractions.getExtractorSe
 GET       /api/extractions/extractors_names                 @api.Extractions.getExtractorNames() 
 GET       /api/extractions/supported_input_types      		@api.Extractions.getExtractorInputTypes()
 
+#API for Temporary fix
+GET       /api/extractions/extractor_details                @api.Extractions.getExtractorDetails()
+
 POST    /api/extractions/upload_url                             @api.Extractions.uploadByURL()
 POST    /api/extractions/upload_file                            @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
 GET     /api/extractions/:id/status                             @api.Extractions.checkExtractorsStatus(id:UUID)
