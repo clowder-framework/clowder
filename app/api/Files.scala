@@ -121,7 +121,6 @@ class Files @Inject()(
   @ApiOperation(value = "Download file",
       notes = "Can use Chunked transfer encoding if the HTTP header RANGE is set.",
       responseClass = "None", httpMethod = "GET")
-
   def download(id: UUID) = SecuredAction(parse.anyContent) { request =>
     files.get(id) match {
       case Some(file) => {
@@ -285,7 +284,6 @@ class Files @Inject()(
       responseClass = "None", httpMethod = "POST")
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>        
@@ -301,7 +299,7 @@ class Files @Inject()(
 		              }
 	          }
 	        
-	        Logger.debug("api/Files Uploading file " + nameOfFile)
+	        Logger.debug("Uploading file " + nameOfFile)
 	        // store file
 	        var realUser = user
 	          if(!originalZipFile.equals("")){
@@ -353,7 +351,7 @@ class Files @Inject()(
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
                   val host = Utils.baseUrl(request) + request.path.replaceAll("api/files$", "")
-                  Logger.debug("api/files uploadFIle  host = " + host)
+
 
                   /*---- Insert DTS Request to database---*/  
 
@@ -488,7 +486,7 @@ class Files @Inject()(
 		              }
 	            }
           
-          Logger.debug("api/Files dataset Uploading file " + nameOfFile)         
+          Logger.debug("Uploading file " + nameOfFile)         
           // store file
           var realUser = user
           if(!originalZipFile.equals("")){
@@ -701,7 +699,7 @@ class Files @Inject()(
     implicit request =>
       request.body.file("File").map {
         f =>
-          Logger.debug("api/FIles 697 Uploading file " + f.filename)
+          Logger.debug("Uploading file " + f.filename)
           // store file
           val id = previews.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
           Ok(toJson(Map("id" -> id)))
@@ -995,13 +993,10 @@ class Files @Inject()(
   @ApiOperation(value = "Add thumbnail to file", notes = "Attaches an already-existing thumbnail to a file.", responseClass = "None", httpMethod = "POST")
   def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-      Logger.debug("~~~~~attachTHumbnail for fileid = " + file_id + " and thumbnail_id = " + thumbnail_id )
       files.get(file_id) match {
         case Some(file) => {
-          Logger.debug("file exists")
           thumbnails.get(thumbnail_id) match {
             case Some(thumbnail) => {
-              Logger.debug("thumbnal exists")
               files.updateThumbnail(file_id, thumbnail_id)
               val datasetList = datasets.findByFileId(file.id)
               for (dataset <- datasetList) {
@@ -1012,53 +1007,10 @@ class Files @Inject()(
 
               Ok(toJson(Map("status" -> "success")))
             }
-            case None => {
-                            Logger.debug("Thumbnail not found")
-
-              BadRequest(toJson("Thumbnail not found"))
-            }
+            case None => BadRequest(toJson("Thumbnail not found"))
           }
         }
-        case None => {
-          Logger.debug("File not found")
-          BadRequest(toJson("File not found " + file_id))
-        }
-      }
-  }
-/**
-   * Add thumbnail to query.
-   */
-  @ApiOperation(value = "Add thumbnail to file", notes = "Attaches an already-existing thumbnail to a file.", responseClass = "None", httpMethod = "POST")
-  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
-    implicit request =>
-      Logger.debug("~~~~~attachTHumbnail for fileid = " + query_id + " and thumbnail_id = " + thumbnail_id )
-      queries.get(query_id) match {
-        case Some(file) => {
-          Logger.debug("file exists")
-          thumbnails.get(thumbnail_id) match {
-            case Some(thumbnail) => {
-              Logger.debug("thumbnal exists")
-              queries.updateThumbnail(query_id, thumbnail_id)
-             // val datasetList = datasets.findByFileId(file.id)
-              //for (dataset <- datasetList) {
-                //if (dataset.thumbnail_id.isEmpty) {
-                  //datasets.updateThumbnail(dataset.id, thumbnail_id)                 
-                //}
-              //}
-
-              Ok(toJson(Map("status" -> "success")))
-            }
-            case None => {
-                            Logger.debug("Thumbnail not found")
-
-              BadRequest(toJson("Thumbnail not found"))
-            }
-          }
-        }
-        case None => {
-          Logger.debug("File not found")
-          BadRequest(toJson("File not found " + query_id))
-        }
+        case None => BadRequest(toJson("File not found " + file_id))
       }
   }
 
@@ -1680,15 +1632,11 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-          //this stmt has to be before files.removeFile
-          Logger.debug("Deleting file from indexes")
+          Logger.debug("Deleting file: " + file.filename)
+          files.removeFile(id)
           current.plugin[VersusPlugin].foreach {        
             _.removeFromIndexes(id)        
           }
-          
-          Logger.debug("Deleting file: " + file.filename)
-          files.removeFile(id)
-          
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "file", id.stringify)
           }
