@@ -5,7 +5,6 @@
 @****    User can enter weights to combine search results into one  ***@
 @**********************************************************************@
 
-
 @import helper._
 @import collection.JavaConverters._
 
@@ -37,10 +36,11 @@
 	</div>
 	} else {
 	<table>
-	@** Fix for Chrome - otherwise tbody tag would be automatically inserted and valign set to "middle"**@
+	@** Fix for Chrome - otherwise <tbody> tag would be automatically inserted and valign set to "middle"**@
 	<tbody valign="top">	
 	<tr>  
 	@for((index, previewsAndFiles) <- resultsList) {		
+
 		<td>
 		<h3>Index name</h3>
 		Extractor:@index.extractorID<br>Measure:@index.measureID<br>Indexer:@index.indexerType<p><p>
@@ -68,6 +68,7 @@
 					  <div class="media-body">
 					    <h4 class="media-heading">@oneResult.searchResultFile.title</h4>
 					    <p>Distance: @oneResult.searchResultFile.distance</p>			    
+
 						
 					    @if(oneResult.searchResultFile.datasetIdList.size==0){
 					    	No dataset associated with this image 
@@ -100,7 +101,7 @@
 					  <div class="media-body">
 
 					    <h4 class="media-heading">@oneResult.searchResultPreview.previewName</h4>
-					    <p>Distance: @oneResult.searchResultPreview.distance</p>				    
+					    <p>Distance (normalized): @oneResult.searchResultPreview.distance</p>				    
 						
 					    @*** displaying datasets ***@
 					    @if(oneResult.searchResultPreview.datasetIdList.size==0){
@@ -121,6 +122,7 @@
 					     	<br>
 					     		Shot start time: @oneResult.searchResultPreview.shotStartTime					     		
 					    						    
+
 						}@* end of If Preview *@											     
 
 					  </div>
@@ -129,10 +131,12 @@
 			</tr>
 		}  @** END OF for(oneResult <- previewsAndFiles)  **@
 		</tbody>	
+
 		</table>
 		</td>		
 	}
 	</tr>
+
 </tbody> </table>
 	@***********  End of search results for each index  ******************@
 	

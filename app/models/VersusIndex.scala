@@ -43,4 +43,3 @@ object VersusIndex {
 				JsSuccess(VersusIndex(maybeID,maybeMimeType,exType,meType,indxrType))     
 			}
 	}
-}

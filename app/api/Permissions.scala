@@ -4,8 +4,10 @@ import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
+import models.AppConfiguration
 import play.api.Play.configuration
 import play.api.{Plugin, Logger, Application}
+import services.AppConfigurationService
 
  /**
   * A request that adds the User for the current call
@@ -23,6 +25,7 @@ object Permission extends Enumeration {
 		Admin,
 		CreateCollections,
 		DeleteCollections,
+    EditCollection,
 		ListCollections,
 		ShowCollection,
 		CreateDatasets,
@@ -32,6 +35,7 @@ object Permission extends Enumeration {
 		SearchDatasets,
 		AddDatasetsMetadata,
 		ShowDatasetsMetadata,
+		ShowTags,
 		CreateTags,
 		DeleteTags,
 		UpdateDatasetInformation,
@@ -73,6 +77,9 @@ import api.Permission._
  * @author Rob Kooper
  */
 case class WithPermission(permission: Permission) extends Authorization {
+	
+  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
+	
   def isAuthorized(user: Identity): Boolean = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
       case "public" => return publicPermission(user, permission)
@@ -102,19 +109,41 @@ case class WithPermission(permission: Permission) extends Authorization {
       case (_, GetSensors)           => true
       case (_, SearchSensors)        => true
       case (_, ExtractMetadata)      => true
-      
+      case (_, ShowTags)             => true
+
       // FIXME: required by ShowDataset if preview uses original file
       // FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
       case (_, DownloadFiles)        => true
       
       // all other permissions require authenticated user
       case (null, _)                 => false
+      case(_, Permission.Admin) =>{
+		    if(!user.email.isEmpty)
+		    	if(appConfiguration.adminExists(user.email.get))
+		    	  true
+		    	else
+		    	  false  
+		    else	  
+		    	false	  
+      }
       case (_, _)                    => true
     }
   }
 
   def privatePermission(user: Identity, permission: Permission): Boolean = {
-    return user != null
+    (user, permission) match {
+      case (null, _)                 => false
+      case(_, Permission.Admin) =>{
+		    if(!user.email.isEmpty)
+		    	if(appConfiguration.adminExists(user.email.get))
+		    	  true
+		    	else
+		    	  false  
+		    else	  
+		    	false	  
+      }
+      case (_, _)                    => true
+    }
   }
 }
 

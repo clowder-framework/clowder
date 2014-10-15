@@ -1,38 +1,12 @@
 package services
-/*
-import models.{SearchResultFile, SearchResultPreview, PreviewFilesSearchResult, FileMD, File, Dataset, UUID}
-
-import play.api.{Plugin, Logger, Application }
-import play.api.libs.json.Json
-import play.api.libs.ws.{WS, Response}
-import java.io._
-
-import play.api.Logger
-import play.api.Play.current
-import play.api.data.Forms._
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Input.Empty
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.Json._
-
-import com.mongodb.casbah.gridfs.GridFS
-
-import scala.concurrent.{blocking, Future, Await}
-import akka.actor.Actor
-import akka.actor.ActorRef
-import controllers.Previewers
-import controllers.routes
-import java.text.DecimalFormat
-
-import scala.collection.mutable.{ArrayBuffer, HashMap, ListBuffer}
-import scala.collection.immutable.Map
-*/
 
 import models.{SearchResultFile, SearchResultPreview, PreviewFilesSearchResult, FileMD, File, Dataset, UUID}
 
 import play.api.{ Plugin, Logger, Application }
 import play.api.libs.json.Json
+import play.api.libs.json.Json._
+import play.api.libs.json.JsValue
+
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import java.io._
@@ -43,26 +17,20 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Input.Empty
 import com.mongodb.casbah.gridfs.GridFS
 import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import models.{UUID, File}
-import play.api.libs.json.Json._
 import scala.concurrent.{blocking, Future, Await}
 import akka.actor.Actor
 import akka.actor.ActorRef
 import controllers.Previewers
 import controllers.routes
 import java.text.DecimalFormat
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.{ArrayBuffer, ListBuffer, HashMap}
 import scala.collection.immutable.Map
-
 
 /** 
  * Versus Plugin
  * 
- * @author Smruti
- * @author Inna Zharnitsky
- * 
+ * @author Smruti Padhy
+ * @author Inna Zharnitsky * 
  **/
 class VersusPlugin(application:Application) extends Plugin{
   
@@ -72,7 +40,7 @@ class VersusPlugin(application:Application) extends Plugin{
   val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
   val queries: MultimediaQueryService = DI.injector.getInstance(classOf[MultimediaQueryService])
   val census: CensusService = DI.injector.getInstance(classOf[CensusService])  
-   
+
   override def onStart() {
     Logger.debug("Starting Versus Plugin")
   }
@@ -185,15 +153,12 @@ class VersusPlugin(application:Application) extends Plugin{
     val indexurl = host + "/indexes"
     var k = 0
     val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
-    indexList.map {
-      response => Logger.debug("VP 192 GETINDEXES: response.body=" + response.body)     
+    indexList.map { response => 
       val json: JsValue = Json.parse(response.body)          
       val seqOfIndexes = json.as[Seq[models.VersusIndexTypeName]]   
-      Logger.debug("VP: getIndexes   seqOfIndexes = " + seqOfIndexes)
       for (index <- seqOfIndexes) {
-    	  Logger.debug("VP  one index = " + index)
-          Logger.debug("VP json = " + Json.toJson(index))
-      }    
+    	  Logger.debug("VersusPlugin  index = " + index)
+      }
     }
     indexList
   }
@@ -204,6 +169,7 @@ class VersusPlugin(application:Application) extends Plugin{
    */ 
    def getIndexesAsFutureList(): Future[List[models.VersusIndex]]= {  
     Logger.debug("VersusPlugin: Getting indexes as a future list")
+
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
     val indexurl = host + "/indexes"   
@@ -307,7 +273,7 @@ class VersusPlugin(application:Application) extends Plugin{
    /* 
    * Get all indexes from Versus web server THAT MATCH THE FILE CONTENT TYPE as a future list
    */
-  def getIndexesForContentTypeAsFutureList(contentType: String): Future[List[models.VersusIndex]]= {    
+ def getIndexesForContentTypeAsFutureList(contentType: String): Future[List[models.VersusIndex]]= {    
    Logger.debug("VersusPlugin,getIndexesForContentTypeAsFutureList")
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
@@ -317,8 +283,8 @@ class VersusPlugin(application:Application) extends Plugin{
 
     val futureResponse: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
     futureResponse.map {
-      response =>     
-        Logger.debug("VP 247 - resp.body = " + response.body)
+      response =>  
+        Logger.debug("VersusPlugin response.body = " + response.body)
         val json: JsValue = Json.parse(response.body)    
         val indexes = json.as[Seq[models.VersusIndex]]  
         val fileTypeStr = contentType.split("/")            
@@ -338,6 +304,7 @@ class VersusPlugin(application:Application) extends Plugin{
       	matchingIndexes.toList
     }    
   }
+  
   
   
    def getIndexesForContentTypeAsFutureListNewMayBe(contentType: String): Future[List[models.VersusIndex]]= {    
@@ -363,8 +330,7 @@ class VersusPlugin(application:Application) extends Plugin{
             //indexMimeType = image/* or application/pdf or */*
             //fileType = image/png or image/jpeg or application/pdf
             if (indexMimeTypeStr(0).equals(fileTypeStr(0)) || indexMimeTypeStr(0).equals("*")) {
-            	matchingIndexes += index
-            	
+            	matchingIndexes += index            	
             	
             }            
         }
@@ -650,6 +616,7 @@ class VersusPlugin(application:Application) extends Plugin{
         var resultList = new ListBuffer[PreviewFilesSearchResult]    
 
         similarityResults.map {      
+
           result =>            
             //example: result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
             //or
@@ -765,6 +732,7 @@ class VersusPlugin(application:Application) extends Plugin{
     }
   
   
+
     /*
     * Helper method. Called from queryIndex    
     */

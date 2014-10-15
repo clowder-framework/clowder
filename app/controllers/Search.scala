@@ -168,7 +168,7 @@ class Search @Inject() (
    * Search MultimediaFeatures.
    */
   def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
-    Logger.debug("Searching multimedia index")
+     Logger.debug("Searching multimedia index " + section_id.stringify)
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
     queries.findFeatureBySection(section_id) match {
@@ -262,6 +262,7 @@ class Search @Inject() (
     		} yield {
     		  //added a placeholder for UUID, to work with the new version of template
     		  Ok(views.html.multimediaSearchResults(queryURL, null, null, listOfResults))     
+
     		}              
         } //case some
                     
@@ -315,6 +316,7 @@ class Search @Inject() (
    						} yield {  
    						  // var thumb_id = file.thumbnail_id.getOrElse("")	
    							Ok(views.html.multimediaSearchResults(filename, fileID, null, listOfResults))             		
+
    						}    		            
    					} //end of case Some(plugin)   
 
@@ -370,7 +372,7 @@ class Search @Inject() (
    	   						futureListResults<-futureFutureListResults
    	   						listOfResults<-futureListResults      		
    	   					} yield {     			             
-   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  null, listOfResults))          
+   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  null, listOfResults)) 
    	   					}    		             
    	   				} //end of case Some(plugin)                   
 
@@ -538,6 +540,7 @@ class Search @Inject() (
        }//end of if no validation errors
          else {Future(Ok("Form validation errors: " + errorMessage))}
                 
+
     } //Async
   }
      

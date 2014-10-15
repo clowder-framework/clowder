@@ -16,6 +16,7 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
 import models.AppConfiguration
+import models.AppAppearance
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import models.{AppConfiguration, UUID, VersusIndexTypeName}
@@ -27,6 +28,9 @@ import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
 import javax.inject.{Inject, Singleton}
+
+import play.api.data.Form
+import play.api.data.Forms._
 
 /**
  * Administration pages.
@@ -44,8 +48,9 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val themeId = themes.indexOf(getTheme)
     Logger.debug("Theme id " + themeId)
+    val appAppearance = AppAppearance.getDefault.get
     implicit val user = request.user
-    Ok(views.html.admin(themeId))
+    Ok(views.html.admin(themeId, appAppearance))
   }
   
   def indexAdmin = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
@@ -102,7 +107,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
   }
   
   
-  //get the available Adapters from Versus
+  //get all the distinct types of sections that are getting indexes (i.e. 'face', 'census')
   def getSections() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request=>
         val types = census.getDistinctTypes
@@ -411,4 +416,44 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
   }
 
   def getTheme(): String = appConfiguration.getTheme()
+  
+  val adminForm = Form(
+  single(
+    "email" -> email
+  )verifying("Admin already exists.", fields => fields match {
+     		case adminMail => !appConfiguration.adminExists(adminMail)
+     	})
+)
+  
+  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.newAdmin(adminForm))
+  }
+  
+  def submitNew() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+    
+        adminForm.bindFromRequest.fold(
+          errors => BadRequest(views.html.newAdmin(errors)),
+	      newAdmin => {
+	    	  		appConfiguration.addAdmin(newAdmin)		            
+		            Redirect(routes.Application.index)
+			      } 
+	)
+  }
+  
+  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+    
+    appConfiguration.getDefault match{
+      case Some(conf) =>{
+        Ok(views.html.listAdmins(conf.admins))
+      }
+      case None => {
+        Logger.error("Error getting application configuration!"); InternalServerError
+      }
+      
+    }  
+  }
+  
 }

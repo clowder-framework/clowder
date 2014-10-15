@@ -10,7 +10,7 @@
 	if(Configuration.fileType === "image/jpeg" || Configuration.fileType === "image/jpg" || Configuration.fileType === "image/png" || Configuration.fileType === "image/gif"
 		|| Configuration.fileType === "image/bmp"){
 		$(Configuration.tab).append(
-			"<canvas class='rubberbandCanvas' id='rubberbandCanvas"+prNum+"'>" +
+			"<canvas class='fit-in-space rubberbandCanvas' id='rubberbandCanvas"+prNum+"'>" +
 			"<img src='" + Configuration.url + "' class='rubberbandimage' id='rubberbandimage"+prNum+"'></img>" +
 			"</canvas>" +
 			"<div class='rubberbandDiv' id='rubberbandDiv"+prNum+"'></div>"
@@ -245,7 +245,7 @@
                         type:        "POST",
                         data:        data,
                         contentType: false,
-                        processData: false,
+                        processData: false
                     });
 				request.done(function(response, textStatus, jqXHR) {
 					previewCreated(tag, comment, sectionid, response.id, w, h, prNum);
@@ -263,10 +263,11 @@
 					data:		 JSON.stringify({
 									section_id:  sectionid, 
 									width:       String(w),
-									height:      String(h),
+									height:      String(h)
 								  }),
 					});
 				request.done(function(response, textStatus, jqXHR) {
+                    console.log("Added preview to section " + sectionid + " (h=" + h + ",w=" + w + ")")
 				});
 				request.fail(function (jqXHR, textStatus, errorThrown){
 					console.error("The following error occured: " + textStatus, errorThrown);
@@ -280,8 +281,8 @@
 						type:        "POST",
 						contentType: "application/json",
 						data:		 JSON.stringify({
-										tags: tagsArray,
-								  	 }),
+										tags: tagsArray
+								  	 })
 					});
 					request.done(function (response, textStatus, jqXHR){ 
 						var url = window.jsRoutes.controllers.Tags.search(tag).url;
