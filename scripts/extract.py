@@ -11,8 +11,8 @@ file = sys.argv[1]
 
 #Upload file
 if 'http://' in file:
-	headers={'Content-Type': 'application/json'}
-	data={}
+	headers = {'Content-Type': 'application/json'}
+	data = {}
 	data["fileurl"] = file
 	file_id = requests.post(host + 'api/extractions/upload_url?key=' + key, headers=headers, data=json.dumps(data)).json()['id']
 else:

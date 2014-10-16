@@ -1,4 +1,0 @@
-AuthType Basic
-AuthName "Restricted Files"
-AuthUserFile /etc/apache2/.htpasswd
-Require user isda

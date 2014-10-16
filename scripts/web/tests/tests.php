@@ -80,6 +80,7 @@
 			var successes = 0;
 			var run = true;
 			var mail = false;
+			var t0;
 
 			<?php
 			if(isset($_REQUEST['run'])) echo "run = " . $_REQUEST['run'] . ";\n";
@@ -88,6 +89,7 @@
 			?>
 
 			function start_tests() {
+				t0 = (new Date).getTime();
 				task = 1;
 				successes = 0;
 				test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
@@ -118,9 +120,25 @@
 						if(task < total) {
 							task++;
 							test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
+						}else{
+							document.getElementById('failures').appendChild(document.createTextNode(', Elapsed time: ' + timeToString((new Date).getTime() - t0)));
 						}
 					}
 				});
+			}
+
+			function timeToString(time) {
+				var h = Math.floor(time / 360000);
+				var m = Math.floor((time % 360000) / 60000);
+				var s = Math.floor(((time % 360000) % 60000) / 1000);
+			
+				if(h > 0) {	
+					return h + '.' + (m / 60) + ' hours';
+				} else if(m > 0) {
+					return m + '.' + (s / 60) + ' minutes';
+				} else {
+					return s + ' seconds';
+				}
 			}
 		</script>
   </body>

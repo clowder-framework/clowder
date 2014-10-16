@@ -1,13 +1,15 @@
 <?php
 $bins = isset($_REQUEST["bins"]) ? $_REQUEST["bins"] : "minutes";
-$time_unit = 60*1000;				//Milli-seconds in a minute
-$time_window = 24*60*60;		//Seconds in one day
+$time_unit = 60*1000;						//Milli-seconds in a minute
+$time_window = 24*60*60;				//Seconds in one day
 
 if($bins == "hours"){
 	$time_unit = 60*60*1000;
 }else if($bins == "days"){
 	$time_unit = 24*60*60*1000;
 	$time_window = 7*24*60*60;
+}else if($bins != "minutes"){		//Make sure a bins is one of these 3 values, default to minutes
+	$bins = "minutes";
 }
 
 $tasks_per_x = array();
