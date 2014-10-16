@@ -133,9 +133,9 @@
 				var s = Math.floor(((time % 360000) % 60000) / 1000);
 			
 				if(h > 0) {	
-					return h + '.' + Math.floor(m / 60) + ' hours';
+					return h + (Math.round(100 * m / 60) / 100) + ' hours';
 				} else if(m > 0) {
-					return m + '.' + Math.floor(s / 60) + ' minutes';
+					return m + (Math.round(100 * s / 60) / 100) + ' minutes';
 				} else {
 					return s + ' seconds';
 				}

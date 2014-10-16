@@ -92,9 +92,9 @@ def timeToString(t):
 	s = int((t % 3600) % 60);
 			
 	if h > 0:
-		return str(h) + '.' + str(m / 60) + ' hours';
+		return str(round(h + m / 60.0, 2)) + ' hours';
 	elif m > 0:
-		return str(m) + '.' + str(s / 60) + ' minutes';
+		return str(round(m + s / 60.0, 2)) + ' minutes';
 	else:
 		return str(s) + ' seconds';
 
