@@ -43,10 +43,10 @@ server: String="N/A"
 /**
  * Extractors' Servers IPs, Name and Count
  * This is a temporary fix for keeping track of number of extractors running in different servers
- * This class may be omitted once the design and implementation 
+ * This class may be omitted once the design and implementation for BD-289 are done
  */
 case class ExtractorDetail(
-    IP: String="",
-    name: String="",
-    var count: Int =0
+    ip: String = "",
+    name: String = "",
+    var count: Int = 0
 )

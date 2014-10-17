@@ -116,7 +116,7 @@ class MongoDBExtractorService extends ExtractorService {
     Logger.debug("[MongoDBExtractorService]- getExtractorDetails")
     var allDocs = ExtractorDetailDAO.findAll
     for (doc <- allDocs) {
-      edArray = edArray :+ JsObject(Seq("Server IP"->JsString(doc.IP),"Extractor Name"->JsString(doc.name),"Count"->JsNumber(doc.count)))
+      edArray = edArray :+ JsObject(Seq("Server IP"->JsString(doc.ip),"Extractor Name"->JsString(doc.name),"Count"->JsNumber(doc.count)))
     }
     Logger.debug("[MongoDBExtractorService]- Extractor Detail List-")
     Logger.debug(edArray.toString)

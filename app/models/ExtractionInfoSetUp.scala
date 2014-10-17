@@ -143,10 +143,10 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
           var qlist = List[String]()
           var subi: String = ""
           var subq: String = ""
-          //--- Temporary Fix  
+          //--- Temporary Fix for BD-289
           var ipQnolist=List[ExtractorDetail]() 
           var hostIp=""
-          //--- End of Temporary Fix  
+          //--- End of Temporary Fix  for BD-289 
             
           for (i <- finalResponse) { /*(ip,flag,queue name)*/
             if (i._2 == true) { /* extractor running in server is a consumer*/
@@ -171,25 +171,25 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
                   Logger.info("Appended ---HOSTNAME:  "+hostname)
                   Logger.info("-------kslist = "+kslist.toString)
                  } 
-                 hostIp=hostname //<-- Temporary Fix
+                 hostIp=hostname //<-- Temporary Fix for BD-289
               } else {
                 var iparr = subi.split('-')(0).split(':')
                 if (!kslist.contains(iparr(0)))
                   kslist = iparr(0) :: kslist
                 
-                hostIp=iparr(0)  //<-- Temporary Fix  
+                hostIp=iparr(0)  //<-- Temporary Fix  for BD-289
               }
               if (!qlist.contains(subq))
                  qlist = subq :: qlist
-             //------- Temporary Fix   
-              var ed=ipQnolist.find(l=>l.IP==hostIp && l.name==subq)
+             //------- Temporary Fix for BD-289  
+              var ed=ipQnolist.find(l=>l.ip==hostIp && l.name==subq)
               ed match {
                  case Some(x)=>
                         x.count=x.count+1
                  case None=>
                         ipQnolist= new ExtractorDetail(hostIp,subq,1) :: ipQnolist 
                }
-            //------ End of Temporary Fix  
+            //------ End of Temporary Fix for BD-289 
             }
           }
           
@@ -197,7 +197,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
 
           extractors.insertExtractorNames(qlist)
           
-          extractors.insertExtractorDetail(ipQnolist) // Temporary Fix
+          extractors.insertExtractorDetail(ipQnolist) // Temporary Fix for BD-289
           
           var rktypelist = qlist.map {
             qn =>

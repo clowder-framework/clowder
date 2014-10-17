@@ -549,16 +549,14 @@ class Extractions @Inject() (
    }
  
 /**
- * Temporary fix: Get Details of Extractors' Servers IP, Names and Count
+ * Temporary fix for BD-289: Get Details of Extractors' Servers IP, Names and Count
  */
  @ApiOperation(value = "Lists the currenlty details running extractors",
-    notes = "  ",
     responseClass = "None", httpMethod = "GET") 
  def getExtractorDetails() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
 
     val listNames = extractors.getExtractorDetail()
     val listNamesJson= toJson(listNames)
-    //Ok(toJson(Map("Extractors" -> listNamesJson)))
     Ok(listNamesJson)
    }
 
