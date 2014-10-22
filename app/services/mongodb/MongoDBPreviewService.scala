@@ -71,7 +71,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
   }
 
   
-   def getMetadataJSON(id: UUID): String = {
+  /* def getMetadataJSON(id: UUID): String = {
     PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case None => "{}"
       case Some(x) => {
@@ -84,7 +84,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
         }
       }
     }
-  }
+  }*/
    
   
   
@@ -286,6 +286,20 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
       case _ => Logger.error("Expected a JSObject")
     }
   }
+  
+   def getExtractorId(id: UUID):Option[String] = {     
+      var extractor_id = getMetadata(id)("extractor_id") match{
+	  	case ex_id=> {
+	  		Logger.debug("metadata contains extractor id = " + ex_id)
+	  		Some(ex_id.toString)
+	    }
+	  	case none =>{
+	  		Logger.debug("metadata DOES NOT contain extractor id")
+	  		None
+	  	}	              
+      }
+      extractor_id
+   }
 }
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {

@@ -52,7 +52,9 @@ trait PreviewService {
   
   def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any]
   
-  def getMetadataJSON(id: UUID): String
+  //def getMetadataJSON(id: UUID): String
+  
+  def getExtractorId(id: UUID):Option[String]
   
 }
   
