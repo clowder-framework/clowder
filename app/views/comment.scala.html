@@ -24,7 +24,7 @@
 				</a>
 				&nbsp;
 				&nbsp;
-				@if(user.getOrElse(null).fullName == c.author.fullName) {
+				@if(user.getOrElse(null).email == c.author.email) {
 					<a href="#" onclick="return showEditComment('@c.id');" class="btn btn-default btn-sm" title="Edit Comment">
 	                    <span class="glyphicon glyphicon-edit"></span> Edit
 	                </a>
