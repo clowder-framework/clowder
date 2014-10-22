@@ -39,8 +39,7 @@ trait PreviewService {
   def findAnnotation(preview_id: UUID, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation]
 
   def updateAnnotation(preview_id: UUID, annotation_id: UUID, description: String)
-
-
+  
   def listAnnotations(preview_id: UUID): List[ThreeDAnnotation]
 
   def removePreview(p: Preview)
@@ -50,4 +49,10 @@ trait PreviewService {
   def attachToCollection(previewId: UUID, collectionId: UUID, previewType: String, extractorId: Option[String], json: JsValue)
 
   def updateMetadata(previewId: UUID, json: JsValue)
+  
+  def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any]
+  
+  def getMetadataJSON(id: UUID): String
+  
 }
+  

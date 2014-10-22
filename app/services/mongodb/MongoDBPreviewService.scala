@@ -1,4 +1,7 @@
 package services.mongodb
+///
+import collection.JavaConverters._
+///
 
 import services.{TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
@@ -53,6 +56,38 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     PreviewDAO.find(MongoDBObject("collection_id" -> new ObjectId(id.stringify))).toList
   }
 
+  
+  def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any] = {
+    PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => new scala.collection.immutable.HashMap[String,Any]
+      case Some(x) => {
+        val returnedMetadata = x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
+        Logger.debug("MongndbPREVIEW metadata keys = " + returnedMetadata.keys)
+        Logger.debug("MongndbPREVIEW metadata vals = " + returnedMetadata.values)
+          
+        returnedMetadata
+      }
+    }
+  }
+
+  
+   def getMetadataJSON(id: UUID): String = {
+    PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match{
+          case Some(y)=>{
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+            returnedMetadata
+          }
+          case None => "{}"
+        }
+      }
+    }
+  }
+   
+  
+  
   /**
    * Save blob.
    */
