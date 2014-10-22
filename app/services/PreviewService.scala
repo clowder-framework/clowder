@@ -50,4 +50,9 @@ trait PreviewService {
   def attachToCollection(previewId: UUID, collectionId: UUID, previewType: String, extractorId: Option[String], json: JsValue)
 
   def updateMetadata(previewId: UUID, json: JsValue)
+  
+  def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any]
+  
+  def getMetadataJSON(id: UUID): String
+  
 }

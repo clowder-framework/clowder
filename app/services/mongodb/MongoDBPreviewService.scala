@@ -23,6 +23,8 @@ import scala.Some
 import play.api.libs.json.JsObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
+import collection.JavaConverters._
+
 /**
  * Created by lmarini on 2/17/14.
  */
@@ -251,6 +253,40 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
       case _ => Logger.error("Expected a JSObject")
     }
   }
+  
+  /**
+   * Get metadata from the mongo db as a map. 
+   * 
+   */
+   def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any] = {
+    PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => new scala.collection.immutable.HashMap[String,Any]
+      case Some(x) => {
+        val returnedMetadata = x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
+        returnedMetadata
+      }
+    }
+  }
+
+  
+   /**
+   * Get metadata from the mongo db as a JSON string. 
+   * 
+   */
+   def getMetadataJSON(id: UUID): String = {
+    PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match{
+          case Some(y)=>{
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+            returnedMetadata
+          }
+          case None => "{}"
+        }
+      }
+    }
+  } 
 }
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
