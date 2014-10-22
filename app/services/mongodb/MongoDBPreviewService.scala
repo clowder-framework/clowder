@@ -267,26 +267,21 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
       }
     }
   }
-
   
-   /**
-   * Get metadata from the mongo db as a JSON string. 
-   * 
-   */
-   def getMetadataJSON(id: UUID): String = {
-    PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
-      case None => "{}"
-      case Some(x) => {
-        x.getAs[DBObject]("metadata") match{
-          case Some(y)=>{
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
-            returnedMetadata
-          }
-          case None => "{}"
-        }
+    def getExtractorId(id: UUID):Option[String] = {     
+      var extractor_id = getMetadata(id)("extractor_id") match{
+	  	case ex_id=> {
+	  		Logger.debug("MongoDBPreviewService: metadata for preview " + id + " contains extractor id = " + ex_id)
+	  		Some(ex_id.toString)
+	    }
+	  	case none =>{
+	  		Logger.debug("MongoDBPreviewService: metadata  for preview " + id + " DOES NOT contain extractor id")
+	  		None
+	  	}	              
       }
-    }
-  } 
+      extractor_id
+   }
+    
 }
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
