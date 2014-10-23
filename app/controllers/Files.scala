@@ -305,7 +305,11 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 }*/
   
   /**
-   * Upload file.
+   * Upload a file.
+   * 
+   * Updated to return json data that is utilized by the user interface upload library. The json structure is an array of maps that 
+   * contain data for each of the file that the upload interface can use to accurately update the display based on the success
+   * or failure of the upload process.
    */
   def upload() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
@@ -427,7 +431,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            current.plugin[AdminsNotifierPlugin].foreach{
                 _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
 	            
-	            //TODO - Change below to return JSON as per what the upload library needs
+	            //Correctly set the updated URLs and data that is needed for the interface to correctly 
+	            //update the display after a successful upload.
 	            var retMap = Map("files" -> 
 	                Seq(
 	                    toJson(
@@ -446,13 +451,34 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	         }
 	         case None => {
 	           Logger.error("Could not retrieve file that was just saved.")
-	           //TODO - Change below to return JSON as per what the upload library needs
-	           InternalServerError("Error uploading file")
+	           //Changed to return appropriate data and message to the upload interface
+	           var retMap = Map("files" -> 
+                    Seq(
+                        toJson(
+                            Map(
+                                "name" -> toJson(nameOfFile),
+                                "size" -> toJson(uploadedFile.ref.file.length()),
+                                "error" -> toJson("Problem in storing the uploaded file.")
+                            )
+                        )
+                    )
+                )
+	           Ok(toJson(retMap))
 	         }
 	        }
 	      }.getOrElse {
-	         //TODO - Change below to return JSON as per what the upload library needs
-	         BadRequest("File not attached.")
+	         Logger.error("The file appears to not have been attached correctly during upload.")
+	         //This should be a very rare case. Changed to return the simple error message for the interface to display.
+	         var retMap = Map("files" -> 
+                    Seq(
+                        toJson(
+                            Map(
+                                "error" -> toJson("The file was not correctly attached during upload.")
+                            )
+                        )
+                    )
+                )
+               Ok(toJson(retMap))
 	
 	      }
       }
