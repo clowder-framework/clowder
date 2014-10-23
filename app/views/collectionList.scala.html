@@ -50,7 +50,7 @@
                         </a>
                         }
                         <div class="caption">
-                            <h4><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></h4>
+                            <h4 class="no-overflow oneline"><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></h4>
                             <p>@ellipsize(collection.description, 200)</p>
                         </div>
                     </div>
@@ -106,7 +106,12 @@
 				}
 			</tbody>
 		</table>		
-		<ul class="pager">
+	</div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <ul class="pager">
 			@if(prev != "") {
   			<li class="previous"><a href="@(routes.Collections.list("b", prev, limit))">Previous</a></li>
   			}
@@ -114,7 +119,8 @@
   			<li class ="next"><a href="@(routes.Collections.list("a", next, limit))">Next</a></li>
   			}
 		</ul>
-	</div>
+    </div>
 </div>
+
 <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
 }

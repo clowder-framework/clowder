@@ -5,6 +5,8 @@
 #OPTIONS        /*path                                                       @controllers.Application.options(path)
 OPTIONS        /*path                                                       api.ApiHelp.options(path)
 
+GET  /*path/                                                                 @controllers.Application.untrail(path: String)
+
 # Home page
 GET      /                                                                   @controllers.Application.index
 
@@ -19,6 +21,7 @@ GET      /users                                                              con
 GET      /users/by-country/:country                                          controllers.Users.listByCountry(country)
 GET      /users/create/:username                                             controllers.Users.create(username)
 GET      /users/view/:id                                                     controllers.Users.view(id)
+POST	 /users/registerThroughAdmins										 controllers.Users.handleStartSignUp
 
 # Utilities
 GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
@@ -75,9 +78,12 @@ GET      /collections                                                        @co
 GET      /collections/new                                                    @controllers.Collections.newCollection
 POST     /collection/submit                                                  @controllers.Collections.submit
 GET      /collection/:id                                                     @controllers.Collections.collection(id: UUID)
+GET      /collections/:collection_id/previews                                           @controllers.Collections.previews(collection_id: UUID)
 
 # Tags
 GET     /tags/search                      @controllers.Tags.search(tag)
+GET     /tags/cloud                       @controllers.Tags.tagCloud
+GET     /tags/list                        @controllers.Tags.tagList
 
 # Authentication
 GET      /loginTest                                                          controllers.Authentication.login
@@ -91,9 +97,11 @@ GET      /advanced                                                           @co
 GET      /SearchByText                                                       @controllers.Search.SearchByText(query: String ?= "")
 POST     /uploadquery                                                        @controllers.Search.uploadquery	
 GET      /searchbyURL                                                        @controllers.Search.searchbyURL(query:String?="")
-GET      /searchbyfeature                                                    @controllers.Search.searchMultimediaIndex(section_id: UUID)
+GET      /searchbyfeature/:section_id                                        @controllers.Search.searchMultimediaIndex(section_id: UUID)
 GET      /files/:id/similar                                                  @controllers.Search.findSimilarFile(id: UUID)
 GET      /queries/:id/similar                                                @controllers.Search.findSimilar(id: UUID)
+POST 	/queries/similarWeightedIndexes						@controllers.Search.findSimilarWeightedIndexes()
+
 
 # Previewers
 GET      /previewers/list                                                    controllers.Previewers.list
@@ -122,7 +130,6 @@ POST     /authenticate/:provider                                             sec
 GET      /not-authorized                                                     securesocial.controllers.ProviderController.notAuthorized
 
 # Administration pages
-
 GET     /admin                                                               @controllers.Admin.main
 GET     /admin/test                                                          @controllers.Admin.test
 GET     /admin/secureTest                                                    @controllers.Admin.secureTest
@@ -132,6 +139,9 @@ GET		/admin/extractors			                                         @controllers.A
 GET		/admin/measures				                                         @controllers.Admin.getMeasures
 GET		/admin/indexers				                                         @controllers.Admin.getIndexers
 GET 	/admin/index				                                         @controllers.Admin.getIndexes
+GET		/admin/addAdmin														 @controllers.Admin.newAdmin
+GET		/admin/listAdmins													 @controllers.Admin.listAdmins
+POST    /admin/submitNew 													 @controllers.Admin.submitNew
 POST    /admin/createIndex  		                                         @controllers.Admin.createIndex
 POST  	/admin/index/:id/build                                               @controllers.Admin.buildIndex(id:String)
 DELETE  /admin/index/:id/delete                                              @controllers.Admin.deleteIndex(id:String)
@@ -163,6 +173,7 @@ GET     /api/files                        						@api.Files.list
 POST    /api/files                        						@api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "")
 POST	/api/files/searchusermetadata							@api.Files.searchFilesUserMetadata
 POST	/api/files/searchmetadata								@api.Files.searchFilesGeneralMetadata
+
 POST    /api/uploadToDataset/:id                        		@api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "")
 POST	/api/files/uploadIntermediate/:idAndFlags				@api.Files.uploadIntermediate(idAndFlags)
 
@@ -218,6 +229,9 @@ GET     /api/queries/:id				                        @api.Files.downloadquery(id:
 # DANGER
 GET     /api/delete-data                    					api.Admin.deleteAllData
 
+POST	/api/remove-admin										api.Admin.removeAdmin
+POST	/api/changeAppearance									api.Admin.submitAppearance
+
 POST    /api/collections                                        					@api.Collections.createCollection()
 GET		/api/collections/list														@api.Collections.listCollections
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
@@ -226,11 +240,14 @@ DELETE	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.remove
 POST	/api/collections/:coll_id/remove											@api.Collections.removeCollection(coll_id: UUID)
 GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id: UUID)
 DELETE	/api/collections/:coll_id													@api.Collections.removeCollection(coll_id: UUID)
+POST    /api/collections/:c_id/previews/:p_id     						            @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
+
 
 GET    	/api/datasets					  							@api.Datasets.list
 POST    /api/datasets                                           	@api.Datasets.createDataset
 POST	/api/datasets/searchusermetadata							@api.Datasets.searchDatasetsUserMetadata
 POST	/api/datasets/searchmetadata								@api.Datasets.searchDatasetsGeneralMetadata
+
 GET		/api/datasets/listOutsideCollection/:coll_id				@api.Datasets.listOutsideCollection(coll_id: UUID)
 POST	/api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound	@api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
 DELETE	/api/datasets/:ds_id/:file_id								@api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
@@ -289,9 +306,15 @@ DELETE	/api/sections/:id/tags			                        @api.Sections.removeTags
 # geostreaming
 
 POST    /api/geostreams/datapoints           api.Geostreams.addDatapoint
+GET     /api/geostreams/datapoints           api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
+GET     /api/geostreams/datapoints/averages  api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
+GET     /api/geostreams/datapoints/trends    api.Geostreams.searchDatapoints(operator = "trends", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
+GET     /api/geostreams/datapoints/bin/:time/:depth api.Geostreams.binDatapoints(time, depth: Double, raw: Boolean ?= false, since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty)
 GET     /api/geostreams/datapoints/:id       api.Geostreams.getDatapoint(id: String)
-GET     /api/geostreams/datapoints           api.Geostreams.searchDatapoints(since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json")
 
+GET     /api/geostreams/cache                api.Geostreams.cacheListAction
+GET     /api/geostreams/cache/invalidate     api.Geostreams.cacheInvalidateAction
+GET     /api/geostreams/cache/:id            api.Geostreams.cacheFetchAction(id)
 
 POST    /api/geostreams/sensors			     api.Geostreams.createSensor
 GET     /api/geostreams/sensors/update       api.Geostreams.updateStatisticsStreamSensor()
