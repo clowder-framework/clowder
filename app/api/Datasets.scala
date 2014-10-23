@@ -117,7 +117,6 @@ class Datasets @Inject()(
                             }
                        }
 
-  					   Ok(toJson(Map("id" -> id)))
                        current.plugin[AdminsNotifierPlugin].foreach {
                          _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",id, name)}
                        Ok(toJson(Map("id" -> id)))
@@ -162,7 +161,7 @@ class Datasets @Inject()(
                           		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
                           	}
                           }
-                          case None=>{}
+                          case None=> Logger.debug(s"No collection found with id $collectionId")
                         }
                       }
                   }
