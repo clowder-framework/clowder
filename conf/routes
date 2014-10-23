@@ -210,7 +210,7 @@ GET       /api/extractions/extractors_names                 @api.Extractions.get
 GET       /api/extractions/supported_input_types      		@api.Extractions.getExtractorInputTypes()
 
 #API for temporary fix for BD-289
-GET       /api/extractions/extractor_details                @api.Extractions.getExtractorDetails()
+GET       /api/extractions/extractors_details                @api.Extractions.getExtractorDetails()
 
 POST    /api/extractions/upload_url                             @api.Extractions.uploadByURL()
 POST    /api/extractions/upload_file                            @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
