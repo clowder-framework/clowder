@@ -15,8 +15,8 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <![endif]-->
 
-<!-- blueimp Gallery styles -->
-<link rel="stylesheet" href="//blueimp.github.io/Gallery/css/blueimp-gallery.min.css">
+<!-- blueimp Gallery styles - downloaded to make the resource local -->
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/file-uploader/blueimp-gallery.min.css")">
 <!-- Generic page styles -->
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/file-uploader/style.css")">
 <!-- CSS to style the file input field as button and adjust the Bootstrap progress bars -->
@@ -164,17 +164,18 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 {% } %}
 </script>
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
+<!-- downloaded to make the resource local -->
+<script src="@routes.Assets.at("javascripts/file-uploader/jquery.min.js")"></script>
+<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included - downloaded to make the resource local -->
 <script src="@routes.Assets.at("javascripts/file-uploader/vendor/jquery.ui.widget.js")"></script>
-<!-- The Templates plugin is included to render the upload/download listings -->
-<script src="//blueimp.github.io/JavaScript-Templates/js/tmpl.min.js"></script>
-<!-- The Load Image plugin is included for the preview images and image resizing functionality -->
-<script src="//blueimp.github.io/JavaScript-Load-Image/js/load-image.all.min.js"></script>
-<!-- The Canvas to Blob plugin is included for image resizing functionality -->
-<script src="//blueimp.github.io/JavaScript-Canvas-to-Blob/js/canvas-to-blob.min.js"></script>
-<!-- blueimp Gallery script -->
-<script src="//blueimp.github.io/Gallery/js/jquery.blueimp-gallery.min.js"></script>
+<!-- The Templates plugin is included to render the upload/download listings - downloaded to make the resource local -->
+<script src="@routes.Assets.at("javascripts/file-uploader/tmpl.min.js")"></script>
+<!-- The Load Image plugin is included for the preview images and image resizing functionality - downloaded to make the resource local -->
+<script src="@routes.Assets.at("javascripts/file-uploader/load-image.all.min.js")"></script>
+<!-- The Canvas to Blob plugin is included for image resizing functionality - downloaded to make the resource local -->
+<script src="@routes.Assets.at("javascripts/file-uploader/canvas-to-blob.min.js")"></script>
+<!-- blueimp Gallery script - downloaded to make the resource local-->
+<script src="@routes.Assets.at("javascripts/file-uploader/jquery.blueimp-gallery.min.js")"></script>
 <!-- The Iframe Transport is required for browsers without support for XHR file uploads -->
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.iframe-transport.js")"></script>
 <!-- The basic File Upload plugin -->
