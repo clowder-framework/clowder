@@ -553,21 +553,18 @@ class VersusPlugin(application:Application) extends Plugin{
    * Note: might be reorganized in the future to use queryIndex method
    */
   def queryIndexSorted( inputFileId: String, indexId: String ): Future[ scala.collection.immutable.HashMap[String, Double]] = {       
-
-    Logger.debug("======VersusPlugin.queryIndexSorted, indexId = " + indexId )
-    
+    Logger.debug("VersusPlugin.queryIndexSorted, indexId = " + indexId )
+  
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")  
     val client = configuration.getString("versus.client").getOrElse("")    
 
-    val queryIndexUrl = host + "/indexes/" + indexId + "/query"
     //if searching for file already uploaded previously, use api/files
     // val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
     //if searching for a new file, i.e.  uploaded just now, use api/queries
     val queryStr = client + "/api/queries/" + inputFileId + "?key=" + configuration.getString("commKey").get  
-    val responseFuture: Future[Response] = WS.url(queryIndexUrl).post(Map("infile"->Seq(queryStr))) 
+    val responseFuture: Future[Response] = WS.url(host + "/indexes/" + indexId + "/query").post(Map("infile"->Seq(queryStr))) 
 
-    Logger.debug("queryIndexSorted - queryStr =" + queryStr )
     //example: queryIndexUrl = http://localhost:8080/api/v1/indexes/a885bad2-f463-496f-a881-c01ebd4c31f1/query
     //will call IndexResource.queryindex on Versus side
         
@@ -588,7 +585,6 @@ class VersusPlugin(application:Application) extends Plugin{
        				resultsHM.put(key, value)    
        				Logger.debug(key + "  ==>>   " + value)       
        }       
-       Logger.debug("for index id = " + indexId + " returning  resultsHM = " + resultsHM)       
        var result = collection.immutable.HashMap(resultsHM.toSeq:_*)
        result
     }   //end of responseFuture.map {     
