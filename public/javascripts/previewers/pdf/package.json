@@ -1,4 +1,4 @@
-{ "name" : "PDF",
+{ "name" : "3D PDF",
   "main" : "some-library.js",
   "contentType" : ["application/pdf"]
   }
