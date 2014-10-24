@@ -131,6 +131,7 @@ GET      /not-authorized                                                     sec
 
 # Administration pages
 GET     /admin                                                               @controllers.Admin.main
+GET		/admin/indexAdmin										@controllers.Admin.adminIndex
 GET     /admin/test                                                          @controllers.Admin.test
 GET     /admin/secureTest                                                    @controllers.Admin.secureTest
 GET     /admin/reindexFiles                                                  @controllers.Admin.reindexFiles
@@ -146,7 +147,7 @@ POST    /admin/createIndex  		                                         @controll
 POST  	/admin/index/:id/build                                               @controllers.Admin.buildIndex(id:String)
 DELETE  /admin/index/:id/delete                                              @controllers.Admin.deleteIndex(id:String)
 DELETE  /admin/index/:id                                              		 @controllers.Admin.deleteIndex(id:String)
-DELETE 	/admin/index/deleteAll		                                         @controllers.Admin.deleteAllIndexes
+DELETE 	/admin/index		                                         @controllers.Admin.deleteAllIndexes
 
 
 
