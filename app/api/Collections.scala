@@ -14,6 +14,7 @@ import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import java.util.Date
+import controllers.Utils
 
 /**
  * Manipulate collections.
@@ -74,8 +75,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       responseClass = "None", httpMethod = "POST")
   def removeCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
                        authorization=WithPermission(Permission.DeleteCollections)) { request =>
-    collections.delete(collectionId)
-    Ok(toJson(Map("status" -> "success")))
+                       collections.get(collectionId) match{
+                       case Some(collection) => {
+                         collections.delete(collectionId)
+                         current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)}
+                       }
+                     }                                             
+                     //Success anyway, as if collection is not found it is most probably deleted already
+                     Ok(toJson(Map("status" -> "success")))
   }
 
   @ApiOperation(value = "List all collections",
@@ -139,3 +146,4 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   }
 
 }
+

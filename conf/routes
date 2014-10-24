@@ -78,7 +78,7 @@ GET      /collections                                                        @co
 GET      /collections/new                                                    @controllers.Collections.newCollection
 POST     /collection/submit                                                  @controllers.Collections.submit
 GET      /collection/:id                                                     @controllers.Collections.collection(id: UUID)
-GET      /collections/:collection_id/previews                                           @controllers.Collections.previews(collection_id: UUID)
+GET      /collections/:collection_id/previews                                @controllers.Collections.previews(collection_id: UUID)
 
 # Tags
 GET     /tags/search                      @controllers.Tags.search(tag)
@@ -88,6 +88,7 @@ GET     /tags/list                        @controllers.Tags.tagList
 # Authentication
 GET      /loginTest                                                          controllers.Authentication.login
 POST     /loginTest                                                          controllers.Authentication.loginSubmit
+GET		 /notAuthorized														 controllers.Authentication.notAuthorized
 
 # Search
 GET      /search                                                             @controllers.Search.search(query: String ?= "")
@@ -101,7 +102,6 @@ GET      /searchbyfeature/:section_id                                        @co
 GET      /files/:id/similar                                                  @controllers.Search.findSimilarFile(id: UUID)
 GET      /queries/:id/similar                                                @controllers.Search.findSimilar(id: UUID)
 POST 	/queries/similarWeightedIndexes						@controllers.Search.findSimilarWeightedIndexes()
-
 
 # Previewers
 GET      /previewers/list                                                    controllers.Previewers.list
@@ -209,6 +209,9 @@ GET       /api/extractions/servers_ips				      	@api.Extractions.getExtractorSe
 GET       /api/extractions/extractors_names                 @api.Extractions.getExtractorNames() 
 GET       /api/extractions/supported_input_types      		@api.Extractions.getExtractorInputTypes()
 
+#API for temporary fix for BD-289
+GET       /api/extractions/extractors_details                @api.Extractions.getExtractorDetails()
+
 POST    /api/extractions/upload_url                             @api.Extractions.uploadByURL()
 POST    /api/extractions/upload_file                            @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
 GET     /api/extractions/:id/status                             @api.Extractions.checkExtractorsStatus(id:UUID)
@@ -241,7 +244,6 @@ POST	/api/collections/:coll_id/remove											@api.Collections.removeCollectio
 GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id: UUID)
 DELETE	/api/collections/:coll_id													@api.Collections.removeCollection(coll_id: UUID)
 POST    /api/collections/:c_id/previews/:p_id     						            @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
-
 
 GET    	/api/datasets					  							@api.Datasets.list
 POST    /api/datasets                                           	@api.Datasets.createDataset
@@ -306,6 +308,7 @@ DELETE	/api/sections/:id/tags			                        @api.Sections.removeTags
 # geostreaming
 
 POST    /api/geostreams/datapoints           api.Geostreams.addDatapoint
+
 GET     /api/geostreams/datapoints           api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET     /api/geostreams/datapoints/averages  api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET     /api/geostreams/datapoints/trends    api.Geostreams.searchDatapoints(operator = "trends", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
