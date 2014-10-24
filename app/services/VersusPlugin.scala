@@ -291,39 +291,38 @@ class VersusPlugin(application:Application) extends Plugin{
     index(fileURL, fileType)
   }
   
-  /*
-   * Helper method - handles the actual call to the Versus REST endpoint to index a file (document or image or video preview)
+  /**
+   * Goes through all exisitng indexes, only adds file to indexes of matching mime type.
+   *   url - the url of the file/section/preview being indexed, where it can be downloaded from.
    * 
    */
-  def index(fileURL:String, fileType: String) {    
-	Logger.debug("From index method fileURL = " + fileURL + ", fileType = " +fileType )
-    val configuration = play.api.Play.configuration   
-    val indexId = configuration.getString("versus.index").getOrElse("")    
-    val host = configuration.getString("versus.host").getOrElse("")
-
-    var indexurl = host + "/indexes/" + indexId + "/add"    
-	 getIndexesAsFutureList().map{
-    	indexList=>
-        	indexList.map{
-    			index=>    
-    				Logger.debug("indexID=" + index.id + " MIMEType=" + index.MIMEtype + " fileType=" + fileType);
-    
-    				//only add file to indexes that have matching mimetype.
-    				val fileTypeStr = fileType.split("/")
-    				val mimeTypeStr = index.MIMEtype.split("/")
-    				//fileType = image/png or image/jpeg
-    				//MIMEtype = image/*
-    				if (fileTypeStr(0).equals(mimeTypeStr(0)) || mimeTypeStr(0).equals("*")) {
-    					Logger.debug("for index.id = " + index.id + " calling add to index")
-    					indexurl = host + "/indexes/" + index.id + "/add"
-    					WS.url(indexurl).post(Map("infile" -> Seq(fileURL))).map {
-    						res =>
-    					} //WS map end
-    				} //if fileType end
-        	}// indexList.map {
+  def index(url:String, fileType: String) {    
+	Logger.debug("VersusPlugin.index url = " + url + ", fileType = " +fileType )   
+	 getIndexesAsFutureList().map{ indexList=>
+        	indexList.map{	index=>    
+    				addToIndex(url, index, fileType)    				
+        	}
     }
   }
   
+  /**
+   * Adds this file/section/preview to this index ONLY if mimetypes match.
+   * Calls Versus REST endpoint.
+   *   url - url where the file/section/preview can be found and downloaded from
+   */
+  def addToIndex(url:String, index:models.VersusIndex, fileType:String){
+    val configuration = play.api.Play.configuration
+    val host = configuration.getString("versus.host").getOrElse("")
+    
+    val mimetypeStr = index.MIMEtype.split("/")(0)
+    //fileType = image/png or image/jpeg; MIMEtype = image/* or */*
+    if (mimetypeStr.equals( fileType.split("/")(0)) || mimetypeStr.equals("*")) {	
+    	//mimetypes match, send to versus to be added to index
+    	WS.url(host + "/indexes/" + index.id + "/add").post(Map("infile" -> Seq(url)))
+    } else {
+      //mimetypes do not match, do nothing.
+    }
+ }
   
   /*
    * Removes video or image file from indexes on Versus side.
@@ -412,9 +411,7 @@ class VersusPlugin(application:Application) extends Plugin{
     }
     buildResponse
   }  
-  
-
-     
+      
 
   def queryIndexForURL(fileURL: String, indexId: String): Future[  List[PreviewFilesSearchResult]] = {
 		  Logger.debug("queryIndexForURL")
@@ -549,69 +546,51 @@ class VersusPlugin(application:Application) extends Plugin{
     	}   
     }
   
-  /*
-   *Used to display resutls with weighted combined indexes 
+ /**
+   *Used to display resutls with weighted combined indexes. 
    * For a given index and file, will query index and return results
    * the results are reorganized as a hash map of (file url, proximity) touples.
    * Note: might be reorganized in the future to use queryIndex method
    */
   def queryIndexSorted( inputFileId: String, indexId: String ): Future[ scala.collection.immutable.HashMap[String, Double]] = {       
-
-    Logger.debug("======VersusPlugin.queryIndexSorted, indexId = " + indexId )
-    
+    Logger.debug("VersusPlugin.queryIndexSorted, indexId = " + indexId )
+  
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")  
     val client = configuration.getString("versus.client").getOrElse("")    
 
-    val queryIndexUrl = host + "/indexes/" + indexId + "/query"
     //if searching for file already uploaded previously, use api/files
     // val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
     //if searching for a new file, i.e.  uploaded just now, use api/queries
     val queryStr = client + "/api/queries/" + inputFileId + "?key=" + configuration.getString("commKey").get  
-    val responseFuture: Future[Response] = WS.url(queryIndexUrl).post(Map("infile"->Seq(queryStr))) 
+    val responseFuture: Future[Response] = WS.url(host + "/indexes/" + indexId + "/query").post(Map("infile"->Seq(queryStr))) 
 
-    Logger.debug("queryIndexSorted - queryStr =" + queryStr )
     //example: queryIndexUrl = http://localhost:8080/api/v1/indexes/a885bad2-f463-496f-a881-c01ebd4c31f1/query
     //will call IndexResource.queryindex on Versus side
         
     //mapping Future[Response] to Future[HashMap[index URL as String, proximity]]    
     responseFuture.map {      
-      response =>
-      	Logger.debug("resp body = " + response.body)
-        val json: JsValue = Json.parse(response.body)
-        Logger.debug("json = " + json + "\nmax prox = " +json\\("maxProximity")      )
-        
-        //===list of file urls ====
-        val idList = json\\"docID"
-        val idListString = idList.map{i=> i.toString()  	}
-      	Logger.debug ("idListStr = " + idListString )
-      	
-       //========list of normalized proximities      ======	
-      	//assuming proximity is 0.0 for identical images
-       var maxProximity=1.0
-        if (!(json\\"maxProximity").isEmpty) {
-          maxProximity = (json\\"maxProximity").head.toString().toDouble
-        }      	 
-       val proximityListJson = json\\"proximity"
-       val proximityListDouble = proximityListJson.map{i=>i.toString.toDouble}
-       val normalizedProximityList = proximityListDouble.map{i=>i/maxProximity}
-       
-       //=== zip two lists to get a list of touples (id, proximity)  ======
-       val toupleList = idListString.zip(normalizedProximityList).toList
-       Logger.debug("toupleList = " + toupleList)       
+      response =>      
+        val similarityResults = Json.parse(response.body).as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]  
+      	//max prox is the same for every result              	     
+      	//a list of touples (id, normalized proximity)
+        val toupleList11 = similarityResults.map{res =>       	  
+      	   //"if(c) p else q" equivalent to java "c ? p : q"     	   
+      	   (res.docID, if(res.maxProximity==0)  res.proximity else (res.proximity / res.maxProximity))
+      	 }.toList
+         
        val resultsHM = new scala.collection.mutable.HashMap[String, Double]
-       toupleList foreach {
+       toupleList11 foreach {
        		case (key, value) =>
        				resultsHM.put(key, value)    
        				Logger.debug(key + "  ==>>   " + value)       
        }       
-       Logger.debug("for index id = " + indexId + " returning  resultsHM = " + resultsHM)       
        var result = collection.immutable.HashMap(resultsHM.toSeq:_*)
        result
-    	}   //end of responseFuture.map {     
-    }
+    }   //end of responseFuture.map {     
+  }
   
-
+  
     /*
     * Helper method. Called from queryIndex    
     */
@@ -686,8 +665,7 @@ class VersusPlugin(application:Application) extends Plugin{
                   
 		}//END OF : previews.get(preview_id) match        
    } 
- 
- 
+   
   override def onStop() {
     Logger.debug("Shutting down Versus Plugin")
   }
