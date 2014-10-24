@@ -95,41 +95,34 @@
 						}
 						case None => {}
 					}
-					
 
 					<ul class="nav navbar-nav navbar-right">
-					
-					
-					@user match {
-    					case Some(x) => {
-    						<li>
-								<a  class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.logout" title="Logout from the system"><span class="glyphicon glyphicon-log-out"></span> Logout (@x.fullName)</a>
-							</li>
-						}
-    					case None => {
-    						<li>
-								<a class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.login" title="Login to the system"><span class="glyphicon glyphicon-log-in"></span> Login</a>
-							</li>
-						}
-					}
-<!-- 						<a class="" href="@routes.Admin.main">Admin</a> -->
-						<li class="dropdown">
-						   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
-						   <ul class="dropdown-menu">
-						   	<li><a href="@routes.Admin.main">Main</a></li>	
-						   	<li><a href="@routes.Extractors.listAllExtractions">Extractors events</a></li>
-						   	<li><a href="@routes.Admin.newAdmin">Add admin</a></li>	
-						   	<li><a href="@routes.Admin.listAdmins">List admins</a></li>	
-						   	 <li><a href="@routes.Admin.adminIndex">Index admin</a></li>					   	
-						   </ul>
-						</li>
-					
-					</ul>
-					
 
-					
-					
-					
+                        @user match {
+                            case Some(x) => {
+                                <li>
+                                    <a  class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.logout" title="Logout from the system"><span class="glyphicon glyphicon-log-out"></span> Logout (@x.fullName)</a>
+                                </li>
+                            }
+                            case None => {
+                                <li>
+                                    <a class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.login" title="Login to the system"><span class="glyphicon glyphicon-log-in"></span> Login</a>
+                                </li>
+                            }
+                        }
+
+                        <li class="dropdown">
+                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Administration<b class="caret"></b></a>
+                           <ul class="dropdown-menu" role="menu">
+                            <li><a href="@routes.Admin.main">Customize</a></li>
+                            <li><a href="@routes.Admin.listAdmins">List adminstrators</a></li>
+                            <li><a href="@routes.Admin.newAdmin">Add administrator</a></li>
+                            <li><a href="@routes.Extractors.listAllExtractions">Extractions</a></li>
+                            <li><a href="@routes.Admin.adminIndex">Indexes</a></li>
+                           </ul>
+                        </li>
+					</ul>
+
 				</div>
 		</div>
 	</div>
