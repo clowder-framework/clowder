@@ -644,51 +644,43 @@ class VersusPlugin(application:Application) extends Plugin{
 		       
 		  previews.get(preview_id) match {
 		  case Some(preview)=>{
-			  var startTime=0                   
+			  var sectionStartTime=0                   
 			  var fileName = ""
-			  var datasetIdList=new ListBuffer[String]
-			  var fileIdString = ""                    
+   			  var fileIdString = ""
+   			  var datasetIDs=new ListBuffer[String]
                   
-			  //===get section for this preview and its start/end time                    
+			  //===Get section and file info, dataset(s) info. Preview is associated with one section, section is associated with one file, file can be associated with 0 or more datasets             
 			  preview.section_id match {
 			  	case Some(section_id)=>{
 			  		sections.get(section_id)match {
 			  			case Some(section)=>{
-                            startTime = section.startTime.getOrElse(0)
-                        }
+			  				sectionStartTime = section.startTime.getOrElse(0)
+                            //get file id and file name for this preview. Preview belongs to a section, and section belongs to a file.
+                            var file_id = section.file_id 
+                            fileIdString = file_id.stringify 
+                            files.get(file_id) match {
+                            	case Some(file)=>{
+                            		fileName = file.filename        
+                            		for(dataset <- datasets.findByFileId(file_id)){                                    
+                            			datasetIDs+= dataset.id.stringify              
+                            		} 
+                            	}
+                            	case None =>{}
+                            }// end of files.get(file_id) match                              
+                        }//end of     case Some(section)=>{
                         case None =>{}                          
-                     }
+                    }
 			  	} 
 			  	case None =>{}                      
-			  }
-			  //===done: finding section
-                    
-			  //=== get file for this preview
-			  // get file's id, name, and all datasets it belongs to.
-			  preview.file_id match{
-			  	case Some(file_id)=>{
-			  		fileIdString = file_id.stringify                   
-			  		files.get(file_id) match {
-			  			case Some(file)=>{
-			  				fileName = file.filename			  				
-			  				for(dataset <- datasets.findByFileId(file_id)){                  				               
-			  					datasetIdList+= dataset.id.stringify	             
-			  				} 
-			  			}
-			  			case None =>{}
-			  		}// end of files.get(file_id) match                        
-			  	} //end of case Some(file_id)=>{
-			  	
-			  	case None=>{}
-			  } //== done: file for this preview
+			  }//end of preview.section_id match
 			                      
 			  var onePreviewResult = new SearchResultPreview(preview_id, result.docID, proxvalue, 
-					  prevName, datasetIdList.toList, fileIdString, fileName, startTime)                               
+					  prevName, datasetIDs.toList, fileIdString, fileName, sectionStartTime)                               
                   		
 			  return Some(onePreviewResult )               
                     
 		  }//END OF: case Some(preview)=>{
-                  
+		  
 		  //No preview found
 		  case None=>{return None}
                   
