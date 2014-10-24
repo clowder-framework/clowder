@@ -25,7 +25,7 @@ object Permission extends Enumeration {
 		Admin,
 		CreateCollections,
 		DeleteCollections,
-    EditCollection,
+		EditCollection,
 		ListCollections,
 		ShowCollection,
 		CreateDatasets,
@@ -117,15 +117,6 @@ case class WithPermission(permission: Permission) extends Authorization {
       
       // all other permissions require authenticated user
       case (null, _)                 => false
-      case(_, Permission.Admin) =>{
-		    if(!user.email.isEmpty)
-		    	if(appConfiguration.adminExists(user.email.get))
-		    	  true
-		    	else
-		    	  false  
-		    else	  
-		    	false	  
-      }
       case (_, _)                    => true
     }
   }
@@ -133,15 +124,6 @@ case class WithPermission(permission: Permission) extends Authorization {
   def privatePermission(user: Identity, permission: Permission): Boolean = {
     (user, permission) match {
       case (null, _)                 => false
-      case(_, Permission.Admin) =>{
-		    if(!user.email.isEmpty)
-		    	if(appConfiguration.adminExists(user.email.get))
-		    	  true
-		    	else
-		    	  false  
-		    else	  
-		    	false	  
-      }
       case (_, _)                    => true
     }
   }

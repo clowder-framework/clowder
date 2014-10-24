@@ -15,6 +15,7 @@ import models.{UUID, Dataset}
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
+import play.api.Play.current 
 
 /**
  * Elasticsearch plugin.
@@ -33,12 +34,17 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   override def onStart() {
     val configuration = application.configuration
     try {
-      node = nodeBuilder().clusterName("medici").client(true).node()
+      
+      var nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("medici")
+      var serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
+      var serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
+      
+      node = nodeBuilder().clusterName(nameOfCluster).client(true).node()
       val settings = ImmutableSettings.settingsBuilder()
       settings.put("client.transport.sniff", true)
       settings.build();
       client = new TransportClient(settings)
-      client.addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
+      client.addTransportAddress(new InetSocketTransportAddress(serverAddress, serverPort))
 
       client.prepareIndex("data", "file")
       client.prepareIndex("data", "dataset")
