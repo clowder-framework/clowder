@@ -1,4 +1,4 @@
-{ "name" : "3D PDF",
+{ "name" : "PDF",
   "main" : "some-library.js",
-  "contentType" : ["application/pdf","application/x-pdf","application/x-bzpdf","application/x-gzpdf"]
+  "contentType" : ["application/pdf"]
   }
