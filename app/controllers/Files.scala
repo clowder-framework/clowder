@@ -89,6 +89,7 @@ class Files @Inject() (
         }
         Logger.debug("Previewers available: " + previewsWithPreviewer)
 
+
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
@@ -120,7 +121,7 @@ class Files @Inject() (
         var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
         var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
         
-        val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         
         Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
@@ -408,15 +409,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName","")))
 		            }
 	            }
-	            
-        
-
 	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
-	            
 
-
-
-	             
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
@@ -445,7 +439,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }
   }
 
-  ////////////////////////////////////////////////  
   
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
