@@ -32,26 +32,28 @@ foreach($cursor as $document) {
 	$tasks_per_x[$timestamp]++;
 }
 
-//Save the resulting histogram to a text file
-$keys = array_keys($tasks_per_x);
-$fp = fopen("tmp/$bins.txt", "w+");
+if(time() - filemtime("tmp/$bins.png") > 60) {		//Don't update plot more than once each minute
+	//Save the resulting histogram to a text file
+	$keys = array_keys($tasks_per_x);
+	$fp = fopen("tmp/$bins.txt", "w+");
 
-foreach($keys as $key) {
-	if($time_unit <= 3600000){		//If less than or equal to an hour
-		$point = date('Y-m-d H:i', $key*$time_unit/1000) . " " . $key . " " . $tasks_per_x[$key];
-	}else{
-		$point = date('Y-m-d m-d', $key*$time_unit/1000) . " " . $key . " " . $tasks_per_x[$key];
+	foreach($keys as $key) {
+		if($time_unit <= 3600000){		//If less than or equal to an hour
+			$point = date('Y-m-d H:i', $key*$time_unit/1000) . " " . $key . " " . $tasks_per_x[$key];
+		}else{
+			$point = date('Y-m-d m-d', $key*$time_unit/1000) . " " . $key . " " . $tasks_per_x[$key];
+		}
+
+		fwrite($fp, "$point\n");
+
+		//echo "$point<br>\n";
 	}
 
-	fwrite($fp, "$point\n");
+	fclose($fp);
 
-	//echo "$point<br>\n";
+	//Call GNUPlot to generate a plot
+	exec("gnuplot $bins.gnuplot");
 }
-
-fclose($fp);
-
-//Call GNUPlot to generate a plot
-exec("gnuplot $bins.gnuplot");
 
 //Print out overall mean performance
 echo array_sum(array_values($tasks_per_x))/count($tasks_per_x) . " ";
