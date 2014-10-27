@@ -1,9 +1,0 @@
-@(users: Iterator[User])
-
-@main("Hello Users!") {
-    <ul>
-        @users.map { user =>
-            <li><a href="@routes.Users.view(user.id.toString)">@user.username</a></li>
-        }
-    </ul>
-}
