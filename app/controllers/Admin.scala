@@ -11,12 +11,15 @@ import api.ApiController
 import api.WithPermission
 import api.Permission
 import securesocial.core.providers.utils.RoutesHelper
-import services.{AppConfigurationService, VersusPlugin}
+import services.{AppConfigurationService, VersusPlugin, CensusService}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
 import models.AppConfiguration
 import models.AppAppearance
+import models.{VersusIndexTypeName, UUID}
+
+import play.api.libs.json._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.Logger
@@ -37,7 +40,7 @@ import play.api.data.Forms._
  *
  */
 @Singleton
-class Admin @Inject() (appConfiguration: AppConfigurationService) extends SecuredController {
+class Admin @Inject() (appConfiguration: AppConfigurationService, census: CensusService) extends SecuredController {
 
   private val themes = "bootstrap/bootstrap.css" ::
     "bootstrap-amelia.min.css" ::
@@ -184,76 +187,126 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
 
   }
 
-  // Get adapter, extractor,measure and indexer value and send it to VersusPlugin to send a create index request to Versus 
-  def createIndex() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) {
-    implicit request =>
-      Async {
-        current.plugin[VersusPlugin] match {
+  /**
+   * Get adapter, extractor,measure and indexer value and send it to VersusPlugin to send a create index request to Versus
+   * If an index has type and/or name, store them in mongo db.
+   * 
+   */ 
+   def createIndex() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) {
+     implicit request =>
+       Async {
+         current.plugin[VersusPlugin] match {
+           case Some(plugin) => {
+             Logger.debug(":::::::::::::::::::::::::::Inside Contr.Admin.CreateIndex():::::::::::::::::::::::::::::::::::::")
+             val adapter = (request.body \ "adapter").as[String]
+             val extractor = (request.body \ "extractor").as[String]
+             val measure = (request.body \ "measure").as[String]
+             val indexer = (request.body \ "indexer").as[String]
+             val indexType = (request.body \ "indexType").as[String]      
+             val indexName = (request.body \ "name").as[String]
+             Logger.debug("controllers.Admin.createIndex: name = " + indexName + ", type =" + indexType)
+             //create index and get its id
+              val indexIdFuture :Future[models.UUID] = plugin.createIndex(adapter, extractor, measure, indexer)//.map{            
+              //save index type (census sections, face sections, etc) to the mongo db
+             if (indexType != null && indexType.length !=0){
+             	Logger.debug("ctrlr.Admin.createIndex calling census insert type")
+             	indexIdFuture.map(id=>census.insertType(id, indexType))          
+             }             
+             //save index name to the mongo db
+             if (indexName != null && indexName.length !=0){
+             	Logger.debug("ctrlr.Admin.createIndex will call census insert name")
+             	indexIdFuture.map(id=>	  census.insertName(id, indexName))
+             }           
+              Future(Ok("Index created successfully"))     
+           } //end of case some plugin
 
-          case Some(plugin) => {
-            Logger.debug("INSIDE CreateIndex()")
-            val adapter = (request.body \ "adapter").as[String]
-            val extractor = (request.body \ "extractor").as[String]
-            val measure = (request.body \ "measure").as[String]
-            val indexer = (request.body \ "indexer").as[String]
-            Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
-            var reply = plugin.createIndex(adapter, extractor, measure, indexer)
-            for (response <- reply) yield Ok(response.body)
-          } //case some
+           case None => {
+             Future(Ok("No Versus Service"))
+           }
+         } //match
 
-          case None => {
-            Future(Ok("No Versus Service"))
-          }
-        } //match
-
-      } //Async
-  }
-
-  //Get list the of indexes from Versus 
+       } //Async
+   }
+   
+  /**
+   * Gets indexes from Versus, using VersusPlugin. Checks in mongo on Medici side if these indexes
+   * have type and/or name. Adds type and/or name to json object and calls view template to display.
+   */
   def getIndexes() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-
-      Async {
+      Async {        
         current.plugin[VersusPlugin] match {
-
           case Some(plugin) => {
-           Logger.debug("::::Inside getIndexes()::::")
+           Logger.debug("::::Inside Admin.getIndexes()::::")
+           Logger.debug("Admin.getIndexes request = " + request)
             var indexListResponse = plugin.getIndexes()
-
             for {
               indexList <- indexListResponse
             } yield {
-             if(indexList.body.isEmpty())
-              { 
-                Logger.debug(":::::::::::No:indexList.json")
-                Ok("No Index")
-                
-              }
+            	if(indexList.body.isEmpty())
+            	{ 
+            		Logger.debug(":::::::::::Admin.getIndexes: indexList is empty")
+            //		Ok("No Index")
+            		 var res :JsValue= Json.toJson("")  
+            		Ok(res)
+            	}
                 else{
-                  Ok(indexList.json)
-                }
-            }
+                  Logger.debug("Admin.getIndexes indexList.body = " + indexList.body)                  
+                  var finalJson :JsValue=null
+                  val jsArray = indexList.json
+                  Logger.debug("Admin.getIndexes jsarray = " + jsArray)
+                  //make sure we got correctly formatted list of values
+                  jsArray.validate[List[VersusIndexTypeName]].fold(
+                		  // Handle the case for invalid incoming JSON.
+                		  // Note: JSON created in Versus IndexResource.listJson must have the same names as Medici models.VersusIndexTypeName 
+                		  error => {
+                		    Logger.debug("Admin.getIndexes - validation error")
+                		    InternalServerError("Received invalid JSON response from remote service.")
+                		    },
+                		 
+                		    // Handle a deserialized array of List[VersusIndexTypeName]
+                		    indexes => {
+                		    	Logger.debug("Admin.getIndexes indexes received = " + indexes)   								  
+                		    	val indexesWithNameType = indexes.map{
+                		    		index=>
+                		    		  	//check in mongo for name/type of each index
+                		    			val indType = census.getType(UUID(index.indexID)).getOrElse("")
+                		    			val indName = census.getName(UUID(index.indexID)).getOrElse("")
 
+                		    			Logger.debug("Admin.getIndexes type  from census = " + indType + "name = " + indName)
+                		    			//add type/name to index
+                		    			VersusIndexTypeName.addTypeAndName(index, indType, indName)
+   								  }                		    
+                		    	indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index iwth name = " + i))
+                		    
+                		    	// Serialize as JSON, requires the implicit `format` defined earlier in VersusIndexTypeName
+                		    	finalJson = Json.toJson(indexesWithNameType)    			
+                		    	Logger.debug("Admin.getIndexes finalJson = " + finalJson)	
+                		    }
+                		  ) //end of fold                
+                		  Ok(finalJson)
+                	}
+            }
           } //case some
 
           case None => {
             Future(Ok("No Versus Service"))
           }
         } //match
-
       } //Async
   }
+ 
 
   //build a specific index in Versus
   def buildIndex(id: String) = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-
+           Logger.debug("::::Inside Admin.buildIndex():::: index = " + id)
       Async {
         current.plugin[VersusPlugin] match {
 
           case Some(plugin) => {
 
-            var buildResponse = plugin.buildIndex(id)
+            var buildResponse = plugin.buildIndex(UUID(id))
 
             for {
               buildRes <- buildResponse
@@ -280,7 +333,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
      
         case Some(plugin)=>{
         	 
-        	var deleteIndexResponse= plugin.deleteIndex(id)
+        	var deleteIndexResponse= plugin.deleteIndex(UUID(id))
         	 
         	for{
         	  deleteIndexRes<-deleteIndexResponse

@@ -10,10 +10,13 @@
       <div class="row">      
        <div class="col-md-12">
        
-      <!-- <div class="col-md-3" style="margin-right:5px;">
+       	<!----------------------------------------------->
+		<!------    Choose a name for index   ------>
+       	<!----------------------------------------------->				
+       <div class="col-md-3" style="margin-right:5px;">
 		 		<h5>Choose a Name for Index (optional)</h5>
 				<input type="text" id="nameTextArea" onchange="setNameForIndex()">						
-			</div> -->
+		</div> 
 			
 			<div class="col-md-3">	  
        			<h5>Choose file type</h5>
@@ -90,13 +93,14 @@
 	   <div class="col-md-12">
 	   	<div class="col-md-3">
 				<h5>Choose an Index </h5>
-				<select id="index" onchange="setIndexState()">
+				<select id="indexDropDownList" onchange="setIndexState()">
 					<option value="invalid">--Index--</option>
 				</select>
 				<div style="text-align: left;">
 				<input id="build" class="btn btn-default btn-sm" type="submit" value="Build Index">
 				</div>
-				<div id="buildIndex"style="text-align: left;">
+				<div id="buildmsg"style="text-align: left;">
+      					<!-- Placeholder for build results message -->
       			 </div>
 		</div>		
 	</div>	
@@ -114,7 +118,8 @@
 	   <div style="text-align: left;">			
        <input id="list" type="submit" class="btn btn-default btn-sm" value="List All Indexes" />
        </div>
-       <div id="listIndexes">
+       <div id="listIndexesTable">
+          <!-- Placeholder for table with info about indexes -->       
        </div>
     </div>
 </div>
@@ -138,7 +143,8 @@
 				</div>
 				<br>
 				<br>
-				<div id="deleteIndex"style="text-align: left;">
+				<div id="deletemsg" style="text-align: left;">
+					<!-- Placeholder for message with results of delete index -->
       			 </div>
 		</div>		
 	</div>
@@ -148,12 +154,14 @@
 <!------------------------------------->
 <!------    Delete all indexes   ------>
 <!------------------------------------->
+<legend> Delete All Indexes</legend>
 <div class="row">
 <div class="col-md-12">
 	   <div style="text-align: left;">			
        <input id="deleteAll" type="submit" class="btn btn-default btn-sm btn-danger" value="Delete All" />
        </div>
-         <div id="deleteAllIndex"style="text-align: left;">
+         <div id="deleteallmsg" style="text-align: left;">
+         	  <!-- Placeholder for message with results of delete ALL indexes -->         
       </div>
    </div>  
 </div>
@@ -170,7 +178,6 @@ var isCensusIndex = false;
 var isFaceIndex = false;
 
 var indexName="";
-var indexNameSet = false;
 
 var allAdapterList=[];
 var shortAdapterList=[];
@@ -208,7 +215,6 @@ $(document).ready(function (){
 
 
 function setNameForIndex(){
-	indexNameSet = true;
 	indexName = nameTextArea.value
 	console.log("inside setNameForIndex = " + indexName)	
 }
@@ -308,14 +314,15 @@ function setIndexerList(json){
 	var availableIndexers = "";
 	for(var i=0; i<json.length; i++){
 		availableIndexers = availableIndexers+'<option value="'+json[i].id+'" >'+json[i].name+'</option>';
-		//adapterList[i] = {id:json[i].id,mimeTypes:json[i].supportedMimeTypes};
 	    indexerList[i] = {name:json[i].name,id:json[i].id};
 	}
 	$("#indexerDropDown").html('<option value="invalid">--Indexer--</option>'+availableIndexers);
 }
 
-
-//Called when page is loaded
+/*
+* Called when page is loaded
+* will set indexDropDownList and indexDel variables
+*/
 function getIndexes() {
 	console.log('from getIndexes');
 	$.ajax({
@@ -333,12 +340,14 @@ function getIndexes() {
 }
 
 function setIndexList(json){	
+	console.log("===setIndexList - will update indexDropDownList");
 	var availableIndexes = "";
-	for(var i=0; i<json.length; i++){		
+	for(var i=0; i<json.length; i++){	
+		console.log("available index id = " +json[i].indexID );
 		availableIndexes = availableIndexes+'<option value="'+json[i].indexID+'" >'+json[i].indexID+'</option>';
 		indexList[i] = {indexID:json[i].indexID,MIMEtype:json[i].MIMEtype,Extractor:json[i].Extractor, Measure:json[i].Measure,Indexer:json[i].Indexer};
 	}
-	$("#index").html('<option value="invalid">--Index--</option>'+availableIndexes);
+	$("#indexDropDownList").html('<option value="invalid">--Index--</option>'+availableIndexes);
 	$("#indexDel").html('<option value="invalid">--Index--</option>'+availableIndexes);
 }
 
@@ -389,8 +398,6 @@ function setFileTypeAndAvailableAdapters(){
        	} 
   		
 		setShortAdapterList(fileTypeSelected);
-						
-		
 	}	
 }
 
@@ -493,8 +500,6 @@ function setExtractorTypeAndAvailableMeasures(){
 				extractorSelected=shortExtractorList[i].id.split(" ")[1];
 			}
 		}
-		//console.log("selected extractor supports feature: ",supportedFeature);
-		//console.log(extractorList[1]);
 		setShortMeasureList(supportedFeature);
 	}
 	//toggleSubmitButton();
@@ -574,14 +579,14 @@ function setIndexerState(){
 
 
 function setIndexState(){
-	if($("#index").val() == "invalid"){
+	if($("#indexDropDownList").val() == "invalid"){
 		indexState = false;
 	}
 	else{
 		indexState    = true;
 		for( var i=0; i<indexList.length; i++){
-			if($("#index").val() == indexList[i].indexID ){
-				console.log("indexList",$("#index").val());
+			if($("#indexDropDownList").val() == indexList[i].indexID ){
+				console.log("indexList",$("#indexDropDownList").val());
 				console.log("Index name selected: ",indexList[i].indexID);				
 				indexSelected=indexList[i].indexID;
 			}
@@ -610,7 +615,7 @@ function setIndexDelState(){
 
 var createBtn=document.getElementById('create');
     createBtn.onclick=function(evt){
-    console.log("========Inside click function");
+    console.log("========Inside createBtn onclick function");
       	$.ajax({
             type : 'POST',
             url : "@routes.Admin.createIndex()",
@@ -620,23 +625,28 @@ var createBtn=document.getElementById('create');
             success : function(data1) {            
                 console.log("data1:", data1);
                 console.log("Sucessfully created");
-                $('#createIndexFeedback').text( data1);                
+                //update list of indexes on the page, remove old info messages
+                resetDisplay();
+                //display info message for create index
+                $('#createIndexFeedback').text( data1);              	
             },
             error : function(xhr, textStatus, errorThrown) {
                 console.log('Make call failed ' +  errorThrown);
                 $('#createIndexFeedback').text( "Index could not be created");
             }
-        });        
+        });      	
 }	    
     			
+    
+    
 var buildBtn=document.getElementById('build');
     buildBtn.onclick=function(evt){    
-    	console.log("I am inside Build click function", indexSelected);    
-    	var request=jsRoutes.controllers.Admin.buildIndexNew(indexSelected).ajax({
+    	console.log("========Inside buildBtn onclick function, index = ", indexSelected);    
+    	var request=jsRoutes.controllers.Admin.buildIndex(indexSelected).ajax({
    					 type:'POST'
     	});
     	request.done(function (response, textStatus, jqXHR){
-    				$('#buildIndex').text(response);
+    				$('#buildmsg').text(response);
 					console.log("Response =" + response);
     	});
 }	
@@ -644,23 +654,23 @@ var buildBtn=document.getElementById('build');
     	
 var listBtn=document.getElementById('list');
     listBtn.onclick=function(evt){    
-    	console.log(" Inside list click function");        
+        console.log("========Inside listBtn onclick function");
     	var request=jsRoutes.controllers.Admin.getIndexes().ajax({
    					 type:'GET',
    					 dataType: "json",
     				});
     				request.done(function (json, textStatus, jqXHR){
 						console.log("Response =" + json);
-						var availableIndexes = "";
 						var tab=[];
-						//tab.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>Name of Index</th><th>Type of Index</th><th>IndexId</th><th>Extractor</th><th>Measure</th><th>Indexer</th>');
-						tab.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>IndexId</th><th>Extractor</th><th>Measure</th><th>Indexer</th>');
+
+						if (json.length>0){
+						tab.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>Name of Index</th><th>Type of Index</th><th>IndexId</th><th>Extractor</th><th>Measure</th><th>Indexer</th>');
                         
 						for(var i=0; i<json.length; i++){						
 								indexList[i] = {indexID:json[i].indexID,MIMEtype:json[i].MIMEtype,Extractor:json[i].Extractor, Measure:json[i].Measure,Indexer:json[i].Indexer};
 									tab.push('<tr id=i >',
-							   //   	'<td>',  json[i].indexName, '</td>',
-							   //   	'<td>',  json[i].indexType, '</td>',
+							      	'<td>',  json[i].indexName, '</td>',
+							      	'<td>',  json[i].indexType, '</td>',
 							    	'<td>', json[i].indexID, '</td>',
 							      	'<td>',json[i].Extractor,' </td>',
 							      	'<td>',json[i].Measure,'</td>',
@@ -668,33 +678,61 @@ var listBtn=document.getElementById('list');
 							      	'</tr>');							
 							}
 						tab.push('</table>');
-						document.getElementById('listIndexes').innerHTML=tab.join('');			
+						document.getElementById('listIndexesTable').innerHTML=tab.join('');		
+						}
+						if (json.length==0){						
+							document.getElementById('listIndexesTable').innerHTML="No indexes found";	
+						}
    					 });
     	    }		
 
 
-var deleteBtn=document.getElementById('delete');
+    var deleteBtn=document.getElementById('delete');
     deleteBtn.onclick=function(evt){ 
-    	console.log("I am inside delete click function");
+        console.log("========Inside deleteBtn onclick function");
     	var request=jsRoutes.controllers.Admin.deleteIndex(indexSelected).ajax({
    					 type:'DELETE'
     				});
     				request.done(function (response, textStatus, jqXHR){
-    				$('#deleteIndex').text(response);
+    					//update list of indexes on the page, remove old info messages
+    	                resetDisplay();
+    					//display info msg for delete index  
+    					$('#deletemsg').text(response);    			
    					 });
 }		
+ 
     
-var deleteAllBtn=document.getElementById('deleteAll');
-    deleteAllBtn.onclick=function(evt){    
-    	console.log("I am inside delete All click function");    	
-    	var request=jsRoutes.controllers.Admin.deleteAllIndexes().ajax({
-   					 type:'DELETE'
-    				});
-    				request.done(function (response, textStatus, jqXHR){
-    				$('#deleteAllIndex').text(response);
-					console.log("Response =" + response);
-   					 });
-}	 
+	var deleteAllBtn=document.getElementById('deleteAll');
+    	deleteAllBtn.onclick=function(evt){    
+        	console.log("========Inside deleteAllBtn onclick function");
+    		var request=jsRoutes.controllers.Admin.deleteAllIndexes().ajax({
+   				type:'DELETE'
+    		});
+    		
+    		request.done(function (response, textStatus, jqXHR){
+    			//update list of indexes on the page, remove old info messages
+    	        resetDisplay();
+    			//display info msg for delete all indexes
+    			$('#deleteallmsg').text(response);			
+           });
+	}	
+    
+   /*
+    *Called when list of indexes changed  - created or deleted an index, or deleted all.
+    */
+    function resetDisplay(){
+    	console.log("===top of resetDisplay");
+    	//update list of indexes everywhere on the page
+    	getIndexes();
+    	//hide the table with all indexes
+    	document.getElementById('listIndexesTable').innerHTML="";
+    	//hide old info messages (create, build, delete, deleteAll)
+    	document.getElementById("createIndexFeedback").innerHTML = "";
+    	$('#buildmsg').text("");
+    	$('#deletemsg').text("");
+    	$('#deleteallmsg').text("");	
+    }
+    
    
 </script>
 }

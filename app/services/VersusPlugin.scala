@@ -49,7 +49,8 @@ class VersusPlugin(application:Application) extends Plugin{
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
   val queries: MultimediaQueryService = DI.injector.getInstance(classOf[MultimediaQueryService])
-  
+  val census: CensusService = DI.injector.getInstance(classOf[CensusService])
+
   override def onStart() {
 
     Logger.debug("Starting Versus Plugin")
@@ -59,8 +60,6 @@ class VersusPlugin(application:Application) extends Plugin{
 /*
  * This method sends the file's url to Versus for the extraction of descriptors from the file
  */
-
-
   def extract(fileid: UUID): Future[Response] = {
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
@@ -233,27 +232,36 @@ class VersusPlugin(application:Application) extends Plugin{
   }
   
   
-/*
- * Sends a request to Versus to delete an index based on its id
- */
-  
-  def deleteIndex(indexId: String): Future[Response] = {
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
-    val deleteurl = host + "/indexes/" + indexId
-    Logger.debug("Deleting IndexId = " + indexId);
-    var deleteResponse: Future[Response] = WS.url(deleteurl).delete()
-    deleteResponse.map {
-      r => Logger.debug("Response from deleteIndex is " + r.body);
+  /*
+   * Sends a request to Versus to delete an index based on its id
+   * If censusindex - delete entry from censusIndex db collection
+   */  
+    def deleteIndex(indexId: UUID): Future[Response] = {    
+      Logger.debug("VersusPlugin.deleteIndex for indexid = " + indexId)     
+     
+      //also delete from mongo collection
+      //will search mongo for given id, if found - will delete, if not found - will do nothing
+       val res =  census.delete(indexId)
+       Logger.debug("VersusPlugin - was indexdeleted from mongo census? " + res)
+        
+      val configuration = play.api.Play.configuration
+      val host = configuration.getString("versus.host").getOrElse("")
+      val deleteurl = host + "/indexes/" + indexId
+      Logger.debug("VersusPlugin - deleteIndex -  IndexId = " + indexId);
+      var deleteResponse: Future[Response] = WS.url(deleteurl).delete()
+      deleteResponse.map {
+        r => Logger.debug("Response from deleteIndex is " + r.body);
+      }
+      deleteResponse
     }
-    deleteResponse
-  }
-  
 /*
  * Sends a request to delete all indexes in Versus
  */
   def deleteAllIndexes(): Future[Response] = {
-    val configuration = play.api.Play.configuration
+		  //Also remove entries from mongo censusIndex table
+	      census.deleteAll()
+	      
+	      val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
     val indexurl = host + "/indexes"
 
@@ -261,21 +269,28 @@ class VersusPlugin(application:Application) extends Plugin{
     response
   }
 
-  /*
-   * Sends a request Versus to create an index with <adapter,extractor, measure, indexer> selected
-   */
-  def createIndex(adapter: String, extractor: String, measure: String, indexer: String): Future[Response] = {
+  /**
+   * Sends a request Versus to create an index. 
+   * Returns id of the created index. 
+   */  
+  def createIndex(adapter: String, extractor: String, measure: String, indexer: String): Future[UUID] = {
+	Logger.debug("VersusPlugin: top of createIndex")   
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
-
     val createIndexUrl = host + "/indexes";
-    Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
-    Logger.debug("theurl: " + createIndexUrl);
-    val response = WS.url(createIndexUrl).post(Map("Adapter" -> Seq(adapter), "Extractor" -> Seq(extractor), "Measure" -> Seq(measure), "Indexer" -> Seq(indexer))).map {
-      res =>
-        res
-    }
-    response
+    Logger.debug("VP: Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
+    Logger.debug("VP: createIndexUrl: " + createIndexUrl);
+    val indexId = WS.url(createIndexUrl).post(
+        Map("Adapter" -> Seq(adapter), 
+        		"Extractor" -> Seq(extractor), 
+        		"Measure" -> Seq(measure), 
+        		"Indexer" -> Seq(indexer))
+            ).map {
+      res =>   
+        //Logger.debug("versusPlugin - createdIndex with id " + res.body)
+        UUID(res.body)
+    }  
+    indexId
   }
   
    /*
@@ -398,16 +413,14 @@ class VersusPlugin(application:Application) extends Plugin{
    * Sends a request to Versus to build an index based on id
    */
   
-  def buildIndex(indexId: String): Future[Response] = {
+  def buildIndex(indexId: UUID): Future[Response] = {
     val configuration = play.api.Play.configuration
-    //val indexId=configuration.getString("versus.index").getOrElse("")
-
     val host = configuration.getString("versus.host").getOrElse("")
     val buildurl = host + "/indexes/" + indexId + "/build"
-    Logger.debug("IndexID=" + indexId);
+    Logger.debug("VersusPlugin.buildIndex ... IndexID=" + indexId);
     var buildResponse: Future[Response] = WS.url(buildurl).post("")
     buildResponse.map {
-      r => Logger.debug("r.body" + r.body);
+      r => Logger.debug("r.body = " + r.body);
     }
     buildResponse
   }  

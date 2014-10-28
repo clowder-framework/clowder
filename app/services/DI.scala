@@ -41,6 +41,7 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[ThreeDService]).to(get("service.3D", "services.mongodb.MongoDBThreeDService"))
     bind(classOf[ThumbnailService]).to(get("service.thumbnails", "services.mongodb.MongoDBThumbnailService"))
     bind(classOf[TileService]).to(get("service.tiles", "services.mongodb.MongoDBTileService"))
+    bind(classOf[CensusService]).to(get("service.census", "services.mongodb.MongoDBCensusService"))    
 
     bind(classOf[RdfSPARQLService]).to(get("service.rdfSparql", "services.fourstore.FourStoreRdfSPARQLService"))
   }
