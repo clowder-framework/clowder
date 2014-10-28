@@ -450,7 +450,8 @@ object Geostreams extends ApiController {
         // return object combining all pieces
         base ++ bin.timeInfo ++ bin.extras ++ raw ++ average
       }
-      (p._1, elements)
+      // add data back to result, sorted by date.
+      (p._1, elements.toList.sortWith((x, y) => x.\("date").toString() < y.\("date").toString()))
     }
 
     Some(Json.obj("sensor_name" -> Parsers.parseString(sensorName), "properties" -> Json.toJson(result.toMap)))
