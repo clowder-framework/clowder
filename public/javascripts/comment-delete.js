@@ -25,7 +25,11 @@ function deleteComment(commentId, reloadPage){
          var errMsg = "You must be logged in to delete a comment.";                                
          if (!checkErrorAndRedirect(jqXHR, errMsg)) {
          	alert("The comment was not deleted due to : " + errorThrown);
-         }  
+         }
+         else {
+        	 var responseText = jqXHR.responseText;
+        	 alert(responseText);
+         }
      });
     
 	 return false;	
