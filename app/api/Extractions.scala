@@ -316,17 +316,13 @@ class Extractions @Inject() (
         case Some(plugin) => {
           files.get(id) match {
             case Some(file) => {
-
               //Get the list of extractors processing the file 
               val l = extractions.getExtractorList(file.id) map {
                 elist => 
-                  Logger.debug("$$$$$$$$$$$ CheckStatus : extractor_id:"+ elist._1+ "  status:"+elist._2+"\n")
                   (elist._1, elist._2)
               }
-
               //Get the bindings
               var blist = plugin.getBindings()
-
               for {
                 rkeyResponse <- blist
               } yield {
@@ -421,10 +417,6 @@ class Extractions @Inject() (
     extractions.findIfBeingProcessed(file.id) match {
       case false =>
       case true => isActivity = "true"
-    }
- val g=l map{
-      e=>Logger.debug("####### extractor name: "+e._1+"   status: "+e._2+"\n")
-        (e._1,e._2)
     }
     val rkeyjson = response.json
     val rkeyjsonlist = rkeyjson.as[List[JsObject]]
