@@ -40,17 +40,17 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         <div class="row fileupload-buttonbar">
             <div class="col-lg-7">
                 <!-- The fileinput-button span is used to style the file input field as button -->
-                <span class="btn btn-success fileinput-button">
+                <span class="btn btn-primary fileinput-button">
                     <i class="glyphicon glyphicon-plus"></i>
-                    <span>Add files...</span>
+                    <span>Add files</span>
                     <input type="file" name="files[]" multiple>
                     <input type="hidden" name="datasetLevel" value="DatasetLevel">
                 </span>
-                <button type="submit" class="btn btn-primary start">
+                <button type="submit" class="btn btn-default start">
                     <i class="glyphicon glyphicon-upload"></i>
                     <span>Start upload</span>
                 </button>
-                <button type="reset" class="btn btn-warning cancel">
+                <button type="reset" class="btn btn-default cancel">
                     <i class="glyphicon glyphicon-ban-circle"></i>
                     <span>Cancel upload</span>
                 </button>
@@ -111,7 +111,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
                 </button>
             {% } %}
             {% if (!i) { %}
-                <button class="btn btn-warning cancel">
+                <button class="btn btn-default cancel">
                     <i class="glyphicon glyphicon-ban-circle"></i>
                     <span>Cancel</span>
                 </button>
@@ -154,7 +154,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
                 </button>
                 <input type="checkbox" name="delete" value="1" class="toggle">
             {% } else { %}
-                <button class="btn btn-warning cancel">
+                <button class="btn btn-default cancel">
                     <i class="glyphicon glyphicon-ban-circle"></i>
                     <span>Cancel</span>
                 </button>
