@@ -267,15 +267,12 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
             Logger.info("Received extractor status: " + statusBody)
             val json = Json.parse(statusBody)
             val file_id = UUID((json \ "file_id").as[String])
-           
             val extractor_id = (json \ "extractor_id").as[String]
             val status = (json \ "status").as[String]
             val start = (json \ "start").asOpt[String]
-            //val end = (json \ "end").asOpt[String]
             val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             val startDate = formatter.parse(start.get)
             Logger.info("Status start: " + startDate)
-            //val endDate=formatter.parse(end.get)
             var updatedStatus = status.toUpperCase()
             if(updatedStatus.contains("DONE")){
               extractions.insert(Extraction(UUID.generate, file_id, extractor_id,"DONE", Some(startDate), None))
