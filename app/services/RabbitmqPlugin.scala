@@ -36,6 +36,7 @@ import play.api.libs.concurrent.Execution.Implicits._
  */
 class RabbitmqPlugin(application: Application) extends Plugin {
 val files: FileService =  DI.injector.getInstance(classOf[FileService])
+
   var extractQueue: Option[ActorRef] = None
 
   var channel:Channel=null
@@ -260,6 +261,7 @@ class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(ch
 }
 
 class EventFilter(channel: Channel, queue: String) extends Actor {
+  val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
    def receive = {
      case statusBody: String => 
             Logger.info("Received extractor status: " + statusBody)
@@ -272,10 +274,16 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
             //val end = (json \ "end").asOpt[String]
             val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             val startDate = formatter.parse(start.get)
-            //val endDate=formatter.parse(end.get)
             Logger.info("Status start: " + startDate)
-            val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
-            extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
+            //val endDate=formatter.parse(end.get)
+            var updatedStatus = status.toUpperCase()
+            if(updatedStatus.contains("DONE") && !updatedStatus.endsWith(".")){
+              updatedStatus += "."
+              extractions.insert(Extraction(UUID.generate, file_id, extractor_id, updatedStatus, Some(startDate), None))
+            }else{
+              extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
+            }
+            Logger.debug("updatedStatus= "+updatedStatus + " status= "+status)
             models.ExtractionInfoSetUp.updateDTSRequests(file_id,extractor_id)
    }
 
