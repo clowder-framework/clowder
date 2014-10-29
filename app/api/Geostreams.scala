@@ -428,7 +428,7 @@ object Geostreams extends ApiController {
 
     // combine results
     val result = properties.map{p =>
-      val elements = for(bin <- p._2.values) yield {
+      val elements = for(bin <- p._2.values if bin.doubles.length > 0) yield {
         val base = Json.obj("depth" -> bin.depth, "label" -> bin.label, "sources" -> bin.sources.toList)
 
         val raw = if (keepRaw) {
@@ -438,13 +438,7 @@ object Geostreams extends ApiController {
         }
 
         val dlen = bin.doubles.length
-        val average = if (dlen == 0) {
-          // JSON does not allow for Double.NaN, one option is 0/0
-          // see http://stackoverflow.com/a/1424034
-          Json.obj("average" -> "NaN", "count" -> 0)
-        } else {
-          Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
-        }
+        val average = Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
 
         // return object combining all pieces
         base ++ bin.timeInfo ++ bin.extras ++ raw ++ average
