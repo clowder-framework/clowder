@@ -50,6 +50,13 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
     implicit val user = request.user
     Ok(views.html.admin(themeId, appAppearance))
   }
+  
+  def adminIndex = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
+    val themeId = themes.indexOf(getTheme)
+    val appAppearance = AppAppearance.getDefault.get
+    implicit val user = request.user
+    Ok(views.html.adminIndex(themeId, appAppearance))
+  }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
     Ok("Reindexing")
@@ -268,7 +275,6 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   //Delete a specific index in Versus
   def deleteIndex(id: String)=SecuredAction(authorization=WithPermission(Permission.Admin)){
     request =>
-      
     Async{  
       current.plugin[VersusPlugin] match {
      
@@ -300,7 +306,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
 
       Async {
         current.plugin[VersusPlugin] match {
-
+        	
           case Some(plugin) => {
 
             var deleteAllResponse = plugin.deleteAllIndexes()
