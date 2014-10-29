@@ -277,9 +277,8 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
             Logger.info("Status start: " + startDate)
             //val endDate=formatter.parse(end.get)
             var updatedStatus = status.toUpperCase()
-            if(updatedStatus.contains("DONE") && !updatedStatus.endsWith(".")){
-              updatedStatus += "."
-              extractions.insert(Extraction(UUID.generate, file_id, extractor_id, updatedStatus, Some(startDate), None))
+            if(updatedStatus.contains("DONE")){
+              extractions.insert(Extraction(UUID.generate, file_id, extractor_id,"DONE", Some(startDate), None))
             }else{
               extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
             }
