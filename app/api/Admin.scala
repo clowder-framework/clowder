@@ -28,24 +28,33 @@ object Admin extends Controller with ApiController {
   
   
   def removeAdmin = SecuredAction(authorization=WithPermission(Permission.Admin)) { request =>    
-      Logger.debug("Removing admin")
-      
-      (request.body \ "email").asOpt[String].map { email =>        
-      		appConfiguration.adminExists(email) match {
-      	      case true => {
-      	        Logger.debug("Removing admin with email " + email)     	        
-      	        appConfiguration.removeAdmin(email)	
-      	        
-      	        Ok(toJson(Map("status" -> "success")))
-      	      }
-      	      case false => {
-      	    	  Logger.info("Identified admin does not exist.")
-      	    	  Ok(toJson(Map("status" -> "notmodified")))
-      	      }
-      	    }      	          
-      }.getOrElse {
-        BadRequest(toJson("Missing parameter [email]"))
-      }      
+    Logger.debug("Removing admin")
+
+    request.user match {
+      case Some(user) => {
+        if(user.email.nonEmpty && appConfiguration.adminExists(user.email.get)) {
+          (request.body \ "email").asOpt[String].map { email =>
+            appConfiguration.adminExists(email) match {
+              case true => {
+                Logger.debug("Removing admin with email " + email)
+                appConfiguration.removeAdmin(email)
+
+                Ok(toJson(Map("status" -> "success")))
+              }
+              case false => {
+                Logger.info("Identified admin does not exist.")
+                Ok(toJson(Map("status" -> "notmodified")))
+              }
+            }
+          }.getOrElse {
+            BadRequest(toJson("Missing parameter [email]"))
+          }
+        } else {
+          Unauthorized("Not authorized")
+        }
+      }
+      case None => Unauthorized("Not authorized")
+    }
   }
   
   

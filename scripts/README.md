@@ -1,6 +1,24 @@
 Setup, Interface, and Helper Scripts for Medici
 ===============================================
 
+exinfo.py
+----------
+
+Connect to the RabbitMQ and get a list of all queues associated with a specific exchange. Next it will list for each queue the number of messages waiting, the number of messages currently being processed, as well as a list of all hosts that are connected to that specific queue.
+
+Usage:
+
+    ./exinfo.py
+
+Output:
+
+  wordCount :
+    messages waiting    : 0
+    messages processing : 0
+    hosts :
+      127.0.0.1
+
+
 extract.py
 ----------
 

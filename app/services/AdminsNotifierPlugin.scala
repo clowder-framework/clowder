@@ -2,12 +2,12 @@ package services
 
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
-import services.DI.injector
+import services._
 import models.UUID
 
 class AdminsNotifierPlugin(application:Application) extends Plugin {
 
-  val appConfiguration: AppConfigurationService = injector.getInstance(classOf[AppConfigurationService])
+  val appConfiguration: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   override def onStart() {
     Logger.debug("Starting Admins Notifier Plugin")
@@ -68,3 +68,4 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
     }
   }
 }
+

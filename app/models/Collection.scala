@@ -10,3 +10,4 @@ case class Collection(
   datasets: List[Dataset] = List.empty,
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty)
+
