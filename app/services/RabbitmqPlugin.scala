@@ -274,6 +274,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
             val startDate = formatter.parse(start.get)
             Logger.info("Status start: " + startDate)
             var updatedStatus = status.toUpperCase()
+            //TODO : Enforce consistent status updates: STARTED, DONE, ERROR and other detailed status updates to logs when we start implementing distributed logging
             if(updatedStatus.contains("DONE")){
               extractions.insert(Extraction(UUID.generate, file_id, extractor_id,"DONE", Some(startDate), None))
             }else{
