@@ -625,8 +625,10 @@ var createBtn=document.getElementById('create');
             success : function(data1) {            
                 console.log("data1:", data1);
                 console.log("Sucessfully created");
-                //update list of indexes on the page, remove old info messages
-                resetDisplay();
+              	//update list of indexes everywhere on the page
+    	    	getIndexes();
+    			//remove old info messages
+    	        resetDisplay();
                 //display info message for create index
                 $('#createIndexFeedback').text( data1);              	
             },
@@ -646,8 +648,9 @@ var buildBtn=document.getElementById('build');
    					 type:'POST'
     	});
     	request.done(function (response, textStatus, jqXHR){
+					//remove old info messages
+	                resetDisplay();
     				$('#buildmsg').text(response);
-					console.log("Response =" + response);
     	});
 }	
         
@@ -661,8 +664,10 @@ var listBtn=document.getElementById('list');
     				});
     				request.done(function (json, textStatus, jqXHR){
 						console.log("Response =" + json);
+						//remove old info messages
+    	                resetDisplay();
+						
 						var tab=[];
-
 						if (json.length>0){
 						tab.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>Name of Index</th><th>Type of Index</th><th>IndexId</th><th>Extractor</th><th>Measure</th><th>Indexer</th>');
                         
@@ -682,7 +687,7 @@ var listBtn=document.getElementById('list');
 						}
 						if (json.length==0){						
 							document.getElementById('listIndexesTable').innerHTML="No indexes found";	
-						}
+						}						
    					 });
     	    }		
 
@@ -694,8 +699,10 @@ var listBtn=document.getElementById('list');
    					 type:'DELETE'
     				});
     				request.done(function (response, textStatus, jqXHR){
-    					//update list of indexes on the page, remove old info messages
-    	                resetDisplay();
+    					//update list of indexes everywhere on the page
+    	    	    	getIndexes();
+    	    			//remove old info messages
+    	    	        resetDisplay();
     					//display info msg for delete index  
     					$('#deletemsg').text(response);    			
    					 });
@@ -710,7 +717,9 @@ var listBtn=document.getElementById('list');
     		});
     		
     		request.done(function (response, textStatus, jqXHR){
-    			//update list of indexes on the page, remove old info messages
+    			//update list of indexes everywhere on the page
+    	    	getIndexes();
+    			//remove old info messages
     	        resetDisplay();
     			//display info msg for delete all indexes
     			$('#deleteallmsg').text(response);			
@@ -722,8 +731,6 @@ var listBtn=document.getElementById('list');
     */
     function resetDisplay(){
     	console.log("===top of resetDisplay");
-    	//update list of indexes everywhere on the page
-    	getIndexes();
     	//hide the table with all indexes
     	document.getElementById('listIndexesTable').innerHTML="";
     	//hide old info messages (create, build, delete, deleteAll)
