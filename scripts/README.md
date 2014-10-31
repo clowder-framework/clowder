@@ -54,16 +54,6 @@ Usage:
 		./test-tag-generic.sh file
 		./test-tag-generic.sh dataset 52697b5ae4b008632f496995
 
-update-medici.py
-----------------
-
-Pull most recent version of Medici from repository and deploy.  Sets up upstart scripts.  In most cases setup as a cron
-job running every 15 minutes or so.
-
-Usage:
-
-		> ./update-medici.py
-
 upload.py
 ---------
 
