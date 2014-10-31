@@ -28,6 +28,10 @@ function editComment(commentId, commentText, reloadPage){
          if (!checkErrorAndRedirect(jqXHR, errMsg)) {
          	alert("The comment was not edited due to : " + errorThrown);
          }  
+         else {
+        	 var responseText = jqXHR.responseText;
+        	 alert(responseText);
+         }
      });
     
 	 return false;	

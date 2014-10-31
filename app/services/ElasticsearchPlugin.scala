@@ -1,7 +1,6 @@
 package services
 
-import play.api.{ Plugin, Logger, Application }
-import play.api.Play.current
+import play.api.{Plugin, Logger, Application}
 import org.elasticsearch.node.NodeBuilder._
 import org.elasticsearch.node.Node
 import org.elasticsearch.common.settings.ImmutableSettings
@@ -16,6 +15,7 @@ import models.{UUID, Dataset}
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
+import play.api.Play.current 
 
 /**
  * Elasticsearch plugin.
@@ -34,6 +34,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   override def onStart() {
     val configuration = application.configuration
     try {
+      
       var nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("medici")
       var serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
       var serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)

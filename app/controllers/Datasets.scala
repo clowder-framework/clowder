@@ -38,7 +38,6 @@ class Datasets @Inject()(
   sparql: RdfSPARQLService,
   previewService: PreviewService) extends SecuredController {
 
-
   object ActivityFound extends Exception {}
 
   /**
@@ -510,3 +509,4 @@ class Datasets @Inject()(
       Ok(views.html.generalMetadataSearch())
   }
 }
+

@@ -3,15 +3,16 @@
  */
 package controllers
 
-import play.api.mvc.Controller
-import play.api.mvc.Action
+import play.api.mvc.{Results, Controller, Action}
 import play.api.Routes
 import securesocial.core.SecureSocial._
-import securesocial.core.SecureSocial
+import securesocial.core.{IdentityProvider, SecureSocial}
 import api.ApiController
 import api.WithPermission
 import api.Permission
+
 import services.{AppConfigurationService, AppAppearanceService, VersusPlugin}
+import securesocial.core.providers.utils.RoutesHelper
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
@@ -48,6 +49,13 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance:
     val appAppearanceGet = appAppearance.getDefault.get
     implicit val user = request.user
     Ok(views.html.admin(themeId, appAppearanceGet))
+  }
+  
+  def adminIndex = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
+    val themeId = themes.indexOf(getTheme)
+    val appAppearanceGet = appAppearance.getDefault.get
+    implicit val user = request.user
+    Ok(views.html.adminIndex(themeId, appAppearanceGet))
   }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
@@ -267,7 +275,6 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance:
   //Delete a specific index in Versus
   def deleteIndex(id: String)=SecuredAction(authorization=WithPermission(Permission.Admin)){
     request =>
-      
     Async{  
       current.plugin[VersusPlugin] match {
      
@@ -299,7 +306,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance:
 
       Async {
         current.plugin[VersusPlugin] match {
-
+        	
           case Some(plugin) => {
 
             var deleteAllResponse = plugin.deleteAllIndexes()
@@ -350,28 +357,43 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance:
   
   def submitNew() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
-    
-        adminForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.newAdmin(errors)),
-	      newAdmin => {
-	    	  		appConfiguration.addAdmin(newAdmin)		            
-		            Redirect(routes.Application.index)
-			      } 
-	)
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && appConfiguration.adminExists(x.email.get)) {
+          adminForm.bindFromRequest.fold(
+            errors => BadRequest(views.html.newAdmin(errors)),
+            newAdmin => {
+              appConfiguration.addAdmin(newAdmin)
+              Redirect(routes.Application.index)
+            }
+          )
+        } else {
+          Unauthorized("Not authorized")
+        }
+      }
+      case None => Unauthorized("Not authorized")
+    }
   }
   
   def listAdmins() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
-    
-    appConfiguration.getDefault match{
-      case Some(conf) =>{
-        Ok(views.html.listAdmins(conf.admins))
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && appConfiguration.adminExists(x.email.get)) {
+          appConfiguration.getDefault match{
+            case Some(conf) =>{
+              Ok(views.html.listAdmins(conf.admins))
+            }
+            case None => {
+              Logger.error("Error getting application configuration!"); InternalServerError
+            }
+          }
+        } else {
+          Unauthorized("Not authorized")
+        }
       }
-      case None => {
-        Logger.error("Error getting application configuration!"); InternalServerError
-      }
-      
-    }  
+      case None => Unauthorized("Not authorized")
+    }
   }
 
 }

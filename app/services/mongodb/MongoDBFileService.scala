@@ -69,7 +69,7 @@ class MongoDBFileService @Inject() (
     if (date == "") {
       FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $lt sinceDate)).sort(order).limit(limit).toList
     }
@@ -84,16 +84,14 @@ class MongoDBFileService @Inject() (
       FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("uploadDate" -> 1)
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
-      var fileList = FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit + 1).toList.reverse
-      fileList = fileList.filter(_ != fileList.last)
-      fileList
+      FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
 
   def latest(): Option[File] = {
-    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
@@ -105,7 +103,7 @@ class MongoDBFileService @Inject() (
   }
 
   def first(): Option[File] = {
-    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
@@ -596,7 +594,7 @@ class MongoDBFileService @Inject() (
             if(!file.xmlMetadata.isEmpty){
               datasets.index(fileDataset.id)
             }
-            
+
             if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
               if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
                 datasets.newThumbnail(fileDataset.id)
@@ -610,7 +608,7 @@ class MongoDBFileService @Inject() (
 		                            		}		                        
 		                            	}
 		                            }
-		                            case None=>{}
+		                            case None=>Logger.debug(s"Could not find collection $collectionId") 
 		                          }
 		                        }		        	  
 		        }

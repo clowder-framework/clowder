@@ -289,3 +289,4 @@ class RDFUpdateService(application: Application) extends Plugin {
   }
 
 }
+

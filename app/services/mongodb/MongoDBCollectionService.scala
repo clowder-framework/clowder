@@ -51,9 +51,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   def listCollectionsAfter(date: String, limit: Int): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
     if (date == "") {
-      Collection.findAll.sort(order).limit(limit).toList
+    	Collection.findAll.sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
       Collection.find("created" $lt sinceDate).sort(order).limit(limit).toList
     }
@@ -65,14 +65,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   def listCollectionsBefore(date: String, limit: Int): List[Collection] = {
     var order = MongoDBObject("created" -> -1)
     if (date == "") {
-      Collection.findAll.sort(order).limit(limit).toList
+    	Collection.findAll.sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("created" -> 1)
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
-      var collectionList = Collection.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
-      collectionList = collectionList.filter(_ != collectionList.last)
-      collectionList
+      Collection.find("created" $gt sinceDate).sort(order).limit(limit).toList.reverse
     }
   }
 
@@ -164,6 +162,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
               datasets.index(dataset.id)
               index(collection.id)
 
+              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
+            	  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
+                  $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+              }
+
               Logger.debug("Adding dataset to collection completed")
             }
             else{
@@ -185,13 +188,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
 
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
-    Collection.findOneById(new ObjectId(collectionId.stringify)) match{
+	 Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
         datasets.get(datasetId) match {
           case Some(dataset) => {
             if(isInCollection(dataset,collection)){
               // remove dataset from collection
-              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+            	Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
             		  $pull("datasets" ->  MongoDBObject( "_id" -> new ObjectId(dataset.id.stringify))), false, false, WriteConcern.Safe)
               //remove collection from dataset
               datasets.removeCollection(dataset.id, collection.id)
@@ -204,6 +207,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
               
               datasets.index(dataset.id)
               index(collection.id)
+              
+              if(!collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
+	        	  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+	        		  createThumbnail(collection.id)
+	        	  }		                        
+	          }
 
               Logger.info("Removing dataset from collection completed")
             }
@@ -235,7 +244,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
 
   def delete(collectionId: UUID) = Try {
-    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+	Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
         for(dataset <- collection.datasets){
           //remove collection from dataset

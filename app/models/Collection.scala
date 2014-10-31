@@ -3,6 +3,7 @@ package models
 import java.util.Date
 import securesocial.core.Identity
 
+
 case class Collection(
   id: UUID = UUID.generate,
   name: String = "N/A",

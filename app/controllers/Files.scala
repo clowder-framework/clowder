@@ -89,6 +89,7 @@ class Files @Inject() (
         }
         Logger.debug("Previewers available: " + previewsWithPreviewer)
 
+
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
@@ -408,15 +409,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName","")))
 		            }
 	            }
-	            
-        
-
 	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
-	            
 
-
-
-	             
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
@@ -445,7 +439,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }
   }
 
-  ////////////////////////////////////////////////  
   
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding

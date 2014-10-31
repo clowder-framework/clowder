@@ -1,9 +1,7 @@
 function removeCollection(collectionId,event){
-
-	var request = $.ajax({
-	       type: 'POST',
-	       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') +"/api/collections/"+collectionId+"/remove"
-	     });
+	var request = jsRoutes.api.Collections.removeCollection(collectionId).ajax({
+		type: 'POST'
+	});
 	request.done(function (response, textStatus, jqXHR){
         console.log("Response " + response);
         $(event.target.parentNode.parentNode).remove();    

@@ -9,9 +9,6 @@ import com.wordnik.swagger.annotations.ApiOperation
 import models._
 import play.api.Logger
 import play.api.libs.json.JsValue
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import jsonutils.JsonUtil
@@ -167,7 +164,7 @@ class Datasets @Inject()(
 		                            		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
 		                            	}
 		                            }
-		                            case None=>{}
+		                            case None=>Logger.debug(s"No collection found with id $collectionId") 
 		                          }
 		                        }
 	            }

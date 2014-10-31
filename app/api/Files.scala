@@ -119,65 +119,66 @@ class Files @Inject()(
   @ApiOperation(value = "Download file",
       notes = "Can use Chunked transfer encoding if the HTTP header RANGE is set.",
       responseClass = "None", httpMethod = "GET")
-  def download(id: UUID) = SecuredAction(parse.anyContent) { request =>
-    files.get(id) match {
-      case Some(file) => {
-        //Check the license type before doing anything.
-        if (file.checkLicenseForDownload(request.user)) {
-          files.getBytes(id) match {
-            case Some((inputStream, filename, contentType, contentLength)) => {
-              request.headers.get(RANGE) match {
-                // user requested a range of an image
-                case Some(value) => {
-                  val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-                    case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-                    case x => (x(0).toLong, x(1).toLong)
-                  }
-
-                  range match {
-                    case (start, end) =>
-                      inputStream.skip(start)
-                      SimpleResult(
-                        header = ResponseHeader(PARTIAL_CONTENT,
-                          Map(
-                            CONNECTION -> "keep-alive",
-                            ACCEPT_RANGES -> "bytes",
-                            CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                            CONTENT_LENGTH -> (end - start + 1).toString,
-                            CONTENT_TYPE -> contentType
-                          )
-                        ),
-                        body = Enumerator.fromStream(inputStream)
-                      )
-                  }
-                }
-                // return full image
-                case None => {
-                  Ok.chunked(Enumerator.fromStream(inputStream))
-                    .withHeaders(CONTENT_TYPE -> contentType)
-                    .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
-                }
+  def download(id: UUID) =
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
+      request =>
+      //Check the license type before doing anything. 
+      files.get(id) match {
+          case Some(file) => {    
+              if (file.checkLicenseForDownload(request.user)) {
+		        files.getBytes(id) match {            
+		          case Some((inputStream, filename, contentType, contentLength)) => {
+		
+		            request.headers.get(RANGE) match {
+		              case Some(value) => {
+		                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
+		                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+		                  case x => (x(0).toLong, x(1).toLong)
+		                }
+		
+		                range match {
+		                  case (start, end) =>
+		                    inputStream.skip(start)
+		                    SimpleResult(
+		                      header = ResponseHeader(PARTIAL_CONTENT,
+		                        Map(
+		                          CONNECTION -> "keep-alive",
+		                          ACCEPT_RANGES -> "bytes",
+		                          CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
+		                          CONTENT_LENGTH -> (end - start + 1).toString,
+		                          CONTENT_TYPE -> contentType
+		                        )
+		                      ),
+		                      body = Enumerator.fromStream(inputStream)
+		                    )
+		                }
+		              }
+		              case None => {
+		                Ok.chunked(Enumerator.fromStream(inputStream))
+		                  .withHeaders(CONTENT_TYPE -> contentType)
+		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		              }
+		            }
+		          }
+		          case None => {
+		            Logger.error("Error getting file" + id)
+		            NotFound
+		          }
+		        }
               }
-            }
-            case None => {
-              Logger.error("Error getting file" + id)
-              NotFound
-            }
+              else {
+            	  //Case where the checkLicenseForDownload fails
+            	  Logger.error("The file is not able to be downloaded")
+            	  BadRequest("The license for this file does not allow it to be downloaded.")
+              }
           }
-        }
-        else {
-          //Case where the checkLicenseForDownload fails
-          Logger.error("The file is not able to be downloaded")
-          BadRequest("The license for this file does not allow it to be downloaded.")
-        }
-      }
-      case None => {
-        //Case where the file could not be found
-        Logger.info(s"Error getting the file with id $id.")
-        BadRequest("Invalid file ID")
+          case None => {
+        	  //Case where the file could not be found
+        	  Logger.info(s"Error getting the file with id $id.")
+        	  BadRequest("Invalid file ID")
+          }
       }
     }
-  }
 
   /**
    *
@@ -1056,6 +1057,7 @@ class Files @Inject()(
                     }
                   }
                   case None => {
+                    //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug! 
                     Ok.stream(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       //.withHeaders(CONTENT_LENGTH -> contentLength.toString)
@@ -1728,5 +1730,4 @@ class Files @Inject()(
 }
 
 object MustBreak extends Exception {}
-
 

@@ -130,3 +130,4 @@ trait SecuredController extends Controller {
       }
   }
 }
+
