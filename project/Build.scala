@@ -83,3 +83,4 @@ object ApplicationBuild extends Build {
    
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
+

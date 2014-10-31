@@ -4,8 +4,10 @@ import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
+import models.AppConfiguration
 import play.api.Play.configuration
 import play.api.{Plugin, Logger, Application}
+import services.AppConfigurationService
 
  /**
   * A request that adds the User for the current call
@@ -23,6 +25,7 @@ object Permission extends Enumeration {
 		Admin,
 		CreateCollections,
 		DeleteCollections,
+		EditCollection,
 		ListCollections,
 		ShowCollection,
 		CreateDatasets,
@@ -74,6 +77,9 @@ import api.Permission._
  * @author Rob Kooper
  */
 case class WithPermission(permission: Permission) extends Authorization {
+	
+  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
+	
   def isAuthorized(user: Identity): Boolean = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
       case "public" => return publicPermission(user, permission)
@@ -116,7 +122,10 @@ case class WithPermission(permission: Permission) extends Authorization {
   }
 
   def privatePermission(user: Identity, permission: Permission): Boolean = {
-    return user != null
+    (user, permission) match {
+      case (null, _)                 => false
+      case (_, _)                    => true
+    }
   }
 }
 

@@ -13,13 +13,12 @@ import api.WithPermission
 import api.Permission
 import play.api.Play.current
 import javax.inject.{Singleton, Inject}
-import services.{DatasetService, CollectionService}
-import services.ElasticsearchPlugin
+import services._
 
 object ThumbnailFound extends Exception {}
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService) extends SecuredController {
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService) extends SecuredController {
 
   /**
    * New dataset form.
@@ -115,7 +114,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collectionForm.bindFromRequest.fold(
         errors => BadRequest(views.html.newCollection(errors)),
         collection => {
-          Logger.debug("Saving dataset " + collection.name)
+          Logger.debug("Saving collection " + collection.name)
           collections.insert(collection)
           
           // index collection
@@ -124,6 +123,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 		                List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
           
           Redirect(routes.Collections.collection(collection.id))
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
+		  Redirect(routes.Collections.collection(collection.id))
         })
   }
 
@@ -137,11 +139,39 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collections.get(id) match {
         case Some(collection) => {
           Logger.debug(s"Found collection $id")
-          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.toString()))
+          // only show previewers that have a matching preview object associated with collection
+          Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
+          for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
+          val filteredPreviewers = for (
+            previewer <- Previewers.findCollectionPreviewers;
+            preview <- previewsService.findByCollectionId(id);
+            if (previewer.collection);
+            if (previewer.supportedPreviews.contains(preview.preview_type.get))
+          ) yield {
+            previewer
+          }
+          Logger.debug("Num previewers " + filteredPreviewers.size)
+          filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
+          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.stringify, filteredPreviewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
         }
       }
   }
+
+  def previews(collection_id: UUID) = SecuredAction(authorization = WithPermission(Permission.EditCollection)) {
+    implicit request =>
+      collections.get(collection_id) match {
+        case Some(collection) => {
+          val previewsByCol = previewsService.findByCollectionId(collection_id)
+          Ok(views.html.collectionPreviews(collection_id.toString, previewsByCol, Previewers.findCollectionPreviewers))
+        }
+        case None => {
+          Logger.error("Error getting collection " + collection_id);
+          BadRequest("Collection not found")
+        }
+      }
+  }
 }
+

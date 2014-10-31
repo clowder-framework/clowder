@@ -260,7 +260,8 @@ class Search @Inject() (
     			futureListResults<-futureFutureListResults
     			listOfResults<-futureListResults   			    		
     		} yield {
-    		   Ok(views.html.multimediaSearchResults(queryURL, listOfResults))     		
+    		  //added a placeholder for UUID, to work with the new version of template
+    		  Ok(views.html.multimediaSearchResults(queryURL, null, listOfResults))     
     		}              
         } //case some
                     
@@ -302,7 +303,7 @@ class Search @Inject() (
    							futureListResults<-futureFutureListResults
    							listOfResults<-futureListResults      		
    						} yield {  
-   							Ok(views.html.multimediaSearchResults(filename, listOfResults))             		
+   							Ok(views.html.multimediaSearchResults(filename, fileID, listOfResults))             		
    						}    		            
    					} //end of case Some(plugin)   
 
@@ -356,7 +357,7 @@ class Search @Inject() (
    	   						futureListResults<-futureFutureListResults
    	   						listOfResults<-futureListResults      		
    	   					} yield {     			             
-   	   						Ok(views.html.multimediaSearchResults(filename, listOfResults))          
+   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  listOfResults))          
    	   					}    		             
    	   				} //end of case Some(plugin)                   
 
@@ -371,6 +372,161 @@ class Search @Inject() (
    				Future(Ok("Could not find similar for file id " +inputFileId ))
    			}
    		}//end of files.getBytes(inputFileId) match 
+    } //Async
+  }
+     
+
+/**
+   *Checks that input has file id, index id, and weight, and that they all are correct.  
+   * Returns 
+   * 	boolean: true if errors are present
+   * 	String: error message
+   * 	List[Double] : weights
+   */
+  def validateInput(input: Map[String, Seq[String]]):(Boolean, String, List[Double])={
+	  var inputErrors = false
+	  var errorMessage=""
+	  var weightsList = List(0.0)
+	  Logger.debug("Search.validateInput = " + input.toString)
+    
+	  if(  !input.contains( "FileID" ) || !input.contains("IndexID") || !input.contains("Weight") ){  
+	    inputErrors = true
+	    return(inputErrors, "Not all fields are present", List(0.0))
+	  } 
+	  //now deal with weights	 		  
+	  try {
+	    weightsList = input("Weight").map(w=>w.toDouble).toList
+	  }catch {
+	   		case e:Exception => return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))
+	   }
+	  Logger.debug("Search.validateInput  weightsList = " + weightsList)    
+     
+	   var sum=0.0 	
+	   for (w<- weightsList){
+		   if (w<0) return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))		   
+		   sum+=w
+	   } 	  
+	  if (sum != 1)  return (true, "sum of weights must be 1", List(0.0))	       
+      
+	  //no errors, return list of weights 
+      (false, "", weightsList)
+  }
+    
+  /**
+   * For a list of maps and a corresponding list of weights, finds linear combination
+   * of the maps.
+   */ 
+  def mergeMaps(maps:List[scala.collection.immutable.HashMap[String, Double]], 
+      weights:List[Double]):scala.collection.immutable.HashMap[String, Double]={
+
+    Logger.debug("Longth of maps = " + maps.length)
+    //merge the first two maps
+    var mergedMap = mergeTwoMaps(maps(0), maps(1), weights(0), weights(1))
+   						  //merge the rest of the maps
+   						  for( ind <- 2 to weights.length-1){
+   						    mergedMap = mergeTwoMaps(mergedMap, maps(ind), 1.0, weights(ind))
+   						  }    
+    mergedMap
+  }
+  
+  /**
+   * For two maps and two corresponding weights, will find linear combinations of corresponding values, 
+   * 	using the weights provided
+   */
+  def mergeTwoMaps (mapOne:collection.immutable.HashMap[String, Double], 
+		  			mapTwo:collection.immutable.HashMap[String, Double], 
+		  			w1:Double, w2:Double):scala.collection.immutable.HashMap[String, Double]={
+        
+	  	mapOne.merged(mapTwo)({ case ((file,proxOne),(_,proxTwo)) => (file,w1*proxOne+w2*proxTwo)  })  
+   		//mergedMap    
+  }
+   							
+  
+
+ /**
+   *   Pass a list of indexes and a list of weights to this method. Will calculate the weighted combination
+   * of the indexes.
+   */  
+     def findSimilarWeightedIndexes() = 
+    						SecuredAction(parse.multipartFormData, 
+    								authorization = WithPermission(Permission.SearchDatasets)){
+      implicit request => 	
+       Logger.debug("top of findSimilarWeightedIndexes")
+     
+       Async {     
+        Logger.debug("Search.findSimilarWeightedIndexes request data parts = " + request.body.dataParts.toString  )  
+        //using a helper method to validate input and get weights
+         val (inputErrors, errorMessage, weights) = validateInput(request.body.dataParts)
+                         
+         if (inputErrors == false){
+           //file id in dataParts is a sequence of just one element
+        	 val fileId = UUID(request.body.dataParts("FileID").head)
+        	 val indexIDs = request.body.dataParts("IndexID").map(i=>UUID(i)).toList        	 
+   	  	
+   	  		//query file will be stored in MultimediaQueryService
+   	  		//in controllers/Files -> uploadSelectQuery
+   	  		queries.get(fileId) match {
+//        	   case Some((inputStream, filename, contentType, length)) => {        
+   	  			case Some(fileInfo) => {                
+   	  				val filename = fileInfo._2
+   	  				current.plugin[VersusPlugin] match {    		
+   	  					case Some(plugin)=>{     						   						
+   	  						val queryResults = for {
+   	  						indexId<-indexIDs
+   	  					} yield {
+   							plugin.queryIndexSorted(fileId.stringify, indexId.stringify)   						  
+   						}
+   						//change a list of futures into a future list
+   						var futureListResults = scala.concurrent.Future.sequence(queryResults)   		   								
+   						
+   						for{
+   						  maps<- futureListResults
+   						}yield{   						  
+   							Logger.debug("list of maps = " + maps + "\nlength of maps = " + maps.length)  							
+   							
+   							//Calling helper method to merge all the maps. The magic happens here.
+   							var mergedMaps = mergeMaps(maps, weights)   										
+   							
+   							val mergedResult = for {
+   								(fileURL, prox)<-mergedMaps
+   							  } yield{   							    	
+   								Logger.debug("Search.findSimilarWeightedIndexes: fileURL = " + fileURL + ", prox = " + prox)   	   								
+   								val begin = fileURL.lastIndexOf("/");                       
+   								val end = fileURL.lastIndexOf("?")
+   								val result_id_str = fileURL.substring(begin + 1, end);
+   								val result_id = UUID(result_id_str);
+   								Logger.debug("result_id = " + result_id)   
+   								var oneFileName=""
+   								var oneThumbnlId=""
+   								files.get(result_id) match {
+   									case Some(file)=>{
+   										oneFileName = file.filename
+   										oneThumbnlId=file.thumbnail_id.getOrElse("")
+   									}
+   									case None=>{}      							    			
+   								}    
+   							    (result_id, oneFileName, oneThumbnlId, prox) 							  
+   							  }
+   							  Logger.debug("total merged result is = " + mergedResult)
+   							  //sort by combined proximity values
+   							  var sortedMergedResults= mergedResult.toList sortBy{_._4}
+   							  Logger.debug("sorted merged Results = " + sortedMergedResults)   							 
+   							  Ok(views.html.multimediaSearchResultsCombined(filename, sortedMergedResults))    							 
+   						}//end of yield   					
+   					} //end of case Some(plugin)   
+   					case None => {
+   						Future(Ok("No Versus Service"))
+   					}
+   				} //current.plugin[VersusPlugin] match  
+   			}//case Some((inputStream...
+   			
+   			case None=>{
+   				Logger.debug("File with id " +fileId +" not found")
+   				Future(Ok("File with id " +fileId +" not found"))
+   			}
+   		}//end of queries.get(imageID) match 
+       }//end of if no validation errors
+         else {Future(Ok("Form validation errors: " + errorMessage))}
     } //Async
   }
      

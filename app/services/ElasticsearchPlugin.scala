@@ -17,6 +17,8 @@ import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
 import org.elasticsearch.action.index.IndexResponse
 import org.elasticsearch.client.Client
+import play.api.Play.current 
+
 
 /**
  * Elasticsearch plugin.
@@ -58,6 +60,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           Logger.error("Error connecting to elasticsearch: No Node Created")
         }
       } //node match
+      Logger.info("ElasticsearchPlugin has started")
+
     } catch {
       case nn: NoNodeAvailableException => {
         Logger.error("Error connecting to elasticsearch: " + nn)

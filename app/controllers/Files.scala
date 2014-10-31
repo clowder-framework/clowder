@@ -1,7 +1,7 @@
 package controllers
 
 import java.io._
-import models.{UUID, FileMD, Thumbnail}
+import models.{UUID, FileMD, File, Thumbnail}
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
@@ -18,6 +18,7 @@ import api.Permission
 import javax.inject.Inject
 import java.util.Date
 import scala.sys.SystemProperties
+import securesocial.core.Identity
 
 /**
  * Manage files.
@@ -59,21 +60,37 @@ class Files @Inject() (
         val previewsFromDB = previews.findByFileId(file.id)
         Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
+        //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
-          val pvf = for (p <- previewers; pv <- previewsFromDB; if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))) yield {
+          val pvf = for (
+            p <- previewers; pv <- previewsFromDB;
+            if (!p.collection);
+            if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
+          ) yield {
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
           }
           if (pvf.length > 0) {
             Map(file -> pvf)
           } else {
-            val ff = for (p <- previewers; if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))) yield {
-              (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+            val ff = for (
+              p <- previewers;
+              if (!p.collection);
+              if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
+            ) yield {
+              if (file.checkLicenseForDownload(user)) {
+                (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+              }
+              else {
+                (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length)
+              }
             }
             Map(file -> ff)
           }
         }
         Logger.debug("Previewers available: " + previewsWithPreviewer)
 
+
+        // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>
@@ -104,7 +121,7 @@ class Files @Inject() (
         var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
         var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
         
-        val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         
         Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
@@ -192,7 +209,7 @@ class Files @Inject() (
   
 def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
-    user match {
+    user match {        
       case Some(identity) => {
         request.body.file("File").map { f =>
 	          var nameOfFile = f.filename
@@ -289,15 +306,20 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 }*/
   
   /**
-   * Upload file.
+   * Upload a file.
+   * 
+   * Updated to return json data that is utilized by the user interface upload library. The json structure is an array of maps that 
+   * contain data for each of the file that the upload interface can use to accurately update the display based on the success
+   * or failure of the upload process.
    */
   def upload() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
+    Logger.debug("--------- in upload ------------ ")
     user match {
       case Some(identity) => {
-        request.body.file("File").map { f =>
+        request.body.file("files[]").map { f =>                     
 	          var nameOfFile = f.filename
-	          var flags = ""
+	          var flags = ""	          
 	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 		          var thirdSeparatorIndex = nameOfFile.indexOf("__")
 	              if(thirdSeparatorIndex >= 0){
@@ -306,8 +328,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 	              }
-	          }
-	        
+	          }	       
 	        Logger.debug("Uploading file " + nameOfFile)
 
 	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
@@ -392,15 +413,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName","")))
 		            }
 	            }
-	            
-        
-
 	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
-	            
 
-
-
-	             
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
@@ -410,69 +424,136 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	             }
 	                        
 	            // redirect to file page]
-
-	            Redirect(routes.Files.file(f.id))
-
+	            //Redirect(routes.Files.file(f.id))
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
+	            
+	            //Correctly set the updated URLs and data that is needed for the interface to correctly 
+	            //update the display after a successful upload.
+	            var retMap = Map("files" -> 
+	                Seq(
+	                    toJson(
+	                        Map(
+	                            "name" -> toJson(nameOfFile),
+	                            "size" -> toJson(uploadedFile.ref.file.length()),
+	                            "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
+	                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(false)),
+	                            "deleteType" -> toJson("POST")
+	                        )
+	                    )
+	                )
+	            )
+	            Ok(toJson(retMap))
+	            //Redirect(routes.Files.file(f.id))
 	         }
 	         case None => {
 	           Logger.error("Could not retrieve file that was just saved.")
-	           InternalServerError("Error uploading file")
+	           //Changed to return appropriate data and message to the upload interface
+	           var retMap = Map("files" -> 
+                    Seq(
+                        toJson(
+                            Map(
+                                "name" -> toJson(nameOfFile),
+                                "size" -> toJson(uploadedFile.ref.file.length()),
+                                "error" -> toJson("Problem in storing the uploaded file.")
+                            )
+                        )
+                    )
+                )
+	           Ok(toJson(retMap))
 	         }
 	        }
 	      }.getOrElse {
-	         BadRequest("File not attached.")
+	         Logger.error("The file appears to not have been attached correctly during upload.")
+	         //This should be a very rare case. Changed to return the simple error message for the interface to display.
+	         var retMap = Map("files" -> 
+                    Seq(
+                        toJson(
+                            Map(
+                                "error" -> toJson("The file was not correctly attached during upload.")
+                            )
+                        )
+                    )
+                )
+               Ok(toJson(retMap))
 	
 	      }
       }
-      case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
+      case None => {
+          //Change to be the authentication login? Or will this automatically intercept? TEST IT
+          Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
+      }
     }
   }
 
-  ////////////////////////////////////////////////
   
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>
-    files.getBytes(id) match {
-      case Some((inputStream, filename, contentType, contentLength)) => {
-        request.headers.get(RANGE) match {
-          case Some(value) => {
-            val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-              case x => (x(0).toLong, x(1).toLong)
-            }
-	            range match { case (start,end) =>
+  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>    
+      if (UUID.isValid(id.stringify)) {
+          //Check the license type before doing anything. 
+          files.get(id) match {
+              case Some(file) => {                                                                                                             
+                  if (file.checkLicenseForDownload(request.user)) {
+                      files.getBytes(id) match {
+                      case Some((inputStream, filename, contentType, contentLength)) => {
+                          request.headers.get(RANGE) match {
+                          case Some(value) => {
+                              val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
+                              case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+                              case x => (x(0).toLong, x(1).toLong)
+                          }
+                          range match { case (start,end) =>
 
-                inputStream.skip(start)
-                import play.api.mvc.{ SimpleResult, ResponseHeader }
-                SimpleResult(
-                  header = ResponseHeader(PARTIAL_CONTENT,
-                    Map(
-                      CONNECTION -> "keep-alive",
-                      ACCEPT_RANGES -> "bytes",
-                      CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                      CONTENT_LENGTH -> (end - start + 1).toString,
-                      CONTENT_TYPE -> contentType
-                    )
-                  ),
-                  body = Enumerator.fromStream(inputStream)
-                )
-            }
-          }
-          case None => {
-	            Ok.chunked(Enumerator.fromStream(inputStream))
-              .withHeaders(CONTENT_TYPE -> contentType)
-              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+                          inputStream.skip(start)
+                          import play.api.mvc.{ SimpleResult, ResponseHeader }
+                          SimpleResult(
+                                  header = ResponseHeader(PARTIAL_CONTENT,
+                                          Map(
+                                                  CONNECTION -> "keep-alive",
+                                                  ACCEPT_RANGES -> "bytes",
+                                                  CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
+                                                  CONTENT_LENGTH -> (end - start + 1).toString,
+                                                  CONTENT_TYPE -> contentType
+                                                  )
+                                          ),
+                                          body = Enumerator.fromStream(inputStream)
+                                  )
+                          }
+                          }
+                          case None => {
+                              Ok.chunked(Enumerator.fromStream(inputStream))
+                              .withHeaders(CONTENT_TYPE -> contentType)
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
 
+                          }
+                          }
+                      }
+                      case None => {
+                          Logger.error("Error getting file" + id)
+                          BadRequest("Invalid file ID")
+                      }
+                      }   
+                  }
+                  else {
+                      //Case where the checkLicenseForDownload fails
+                      Logger.error("The file is not able to be downloaded")
+                      BadRequest("The license for this file does not allow it to be downloaded.")
+                  }
+              }
+              case None => {
+                  //Case where the file could not be found
+                  Logger.info(s"Error getting the file with id $id.")
+                  BadRequest("Invalid file ID")
+              }
           }
-        }
+               
       }
-      case None => {
-        Logger.error("Error getting file" + id)
-        NotFound
+      else {
+          Logger.error(s"The given id $id is not a valid ObjectId.")
+          BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
-    }
   }
 
   def thumbnail(id: UUID) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>
@@ -623,7 +704,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
    * Upload query to temporary folder
   */
   def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    request.body.file("File").map { f =>
+      request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
       	if(nameOfFile.toLowerCase().endsWith(".ptm")){
@@ -727,7 +808,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
   /* Drag and drop */
   def uploadDragDrop() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    request.body.file("File").map { f =>
+      request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
       	if(nameOfFile.toLowerCase().endsWith(".ptm")){
@@ -825,7 +906,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   }
 
   def uploaddnd(dataset_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
-    request.user match {
+      request.user match {
       case Some(identity) => {
         datasets.get(dataset_id) match {
           case Some(dataset) => {

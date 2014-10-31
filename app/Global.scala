@@ -51,7 +51,12 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSett
       }
 
     }
- 
+        
+    //Add permanent admins to app if not already included
+    val appConfObj = new services.mongodb.MongoDBAppConfigurationService{}    
+    appConfObj.getDefault()
+    for(initialAdmin <- play.Play.application().configuration().getString("initialAdmins").split(","))
+    	appConfObj.addAdmin(initialAdmin)
     
     extractorTimer = Akka.system().scheduler.schedule(0.minutes,5 minutes){
            ExtractionInfoSetUp.updateExtractorsInfo()
@@ -63,7 +68,7 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSett
   }
 
   override def onStop(app: Application) {
-    extractorTimer.cancel
+    extractorTimer.cancel()
     Logger.info("Application shutdown")
   }
 

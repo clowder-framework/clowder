@@ -1,11 +1,11 @@
-@(files: List[models.File])(implicit user: Option[securesocial.core.Identity])
+@(files: List[models.File], displayedName: String, welcomeMessage: String)(implicit user: Option[securesocial.core.Identity])
 
-@main("Medici 2.0") {
+@main(displayedName) {
 
 <div class="jumbotron">
-  <h1>Medici 2.0</h1>
-  <p>Hello @(user.map{_.firstName}.getOrElse("stranger"))! 
-     Welcome to Medici 2.0, a scalable data repository where you can share, organize and analyze data.</p>
+  <h1>@displayedName</h1>
+  <p class="josefinFonted">Hello @(user.map{_.firstName}.getOrElse("stranger"))! 
+     @welcomeMessage</p>
 </div>
 
 @*@carousel(files: List[models.File])*@

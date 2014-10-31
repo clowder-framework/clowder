@@ -69,7 +69,7 @@ class MongoDBFileService @Inject() (
     if (date == "") {
       FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $lt sinceDate)).sort(order).limit(limit).toList
     }
@@ -84,16 +84,14 @@ class MongoDBFileService @Inject() (
       FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("uploadDate" -> 1)
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
-      var fileList = FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit + 1).toList.reverse
-      fileList = fileList.filter(_ != fileList.last)
-      fileList
+      FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
 
   def latest(): Option[File] = {
-    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
@@ -105,7 +103,7 @@ class MongoDBFileService @Inject() (
   }
 
   def first(): Option[File] = {
-    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
@@ -486,108 +484,30 @@ class MongoDBFileService @Inject() (
   
   
   /**
-   *  Add versus descriptors to the metadata
-   *
-   * Reads descriptors received from versus( in the response body)  as list of JSON objects
-   * Each JSON object has four fields <extraction_id,adapter_name,extractor_name,descriptor>
-   * Parse each json object based on the field/key name and obtain the values and combine them as a tuple
-   * Obtain the existing versus descriptors in the "metadata" as list of tuples (extraction_id,adapter_name,extractor_name,descriptor)
-   * merge with the tuples obtained from descriptors received from versus
-   * write it back to the versus_descriptors field of "metadata" to mongoDB
+   *  Add versus descriptors to the Versus.descriptors collection associated to a file
    *
    */
  def addVersusMetadata(id:UUID,json:JsValue){
     val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject].toMap
               .asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
-    VersusDAO.insert(new Versus(id,doc),WriteConcern.Safe)
-    Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
-  } 
-  
- def getVersusMetadata(id: UUID): Option[JsValue] = {
-    val versusDescriptor=VersusDAO.findOne(MongoDBObject("fileId" -> new ObjectId(id.stringify)))
-    versusDescriptor.map{
-      vdes=>
-      	 val x=com.mongodb.util.JSON.serialize(vdes.asInstanceOf[Versus].descriptors("versus_descriptors"))
-      	 Json.parse(x)
-     }
-  } 
+       VersusDAO.insert(new Versus(id,doc),WriteConcern.Safe)
+       Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
+  }
  
-  /**
-   * This is the previous code that adds Versus descriptors to the metadata. If the Versus extraction is carried out more than once, it takes care of it
-   * by merging the extractions results into single list
-   * This works fine in Mac but due to some reason, it does not work in Ubuntu and gives mongodb exception
-   * TODO: need to incorporate this into the current addVersusMetadata code
-   * 
-   * This code will be deleted once we figure out where to add versus metadata
-   */
-   /*def addVersusMetadata(id: UUID, json: JsValue) {
-   
-     Logger.debug("******MongoDB::::Adding Versus metadata to file " + id.toString )
-
-    var jsonlist = json.as[List[JsObject]] // read json as list of JSON objects
-
-    var addmd = jsonlist.map {
-      list =>
-        Logger.debug("extraction_id=" + list \ ("extraction_id"))
-        Logger.debug("adapter_name=" + list \ ("adapter_name"))
-        Logger.debug("extractor_name=" + list \ ("extractor_name"))
-        //Logger.debug("descriptor=" + list \ ("descriptor"))
-        (list \ ("extraction_id"), list \ ("adapter_name"), list \ ("extractor_name"), list \ ("descriptor"))
-    } /* to access into the list of json objects and convert as list of tuples*/
-
-    val doc = com.mongodb.util.JSON.parse(json.toString)
-
-    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
-      case Some(x) => {
-
-        x.getAs[DBObject]("metadata") match {
-          case None => {
-            Logger.debug("-----No metadata field found: Adding meta data field and setting Versus Descriptors----")
-            FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata.versus_descriptors" -> doc), false, false, WriteConcern.Safe)
-            Logger.debug("-----Added metadata field ----")
-            
-            
-          }
-          case Some(map) => {
-
-            Logger.debug("----metadata found--- ")
-
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
-            Logger.debug("retmd: " + returnedMetadata)
-
-            val retmd = Json.toJson(returnedMetadata)
-            var ksize = map.keySet().size()
-            Logger.debug("Contains Keys versus descriptors: " + map.containsField("versus_descriptors"))
-            val listd = Json.parse(returnedMetadata) \ ("versus_descriptors")
-
-            var mdList = listd.as[List[JsObject]].map {
-              md =>
-                Logger.debug("extraction_id=" + md \ ("extraction_id"))
-                Logger.debug("adapter_name=" + md \ ("adapter_name"))
-                Logger.debug("extractor_name=" + md \ ("extractor_name"))
-                Logger.debug("descriptor=" + md \ ("descriptor"))
-                (md \ ("extraction_id"), md \ ("adapter_name"), md \ ("extractor_name"), md \ ("descriptor"))
-            }
-
-            val versusmd = mdList ++ addmd
-
-            var versusmdList = for ((id, a, e, d) <- versusmd) yield Json.obj("extraction_id" -> id, "adapter_name" -> a, "extractor_name" -> e, "descriptor" -> d)
-
-            val jobj = Json.obj("versus_descriptors" -> getJsonArray(versusmdList))
-
-            Logger.debug("versus mdList:  " + jobj)
-
-            FileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata" -> com.mongodb.util.JSON.parse(jobj.toString)), false, false, WriteConcern.Safe)
-
-          }
-        }
-
-      }
-      case None => Logger.error("Error getting file" + id)
+/**
+ * Get Versus descriptors as Json Array for a file
+ */
+  def getVersusMetadata(id: UUID): Option[JsValue] = {
+    val versusDescriptors = VersusDAO.find(MongoDBObject("fileId" -> new ObjectId(id.stringify)))
+    var vdArray = new JsArray()
+    for (vd <- versusDescriptors) {
+      var x = com.mongodb.util.JSON.serialize(vd.asInstanceOf[Versus].descriptors("versus_descriptors"))
+      vdArray = vdArray :+ Json.parse(x)
+      Logger.debug("array=" + vdArray.toString)
     }
-  }*/
-
-  /*convert list of JsObject to JsArray*/
+    Some(vdArray)
+  } 
+   /*convert list of JsObject to JsArray*/
   def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
@@ -676,9 +596,22 @@ class MongoDBFileService @Inject() (
             }
             if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty)
               if(file.thumbnail_id.get == fileDataset.thumbnail_id.get){
-                datasets.newThumbnail(fileDataset.id)	        	  
-		        	}
-  
+                datasets.newThumbnail(fileDataset.id)
+                
+                for(collectionId <- fileDataset.collections){
+                    collections.get(new UUID(collectionId)) match{
+                      case Some(collection) =>{		                              
+                      	if(!collection.thumbnail_id.isEmpty){	                            	  
+                      		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                      			collections.createThumbnail(collection.id)
+                      		}		                        
+                      	}
+                      }
+                      case None=> Logger.debug(s"Could not find collection $collectionId")
+                    }
+                  }
+                
+		      }  
           }
           for(section <- sections.findByFileId(file.id)){
             sections.removeSection(section)

@@ -35,8 +35,8 @@ class Datasets @Inject()(
   sections: SectionService,
   extractions: ExtractionService,
   dtsrequests:ExtractionRequestsService,
-  sparql: RdfSPARQLService) extends SecuredController {
-
+  sparql: RdfSPARQLService,
+  previewService: PreviewService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -132,6 +132,7 @@ class Datasets @Inject()(
       Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
       datasets.get(id) match {
         case Some(dataset) => {
+
           val filesInDataset = dataset.files.map(f => files.get(f.id).get)
           
           //Search whether dataset is currently being processed by extractor(s)
@@ -151,20 +152,43 @@ class Datasets @Inject()(
           val datasetWithFiles = dataset.copy(files = filesInDataset)
           decodeDatasetElements(datasetWithFiles)
           val previewers = Previewers.findPreviewers
+          //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
           val previewslist = for (f <- datasetWithFiles.files) yield {
-            val pvf = for (p <- previewers; pv <- f.previews; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield {
+
+
+            // add sections to file
+            val sectionsByFile = sections.findByFileId(f.id)
+            Logger.debug("Sections: " + sectionsByFile)
+            val sectionsWithPreviews = sectionsByFile.map { s =>
+              val p = previewService.findBySectionId(s.id)
+              if(p.length>0)
+                s.copy(preview = Some(p(0)))
+              else
+                s.copy(preview = None)
+            }
+            Logger.debug("Sections available: " + sectionsWithPreviews)
+            val fileWithSections = f.copy(sections = sectionsWithPreviews)
+
+
+            val pvf = for (p <- previewers; pv <- fileWithSections.previews; if (fileWithSections.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield {
               (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
             }
             if (pvf.length > 0) {
-              (f -> pvf)
+              fileWithSections -> pvf
             } else {
               val ff = for (p <- previewers; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(f.contentType))) yield {
-                (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id).toString, f.contentType, f.length)
+                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                if (f.checkLicenseForDownload(user)) {
+                    (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id).toString, f.contentType, f.length)
+                }
+                else {
+                    (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                }
               }
-              (f -> ff)
+              fileWithSections -> ff
             }
           }
-          val previews = Map(previewslist: _*)
           val metadata = datasets.getMetadata(id)
           Logger.debug("Metadata: " + metadata)
           for (md <- metadata) {
@@ -187,9 +211,9 @@ class Datasets @Inject()(
           }
           commentsByDataset = commentsByDataset.sortBy(_.posted)
 
-          val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previews, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError
@@ -385,7 +409,11 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					        val dt = dataset.copy(author=identity)
 				            datasets.update(dt) 
 				            // redirect to dataset page
-				            Redirect(routes.Datasets.dataset(dt.id))				            
+				            Redirect(routes.Datasets.dataset(dt.id))
+				            current.plugin[AdminsNotifierPlugin].foreach{
+                      _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+				            Redirect(routes.Datasets.dataset(dt.id))
+
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
 					    }   	                 
@@ -435,7 +463,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
-						  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
+				  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 
 		          //link file to dataset in RDF triple store if triple store is used
 		          if(theFileGet.filename.endsWith(".xml")){
@@ -458,7 +486,10 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				//****************************//
 		          
 				  // redirect to dataset page
-				  Redirect(routes.Datasets.dataset(dt.id)) 				  
+				  Redirect(routes.Datasets.dataset(dt.id))
+				  current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+				  Redirect(routes.Datasets.dataset(dt.id)) 
 	            }	            
 	          }  
 	        }
@@ -482,3 +513,4 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
       Ok(views.html.generalMetadataSearch())
   }
 }
+
