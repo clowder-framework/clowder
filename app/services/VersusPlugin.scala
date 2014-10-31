@@ -64,7 +64,7 @@ class VersusPlugin(application:Application) extends Plugin{
   def extract(fileid: UUID): Future[Response] = {
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
-    val fileUrl = client + "/api/files/" + fileid + "?key=" + configuration.getString("commKey").get
+    val fileUrl = client + "/api/files/" + fileid + "/blob?key=" + configuration.getString("commKey").get
     val host = configuration.getString("versus.host").getOrElse("")
 
     val extractUrl = host + "/extract"
@@ -287,7 +287,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId = configuration.getString("versus.index").getOrElse("")
-    val fileURL = client + "/api/files/" + fileId + "?key=" + configuration.getString("commKey").get    
+    val fileURL = client + "/api/files/" + fileId + "/blob?key=" + configuration.getString("commKey").get
     index(fileURL, fileType)
   }
   
@@ -435,7 +435,7 @@ class VersusPlugin(application:Application) extends Plugin{
 		  val configuration = play.api.Play.configuration
 		  val client = configuration.getString("versus.client").getOrElse("") 
 		  val host = configuration.getString("versus.host").getOrElse("")		  
-		  val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
+		  val queryStr = client + "/api/files/" + inputFileId + "/blob?key=" + configuration.getString("commKey").get
 		  
 		  queryIndex(queryStr, indexId) 
    	}
@@ -494,9 +494,9 @@ class VersusPlugin(application:Application) extends Plugin{
         var resultList = new ListBuffer[PreviewFilesSearchResult]                            
         similarity_value.map {      
           result =>            
-            //example: result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db?key=r1ek3rs
+            //example: result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db/blob?key=r1ek3rs
             //or
-            //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs
+            //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5/blob?key=r1ek3rs
             //        
             //parse docID to get preivew id or file id - string between '/' and '?'
             val end = result.docID.lastIndexOf("?")
@@ -560,7 +560,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val client = configuration.getString("versus.client").getOrElse("")    
 
     //if searching for file already uploaded previously, use api/files
-    // val queryStr = client + "/api/files/" + inputFileId + "?key=" + configuration.getString("commKey").get
+    // val queryStr = client + "/api/files/" + inputFileId + "/blob?key=" + configuration.getString("commKey").get
     //if searching for a new file, i.e.  uploaded just now, use api/queries
     val queryStr = client + "/api/queries/" + inputFileId + "?key=" + configuration.getString("commKey").get  
     val responseFuture: Future[Response] = WS.url(host + "/indexes/" + indexId + "/query").post(Map("infile"->Seq(queryStr))) 
