@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat
 import org.elasticsearch.action.index.IndexResponse
 import org.elasticsearch.client.Client
 import play.api.Play.current 
+import org.elasticsearch.common.settings.Settings
 
 
 /**
@@ -30,39 +31,31 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-  var client: Option[Client] = null
-  var node: Option[Node] = null
+  var client: Option[TransportClient] = null
+  var nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("medici")
+  var serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
+  var serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
 
   override def onStart() {
     val configuration = application.configuration
     try {
-      node = Some(nodeBuilder().clusterName("medici").client(true).node())
-      Logger.debug("--- ElasticSearch Node is being created----")
-      node match {
-        case Some(n) => {
-          client = Some(n.client())
-          Logger.debug("--- ElasticSearch Client is being created----")
-          client match {
-            case Some(x) => {
-              Logger.debug("Index \"data\"  is being created if it does not exist ---")
-              val indexExists = x.admin().indices().prepareExists("data").execute().actionGet().isExists()
-              if (!indexExists) {
-                x.admin().indices().prepareCreate("data").execute().actionGet()
-              }
-            }
-            case None => {
-              Logger.error("Error connecting to elasticsearch: No Client Created")
+      val settings = ImmutableSettings.settingsBuilder().put("cluster.name", nameOfCluster).build()
+       client= Some(new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(serverAddress, serverPort)))
+       Logger.debug("--- ElasticSearch Client is being created----")
+       client match {
+         case Some(x) => {
+           Logger.debug("Index \"data\"  is being created if it does not exist ---")
+           val indexExists = x.admin().indices().prepareExists("data").execute().actionGet().isExists()
+           if (!indexExists) {
+             x.admin().indices().prepareCreate("data").execute().actionGet()
             }
           }
-          Logger.info("ElasticsearchPlugin has started")
+          case None => {
+            Logger.error("Error connecting to elasticsearch: No Client Created")
+          }
         }
-        case None => {
-          Logger.error("Error connecting to elasticsearch: No Node Created")
-        }
-      } //node match
-      Logger.info("ElasticsearchPlugin has started")
-
-    } catch {
+       Logger.info("ElasticsearchPlugin has started")
+      } catch {
       case nn: NoNodeAvailableException => {
         Logger.error("Error connecting to elasticsearch: " + nn)
         client match {
@@ -70,26 +63,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           case None => None
         }
         client = None
-        node match {
-          case Some(x) => x.close
-          case None => None
-        }
-        node = None
-      }
-
-      case _: Throwable => {
-        Logger.error("Unknown exception connecting to elasticsearch")
-        client match {
-          case Some(x) => x.close
-          case None => None
-        }
-        client = None
-        node match {
-          case Some(x) => x.close
-          case None => None
-        }
-        node = None
-
+    }
+    case _: Throwable => {
+      Logger.error("Unknown exception connecting to elasticsearch")
+      client match {
+        case Some(x) => x.close
+        case None => None
+       }
+      client = None
       }
     }
   }
@@ -208,12 +189,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   override def onStop() {
     client match {
       case Some(x) => x.close
+      case None=>None
     }
     client = None
-    node match {
-      case Some(x) => x.close
-    }
-    node = None
     Logger.info("ElasticsearchPlugin has stopped")
   }
 
