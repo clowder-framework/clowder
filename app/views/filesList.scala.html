@@ -24,24 +24,35 @@
                 <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
             }
         </div>
-        <script>
-            $(function() {
+        <script>            
+            $(function() {            	            	
                 $('#tile-view-btn').click(function() {
                   $('#tile-view').removeClass('hidden');
                   $('#list-view').addClass('hidden');
                   $('#tile-view-btn').addClass('active');
                   $('#list-view-btn').removeClass('active');
+                  viewMode = "tile";
                 });
                 $('#list-view-btn').click(function() {
                   $('#tile-view').addClass('hidden');
                   $('#list-view').removeClass('hidden');
                   $('#list-view-btn').addClass('active');
                   $('#tile-view-btn').removeClass('active');
-                });                
+                  viewMode = "list";
+                });                 
+                
+                //Handlers for the next and previous links that behave more like buttons.
+                $('#nextlink').click(function() {
+                	onPage("@(routes.Files.list("a", next, limit))");
+                });
+                $('#prevlink').click(function() {
+                    onPage("@(routes.Files.list("b", prev, limit))");
+                });
             });
             
             $(document).ready(function() {
             	var viewMode = '@mode';
+            	console.log("on load, viewMode is " + viewMode);
             	if (viewMode == "list") {
             		$('#list-view-btn').click();
             	}
@@ -49,6 +60,16 @@
             		$('#tile-view-btn').click();
             	}
             });
+        </script>
+        <script type="text/javascript" language="javascript">
+            //Handler for next/previous page requests, to preserve the format that the user is currently viewing.
+            //Perhaps there is a better way to pass this data other than URL modification. I couldn't seem to get the
+            //route to compile correctly while directly in here and trying to reference the javascript viewMode variable.
+	        function onPage(url) {
+	            var modUrl = url  + "&mode=" + viewMode;
+	            console.log("onPage - url is " + modUrl);
+	            window.location.href=modUrl;
+	        }
         </script>
     </div>
 </div>
@@ -135,11 +156,12 @@
 <div class="row">
     <div class="col-md-12">
         <ul class="pager">
+            <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
             @if(prev != "") {
-            <li class="previous"><a href="@(routes.Files.list("b", prev, limit))">Previous</a></li>
+                <li class="previous"><a id="prevlink" title="Page backwards" href="#" onclick="return false">Previous</a></li>
             }
             @if(next != "") {
-            <li class ="next"><a href="@(routes.Files.list("a", next, limit))">Next</a></li>
+                <li class ="next"><a id="nextlink" title="Page forwards" href="#" onclick="return false">Next</a></li>
             }
         </ul>
     </div>
