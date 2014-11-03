@@ -136,7 +136,8 @@ class Files @Inject() (
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ListFiles)) { implicit request =>
+  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListFiles)) { implicit request =>
+    Logger.debug("------- mode is " + mode + " ---------")
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -151,6 +152,7 @@ class Files @Inject() (
     } else {
       badRequest
     }
+    Logger.debug("---------- fileList size is " + fileList.size + " --------------")
     // latest object
     val latest = files.latest()
     // first object
@@ -180,8 +182,7 @@ class Files @Inject() (
       }
       file.id -> allComments.size
     }.toMap
-
-    Ok(views.html.filesList(fileList, commentMap, prev, next, limit))
+    Ok(views.html.filesList(fileList, commentMap, prev, next, limit, mode))
   }
 
   /**

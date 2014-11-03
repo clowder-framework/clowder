@@ -39,7 +39,7 @@ GET     /bookmarklet.js                                                     @con
 
 
 # Files
-GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
+GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10, mode: String ?= "tile")
 GET		/files/new					      @controllers.Files.uploadFile
 
 #This may not require; This is only for testing. It will change in subsequent version
