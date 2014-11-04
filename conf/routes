@@ -236,6 +236,10 @@ GET     /api/delete-data                    					api.Admin.deleteAllData
 POST	/api/remove-admin										api.Admin.removeAdmin
 POST	/api/changeAppearance									api.Admin.submitAppearance
 
+# ----------------------------------------------------------------------
+# COLLECTIONS ENDPOINT
+# ----------------------------------------------------------------------
+GET		/api/collections														    @api.Collections.listCollections
 POST    /api/collections                                        					@api.Collections.createCollection()
 GET		/api/collections/list														@api.Collections.listCollections
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
@@ -245,6 +249,7 @@ POST	/api/collections/:coll_id/remove											@api.Collections.removeCollectio
 GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id: UUID)
 DELETE	/api/collections/:coll_id													@api.Collections.removeCollection(coll_id: UUID)
 POST    /api/collections/:c_id/previews/:p_id     						            @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
+GET     /api/collections/:coll_id													@api.Collections.getCollection(coll_id: UUID)
 
 GET    	/api/datasets					  							@api.Datasets.list
 POST    /api/datasets                                           	@api.Datasets.createDataset
