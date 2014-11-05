@@ -539,7 +539,9 @@ object Geostreams extends ApiController {
           cacheFetch(description) match {
             case Some(data) => {
               if (format == "csv") {
-                Ok.chunked(data).as(withCharset("text/csv"))
+                Ok.chunked(data)
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                  .as(withCharset("text/csv"))
               } else {
                 jsonp(data.through(Enumeratee.map(new String(_))), request)
               }
@@ -557,7 +559,9 @@ object Geostreams extends ApiController {
               val data = calculate(operator, filtered, since, until, semi.isDefined)
 
               if (format == "csv") {
-                Ok.chunked(cacheWrite(description, jsonToCSV(data))).as(withCharset("text/csv"))
+                Ok.chunked(cacheWrite(description, jsonToCSV(data)))
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                  .as(withCharset("text/csv"))
               } else {
                 jsonp(cacheWrite(description, formatResult(data, format)), request)
               }
