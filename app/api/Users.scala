@@ -19,7 +19,7 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "List all users in the system",
     responseClass = "User", httpMethod = "GET")
-  def list() = Action { request =>
+  def list() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.UserAdmin)) { request =>
     Ok(Json.toJson(users.list))
   }
 
@@ -28,10 +28,22 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "Return a single user.",
     responseClass = "User", httpMethod = "GET")
-  def findById(id: UUID) = Action { request =>
+  def findById(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
     users.findById(id) match {
       case Some(x) => Ok(Json.toJson(x))
       case None => BadRequest("no user found with that id.")
+    }
+  }
+
+  /**
+   * Returns a single user based on the email specified.
+   */
+  @ApiOperation(value = "Return a single user.",
+    responseClass = "User", httpMethod = "GET")
+  def findByEmail(email: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    users.findByEmail(email) match {
+      case Some(x) => Ok(Json.toJson(x))
+      case None => BadRequest("no user found with that email.")
     }
   }
 }

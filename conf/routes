@@ -359,4 +359,5 @@ POST	/api/sparqlquery				  @api.Search.querySPARQL
 # USERS API
 # ----------------------------------------------------------------------
 GET            /api/users                                                               @api.Users.list
+GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
