@@ -2,17 +2,17 @@ import com.mongodb.casbah.Imports._
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.api.Play.current
-
 import services.mongodb.MongoSalatPlugin
 import services.mongodb.MongoDBAppConfigurationService
 import play.api.mvc.WithFilters
 import play.filters.gzip.GzipFilter 
-
 import services._
 import play.libs.Akka
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 import models.ExtractionInfoSetUp
+import services.ExtractorService
 import java.util.Date
 import java.util.Calendar
 import models._
@@ -32,7 +32,7 @@ object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSett
   
   override def onStart(app: Application) {
     // create mongo indexes if plugin is loaded
-    ServerStartTime.startTime = Calendar.getInstance().getTime
+    ServerStartTime.startTime = Calendar.getInstance().getTime()
     serverStartTime = ServerStartTime.startTime
     Logger.debug("\n----Server Start Time----" + serverStartTime + "\n \n")
     

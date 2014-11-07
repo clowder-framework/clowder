@@ -210,7 +210,7 @@ class Datasets @Inject()(
           }
           commentsByDataset = commentsByDataset.sortBy(_.posted)
 
-          val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
         }
@@ -516,3 +516,4 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
       Ok(views.html.generalMetadataSearch())
   }
 }
+

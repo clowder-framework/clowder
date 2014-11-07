@@ -1,10 +1,9 @@
 function removeDataset(datasetId,event, reloadPage){
 	if(reloadPage === undefined) reloadPage = false;
 	
-	var request = $.ajax({
-	       type: 'POST',
-	       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+datasetId+"/remove"
-	     });
+	var request = jsRoutes.api.Datasets.deleteDataset(datasetId).ajax({
+		type: 'POST'
+	});
 	request.done(function (response, textStatus, jqXHR){
         console.log("Response " + response);
         if($(event.target).is("span")){

@@ -2,7 +2,7 @@ package services
 
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
-import services.DI.injector
+import services._
 import models.UUID
 
 class AdminsNotifierPlugin(application:Application) extends Plugin {
@@ -79,3 +79,4 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
     }
   }
 }
+

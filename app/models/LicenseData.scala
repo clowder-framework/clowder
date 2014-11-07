@@ -37,3 +37,4 @@ case class LicenseData (
         m_rightsHolder == aName
     }
 }
+

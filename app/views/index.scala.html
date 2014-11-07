@@ -1,6 +1,6 @@
 @(files: List[models.File], displayedName: String, welcomeMessage: String)(implicit user: Option[securesocial.core.Identity])
 
-@main("Medici 2.0") {
+@main(displayedName) {
 
 <div class="jumbotron">
   <h1>@displayedName</h1>

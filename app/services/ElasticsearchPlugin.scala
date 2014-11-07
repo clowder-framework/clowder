@@ -16,6 +16,7 @@ import models.{UUID, Dataset}
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
+import play.api.Play.current 
 
 /**
  * Elasticsearch plugin.

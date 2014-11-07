@@ -88,6 +88,7 @@ class Files @Inject() (
         }
         Logger.debug("Previewers available: " + previewsWithPreviewer)
 
+
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
@@ -119,7 +120,7 @@ class Files @Inject() (
         var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
         var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
         
-        val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         
         Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
@@ -207,7 +208,7 @@ class Files @Inject() (
   
 def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
-    user match {
+    user match {        
       case Some(identity) => {
         request.body.file("File").map { f =>
 	          var nameOfFile = f.filename
@@ -305,15 +306,20 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 }*/
 
   /**
-   * Upload file.
+   * Upload a file.
+   * 
+   * Updated to return json data that is utilized by the user interface upload library. The json structure is an array of maps that 
+   * contain data for each of the file that the upload interface can use to accurately update the display based on the success
+   * or failure of the upload process.
    */
   def upload() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
     implicit val user = request.user
+    Logger.debug("--------- in upload ------------ ")
     user match {
       case Some(identity) => {
-        request.body.file("File").map { f =>
+        request.body.file("files[]").map { f =>                     
 	          var nameOfFile = f.filename
-	          var flags = ""
+	          var flags = ""	          
 	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 		          var thirdSeparatorIndex = nameOfFile.indexOf("__")
 	              if(thirdSeparatorIndex >= 0){
@@ -322,8 +328,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 	              }
-	          }
-	        
+	          }	       
 	        Logger.debug("Uploading file " + nameOfFile)
 
 	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
@@ -410,9 +415,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            }
 	            }
 
-
 	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
-	             
+
 	             //add file to RDF triple store if triple store is used
 	             if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
@@ -422,26 +426,68 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	             }
 	                        
 	            // redirect to file page]
-	            Redirect(routes.Files.file(f.id))
+	            //Redirect(routes.Files.file(f.id))
 	            current.plugin[AdminsNotifierPlugin].foreach{
                 _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
-	            Redirect(routes.Files.file(f.id))
+	            
+	            //Correctly set the updated URLs and data that is needed for the interface to correctly 
+	            //update the display after a successful upload.
+	            var retMap = Map("files" -> 
+	                Seq(
+	                    toJson(
+	                        Map(
+	                            "name" -> toJson(nameOfFile),
+	                            "size" -> toJson(uploadedFile.ref.file.length()),
+	                            "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
+	                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(false)),
+	                            "deleteType" -> toJson("POST")
+	                        )
+	                    )
+	                )
+	            )
+	            Ok(toJson(retMap))
+	            //Redirect(routes.Files.file(f.id))
 	         }
 	         case None => {
 	           Logger.error("Could not retrieve file that was just saved.")
-	           InternalServerError("Error uploading file")
+	           //Changed to return appropriate data and message to the upload interface
+	           var retMap = Map("files" -> 
+                    Seq(
+                        toJson(
+                            Map(
+                                "name" -> toJson(nameOfFile),
+                                "size" -> toJson(uploadedFile.ref.file.length()),
+                                "error" -> toJson("Problem in storing the uploaded file.")
+                            )
+                        )
+                    )
+                )
+	           Ok(toJson(retMap))
 	         }
 	        }
 	      }.getOrElse {
-	         BadRequest("File not attached.")
+	         Logger.error("The file appears to not have been attached correctly during upload.")
+	         //This should be a very rare case. Changed to return the simple error message for the interface to display.
+	         var retMap = Map("files" -> 
+                    Seq(
+                        toJson(
+                            Map(
+                                "error" -> toJson("The file was not correctly attached during upload.")
+                            )
+                        )
+                    )
+                )
+               Ok(toJson(retMap))
 	
 	      }
       }
-      case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
+      case None => {
+          //Change to be the authentication login? Or will this automatically intercept? TEST IT
+          Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
+      }
     }
   }
 
-  ////////////////////////////////////////////////  
   
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
@@ -661,7 +707,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
    * Upload query to temporary folder
   */
   def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    request.body.file("File").map { f =>
+      request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
       	if(nameOfFile.toLowerCase().endsWith(".ptm")){
@@ -767,7 +813,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
   /* Drag and drop */
   def uploadDragDrop() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    request.body.file("File").map { f =>
+      request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
       	if(nameOfFile.toLowerCase().endsWith(".ptm")){
@@ -866,7 +912,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   }
 
   def uploaddnd(dataset_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
-    request.user match {
+      request.user match {
       case Some(identity) => {
         datasets.get(dataset_id) match {
           case Some(dataset) => {

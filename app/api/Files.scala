@@ -131,65 +131,66 @@ class Files @Inject()(
   @ApiOperation(value = "Download file",
       notes = "Can use Chunked transfer encoding if the HTTP header RANGE is set.",
       responseClass = "None", httpMethod = "GET")
-  def download(id: UUID) = SecuredAction(parse.anyContent) { request =>
-    files.get(id) match {
-      case Some(file) => {
-        //Check the license type before doing anything.
-        if (file.checkLicenseForDownload(request.user)) {
-          files.getBytes(id) match {
-            case Some((inputStream, filename, contentType, contentLength)) => {
-              request.headers.get(RANGE) match {
-                // user requested a range of an image
-                case Some(value) => {
-                  val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-                    case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-                    case x => (x(0).toLong, x(1).toLong)
-                  }
-
-                  range match {
-                    case (start, end) =>
-                      inputStream.skip(start)
-                      SimpleResult(
-                        header = ResponseHeader(PARTIAL_CONTENT,
-                          Map(
-                            CONNECTION -> "keep-alive",
-                            ACCEPT_RANGES -> "bytes",
-                            CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                            CONTENT_LENGTH -> (end - start + 1).toString,
-                            CONTENT_TYPE -> contentType
-                          )
-                        ),
-                        body = Enumerator.fromStream(inputStream)
-                      )
-                  }
-                }
-                // return full image
-                case None => {
-                  Ok.chunked(Enumerator.fromStream(inputStream))
-                    .withHeaders(CONTENT_TYPE -> contentType)
-                    .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
-                }
+  def download(id: UUID) =
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
+      request =>
+      //Check the license type before doing anything. 
+      files.get(id) match {
+          case Some(file) => {    
+              if (file.checkLicenseForDownload(request.user)) {
+		        files.getBytes(id) match {            
+		          case Some((inputStream, filename, contentType, contentLength)) => {
+		
+		            request.headers.get(RANGE) match {
+		              case Some(value) => {
+		                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
+		                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+		                  case x => (x(0).toLong, x(1).toLong)
+		                }
+		
+		                range match {
+		                  case (start, end) =>
+		                    inputStream.skip(start)
+		                    SimpleResult(
+		                      header = ResponseHeader(PARTIAL_CONTENT,
+		                        Map(
+		                          CONNECTION -> "keep-alive",
+		                          ACCEPT_RANGES -> "bytes",
+		                          CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
+		                          CONTENT_LENGTH -> (end - start + 1).toString,
+		                          CONTENT_TYPE -> contentType
+		                        )
+		                      ),
+		                      body = Enumerator.fromStream(inputStream)
+		                    )
+		                }
+		              }
+		              case None => {
+		                Ok.chunked(Enumerator.fromStream(inputStream))
+		                  .withHeaders(CONTENT_TYPE -> contentType)
+		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		              }
+		            }
+		          }
+		          case None => {
+		            Logger.error("Error getting file" + id)
+		            NotFound
+		          }
+		        }
               }
-            }
-            case None => {
-              Logger.error("Error getting file" + id)
-              NotFound
-            }
+              else {
+            	  //Case where the checkLicenseForDownload fails
+            	  Logger.error("The file is not able to be downloaded")
+            	  BadRequest("The license for this file does not allow it to be downloaded.")
+              }
           }
-        }
-        else {
-          //Case where the checkLicenseForDownload fails
-          Logger.error("The file is not able to be downloaded")
-          BadRequest("The license for this file does not allow it to be downloaded.")
-        }
-      }
-      case None => {
-        //Case where the file could not be found
-        Logger.info(s"Error getting the file with id $id.")
-        BadRequest("Invalid file ID")
+          case None => {
+        	  //Case where the file could not be found
+        	  Logger.info(s"Error getting the file with id $id.")
+        	  BadRequest("Invalid file ID")
+          }
       }
     }
-  }
 
   /**
    *
@@ -773,39 +774,22 @@ class Files @Inject()(
   @ApiOperation(value = "Get the user-generated metadata of the selected file in an RDF file",
 	      notes = "",
 	      responseClass = "None", httpMethod = "GET")
-  def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-    implicit request =>
-      configuration.getString("rdfexporter") match {
-        case Some("on") => {
-          files.get(id) match {
-            case Some(file) => {
-              val theJSON = files.getUserMetadataJSON(id)
-              val fileSep = System.getProperty("file.separator")
-              val tmpDir = System.getProperty("java.io.tmpdir")
-              var resultDir = tmpDir + fileSep + "medici__rdfdumptemporaryfiles" + fileSep + new ObjectId().toString
-              new java.io.File(resultDir).mkdirs()
-
-              if (!theJSON.replaceAll(" ", "").equals("{}")) {
-                val xmlFile = jsonToXML(theJSON)
-                new LidoToCidocConvertion(configuration.getString("filesxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
-                xmlFile.delete()
-              }
-              else {
-                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
-              }
-              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
-
-              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-                .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-                .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
-            }
-            case None => BadRequest(toJson("File not found " + id))
-          }
+  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>  
+   current.plugin[RDFExportService].isDefined match{
+    case true => {
+      current.plugin[RDFExportService].get.getRDFUserMetadataFile(id.stringify, mappingNumber) match{
+        case Some(resultFile) =>{
+          Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+			            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+			            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
         }
-        case _ => {
-          Ok("RDF export features not enabled")
-        }
+        case None => BadRequest(toJson("File not found " + id))
       }
+    }
+    case false=>{
+      Ok("RDF export plugin not enabled")
+    }      
+   }
   }
 
   def jsonToXML(theJSON: String): java.io.File = {
@@ -836,53 +820,20 @@ class Files @Inject()(
   @ApiOperation(value = "Get URLs of file's RDF metadata exports.",
 	      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
 	      responseClass = "None", httpMethod = "GET")
-  def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-    request =>
-      configuration.getString("rdfexporter") match {
-        case Some("on") => {
-          files.get(id) match {
-            case Some(file) => {
-
-              //RDF from XML of the file itself (for XML metadata-only files)
-              val previewsList = previews.findByFileId(id)
-              var rdfPreviewList = List.empty[models.Preview]
-              for (currPreview <- previewsList) {
-                if (currPreview.contentType.equals("application/rdf+xml")) {
-                  rdfPreviewList = rdfPreviewList :+ currPreview
-                }
-              }
-              var hostString = Utils.baseUrl(request) + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
-              var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-
-              //RDF from export of file community-generated metadata to RDF
-              var connectionChars = ""
-              if (hostString.contains("?")) {
-                connectionChars = "&mappingNum="
-              }
-              else {
-                connectionChars = "?mappingNum="
-              }
-              hostString = Utils.baseUrl(request) + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars
-              val mappingsQuantity = Integer.parseInt(configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
-              for (i <- 1 to mappingsQuantity) {
-                var currHostString = hostString + i
-                list = list :+ Json.toJson(currHostString)
-              }
-
-              val listJson = toJson(list.toList)
-
-              Ok(listJson)
-            }
-            case None => {
-              Logger.error("Error getting file" + id);
-              InternalServerError
-            }
-          }
-        }
-        case _ => {
-          Ok("RDF export features not enabled")
-        }
+  def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    current.plugin[RDFExportService].isDefined match{
+      case true =>{
+	    current.plugin[RDFExportService].get.getRDFURLsForFile(id.stringify)  match {
+	      case Some(listJson) => {
+	        Ok(listJson) 
+	      }
+	      case None => {Logger.error("Error getting file" + id); InternalServerError}
+	    }
       }
+      case false => {
+        Ok("RDF export plugin not enabled")
+      }
+    }
   }
   
     @ApiOperation(value = "Add user-generated metadata to file",
@@ -1801,3 +1752,4 @@ class Files @Inject()(
 }
 
 object MustBreak extends Exception {}
+

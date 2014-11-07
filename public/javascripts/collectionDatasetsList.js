@@ -12,10 +12,9 @@
 	var areRestDatasetsVisible = false;
 
 	function addDataset(datasetId, event){
-		var request = $.ajax({
-		       type: 'POST',
-		       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasets/"+datasetId
-		     });
+		var request = jsRoutes.api.Collections.attachDataset(collectionId, datasetId).ajax({
+			type: 'POST'
+		});
 		request.done(function (response, textStatus, jqXHR){
 	        console.log("Response " + response);	        
 	        //Remove selected dataset from datasets not in collection.
@@ -79,10 +78,9 @@
 	}
 	
 	function removeDataset(datasetId, event){
-		var request = $.ajax({
-		       type: 'POST',
-		       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasetsRemove/"+datasetId+"/False"
-		     });
+		var request = jsRoutes.api.Collections.removeDataset(collectionId, datasetId).ajax({
+			type: 'POST'
+		});
 		request.done(function (response, textStatus, jqXHR){
 	        console.log("Response " + response);
 	        

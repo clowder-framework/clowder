@@ -3,13 +3,13 @@
  */
 package api
 
-import java.io.{PrintStream, BufferedWriter, FileOutputStream, File}
+import java.io.{PrintStream, File}
 import java.security.MessageDigest
 
 import _root_.util.{PeekIterator, Parsers}
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
-import play.api.mvc.{SimpleResult, Action, Request, AnyContent}
+import play.api.mvc.{SimpleResult, Action, Request}
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
@@ -19,7 +19,7 @@ import play.api.Logger
 import java.sql.Timestamp
 import services.PostgresPlugin
 import scala.collection.mutable.ListBuffer
-import play.api.libs.iteratee.{Input, Enumeratee, Enumerator}
+import play.api.libs.iteratee.{Enumeratee, Enumerator}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
@@ -178,7 +178,7 @@ object Geostreams extends ApiController {
   }
 
   def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
-      Logger.info("Creating stream: " + request.body)
+      Logger.debug("Creating stream: " + request.body)
       request.body.validate[(String, String, List[Double], JsValue, String)].map {
         case (name, geoType, longlat, metadata, sensor_id) => {
           current.plugin[PostgresPlugin] match {
@@ -258,12 +258,11 @@ object Geostreams extends ApiController {
     }
 
   def addDatapoint()  = SecuredAction(authorization=WithPermission(Permission.AddDataPoints)) { request =>
-    Logger.info("Adding datapoint: " + request.body)
+    Logger.debug("Adding datapoint: " + request.body)
     request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
       case (start_time, end_time, geoType, longlat, data, streamId) =>
         current.plugin[PostgresPlugin] match {
           case Some(plugin) => {
-            Logger.info("GEOSTREAM TIME: " + start_time + " " + end_time)
             val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
             val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
             if (longlat.length == 3) {
@@ -429,7 +428,7 @@ object Geostreams extends ApiController {
 
     // combine results
     val result = properties.map{p =>
-      val elements = for(bin <- p._2.values) yield {
+      val elements = for(bin <- p._2.values if bin.doubles.length > 0) yield {
         val base = Json.obj("depth" -> bin.depth, "label" -> bin.label, "sources" -> bin.sources.toList)
 
         val raw = if (keepRaw) {
@@ -439,18 +438,13 @@ object Geostreams extends ApiController {
         }
 
         val dlen = bin.doubles.length
-        val average = if (dlen == 0) {
-          // JSON does not allow for Double.NaN, one option is 0/0
-          // see http://stackoverflow.com/a/1424034
-          Json.obj("average" -> "NaN", "count" -> 0)
-        } else {
-          Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
-        }
+        val average = Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
 
         // return object combining all pieces
         base ++ bin.timeInfo ++ bin.extras ++ raw ++ average
       }
-      (p._1, elements)
+      // add data back to result, sorted by date.
+      (p._1, elements.toList.sortWith((x, y) => x.\("date").toString() < y.\("date").toString()))
     }
 
     Some(Json.obj("sensor_name" -> Parsers.parseString(sensorName), "properties" -> Json.toJson(result.toMap)))
@@ -545,7 +539,9 @@ object Geostreams extends ApiController {
           cacheFetch(description) match {
             case Some(data) => {
               if (format == "csv") {
-                Ok.chunked(data).as(withCharset("text/csv"))
+                Ok.chunked(data)
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                  .as(withCharset("text/csv"))
               } else {
                 jsonp(data.through(Enumeratee.map(new String(_))), request)
               }
@@ -559,10 +555,13 @@ object Geostreams extends ApiController {
               }
 
               val filtered = raw.filter(p => filterDataBySemi(p, semi))
-              val data = calculate(operator, filtered, since, until)
+              // TODO fix this for better grouping see MMDB-1678
+              val data = calculate(operator, filtered, since, until, semi.isDefined)
 
               if (format == "csv") {
-                Ok.chunked(cacheWrite(description, jsonToCSV(data))).as(withCharset("text/csv"))
+                Ok.chunked(cacheWrite(description, jsonToCSV(data)))
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                  .as(withCharset("text/csv"))
               } else {
                 jsonp(cacheWrite(description, formatResult(data, format)), request)
               }
@@ -654,7 +653,7 @@ object Geostreams extends ApiController {
   // Calculations
   // ----------------------------------------------------------------------
 
-  def calculate(operator: String, data: Iterator[JsObject], since: Option[String], until: Option[String]): Iterator[JsObject] = {
+  def calculate(operator: String, data: Iterator[JsObject], since: Option[String], until: Option[String], semiGroup: Boolean): Iterator[JsObject] = {
     if (operator == "") return data
 
     val peekIter = new PeekIterator(data)
@@ -676,10 +675,17 @@ object Geostreams extends ApiController {
         if (nextObject.isDefined) {
           true
         } else {
-          nextObject = operator.toLowerCase match {
-            case "averages" => computeAverage(peekIter)
-            case "trends" => computeTrends(peekIter, trendStart, trendEnd)
-            case _ => None
+          try {
+            nextObject = operator.toLowerCase match {
+              case "averages" => computeAverage(peekIter)
+              case "trends" => computeTrends(peekIter, trendStart, trendEnd, semiGroup)
+              case _ => None
+            }
+          } catch {
+            case t:Throwable => {
+               nextObject = None
+              Logger.error("Error computing next value.", t)
+            }
           }
           nextObject.isDefined
         }
@@ -805,13 +811,15 @@ object Geostreams extends ApiController {
    * @param data list of data for all sensors
    * @return an array with a all sensors and the average values.
    */
-  def computeTrends(data: PeekIterator[JsObject], since: DateTime, until: DateTime): Option[JsObject] = {
+  def computeTrends(data: PeekIterator[JsObject], since: DateTime, until: DateTime, semiGroup: Boolean): Option[JsObject] = {
     if (!data.hasNext) return None
 
     val counterTrend = collection.mutable.HashMap.empty[String, Int]
     val counterAll = collection.mutable.HashMap.empty[String, Int]
+    val counterLast = collection.mutable.HashMap.empty[String, Int]
     val propertiesTrend = collection.mutable.HashMap.empty[String, Either[collection.mutable.ListBuffer[String], Double]]
     val propertiesAll = collection.mutable.HashMap.empty[String, Either[collection.mutable.ListBuffer[String], Double]]
+    val propertiesLast = collection.mutable.HashMap.empty[String, Either[collection.mutable.ListBuffer[String], Double]]
     val sensor = data.next()
     var startDate = Parsers.parseString(sensor.\("start_time"))
     var endDate = Parsers.parseString(sensor.\("end_time"))
@@ -830,7 +838,7 @@ object Geostreams extends ApiController {
       }
     })
     val sensorName = sensor.\("sensor_name")
-
+    var lastBin = "nada"
     while (data.hasNext && sensorName.equals(data.peek().get.\("sensor_name"))) {
       val nextSensor = data.next()
       val sensorStart = Parsers.parseString(nextSensor.\("start_time"))
@@ -841,10 +849,57 @@ object Geostreams extends ApiController {
       if (endDate.compareTo(sensorEnd) < 0) {
         endDate = sensorEnd
       }
+      // check to see what bin this is
+      // TODO fix this for better grouping see MMDB-1678
+      val currentBin = timeBins("semi", Parsers.parseDate(sensorStart).get, Parsers.parseDate(sensorEnd).get).keys.last
       if (!streams.contains(Parsers.parseString(nextSensor.\("stream_id")))) {
         streams += Parsers.parseString(nextSensor.\("stream_id"))
       }
       nextSensor.\("properties").as[JsObject].fieldSet.foreach(f => {
+        // compute last grouping worth of data
+        // TODO fix this for better grouping see MMDB-1678
+        if (semiGroup) {
+          if (lastBin != currentBin) {
+            counterLast.clear()
+            propertiesLast.clear()
+            lastBin = currentBin
+          }
+          if (propertiesLast contains f._1) {
+            propertiesLast(f._1) match {
+              case Left(l) => {
+                val s = Parsers.parseString(f._2)
+                if (counterLast(f._1) == 1) {
+                  val v = Parsers.parseDouble(s)
+                  if (v.isDefined) {
+                    propertiesLast(f._1) = Right(v.get)
+                  }
+                } else {
+                  if (!l.contains(s)) {
+                    counterLast(f._1) = counterLast(f._1) + 1
+                    l += s
+                  }
+                }
+              }
+              case Right(d) => {
+                val v2 = Parsers.parseDouble(f._2)
+                if (v2.isDefined) {
+                  counterLast(f._1) = counterLast(f._1) + 1
+                  propertiesLast(f._1) = Right(d + v2.get)
+                }
+              }
+            }
+          } else {
+            val s = Parsers.parseString(f._2)
+            val v = Parsers.parseDouble(s)
+            counterLast(f._1) = 1
+            if (v.isDefined) {
+              propertiesLast(f._1) = Right(v.get)
+            } else {
+              propertiesLast(f._1) = Left(collection.mutable.ListBuffer[String](s))
+            }
+          }
+        }
+
         if (propertiesAll contains f._1) {
           propertiesAll(f._1) match {
             case Left(l) => {
@@ -936,7 +991,19 @@ object Geostreams extends ApiController {
           if (propertiesAll(f._1).isRight) {
             val avgAll = propertiesAll(f._1).right.get / counterAll(f._1)
             val avgTrend = d / counterTrend(f._1)
-            Json.toJson(((avgTrend - avgAll) / avgAll) * 100.0)
+            jsProperties(f._1 + "_total_average") = Json.toJson(avgAll)
+            jsProperties(f._1 + "_interval_average") =  Json.toJson(avgTrend)
+            // TODO fix this for better grouping see MMDB-1678
+            if (semiGroup) {
+              if (propertiesLast(f._1).isRight) {
+                val avgLast = propertiesLast(f._1).right.get / counterLast(f._1)
+                jsProperties(f._1 + "_last_average") = Json.toJson(avgLast)
+              } else {
+                Logger.debug("Error getting last value, non number as last value.")
+              }
+            }
+            jsProperties(f._1 + "_percentage_change") = Json.toJson(((avgTrend - avgAll) / avgAll) * 100.0)
+            null
           } else {
             Json.toJson("no data")
           }
@@ -945,10 +1012,18 @@ object Geostreams extends ApiController {
     })
 
     // update sensor
-    Some(sensor ++ Json.obj("properties" -> Json.toJson(jsProperties.toMap),
-      "start_time" -> startDate,
-      "end_time"   -> endDate,
-      "stream_id"  -> Json.toJson(streams)))
+    if (semiGroup) {
+      Some(sensor ++ Json.obj("properties" -> Json.toJson(jsProperties.filter(p => p._2 != null).toMap),
+        "start_time" -> startDate,
+        "end_time"   -> endDate,
+        "last_time" -> lastBin,
+        "stream_id"  -> Json.toJson(streams)))
+    } else {
+      Some(sensor ++ Json.obj("properties" -> Json.toJson(jsProperties.filter(p => p._2 != null).toMap),
+        "start_time" -> startDate,
+        "end_time"   -> endDate,
+        "stream_id"  -> Json.toJson(streams)))
+    }
   }
 
   /**

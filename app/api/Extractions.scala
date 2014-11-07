@@ -50,7 +50,11 @@ import scala.util.control._
 import javax.activation.MimetypesFileTypeMap
 import java.util.Calendar
 import api.WithPermission
-import controllers.Utils 
+import controllers.Utils
+import org.apache.commons.io.FileUtils
+import play.api.libs.MimeTypes
+import play.api.http.ContentTypes
+import java.io.InputStream
 
 
 /**
@@ -202,9 +206,7 @@ class Extractions @Inject() (
         fileurljs match {
 
           case Some(fileurl) => {
-            var fout: OutputStream = null;
-            var in: BufferedInputStream = null;
-            var buff = new Array[Byte](10240)
+            var source: InputStream =null
             try {
               /*
                * Downloads the file using 'fileurl' as specified in the request body
@@ -212,81 +214,32 @@ class Extractions @Inject() (
                * Gets the filename by spliting the 'fileurl' and last string being the filename
                * e.g: if fileurl is : http://isda.ncsa.illinois.edu/drupal/sites/default/files/pictures/picture.jpg, then picture.jpg is the filename
                * Opens a HTTPConnection, opens an inputstream to download the file using the given url
-               * Saves the inputstream to a temporary file and names it as (tmpdir+filename) 
-               * Sends it to mongodb to save the file in the database   
+               * Gets the file's ContentType 
+               * Saves the file to the database
                * 
                */
               val urlsplit = fileurl.split("/")
               val filename = urlsplit(urlsplit.length - 1) 
               val url = new URL(fileurl)
-              var len = 0
-              Logger.debug("filename: " + filename)
-              //Open a Httpconnection to download the file 
-              val connection = url.openConnection().asInstanceOf[HttpURLConnection]
-              connection.setRequestMethod("GET")
-              val ct = connection.getContentType()
-              val clen = connection.getContentLength()
-
-              val name = connection.getHeaderField("Name")
-
-              Logger.debug("content-type " + ct + " content length-" + clen)
-
-              in = new BufferedInputStream(url.openStream())
-
-              var fout: OutputStream = new FileOutputStream(tmpdir + filename)
-
-              var buf = new Array[Byte](clen)
-              var count = 0
-              //Start reading the file from the stream and write to a 'localfile' with 'localfilename'
-              while(count != -1) { 
-                  Logger.trace("Inside while: before: count= " + count)
-                  count = in.read(buf)
-                  Logger.trace("Inside while: after: count= " + count)
-                  if (count == -1) {
-                    Logger.trace("Inside While even if count is -1")
-                  } else {
-                    Logger.trace("Trying to write into file")
-                    fout.write(buf, 0, count)
-                  }
-                }
-              
-              fout.flush()
-              Logger.debug("After read")
-
-              val localfilename = tmpdir + filename
-
-              val localfile = new java.io.File(localfilename)
-
-              val mimetype = new MimetypesFileTypeMap().getContentType(localfile)
-              var fileType = mimetype
-              Logger.debug("fileType= " + fileType)
-              val file = files.save(new FileInputStream(localfile), localfile.getName(), Some(ct), user, null)
-              val uploadedFile = localfile
-
+              Logger.debug("UploadbyURL: filename: " + filename)
+              source = url.openConnection().getInputStream()
+              val contentType = MimeTypes.forFileName(filename.toLowerCase()).getOrElse(ContentTypes.BINARY)
+              Logger.debug("ContentType of the file: "+contentType)
+              val file = files.save(source, filename, Some(contentType), user, null)
               file match {
                 case Some(f) => {
-
-                  val id = f.id
+                  var fileType = f.contentType
+				  val id = f.id
                   fileType = f.contentType
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
                   val host = Utils.baseUrl(request)
 
                   current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
-                  Logger.debug("After RabbitmqPlugin")
-
                   /*--- Insert DTS Requests  ---*/
-
                   val clientIP = request.remoteAddress
                   val serverIP = request.host
                   dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
-
-                  /*----------------------*/
-
-                  /*file remove from temporary directory*/
-
-                  localfile.delete()
-
                   Ok(toJson(Map("id" -> id.toString)))
                 }
                 case None => {
@@ -299,13 +252,9 @@ class Extractions @Inject() (
                 println(e.printStackTrace())
                 BadRequest(toJson("File not attached"))
             } finally {
-              if (fout != null)
-                fout.close
-
-              if (in != null)
-                in.close
-
-            } //end of finally
+                if (source != null)
+                  source.close
+           } //end of finally
           } //end of match some file url
           case None => {
             Ok("NO Url specified")
@@ -315,7 +264,6 @@ class Extractions @Inject() (
       case None => BadRequest(toJson("Not authorized."))
     }
   }
-
   /**
    * *
    * For DTS service use case: suppose a user posts a file to the extractions API, no extractors and its corresponding queues in the Rabbitmq are available. Now she checks the status
@@ -325,7 +273,7 @@ class Extractions @Inject() (
    * This may change depending on our our design on DTS extraction service.
    *
    */
-  @ApiOperation(value = "Submites a previously uploaded file's id for extraction",
+  @ApiOperation(value = "Submits a previously uploaded file's id for extraction",
     notes = "Notifies the user that the file is sent for extraction. check the status  ",
     responseClass = "None", httpMethod = "POST")
   def submitExtraction(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
@@ -372,21 +320,19 @@ class Extractions @Inject() (
         case Some(plugin) => {
           files.get(id) match {
             case Some(file) => {
-
               //Get the list of extractors processing the file 
               val l = extractions.getExtractorList(file.id) map {
-                elist => (elist._1, elist._2)
+                elist => 
+                  (elist._1, elist._2)
               }
-
               //Get the bindings
               var blist = plugin.getBindings()
-
               for {
                 rkeyResponse <- blist
               } yield {
                 val status = computeStatus(rkeyResponse, file, l)
                 l += "Status" -> status
-                Logger.debug("l.toString : " + l.toString)
+                Logger.debug(" CheckStatus: l.toString : " + l.toString)
                 Ok(toJson(l.toMap))
               } //end of yield
 
@@ -552,6 +498,19 @@ class Extractions @Inject() (
     val listNamesJson= toJson(listNames)
     Ok(toJson(Map("Extractors" -> listNamesJson)))
    }
+ 
+/**
+ * Temporary fix for BD-289: Get Details of Extractors' Servers IP, Names and Count
+ */
+ @ApiOperation(value = "Lists the currenlty details running extractors",
+    responseClass = "None", httpMethod = "GET") 
+ def getExtractorDetails() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
+
+    val listNames = extractors.getExtractorDetail()
+    val listNamesJson= toJson(listNames)
+    Ok(listNamesJson)
+   }
+
 
  @ApiOperation(value = "Lists the input file format supported by currenlty running extractors",
     notes = "  ",

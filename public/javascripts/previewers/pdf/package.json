@@ -1,0 +1,4 @@
+{ "name" : "PDF",
+  "main" : "some-library.js",
+  "contentType" : ["application/pdf"]
+  }
