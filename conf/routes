@@ -39,7 +39,7 @@ GET     /bookmarklet.js                                                     @con
 
 
 # Files
-GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
+GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12)
 GET		/files/new					      @controllers.Files.uploadFile
 
 #This may not require; This is only for testing. It will change in subsequent version
@@ -65,7 +65,7 @@ POST    /uploadDragDrop					  @controllers.Files.uploadDragDrop
 GET		/fileThumbnail/:id/blob			  @controllers.Files.thumbnail(id: UUID)
 
 # Datasets
-GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
+GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12)
 GET     /datasets/new                     @controllers.Datasets.newDataset
 GET     /datasets/metadataSearch          @controllers.Datasets.metadataSearch
 GET     /datasets/generalMetadataSearch   @controllers.Datasets.generalMetadataSearch
@@ -74,7 +74,7 @@ GET     /datasets_by_section/:id          @controllers.Datasets.datasetBySection
 POST    /dataset/submit                   @controllers.Datasets.submit
 
 # Collections
-GET      /collections                                                        @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
+GET      /collections                                                        @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12)
 GET      /collections/new                                                    @controllers.Collections.newCollection
 POST     /collection/submit                                                  @controllers.Collections.submit
 GET      /collection/:id                                                     @controllers.Collections.collection(id: UUID)
@@ -234,6 +234,10 @@ GET     /api/delete-data                    					api.Admin.deleteAllData
 POST	/api/remove-admin										api.Admin.removeAdmin
 POST	/api/changeAppearance									api.Admin.submitAppearance
 
+# ----------------------------------------------------------------------
+# COLLECTIONS ENDPOINT
+# ----------------------------------------------------------------------
+GET		/api/collections														    @api.Collections.listCollections
 POST    /api/collections                                        					@api.Collections.createCollection()
 GET		/api/collections/list														@api.Collections.listCollections
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
@@ -243,6 +247,7 @@ POST	/api/collections/:coll_id/remove											@api.Collections.removeCollectio
 GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id: UUID)
 DELETE	/api/collections/:coll_id													@api.Collections.removeCollection(coll_id: UUID)
 POST    /api/collections/:c_id/previews/:p_id     						            @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
+GET     /api/collections/:coll_id													@api.Collections.getCollection(coll_id: UUID)
 
 GET    	/api/datasets					  							@api.Datasets.list
 POST    /api/datasets                                           	@api.Datasets.createDataset
