@@ -3,19 +3,20 @@
  */
 package controllers
 
-import play.api.mvc.Controller
-import play.api.mvc.Action
+import play.api.mvc.{Results, Controller, Action}
 import play.api.Routes
 import securesocial.core.SecureSocial._
-import securesocial.core.SecureSocial
+import securesocial.core.{IdentityProvider, SecureSocial}
 import api.ApiController
 import api.WithPermission
 import api.Permission
+import securesocial.core.providers.utils.RoutesHelper
 import services.{AppConfigurationService, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
 import models.AppConfiguration
+import models.AppAppearance
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.Logger
@@ -25,6 +26,9 @@ import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
 import javax.inject.{Inject, Singleton}
+
+import play.api.data.Form
+import play.api.data.Forms._
 
 /**
  * Administration pages.
@@ -42,8 +46,16 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val themeId = themes.indexOf(getTheme)
     Logger.debug("Theme id " + themeId)
+    val appAppearance = AppAppearance.getDefault.get
     implicit val user = request.user
-    Ok(views.html.admin(themeId))
+    Ok(views.html.admin(themeId, appAppearance))
+  }
+  
+  def adminIndex = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
+    val themeId = themes.indexOf(getTheme)
+    val appAppearance = AppAppearance.getDefault.get
+    implicit val user = request.user
+    Ok(views.html.adminIndex(themeId, appAppearance))
   }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
@@ -263,7 +275,6 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   //Delete a specific index in Versus
   def deleteIndex(id: String)=SecuredAction(authorization=WithPermission(Permission.Admin)){
     request =>
-      
     Async{  
       current.plugin[VersusPlugin] match {
      
@@ -295,7 +306,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
 
       Async {
         current.plugin[VersusPlugin] match {
-
+        	
           case Some(plugin) => {
 
             var deleteAllResponse = plugin.deleteAllIndexes()
@@ -330,4 +341,59 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   }
 
   def getTheme(): String = appConfiguration.getTheme()
+  
+  val adminForm = Form(
+  single(
+    "email" -> email
+  )verifying("Admin already exists.", fields => fields match {
+     		case adminMail => !appConfiguration.adminExists(adminMail)
+     	})
+)
+  
+  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.newAdmin(adminForm))
+  }
+  
+  def submitNew() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && appConfiguration.adminExists(x.email.get)) {
+          adminForm.bindFromRequest.fold(
+            errors => BadRequest(views.html.newAdmin(errors)),
+            newAdmin => {
+              appConfiguration.addAdmin(newAdmin)
+              Redirect(routes.Application.index)
+            }
+          )
+        } else {
+          Unauthorized("Not authorized")
+        }
+      }
+      case None => Unauthorized("Not authorized")
+    }
+  }
+  
+  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && appConfiguration.adminExists(x.email.get)) {
+          appConfiguration.getDefault match{
+            case Some(conf) =>{
+              Ok(views.html.listAdmins(conf.admins))
+            }
+            case None => {
+              Logger.error("Error getting application configuration!"); InternalServerError
+            }
+          }
+        } else {
+          Unauthorized("Not authorized")
+        }
+      }
+      case None => Unauthorized("Not authorized")
+    }
+  }
+  
 }

@@ -29,9 +29,11 @@ class ApplicationSpec extends IntegrationSpec with ServerFixture {
   }
 
   "Application" should "render index template" in {
-    val html = views.html.index(List.empty)
+    val html = views.html.index(List.empty, "Medici 2.0", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     contentType(html) shouldBe ("text/html")
-    contentAsString(html) should include ("Medici")
+    contentAsString(html) should include ("Medici 2.0")
+    contentAsString(html) should include ("Hello stranger!")
+    contentAsString(html) should include ("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
   }
 
   "Application" should "load home route" in {

@@ -9,9 +9,6 @@ import com.wordnik.swagger.annotations.ApiOperation
 import models._
 import play.api.Logger
 import play.api.libs.json.JsValue
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import jsonutils.JsonUtil
@@ -119,6 +116,9 @@ class Datasets @Inject()(
                                 List(("name", d.name), ("description", d.description)))
                             }
                        }
+
+                       current.plugin[AdminsNotifierPlugin].foreach {
+                         _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",id, name)}
                        Ok(toJson(Map("id" -> id)))
 		      	     }
 		      	     case None => Ok(toJson(Map("status" -> "error")))
@@ -151,9 +151,20 @@ class Datasets @Inject()(
                 files.index(fileId)
                 if (!file.xmlMetadata.isEmpty)
                   datasets.index(dsId)
-
-                if (dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty)
-                  datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
+                  if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+                      datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
+                      
+                      for(collectionId <- dataset.collections){
+                        collections.get(UUID(collectionId)) match{
+                          case Some(collection) =>{
+                          	if(collection.thumbnail_id.isEmpty){ 
+                          		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
+                          	}
+                          }
+                          case None=> Logger.debug(s"No collection found with id $collectionId")
+                        }
+                      }
+                  }
 
                 //add file to RDF triple store if triple store is used
                 if (file.filename.endsWith(".xml")) {
@@ -200,7 +211,21 @@ class Datasets @Inject()(
 
                 if (!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty) {
                   if (dataset.thumbnail_id.get == file.thumbnail_id.get) {
-                    datasets.createThumbnail(dataset.id)                    
+                    datasets.createThumbnail(dataset.id)
+                    
+                    for(collectionId <- dataset.collections){
+                        collections.get(UUID(collectionId)) match{
+                          case Some(collection) =>{		                              
+                          	if(!collection.thumbnail_id.isEmpty){
+                          		if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+                          			collections.createThumbnail(collection.id)
+                          		}		                        
+                          	}
+                          }
+                          case None=>{}
+                        }
+                      }
+                    
                   }
                 }
                 //remove link between dataset and file from RDF triple store if triple store is used
@@ -322,8 +347,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update dataset administrative information",
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
-  def updateInformation(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
+  def updateInformation(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -404,8 +428,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update license information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
-  def updateLicense(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
+  def updateLicense(id: UUID) =  SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -910,6 +933,7 @@ class Datasets @Inject()(
           val innerFiles = dataset.files map {f => files.get(f.id).get}
           val datasetWithFiles = dataset.copy(files = innerFiles)
           val previewers = Previewers.findPreviewers
+          //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
           val previewslist = for (f <- datasetWithFiles.files; if (f.showPreviews.equals("DatasetLevel"))) yield {
             val pvf = for (p <- previewers; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
               (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
@@ -918,7 +942,14 @@ class Datasets @Inject()(
               (f -> pvf)
             } else {
               val ff = for (p <- previewers; if (p.contentType.contains(f.contentType))) yield {
-                (f.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(f.id) + "/blob", f.contentType, f.length)
+                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                if (f.checkLicenseForDownload(request.user)) {
+                    (f.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(f.id) + "/blob", f.contentType, f.length)
+                }
+                else {
+                    (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                }
               }
               (f -> ff)
             }
@@ -953,46 +984,35 @@ class Datasets @Inject()(
           
           Ok(toJson(Map("status" -> "success")))
         }
-        case None => Ok(toJson(Map("status" -> "success")))
+
+        Ok(toJson(Map("status"->"success")))
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.toString, dataset.name)}
+        Ok(toJson(Map("status"->"success")))
       }
   }
 
+  
   @ApiOperation(value = "Get the user-generated metadata of the selected dataset in an RDF file",
       notes = "",
       responseClass = "None", httpMethod = "GET")
-  def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
-    implicit request =>
-      configuration.getString("rdfexporter").getOrElse("no") match {
-        case "on" => {
-          datasets.get(id) match {
-            case Some(dataset) => {
-              val theJSON = datasets.getUserMetadataJSON(id)
-              val fileSep = System.getProperty("file.separator")
-              val tmpDir = System.getProperty("java.io.tmpdir")
-              var resultDir = tmpDir + fileSep + "medici__rdfdumptemporaryfiles" + fileSep + new ObjectId().toString
-              new java.io.File(resultDir).mkdir()
-
-              if (!theJSON.replaceAll(" ", "").equals("{}")) {
-                val xmlFile = jsonToXML(theJSON)
-                new LidoToCidocConvertion(configuration.getString("datasetsxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
-                xmlFile.delete()
-              }
-              else {
-                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
-              }
-              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
-
-              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-                .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-                .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
-            }
-            case None => BadRequest(toJson("Dataset not found " + id))
+  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) {implicit request =>
+    
+    current.plugin[RDFExportService].isDefined match{
+      case true => {
+        current.plugin[RDFExportService].get.getRDFUserMetadataDataset(id.toString, mappingNumber) match{
+          case Some(resultFile) =>{
+            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+			            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+			            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
           }
+          case None => BadRequest(toJson("Dataset not found " + id))
         }
-        case _ => Ok("RDF export features not enabled")
       }
-  }
-
+      case _ => Ok("RDF export plugin not enabled")
+     }
+    }
+  
   def jsonToXML(theJSON: String): java.io.File = {
 
     val jsonObject = new JSONObject(theJSON)
@@ -1019,63 +1039,25 @@ class Datasets @Inject()(
 
     return xmlFile
   }
-
   
   @ApiOperation(value = "Get URLs of dataset's RDF metadata exports",
       notes = "URLs of metadata exported as RDF from XML files contained in the dataset, as well as the URL used to export the dataset's user-generated metadata as RDF.",
       responseClass = "None", httpMethod = "GET")
-  def getRDFURLsForDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
-    request =>
-      configuration.getString("rdfexporter").getOrElse("no") match {
-        case "on" => {
-          datasets.get(id) match {
-            case Some(dataset) => {
+  def getRDFURLsForDataset(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
 
-              //RDF from XML files in the dataset itself (for XML metadata-only files)
-              val previewsList = previews.findByDatasetId(id)
-              var rdfPreviewList = List.empty[models.Preview]
-              for (currPreview <- previewsList) {
-                if (currPreview.contentType.equals("application/rdf+xml")) {
-                  rdfPreviewList = rdfPreviewList :+ currPreview
-                }
-              }
-              var hostString = Utils.baseUrl(request) + request.path.replaceAll("datasets/getRDFURLsForDataset/[A-Za-z0-9_]*$", "previews/")
-              var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-
-              for (file <- dataset.files) {
-                val filePreviewsList = previews.findByFileId(file.id)
-                var fileRdfPreviewList = List.empty[models.Preview]
-                for (currPreview <- filePreviewsList) {
-                  if (currPreview.contentType.equals("application/rdf+xml")) {
-                    fileRdfPreviewList = fileRdfPreviewList :+ currPreview
-                  }
-                }
-                val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-                list = list ++ filesList
-              }
-
-              //RDF from export of dataset community-generated metadata to RDF
-              var connectionChars = ""
-              if (hostString.contains("?")) {
-                connectionChars = "&mappingNum="
-              }
-              else {
-                connectionChars = "?mappingNum="
-              }
-              hostString = Utils.baseUrl(request) + request.path.replaceAll("/getRDFURLsForDataset/", "/rdfUserMetadataDataset/") + connectionChars
-              val mappingsQuantity = Integer.parseInt(configuration.getString("datasetsxmltordfmapping.dircount").getOrElse("1"))
-
-              for (i <- 1 to mappingsQuantity) {
-                var currHostString = hostString + i
-                list = list :+ Json.toJson(currHostString)
-              }
-              Ok(toJson(list.toList))
-            }
-            case None => Logger.error(s"Error getting dataset $id"); InternalServerError
-          }
-        }
-        case _ => Ok("RDF export features not enabled")
+    current.plugin[RDFExportService].isDefined match{
+      case true =>{
+	    current.plugin[RDFExportService].get.getRDFURLsForDataset(id.toString)  match {
+	      case Some(listJson) => {
+	        Ok(listJson) 
+	      }
+	      case None => Logger.error(s"Error getting dataset $id"); InternalServerError
+	    }
       }
+      case false => {
+        Ok("RDF export plugin not enabled")
+      }
+    }
   }
 
   @ApiOperation(value = "Get technical metadata of the dataset",
@@ -1097,6 +1079,7 @@ class Datasets @Inject()(
       case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
     }
   }
+
   def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
     datasets.get(id)  match {
       case Some(dataset) => {
@@ -1108,6 +1091,7 @@ class Datasets @Inject()(
       }      
     }
   }
+
   
   def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNotes))  { implicit request =>
 	  request.user match {

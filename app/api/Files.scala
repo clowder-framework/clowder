@@ -1,30 +1,15 @@
 package api
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.OutputStream
-import java.net.URL
-import java.net.HttpURLConnection
 import java.io.FileInputStream
 
-import java.io.FileOutputStream
-import java.util.Date
-import java.util.ArrayList
 
 import java.io.BufferedWriter
 import java.io.FileWriter
-
-import java.io.FileReader
-import java.io.ByteArrayInputStream
-
-import scala.collection.mutable.MutableList
-
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.bson.types.ObjectId
 
-import com.mongodb.WriteConcern
 import com.mongodb.casbah.Imports._
 
 import models._
@@ -49,14 +34,9 @@ import jsonutils.JsonUtil
 import services._
 import fileutils.FilesUtils
 
-import controllers.Previewers
-
 import play.api.libs.json.JsString
-import scala.Some
 import services.DumpOfFile
-import services.ExtractorMessage
 import play.api.mvc.ResponseHeader
-import scala.util.parsing.json.JSONArray
 import models.Preview
 import play.api.mvc.SimpleResult
 import models.File
@@ -67,8 +47,11 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import services.ExtractorMessage
 import scala.util.parsing.json.JSONArray
 
-
 import controllers.Previewers
+
+import java.io.BufferedInputStream
+import javax.imageio.ImageIO
+
 import scala.concurrent.Future
  
 import scala.util.control._
@@ -141,46 +124,62 @@ class Files @Inject()(
   def download(id: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadFiles)) {
       request =>
-
-        files.getBytes(id) match {
-          case Some((inputStream, filename, contentType, contentLength)) => {
-
-            request.headers.get(RANGE) match {
-              case Some(value) => {
-                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-                  case x => (x(0).toLong, x(1).toLong)
-                }
-
-                range match {
-                  case (start, end) =>
-                    inputStream.skip(start)
-                    SimpleResult(
-                      header = ResponseHeader(PARTIAL_CONTENT,
-                        Map(
-                          CONNECTION -> "keep-alive",
-                          ACCEPT_RANGES -> "bytes",
-                          CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                          CONTENT_LENGTH -> (end - start + 1).toString,
-                          CONTENT_TYPE -> contentType
-                        )
-                      ),
-                      body = Enumerator.fromStream(inputStream)
-                    )
-                }
+      //Check the license type before doing anything. 
+      files.get(id) match {
+          case Some(file) => {    
+              if (file.checkLicenseForDownload(request.user)) {
+		        files.getBytes(id) match {            
+		          case Some((inputStream, filename, contentType, contentLength)) => {
+		
+		            request.headers.get(RANGE) match {
+		              case Some(value) => {
+		                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
+		                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+		                  case x => (x(0).toLong, x(1).toLong)
+		                }
+		
+		                range match {
+		                  case (start, end) =>
+		                    inputStream.skip(start)
+		                    SimpleResult(
+		                      header = ResponseHeader(PARTIAL_CONTENT,
+		                        Map(
+		                          CONNECTION -> "keep-alive",
+		                          ACCEPT_RANGES -> "bytes",
+		                          CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
+		                          CONTENT_LENGTH -> (end - start + 1).toString,
+		                          CONTENT_TYPE -> contentType
+		                        )
+		                      ),
+		                      body = Enumerator.fromStream(inputStream)
+		                    )
+		                }
+		              }
+		              case None => {
+		                Ok.chunked(Enumerator.fromStream(inputStream))
+		                  .withHeaders(CONTENT_TYPE -> contentType)
+		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		              }
+		            }
+		          }
+		          case None => {
+		            Logger.error("Error getting file" + id)
+		            NotFound
+		          }
+		        }
               }
-              case None => {
-                Ok.chunked(Enumerator.fromStream(inputStream))
-                  .withHeaders(CONTENT_TYPE -> contentType)
-                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+              else {
+            	  //Case where the checkLicenseForDownload fails
+            	  Logger.error("The file is not able to be downloaded")
+            	  BadRequest("The license for this file does not allow it to be downloaded.")
               }
-            }
           }
           case None => {
-            Logger.error("Error getting file" + id)
-            NotFound
+        	  //Case where the file could not be found
+        	  Logger.info(s"Error getting the file with id $id.")
+        	  BadRequest("Invalid file ID")
           }
-        }
+      }
     }
 
   /**
@@ -281,13 +280,11 @@ class Files @Inject()(
   /**
    * Upload file using multipart form enconding.
    */
-
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-
       request.user match {
         case Some(user) => {
 	      request.body.file("File").map { f =>        
@@ -315,8 +312,8 @@ class Files @Inject()(
 	             }
 	         }
 
-
 	        var realUserName = realUser.fullName
+
 	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
 	        val uploadedFile = f
 	        file match {
@@ -398,6 +395,10 @@ class Files @Inject()(
 		            }
 	            }
 	            
+
+	            Ok(toJson(Map("id"->id.stringify)))
+	            current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id.stringify, nameOfFile)}
 	            Ok(toJson(Map("id"->id.stringify)))
 	          }
 	          case None => {
@@ -497,7 +498,9 @@ class Files @Inject()(
                case None => {}
              }
          }          
+
           var realUserName = realUser.fullName
+
           val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser, showPreviews)
           val uploadedFile = f         
           
@@ -604,6 +607,9 @@ class Files @Inject()(
 	              }
 
               //sending success message
+              Ok(toJson(Map("id" -> id)))
+              current.plugin[AdminsNotifierPlugin].foreach{
+                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",id, nameOfFile)}
               Ok(toJson(Map("id" -> id)))
              }
             }
@@ -751,39 +757,22 @@ class Files @Inject()(
   @ApiOperation(value = "Get the user-generated metadata of the selected file in an RDF file",
 	      notes = "",
 	      responseClass = "None", httpMethod = "GET")
-  def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-    implicit request =>
-      configuration.getString("rdfexporter") match {
-        case Some("on") => {
-          files.get(id) match {
-            case Some(file) => {
-              val theJSON = files.getUserMetadataJSON(id)
-              val fileSep = System.getProperty("file.separator")
-              val tmpDir = System.getProperty("java.io.tmpdir")
-              var resultDir = tmpDir + fileSep + "medici__rdfdumptemporaryfiles" + fileSep + new ObjectId().toString
-              new java.io.File(resultDir).mkdirs()
-
-              if (!theJSON.replaceAll(" ", "").equals("{}")) {
-                val xmlFile = jsonToXML(theJSON)
-                new LidoToCidocConvertion(configuration.getString("filesxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
-                xmlFile.delete()
-              }
-              else {
-                new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
-              }
-              val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
-
-              Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-                .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-                .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
-            }
-            case None => BadRequest(toJson("File not found " + id))
-          }
+  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>  
+   current.plugin[RDFExportService].isDefined match{
+    case true => {
+      current.plugin[RDFExportService].get.getRDFUserMetadataFile(id.stringify, mappingNumber) match{
+        case Some(resultFile) =>{
+          Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+			            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
+			            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
         }
-        case _ => {
-          Ok("RDF export features not enabled")
-        }
+        case None => BadRequest(toJson("File not found " + id))
       }
+    }
+    case false=>{
+      Ok("RDF export plugin not enabled")
+    }      
+   }
   }
 
   def jsonToXML(theJSON: String): java.io.File = {
@@ -814,53 +803,20 @@ class Files @Inject()(
   @ApiOperation(value = "Get URLs of file's RDF metadata exports.",
 	      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
 	      responseClass = "None", httpMethod = "GET")
-  def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-    request =>
-      configuration.getString("rdfexporter") match {
-        case Some("on") => {
-          files.get(id) match {
-            case Some(file) => {
-
-              //RDF from XML of the file itself (for XML metadata-only files)
-              val previewsList = previews.findByFileId(id)
-              var rdfPreviewList = List.empty[models.Preview]
-              for (currPreview <- previewsList) {
-                if (currPreview.contentType.equals("application/rdf+xml")) {
-                  rdfPreviewList = rdfPreviewList :+ currPreview
-                }
-              }
-              var hostString = Utils.baseUrl(request) + request.path.replaceAll("files/getRDFURLsForFile/[A-Za-z0-9_]*$", "previews/")
-              var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostString + currPreview.id.toString)
-
-              //RDF from export of file community-generated metadata to RDF
-              var connectionChars = ""
-              if (hostString.contains("?")) {
-                connectionChars = "&mappingNum="
-              }
-              else {
-                connectionChars = "?mappingNum="
-              }
-              hostString = Utils.baseUrl(request) + request.path.replaceAll("/getRDFURLsForFile/", "/rdfUserMetadata/") + connectionChars
-              val mappingsQuantity = Integer.parseInt(configuration.getString("filesxmltordfmapping.dircount").getOrElse("1"))
-              for (i <- 1 to mappingsQuantity) {
-                var currHostString = hostString + i
-                list = list :+ Json.toJson(currHostString)
-              }
-
-              val listJson = toJson(list.toList)
-
-              Ok(listJson)
-            }
-            case None => {
-              Logger.error("Error getting file" + id);
-              InternalServerError
-            }
-          }
-        }
-        case _ => {
-          Ok("RDF export features not enabled")
-        }
+  def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    current.plugin[RDFExportService].isDefined match{
+      case true =>{
+	    current.plugin[RDFExportService].get.getRDFURLsForFile(id.stringify)  match {
+	      case Some(listJson) => {
+	        Ok(listJson) 
+	      }
+	      case None => {Logger.error("Error getting file" + id); InternalServerError}
+	    }
       }
+      case false => {
+        Ok("RDF export plugin not enabled")
+      }
+    }
   }
   
     @ApiOperation(value = "Add user-generated metadata to file",
@@ -1047,6 +1003,7 @@ class Files @Inject()(
                     }
                   }
                   case None => {
+                    //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!                  
                     Ok.chunked(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
@@ -1057,7 +1014,6 @@ class Files @Inject()(
               case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
 
             }
-
           }
           case None => Logger.error("Geometry file not found"); InternalServerError
         }
@@ -1101,6 +1057,7 @@ class Files @Inject()(
                     }
                   }
                   case None => {
+                    //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug! 
                     Ok.stream(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       //.withHeaders(CONTENT_LENGTH -> contentLength.toString)
@@ -1525,6 +1482,7 @@ class Files @Inject()(
             val previewers = Previewers.findPreviewers
             //Logger.info("Number of previews " + previews.length);
             val files = List(file)
+            //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
             val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
               val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
                 (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
@@ -1533,7 +1491,14 @@ class Files @Inject()(
                 (file -> pvf)
               } else {
                 val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                  (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                    //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                    if (f.checkLicenseForDownload(request.user)) {
+                        (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    }
+                    else {
+                        (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                    }
                 }
                 (file -> ff)
               }
@@ -1637,7 +1602,10 @@ class Files @Inject()(
             }
             case _ => {}
           }
-          Ok(toJson(Map("status" -> "success")))
+          Ok(toJson(Map("status"->"success")))
+          current.plugin[AdminsNotifierPlugin].foreach{
+            _.sendAdminsNotification(Utils.baseUrl(request), "File","removed",id.stringify, file.filename)}
+          Ok(toJson(Map("status"->"success")))
         }
         case None => Ok(toJson(Map("status" -> "error", "msg" -> "file not found")))
       }
@@ -1762,5 +1730,4 @@ class Files @Inject()(
 }
 
 object MustBreak extends Exception {}
-
 

@@ -2,7 +2,12 @@ package controllers
 
 import api.{Permission, WithPermission}
 import play.api.Routes
+import play.api.mvc.Action
+import play.api.mvc.Controller
+import api.Sections
+import models.AppAppearance
 import javax.inject.{Singleton, Inject}
+import play.api.mvc.Action
 import services.FileService
 import play.api.Logger
 
@@ -13,14 +18,24 @@ import play.api.Logger
  */
 @Singleton
 class Application  @Inject() (files: FileService) extends SecuredController {
-  
+
+  /**
+   * Redirect any url's that have a trailing /
+   * @param path the path minus the slash
+   * @return moved permanently to path without /
+   */
+  def untrail(path: String) = Action {
+    MovedPermanently("/" + path)
+  }
+
   /**
    * Main page.
    */
   def index = SecuredAction() { request =>
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
-    Ok(views.html.index(latestFiles))
+    val appAppearance = AppAppearance.getDefault.get
+    Ok(views.html.index(latestFiles, appAppearance.displayedName, appAppearance.welcomeMessage))
   }
   
   def options(path:String) = SecuredAction() { implicit request =>
@@ -53,10 +68,13 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         routes.javascript.Tags.search,
         routes.javascript.Admin.setTheme,
         
+        api.routes.javascript.Admin.removeAdmin,
+        
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,
         api.routes.javascript.Datasets.comment,
+        api.routes.javascript.Datasets.deleteDataset,
         api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,
         api.routes.javascript.Datasets.removeTag,
@@ -71,6 +89,7 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Files.removeAllTags,
         api.routes.javascript.Files.updateLicense,
         api.routes.javascript.Files.extract,
+        api.routes.javascript.Files.removeFile,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
@@ -81,7 +100,11 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
         api.routes.javascript.Geostreams.getSensorStreams,
-        api.routes.javascript.Geostreams.searchDatapoints
+        api.routes.javascript.Geostreams.searchDatapoints,
+        api.routes.javascript.Collections.attachPreview,
+        api.routes.javascript.Collections.attachDataset,
+        api.routes.javascript.Collections.removeDataset,
+        api.routes.javascript.Collections.removeCollection
       )
     ).as(JSON) 
   }

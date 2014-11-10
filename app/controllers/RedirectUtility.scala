@@ -33,14 +33,14 @@ class RedirectUtility extends Controller {
      *  @param url The originating window href for the failed authentication
      */
     def authenticationRequiredMessage(msg: String, url: String) = Action { implicit request =>
-        Logger.info("---- Incoming message is " + msg + "--------")
+        Logger.trace("The authentication required message is " + msg)
         var errMsg = "You must be logged in to perform that action."
         var origUrlPresent = false
         if (msg != null && !msg.trim().equals("")) {
             errMsg = msg
         }
         
-        Logger.info("---- Incoming url is " + url + "-------")
+        Logger.trace("The specified url to redirect to is " + url)
         
         //If the url is present, set the session key
         if (url != null && !url.trim().equals("")) {

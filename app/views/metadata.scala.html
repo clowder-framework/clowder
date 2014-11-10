@@ -1,10 +1,10 @@
-@(dataset_id: String, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity]) 
+@(dataset_id: String, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity]) 
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
 
 <form class="form-inline">	
-	@printLevel(metadata: Map[String,Any]) = {
+	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
 		<ul>
 		@for((key,value) <- metadata) {
 			<li><b>@(key):</b>
@@ -15,7 +15,7 @@
 					@value
 				}
 			} else {
-			    @printLevel(value.asInstanceOf[DBObject].toMap.asScala.toMap.asInstanceOf[Map[String, Any]])
+			    @printLevel(value.asInstanceOf[DBObject].toMap.asScala.toMap.asInstanceOf[scala.collection.immutable.Map[String, Any]])
 			}</li>
 		}
 		</ul>
@@ -43,15 +43,16 @@
 		}
 		</ul>
 	}
-	
-	<h5>Auto-generated metadata:</h5>
-	
-	@if(metadata.isEmpty) {
-		<div>No auto-generated metadata.</div>
-	} else {
-		<div>@printLevel(metadata)</div>
-	}
-	<br />
+	@*
+		<h5>Auto-generated metadata:</h5>
+		
+		@if(metadata.isEmpty) {
+			<div>No auto-generated metadata.</div>
+		} else {
+			<div>@printLevel(metadata)</div>
+		}	
+		<br />
+	*@
 	<h5>Community-generated metadata:</h5>
 	
 	<div id='generalUserMetadata_@(dataset_id)' class='usr_md_'>
@@ -61,7 +62,15 @@
 		@if(rdfExported){
 			<button class="usr_md_submit btn rdfbtn" type="button">Get as RDF</button>
 		}
-	</div>		
+	</div>
+	
+	@if(!xmlMetadata.isEmpty) {
+		<h5>XML metadata:</h5>		
+		@for(i <- 0 until xmlMetadata.length){								
+			@printLevel(xmlMetadata(i).xmlMetadata)
+		}
+	}
+			
 </form>
 <script language="javascript">
 	var topId = "generalUserMetadata_@(dataset_id)"; 
