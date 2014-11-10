@@ -58,19 +58,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       } catch {
       case nn: NoNodeAvailableException => {
         Logger.error("Error connecting to elasticsearch: " + nn)
-        client match {
-          case Some(x) => x.close
-          case None => None
-        }
-        client = None
-    }
-    case _: Throwable => {
-      Logger.error("Unknown exception connecting to elasticsearch")
-      client match {
-        case Some(x) => x.close
-        case None => None
-       }
-      client = None
+        client.map(_.close())
+      }
+      case _: Throwable => {
+        Logger.error("Unknown exception connecting to elasticsearch")
+        client.map(_.close())
       }
     }
   }
@@ -84,12 +76,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val response = x.prepareSearch(index)
           .setTypes("file", "dataset")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          // .setQuery(QueryBuilders.matchQuery("_all", query))
           .setQuery(QueryBuilders.queryString(query))
           .setFrom(0).setSize(60).setExplain(true)
           .execute()
           .actionGet()
-
         Logger.info("Search hits: " + response.getHits().getTotalHits())
         response
       }
@@ -182,16 +172,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
     index("data", "dataset", dataset.id,
-      List(("name", dataset.name), ("description", dataset.description), ("author", dataset.author.fullName), ("created", formatter.format(dataset.created)), ("fileId", fileDsId), ("fileName", fileDsName), ("collId", dsCollsId), ("collName", dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
-
+    List(("name", dataset.name), ("description", dataset.description), ("author", dataset.author.fullName), 
+    ("created", formatter.format(dataset.created)), ("fileId", fileDsId), ("fileName", fileDsName), 
+    ("collId", dsCollsId), ("collName", dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString),
+    ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
   }
 
   override def onStop() {
-    client match {
-      case Some(x) => x.close
-      case None=>None
-    }
-    client = None
+    client.map(_.close())
     Logger.info("ElasticsearchPlugin has stopped")
   }
 
