@@ -69,7 +69,7 @@ function fetchFrame(index,prNum){
   
   var fileUrl = hostAddress + Configuration.url;
   var pathJs = hostAddress + Configuration.jsPath + "/";
-  previewUrl = hostAddress + "/api/previews/";
+  previewUrl = hostAddress + Configuration.appContext + "/api/previews/";
   var width = 750;
   var height = 550;
   var cacheLength = 5;  

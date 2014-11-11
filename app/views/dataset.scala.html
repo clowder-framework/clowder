@@ -4,6 +4,7 @@
 @import helper._
 @import collection.JavaConverters._
 @import com.mongodb.casbah.Imports.DBObject
+@import play.api.Play.current
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {		
@@ -110,7 +111,8 @@
 		Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
 		Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
 		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
-		Configuration.imagesPath = "@(routes.Assets.at("images"))";		
+		Configuration.imagesPath = "@(routes.Assets.at("images"))";	
+		Configuration.appContext = "@play.api.Play.configuration.getString("application.context").getOrElse("")";
     </script>
     <script>
     	window.onload = function() {
