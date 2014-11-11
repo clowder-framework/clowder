@@ -93,7 +93,17 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
     Ok(toJson(list))
   }
-  
+
+  @ApiOperation(value = "Get a specific collection",
+    responseClass = "Collection", httpMethod = "GET")
+  def getCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
+    authorization=WithPermission(Permission.ShowCollection)) { request =>
+    collections.get(collectionId) match {
+      case Some(x) => Ok(jsonCollection(x))
+      case None => BadRequest(toJson("collection not found"))
+    }
+  }
+
   def jsonCollection(collection: Collection): JsValue = {
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
                "created" -> collection.created.toString))

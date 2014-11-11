@@ -539,7 +539,9 @@ object Geostreams extends ApiController {
           cacheFetch(description) match {
             case Some(data) => {
               if (format == "csv") {
-                Ok.chunked(data).as(withCharset("text/csv"))
+                Ok.chunked(data)
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                  .as(withCharset("text/csv"))
               } else {
                 jsonp(data.through(Enumeratee.map(new String(_))), request)
               }
@@ -557,7 +559,9 @@ object Geostreams extends ApiController {
               val data = calculate(operator, filtered, since, until, semi.isDefined)
 
               if (format == "csv") {
-                Ok.chunked(cacheWrite(description, jsonToCSV(data))).as(withCharset("text/csv"))
+                Ok.chunked(cacheWrite(description, jsonToCSV(data)))
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                  .as(withCharset("text/csv"))
               } else {
                 jsonp(cacheWrite(description, formatResult(data, format)), request)
               }
@@ -671,10 +675,17 @@ object Geostreams extends ApiController {
         if (nextObject.isDefined) {
           true
         } else {
-          nextObject = operator.toLowerCase match {
-            case "averages" => computeAverage(peekIter)
-            case "trends" => computeTrends(peekIter, trendStart, trendEnd, semiGroup)
-            case _ => None
+          try {
+            nextObject = operator.toLowerCase match {
+              case "averages" => computeAverage(peekIter)
+              case "trends" => computeTrends(peekIter, trendStart, trendEnd, semiGroup)
+              case _ => None
+            }
+          } catch {
+            case t:Throwable => {
+               nextObject = None
+              Logger.error("Error computing next value.", t)
+            }
           }
           nextObject.isDefined
         }
@@ -984,8 +995,12 @@ object Geostreams extends ApiController {
             jsProperties(f._1 + "_interval_average") =  Json.toJson(avgTrend)
             // TODO fix this for better grouping see MMDB-1678
             if (semiGroup) {
-              val avgLast = propertiesLast(f._1).right.get / counterLast(f._1)
-              jsProperties(f._1 + "_last_average") = Json.toJson(avgLast)
+              if (propertiesLast(f._1).isRight) {
+                val avgLast = propertiesLast(f._1).right.get / counterLast(f._1)
+                jsProperties(f._1 + "_last_average") = Json.toJson(avgLast)
+              } else {
+                Logger.debug("Error getting last value, non number as last value.")
+              }
             }
             jsProperties(f._1 + "_percentage_change") = Json.toJson(((avgTrend - avgAll) / avgAll) * 100.0)
             null
