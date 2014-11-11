@@ -223,8 +223,10 @@ GET		/api/files/:id/getPreviews								@api.Files.getPreviews(id: UUID)
 GET		/api/files/:id/isBeingProcessed							@api.Files.isBeingProcessed(id: UUID)
 #GET		/api/files/:three_d_file_id/:filename			    @api.Files.getGeometry(three_d_file_id: UUID, filename)
 GET		/api/files/:three_d_file_id/:filename					@api.Files.getTexture(three_d_file_id: UUID, filename)
-GET     /api/files/:id                    						@api.Files.download(id: UUID)
 GET     /api/queries/:id				                        @api.Files.downloadquery(id: UUID)
+GET     /api/files/:id/blob                  					@api.Files.download(id: UUID)
+# TODO please use /api/files/:id/blob to get the actual data see MMDB-1685
+GET     /api/files/:id                    						@api.Files.download(id: UUID)
 
 # DANGER
 GET     /api/delete-data                    					api.Admin.deleteAllData
