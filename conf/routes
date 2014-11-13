@@ -17,10 +17,6 @@ GET      /assets/img/glyphicons-halflings.png                                con
 GET      /assets/*file                                                       controllers.Assets.at(path="/public", file)
 
 # Users
-GET      /users                                                              controllers.Users.list
-GET      /users/by-country/:country                                          controllers.Users.listByCountry(country)
-GET      /users/create/:username                                             controllers.Users.create(username)
-GET      /users/view/:id                                                     controllers.Users.view(id)
 POST	 /users/registerThroughAdmins										 controllers.Users.handleStartSignUp
 
 # Utilities
@@ -366,3 +362,9 @@ POST    /api/comment/:id/editComment                           @api.Comments.edi
 GET   	/api/search                       @api.Search.search(query: String ?= "")
 POST	/api/sparqlquery				  @api.Search.querySPARQL
 
+# ----------------------------------------------------------------------
+# USERS API
+# ----------------------------------------------------------------------
+GET            /api/users                                                               @api.Users.list
+GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
+GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
