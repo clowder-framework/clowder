@@ -123,7 +123,7 @@ object Users extends Controller {
               }
             }
           }
-          Redirect(onHandleStartSignUpGoTo).flashing(Success -> play.Play.application().configuration().getString("securesocial.messageOnStartRegistrationWithAdmin") , Email -> email)
+          Redirect(onHandleStartSignUpGoTo).flashing(Success -> play.Play.application().configuration().getString("messageOnStartRegistrationWithAdmin") , Email -> email)
         }
       )
     }
