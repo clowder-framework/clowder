@@ -523,7 +523,7 @@ object Geostreams extends ApiController {
           val year = counter.getYear
           val month = counter.getMonthOfYear
           val day = counter.getDayOfMonth
-          val date = new DateTime(year,month,15,12,0,0,0)
+          val date = new DateTime(year,month,day,12,0,0,0)
           result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "date" -> iso.print(date)))
           counter = counter.plusDays(1)
         }
