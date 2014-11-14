@@ -11,7 +11,7 @@ import api.ApiController
 import api.WithPermission
 import api.Permission
 import securesocial.core.providers.utils.RoutesHelper
-import services.{AppConfigurationService, VersusPlugin, CensusService}
+import services.{AppConfigurationService, VersusPlugin, SectionIndexInfoService}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
@@ -40,7 +40,7 @@ import play.api.data.Forms._
  *
  */
 @Singleton
-class Admin @Inject() (appConfiguration: AppConfigurationService, census: CensusService) extends SecuredController {
+class Admin @Inject() (appConfiguration: AppConfigurationService, sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
 
   private val themes = "bootstrap/bootstrap.css" ::
     "bootstrap-amelia.min.css" ::
@@ -197,25 +197,22 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
        Async {
          current.plugin[VersusPlugin] match {
            case Some(plugin) => {
-             Logger.debug(":::::::::::::::::::::::::::Inside Contr.Admin.CreateIndex():::::::::::::::::::::::::::::::::::::")
+             Logger.debug("Contr.Admin.CreateIndex()")
              val adapter = (request.body \ "adapter").as[String]
              val extractor = (request.body \ "extractor").as[String]
              val measure = (request.body \ "measure").as[String]
              val indexer = (request.body \ "indexer").as[String]
              val indexType = (request.body \ "indexType").as[String]      
              val indexName = (request.body \ "name").as[String]
-             Logger.debug("controllers.Admin.createIndex: name = " + indexName + ", type =" + indexType)
              //create index and get its id
-              val indexIdFuture :Future[models.UUID] = plugin.createIndex(adapter, extractor, measure, indexer)//.map{            
+              val indexIdFuture :Future[models.UUID] = plugin.createIndex(adapter, extractor, measure, indexer)            
               //save index type (census sections, face sections, etc) to the mongo db
              if (indexType != null && indexType.length !=0){
-             	Logger.debug("ctrlr.Admin.createIndex calling census insert type")
-             	indexIdFuture.map(id=>census.insertType(id, indexType))          
+             	indexIdFuture.map(sectionIndexInfo.insertType(_, indexType))          
              }             
              //save index name to the mongo db
              if (indexName != null && indexName.length !=0){
-             	Logger.debug("ctrlr.Admin.createIndex will call census insert name")
-             	indexIdFuture.map(id=>	  census.insertName(id, indexName))
+             	indexIdFuture.map(sectionIndexInfo.insertName(_, indexName))
              }           
               Future(Ok("Index created successfully"))     
            } //end of case some plugin
@@ -237,24 +234,19 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
       Async {        
         current.plugin[VersusPlugin] match {
           case Some(plugin) => {
-           Logger.debug("::::Inside Admin.getIndexes()::::")
-           Logger.debug("Admin.getIndexes request = " + request)
+           Logger.debug(" Admin.getIndexes()")
             var indexListResponse = plugin.getIndexes()
             for {
               indexList <- indexListResponse
             } yield {
             	if(indexList.body.isEmpty())
             	{ 
-            		Logger.debug(":::::::::::Admin.getIndexes: indexList is empty")
-            //		Ok("No Index")
-            		 var res :JsValue= Json.toJson("")  
+            		var res :JsValue= Json.toJson("")  
             		Ok(res)
             	}
                 else{
-                  Logger.debug("Admin.getIndexes indexList.body = " + indexList.body)                  
                   var finalJson :JsValue=null
                   val jsArray = indexList.json
-                  Logger.debug("Admin.getIndexes jsarray = " + jsArray)
                   //make sure we got correctly formatted list of values
                   jsArray.validate[List[VersusIndexTypeName]].fold(
                 		  // Handle the case for invalid incoming JSON.
@@ -270,18 +262,16 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
                 		    	val indexesWithNameType = indexes.map{
                 		    		index=>
                 		    		  	//check in mongo for name/type of each index
-                		    			val indType = census.getType(UUID(index.indexID)).getOrElse("")
-                		    			val indName = census.getName(UUID(index.indexID)).getOrElse("")
+                		    			val indType = sectionIndexInfo.getType(UUID(index.indexID)).getOrElse("")
+                		    			val indName = sectionIndexInfo.getName(UUID(index.indexID)).getOrElse("")
 
-                		    			Logger.debug("Admin.getIndexes type  from census = " + indType + "name = " + indName)
                 		    			//add type/name to index
                 		    			VersusIndexTypeName.addTypeAndName(index, indType, indName)
    								  }                		    
-                		    	indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index iwth name = " + i))
+                		    	indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index with name = " + i))
                 		    
                 		    	// Serialize as JSON, requires the implicit `format` defined earlier in VersusIndexTypeName
                 		    	finalJson = Json.toJson(indexesWithNameType)    			
-                		    	Logger.debug("Admin.getIndexes finalJson = " + finalJson)	
                 		    }
                 		  ) //end of fold                
                 		  Ok(finalJson)
@@ -300,20 +290,16 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, census: Census
   //build a specific index in Versus
   def buildIndex(id: String) = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-           Logger.debug("::::Inside Admin.buildIndex():::: index = " + id)
+           Logger.debug("Inside Admin.buildIndex(), index = " + id)
       Async {
         current.plugin[VersusPlugin] match {
-
           case Some(plugin) => {
-
             var buildResponse = plugin.buildIndex(UUID(id))
-
             for {
               buildRes <- buildResponse
             } yield {
               Ok(buildRes.body)
             }
-
           } //case some
 
           case None => {

@@ -13,7 +13,7 @@ package services
 import models.UUID
 import scala.util.Try
 
-trait CensusService {
+trait SectionIndexInfoService {
 
 	/**
 	 * Add a new document to the collection, with index Id given.
