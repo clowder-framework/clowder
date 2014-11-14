@@ -20,6 +20,7 @@ object DI {
 class ConfigurationModule extends AbstractModule {
   protected def configure() {
     bind(classOf[AppConfigurationService]).to(get("service.appConfiguration", "services.mongodb.MongoDBAppConfigurationService"))
+    bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
 
     bind(classOf[DatasetService]).to(get("service.datasets", "services.mongodb.MongoDBDatasetService"))
     bind(classOf[FileService]).to(get("service.files", "services.mongodb.MongoDBFileService"))
