@@ -10,6 +10,7 @@ import models._
 import play.api.mvc.WithFilters
 import play.filters.gzip.GzipFilter
 import akka.actor.Cancellable
+import julienrf.play.jsonp.Jsonp
 
 
 /**
@@ -18,7 +19,7 @@ import akka.actor.Cancellable
  * @author Luigi Marini
  */
 
-object Global extends WithFilters(new GzipFilter(),CORSFilter()) with GlobalSettings {
+object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) with GlobalSettings {
         
       var serverStartTime:Date=null
 
