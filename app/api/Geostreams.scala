@@ -1443,7 +1443,7 @@ object Geostreams extends ApiController {
    * @param data the json to be converted to CSV.
    * @return Enumarator[String]
    */
-  def jsonToCoSV(data: Iterator[JsObject]): Enumerator[String] = {
+  def jsonToCSV(data: Iterator[JsObject]): Enumerator[String] = {
     val headers = ListBuffer.empty[Header]
 
     val configuration = play.api.Play.configuration
