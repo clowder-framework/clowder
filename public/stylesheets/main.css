@@ -445,3 +445,7 @@ textarea, input[type='text'], input[type='password']{
     color: black;
     text-decoration: none;
 }
+
+.paddingTop7 {
+    padding-top: 7px;
+}
