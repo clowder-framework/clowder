@@ -84,7 +84,9 @@ case class WithPermission(permission: Permission) extends Authorization {
 	
   def isAuthorized(user: Identity): Boolean = {
     // always check for useradmin, user needs to be in admin list no ifs ands or buts.
-    if (permission == UserAdmin) {
+    if (permission == Public) {
+      true
+    } else if (permission == UserAdmin) {
       checkUserAdmin(user)
     } else {
       // based on scheme pick right setup
