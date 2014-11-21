@@ -129,11 +129,6 @@ ol.comment-threads {
 .comment-input-box {
 	width: 100%;
 	margin: 10px 0px;
-} 
-
-.file-list-cell {
-	text-align: right;
-	width: 80%;
 }
 
 .rubberbandDiv {
@@ -427,6 +422,8 @@ textarea, input[type='text'], input[type='password']{
 
 .border-top {
   border-top: 1px solid #E1E1E8;
+  padding-top: 10px;
+  margin-top: 50px;
 }
 
 .button-margins {
