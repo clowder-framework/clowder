@@ -416,6 +416,28 @@ class Files @Inject()(
   }
 
   /**
+   * Reindex a file.
+   */
+  @ApiOperation(value = "Reindex a file",
+    notes = "Reindex the existing file.",
+    responseClass = "None", httpMethod = "GET")
+  def reindex(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+    request =>
+      files.get(id) match {
+        case Some(file) => {
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.index(file)
+          }
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => {
+          Logger.error("Error getting dataset" + id)
+          BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+        }
+      }
+  }
+
+    /**
    * Send job for file preview(s) generation at a later time.
    */
   @ApiOperation(value = "(Re)send preprocessing job for file",
