@@ -3,23 +3,16 @@
  */
 package controllers
 
-import java.util.regex.Pattern
-import scala.Array.canBuildFrom
-import scala.collection.JavaConversions
-import scala.io.Source
-import org.reflections.Reflections
-import org.reflections.scanners.ResourcesScanner
-import org.reflections.util.ConfigurationBuilder
+import api.{Permission, WithPermission}
 import models.Previewer
-import play.api.Logger
-import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.Json
-import play.api.mvc.Action
 import play.api.mvc.Controller
-import securesocial.core.SecureSocial
-import api.WithPermission
-import api.Permission
+import play.api.{Logger, Play}
+import util.ResourceLister
+
+import scala.Array.canBuildFrom
+import scala.io.Source
 
 /**
  * Previewers.
@@ -29,15 +22,13 @@ import api.Permission
  *
  */
 object Previewers extends Controller with SecuredController {
+  lazy val previewers = ResourceLister.listFiles("public/javascripts/previewers", "package.json")
+
   def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
-    Ok(views.html.previewers(findPreviewers))
+    Ok(views.html.previewers(findPreviewers()))
   }
 
   def findPreviewers(): Array[Previewer] = {
-    val configuration = ConfigurationBuilder.build("public", new ResourcesScanner())
-    val reflections = new Reflections(configuration)
-    val previewers = JavaConversions.asScalaSet(reflections.getResources(Pattern.compile("package.json")))
-
     var result = Array[Previewer]()
     for (previewer <- previewers) {
       Play.resourceAsStream(previewer) match {
@@ -56,14 +47,10 @@ object Previewers extends Controller with SecuredController {
         }
       }
     }
-    return result
+    result
   }
 
   def findCollectionPreviewers(): Array[Previewer] = {
-    val configuration = ConfigurationBuilder.build("public", new ResourcesScanner())
-    val reflections = new Reflections(configuration)
-    val previewers = JavaConversions.asScalaSet(reflections.getResources(Pattern.compile("package.json")))
-
     var result = Array[Previewer]()
     for (previewer <- previewers) {
       Play.resourceAsStream(previewer) match {
@@ -83,7 +70,7 @@ object Previewers extends Controller with SecuredController {
         }
       }
     }
-    return result
+    result
   }
 
 }
