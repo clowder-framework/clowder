@@ -4,9 +4,7 @@ import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
-import models.AppConfiguration
 import play.api.Play.configuration
-import play.api.{Plugin, Logger, Application}
 import services.AppConfigurationService
 
  /**
