@@ -513,7 +513,46 @@ object Geostreams extends ApiController {
           val month = counter.getMonthOfYear
           val date = new DateTime(year,month,15,12,0,0,0)
           result.put(label, Json.obj("year" -> year, "month" -> month, "date" -> iso.print(date)))
-          counter = counter.plusYears(1)
+          counter = counter.plusMonths(1)
+        }
+      }
+      case "day" => {
+        var counter = startTime
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val label = DateTimeFormat.forPattern("YYYY-MM-dd").print(counter)
+          val year = counter.getYear
+          val month = counter.getMonthOfYear
+          val day = counter.getDayOfMonth
+          val date = new DateTime(year,month,day,12,0,0,0)
+          result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "date" -> iso.print(date)))
+          counter = counter.plusDays(1)
+        }
+      }
+      case "hour" => {
+        var counter = startTime
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val label = DateTimeFormat.forPattern("YYYY-MM-dd HH").print(counter)
+          val year = counter.getYear
+          val month = counter.getMonthOfYear
+          val day = counter.getDayOfMonth
+          val hour = counter.getHourOfDay
+          val date = new DateTime(year,month,day,hour,30,0,0)
+          result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "hour" -> hour, "date" -> iso.print(date)))
+          counter = counter.plusHours(1)
+        }
+      }
+      case "minute" => {
+        var counter = startTime
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val label = DateTimeFormat.forPattern("YYYY-MM-dd HH:mm").print(counter)
+          val year = counter.getYear
+          val month = counter.getMonthOfYear
+          val day = counter.getDayOfMonth
+          val hour = counter.getHourOfDay
+          val minute = counter.getMinuteOfHour
+          val date = new DateTime(year,month,day,hour,minute,30,0)
+          result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "hour" -> hour, "minute" -> minute, "date" -> iso.print(date)))
+          counter = counter.plusMinutes(1)
         }
       }
       case _ => // do nothing

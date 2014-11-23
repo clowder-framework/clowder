@@ -328,12 +328,12 @@ class Admin extends SecuredController {
      	})
 )
   
-  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.newAdmin(adminForm))
   }
   
-  def submitNew() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  def submitNew() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -342,18 +342,17 @@ class Admin extends SecuredController {
             errors => BadRequest(views.html.newAdmin(errors)),
             newAdmin => {
               AppConfiguration.addAdmin(newAdmin)
-              Redirect(routes.Application.index)
+              Redirect(routes.Application.listAdmins)
             }
           )
         } else {
           Unauthorized("Not authorized")
         }
       }
-      case None => Unauthorized("Not authorized")
-    }
+    )
   }
   
-  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -364,7 +363,6 @@ class Admin extends SecuredController {
           Unauthorized("Not authorized")
         }
       }
-      case None => Unauthorized("Not authorized")
     }
   }
   

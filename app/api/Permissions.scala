@@ -64,7 +64,9 @@ object Permission extends Enumeration {
 		SearchSensors,
 		RemoveSensors,
 		AddThumbnail,
-		DownloadFiles = Value
+		DownloadFiles,
+    GetUser,
+    UserAdmin = Value        // Permission to work with users (list/add/remove/register)
 }
 
 import api.Permission._
@@ -79,13 +81,24 @@ case class WithPermission(permission: Permission) extends Authorization {
   val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
 	
   def isAuthorized(user: Identity): Boolean = {
-    configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
-      case "public" => return publicPermission(user, permission)
-      case "private" => return privatePermission(user, permission)        
-      case _ => return publicPermission(user, permission)
+    // always check for useradmin, user needs to be in admin list no ifs ands or buts.
+    if (permission == UserAdmin) {
+      checkUserAdmin(user)
+    } else {
+      // based on scheme pick right setup
+      configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
+        case "public"  => publicPermission(user, permission)
+        case "private" => privatePermission(user, permission)
+        case "admin"   => adminPermission(user, permission)
+        case _         => publicPermission(user, permission)
+      }
     }
   }
 
+  /**
+   * All read-only actions are public, writes and admin require a login. This is the most
+   * open configuration.
+   */
   def publicPermission(user: Identity, permission: Permission): Boolean = {
     // order is important
     (user, permission) match {
@@ -119,11 +132,33 @@ case class WithPermission(permission: Permission) extends Authorization {
     }
   }
 
+  /**
+   * All actions require a login, once logged in all users have all permission.
+   */
   def privatePermission(user: Identity, permission: Permission): Boolean = {
     (user, permission) match {
+      // return true if user is signed in
       case (null, _)                 => false
       case (_, _)                    => true
     }
+  }
+
+  /**
+   * All actions require a login, admin actions require user to be in admin list.
+   */
+  def adminPermission(user: Identity, permission: Permission): Boolean = {
+    (user, permission) match {
+      // check to see if user has admin rights
+      case (_, Permission.Admin)     => checkUserAdmin(user)
+
+      // return true if user is signed in
+      case (null, _)                 => false
+      case (_, _)                    => true
+    }
+  }
+
+  def checkUserAdmin(user: Identity) = {
+     (user != null) && user.email.nonEmpty && appConfiguration.adminExists(user.email.get)
   }
 }
 
