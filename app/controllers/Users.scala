@@ -26,14 +26,6 @@ import services.AppConfiguration
  * @author Luigi Marini
  */
 object Users extends Controller {
-  /**
-   * List users.
-   */
-  def list() = Action {
-    val users = User.findAll()
-    Ok(views.html.list(users))
-  }
-
   //Custom signup initiation code, to be used if config is set to send signup link emails to admins to forward to users
   
   val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey

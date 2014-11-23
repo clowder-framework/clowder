@@ -5,7 +5,7 @@ import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
 import play.api.Play.configuration
-import services.AppConfigurationService
+import services.AppConfiguration
 
  /**
   * A request that adds the User for the current call
@@ -77,9 +77,7 @@ import api.Permission._
  * @author Rob Kooper
  */
 case class WithPermission(permission: Permission) extends Authorization {
-	
-  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
-	
+
   def isAuthorized(user: Identity): Boolean = {
     // always check for useradmin, user needs to be in admin list no ifs ands or buts.
     if (permission == UserAdmin) {
@@ -158,7 +156,7 @@ case class WithPermission(permission: Permission) extends Authorization {
   }
 
   def checkUserAdmin(user: Identity) = {
-     (user != null) && user.email.nonEmpty && appConfiguration.adminExists(user.email.get)
+     (user != null) && user.email.nonEmpty && AppConfiguration.checkAdmin(user.email.get)
   }
 }
 

@@ -342,14 +342,14 @@ class Admin extends SecuredController {
             errors => BadRequest(views.html.newAdmin(errors)),
             newAdmin => {
               AppConfiguration.addAdmin(newAdmin)
-              Redirect(routes.Application.listAdmins)
+              Redirect(routes.Admin.listAdmins())
             }
           )
         } else {
           Unauthorized("Not authorized")
         }
       }
-    )
+    }
   }
   
   def listAdmins() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
