@@ -3,28 +3,15 @@
  */
 package controllers
 
-import play.api.mvc.{Results, Controller, Action}
-import play.api.Routes
-import securesocial.core.SecureSocial._
-import securesocial.core.{IdentityProvider, SecureSocial}
-import api.ApiController
 import api.WithPermission
 import api.Permission
-import securesocial.core.providers.utils.RoutesHelper
-import services.{AppConfigurationService, VersusPlugin}
+import services.{AppConfiguration, AppConfigurationService, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
-import models.AppConfiguration
-import models.AppAppearance
-import play.api.libs.json.Json
-import play.api.libs.json.Json._
 import play.api.Logger
 
 import scala.concurrent._
-import play.api.libs.ws.WS
-import play.api.libs.ws.Response
-import play.api.libs.concurrent.Promise
 import javax.inject.{Inject, Singleton}
 
 import play.api.data.Form
@@ -37,25 +24,18 @@ import play.api.data.Forms._
  *
  */
 @Singleton
-class Admin @Inject() (appConfiguration: AppConfigurationService) extends SecuredController {
-
-  private val themes = "bootstrap/bootstrap.css" ::
-    "bootstrap-amelia.min.css" ::
-    "bootstrap-simplex.min.css" :: Nil
+class Admin extends SecuredController {
 
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
-    val themeId = themes.indexOf(getTheme)
-    Logger.debug("Theme id " + themeId)
-    val appAppearance = AppAppearance.getDefault.get
+    val theme = AppConfiguration.getTheme
+    Logger.debug("Theme id " + theme)
     implicit val user = request.user
-    Ok(views.html.admin(themeId, appAppearance))
+    Ok(views.html.admin(theme, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
   
   def adminIndex = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
-    val themeId = themes.indexOf(getTheme)
-    val appAppearance = AppAppearance.getDefault.get
     implicit val user = request.user
-    Ok(views.html.adminIndex(themeId, appAppearance))
+    Ok(views.html.adminIndex())
   }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
@@ -328,9 +308,9 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   }
   
   def setTheme() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { implicit request =>
-    request.body.\("theme").asOpt[Int] match {
+    request.body.\("theme").asOpt[String] match {
       case Some(theme) => {
-        appConfiguration.setTheme(themes(theme))
+        AppConfiguration.setTheme(theme)
         Ok("""{"status":"ok"}""").as(JSON)
       }
       case None => {
@@ -340,13 +320,11 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
     }
   }
 
-  def getTheme(): String = appConfiguration.getTheme()
-  
   val adminForm = Form(
   single(
     "email" -> email
   )verifying("Admin already exists.", fields => fields match {
-     		case adminMail => !appConfiguration.adminExists(adminMail)
+     		case adminMail => !AppConfiguration.checkAdmin(adminMail)
      	})
 )
   
@@ -359,11 +337,11 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
     implicit val user = request.user
     user match {
       case Some(x) => {
-        if (x.email.nonEmpty && appConfiguration.adminExists(x.email.get)) {
+        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
           adminForm.bindFromRequest.fold(
             errors => BadRequest(views.html.newAdmin(errors)),
             newAdmin => {
-              appConfiguration.addAdmin(newAdmin)
+              AppConfiguration.addAdmin(newAdmin)
               Redirect(routes.Application.index)
             }
           )
@@ -379,15 +357,9 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
     implicit val user = request.user
     user match {
       case Some(x) => {
-        if (x.email.nonEmpty && appConfiguration.adminExists(x.email.get)) {
-          appConfiguration.getDefault match{
-            case Some(conf) =>{
-              Ok(views.html.listAdmins(conf.admins))
-            }
-            case None => {
-              Logger.error("Error getting application configuration!"); InternalServerError
-            }
-          }
+        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
+          val admins = AppConfiguration.getAdmins
+          Ok(views.html.listAdmins(admins))
         } else {
           Unauthorized("Not authorized")
         }
