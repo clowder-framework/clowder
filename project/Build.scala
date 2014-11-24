@@ -63,6 +63,7 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
+    offline := true,
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
     javaOptions in Test += "-Dconfig.file=" + Option(System.getProperty("config.file")).getOrElse("conf/application.conf"),
     testOptions in Test := Nil, // overwrite spec2 config to use scalatest instead
@@ -73,7 +74,7 @@ object ApplicationBuild extends Build {
     resolvers += Resolver.url("sbt-plugin-snapshots", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
-    resolvers += "Forth" at "http://139.91.183.63/repository",
+    //resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",   
     resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public"
    
