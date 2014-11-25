@@ -21,7 +21,8 @@ case class AppAppearance(
   id: ObjectId = new ObjectId,
   name: String = "default",
   displayedName: String = "Medici 2",
-  welcomeMessage: String = "Welcome to Medici 2.0, a scalable data repository where you can share, organize and analyze data."  
+  welcomeMessage: String = "Welcome to Medici 2.0, a scalable data repository where you can share, organize and analyze data.",
+  sensors: String = "Sensors"
   )
 
 object AppAppearance extends ModelCompanion[AppAppearance, ObjectId] {
@@ -58,5 +59,13 @@ object AppAppearance extends ModelCompanion[AppAppearance, ObjectId] {
       case None => {}
     }    
   }
-  
+
+
+  def setSensorsTitle(sensors: String) {
+    Logger.debug("Setting sensors title to " + sensors)
+    getDefault match {
+      case Some(conf) => AppAppearance.update(MongoDBObject("name" -> "default"), $set("sensors" ->  sensors), false, false, WriteConcern.Safe)
+      case None => {}
+    }
+  }
 }

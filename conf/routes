@@ -342,7 +342,8 @@ DELETE  /api/geostreams/streams/:id          api.Geostreams.deleteStream(id: Str
 DELETE  /api/geostreams/dropall              api.Geostreams.deleteAll
 GET     /api/geostreams/counts               api.Geostreams.counts
 
-GET     /geostreams                       controllers.Geostreams.browse
+GET     /geostreams                           controllers.Geostreams.map
+GET     /geostreams/list                      controllers.Geostreams.list
 
 
 POST	/api/tiles						  @api.ZoomIt.uploadTile

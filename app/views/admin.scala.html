@@ -26,7 +26,11 @@
 			    <label for="welcomingField">Welcoming message</label>
 				<textarea name="welcomingField" id="welcomingField" style="width:300%;">@(appAppearance.welcomeMessage)</textarea>
 				<br /><br />
-				<button class="btn btn-default" onclick="return submitAppearance();">Submit</button>	
+				<label for="sensorsTitle">Sensors title</label>
+			    <input id="sensorsTitle" name="sensorsTitle" type="text" value="@(appAppearance.sensors)"></input>
+			    <span id="sensorsTitle_error" style="display:none;">Sensors must have a title.</span>
+			    <br /><br />
+			    <button class="btn btn-default" onclick="return submitAppearance();">Submit</button>
 			  </div>
 			</form>			
 		</div>
@@ -35,7 +39,8 @@
 		function submitAppearance(){
 			var displayName = $("#displayNameField").val().trim();
 			var welcomeMessage = $("#welcomingField").val().trim();
-			
+			var sensorsTitle = $("#sensorsTitle").val().trim();
+
 			if(displayName == ""){
 				$("#displayNameField_error").css("display","inline");
 				return false;
@@ -48,7 +53,7 @@
 			
 			var request = $.ajax({
 				url:  "@api.routes.Admin.submitAppearance",
-				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage}),
+				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage, sensors: sensorsTitle }),
 				type: "POST",
 				contentType: "application/json",
 	     	});

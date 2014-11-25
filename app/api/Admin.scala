@@ -64,13 +64,19 @@ object Admin extends Controller with ApiController {
       case Some(displayName) =>{
         AppAppearance.setDisplayedName(displayName)
         (request.body \ "welcomeMessage").asOpt[String] match {
-          case Some(welcomeMessage)=>{
+          case Some(welcomeMessage) => {
             AppAppearance.setWelcomeMessage(welcomeMessage)
+            (request.body \ "sensors").asOpt[String] match {
+              case Some(sensors) => {
+                AppAppearance.setSensorsTitle(sensors)
+              }
+              case None => {}
+            }
           }
-          case None=>{}         
         }
         Ok(toJson(Map("status" -> "success")))
       }
+
       case None =>{
         Logger.error("Missing parameter [displayName].")
     	BadRequest(toJson("Missing parameter [displayName]"))
