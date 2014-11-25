@@ -24,14 +24,16 @@
                 <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
             }
         </div>
-        <script>            
-            $(function() {            	            	
+        <script type="text/javascript" language="javascript">
+            var viewMode = '@mode';
+            $(function() {                      	            
                 $('#tile-view-btn').click(function() {
                   $('#tile-view').removeClass('hidden');
                   $('#list-view').addClass('hidden');
                   $('#tile-view-btn').addClass('active');
                   $('#list-view-btn').removeClass('active');
                   viewMode = "tile";
+                  updatePage();
                 });
                 $('#list-view-btn').click(function() {
                   $('#tile-view').addClass('hidden');
@@ -39,42 +41,32 @@
                   $('#list-view-btn').addClass('active');
                   $('#tile-view-btn').removeClass('active');
                   viewMode = "list";
-                });                 
-                
-                //Handlers for the next and previous links that behave more like buttons.
-                $('#nextlink').click(function() {
-                	onPage("@(routes.Files.list("a", next, limit))");
-                });
-                $('#prevlink').click(function() {
-                    onPage("@(routes.Files.list("b", prev, limit))");
-                });
+                  updatePage();
+                });                                 
             });
             
-            $(document).ready(function() {
-            	var viewMode = '@mode';
-            	console.log("on load, viewMode is " + viewMode);
-            	if (viewMode == "list") {
-            		$('#list-view-btn').click();
-            	}
-            	else if (viewMode == "tile") {
-            		$('#tile-view-btn').click();
-            	}
+            $(document).ready(function() {            	
+            	console.log("on load, viewMode is " + viewMode);      
+            	updatePage();            	
             });
-        </script>
-        <script type="text/javascript" language="javascript">
-            //Handler for next/previous page requests, to preserve the format that the user is currently viewing.
-            //Perhaps there is a better way to pass this data other than URL modification. I couldn't seem to get the
-            //route to compile correctly while directly in here and trying to reference the javascript viewMode variable.
-	        function onPage(url) {
-	            var modUrl = url  + "&mode=" + viewMode;
-	            console.log("onPage - url is " + modUrl);
-	            window.location.href=modUrl;
+            
+            //Function to unify the changing of the href for the next/previous links. Called on button activation for
+            //viewMode style, as well as on initial load of page.
+	        function updatePage() {
+	            var modUrl = "&mode=" + viewMode;
+	            console.log("updatePage - url is " + modUrl);
+	            $('#nextlink').attr('href', "@(routes.Files.list("a", next, limit))" + modUrl);
+	            $('#prevlink').attr('href', "@(routes.Files.list("b", prev, limit))" + modUrl);
 	        }
         </script>
     </div>
 </div>
 
-<div class="row" id="tile-view">
+@if(mode == "list") {
+  <div class="row hidden" id="tile-view">
+} else {
+  <div class="row" id="tile-view">
+}
     <div class="col-md-12">
         <div id="masonry">
             @files.map { file =>
@@ -116,8 +108,11 @@
     </div>
 </div>
 
-
-<div class="row hidden" id="list-view">
+@if(mode == "list") {
+  <div class="row" id="list-view">
+} else {
+  <div class="row hidden" id="list-view">
+}
 	<div class="col-md-12">
 		<table class="table table-bordered table-hover">
 			<thead>
@@ -158,10 +153,10 @@
         <ul class="pager">
             <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
             @if(prev != "") {
-                <li class="previous"><a id="prevlink" title="Page backwards" href="#" onclick="return false">Previous</a></li>
+                <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
             }
             @if(next != "") {
-                <li class ="next"><a id="nextlink" title="Page forwards" href="#" onclick="return false">Next</a></li>
+                <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
             }
         </ul>
     </div>

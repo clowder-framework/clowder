@@ -2,7 +2,7 @@ function removeFile(fileId,event, reloadPage){
 	if(reloadPage === undefined) reloadPage = false;
 
 	var request = jsRoutes.api.Files.removeFile(fileId).ajax({
-		type: 'POST'
+		type: 'DELETE'
 	});
 
 	request.done(function (response, textStatus, jqXHR){
@@ -26,7 +26,7 @@ function removeFileAndRedirect(fileId, url){
 	if(url === undefined) reloadPage = "/files";
 
 	var request = jsRoutes.api.Files.removeFile(fileId).ajax({
-		type: 'POST'
+		type: 'DELETE'
 	});
 
 	request.done(function (response, textStatus, jqXHR){
