@@ -189,19 +189,21 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
   
   def updateSensorStats(sensor_id: Option[String]) {
-    var query = "WITH stream_sub1 AS (" +
-    			"SELECT stream_id, start_time, end_time, json_object_keys(data) AS param FROM datapoints" +
-    			")," +
-    			"stream_sub2 AS (" +
-    			"SELECT stream_id, min(start_time) AS start_time, max(end_time) AS end_time, array_agg(distinct param) as params FROM stream_sub1 GROUP BY stream_id" +
-    			")" +
-    			"UPDATE streams SET start_time=stream_sub2.start_time, end_time=stream_sub2.end_time, params=stream_sub2.params FROM stream_sub2  WHERE gid=stream_id"
-    if (sensor_id.isDefined) query += " AND sensor_id = ?"
+    var query = "UPDATE streams SET start_time=n.start_time, end_time=n.end_time, params=n.params FROM ("
+    query += "  SELECT stream_id, min(datapoints.start_time) AS start_time, max(datapoints.end_time) AS end_time, array_agg(distinct keys) AS params"
+    if (!sensor_id.isDefined) {
+      query += "    FROM datapoints, json_object_keys(data) data(keys)"
+    } else {
+      query += "    FROM datapoints, json_object_keys(data) data(keys), streams"
+      query += "    WHERE streams.gid=datapoints.stream_id AND streams.sensor_id=?"
+    }
+    query += "    GROUP by stream_id) n"
+    query += "  WHERE n.stream_id=streams.gid;"
     val st = conn.prepareStatement(query)
     if (sensor_id.isDefined) st.setInt(1, sensor_id.get.toInt)
     Logger.debug("updateSensorStats statement: " + st)
     st.execute()
-	  st.close()
+    st.close()
   }
   
   def getSensorStats(id: String): Option[String] = {
@@ -248,14 +250,13 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
 
   def updateStreamStats(stream_id: Option[String]) {
-    var query = "WITH stream_sub1 AS (" +
-    			"SELECT stream_id, start_time, end_time, json_object_keys(data) AS param FROM datapoints"
-    if (stream_id.isDefined) query += " WHERE stream_id = ?"    
-	  query += ")," +
-			 "stream_sub2 AS (" +
-			 "SELECT stream_id, min(start_time) AS start_time, max(end_time) AS end_time, array_agg(distinct param) as params FROM stream_sub1 GROUP BY stream_id" +
-			 ")" +
-			 "UPDATE streams SET start_time=stream_sub2.start_time, end_time=stream_sub2.end_time, params=stream_sub2.params FROM stream_sub2  WHERE gid=stream_id"
+    var query = "UPDATE streams SET start_time=n.start_time, end_time=n.end_time, params=n.params FROM ("
+    query += "  SELECT stream_id, min(datapoints.start_time) AS start_time, max(datapoints.end_time) AS end_time, array_agg(distinct keys) AS params"
+    query += "    FROM datapoints, json_object_keys(data) data(keys)"
+    if (stream_id.isDefined) query += " WHERE stream_id = ?"
+    query += "    GROUP BY stream_id) n"
+    query += "  WHERE n.stream_id=streams.gid;"
+
     val st = conn.prepareStatement(query)
     if (stream_id.isDefined) st.setInt(1, stream_id.get.toInt)
     Logger.debug("updateStreamStats statement: " + st)
