@@ -7,6 +7,8 @@ import org.bson.types.ObjectId
 import services.UserService
 import play.api.Play.current
 import MongoContext.context
+import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.Imports._
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -36,6 +38,18 @@ class MongoDBUserService extends UserService {
    */
   override def findByEmail(email: String): Option[User] = {
     UserDAO.dao.findOne(MongoDBObject("email" -> email))
+  }
+
+  override def editField(email: String, field: String, fieldText: Any) {      
+      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText));      
+  }
+
+  override def editList(email: String, field: String, fieldList: Any) {      
+      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push(field -> fieldList));      
+  }
+
+  override def createList(email: String, field: String, fieldList: List[Any]) {      
+      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));      
   }
 }
 

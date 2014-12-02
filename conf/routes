@@ -19,6 +19,13 @@ GET      /assets/*file                                                       con
 # Users
 POST	 /users/registerThroughAdmins										 controllers.Users.handleStartSignUp
 
+# Profile
+GET 	/Profile/view														@controllers.Profile.view
+GET 	/Profile/viewProfile												@controllers.Profile.viewProfile(email: Option[String])
+GET      /Profile/editProfile                                                    @controllers.Profile.editProfile
+GET 	/Profile/submitChanges                                                 @controllers.Profile.submitChanges
+GET 	/Profile/addFriend														@controllers.Profile.addFriend(email: String)
+
 # Utilities
 GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
 GET     /utils/authenticationRequiredMessage/:msg/:url       @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
@@ -62,6 +69,7 @@ GET		/fileThumbnail/:id/blob			  @controllers.Files.thumbnail(id: UUID)
 
 # Datasets
 GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12)
+GET     /datasets/userDatasets            @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, email: String)
 GET     /datasets/new                     @controllers.Datasets.newDataset
 GET     /datasets/metadataSearch          @controllers.Datasets.metadataSearch
 GET     /datasets/generalMetadataSearch   @controllers.Datasets.generalMetadataSearch

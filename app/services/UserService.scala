@@ -27,4 +27,10 @@ trait UserService {
    * Return a specific user based on the email provided.
    */
   def findByEmail(email: String): Option[User]
+
+
+  def editField(email: String, field: String, fieldText: Any)
+
+  def editList(email: String, field: String, fieldList: Any)
+  def createList(email: String, field: String, fieldList: List[Any])
 }

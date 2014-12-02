@@ -46,4 +46,26 @@ class Users @Inject()(users: UserService) extends ApiController {
       case None => BadRequest("no user found with that email.")
     }
   }
+
+  @ApiOperation(value = "Edit Name Field.",
+    responseClass = "None", httpMethod = "GET")
+  def editField(email: String, field: String, fieldText: Any) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    users.editField(email, field, fieldText)
+    Ok(Json.obj("status" -> "success"))
+  }
+
+  @ApiOperation(value = "Edit a List.",
+    responseClass = "None", httpMethod = "GET")
+  def editList(email: String, field: String, fieldList: Any)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    users.editList(email, field, fieldList)
+    Ok(Json.obj("status" -> "success"))
+  }
+
+  @ApiOperation(value = "Create a List.",
+    responseClass = "None", httpMethod = "GET")
+  def createList(email: String, field: String, fieldList: List[Any])= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    users.createList(email, field, fieldList)
+    Ok(Json.obj("status" -> "success"))
+  }
+
 }

@@ -36,6 +36,7 @@ class Datasets @Inject()(
   extractions: ExtractionService,
   dtsrequests:ExtractionRequestsService,
   sparql: RdfSPARQLService,
+  users: UserService,
   previewService: PreviewService) extends SecuredController {
 
   object ActivityFound extends Exception {}
@@ -121,7 +122,100 @@ class Datasets @Inject()(
       }
       Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
   }
+  def userDatasets(when: String, date: String, limit: Int, email: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
+    implicit request =>
+      implicit val user = request.user
+      var direction = "b"
+      if (when != "") direction = when
+      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+      var prev, next = ""
+      var datasetList = List.empty[models.Dataset]
+      if (direction == "b") {
+        datasetList = datasets.listDatasetsBefore(date, limit)
+      } else if (direction == "a") {
+        datasetList = datasets.listDatasetsAfter(date, limit)
+      } else {
+        badRequest
+      }
+      // latest object
+      val latest = datasets.latest()
+      // first object
+      val first = datasets.first()
+      var firstPage = false
+      var lastPage = false
+      if (latest.size == 1) {
+        firstPage = datasetList.exists(_.id.equals(latest.get.id))
+        lastPage = datasetList.exists(_.id.equals(first.get.id))
+        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
+        Logger.debug("first " + first.get.id + " last page " + lastPage)
+      }
+      if (datasetList.size > 0) {
+        if (date != "" && !firstPage) {
+          // show prev button
+          prev = formatter.format(datasetList.head.created)
+        }
+        if (!lastPage) {
+          // show next button
+          next = formatter.format(datasetList.last.created)
+        }
+      }
+      
+      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
 
+      
+
+      val commentMap = datasetList.map{dataset =>
+        var allComments = comments.findCommentsByDatasetId(dataset.id)
+        dataset.files.map { file =>
+          allComments ++= comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+        }
+        dataset.id -> allComments.size
+      }.toMap
+
+
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part 
+      //of the datasets names or descriptions
+      val aBuilder = new StringBuilder()
+      for (aDataset <- datasetList) {
+          decodeDatasetElements(aDataset)
+      }
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
+  }
+
+
+  def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {
+      user match{
+            case Some(viewer) => {
+              implicit val email = viewer.email
+              email match {
+                case Some(addr) => {
+                  implicit val modeluser = users.findByEmail(addr.toString())
+                  modeluser match {
+                    case Some(muser) => {
+                       muser.viewed match {
+                        case Some(viewList) =>{
+                          users.editList(addr, "viewed", id)
+                        }
+                        case None => {
+                          val newList: List[UUID] = List(id)
+                          users.createList(addr, "viewed", newList)
+                        }
+                      }
+                  }
+                  case None => {
+                    Ok("NOT WORKS")
+                  }
+                 }
+                }
+              }
+            }
+
+
+          }
+  }
 
   /**
    * Dataset.
@@ -132,6 +226,8 @@ class Datasets @Inject()(
       Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
       datasets.get(id) match {
         case Some(dataset) => {
+          addViewer(id, user)
+          
 
           val filesInDataset = dataset.files.map(f => files.get(f.id).get)
           
