@@ -1,49 +1,49 @@
 @(profile: User)(implicit user: Option[securesocial.core.Identity] = None)
 @main("ProfilePage") {
 <div class="page-header">
-    <h3>@profile.fullName</h3>
-    <h4>@profile.firstName</h4>
-    <h4>@profile.lastName</h4>
-    <h4>@profile.email</h4>
-    <h4>@profile.id</h4>
+  <h3>@profile.fullName</h3>
+  <h4>@profile.firstName</h4>
+  <h4>@profile.lastName</h4>
+  <h4>@profile.email</h4>
+  <h4>@profile.id</h4>
 
 
-    @profile.biography match{
+  @profile.biography match{
     case Some(info) => {<h4> Biography: @info </h4>}
     case None => {}
-    }
+  }
 
-    @profile.personal match{
-        case Some(info) => {<h4> Personal: @info </h4>}
-        case None => {}
-    }
+  @profile.personal match{
+    case Some(info) => {<h4> Personal: @info </h4>}
+    case None => {}
+  }
 
-    @profile.number match{
-        case Some(info) => {<h4> Number: @info </h4>}
-        case None => {}
-    }
+  @profile.number match{
+    case Some(info) => {<h4> Number: @info </h4>}
+    case None => {}
+  }
 
-    @profile.building match{
-        case Some(info) => {<h4> Building: @info </h4>}
-        case None => {}
-    }
-    @profile.room match{
-        case Some(info) => {<h4> Room: @info </h4>}
-        case None => {}
-    }
-    @profile.currentprojects match{
-        case Some(info) => {<h4> Current Projects: @info </h4>}
-        case None => {}
-    }
-    @profile.pastprojects match{
-        case Some(info) => {<h4> Past Projects: @info </h4>}
-        case None => {}
-    }
+  @profile.building match{
+    case Some(info) => {<h4> Building: @info </h4>}
+    case None => {}
+  }
+  @profile.room match{
+    case Some(info) => {<h4> Room: @info </h4>}
+    case None => {}
+  }
+  @profile.currentprojects match{
+    case Some(info) => {<h4> Current Projects: @info </h4>}
+    case None => {}
+  }
+  @profile.pastprojects match{
+    case Some(info) => {<h4> Past Projects: @info </h4>}
+    case None => {}
+  }
 
- <h4> @profile.viewed </h4>
- <h4> @profile.friends </h4>
+  <h4> @profile.viewed </h4>
+  <h4> @profile.friends </h4>
 
-    <h4><a href="@routes.Datasets.userDatasets("", "", 12,profile.email)">View Datasets</a> </h4>
-    <h4><a href="@routes.Profile.addFriend(profile.email)">Add Friend</a> </h4>
+  <h4><a href="@routes.Datasets.userDatasets("", "", 12,profile.email)">View Datasets</a> </h4>
+  <h4><a href="@routes.Profile.addFriend(profile.email)">Add Friend</a> </h4>
 </div>
 }
