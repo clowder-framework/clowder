@@ -342,8 +342,6 @@ DELETE  /api/geostreams/streams/:id          api.Geostreams.deleteStream(id: Str
 DELETE  /api/geostreams/dropall              api.Geostreams.deleteAll
 GET     /api/geostreams/counts               api.Geostreams.counts
 
-GET     /geostreams                           controllers.Geostreams.map
-GET     /geostreams/list                      controllers.Geostreams.list
 
 
 POST	/api/tiles						  @api.ZoomIt.uploadTile
@@ -363,6 +361,10 @@ POST    /api/comment/:id/editComment                           @api.Comments.edi
 
 GET   	/api/search                       @api.Search.search(query: String ?= "")
 POST	/api/sparqlquery				  @api.Search.querySPARQL
+GET            /geostreams                                                              controllers.Geostreams.map
+GET            /geostreams/sensors                                                      controllers.Geostreams.list
+GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
+GET            /geostreams/sensors/:id                                                  controllers.Geostreams.sensor(id)
 
 # ----------------------------------------------------------------------
 # USERS API

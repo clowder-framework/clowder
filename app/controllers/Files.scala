@@ -192,15 +192,7 @@ class Files @Inject() (
   	Ok(views.html.upload(uploadForm))
   }
 
-
   /**
-   * Upload file IMLCZO page.
-   */
-  def uploadFileIMLCZO = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
-    implicit val user = request.user
-    Ok(views.html.uploadFileIMLCZO(uploadForm))
-  }
-/**
    * Upload form for extraction.
    */
   val extractForm = Form(

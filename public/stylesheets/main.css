@@ -449,3 +449,7 @@ textarea, input[type='text'], input[type='password']{
 .paddingTop7 {
     padding-top: 7px;
 }
+
+.error {
+    color: red;
+}

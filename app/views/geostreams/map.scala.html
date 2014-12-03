@@ -1,4 +1,5 @@
-@main("Geostreams") {
+@(title: String = "Geostream Map")(implicit user: Option[securesocial.core.Identity])
+@main(title) {
 
  <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
  <!--[if lte IE 8]>

@@ -1,4 +1,5 @@
-@main("Geostreams") {
+@(title: String = "Geostreams")(implicit user: Option[securesocial.core.Identity])
+@main(title) {
 
  <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
  <!--[if lte IE 8]>
@@ -26,7 +27,7 @@
 	       contentType: "application/json",
 	       dataType: 'json',
 	     });
-	     
+
 	     request.done(function (response, textStatus, jqXHR){
 	        response.forEach(function(sensor) {
 	            $('table tr:last').after("<tr> \
@@ -39,11 +40,11 @@
 	        });
 
 	     });
-	  
+
 	     request.fail(function (jqXHR, textStatus, errorThrown){
 	        console.error(
 	            "The following error occured: "+
-	            textStatus, errorThrown  
+	            textStatus, errorThrown
 	        );
 	     });
    });
