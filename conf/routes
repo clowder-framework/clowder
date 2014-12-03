@@ -37,7 +37,6 @@ GET     /bookmarklet.js                                                     @con
 # Files
 GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12)
 GET		/files/new					      @controllers.Files.uploadFile
-GET		/files/newIMLCZO    		      @controllers.Files.uploadFileIMLCZO
 
 #This may not require; This is only for testing. It will change in subsequent version
 GET     /extraction/form                  @controllers.Files.extractFile
