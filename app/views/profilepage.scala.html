@@ -1,49 +1,56 @@
 @(profile: User)(implicit user: Option[securesocial.core.Identity] = None)
 @main("ProfilePage") {
 <div class="page-header">
-  <h3>@profile.fullName</h3>
-  <h4>@profile.firstName</h4>
-  <h4>@profile.lastName</h4>
-  <h4>@profile.email</h4>
-  <h4>@profile.id</h4>
 
+  <table>
+    <tr>
+      <td valign="top">
+        @profile.avatarUrl match{
+          case Some(info) => {<img src=@info+"?s=256" height="256px" width="256px" style="margin-bottom: 12px">}
+          case None => {}
+        }
+        <div align="center">
+          <h4><a href="@routes.Datasets.userDatasets("", "", 12, profile.email)">View Datasets</a> </h4>
+          <h4><a href="@routes.Profile.addFriend(profile.email)">Add Friend</a> </h4>
+        </div>
+      </td>
+      <td>
+        <div style="margin-left: 45px;">
+          <h1>@profile.fullName</h1>
+          <h5>@profile.position at @profile.institution</h5>
+          <p style="margin-bottom: 24px">@profile.email</p>
 
-  @profile.biography match{
-    case Some(info) => {<h4> Biography: @info </h4>}
-    case None => {}
-  }
+          @profile.biography match{
+            case Some(info) => {
+              <h4>Biography</h4>
+              <p>@info</p>
+            }
+            case None => {}
+          }
+          @profile.currentprojects match{
+            case Some(info) => {
+              <h4>Current Projects</h4>
+              <p>@info</p>
+            }
+            case None => {}
+          }
+          @profile.pastprojects match{
+            case Some(info) => {
+              <h4>Past Projects</h4>
+              <p>@info</p>
+            }
+            case None => {}
+          }
 
-  @profile.personal match{
-    case Some(info) => {<h4> Personal: @info </h4>}
-    case None => {}
-  }
+          <!--
+          <p>@profile.viewed</p>
+          <p>@profile.friends</p>
+          -->
 
-  @profile.number match{
-    case Some(info) => {<h4> Number: @info </h4>}
-    case None => {}
-  }
+        </div>
+      </td> 
+    </tr>
+  </table>
 
-  @profile.building match{
-    case Some(info) => {<h4> Building: @info </h4>}
-    case None => {}
-  }
-  @profile.room match{
-    case Some(info) => {<h4> Room: @info </h4>}
-    case None => {}
-  }
-  @profile.currentprojects match{
-    case Some(info) => {<h4> Current Projects: @info </h4>}
-    case None => {}
-  }
-  @profile.pastprojects match{
-    case Some(info) => {<h4> Past Projects: @info </h4>}
-    case None => {}
-  }
-
-  <h4> @profile.viewed </h4>
-  <h4> @profile.friends </h4>
-
-  <h4><a href="@routes.Datasets.userDatasets("", "", 12,profile.email)">View Datasets</a> </h4>
-  <h4><a href="@routes.Profile.addFriend(profile.email)">Add Friend</a> </h4>
 </div>
 }

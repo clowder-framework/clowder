@@ -13,19 +13,24 @@ case class User(
   lastName: String,
   fullName: String,
   email: String,
+  avatarUrl: Option[String] = None,
   biography: Option[String] = None,
-  personal: Option[String] = None,
-  viewed: Option[List[UUID]] = None,
-  number: Option[String] = None,
-  building: Option[String] = None,
-  room: Option[String] = None,
   currentprojects: Option[String] = None,
+  institution: Option[String] = None,
   pastprojects: Option[String] = None,
-  avatarUrl : Option[String] = None,
-  friends: Option[List[String]] = None
+  position: Option[String] = None,
+  friends: Option[List[String]] = None,
+  viewed: Option[List[UUID]] = None
 )
 
-case class Info(bio: Option[String], personal: Option[String], number: Option[String], building: Option[String], room: Option[String], currentprojects: Option[String], pastprojects: Option[String])
+case class Info(
+  avatarUrl: Option[String],
+  biography: Option[String],
+  currentprojects: Option[String],
+  institution: Option[String],
+  pastprojects: Option[String],
+  position: Option[String]
+)
 
 object User {
   // takes care of automatic conversion to/from JSON
