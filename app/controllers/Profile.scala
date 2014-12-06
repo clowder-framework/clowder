@@ -126,7 +126,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.editList(addr.toString(), "friends", email)
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profilepage(other))
+                        Ok(views.html.profilepage(other, None))
                       }
                     }
                   }
@@ -135,7 +135,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.createList(addr.toString(), "friends", newList)
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profilepage(other))
+                        Ok(views.html.profilepage(other, None))
                       }
                     }
                   }
@@ -147,43 +147,30 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
       }
     }
   }
-  
-  def view = SecuredAction() { request =>
-    implicit val user = request.user
-    user match {
-      case Some(x) => {
-        implicit val email = x.email
-        email match {
-          case Some(addr) => {
-            implicit val modeluser = users.findByEmail(addr.toString())
-            modeluser match {
-              case Some(muser) => {
-                Ok(views.html.profilepage(muser))
-              }
-              case None => {
-                Ok("NOT WORKS")
-              }
-            }
-          }
-        }
-      }
-      case None => {
-        Ok("NOT WORKING")
-      }
-    } 
-  }  
+   
 
   def viewProfile(email: Option[String]) = SecuredAction() { request =>
     implicit val user = request.user
+    var ownProfile: Option[Boolean] = None
     email match {
       case Some(addr) => {
         implicit val modeluser = users.findByEmail(addr.toString())
         modeluser match {
           case Some(muser) => {
-            Ok(views.html.profilepage(muser))
-          }
-          case None => {
-            Ok("NOT WORKS")
+            user match{
+              case Some(loggedIn) => {
+                loggedIn.email  match{
+                  case Some(loggedEmail) => {
+                    if (loggedEmail.toString == addr.toString())
+                      ownProfile = Option(true)
+                    else
+                      ownProfile = None
+                  }
+                }
+              }
+              case None => { ownProfile = None }
+            }
+            Ok(views.html.profilepage(muser, ownProfile))
           }
         }
       }
@@ -210,17 +197,11 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.editField(addr.toString(), "institution", form.institution)
                     users.editField(addr.toString(), "pastprojects", form.pastprojects)
                     users.editField(addr.toString(), "position", form.position)
-                    Redirect(routes.Profile.view)
-                  }
-                  case None => {
-                    Ok("NOT WORKS")
+                    Redirect(routes.Profile.viewProfile(email))
                   }
                 }
               }
             }
-          }
-          case None => {
-            Ok("NOT WORKING")
           }
         }
       }
