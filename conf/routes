@@ -20,7 +20,6 @@ GET      /assets/*file                                                       con
 POST	 /users/registerThroughAdmins										 controllers.Users.handleStartSignUp
 
 # Profile
-GET 	/Profile/view														@controllers.Profile.view
 GET 	/Profile/viewProfile												@controllers.Profile.viewProfile(email: Option[String])
 GET      /Profile/editProfile                                                    @controllers.Profile.editProfile
 GET 	/Profile/submitChanges                                                 @controllers.Profile.submitChanges

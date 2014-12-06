@@ -103,8 +103,8 @@
                              <li class="dropdown">
                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">@x.fullName<b class="caret"></b></a>
                            <ul class="dropdown-menu" role="menu">
-                           	<li><a href="@routes.Profile.view">View Profile</a></li>
-                           	<li><a href="@routes.Profile.editProfile">Edit Profile</a></li>
+                           	<li><a href="@routes.Profile.viewProfile(x.email)">View Profile</a></li>
+                           	
                                 <li>
                                     <a  class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.logout" title="Logout from the system"><span class="glyphicon glyphicon-log-out"></span> Logout </a>
                                 </li>

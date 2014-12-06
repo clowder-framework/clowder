@@ -1,4 +1,4 @@
-@(profile: User)(implicit user: Option[securesocial.core.Identity] = None)
+@(profile: User, ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
 @main("ProfilePage") {
 <div class="page-header">
 
@@ -11,7 +11,14 @@
         }
         <div align="center">
           <h4><a href="@routes.Datasets.userDatasets("", "", 12, profile.email)">View Datasets</a> </h4>
-          <h4><a href="@routes.Profile.addFriend(profile.email)">Add Friend</a> </h4>
+          @ownProfile match {
+          case Some(sameProfile) =>{
+          <h4><a href="@routes.Profile.editProfile">Edit Profile</a></h4>
+        }
+        case None => {
+        <h4><a href="@routes.Profile.addFriend(profile.email)">Add Friend</a> </h4>
+      }
+        }
         </div>
       </td>
       <td>
