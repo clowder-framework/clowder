@@ -1,5 +1,8 @@
 package services
 
+import models.UUID
+import scala.util.Try
+
 /**
  * Census service.
  * 
@@ -9,17 +12,16 @@ package services
  * @author Inna Zharnitsky May 28, 2014
  *
  */
-
-import models.UUID
-import scala.util.Try
-
 trait SectionIndexInfoService {
 
 	/**
-	 * Add a new document to the collection, with index Id given.
+	 * Add a new document to the collection, with index Id and type given.
 	 */
 	def insertType(indexId: UUID, indexType:String)
   	
+	/**
+	 * Add a new document to the collection, with index Id and name given.
+	 */
 	def insertName(indexId:UUID, indexName:String)
 	
 	/**
@@ -27,6 +29,9 @@ trait SectionIndexInfoService {
 	 */
 	def isFound(indexId: UUID): Boolean 
 	
+	/**
+	 * Return type of the sections for the id given
+	 */
 	def getType(indexId:UUID):Option[String]
 	
 	/**
@@ -34,6 +39,9 @@ trait SectionIndexInfoService {
 	 */
 	def getDistinctTypes:List[String]
 	 
+	/**
+	 * Return name of the sections for the id given
+	 */
 	def getName(indexId:UUID):Option[String]
 		
 	/**
