@@ -197,7 +197,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, sectionIndexIn
        Async {
          current.plugin[VersusPlugin] match {
            case Some(plugin) => {
-             Logger.debug("Contr.Admin.CreateIndex()")
+             Logger.trace("Contr.Admin.CreateIndex()")
              val adapter = (request.body \ "adapter").as[String]
              val extractor = (request.body \ "extractor").as[String]
              val measure = (request.body \ "measure").as[String]
@@ -234,7 +234,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, sectionIndexIn
       Async {        
         current.plugin[VersusPlugin] match {
           case Some(plugin) => {
-           Logger.debug(" Admin.getIndexes()")
+           Logger.trace(" Admin.getIndexes()")
             var indexListResponse = plugin.getIndexes()
             for {
               indexList <- indexListResponse
@@ -252,7 +252,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, sectionIndexIn
                 		  // Handle the case for invalid incoming JSON.
                 		  // Note: JSON created in Versus IndexResource.listJson must have the same names as Medici models.VersusIndexTypeName 
                 		  error => {
-                		    Logger.debug("Admin.getIndexes - validation error")
+                		    Logger.error("Admin.getIndexes - validation error")
                 		    InternalServerError("Received invalid JSON response from remote service.")
                 		    },
                 		 
@@ -290,7 +290,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, sectionIndexIn
   //build a specific index in Versus
   def buildIndex(id: String) = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-           Logger.debug("Inside Admin.buildIndex(), index = " + id)
+           Logger.trace("Inside Admin.buildIndex(), index = " + id)
       Async {
         current.plugin[VersusPlugin] match {
           case Some(plugin) => {
