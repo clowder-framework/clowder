@@ -97,14 +97,15 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                 Ok(views.html.editProfile(newbioForm))
               }
               case None => {
-                Ok("NOT WORKS")
+                Logger.error("no user model exists for email " + addr.toString())
+                InternalServerError
               }
             }
           }
         }
       }
       case None => {
-        Ok("NOT WORKING")
+        Redirect(routes.RedirectUtility.authenticationRequired())
       }
     } 
   }
@@ -159,7 +160,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
           case Some(muser) => {
             user match{
               case Some(loggedIn) => {
-                loggedIn.email  match{
+                loggedIn.email match{
                   case Some(loggedEmail) => {
                     if (loggedEmail.toString == addr.toString())
                       ownProfile = Option(true)
@@ -171,6 +172,10 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
               case None => { ownProfile = None }
             }
             Ok(views.html.profilepage(muser, ownProfile))
+          }
+          case None => {
+            Logger.error("no user model exists for " + addr.toString())
+            InternalServerError
           }
         }
       }
@@ -202,6 +207,9 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                 }
               }
             }
+          }
+          case None => {
+            Redirect(routes.RedirectUtility.authenticationRequired())
           }
         }
       }
