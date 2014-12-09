@@ -6,8 +6,12 @@
     <tr>
       <td valign="top">
         @profile.avatarUrl match{
-          case Some(info) => {<img src=@info+"?s=256" height="256px" width="256px" style="margin-bottom: 12px">}
-          case None => {}
+          case Some(info) => {
+            <img src=@info+"?s=256" height="256px" width="256px" style="margin-bottom: 12px">
+          }
+          case None => {
+            <img src="http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=256" height="256px" width="256px" style="margin-bottom: 12px">
+          }
         }
         <div align="center">
           <h4><a href="@routes.Datasets.userDatasets("", "", 12, profile.email)">View Datasets</a> </h4>

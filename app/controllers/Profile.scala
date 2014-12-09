@@ -62,7 +62,14 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
             modeluser match {
               case Some(muser) => {
                 muser.avatarUrl match {
-                  case Some(filledOut) => avatarUrl = Option(filledOut)
+                  case Some(url) => {
+                    val questionMarkIdx :Int = url.indexOf("?")
+                    if (questionMarkIdx > -1) {
+                      avatarUrl = Option(url.substring(0, questionMarkIdx))
+                    } else {
+                      avatarUrl = Option(url)
+                    }
+                  }
                   case None => avatarUrl = None
                 }
                 muser.biography match {
