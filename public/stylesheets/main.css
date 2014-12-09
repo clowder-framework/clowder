@@ -259,6 +259,15 @@ button.tech_md_ {
 	left:20px;
 }
 
+#editProfileFieldSet .control-group .controls input[type='text']{
+  width:208px;
+  height:30px;
+}
+#editProfileFieldSet .control-group .controls textarea{
+  width:500px;
+  height:100px;
+}
+
 #nameDescrFieldSet .control-group .controls textarea{
 	width:208px;
 }
