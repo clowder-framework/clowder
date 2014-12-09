@@ -10,6 +10,7 @@ import securesocial.core.Authorization
 import securesocial.core.SecureSocial
 import securesocial.core.SocialUser
 import securesocial.core.IdentityId
+import models.UUID
 
 /**
  * New way to wrap actions for authentication so that we have access to Identity.
@@ -20,7 +21,7 @@ import securesocial.core.IdentityId
 trait ApiController extends Controller {
   val anonymous = new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
 
-  def SecuredAction[A](p: BodyParser[A] = parse.json, authorization: Authorization = WithPermission(Permission.Public))(f: RequestWithUser[A] => Result) = Action(p) {
+  def SecuredAction[A](p: BodyParser[A] = parse.json, authorization: Authorization = WithPermission(Permission.Public), resourceId: Option[UUID] = None)(f: RequestWithUser[A] => Result) = Action(p) {
     implicit request =>
       {
         request.queryString.get("key") match { // token in url
@@ -43,10 +44,14 @@ trait ApiController extends Controller {
           case None => {
             SecureSocial.currentUser(request) match { // calls from browser
               case Some(identity) => {
-                if (authorization.isAuthorized(identity))
-                  f(RequestWithUser(Some(identity), request))
+                if (authorization.isInstanceOf[WithPermission]){
+                  if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId))
+                	  f(RequestWithUser(Some(identity), request))
+                  else
+                	  Unauthorized("Not authorized")
+                }
                 else
-                  Unauthorized("Not authorized")
+                	Unauthorized("Not authorized")
               }
               case None => {
                 if (authorization.isAuthorized(null))

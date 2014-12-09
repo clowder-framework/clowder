@@ -117,6 +117,7 @@ class Datasets @Inject()(
                             }
                        }
 
+					   Ok(toJson(Map("id" -> id)))
                        current.plugin[AdminsNotifierPlugin].foreach {
                          _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",id, name)}
                        Ok(toJson(Map("id" -> id)))
@@ -140,33 +141,35 @@ class Datasets @Inject()(
       notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
       responseClass = "None", httpMethod = "POST")
   def attachExistingFile(dsId: UUID, fileId: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.CreateDatasets)) {
-    request =>
-      datasets.get(dsId) match {
-        case Some(dataset) => {
-          files.get(fileId) match {
-            case Some(file) => {
-              if (!files.isInDataset(file, dataset)) {
-                datasets.addFile(dsId, file)
-                files.index(fileId)
-                if (!file.xmlMetadata.isEmpty)
+    authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(dsId)) {
+	request =>
+     datasets.get(dsId) match {
+      case Some(dataset) => {
+        files.get(fileId) match {
+          case Some(file) => {
+            if (!files.isInDataset(file, dataset)) {
+	            datasets.addFile(dsId, file)	            
+	            files.index(fileId)
+	            if (!file.xmlMetadata.isEmpty){
                   datasets.index(dsId)
-                  if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-                      datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
-                      
-                      for(collectionId <- dataset.collections){
-                        collections.get(UUID(collectionId)) match{
-                          case Some(collection) =>{
-                          	if(collection.thumbnail_id.isEmpty){ 
-                          		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
-                          	}
-                          }
-                          case None=> Logger.debug(s"No collection found with id $collectionId")
-                        }
-                      }
-                  }
-
-                //add file to RDF triple store if triple store is used
+	            }	            
+       
+	            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+		                        datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
+		                        
+		                        for(collectionId <- dataset.collections){
+		                          collections.get(UUID(collectionId)) match{
+		                            case Some(collection) =>{
+		                            	if(collection.thumbnail_id.isEmpty){ 
+		                            		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
+		                            	}
+		                            }
+		                            case None=>Logger.debug(s"No collection found with id $collectionId") 
+		                          }
+		                        }
+	            }
+	            
+	            //add file to RDF triple store if triple store is used
                 if (file.filename.endsWith(".xml")) {
                   configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                     case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
@@ -192,43 +195,44 @@ class Datasets @Inject()(
       }
   }
 
-
   @ApiOperation(value = "Detach file from dataset",
       notes = "File is not deleted, only separated from the selected dataset. If the file is an XML metadata file, the metadata are removed from the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollections)) {
+  def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(datasetId)) {
     request =>
-      datasets.get(datasetId) match {
-        case Some(dataset) => {
-          files.get(fileId) match {
-            case Some(file) => {
-              if (files.isInDataset(file, dataset)) {
-                //remove file from dataset
-                datasets.removeFile(dataset.id, file.id)
-                files.index(fileId)
-                if (!file.xmlMetadata.isEmpty)
+     datasets.get(datasetId) match{
+      case Some(dataset) => {
+        files.get(fileId) match {
+          case Some(file) => {
+            if(files.isInDataset(file, dataset)){
+	            //remove file from dataset
+	            datasets.removeFile(dataset.id, file.id)
+	            files.index(fileId)
+	            if (!file.xmlMetadata.isEmpty)
                   datasets.index(datasetId)
-
-                if (!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty) {
-                  if (dataset.thumbnail_id.get == file.thumbnail_id.get) {
-                    datasets.createThumbnail(dataset.id)
-                    
-                    for(collectionId <- dataset.collections){
-                        collections.get(UUID(collectionId)) match{
-                          case Some(collection) =>{		                              
-                          	if(!collection.thumbnail_id.isEmpty){
-                          		if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
-                          			collections.createThumbnail(collection.id)
-                          		}		                        
-                          	}
-                          }
-                          case None=>{}
-                        }
-                      }
-                    
-                  }
-                }
-                //remove link between dataset and file from RDF triple store if triple store is used
+                  
+	            Logger.info("Removing file from dataset completed")
+	            
+	            if(!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+	              if(dataset.thumbnail_id.get == file.thumbnail_id.get){
+	            	  datasets.createThumbnail(dataset.id)
+		             
+		             			for(collectionId <- dataset.collections){
+		                          collections.get(UUID(collectionId)) match{
+		                            case Some(collection) =>{		                              
+		                            	if(!collection.thumbnail_id.isEmpty){
+		                            		if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+		                            			collections.createThumbnail(collection.id)
+		                            		}		                        
+		                            	}
+		                            }
+		                            case None=>{}
+		                          }
+		                        }
+	              }		                        
+	            }
+	            
+	           //remove link between dataset and file from RDF triple store if triple store is used
                 if (file.filename.endsWith(".xml")) {
                   configuration.getString("userdfSPARQLStore").getOrElse("no") match {
                     case "yes" => rdfsparql.detachFileFromDataset(fileId, datasetId)
@@ -236,7 +240,6 @@ class Datasets @Inject()(
                   }
                 }
                }
-
               else  Logger.info("File was already out of the dataset.")
               Ok(toJson(Map("status" -> "success")))
             }
@@ -268,7 +271,7 @@ class Datasets @Inject()(
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
-  def addMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata)) {
+  def addMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata), resourceId = Some(id)) {
     request =>
       Logger.debug(s"Adding metadata to dataset $id")
       datasets.addMetadata(id, Json.stringify(request.body))
@@ -279,7 +282,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Add user-generated metadata to dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata)) {
+  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata), resourceId = Some(id)) {
     request =>
       Logger.debug(s"Adding user metadata to dataset $id")
       datasets.addUserMetadata(id, Json.stringify(request.body))
@@ -428,7 +431,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update license information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
-  def updateLicense(id: UUID) =  SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
+  def updateLicense(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
     implicit request =>
       if (UUID.isValid(id.stringify)) {          
 
@@ -566,7 +569,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove tag of dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeTag(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteTags)) {
+  def removeTag(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteTagsDatasets)) {
     implicit request =>
       Logger.debug("Removing tag " + request.body)
       request.body.\("tagId").asOpt[String].map {
@@ -585,10 +588,9 @@ class Datasets @Inject()(
   @ApiOperation(value = "Add tags to dataset",
       notes = "Requires that the request body contains a 'tags' field of List[String] type.",
       responseClass = "None", httpMethod = "POST")
-  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
-    implicit request =>{
-        addTagsHelper(TagCheck_Dataset, id, request)
-      }
+  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTagsDatasets)) {
+    implicit request =>
+      addTagsHelper(TagCheck_Dataset, id, request)
   }
 
   /**
@@ -598,10 +600,9 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove tags of dataset",
       notes = "Requires that the request body contains a 'tags' field of List[String] type.",
       responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
-    implicit request =>{
+  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsDatasets)) {
+    implicit request =>
       removeTagsHelper(TagCheck_Dataset, id, request)
-    }
   }
   				
   /*
@@ -771,7 +772,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove all tags of dataset",
       notes = "Forcefully remove all tags for this dataset.  It is mainly intended for testing.",
       responseClass = "None", httpMethod = "POST")
-  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsDatasets)) {
     implicit request =>
       Logger.info(s"Removing all tags for dataset with id: $id.")
       if (UUID.isValid(id.stringify)) {
@@ -965,7 +966,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Delete dataset",
       notes = "Cascading action (deletes all previews and metadata of the dataset and all files existing only in the deleted dataset).",
       responseClass = "None", httpMethod = "POST")
-  def deleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets)) {
+  def deleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets), resourceId = Some(id)) {
     request =>
       datasets.get(id) match {
         case Some(dataset) => {
@@ -983,16 +984,13 @@ class Datasets @Inject()(
         	  files.index(file.id)
           
           Ok(toJson(Map("status" -> "success")))
+          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
+          Ok(toJson(Map("status"->"success")))
         }
-
-        Ok(toJson(Map("status"->"success")))
-        current.plugin[AdminsNotifierPlugin].foreach {
-          _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.toString, dataset.name)}
-        Ok(toJson(Map("status"->"success")))
+        case None => Ok(toJson(Map("status" -> "success")))
       }
   }
 
-  
   @ApiOperation(value = "Get the user-generated metadata of the selected dataset in an RDF file",
       notes = "",
       responseClass = "None", httpMethod = "GET")
@@ -1012,7 +1010,7 @@ class Datasets @Inject()(
       case _ => Ok("RDF export plugin not enabled")
      }
     }
-  
+
   def jsonToXML(theJSON: String): java.io.File = {
 
     val jsonObject = new JSONObject(theJSON)
@@ -1091,7 +1089,6 @@ class Datasets @Inject()(
       }      
     }
   }
-
   
   def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNotes))  { implicit request =>
 	  request.user match {

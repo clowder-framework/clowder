@@ -6,6 +6,7 @@
 
 @import helper._
 @import collection.JavaConverters._
+@import play.api.Play.current
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
@@ -50,7 +51,7 @@
 			Configuration.wasPTM = "@(filename.endsWith(".ptm") || contentType.contains("ptmimages"))";
 			Configuration.calledFrom = "file";
 		}
-		else if("@p._2" === "Oni"){
+		else if("@p._2" === "Oni"){			
 		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
@@ -94,6 +95,7 @@
 		Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
 		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 		Configuration.imagesPath = "@(routes.Assets.at("images"))";
+		Configuration.appContext = "@play.api.Play.configuration.getString("application.context").getOrElse("")";
     </script>
     <script>
     	window.onload = function() {
@@ -282,7 +284,7 @@
             <div class="row border-top">
                 <div class="col-md-12">
                     <h4>Community-generated metadata</h4>
-                    @fileusermetadata(id, usrmd, rdfExported)
+                    @fileusermetadata(file, usrmd, rdfExported)
                 </div>
             </div>
 
@@ -729,4 +731,17 @@
     			});
     		</script>
 	</div>
+	
+	@if(!user.isDefined) {
+     	   <script language="javascript">
+     			$(".requiresLogin").css("display","none");
+       	   </script>
+     	 }
+     	 @if(user.isDefined) {
+     	 	@if(!user.get.identityId.userId.equals(file.author.identityId.userId)){
+      	   		<script language="javascript">
+	     			$(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
+	       		</script>
+       		}
+     	 }
 }

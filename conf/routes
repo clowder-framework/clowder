@@ -145,8 +145,6 @@ DELETE  /admin/index/:id/delete                                              @co
 DELETE  /admin/index/:id                                              		 @controllers.Admin.deleteIndex(id:String)
 DELETE 	/admin/index		                                         @controllers.Admin.deleteAllIndexes
 
-
-
 GET     /admin/extractions                                                   @controllers.Extractors.listAllExtractions
 POST    /admin/theme                                                         @controllers.Admin.setTheme
 
@@ -283,6 +281,12 @@ GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)
 POST	/api/datasets/:ds_id/files/:file_id							@api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
 GET 	/api/datasets/:id				 							@api.Datasets.datasetFilesList(id: UUID)
 DELETE	/api/datasets/:id											@api.Datasets.deleteDataset(id: UUID)
+
+GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
+GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)
+POST	/api/datasets/:ds_id/files/:file_id							@api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
+GET 	/api/datasets/:id				 							@api.Datasets.datasetFilesList(id: UUID)
+
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					@api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			@api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
