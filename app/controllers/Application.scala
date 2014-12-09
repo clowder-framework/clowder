@@ -31,11 +31,11 @@ class Application  @Inject() (files: FileService, appAppearance: AppAppearanceSe
   /**
    * Main page.
    */  
-  def index = SecuredAction(authorization = WithPermission(Permission.PublicOpen)) { request =>
-	implicit val user = request.user
-	val latestFiles = files.latest(5)
-	val appAppearanceGet = appAppearance.getDefault.get
-	Ok(views.html.index(latestFiles, appAppearanceGet.displayedName, appAppearanceGet.welcomeMessage))
+  def index = SecuredAction(authorization = WithPermission(Permission.Public)) { request =>
+	  implicit val user = request.user
+	  val latestFiles = files.latest(5)
+	  val appAppearanceGet = appAppearance.getDefault.get
+	  Ok(views.html.index(latestFiles, appAppearanceGet.displayedName, appAppearanceGet.welcomeMessage))
   }
   
   def options(path:String) = SecuredAction() { implicit request =>

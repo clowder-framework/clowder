@@ -4,14 +4,13 @@ import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
-import models.AppConfiguration
 import services.AppConfigurationService
 import models.UUID
 import services.FileService
 import services.DatasetService
 import services.CollectionService
 import play.api.Play.configuration
-import play.api.{Plugin, Logger, Application}
+import play.api.Logger
 
  /**
   * A request that adds the User for the current call
@@ -21,12 +20,12 @@ case class RequestWithUser[A](user: Option[Identity], request: Request[A]) exten
 /**
  * List of all permissions available in Medici
  * 
- * @author Rob Kooper
+ * @author Rob Kooperp
+ *
  */
 object Permission extends Enumeration {
 	type Permission = Value
 	val Public,					// Page is public accessible, i.e. no login needed
-		PublicOpen,				//Page always accessible
 		Admin,
 		CreateCollections,
 		DeleteCollections,
@@ -75,7 +74,9 @@ object Permission extends Enumeration {
 		SearchSensors,
 		RemoveSensors,
 		AddThumbnail,
-		DownloadFiles = Value
+		DownloadFiles,
+    GetUser,
+    UserAdmin = Value        // Permission to work with users (list/add/remove/register)
 }
 
 import api.Permission._
@@ -84,6 +85,8 @@ import api.Permission._
  * Specific implementation of an Authorization
  * 
  * @author Rob Kooper
+ * @author Constantinos Sophocleous
+ * @author Luigi Marini
  */
 case class WithPermission(permission: Permission) extends Authorization {
   
@@ -91,114 +94,164 @@ case class WithPermission(permission: Permission) extends Authorization {
   val files: FileService = services.DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = services.DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = services.DI.injector.getInstance(classOf[CollectionService])
-  
-  def isAuthorized(user: Identity): Boolean = {
-    isAuthorized(user, None)
+
+	def isAuthorized(user: Identity): Boolean = {
+		isAuthorized(user, None)
+	}
+
+	def isAuthorized(user: Identity, resource: Option[UUID] = None): Boolean = {
+
+    // always check for useradmin, user needs to be in admin list no ifs ands or buts.
+    if (permission == UserAdmin) {
+      checkUserAdmin(user)
+    } else {
+      // based on scheme pick right setup
+      configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
+        case "public"  => publicPermission(user, permission, resource)
+        case "private" => privatePermission(user, permission, resource)
+        case "admin"   => adminPermission(user, permission, resource)
+        case _         => publicPermission(user, permission, resource)
+      }
+    }
   }
 
-	def isAuthorized(user: Identity, resourceId: Option[UUID] = None): Boolean = {
-	  
-	  	val permissionsShow = configuration(play.api.Play.current).getString("permissions").getOrElse("private").equals("public") || user != null
-	  
-		// order is important
-		(user, permission) match {
-		  		  
-		  // anybody can list/show
-		  case (_, PublicOpen)           => true	
-		  case (_, Public)               => permissionsShow 
-		  case (_, ListCollections)      => permissionsShow
-		  case (_, ShowCollection)       => permissionsShow
-		  case (_, ListDatasets)         => permissionsShow
-		  case (_, ShowDataset)          => permissionsShow
-		  case (_, SearchDatasets)       => permissionsShow
-		  case (_, SearchFiles)	         => permissionsShow
-		  case (_, GetSections)          => permissionsShow
-		  case (_, ListFiles)            => permissionsShow
-		  case (_, ShowFile)             => permissionsShow
-		  case (_, ShowFilesMetadata)    => permissionsShow
-		  case (_, ShowDatasetsMetadata) => permissionsShow
-		  case (_, SearchStreams)        => permissionsShow
-		  case (_, ListSensors)          => permissionsShow
-		  case (_, GetSensors)           => permissionsShow
-		  case (_, SearchSensors)        => permissionsShow
-		  case (_, DownloadFiles)        => permissionsShow
-		  
-		  // all other permissions require authenticated user
-		  case (null, _)                 => false
-		  case(_, Permission.Admin) =>{
-		    if(!user.email.isEmpty)
-		    	if(appConfiguration.adminExists(user.email.get))
-		    	  true
-		    	else
-		    	  false  
-		    else	  
-		    	false	  
-		  }
-		  //Only authors of a resource-or admins-can modify a particular resource from the browser
-		  case (_, requestedPermission)  =>{
-		    resourceId match{
-		      case Some(idOfResource) => {
-		        if(requestedPermission == CreateFiles || requestedPermission == DeleteFiles || requestedPermission == AddFilesMetadata){
-		          files.get(idOfResource) match{
-		            case Some(file)=>{
-		              if(file.author.identityId.userId.equals(user.identityId.userId))
-		                true
-		              else
-		                appConfiguration.adminExists(user.email.getOrElse("none"))
-		            }
-		            case _ =>{
-		              Logger.error("File requested to be accessed not found. Denying request.")
-		              false
-		            }
-		          }
-		        }
-		        else if(requestedPermission == CreateDatasets || requestedPermission == DeleteDatasets || requestedPermission == AddDatasetsMetadata){
-		          datasets.get(idOfResource) match{
-		            case Some(dataset)=>{
-		              if(dataset.author.identityId.userId.equals(user.identityId.userId))
-		                true
-		              else
-		                appConfiguration.adminExists(user.email.getOrElse("none"))
-		            }
-		            case _ =>{
-		              Logger.error("Dataset requested to be accessed not found. Denying request.")
-		              false
-		            }
-		          }
-		        }
-		        else if(requestedPermission == CreateCollections || requestedPermission == DeleteCollections){
-		          collections.get(idOfResource) match{
-		            case Some(collection)=>{
-		              collection.author match{
-		                case Some(collectionAuthor)=>{
-		                  if(collectionAuthor.identityId.userId.equals(user.identityId.userId))
-		                	  true
-		                  else
-		                	  appConfiguration.adminExists(user.email.getOrElse("none"))
-		                }
-		                //Anonymous collections are free-for-all
-		                case None=>{
-		                  Logger.info("Requested collection is anonymous, anyone can modify, granting modification request.")
-		                  true
-		                }
-		              }		              
-		            }
-		            case _ =>{
-		              Logger.error("Collection requested to be accessed not found. Denying request.")
-		              false
-		            }
-		          }
-		        }
-		        else{
-		          true
-		        }
-		      }
-		      case _ =>
-		      	true
-		    }
-		  }
+  /**
+   * All read-only actions are public, writes and admin require a login. This is the most
+   * open configuration.
+   */
+  def publicPermission(user: Identity, permission: Permission, resource: Option[UUID]): Boolean = {
+    // order is important
+    (user, permission, resource) match {
+      // anybody can list/show
+      case (_, Public, _)               => true
+      case (_, ListCollections, _)      => true
+      case (_, ShowCollection, _)       => true
+      case (_, ListDatasets, _)         => true
+      case (_, ShowDataset, _)          => true
+      case (_, SearchDatasets, _)       => true
+      case (_, SearchFiles, _)          => true
+      case (_, GetSections, _)          => true
+      case (_, ListFiles, _)            => true
+      case (_, ShowFile, _)             => true
+      case (_, ShowFilesMetadata, _)    => true
+      case (_, ShowDatasetsMetadata, _) => true
+      case (_, SearchStreams, _)        => true
+      case (_, ListSensors, _)          => true
+      case (_, GetSensors, _)           => true
+      case (_, SearchSensors, _)        => true
+      case (_, ExtractMetadata, _)      => true
+      case (_, ShowTags, _)             => true
+
+      // FIXME: required by ShowDataset if preview uses original file
+      // FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
+      case (_, DownloadFiles, _)        => true
+
+			// check resource ownership
+			case (_, CreateFiles | DeleteFiles | AddFilesMetadata, Some(resource)) => checkFileOwnership(user, permission, resource)
+			case (_, CreateDatasets | DeleteDatasets | AddDatasetsMetadata, Some(resource)) => checkDatasetOwnership(user, permission, resource)
+			case (_, CreateCollections | DeleteCollections, Some(resource)) => checkCollectionOwnership(user, permission, resource)
+
+      // all other permissions require authenticated user
+      case (null, _, _)                 => false
+      case (_, _, _)                    => true
+    }
+  }
+
+  /**
+   * All actions require a login, once logged in all users have all permission.
+   */
+  def privatePermission(user: Identity, permission: Permission, resource: Option[UUID]): Boolean = {
+		Logger.debug("Private permissions " + user + " " + permission + " " + resource)
+    (user, permission, resource) match {
+
+			// check resource ownership
+			case (_, CreateFiles | DeleteFiles | AddFilesMetadata, Some(resource)) => checkFileOwnership(user, permission, resource)
+			case (_, CreateDatasets | DeleteDatasets | AddDatasetsMetadata, Some(resource)) => checkDatasetOwnership(user, permission, resource)
+			case (_, CreateCollections | DeleteCollections, Some(resource)) => checkCollectionOwnership(user, permission, resource)
+
+			// all other permissions require authenticated user
+			case (null, _, _)                 => false
+			case (_, _, _)                    => true
+    }
+  }
+
+  /**
+   * All actions require a login, admin actions require user to be in admin list.
+   */
+  def adminPermission(user: Identity, permission: Permission, resource: Option[UUID]): Boolean = {
+    (user, permission, resource) match {
+
+      // check to see if user has admin rights
+      case (_, Permission.Admin, _)     => checkUserAdmin(user)
+
+			// check resource ownership
+			case (_, CreateFiles | DeleteFiles | AddFilesMetadata, Some(resource)) => checkFileOwnership(user, permission, resource)
+			case (_, CreateDatasets | DeleteDatasets | AddDatasetsMetadata, Some(resource)) => checkDatasetOwnership(user, permission, resource)
+			case (_, CreateCollections | DeleteCollections, Some(resource)) => checkCollectionOwnership(user, permission, resource)
+
+			// all other permissions require authenticated user
+			case (null, _, _)                 => false
+			case (_, _, _)                    => true
+    }
+  }
+
+  def checkUserAdmin(user: Identity) = {
+     (user != null) && user.email.nonEmpty && appConfiguration.adminExists(user.email.get)
+  }
+
+	def checkFileOwnership(user: Identity, permission: Permission, resource: UUID): Boolean = {
+		files.get(resource) match{
+			case Some(file)=> {
+				if(file.author.identityId.userId.equals(user.identityId.userId))
+					true
+				else
+					checkUserAdmin(user)
+			}
+			case _ => {
+				Logger.error("File requested to be accessed not found. Denying request.")
+				false
+			}
 		}
 	}
 
+	def checkDatasetOwnership(user: Identity, permission: Permission, resource: UUID): Boolean = {
+		datasets.get(resource) match{
+			case Some(dataset)=> {
+				if(dataset.author.identityId.userId.equals(user.identityId.userId))
+					true
+				else
+					checkUserAdmin(user)
+			}
+			case _ => {
+				Logger.error("Dataset requested to be accessed not found. Denying request.")
+				false
+			}
+		}
+	}
+
+	def checkCollectionOwnership(user: Identity, permission: Permission, resource: UUID): Boolean = {
+		collections.get(resource) match{
+			case Some(collection) => {
+				collection.author match{
+					case Some(collectionAuthor) => {
+						if(collectionAuthor.identityId.userId.equals(user.identityId.userId))
+							true
+						else
+							checkUserAdmin(user)
+					}
+					//Anonymous collections are free-for-all
+					// FIXME should we allow collections created by anonymous?
+					case None => {
+						Logger.info("Requested collection is anonymous, anyone can modify, granting modification request.")
+						true
+					}
+				}
+			}
+			case _ => {
+				Logger.error("Collection requested to be accessed not found. Denying request.")
+				false
+			}
+		}
+	}
 }
 

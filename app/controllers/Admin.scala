@@ -350,49 +350,32 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance:
      	})
 )
   
-  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.newAdmin(adminForm))
   }
   
-  def submitNew() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  def submitNew() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
-    user match {
-      case Some(x) => {
-        if (x.email.nonEmpty && appConfiguration.adminExists(x.email.get)) {
-          adminForm.bindFromRequest.fold(
-            errors => BadRequest(views.html.newAdmin(errors)),
-            newAdmin => {
-              appConfiguration.addAdmin(newAdmin)
-              Redirect(routes.Application.index)
-            }
-          )
-        } else {
-          Unauthorized("Not authorized")
-        }
+
+    adminForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.newAdmin(errors)),
+      newAdmin => {
+        appConfiguration.addAdmin(newAdmin)
+        Redirect(routes.Admin.listAdmins)
       }
-      case None => Unauthorized("Not authorized")
-    }
+    )
   }
   
-  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
-    user match {
-      case Some(x) => {
-        if (x.email.nonEmpty && appConfiguration.adminExists(x.email.get)) {
-          appConfiguration.getDefault match{
-            case Some(conf) =>{
-              Ok(views.html.listAdmins(conf.admins))
-            }
-            case None => {
-              Logger.error("Error getting application configuration!"); InternalServerError
-            }
-          }
-        } else {
-          Unauthorized("Not authorized")
-        }
+
+    appConfiguration.getDefault match {
+      case Some(conf) => Ok(views.html.listAdmins(conf.admins))
+      case None => {
+        Logger.error("Error getting application configuration!");
+        InternalServerError
       }
-      case None => Unauthorized("Not authorized")
     }
   }
 
