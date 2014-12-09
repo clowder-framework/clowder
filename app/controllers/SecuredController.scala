@@ -82,26 +82,12 @@ trait SecuredController extends Controller {
                 if (authorization.isAuthorized(null))
                   f(RequestWithUser(None, request))
                 else {
-                    //Modified to return a message specifying that authentication is necessary, so that 
-                    //callers can handle it appropriately when specific ajax calls come in. Otherwise, redirect
-                    //as normal to the login page with the generic message and behavior.                    
-                    Logger.debug("SecuredController - Authentication failure")                           
-                    
-                    //Generate a pattern to match the uri's that contain at least one "/admin/" since those will not be
-                    //navigation calls to the admin page. Also, ensure that other elements were being handled as normal.
-                    //In the future, if other items need to be handled here, this can be extended with more patterns or 
-                    //a pattern subclass can be generated.
-                    val adminPattern = "(/admin/.+)".r                     
-                    var uri = request.uri                    
-                    
-                    uri match {                        
-                        case adminPattern(_) => {
-                            Unauthorized("Authentication Required")
-                        }
-                        case _ => {
-                            Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not logged in.")
-                        }
-                    }                                                                                                       
+                  if(SecureSocial.currentUser.isDefined){  //User logged in but not authorized, so redirect to 'not authorized' page
+                    Results.Redirect(routes.Authentication.notAuthorized)
+                  }
+                  else{   //User not logged in, so redirect to login page
+                    Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authorized.")
+                  }
                 }
               }
             }
