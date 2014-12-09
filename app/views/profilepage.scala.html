@@ -37,10 +37,10 @@
           <h5>@profile.position at @profile.institution</h5>
           <p style="margin-bottom: 24px">@profile.email</p>
 
-          @profile.orchidID match{
+          @profile.orcidID match{
             case Some(info) => {
-              <h4>Orchid ID</h4>
-              <p>@info</p>
+              <h4>Orcid ID</h4>
+              <a href = "http://orcid.org/@info" > <p>@info</p> </a>
             }
             case None => {}
           }

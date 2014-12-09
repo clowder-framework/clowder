@@ -17,7 +17,7 @@ case class User(
   biography: Option[String] = None,
   currentprojects: Option[String] = None,
   institution: Option[String] = None,
-  orchidID: Option[Int] = None,
+  orcidID: Option[String] = None,
   pastprojects: Option[String] = None,
   position: Option[String] = None,
   friends: Option[List[String]] = None,
@@ -29,7 +29,7 @@ case class Info(
   biography: Option[String],
   currentprojects: Option[String],
   institution: Option[String],
-  orchidID: Option[Int] = None,
+  orcidID: Option[String] = None,
   pastprojects: Option[String],
   position: Option[String]
 )

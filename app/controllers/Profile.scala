@@ -38,7 +38,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
       "biography" -> optional(text),
       "currentprojects" -> optional(text),
       "institution" -> optional(text),
-      "orchidID" -> optional(number),
+      "orcidID" -> optional(text),
       "pastprojects" -> optional(text),
       "position" -> optional(text)
     )(Info.apply)(Info.unapply)
@@ -51,7 +51,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
     var biography: Option[String] = None
     var currentprojects: Option[String] = None
     var institution: Option[String] = None
-    var orchidID: Option[Int] = None
+    var orcidID: Option[String] = None
     var pastprojects: Option[String] = None
     var position: Option[String] = None
     user match {
@@ -86,9 +86,9 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                   case Some(filledOut) => institution = Option(filledOut)
                   case None => institution = None
                 }
-                muser.orchidID match {
-                  case Some(filledOut) => orchidID = Option(filledOut)
-                  case None => orchidID = None
+                muser.orcidID match {
+                  case Some(filledOut) => orcidID = Option(filledOut)
+                  case None => orcidID = None
                 }
                 muser.pastprojects match {
                   case Some(filledOut) => pastprojects = Option(filledOut)
@@ -104,7 +104,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                   biography,
                   currentprojects,
                   institution,
-                  orchidID,
+                  orcidID,
                   pastprojects,
                   position
                 ))
@@ -214,7 +214,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.editField(addr.toString(), "biography", form.biography)
                     users.editField(addr.toString(), "currentprojects", form.currentprojects)
                     users.editField(addr.toString(), "institution", form.institution)
-                    users.editField(addr.toString(), "orchidID", form.orchidID)
+                    users.editField(addr.toString(), "orcidID", form.orcidID)
                     users.editField(addr.toString(), "pastprojects", form.pastprojects)
                     users.editField(addr.toString(), "position", form.position)
                     Redirect(routes.Profile.viewProfile(email))
