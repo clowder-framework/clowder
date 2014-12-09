@@ -23,6 +23,7 @@
       @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {   
         <fieldset  id="nameDescrFieldSet">
           @inputText(myForm("avatarUrl"), '_label -> "Avatar URL")
+          @inputText(myForm("orchidID"), '_label -> "Orchid ID")
           @textarea(myForm("biography"), '_label -> "Biography", 'rows -> 3, 'cols -> 250)
           @textarea(myForm("currentprojects"), '_label -> "Current Projects", 'rows -> 2, 'cols -> 250)
           @inputText(myForm("institution"), '_label -> "Institution")

@@ -37,6 +37,14 @@
           <h5>@profile.position at @profile.institution</h5>
           <p style="margin-bottom: 24px">@profile.email</p>
 
+          @profile.orchidID match{
+            case Some(info) => {
+              <h4>Orchid ID</h4>
+              <p>@info</p>
+            }
+            case None => {}
+          }
+
           @profile.biography match{
             case Some(info) => {
               <h4>Biography</h4>
@@ -58,11 +66,6 @@
             }
             case None => {}
           }
-
-          <!--
-          <p>@profile.viewed</p>
-          <p>@profile.friends</p>
-          -->
 
         </div>
       </td> 
