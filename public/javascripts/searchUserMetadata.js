@@ -386,9 +386,12 @@ $(function() {
 						        	var createdDateArray = respJSON[i].created.split(" ");
 						        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
 						        	var removeCell = "";
-						        	if(window["userDefined"] == true){
+						        	if(window["userId"] == respJSON[i].authorId){
 						        		removeCell = "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
-						        	}					        	
+						        	}
+						        	else if(window["userDefined"]){
+						        		removeCell = "<td></td>";
+						        	}
 						        	var datasetThumbnail = "";
 						        	if(respJSON[i].thumbnail != "None")
 						        		datasetThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
@@ -406,9 +409,12 @@ $(function() {
 						        	//var createdDateArray = respJSON[i].created.split(" ");
 						        	//var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
 						        	var removeCell = "";
-						        	if(window["userDefined"] == true){
+						        	if(window["userId"] == respJSON[i].authorId){
 						        		removeCell = "<td><a href='#!' onclick='removeFile(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
-						        	}					        	
+						        	}
+						        	else if(window["userDefined"]){
+						        		removeCell = "<td></td>";
+						        	}
 						        	var fileThumbnail = "";
 						        	if(respJSON[i].thumbnail != "None")
 						        		fileThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "

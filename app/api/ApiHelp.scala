@@ -42,5 +42,5 @@ object ApiHelp extends Controller {
 			}
     """))
   }
-  
+
 }

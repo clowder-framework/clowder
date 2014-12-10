@@ -1,6 +1,3 @@
-/**
- *
- */
 package controllers
 
 import play.api.mvc.{Results, Controller, Action}
@@ -10,13 +7,13 @@ import securesocial.core.{IdentityProvider, SecureSocial}
 import api.ApiController
 import api.WithPermission
 import api.Permission
+
+import services.{AppConfigurationService, AppAppearanceService, VersusPlugin}
+
 import securesocial.core.providers.utils.RoutesHelper
-import services.{AppConfigurationService, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
-import models.AppConfiguration
-import models.AppAppearance
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.Logger
@@ -25,10 +22,10 @@ import scala.concurrent._
 import play.api.libs.ws.WS
 import play.api.libs.ws.Response
 import play.api.libs.concurrent.Promise
-import javax.inject.{Inject, Singleton}
 
 import play.api.data.Form
 import play.api.data.Forms._
+import javax.inject.{Inject, Singleton}
 
 /**
  * Administration pages.
@@ -37,7 +34,7 @@ import play.api.data.Forms._
  *
  */
 @Singleton
-class Admin @Inject() (appConfiguration: AppConfigurationService) extends SecuredController {
+class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance: AppAppearanceService) extends SecuredController {
 
   private val themes = "bootstrap/bootstrap.css" ::
     "bootstrap-amelia.min.css" ::
@@ -46,16 +43,17 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val themeId = themes.indexOf(getTheme)
     Logger.debug("Theme id " + themeId)
-    val appAppearance = AppAppearance.getDefault.get
+    val appAppearanceGet = appAppearance.getDefault.get
+    val appConfigGet = appConfiguration.getDefault.get
     implicit val user = request.user
-    Ok(views.html.admin(themeId, appAppearance))
+    Ok(views.html.admin(themeId, appAppearanceGet, appConfigGet))
   }
   
   def adminIndex = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val themeId = themes.indexOf(getTheme)
-    val appAppearance = AppAppearance.getDefault.get
+    val appAppearanceGet = appAppearance.getDefault.get
     implicit val user = request.user
-    Ok(views.html.adminIndex(themeId, appAppearance))
+    Ok(views.html.adminIndex(themeId, appAppearanceGet))
   }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
@@ -340,7 +338,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
     }
   }
 
-  def getTheme(): String = appConfiguration.getTheme()
+def getTheme(): String = appConfiguration.getTheme()
   
   val adminForm = Form(
   single(
@@ -378,5 +376,5 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
       }
     }
   }
-  
+
 }
