@@ -221,29 +221,25 @@ class Datasets @Inject()(
    * Dataset.
    */
   def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
-    implicit request =>
-      implicit val user = request.user
-      Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
-      datasets.get(id) match {
-        case Some(dataset) => {
-          addViewer(id, user)
-          
+	  implicit request =>
+	      implicit val user = request.user
+	      Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
+	      datasets.get(id) match {
+	        case Some(dataset) => {
+	          val filesInDataset = dataset.files.map(f => files.get(f.id).get)
 
-          val filesInDataset = dataset.files.map(f => files.get(f.id).get)
-          
-          //Search whether dataset is currently being processed by extractor(s)
-          var isActivity = false
-          try {
-            for (f <- filesInDataset) {
-              extractions.findIfBeingProcessed(f.id) match {
-                case false =>
-                case true => isActivity = true; throw ActivityFound
-              }
-            }
-          } catch {
-            case ActivityFound =>
-          }
-
+	          //Search whether dataset is currently being processed by extractor(s)
+	          var isActivity = false
+	          try {
+	            for (f <- filesInDataset) {
+	              extractions.findIfBeingProcessed(f.id) match {
+	                case false =>
+	                case true => isActivity = true; throw ActivityFound
+	              }
+	            }
+	          } catch {
+	            case ActivityFound =>
+	          }
 
           val datasetWithFiles = dataset.copy(files = filesInDataset)
           decodeDatasetElements(datasetWithFiles)
@@ -285,6 +281,7 @@ class Datasets @Inject()(
               fileWithSections -> ff
             }
           }
+
           val metadata = datasets.getMetadata(id)
           Logger.debug("Metadata: " + metadata)
           for (md <- metadata) {
@@ -293,21 +290,21 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
-          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
-          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
+	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
+	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
+	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
 
-          var commentsByDataset = comments.findCommentsByDatasetId(id)
-          filesInDataset.map {
-            file =>
-              commentsByDataset ++= comments.findCommentsByFileId(file.id)
-              sections.findByFileId(UUID(file.id.toString)).map { section =>
-                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
-              }
-          }
-          commentsByDataset = commentsByDataset.sortBy(_.posted)
-
-          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+	          var commentsByDataset = comments.findCommentsByDatasetId(id)
+	          filesInDataset.map {
+	            file =>
+	              commentsByDataset ++= comments.findCommentsByFileId(file.id)
+	              sections.findByFileId(UUID(file.id.toString)).map { section =>
+	                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
+	              }
+	          }
+	          commentsByDataset = commentsByDataset.sortBy(_.posted)
+	          
+	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
         }
@@ -358,8 +355,7 @@ class Datasets @Inject()(
   /**
    * Upload file.
    */
-
-def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
     user match {
@@ -430,10 +426,8 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					        
 					    	// TODO RK need to replace unknown with the server name
 					    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-		//			        val key = "unknown." + "file."+ "application.x-ptm"
-					    	
 			                val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
-        
+
 					        // add file to dataset 
 					        val dt = dataset.copy(files = List(f), author=identity)					        
 					        // TODO create a service instead of calling salat directly
@@ -441,7 +435,6 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				            
 						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id, flags))}
 						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
-
 					        
 					        val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 					        
@@ -474,6 +467,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
                             current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 					        
                             val dtkey = "unknown." + "dataset."+ "unknown"
+                            
 					        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 		 			    	
 		 			    	//add file to RDF triple store if triple store is used
@@ -486,14 +480,14 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 						             case _ => {}
 					             }
 				             }
-		 			    	
-		 			    	  	
+		 			    			 			    	  	
 		 			    	/*---- Insert DTS Request to the database   ----*/
 
 		 			    	val clientIP=request.remoteAddress
 		 			    	val serverIP= request.host
 		 			    	dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 			    			/*--------------------------------------------*/
+		 			    	
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id))
 		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
@@ -538,9 +532,9 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          
 				  val dt = dataset.copy(files = List(theFileGet), author=identity, thumbnail_id=thisFileThumbnailString)
 				  datasets.update(dt)
-				  
+		  
 				  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-			      
+
 		          if(!theFileGet.xmlMetadata.isEmpty){
 		            val xmlToJSON = files.getXMLMetadataJSON(UUID(fileId))
 		            datasets.addXMLMetadata(dt.id, UUID(fileId), xmlToJSON)
@@ -559,6 +553,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
 				  // TODO RK need to replace unknown with the server name and dataset type		            
 				  val dtkey = "unknown." + "dataset."+ "unknown"
+
 				  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 
 		          //link file to dataset in RDF triple store if triple store is used
@@ -584,7 +579,7 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				  // redirect to dataset page
 				  Redirect(routes.Datasets.dataset(dt.id))
 				  current.plugin[AdminsNotifierPlugin].foreach{
-            _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+					  _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
 				  Redirect(routes.Datasets.dataset(dt.id)) 
 	            }	            
 	          }  
@@ -593,7 +588,6 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		 )
         }
         case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
-
       }
   }
 

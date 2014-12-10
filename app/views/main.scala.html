@@ -1,6 +1,6 @@
 @(title: String)(content: Html)(implicit user: Option[securesocial.core.Identity] = None)
 
-@import models.AppAppearance._
+@import services._
 
 <!DOCTYPE html>
 
@@ -40,7 +40,7 @@
 				      <span class="glyphicon-bar"></span>
 				      <span class="glyphicon-bar"></span>
 				    </button>
-					<a class="navbar-brand" href="@routes.Application.index">@(AppAppearance.getDefault.get.displayedName)</a>
+					<a class="navbar-brand" href="@routes.Application.index">@(services.DI.injector.getInstance(classOf[AppAppearanceService]).getDefault.get.displayedName)</a>
 				</div>
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
@@ -97,7 +97,6 @@
 					}
 
 					<ul class="nav navbar-nav navbar-right">
-
                         @user match {
                             case Some(x) => {
                              <li class="dropdown">
@@ -129,7 +128,6 @@
                            </ul>
                         </li>
 					</ul>
-
 				</div>
 		</div>
 	</div>
