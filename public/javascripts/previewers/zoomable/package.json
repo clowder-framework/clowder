@@ -1,4 +1,4 @@
 { "name" : "Zoomable",
   "main" : "some-library.js",
-  "contentType" : ["application/xml"]
+  "contentType" : ["application/dzi"]
   }

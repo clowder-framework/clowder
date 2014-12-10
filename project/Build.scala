@@ -12,7 +12,7 @@ object ApplicationBuild extends Build {
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "com.rabbitmq" % "amqp-client" % "3.0.0",
-    "org.elasticsearch" % "elasticsearch" % "0.90.2",
+    "org.elasticsearch" % "elasticsearch" % "1.3.4",
     "com.spatial4j" % "spatial4j" % "0.3",
     "org.mongodb" %% "casbah" % "2.6.3",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
@@ -64,6 +64,7 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
+    javaOptions in Test += "-Dconfig.file=" + Option(System.getProperty("config.file")).getOrElse("conf/application.conf"),
     testOptions in Test := Nil, // overwrite spec2 config to use scalatest instead
     routesImport += "models._",
     routesImport += "Binders._",

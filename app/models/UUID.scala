@@ -3,6 +3,7 @@ package models
 import org.bson.types.ObjectId
 import com.novus.salat.transformers.CustomTransformer
 import play.api.Logger
+import play.api.libs.json._
 
 /**
  * Created by lmarini on 2/20/14.
@@ -14,6 +15,10 @@ case class UUID(uuid: String) {
 }
 
 object UUID {
+  implicit val uuidFormat = new Format[UUID] {
+    def reads(json: JsValue): JsResult[UUID] = JsSuccess(new UUID(json.toString()))
+    def writes(uuid: UUID): JsValue = Json.toJson(uuid.stringify)
+  }
 
   def apply(): UUID = {
     new UUID(new ObjectId().toString)

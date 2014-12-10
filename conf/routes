@@ -18,10 +18,6 @@ GET      /assets/img/glyphicons-halflings.png                                con
 GET      /assets/*file                                                       controllers.Assets.at(path="/public", file)
 
 # Users
-GET      /users                                                              controllers.Users.list
-GET      /users/by-country/:country                                          controllers.Users.listByCountry(country)
-GET      /users/create/:username                                             controllers.Users.create(username)
-GET      /users/view/:id                                                     controllers.Users.view(id)
 POST	 /users/registerThroughAdmins										 controllers.Users.handleStartSignUp
 
 # Utilities
@@ -285,7 +281,6 @@ POST	/api/datasets/:ds_id/files/:file_id							@api.Datasets.attachExistingFile(
 GET 	/api/datasets/:id				 							@api.Datasets.datasetFilesList(id: UUID)
 DELETE	/api/datasets/:id											@api.Datasets.deleteDataset(id: UUID)
 
-
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					@api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			@api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
 GET		/api/previews/:dzi_id_dir/:level/:filename									@api.Previews.getTile(dzi_id_dir, level, filename)
@@ -365,3 +360,10 @@ POST    /api/comment/:id/editComment        @api.Comments.editComment(id: UUID)
 
 GET   	/api/search                       @api.Search.search(query: String ?= "")
 POST	/api/sparqlquery				  @api.Search.querySPARQL
+
+# ----------------------------------------------------------------------
+# USERS API
+# ----------------------------------------------------------------------
+GET            /api/users                                                               @api.Users.list
+GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
+GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
