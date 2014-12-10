@@ -193,6 +193,16 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
           }
         }
       }
+      case None => {
+        user match {
+          case Some(loggedInUser) => {
+            Redirect(routes.Profile.viewProfile(loggedInUser.email))
+          }
+          case None => {
+            Redirect(routes.RedirectUtility.authenticationRequired())
+          }
+        }
+      }
     }
   }
 
