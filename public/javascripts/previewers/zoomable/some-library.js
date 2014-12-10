@@ -13,6 +13,8 @@
 	s.src = pathJs + "zoomit.js";
 	console.log("Updating tab " + Configuration.tab);
 	$(Configuration.tab).append(s);
+	
+	$(Configuration.tab).append("<br/>");
 
 	 $(Configuration.tab).append(
 		     "<div style='width: " + width + "px; height: " + height + "px' id='seadragon" + Configuration.tab.replace("#previewer","") + "'>Insert image here</div>"
@@ -20,5 +22,5 @@
 
 	 viewer = new Seadragon.Viewer("seadragon" + Configuration.tab.replace("#previewer",""));
 	 viewer.openDzi(Configuration.url);
-	 			
+			
 }(jQuery, Configuration));
