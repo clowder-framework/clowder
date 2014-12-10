@@ -34,7 +34,20 @@
       <td>
         <div style="margin-left: 45px;">
           <h1>@profile.fullName</h1>
-          <h5>@profile.position at @profile.institution</h5>
+          <h5>
+            @profile.position
+            @profile.position match{
+              case Some(info) => {
+                @profile.institution match{
+                  case Some(info) => {at}
+                  case None => {}
+                }
+              }
+              case None => {}
+            }
+            @profile.institution
+          </h5>
+          
           <p style="margin-bottom: 24px">@profile.email</p>
 
           @profile.orcidID match{
