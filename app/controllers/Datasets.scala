@@ -265,7 +265,7 @@ class Datasets @Inject()(
 
 def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
-    
+    Logger.debug("------- in Datasets.submit ---------")
     user match {
       case Some(identity) => {
         datasetForm.bindFromRequest.fold(

@@ -37,6 +37,8 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
     <h1>Create New Dataset</h1>
   </div>
   
+    <div class="row">
+    <div class="col-md-12">
     @if(myForm.hasErrors) {
         <div class="alert alert-error">
             <p>Please fix all errors</p>
@@ -62,7 +64,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
             ("__nofile" -> "--NONE--") +: filesList.map{ oneFile =>
                 oneFile._1 -> (oneFile._2)
             },
-            '_label -> "or select an existing file"
+            '_label -> "Choose existing file, or upload a new one. NOTE: Single file only."
         )
         </fieldset>
         <fieldset id="datasetRadioFieldSet">
@@ -116,6 +118,8 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         <!-- The table listing the files available for upload/download -->
         <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
     </form>
+    </div>
+    </div>
 </div>
     
     <!-- The blueimp Gallery widget -->
