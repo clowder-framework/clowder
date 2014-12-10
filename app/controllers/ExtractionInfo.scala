@@ -111,4 +111,5 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
       Ok(views.html.dtsbookmarklet(Utils.baseUrl(request)))
   }
 
+
 }

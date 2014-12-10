@@ -29,10 +29,12 @@
 			No results found
 		</div>
 	</div>
-	} else {
+	} else {	
+			
 	<table>
-	<tr>
-  
+	@** Fix to align results at the top - otherwise <tbody> tag would be automatically inserted and valign set to "middle"**@
+	<tbody valign="top">	
+	<tr>  
 	@for((index, previewsAndFiles) <- resultsList) {
 		<td>
 		<h3>@index.extractorID / @index.measureID / @index.indexerType</h3>
@@ -108,17 +110,8 @@
 					    <a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
 					     		View File @oneResult.searchResultPreview.fileTitle</a>
 					     <br>
-
-
-
-					     		Shot start time: @oneResult.searchResultPreview.shotStartTime
-					     		
+					     		Shot start time: @oneResult.searchResultPreview.shotStartTime					     		
 						}@* end of If Preview *@
-											     
-
-
-
-
 
 					  </div>
 					</div>
@@ -128,11 +121,13 @@
 		</td>		
 	}
 	</tr>
-</table>
+	</tbody></table>
 	@***********  End of search results for each index  ******************@
 	
-	
-<br>@************ form to combine search results ************@
+
+	<br>@************ form to combine search results - if two or more indexes ************@
+
+	@if(resultsList.size >=2) {
 		 @form(action = routes.Search.findSimilarWeightedIndexes, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 			    <fieldset>
 			      <legend>Combine search results</legend>			     
@@ -147,7 +142,8 @@
 		          		<input type="submit" class="btn btn-primary" value="Combine Results"/>
 		        	</div>
 		}
-		@************ end of form ************@
+	}<!--end of if(resultsList.size >=2) -->
+@************ end of form ************@
 
 	}		
 }

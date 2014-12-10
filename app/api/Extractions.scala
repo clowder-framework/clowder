@@ -140,6 +140,8 @@ class Extractions @Inject() (
                   }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+                  // TODO RK : need figure out if we can use https
+                  //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
                   val host = Utils.baseUrl(request)
 
                   /** Insert DTS Requests   **/
@@ -230,7 +232,9 @@ class Extractions @Inject() (
 				  val id = f.id
                   fileType = f.contentType
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+
                   val host = Utils.baseUrl(request)
+
                   current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
                   /*--- Insert DTS Requests  ---*/
                   val clientIP = request.remoteAddress
@@ -383,6 +387,7 @@ class Extractions @Inject() (
                   													case Some(vd)=>api.routes.Files.getVersusMetadataJSON(id).toString
                   													case None=> ""
                   													}
+
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
 
