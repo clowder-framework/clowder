@@ -150,11 +150,13 @@
             	<span class="button-bar">
                     <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
                 </span>
-                @if(user.isDefined) {                    
-                    <span class="align-right">
-				        <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
+                @if(user.isDefined) {
+                    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
+                        <span class="align-right">
+				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
-					</span>					
+					    </span>
+					}					
 				}				               
             </div>
         </div>
