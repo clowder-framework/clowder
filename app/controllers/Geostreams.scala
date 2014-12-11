@@ -41,7 +41,7 @@ object Geostreams extends Controller with SecuredController {
   def newSensor() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { implicit request =>
     implicit val user = request.user
     plugin match {
-      case Some(db) => Ok(views.html.geostreams.newSensor())
+      case Some(db) => Ok(views.html.geostreams.create())
       case None => pluginNotEnabled
     }
   }

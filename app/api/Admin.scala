@@ -69,8 +69,13 @@ object Admin extends Controller with ApiController {
             (request.body \ "sensors").asOpt[String] match {
               case Some(sensors) => {
                 AppAppearance.setSensorsTitle(sensors)
+                (request.body \ "sensor").asOpt[String] match {
+                  case Some(sensor) => {
+                    AppAppearance.setSensorTitle(sensor)
+                  }
+                  case None => {}
+                }
               }
-              case None => {}
             }
           }
         }
