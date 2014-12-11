@@ -1,6 +1,7 @@
 package api
 
 import models.UUID
+import play.Logger
 import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
@@ -16,8 +17,7 @@ case class RequestWithUser[A](user: Option[Identity], request: Request[A]) exten
 /**
  * List of all permissions available in Medici
  * 
- * @author Rob Kooperp
- *
+ * @author Rob Kooper
  */
 object Permission extends Enumeration {
 	type Permission = Value
@@ -249,5 +249,4 @@ case class WithPermission(permission: Permission) extends Authorization {
 			}
 		}
 	}
-
 }

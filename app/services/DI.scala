@@ -20,7 +20,6 @@ object DI {
 class ConfigurationModule extends AbstractModule {
   protected def configure() {
     bind(classOf[AppConfigurationService]).to(get("service.appConfiguration", "services.mongodb.MongoDBAppConfigurationService"))
-    bind(classOf[AppAppearanceService]).to(get("service.appAppearance", "services.mongodb.MongoDBAppAppearanceService"))
 
     bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
 
@@ -34,8 +33,6 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[SectionService]).to(get("service.sections", "services.mongodb.MongoDBSectionService"))
     bind(classOf[CommentService]).to(get("service.comments", "services.mongodb.MongoDBCommentService"))
     bind(classOf[PreviewService]).to(get("service.previews", "services.mongodb.MongoDBPreviewService"))
-    bind(classOf[AppConfigurationService]).to(get("service.appConfiguration", "services.mongodb.MongoDBAppConfigurationService"))
-    bind(classOf[AppAppearanceService]).to(get("service.appAppearance", "services.mongodb.MongoDBAppAppearanceService"))
     bind(classOf[ExtractionService]).to(get("service.extractions", "services.mongodb.MongoDBExtractionService"))
     bind(classOf[TempFileService]).to(get("service.tempFiles", "services.mongodb.MongoDBTempFileService"))
     bind(classOf[ThreeDService]).to(get("service.3D", "services.mongodb.MongoDBThreeDService"))
