@@ -197,11 +197,11 @@ class Datasets @Inject()(
                     case Some(muser) => {
                        muser.viewed match {
                         case Some(viewList) =>{
-                          users.editList(addr, "viewed", id)
+                          users.addUserDatasetView(addr, id)
                         }
                         case None => {
                           val newList: List[UUID] = List(id)
-                          users.createList(addr, "viewed", newList)
+                          users.createNewListInUser(addr, "viewed", newList)
                         }
                       }
                   }

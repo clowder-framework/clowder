@@ -138,7 +138,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
               case Some(muser) => {
                 muser.friends match {
                   case Some(viewList) =>{
-                    users.editList(addr.toString(), "friends", email)
+                    users.addUserFriend(addr.toString(),  addr.toString())
                     otherUser match {
                       case Some(other) => {
                         Ok(views.html.profilepage(other, None))
@@ -147,7 +147,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                   }
                   case None => {
                     val newList: List[String] = List(email)
-                    users.createList(addr.toString(), "friends", newList)
+                    users.createNewListInUser(addr.toString(), "friends", newList)
                     otherUser match {
                       case Some(other) => {
                         Ok(views.html.profilepage(other, None))
@@ -220,13 +220,13 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                 implicit val modeluser = users.findByEmail(addr.toString())
                 modeluser match {
                   case Some(muser) => {
-                    users.editField(addr.toString(), "avatarUrl", form.avatarUrl)
-                    users.editField(addr.toString(), "biography", form.biography)
-                    users.editField(addr.toString(), "currentprojects", form.currentprojects)
-                    users.editField(addr.toString(), "institution", form.institution)
-                    users.editField(addr.toString(), "orcidID", form.orcidID)
-                    users.editField(addr.toString(), "pastprojects", form.pastprojects)
-                    users.editField(addr.toString(), "position", form.position)
+                    users.updateUserField(addr.toString(), "avatarUrl", form.avatarUrl)
+                    users.updateUserField(addr.toString(), "biography", form.biography)
+                    users.updateUserField(addr.toString(), "currentprojects", form.currentprojects)
+                    users.updateUserField(addr.toString(), "institution", form.institution)
+                    users.updateUserField(addr.toString(), "orcidID", form.orcidID)
+                    users.updateUserField(addr.toString(), "pastprojects", form.pastprojects)
+                    users.updateUserField(addr.toString(), "position", form.position)
                     Redirect(routes.Profile.viewProfile(email))
                   }
                 }

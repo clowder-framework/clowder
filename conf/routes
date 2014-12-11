@@ -20,10 +20,10 @@ GET      /assets/*file                                                       con
 POST	 /users/registerThroughAdmins										 controllers.Users.handleStartSignUp
 
 # Profile
-GET 	/Profile/viewProfile												@controllers.Profile.viewProfile(email: Option[String])
-GET      /Profile/editProfile                                                    @controllers.Profile.editProfile
-GET 	/Profile/submitChanges                                                 @controllers.Profile.submitChanges
-GET 	/Profile/addFriend														@controllers.Profile.addFriend(email: String)
+GET 	/profile/viewProfile												@controllers.Profile.viewProfile(email: Option[String])
+GET      /profile/editProfile                                                    @controllers.Profile.editProfile
+GET 	/profile/submitChanges                                                 @controllers.Profile.submitChanges
+GET 	/profile/addFriend														@controllers.Profile.addFriend(email: String)
 
 # Utilities
 GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
@@ -379,3 +379,11 @@ POST	/api/sparqlquery				  @api.Search.querySPARQL
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
+
+POST 			/api/users/updateUserField												@api.Users.updateUserField(email: String, field: String, fieldText: String)
+
+POST 			/api/users/addUserFriend												@api.Users.addUserFriend(email: String, newFriend: String)
+
+POST 			/api/users/addUserDatasetView 											@api.Users.addUserDatasetView(email: String, dataset: UUID)
+
+POST 			/api/users/createNewListInUser 											@api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])															

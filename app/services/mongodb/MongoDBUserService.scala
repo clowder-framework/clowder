@@ -40,15 +40,19 @@ class MongoDBUserService extends UserService {
     UserDAO.dao.findOne(MongoDBObject("email" -> email))
   }
 
-  override def editField(email: String, field: String, fieldText: Any) {      
+  override def updateUserField(email: String, field: String, fieldText: Any) {      
       val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText));      
   }
 
-  override def editList(email: String, field: String, fieldList: Any) {      
-      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push(field -> fieldList));      
+override def addUserFriend(email: String, newFriend: String) {      
+      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("friends" -> newFriend));      
   }
 
-  override def createList(email: String, field: String, fieldList: List[Any]) {      
+  override def addUserDatasetView(email: String, dataset: UUID) {      
+      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("viewed" -> dataset));      
+  }
+
+  override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {      
       val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));      
   }
 }

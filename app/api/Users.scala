@@ -47,24 +47,31 @@ class Users @Inject()(users: UserService) extends ApiController {
     }
   }
 
-  @ApiOperation(value = "Edit Name Field.",
-    responseClass = "None", httpMethod = "GET")
-  def editField(email: String, field: String, fieldText: Any) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
-    users.editField(email, field, fieldText)
+  @ApiOperation(value = "Edit User Field.",
+    responseClass = "None", httpMethod = "POST")
+  def updateUserField(email: String, field: String, fieldText: Any) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    users.updateUserField(email, field, fieldText)
     Ok(Json.obj("status" -> "success"))
   }
 
-  @ApiOperation(value = "Edit a List.",
-    responseClass = "None", httpMethod = "GET")
-  def editList(email: String, field: String, fieldList: Any)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
-    users.editList(email, field, fieldList)
+  @ApiOperation(value = "Add a friend.",
+    responseClass = "None", httpMethod = "POST")
+  def addUserFriend(email: String, newFriend: String)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    users.addUserFriend(email, newFriend)
+    Ok(Json.obj("status" -> "success"))
+  }
+
+  @ApiOperation(value = "Add a dataset View.",
+    responseClass = "None", httpMethod = "POST")
+  def addUserDatasetView(email: String, dataset: UUID)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    users.addUserDatasetView(email, dataset)
     Ok(Json.obj("status" -> "success"))
   }
 
   @ApiOperation(value = "Create a List.",
-    responseClass = "None", httpMethod = "GET")
-  def createList(email: String, field: String, fieldList: List[Any])= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
-    users.createList(email, field, fieldList)
+    responseClass = "None", httpMethod = "POST")
+  def createNewListInUser(email: String, field: String, fieldList: List[Any])= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    users.createNewListInUser(email, field, fieldList)
     Ok(Json.obj("status" -> "success"))
   }
 

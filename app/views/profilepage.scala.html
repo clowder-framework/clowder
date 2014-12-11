@@ -1,5 +1,5 @@
 @(profile: User, ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
-@main("ProfilePage") {
+@main("Profile") {
 <div class="page-header">
 
   <table>
@@ -10,7 +10,7 @@
             <img src=@info+"?s=256" height="256px" width="256px" style="margin-bottom: 12px">
           }
           case None => {
-            <img src="http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=256" height="256px" width="256px" style="margin-bottom: 12px">
+            <img src="http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=256" max-height="256px" max-width="256px" style="margin-bottom: 12px">
           }
         }
         <div align="center">
