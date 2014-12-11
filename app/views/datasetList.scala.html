@@ -45,11 +45,29 @@
                   updatePage();
                 });
             });
+            
+            $(document).ready(function() {              
+                console.log("on load, viewMode is " + viewMode);      
+                updatePage();               
+            });
+            
+            //Function to unify the changing of the href for the next/previous links. Called on button activation for
+            //viewMode style, as well as on initial load of page.
+            function updatePage() {
+                var modUrl = "&mode=" + viewMode;
+                console.log("updatePage - url is " + modUrl);
+                $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit))" + modUrl);
+                $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit))" + modUrl);
+            }
         </script>
     </div>
 </div>
 
-<div class="row" id="tile-view">
+@if(mode == "list") {
+  <div class="row hidden" id="tile-view">
+} else {
+  <div class="row" id="tile-view">
+}
 	<div class="col-md-12">
 		<div id="masonry">
 		@datasets.map { dataset =>
@@ -78,8 +96,8 @@
                       <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span>  @(comments.get(dataset.id))
 					  @if(user.isDefined) {
 									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
-							    		<span class="glyphicon glyphicon-trash"></span></a>
+							    		<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <span class="glyphicon glyphicon-trash"></span></button>
 									}													
 							}					  
                     </li>
@@ -91,7 +109,11 @@
 	</div>
 </div>
 
-<div class="row hidden" id="list-view">
+@if(mode == "list") {
+  <div class="row" id="list-view">
+} else {
+  <div class="row hidden" id="list-view">
+}
 	<div class="col-md-12">
 		<table class="table table-bordered table-hover">
 			<thead>
@@ -124,8 +146,8 @@
 						<td class="requiresLogin">
 							@if(user.isDefined) {
 									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
-							    		<span class="glyphicon glyphicon-trash"></span></a>
+										<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <span class="glyphicon glyphicon-trash"></span></button>
 									}													
 							}
 						</td>	
@@ -140,11 +162,12 @@
 <div class="row">
     <div class="col-md-12">
         <ul class="pager">
+            <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
             @if(prev != "") {
-            <li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
+                <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
             }
             @if(next != "") {
-            <li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
+                <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
             }
         </ul>
     </div>

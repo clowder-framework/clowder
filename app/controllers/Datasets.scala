@@ -63,8 +63,9 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
+  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
     implicit request =>
+      Logger.debug("------- mode is " + mode + " ---------")
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when
@@ -78,6 +79,7 @@ class Datasets @Inject()(
       } else {
         badRequest
       }
+      Logger.debug("---------- datasetList size is " + datasetList.size + " --------------")
       // latest object
       val latest = datasets.latest()
       // first object
@@ -119,7 +121,7 @@ class Datasets @Inject()(
       for (aDataset <- datasetList) {
           decodeDatasetElements(aDataset)
       }
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, mode))
   }
 
 
