@@ -1,5 +1,8 @@
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
+
+import play.filters.gzip.GzipFilter
+
 import play.libs.Akka
 import services.AppConfiguration
 import scala.concurrent.duration._
@@ -7,17 +10,15 @@ import play.api.libs.concurrent.Execution.Implicits._
 import models.{ServerStartTime, CORSFilter, ExtractionInfoSetUp}
 import java.util.Calendar
 import play.api.mvc.WithFilters
-import play.filters.gzip.GzipFilter
 import akka.actor.Cancellable
-
+import julienrf.play.jsonp.Jsonp
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
  *
  * @author Luigi Marini
  */
-
-object Global extends WithFilters(new GzipFilter(), CORSFilter()) with GlobalSettings {
+object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) with GlobalSettings {
   var extractorTimer: Cancellable = null
 
   override def onStart(app: Application) {

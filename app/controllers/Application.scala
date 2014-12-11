@@ -27,7 +27,7 @@ class Application  @Inject() (files: FileService) extends SecuredController {
   /**
    * Main page.
    */
-  def index = SecuredAction() { request =>
+  def index = SecuredAction(authorization = WithPermission(Permission.Public)) { request =>
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     Ok(views.html.index(latestFiles, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))

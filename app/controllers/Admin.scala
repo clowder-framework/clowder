@@ -1,10 +1,8 @@
-/**
- *
- */
 package controllers
 
 import api.WithPermission
 import api.Permission
+<<<<<<< HEAD
 import services.{AppConfiguration, AppConfigurationService, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -13,9 +11,27 @@ import play.api.Logger
 
 import scala.concurrent._
 import javax.inject.{Inject, Singleton}
+=======
+
+import services.{AppConfigurationService, AppAppearanceService, VersusPlugin}
+
+import securesocial.core.providers.utils.RoutesHelper
+import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits._
+
+import play.api.libs.json.Json
+import play.api.libs.json.Json._
+import play.api.Logger
+
+import scala.concurrent._
+import play.api.libs.ws.WS
+import play.api.libs.ws.Response
+import play.api.libs.concurrent.Promise
+>>>>>>> FETCH_HEAD
 
 import play.api.data.Form
 import play.api.data.Forms._
+import javax.inject.{Inject, Singleton}
 
 /**
  * Administration pages.
@@ -365,5 +381,5 @@ class Admin extends SecuredController {
       }
     }
   }
-  
+
 }

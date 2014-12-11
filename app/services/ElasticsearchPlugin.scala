@@ -1,8 +1,6 @@
 package services
 
 import play.api.{ Plugin, Logger, Application }
-import org.elasticsearch.node.NodeBuilder._
-import org.elasticsearch.node.Node
 import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
@@ -15,10 +13,7 @@ import models.{ UUID, Dataset }
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
-import org.elasticsearch.action.index.IndexResponse
-import org.elasticsearch.client.Client
-import play.api.Play.current 
-import org.elasticsearch.common.settings.Settings
+import play.api.Play.current
 
 
 /**
@@ -126,6 +121,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
 
   }
+
 
   def indexDataset(dataset: Dataset) {
     var tagListBuffer = new ListBuffer[String]()
