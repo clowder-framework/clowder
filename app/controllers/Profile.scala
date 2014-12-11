@@ -141,7 +141,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.addUserFriend(addr.toString(),  addr.toString())
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profilepage(other, None))
+                        Ok(views.html.profile(other, None))
                       }
                     }
                   }
@@ -150,7 +150,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.createNewListInUser(addr.toString(), "friends", newList)
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profilepage(other, None))
+                        Ok(views.html.profile(other, None))
                       }
                     }
                   }
@@ -185,7 +185,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
               }
               case None => { ownProfile = None }
             }
-            Ok(views.html.profilepage(muser, ownProfile))
+            Ok(views.html.profile(muser, ownProfile))
           }
           case None => {
             Logger.error("no user model exists for " + addr.toString())
