@@ -260,11 +260,11 @@ button.tech_md_ {
 }
 
 #editProfileFieldSet .control-group .controls input[type='text']{
-  width:208px;
+  width:450px;
   height:30px;
 }
 #editProfileFieldSet .control-group .controls textarea{
-  width:500px;
+  width:450px;
   height:100px;
 }
 
