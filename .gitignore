@@ -18,4 +18,5 @@ dist
 /.settings
 /RUNNING_PID
 doc/src/sphinx/_build
+/conf/custom.conf
 .DS_Store
