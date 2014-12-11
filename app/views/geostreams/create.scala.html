@@ -437,14 +437,14 @@
         $("#formSubmit").click(function(event) {
             event.preventDefault();
             var mediciSensorsURL = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/api/geostreams/sensors";
-            var data = {geometry: { type: "Point", coordinates: [0,0,0]}, properties: { type: {id: "", "name": ""}}, type: "Feature"};
+            var data = {geometry: { type: "Point", coordinates: [0,0,0]}, properties: { type: {id: "", "title": ""}}, type: "Feature"};
             data.name = $("#sensor_name").val();
             data.properties.name = data.name;
             data.properties.popupContent = $("#sensorFullName").val();
             data.geometry.coordinates[0] = +$("#sensorLocationLong").val();
             data.geometry.coordinates[1] = +$("#sensorLocationLat").val();
             data.properties.type.id = $("#sensorDataSource").val().toLowerCase();
-            data.properties.type.name = $("#sensorDataSource").val();
+            data.properties.type.title = $("#sensorDataSource").val();
             data.properties.region = $("#sensorRegion").val();
             $.ajax({
                 url: mediciSensorsURL,
