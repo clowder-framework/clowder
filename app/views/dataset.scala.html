@@ -87,7 +87,7 @@
 	<div class="row">	
 	
 		<!-- left column -->
-		<div class="col-md-8 col-right-border" id="filePrevsCol">
+		<div class="col-md-8" id="filePrevsCol">
 
             @files.grid(previews.keys.toList)
     		
@@ -118,7 +118,7 @@
 		</div>
 
 		<!-- right column -->
-		<div class="col-md-4">
+		<div class="col-md-4 col-left-border">
 		    <!-- Dataset information elements -->
             <div id="aboutDiv" class="row ds-section-sm">
                 <table>
@@ -223,12 +223,67 @@
             </div>
 
 			<div class="row ds-section-sm border-top">
-				<h4>Files</h4>
+					<!-- License elements -->
+				<h4>License Information</h4>
+				<table>
+					<tr>
+						<td><b>Type: </b></td>
+						<td id="licensetextdata" style="padding-left:10px;">blank</td>
+					</tr>
+					<tr>
+						<td><b>Holder: </b></td>
+						<td id="rightsholderdata" style="padding-left:10px;">blank</td>
+					</tr>
+				</table>
+				<p>
 				@if(user.isDefined) {
+					<a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
+					data-parent="#accordion6" href="#collapseSix" id="editlicense"
+					title="Edit License Information">
+						<span class="glyphicon glyphicon-chevron-down"></span> Edit
+					</a>
+			}
+
+				<div id="collapseSix" class="accordion-body collapse">
+					<div class="panel panel-primary">
+						<div class="panel-body">
+						@if(user.isDefined) {
+							@licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
+						}
+						</div>
+					</div>
+				</div>
+
+				<script type="text/javascript" language="javascript">
+				$(document).ready(function() {
+				//Will have to modify the if check to see if there is data that specifies what should be selected
+				//Incoming data may specifiy the type of license, the name of the owner of the rights, the text
+				//describing the license rights, the URL for the license, and whether or not downloading is
+				//allowed.
+				var datasetLicenseType = "@dataset.licenseData.m_licenseType";
+				var datasetRightsHolder = "@dataset.licenseData.m_rightsHolder";
+				var datasetLicenseText = "@dataset.licenseData.m_licenseText";
+				var datasetLicenseUrl = "@dataset.licenseData.m_licenseUrl";
+				var datasetAllowDownload = "@dataset.licenseData.m_allowDownload";
+				var datasetImageBase = '@routes.Assets.at("images")';
+				var datasetAuthorName = '@dataset.author.fullName';
+
+				if (!@user.isDefined) {
+				updateInterface(datasetLicenseType, datasetRightsHolder, datasetLicenseText, datasetLicenseUrl, datasetAllowDownload, datasetImageBase, datasetAuthorName);
+				}
+				});
+				</script>
+					<!-- End License elements -->
+			</div>
+
+			@if(user.isDefined) {
+			<div class="row ds-section-sm border-top">
+				<h4>Files</h4>
+
 				<a href="#myModal" class="btn btn-default btn-xs" data-toggle="modal" id="fileUploadBtn" title="Add New File to Dataset" role="button">
 				    <span class="glyphicon glyphicon-export"></span> Upload new file
 				</a>
-				}
+
 				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 				    <div class="modal-dialog">
 				      <div class="modal-content">
@@ -259,7 +314,7 @@
 
                 <div>Add existing file</div>
 				<div class="ui-widget form-inline requiresLogin" id="filesUi">
-                    <div class="input-group input-group-sm col-md-8"">
+                    <div class="input-group input-group-sm col-md-8">
                         <select id="filesAddSelect" data-inputid="selectingInputFiles" data-errorid="doesNotExistErrorFiles">
                             <option value="" selected="selected"></option>
                             @filesOutside.map { file =>
@@ -312,9 +367,9 @@
 
                     function detachFile(fileId, fileName,event){
                         var request = $.ajax({
-                               type: 'POST',
-                               url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
-                             });
+							type: 'POST',
+							url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
+						});
                         request.done(function (response, textStatus, jqXHR){
                             console.log("Response " + response);
                             $(event.target.parentNode.parentNode).remove();
@@ -356,9 +411,10 @@
 
                 </script>
 			</div>
+			}
 	
 			<div class="row ds-section-sm border-top">
-				<h4>Collections</h4>
+				<h4>Collections containing the dataset</h4>
 				<table id="collTable">
 				@collectionsInside.map { collection =>
 					<tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></td>
@@ -366,25 +422,24 @@
 				}
 				</table>
 
-                <div>Add to existing collection</div>
-				<div class="requiresLogin ui-widget" id="collectionsUi">			
-
-						<div class="input-group input-group-sm col-md-8"">
-							<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
-							@collectionsOutside.map { collection =>
-								<option value="@(collection.id)">@(collection.name)</option>
-							}					  
-							</select>
-							<span class="input-group-btn">
-								<button class="btn btn-default btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
-                                    <span class="glyphicon glyphicon-plus"></span>
-                                </button>
-							</span>
-						</div>
-						<span id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
+				<div class="requiresLogin ui-widget" id="collectionsUi">
+					<div>Add to existing collection</div>
+					<div class="input-group input-group-sm col-md-8">
+						<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
+						@collectionsOutside.map { collection =>
+							<option value="@(collection.id)">@(collection.name)</option>
+						}
+						</select>
+						<span class="input-group-btn">
+							<button class="btn btn-default btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
+								<span class="glyphicon glyphicon-plus"></span>
+							</button>
+						</span>
+					</div>
+					<span id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
 				</div>
-					<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-					<script type="text/javascript">
+				<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
+				<script type="text/javascript">
 						$("#collectionAddSelect").combobox();
 						
 	  					function selectClickChange() {
@@ -393,7 +448,7 @@
 	  					}
 	  					document.getElementById("collectionAddSelect").onchange = selectClickChange;
 					</script>
-					<script>
+				<script>
 						$('body').on('click','#addCollBtn',function(e){
 							if($("#doesNotExistErrorCollections").css('display') == 'inline')
 								return;
@@ -408,30 +463,30 @@
 							       type: 'POST',
 							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+selectedId+"/datasets/"+"@dataset.id"
 							     });
-							request.done(function (response, textStatus, jqXHR){
-						        console.log("Response " + response);	        
-						        $("#collectionAddSelect option[value=" + selectedId + "]").remove();
-						        $("#selectingInputCollections").val("");
-						        var i = 1;
-						        var tableLength = $("#collTable tbody tr").length;
-						        while(i <= tableLength && $("#collTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
-						        	i++;
-						        if(i <= tableLength)	        
-							        $("#collTable tbody tr:nth-child("+i+")").before("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
-							        		);
-						        else if(tableLength > 0)
-						        	$("#collTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
-							        		);
-						        else{
-						        	if($("#collTable tbody").length == 0)
-						        		$("#collTable").append("<tbody></tbody>");
-						        	$("#collTable tbody").append("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
-							        		+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
-							        		);
-						        	}
-							});	
+							request.done(function (response, textStatus, jqXHR) {
+								console.log ( "Response " + response ) ;
+								$ ( "#collectionAddSelect option[value=" + selectedId + "]" ).remove ( ) ;
+								$ ( "#selectingInputCollections" ).val ( "" ) ;
+								var i = 1 ;
+								var tableLength = $ ( "#collTable tbody tr" ).length ;
+								while ( i <= tableLength && $ ( "#collTable tbody tr:nth-child(" + i + ") td:nth-child(1) a" ).text ( ) < selectedName )
+								i ++ ;
+								if ( i <= tableLength ) {
+									$ ( "#collTable tbody tr:nth-child(" + i + ")" ).before ( "<tr><td><a href='" + window.location.protocol + "//" + window.location.hostname + ( window.location.port ? ':' + window.location.port : '' ) + "/collection/" + selectedId + "'>" + selectedName + "</a>"
+									+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\"" + selectedId + "\",\"" + selectedName + "\",event)'>Remove</a></td></tr>"
+									) ;
+								} else if(tableLength > 0) {
+									$ ( "#collTable tbody tr:nth-child(" + ( i - 1 ) + ")" ).after ( "<tr><td><a href='" + window.location.protocol + "//" + window.location.hostname + ( window.location.port ? ':' + window.location.port : '' ) + "/collection/" + selectedId + "'>" + selectedName + "</a>"
+									+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\"" + selectedId + "\",\"" + selectedName + "\",event)'>Remove</a></td></tr>"
+									) ;
+								} else {
+									if($("#collTable tbody").length == 0)
+										$("#collTable").append("<tbody></tbody>");
+									$("#collTable tbody").append("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+											+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+									);
+								}
+							});
 							request.fail(function (jqXHR, textStatus, errorThrown){
 								console.error("The following error occured: " + textStatus, errorThrown);
                                 var errMsg = "You must be logged in to add a dataset to a collection.";                                
@@ -499,10 +554,10 @@
 				   }
 				</ul>
 				<form class="form-inline requiresLogin">
-					<div class="input-group input-group-sm col-md-8"">
+					<div class="input-group input-group-sm col-md-8">
 						<input type="text" id="tagField" class="form-control">
 						<span class="input-group-btn">
-							<button class="btn btn-primary btn-large" id="tagB" title="Add Tag">
+							<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
 							    <span class="glyphicon glyphicon-tag"></span>
 							</button>
 						</span>
@@ -553,15 +608,15 @@
 
 					$(function() {
                        if(window["userDefined"] == true)
-                         $("#tagList").children("li").each(function(){
-                           $(this).hover(removeIconMouseIn,removeIconMouseOut);
-                         });
+					   	$("#tagList").children("li").each(function(){
+							$(this).hover(removeIconMouseIn,removeIconMouseOut);
+                        });
                        $("#tagList").find(".glyphicon-remove").click(removeTag);
 						
 					   $('#tagB').click(function() {
-					     var tag = $('#tagField').val();
+					   	var tag = $('#tagField').val();
 					     
-					     var isTagPresent = false;
+					   	var isTagPresent = false;
 					     $("#tagList").children("li").each(function (index, tagLi) {
 					       if($(tagLi).attr("name")===tag){
 					         isTagPresent = true;
@@ -570,35 +625,34 @@
 					     });
 	
 					     if (tag !== "" && isTagPresent != true) {
-					     	 console.log("submitting tag " + tag);
+						 	console.log("submitting tag " + tag);
 					     	var request = jsRoutes.api.Datasets.addTags('@dataset.id').ajax({
 					     		data: JSON.stringify({"tags":[tag]}),
 						       type: 'POST',
-						       contentType: "application/json",
+						       contentType: "application/json"
 						     });
 						     
-						     request.done(function (response, textStatus, jqXHR){
-						        console.log("Response " + response);
+							request.done(function (response, textStatus, jqXHR){
+								console.log("Response " + response);
 						        var url = "../tags/search?tag=" + tag;
 						        $newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
 						        $newTag.hover(removeIconMouseIn,removeIconMouseOut);
      						    $newTag.find(".glyphicon-remove").click(removeTag);
 						        $('#tagField').val("");
-						     });
+						    });
 				    
-						     request.fail(function (jqXHR, textStatus, errorThrown){
-						        console.error("The following error occured: "+textStatus, errorThrown);
+							request.fail(function (jqXHR, textStatus, errorThrown){
+								console.error("The following error occured: "+textStatus, errorThrown);
 						        var errMsg = "You must be logged in to add a tag to a dataset.";
 						        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                                     alert("The tag was not added to the dataset due to : " + errorThrown);
                                 } 
 						     });
-						     return false;
-					     }
-					     
-					  });
+							return false;
+						 }
+					   });
 					  
-					  	$('#tagField').keypress(function (e) {
+						$('#tagField').keypress(function (e) {
 						  if (e.which == 13) {
 						    console.log("enter");
 						    $('#tagB').click();
@@ -614,59 +668,6 @@
 			       </script>
 		      	}
 			</div>
-
-            <div class="row ds-section-sm border-top">
-				<!-- License elements -->
-                <h4>License Information</h4>
-                <table>
-                   <tr>
-                    <td><b>Type: </b></td>
-                    <td id="licensetextdata" style="padding-left:10px;">blank</td>
-                   </tr>
-                   <tr>
-                    <td><b>Holder: </b></td>
-                    <td id="rightsholderdata" style="padding-left:10px;">blank</td>
-                   </tr>
-                </table>
-                <p>
-                @if(user.isDefined) {
-                <a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
-                    data-parent="#accordion6" href="#collapseSix" id="editlicense"
-                    title="Edit License Information">
-                    <span class="glyphicon glyphicon-chevron-down"></span> Edit
-                </a>
-                }
-            </div>
-            <div id="collapseSix" class="accordion-body collapse">
-               <div class="panel panel-primary">
-                   <div class="panel-body">
-                @if(user.isDefined) {
-                    @licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
-                }
-                   </div>
-               </div>
-            </div>
-	      
-            <script type="text/javascript" language="javascript">
-            $(document).ready(function() {
-                //Will have to modify the if check to see if there is data that specifies what should be selected
-                //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
-                //describing the license rights, the URL for the license, and whether or not downloading is
-                //allowed.
-                var datasetLicenseType = "@dataset.licenseData.m_licenseType";
-                var datasetRightsHolder = "@dataset.licenseData.m_rightsHolder";
-                var datasetLicenseText = "@dataset.licenseData.m_licenseText";
-                var datasetLicenseUrl = "@dataset.licenseData.m_licenseUrl";
-                var datasetAllowDownload = "@dataset.licenseData.m_allowDownload";
-                var datasetImageBase = '@routes.Assets.at("images")';
-                var datasetAuthorName = '@dataset.author.fullName';
-
-                if (!@user.isDefined){
-                    updateInterface(datasetLicenseType, datasetRightsHolder, datasetLicenseText, datasetLicenseUrl, datasetAllowDownload, datasetImageBase, datasetAuthorName);
-                }
-            });
-            </script>
-            <!-- End License elements -->
 		</div>
-	</div>	
+	</div>
 }
