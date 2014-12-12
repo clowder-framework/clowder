@@ -54,3 +54,4 @@ case class Versus(
   fileId: UUID,
   descriptors: Map[String,Any]= Map.empty
 )
+

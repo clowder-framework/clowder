@@ -295,7 +295,6 @@ fieldset #email_field .controls #email{
 	height:30px;
 }
 
-
 #adminMailFieldSet .control-group .controls input[type='text']{
 	width:208px;
 	height:30px;
@@ -305,6 +304,7 @@ fieldset #email_field .controls #email{
 	width:208px;
 	height:30px;
 }
+
 
 
 :-webkit-full-screen x3d {
