@@ -26,7 +26,6 @@ import org.apache.commons.lang.StringEscapeUtils
  * @author Luigi Marini
  *
  */
-
 class Datasets @Inject()(
   datasets: DatasetService,
   files: FileService,
@@ -126,8 +125,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
-    implicit request =>
+  def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) { implicit request =>
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
       datasets.get(id) match {
@@ -152,7 +150,6 @@ class Datasets @Inject()(
               else
                 s.copy(preview = None)
             }
-            Logger.debug("Sections available: " + sectionsWithPreviews)
             val fileWithSections = f.copy(sections = sectionsWithPreviews)
 
 
@@ -175,6 +172,7 @@ class Datasets @Inject()(
               fileWithSections -> ff
             }
           }
+
           val metadata = datasets.getMetadata(id)
           Logger.debug("Metadata: " + metadata)
           for (md <- metadata) {
@@ -183,21 +181,21 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
-          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
-          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
+	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
+	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
+	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
 
-          var commentsByDataset = comments.findCommentsByDatasetId(id)
-          filesInDataset.map {
-            file =>
-              commentsByDataset ++= comments.findCommentsByFileId(file.id)
-              sections.findByFileId(UUID(file.id.toString)).map { section =>
-                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
-              }
-          }
-          commentsByDataset = commentsByDataset.sortBy(_.posted)
-
-          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+	          var commentsByDataset = comments.findCommentsByDatasetId(id)
+	          filesInDataset.map {
+	            file =>
+	              commentsByDataset ++= comments.findCommentsByFileId(file.id)
+	              sections.findByFileId(UUID(file.id.toString)).map { section =>
+	                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
+	              }
+	          }
+	          commentsByDataset = commentsByDataset.sortBy(_.posted)
+	          
+	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
         }
@@ -248,8 +246,7 @@ class Datasets @Inject()(
   /**
    * Upload file.
    */
-
-def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+	def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
     user match {
@@ -311,27 +308,24 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					              }
 					        	  files.setContentType(f.id, fileType)
 					          }
-					        }
-					        else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
+					        } else if(nameOfFile.toLowerCase().endsWith(".mov")) {
+							  		fileType = "ambiguous/mov";
 					        }
 					        
 					        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 					        
-					    	// TODO RK need to replace unknown with the server name
-					    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-		//			        val key = "unknown." + "file."+ "application.x-ptm"
-					    	
-			                val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
-        
+					    		// TODO RK need to replace unknown with the server name
+					    		val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
+
+									val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
+
 					        // add file to dataset 
 					        val dt = dataset.copy(files = List(f), author=identity)					        
 					        // TODO create a service instead of calling salat directly
 				            datasets.update(dt)				            
-				            
+
 						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id, flags))}
 						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
-
 					        
 					        val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 					        
@@ -345,26 +339,28 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 										  
 										  //index the file
 										  current.plugin[ElasticsearchPlugin].foreach{
-								  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dt.id.toString()),("datasetName",dt.name), ("xmlmetadata", xmlToJSON)))
+								  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dt.id.toString()),("datasetName",dt.name), ("xmlmetadata", xmlToJSON)))
+
 								  		  }
 								  		  // index dataset
 								  		  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
 								  		  List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
-							  }
-							  else{
+							  } else {
 								  //index the file
-								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+
+								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dt.id.toString),("datasetName",dt.name)))}
+
 								  // index dataset
 								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
 								  List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName","")))}
 							  }
-					    	// TODO RK need to replace unknown with the server name and dataset type		            
-		 			    	
-					        // index the file using Versus for content-based retrieval
-                            current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 					        
-                            val dtkey = "unknown." + "dataset."+ "unknown"
-					        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
+					      // index the file using Versus for content-based retrieval
+					      current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+
+					    	// TODO RK need to replace unknown with the server name and dataset type		            
+		 			    	val dtkey = "unknown." + "dataset."+ "unknown"
+									current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 		 			    	
 		 			    	//add file to RDF triple store if triple store is used
 		 			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -376,17 +372,14 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 						             case _ => {}
 					             }
 				             }
-		 			    	
-		 			    	  	
-		 			    	/*---- Insert DTS Request to the database   ----*/
 
+		 			    	// Insert DTS Request to the database
 		 			    	val clientIP=request.remoteAddress
 		 			    	val serverIP= request.host
 		 			    	dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-			    			/*--------------------------------------------*/
+		 			    	
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id))
-		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
 					      
 					      case None => {
@@ -399,8 +392,6 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				            current.plugin[AdminsNotifierPlugin].foreach{
                       _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
 				            Redirect(routes.Datasets.dataset(dt.id))
-
-		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
 					    }   	                 
 	                 }
@@ -428,53 +419,52 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          
 				  val dt = dataset.copy(files = List(theFileGet), author=identity, thumbnail_id=thisFileThumbnailString)
 				  datasets.update(dt)
-				  
+		  
 				  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-			      
-		          if(!theFileGet.xmlMetadata.isEmpty){
-		            val xmlToJSON = files.getXMLMetadataJSON(UUID(fileId))
-		            datasets.addXMLMetadata(dt.id, UUID(fileId), xmlToJSON)
-		            // index dataset
-		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
-			        List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
-		          }else{
-		            // index dataset
-		        	  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
-			    	   List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName","")))}
-		          }
-		          
-		          //reindex file
-		          files.index(theFileGet.id)
-		          
-		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
-				  // TODO RK need to replace unknown with the server name and dataset type		            
-				  val dtkey = "unknown." + "dataset."+ "unknown"
+
+					if(!theFileGet.xmlMetadata.isEmpty){
+						val xmlToJSON = files.getXMLMetadataJSON(UUID(fileId))
+						datasets.addXMLMetadata(dt.id, UUID(fileId), xmlToJSON)
+						// index dataset
+						current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id,
+					List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
+					}else{
+						// index dataset
+						current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id,
+					 List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName","")))}
+					}
+
+					//reindex file
+					files.index(theFileGet.id)
+					val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
+					// TODO RK need to replace unknown with the server name and dataset type
+					val dtkey = "unknown." + "dataset."+ "unknown"
+
 				  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 
-		          //link file to dataset in RDF triple store if triple store is used
-		          if(theFileGet.filename.endsWith(".xml")){
-				             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-					             case "yes" => {
-					               sparql.linkFileToDataset(UUID(fileId), dt.id)
-					             }
-					             case _ => {}
-				             }
-				   }
-		          //***** Inserting DTS Requests   **//  
-		          Logger.debug("The file already exists")
-		          val clientIP=request.remoteAddress
-		          val domain=request.domain
-		          val keysHeader=request.headers.keys
-		          Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-		          val serverIP= request.host
-		          dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
-						            
-				//****************************//
+		      //link file to dataset in RDF triple store if triple store is used
+		      if(theFileGet.filename.endsWith(".xml")) {
+						play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+							case "yes" => {
+								sparql.linkFileToDataset(UUID(fileId), dt.id)
+							}
+							case _ => {}
+						}
+				  }
+		          
+					// Inserting DTS Requests
+					Logger.debug("The file already exists")
+					val clientIP=request.remoteAddress
+					val domain=request.domain
+					val keysHeader=request.headers.keys
+					Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+					val serverIP= request.host
+					dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
 		          
 				  // redirect to dataset page
 				  Redirect(routes.Datasets.dataset(dt.id))
 				  current.plugin[AdminsNotifierPlugin].foreach{
-            _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+					  _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
 				  Redirect(routes.Datasets.dataset(dt.id)) 
 	            }	            
 	          }  
@@ -483,7 +473,6 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		 )
         }
         case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
-
       }
   }
 
