@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# MEDICI_CLASSPATH
+#
+# The Medici implementation will look on the classpath for 'themes' and
+# 'previewers'. To add additional directories where Medici should look for
+# files, set the MEDICI_CLASSPATH environment variable, for example:
+#
+#   export MEDICI_CLASSPATH="/path/to/themes/:/path/to/previewers/"
+#
+# MEDICI_JAVA_OPTS
+#
+# If you need to specify java options specific to Medici, you can set the
+# MEDICI_JAVA_OPTS environment variable. If not specified, the JAVA_OPTS
+# environment variable will be used. If that is not specified, reasonable
+# defaults for Medici will be used.
+
+cd $( dirname "$0" )/..
+MAINCLASS=play.core.server.NettyServer
+BINDIR="${PWD}/bin"
+LIBDIR="${PWD}/lib"
+USERDIR="${PWD}/.."
+CLASSPATH=${LIBDIR}/'*'
+
+JOPTS="-Xms1024m -Xmx1024m -XX:MaxPermSize=256m -XX:ReservedCodeCacheSize=128m"
+
+if [ -n "${MEDICI_JAVA_OPTS}" ]; then
+        JOPTS="${MEDICI_JAVA_OPTS}"
+elif [ -n "${JAVA_OPTS}" ]; then
+        JOPTS="${JAVA_OPTS}"
+fi
+
+if [ -n "${MEDICI_CLASSPATH}" ]
+then
+        CLASSPATH="${CLASSPATH}:${MEDICI_CLASSPATH}"
+fi
+
+if uname -a | grep -qi cygwin
+then
+        # if run from cygwin, convert unix paths to windows paths
+        CLASSPATH=$(cygpath -apw "${CLASSPATH}")
+        JOPTS="${JOPTS} -Djline.terminal=jline.UnixTerminal"
+fi
+
+exec java ${JOPTS} -Duser.dir="${USERDIR}" -cp "${CLASSPATH}" "${MAINCLASS}" "$@"
