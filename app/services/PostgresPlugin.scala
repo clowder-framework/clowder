@@ -231,7 +231,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     generatedKey.toString
   }
 
-  def searchStreams(geocode: Option[String]): Option[String] = {
+  def searchStreams(geocode: Option[String], stream_name: Option[String]): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
@@ -250,6 +250,9 @@ class PostgresPlugin(application: Application) extends Plugin {
         i += 2
       }
       query += "ST_MakePoint(?, ?)])), geog)"
+      if (stream_name.isDefined) query += " AND name = ?"
+    } else if (parts.length == 0) {
+      if (stream_name.isDefined) query += " WHERE name = ?"
     }
     query += ") As t;"
     val st = conn.prepareStatement(query)
@@ -266,6 +269,8 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
+    } else if (parts.length == 0 && stream_name.isDefined) {
+      st.setString(1, stream_name.getOrElse(""))
     }
     st.setFetchSize(50)
     Logger.debug("Sensors search statement: " + st)

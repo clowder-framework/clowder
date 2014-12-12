@@ -195,13 +195,17 @@ object Geostreams extends ApiController {
       }
   }
 
-  def searchStreams(geocode: Option[String]) =
+  def searchStreams(geocode: Option[String], stream_name: Option[String]) =
     Action { request =>
       Logger.debug("Searching stream " + geocode)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchStreams(geocode) match {
-            case Some(d) => jsonp(d, request)
+          geocode -> geocode.getOrElse("").toString
+          stream_name -> stream_name.getOrElse("").toString
+          plugin.searchStreams(geocode, stream_name) match {
+            case Some(data) => {
+              jsonp(data, request)
+            }
             case None => jsonp("""{"status":"No data found"}""", request)
           }
         }
