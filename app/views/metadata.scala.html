@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity]) 
+@(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
@@ -63,13 +63,7 @@
 			<button class="usr_md_submit btn rdfbtn" type="button">Get as RDF</button>
 		}
 	</div>
-	
-	@if(!xmlMetadata.isEmpty) {
-		<h5>XML metadata:</h5>		
-		@for(i <- 0 until xmlMetadata.length){								
-			@printLevel(xmlMetadata(i).xmlMetadata)
-		}
-	}
+
 			
 </form>
 <script language="javascript">
@@ -80,16 +74,16 @@
 </script>
 <script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
 @if(!user.isDefined) {
-		      	   <script language="javascript">
-			     		$("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");
-			     		$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
-			       </script>
-		      	}
+   <script language="javascript">
+		$("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");
+		$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
+   </script>
+}
 @if(user.isDefined) {
-			@if(!user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-					<script language="javascript">
-			     		$("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");
-			     		$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
-			       </script>
-			}													
-		} 
+	@if(!user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+			<script language="javascript">
+				$("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");
+				$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
+		   </script>
+	}
+}

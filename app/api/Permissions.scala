@@ -89,7 +89,7 @@ import api.Permission._
  * @author Luigi Marini
  */
 case class WithPermission(permission: Permission) extends Authorization {
-  
+
   val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
   val files: FileService = services.DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = services.DI.injector.getInstance(classOf[DatasetService])
@@ -102,7 +102,9 @@ case class WithPermission(permission: Permission) extends Authorization {
 	def isAuthorized(user: Identity, resource: Option[UUID] = None): Boolean = {
 
     // always check for useradmin, user needs to be in admin list no ifs ands or buts.
-    if (permission == UserAdmin) {
+    if (permission == Public) {
+      true
+    } else if (permission == UserAdmin) {
       checkUserAdmin(user)
     } else {
       // based on scheme pick right setup
@@ -253,5 +255,5 @@ case class WithPermission(permission: Permission) extends Authorization {
 			}
 		}
 	}
-}
 
+}

@@ -163,7 +163,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
               index(collection.id)
 
               if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
-            	  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
+                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
                   $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
               }
 

@@ -5,15 +5,17 @@ import play.api.data.Forms._
 import models.{UUID, Collection}
 import java.util.Date
 import play.api.Logger
+import play.api.Play.current
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
-import play.api.Play.current
-import javax.inject.{Singleton, Inject}
+import javax.inject.{ Singleton, Inject }
+import services.{ DatasetService, CollectionService }
 import services._
+
 
 object ThumbnailFound extends Exception {}
 
@@ -40,7 +42,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
   /**
    * List collections.
-   */
+   */	
   def list(when: String, date: String, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ListCollections)) {
     implicit request =>
       implicit val user = request.user
@@ -80,14 +82,31 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         }
       }
 
-      Ok(views.html.collectionList(collectionList, prev, next, limit))
-    
+      var collectionsWithThumbnails = List.empty[models.Collection]
+      for (collection <- collectionList) {
+        var collectionThumbnail: Option[String] = None
+        try {
+          for (dataset <- collection.datasets) {
+            if (!dataset.thumbnail_id.isEmpty) {
+              collectionThumbnail = dataset.thumbnail_id
+              throw ThumbnailFound
+            }
+          }
+        } catch {
+          case ThumbnailFound =>
+        }
+        val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+        collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
+      }
+      collectionsWithThumbnails = collectionsWithThumbnails.reverse
+
+      Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit))
   }
 
   def jsonCollection(collection: Collection): JsValue = {
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description, "created" -> collection.created.toString))
   }
-
+  
   /**
    * Create collection.
    */

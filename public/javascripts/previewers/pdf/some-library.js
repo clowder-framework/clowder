@@ -10,8 +10,6 @@
 	s.type = "text/javascript";
 	s.src = Configuration.previewer + "/pdf.js";
 	$(Configuration.tab).append(s);
-	
-	$(Configuration.tab).append("<br/>");
 
 	$(Configuration.tab).append(
 		"<button id='prevPage"+prNum+"' value='prev'>&lt;</button>" + 
