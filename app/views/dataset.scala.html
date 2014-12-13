@@ -618,6 +618,11 @@
                                     <button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete">
                                     <span class="glyphicon glyphicon-trash"></span> Delete</button>
                                 </span>
+                            } else {
+                                <span class="align-right" style="padding-right:12px;">
+                                    <button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete">
+                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                                </span>
                             } 
                          }
                     </div>

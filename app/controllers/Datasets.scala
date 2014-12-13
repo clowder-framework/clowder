@@ -3,6 +3,7 @@ package controllers
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.mvc.Cookie
 import java.io.FileInputStream
 import play.api.Play.current
 import services._
@@ -64,8 +65,7 @@ class Datasets @Inject()(
    * List datasets.
    */
   def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
-    implicit request =>
-      Logger.debug("------- mode is " + mode + " ---------")
+    implicit request =>      
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when
@@ -121,7 +121,25 @@ class Datasets @Inject()(
       for (aDataset <- datasetList) {
           decodeDatasetElements(aDataset)
       }
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, mode))
+      Logger.debug("------- mode is " + mode + " ---------")
+      var viewMode = mode;
+      if (viewMode == "null") {
+          //Base case, so check to see if there is a session value          
+          request.cookies.get("view-mode") match {
+              case Some(cookie) => {
+                  Logger.debug("------ from cookie! ------")
+                  viewMode = cookie.value
+              }
+              case None => {
+                  //If there is no cookie, default it to tile
+                  Logger.debug("------ NO cookie! ------")
+                  viewMode = "tile"
+              }
+          }                      
+      }
+      Logger.debug("------- viewMode is " + viewMode + " ---------")
+      //Pass the viewMode into the view, but also update the session
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))//.withCookies(Cookie("view-mode", viewMode))
   }
 
 
