@@ -121,6 +121,10 @@ class Datasets @Inject()(
       for (aDataset <- datasetList) {
           decodeDatasetElements(aDataset)
       }
+      
+      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
       Logger.debug("------- mode is " + mode + " ---------")
       var viewMode = mode;
       if (viewMode == "null") {
@@ -138,8 +142,8 @@ class Datasets @Inject()(
           }                      
       }
       Logger.debug("------- viewMode is " + viewMode + " ---------")
-      //Pass the viewMode into the view, but also update the session
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))//.withCookies(Cookie("view-mode", viewMode))
+      //Pass the viewMode into the view
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
   }
 
 
