@@ -41,7 +41,7 @@ POST    /extraction/upload                @controllers.Files.uploadExtract()
 #End
 
 # Files
-GET     /files                            @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+GET     /files                            @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "null")
 GET     /files/new                        @controllers.Files.uploadFile
 GET		/files/new					      @controllers.Files.uploadFile
 GET     /files/metadataSearch          	  @controllers.Files.metadataSearch

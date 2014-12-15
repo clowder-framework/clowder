@@ -181,7 +181,29 @@ class Files @Inject() (
       }
       file.id -> allComments.size
     }.toMap
-    Ok(views.html.filesList(fileList, commentMap, prev, next, limit, mode))
+    
+    //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+	Logger.debug("------- file view - mode is " + mode + " ---------")
+	var viewMode = mode;
+    if (viewMode == "null") {
+    	//Base case, so check to see if there is a session value          
+    	request.cookies.get("view-mode") match {
+	    	case Some(cookie) => {
+	    		Logger.debug("------ file view - from cookie! ------")
+	    		viewMode = cookie.value
+	    	}
+	    	case None => {
+	    		//If there is no cookie, default it to tile
+	    		Logger.debug("------ file view - NO cookie! ------")
+	    		viewMode = "tile"
+	    	}
+    	}                      
+      }
+      Logger.debug("------- file view - viewMode is " + viewMode + " ---------")
+      //Pass the viewMode into the view
+    Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
   }
 
   /**
