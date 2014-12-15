@@ -1,6 +1,3 @@
-/**
- *
- */
 package controllers
 
 import play.api.mvc.{Results, Controller, Action}
@@ -12,6 +9,7 @@ import api.WithPermission
 import api.Permission
 
 import services.{AppConfigurationService, AppAppearanceService, VersusPlugin}
+
 import securesocial.core.providers.utils.RoutesHelper
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -27,7 +25,6 @@ import play.api.libs.concurrent.Promise
 
 import play.api.data.Form
 import play.api.data.Forms._
-
 import javax.inject.{Inject, Singleton}
 
 /**
@@ -47,8 +44,9 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance:
     val themeId = themes.indexOf(getTheme)
     Logger.debug("Theme id " + themeId)
     val appAppearanceGet = appAppearance.getDefault.get
+    val appConfigGet = appConfiguration.getDefault.get
     implicit val user = request.user
-    Ok(views.html.admin(themeId, appAppearanceGet))
+    Ok(views.html.admin(themeId, appAppearanceGet, appConfigGet))
   }
   
   def adminIndex = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
@@ -340,7 +338,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance:
     }
   }
 
-  def getTheme(): String = appConfiguration.getTheme()
+def getTheme(): String = appConfiguration.getTheme()
   
   val adminForm = Form(
   single(

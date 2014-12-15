@@ -6,9 +6,20 @@ import services._
 import models.UUID
 
 class AdminsNotifierPlugin(application:Application) extends Plugin {
+  
+  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
 
-  val appConfiguration: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
+//  var appPort = play.api.Play.configuration.getString("https.port").getOrElse("")
+//  val hostUrl = {
+//    if(!appPort.equals("")){
+//          "https://"
+//        }
+//    else{
+//      appPort = play.api.Play.configuration.getString("http.port").getOrElse("9000")
+//      "http://"
+//    }
+//  } + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + appPort
+  
   override def onStart() {
     Logger.debug("Starting Admins Notifier Plugin")
   }

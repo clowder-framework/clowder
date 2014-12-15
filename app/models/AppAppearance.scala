@@ -7,7 +7,6 @@ import play.api.Play.current
 import play.api.Logger
 import services.mongodb.MongoSalatPlugin
 import services.mongodb.MongoContext
-import services.mongodb.MongoContext.context
 
 
 /**
