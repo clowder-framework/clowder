@@ -44,3 +44,4 @@ object VersusIndex {
 			}
 	}
 }
+

@@ -15,8 +15,9 @@ import play.api.Logger
  * @author Luigi Marini
  */
 object Admin extends Controller with ApiController {
-	
-	val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
+  
+  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
+  val appAppearance: AppAppearanceService = services.DI.injector.getInstance(classOf[AppAppearanceService])
 
   /**
    * DANGER: deletes all data, keep users.
@@ -62,10 +63,10 @@ object Admin extends Controller with ApiController {
     
     (request.body \ "displayName").asOpt[String] match {
       case Some(displayName) =>{
-        AppAppearance.setDisplayedName(displayName)
+        appAppearance.setDisplayedName(displayName)
         (request.body \ "welcomeMessage").asOpt[String] match {
           case Some(welcomeMessage)=>{
-            AppAppearance.setWelcomeMessage(welcomeMessage)
+            appAppearance.setWelcomeMessage(welcomeMessage)
           }
           case None=>{}         
         }
