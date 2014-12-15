@@ -34,6 +34,7 @@
 
             var selectedId = $("#datasetAddSelect").val();
             var selectedName = $("#datasetAddSelect option:selected").text();
+            alert("http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+selectedId+"/files/"+"@file.id");
             var request = $.ajax({
                    type: 'POST',
                    url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+selectedId+"/files/"+"@file.id"

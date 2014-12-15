@@ -90,51 +90,40 @@ class Datasets @Inject()(
   @ApiOperation(value = "Create new dataset",
       notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
       responseClass = "None", httpMethod = "POST")
-  def createDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
-    request =>
-      Logger.debug("Creating new dataset")
-      (request.body \ "name").asOpt[String].map { name =>
-      	  (request.body \ "description").asOpt[String].map { description =>
-      	    (request.body \ "file_id").asOpt[String].map { file_id =>
-      	      files.get(UUID(file_id)) match {
-      	        case Some(file) =>
-      	           val d = Dataset(name=name,description=description, created=new Date(), files=List(file), author=request.user.get, licenseData = new LicenseData())
-		      	   datasets.insert(d) match {
-		      	     case Some(id) => {
-                       files.index(UUID(file_id))
-                       if(!file.xmlMetadata.isEmpty){
-                         val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
-                         datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
-                         current.plugin[ElasticsearchPlugin].foreach {
-                              _.index("data", "dataset", UUID(id),
-                                List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
-                            }
-                       }
-                       else{
-                         current.plugin[ElasticsearchPlugin].foreach {
-                              _.index("data", "dataset", UUID(id),
-                                List(("name", d.name), ("description", d.description)))
-                            }
-                       }
-
-					   Ok(toJson(Map("id" -> id)))
-                       current.plugin[AdminsNotifierPlugin].foreach {
-                         _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",id, name)}
-                       Ok(toJson(Map("id" -> id)))
-		      	     }
-		      	     case None => Ok(toJson(Map("status" -> "error")))
-		      	   }
-      	        case None => BadRequest(toJson("Bad file_id = " + file_id))
-      	      }
-      	   }.getOrElse {
-      		  BadRequest(toJson("Missing parameter [file_id]"))
-      	   }
-      	  }.getOrElse {
-      		BadRequest(toJson("Missing parameter [description]"))
-      	  }
-    }.getOrElse {
-      BadRequest(toJson("Missing parameter [name]"))
-    }
+  def createDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>
+    Logger.debug("Creating new dataset")
+    (request.body \ "name").asOpt[String].map { name =>
+      (request.body \ "description").asOpt[String].map { description =>
+        (request.body \ "file_id").asOpt[String].map { file_id =>
+          files.get(UUID(file_id)) match {
+            case Some(file) =>
+              val d = Dataset(name=name,description=description, created=new Date(), files=List(file),
+                author=request.user.get, licenseData = new LicenseData())
+              datasets.insert(d) match {
+                case Some(id) => {
+                  files.index(UUID(file_id))
+                  if(!file.xmlMetadata.isEmpty) {
+                    val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
+                    datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
+                    current.plugin[ElasticsearchPlugin].foreach {
+                     _.index("data", "dataset", UUID(id),
+                       List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
+                    }
+                  } else {
+                    current.plugin[ElasticsearchPlugin].foreach {
+                      _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
+                    }
+                  }
+                  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}
+                  Ok(toJson(Map("id" -> id)))
+                }
+                case None => Ok(toJson(Map("status" -> "error")))
+              }
+            case None => BadRequest(toJson("Bad file_id = " + file_id))
+          }
+        }.getOrElse(BadRequest(toJson("Missing parameter [file_id]")))
+      }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
+    }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
 
   @ApiOperation(value = "Attach existing file to dataset",
@@ -254,9 +243,6 @@ class Datasets @Inject()(
         }
       }
   }
-  
-  //////////////////
-
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection)) {
@@ -669,7 +655,9 @@ class Datasets @Inject()(
         case TagCheck_Dataset => {
         	datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         	datasets.index(id)
+
           }
+
         case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }
       Ok(Json.obj("status" -> "success"))
@@ -779,7 +767,8 @@ class Datasets @Inject()(
         datasets.get(id) match {
           case Some(dataset) => {
             datasets.removeAllTags(id)
-            datasets.index(id)
+            datasets.index(id) 
+
             Ok(Json.obj("status" -> "success"))
           }
           case None => {
@@ -976,19 +965,20 @@ class Datasets @Inject()(
             case _ => Logger.debug("userdfSPARQLStore not enabled")
           }
           datasets.removeDataset(id)
+
           current.plugin[ElasticsearchPlugin].foreach {
         	  _.delete("data", "dataset", id.stringify)
           }
           
-          for(file <- dataset.files)
-        	  files.index(file.id)
-          
-          Ok(toJson(Map("status" -> "success")))
-          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
-          Ok(toJson(Map("status"->"success")))
-        }
-        case None => Ok(toJson(Map("status" -> "success")))
+          for(file <- dataset.files) files.index(file.id)
+
+        Ok(toJson(Map("status"->"success")))
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
+        Ok(toJson(Map("status"->"success")))
       }
+      case None => Ok(toJson(Map("status" -> "success")))
+     }
   }
 
   @ApiOperation(value = "Get the user-generated metadata of the selected dataset in an RDF file",
@@ -1069,6 +1059,7 @@ class Datasets @Inject()(
       }
   }
 
+  
   def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowDatasetsMetadata)) { request =>
     datasets.get(id)  match {
       case Some(dataset) => {
@@ -1087,6 +1078,7 @@ class Datasets @Inject()(
         Logger.error("Error finding dataset" + id);
         InternalServerError
       }      
+
     }
   }
   
@@ -1111,6 +1103,7 @@ class Datasets @Inject()(
 	    }
     }
   }
+
 }
 
 object ActivityFound extends Exception {}

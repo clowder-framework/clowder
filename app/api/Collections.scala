@@ -23,6 +23,7 @@ import controllers.Utils
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService) extends ApiController {
 
+    
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
@@ -72,15 +73,17 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "Does not delete the individual datasets in the collection.",
       responseClass = "None", httpMethod = "POST")
   def removeCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-                       authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
-                       collections.get(collectionId) match{
-                       case Some(collection) => {
-                         collections.delete(collectionId)
-                         current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)}
-                       }
-                     }                                             
-                     //Success anyway, as if collection is not found it is most probably deleted already
-                     Ok(toJson(Map("status" -> "success")))
+    authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        collections.delete(collectionId)
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
+        }
+      }
+    }
+    //Success anyway, as if collection is not found it is most probably deleted already
+    Ok(toJson(Map("status" -> "success")))
   }
 
   @ApiOperation(value = "List all collections",

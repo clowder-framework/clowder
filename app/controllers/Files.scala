@@ -20,12 +20,12 @@ import java.util.Date
 import scala.sys.SystemProperties
 import securesocial.core.Identity
 
+
 /**
  * Manage files.
  *
  * @author Luigi Marini
  */
-
 class Files @Inject() (
   files: FileService,
   datasets: DatasetService,
@@ -38,7 +38,6 @@ class Files @Inject() (
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
   thumbnails: ThumbnailService) extends SecuredController {
-
 
   /**
    * Upload form.
@@ -94,13 +93,13 @@ class Files @Inject() (
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>
-        	val p = previews.findBySectionId(s.id)
-        	if(p.length>0)
+          val p = previews.findBySectionId(s.id)
+          if(p.length>0)
         		s.copy(preview = Some(p(0)))
         	else
         		s.copy(preview = None)
         }
-        Logger.debug("Sections available: " + sectionsWithPreviews)
+        Logger.debug("Sections available: " + sectionsWithPreviews) 
 
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
@@ -189,11 +188,11 @@ class Files @Inject() (
    * Upload file page.
    */
   def uploadFile = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
-  	implicit val user = request.user
-  	Ok(views.html.upload(uploadForm))
+    implicit val user = request.user
+    Ok(views.html.upload(uploadForm))
   }
   
-/**
+  /**
    * Upload form for extraction.
    */
   val extractForm = Form(
@@ -252,6 +251,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
               // TODO RK need to replace unknown with the server name
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+
               val host = Utils.baseUrl(request)
               val id = f.id
 	          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
@@ -305,7 +305,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
  
 
 }*/
-  
+
   /**
    * Upload a file.
    * 
@@ -372,10 +372,10 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	            
 	            // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
-	            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
 
+	            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
 	            val id = f.id
-             
+	            
 	            /***** Inserting DTS Requests   **/  
 	            
 	            val clientIP=request.remoteAddress
@@ -392,11 +392,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                 val serverIP= request.host
 	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 	           /****************************/ 
-	             // TODO replace null with None
+
+              // TODO replace null with None
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
 
-	            
-	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
+
 	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -414,6 +415,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName","")))
 		            }
 	            }
+
 	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
 
 	             //add file to RDF triple store if triple store is used
@@ -654,6 +656,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace("/", ".")
+
             val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             val id = f.id
             // TODO replace null with None
@@ -757,6 +760,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace("/", ".")
+
             val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             
             val id = f.id
@@ -765,7 +769,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
             
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
+
             
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -858,6 +863,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
+
             val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             val id = f.id
 
@@ -966,11 +972,11 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				  	  
 					  // TODO RK need to replace unknown with the server name
 					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
+
 							  val host = Utils.baseUrl(request) + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
 							  val id = f.id
-
 							  
-							   /***** Inserting DTS Requests   **/  
+							  /***** Inserting DTS Requests   **/  
 	            
 						            val clientIP=request.remoteAddress
 						            //val clientIP=request.headers.get("Origin").get
@@ -986,12 +992,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 					                val serverIP= request.host
 						            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 						      
-						      /****************************/ 
-							  
-							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
+						      /****************************/
 
-					  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
 					  
+					  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+
 					  //for metadata files
 					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 						  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -1126,6 +1132,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   //        
   //        // TODO RK need to replace unknown with the server name
   //        val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
+  //        // TODO RK : need figure out if we can use https
   //        val host = request.origin + request.path.replaceAll("upload$", "")
   //        val id = f.id.toString
   //        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, "", ""))}
