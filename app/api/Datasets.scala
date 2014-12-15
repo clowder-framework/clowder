@@ -11,6 +11,7 @@ import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
+import play.api.mvc.AnyContent
 import jsonutils.JsonUtil
 import controllers.Previewers
 import org.bson.types.ObjectId
@@ -202,49 +203,7 @@ class Datasets @Inject()(
     request =>
      datasets.get(datasetId) match{
       case Some(dataset) => {
-        files.get(fileId) match {
-          case Some(file) => {
-            if(files.isInDataset(file, dataset)){
-	            //remove file from dataset
-	            datasets.removeFile(dataset.id, file.id)
-	            files.index(fileId)
-	            if (!file.xmlMetadata.isEmpty)
-                  datasets.index(datasetId)
-                  
-	            Logger.info("Removing file from dataset completed")
-	            
-	            if(!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-	              if(dataset.thumbnail_id.get == file.thumbnail_id.get){
-	            	  datasets.createThumbnail(dataset.id)
-		             
-		             			for(collectionId <- dataset.collections){
-		                          collections.get(UUID(collectionId)) match{
-		                            case Some(collection) =>{		                              
-		                            	if(!collection.thumbnail_id.isEmpty){
-		                            		if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
-		                            			collections.createThumbnail(collection.id)
-		                            		}		                        
-		                            	}
-		                            }
-		                            case None=>{}
-		                          }
-		                        }
-	              }		                        
-	            }
-	            
-	           //remove link between dataset and file from RDF triple store if triple store is used
-                if (file.filename.endsWith(".xml")) {
-                  configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                    case "yes" => rdfsparql.detachFileFromDataset(fileId, datasetId)
-                    case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-                  }
-                }
-               }
-              else  Logger.info("File was already out of the dataset.")
-              Ok(toJson(Map("status" -> "success")))
-            }
-            case None => Ok(toJson(Map("status" -> "success")))
-          }
+    	  detachFileHelper(datasetId, fileId, dataset)
         }
         case None => {
           ignoreNotFound match {
@@ -255,7 +214,66 @@ class Datasets @Inject()(
       }
   }
   
+  /**
+   * Utility function to consolidate the utility portions of the detach file functionality 
+   * so that it can be easily called from multiple API operations.
+   * 
+   * @param datasetId The id of the dataset that a file is being detached from
+   * @param fileId The id of the file to detach from the dataset
+   * @param dataset The reference to the model of the dataset being operated on
+   * 
+   */
+  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset) = {      
+	  files.get(fileId) match {
+		  case Some(file) => {		       
+			  if(files.isInDataset(file, dataset)){
+				  //remove file from dataset
+				  datasets.removeFile(dataset.id, file.id)
+				  files.index(fileId)
+				  if (!file.xmlMetadata.isEmpty)
+					  datasets.index(datasetId)
+	
+				  Logger.debug("----- Removing a file from dataset completed")
+
+				  if(!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+					  if(dataset.thumbnail_id.get == file.thumbnail_id.get){
+						  datasets.createThumbnail(dataset.id)
+
+						  for(collectionId <- dataset.collections){
+							  collections.get(UUID(collectionId)) match{
+							  case Some(collection) =>{		                              
+								  if(!collection.thumbnail_id.isEmpty){
+									  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+										  collections.createThumbnail(collection.id)
+									  }		                        
+								  }
+							  }
+							  case None=>{}
+							  }
+						  }
+					  }		                        
+				  }
+	
+				  //remove link between dataset and file from RDF triple store if triple store is used
+				  if (file.filename.endsWith(".xml")) {
+					  configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+						  case "yes" => rdfsparql.detachFileFromDataset(fileId, datasetId)
+						  case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
+					  }
+				  }
+			  }
+			  else  Logger.debug("----- File was already out of the dataset.")
+			  Ok(toJson(Map("status" -> "success")))
+		  }
+		  case None => {
+		       Logger.debug("----- detach helper NONE case")
+		       Ok(toJson(Map("status" -> "success")))
+		  }
+	  }
+  }
+  
   //////////////////
+  
 
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
@@ -963,11 +981,43 @@ class Datasets @Inject()(
       }
   }
 
-  @ApiOperation(value = "Delete dataset",
-      notes = "Cascading action (deletes all previews and metadata of the dataset and all files existing only in the deleted dataset).",
-      responseClass = "None", httpMethod = "POST")
-  def deleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets), resourceId = Some(id)) {
-    request =>
+  //Detach and delete dataset code 
+  /**
+   * REST endpoint: DELETE: detach all files from a dataset and then delete the dataset
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with the dataset to detach all files from and then delete.
+   *  
+   */
+  @ApiOperation(value = "Detach and delete dataset", 
+          notes = "Detaches all files before proceeding to perform the stanadard delte on the dataset.",
+          responseClass = "None", httpMethod="DELETE")
+  def detachAndDeleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets), resourceId = Some(id)) {
+      request =>          
+          datasets.get(id) match{              
+              case Some(dataset) => {                  
+                  for (f <- dataset.files) {                      
+                      detachFileHelper(dataset.id, f.id, dataset)
+                  }
+            	  deleteDatasetHelper(dataset.id, request)
+            	  Ok(toJson(Map("status" -> "success")))
+              }
+              case None=> {
+                  Ok(toJson(Map("status" -> "success")))
+              }
+          }          
+  }
+  
+  /**
+   * Utility function to consolidate the utility portions of the delete dataset functionality 
+   * so that it can be easily called from multiple API operations.
+   * 
+   * @param id The id of the dataset that a file is being detached from
+   * @param request The implicit request parameter which is part of the REST API call
+   * 
+   */
+  def deleteDatasetHelper(id: UUID, request: RequestWithUser[AnyContent]) = {
       datasets.get(id) match {
         case Some(dataset) => {
           //remove dataset from RDF triple store if triple store is used
@@ -982,13 +1032,20 @@ class Datasets @Inject()(
           
           for(file <- dataset.files)
         	  files.index(file.id)
-          
-          Ok(toJson(Map("status" -> "success")))
+                    
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
           Ok(toJson(Map("status"->"success")))
         }
         case None => Ok(toJson(Map("status" -> "success")))
       }
+  }
+  
+  @ApiOperation(value = "Delete dataset",
+      notes = "Cascading action (deletes all previews and metadata of the dataset and all files existing only in the deleted dataset).",
+      responseClass = "None", httpMethod = "POST")
+  def deleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets), resourceId = Some(id)) {
+    implicit request => 
+        deleteDatasetHelper(id, request)      
   }
 
   @ApiOperation(value = "Get the user-generated metadata of the selected dataset in an RDF file",

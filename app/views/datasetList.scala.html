@@ -114,10 +114,10 @@
                       <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span>  @(comments.get(dataset.id))
 					  @if(user.isDefined) {
 									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-							    		<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+							    		<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Cascade Delete of Dataset and Contents">
                                         <span class="glyphicon glyphicon-trash"></span></button>
 									} else {
-									    <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+									    <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Cascade Delete of Dataset and Contents">
                                         <span class="glyphicon glyphicon-trash"></span></button>
 									}											
 							}					  

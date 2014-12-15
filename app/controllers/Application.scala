@@ -75,6 +75,7 @@ class Application  @Inject() (files: FileService, appAppearance: AppAppearanceSe
         api.routes.javascript.Comments.editComment,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.deleteDataset,
+        api.routes.javascript.Datasets.detachAndDeleteDataset,
         api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,
         api.routes.javascript.Datasets.removeTag,
