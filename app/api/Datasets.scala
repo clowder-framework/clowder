@@ -977,11 +977,11 @@ class Datasets @Inject()(
    * 
    *  Takes one arg, id:
    *  
-   *  id, the UUID associated with the dataset to detach all files from and then delete.
+   *  @param id, the UUID associated with the dataset to detach all files from and then delete.
    *  
    */
   @ApiOperation(value = "Detach and delete dataset", 
-          notes = "Detaches all files before proceeding to perform the stanadard delte on the dataset.",
+          notes = "Detaches all files before proceeding to perform the stanadard delete on the dataset.",
           responseClass = "None", httpMethod="DELETE")
   def detachAndDeleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDatasets), resourceId = Some(id)) {
       request =>          

@@ -5,7 +5,6 @@ function removeDataset(datasetId,event, reloadPage){
 		type: 'DELETE'
 	});
 	request.done(function (response, textStatus, jqXHR){
-        console.log("Response " + response);
         if($(event.target).is("span")){
         	$(event.target.parentNode.parentNode.parentNode).remove();
         }
@@ -35,8 +34,7 @@ function removeDatasetAndRedirect(datasetId, url){
 		type: 'DELETE'
 	});
 
-	request.done(function (response, textStatus, jqXHR){
-		console.log("Response " + response);		
+	request.done(function (response, textStatus, jqXHR){		
 		window.location.href=url;
 	});
 	
