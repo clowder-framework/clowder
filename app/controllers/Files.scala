@@ -135,8 +135,7 @@ class Files @Inject() (
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListFiles)) { implicit request =>
-    Logger.debug("------- mode is " + mode + " ---------")
+  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListFiles)) { implicit request =>    
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -151,7 +150,7 @@ class Files @Inject() (
     } else {
       badRequest
     }
-    Logger.debug("---------- fileList size is " + fileList.size + " --------------")
+
     // latest object
     val latest = files.latest()
     // first object
@@ -184,19 +183,16 @@ class Files @Inject() (
     
     //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
     //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
-	Logger.debug("------- file view - mode is " + mode + " ---------")
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14	
 	var viewMode = mode;
     if (viewMode == "null") {
     	//Base case, so check to see if there is a session value          
     	request.cookies.get("view-mode") match {
 	    	case Some(cookie) => {
-	    		Logger.debug("------ file view - from cookie! ------")
 	    		viewMode = cookie.value
 	    	}
 	    	case None => {
 	    		//If there is no cookie, default it to tile
-	    		Logger.debug("------ file view - NO cookie! ------")
 	    		viewMode = "tile"
 	    	}
     	}                      
