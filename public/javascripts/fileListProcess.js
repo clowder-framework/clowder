@@ -6,7 +6,6 @@ function removeFile(fileId,event, reloadPage){
 	});
 
 	request.done(function (response, textStatus, jqXHR){
-		console.log("Response " + response);
 		$(event.target.parentNode.parentNode).remove();
 
 		if(reloadPage == true)
@@ -29,8 +28,7 @@ function removeFileAndRedirect(fileId, url){
 		type: 'DELETE'
 	});
 
-	request.done(function (response, textStatus, jqXHR){
-		console.log("Response " + response);		
+	request.done(function (response, textStatus, jqXHR){		
 		window.location.href=url;
 	});
 	
