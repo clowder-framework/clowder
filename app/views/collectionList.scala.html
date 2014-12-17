@@ -3,6 +3,9 @@
 @import _root_.util.Formatters.ellipsize
 
 @main("Collections") {
+<script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script> 
+
 <div class="page-header">
   <h1>Collections</h1>
 </div>
@@ -19,10 +22,9 @@
             }
         </div>
         <script>
-            $(function() {
-            	var viewMode = '@mode';
-                $.cookie.raw = true;
-                
+	        var viewMode = '@mode';
+	        $.cookie.raw = true;
+            $(function() {            	                
                 $('#tile-view-btn').click(function() {
                   console.log('tile view');
                   $('#tile-view').removeClass('hidden');
@@ -110,7 +112,7 @@
                             <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasets.size datasets"></span> @collection.datasets.size
                             @if(user.isDefined) {
 	                            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
-	                            @if(user.get.identityId.userId.equals(collection.author.identityId.userId)){
+	                            @if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
 	                                <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
 	                                      <span class="glyphicon glyphicon-trash"></span></button>
 	                            } else {
@@ -162,21 +164,15 @@
 							@if(collection.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
 						<td class="requiresLogin">
-							@if(user.isDefined) {
-								@if(!collection.author.isDefined){
-									<button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
+							@if(user.isDefined) {								
+								<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
+                                @if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
+                                    <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
                                     <span class="glyphicon glyphicon-trash"></span></button>
-								}
-								@if(collection.author.isDefined){
-									<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
-	                                @if(user.get.identityId.userId.equals(collection.author.identityId.userId)){
-	                                    <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
-	                                    <span class="glyphicon glyphicon-trash"></span></button>
-	                                } else {
-	                                    <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
-	                                    <span class="glyphicon glyphicon-trash"></span></button>
-	                                }
-								}								                                                            					
+                                } else {
+                                    <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
+                                    <span class="glyphicon glyphicon-trash"></span></button>
+                                }																                                                            				
 							}
 						</td>
 					</tr>
@@ -204,6 +200,4 @@
 			$(".requiresLogin").css("display","none");
 		</script>
 	}
-
-<script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
 }

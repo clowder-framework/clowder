@@ -103,22 +103,21 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
       //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
       //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
-      Logger.debug("------- collections mode is " + mode + " ---------")
       var viewMode = mode;
-      if (viewMode == "null") {
-          //Base case, so check to see if there is a session value          
-          request.cookies.get("view-mode") match {
-              case Some(cookie) => {
-                  Logger.debug("------ collections from cookie! ------")
-                  viewMode = cookie.value
-              }
-              case None => {
-                  //If there is no cookie, default it to tile
-                  Logger.debug("------ collections NO cookie! ------")
+      
+      //Always check to see if there is a session value          
+      request.cookies.get("view-mode") match {
+          case Some(cookie) => {              
+              viewMode = cookie.value
+          }
+          case None => {
+              //If there is no cookie, and no value is passed in, default it to tile
+              if (viewMode == null || viewMode == "") {
                   viewMode = "tile"
               }
-          }                      
-      }
+          }
+      }                      
+  
       Logger.debug("------- collections viewMode is " + viewMode + " ---------")
       //Pass the viewMode into the view
       Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit, viewMode))
