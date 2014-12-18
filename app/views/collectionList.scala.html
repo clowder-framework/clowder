@@ -112,11 +112,11 @@
                             <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasets.size datasets"></span> @collection.datasets.size
                             @if(user.isDefined) {
 	                            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
-	                            @if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
-	                                <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
+	                            @if(collection.author.isDefined && user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
+	                                <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
 	                                      <span class="glyphicon glyphicon-trash"></span></button>
 	                            } else {
-	                                <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
+	                                <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
 	                                      <span class="glyphicon glyphicon-trash"></span></button>
 	                            }
 	                        }
@@ -166,11 +166,11 @@
 						<td class="requiresLogin">
 							@if(user.isDefined) {								
 								<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
-                                @if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
-                                    <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
+                                @if(collection.author.isDefined && user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
+                                    <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                     <span class="glyphicon glyphicon-trash"></span></button>
                                 } else {
-                                    <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Delete the Collection">
+                                    <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                     <span class="glyphicon glyphicon-trash"></span></button>
                                 }																                                                            				
 							}
