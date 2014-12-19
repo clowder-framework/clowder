@@ -10,6 +10,7 @@ import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import java.util.Date
 import play.api.Logger
+import models.WebPageResource
 
 /**
  * Created by lmarini on 2/21/14.
@@ -53,7 +54,12 @@ class MongoDBExtractionService extends ExtractionService {
 	    extractorsTimeArray = currentExtraction.start.get :: extractorsTimeArray
 	}
   return extractorsTimeArray
-} 
+}
+
+  def save(webpr:WebPageResource):UUID={
+    WebPageResource.insert(webpr)
+    webpr.id
+  }
   
 }
 
@@ -63,3 +69,11 @@ object Extraction extends ModelCompanion[Extraction, ObjectId] {
     case Some(x) => new SalatDAO[Extraction, ObjectId](collection = x.collection("extractions")) {}
   }
 }
+
+object WebPageResource extends ModelCompanion[WebPageResource,ObjectId]{
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[WebPageResource, ObjectId](collection = x.collection("webpage.resources")) {}
+  }
+}
+

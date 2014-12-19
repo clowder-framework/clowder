@@ -1,7 +1,8 @@
 package services
 
-import models.{UUID, Extraction}
+import models.{UUID, Extraction,WebPageResource}
 import java.util.Date
+
 
 /**
  * Track information about individual extractions.
@@ -19,4 +20,7 @@ trait ExtractionService {
   def getExtractorList(fileId:UUID):collection.mutable.Map[String,String] 
   
   def getExtractionTime(fileId:UUID):List[Date]
+  
+  def save(webpr: WebPageResource): UUID
+  def getWebPageResource(id: UUID): Map[String,String]
 }
