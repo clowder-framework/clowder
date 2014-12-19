@@ -43,7 +43,6 @@ POST    /extraction/upload                @controllers.Files.uploadExtract()
 # Files
 GET     /files                            @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
 GET     /files/new                        @controllers.Files.uploadFile
-GET		/files/new					      @controllers.Files.uploadFile
 GET     /files/metadataSearch          	  @controllers.Files.metadataSearch
 GET     /files/generalMetadataSearch      @controllers.Files.generalMetadataSearch
 GET		/files/:id					      @controllers.Files.file(id: UUID)

@@ -1,16 +1,13 @@
 package api
 
+import models.UUID
+import play.Logger
 import securesocial.core.Authorization
 import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
-import services.AppConfigurationService
-import models.UUID
-import services.FileService
-import services.DatasetService
-import services.CollectionService
 import play.api.Play.configuration
-import play.api.Logger
+import services.{CollectionService, DatasetService, FileService, AppConfiguration}
 
  /**
   * A request that adds the User for the current call
@@ -20,8 +17,7 @@ case class RequestWithUser[A](user: Option[Identity], request: Request[A]) exten
 /**
  * List of all permissions available in Medici
  * 
- * @author Rob Kooperp
- *
+ * @author Rob Kooper
  */
 object Permission extends Enumeration {
 	type Permission = Value
@@ -90,7 +86,6 @@ import api.Permission._
  */
 case class WithPermission(permission: Permission) extends Authorization {
 
-  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
   val files: FileService = services.DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = services.DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = services.DI.injector.getInstance(classOf[CollectionService])
@@ -100,7 +95,6 @@ case class WithPermission(permission: Permission) extends Authorization {
 	}
 
 	def isAuthorized(user: Identity, resource: Option[UUID] = None): Boolean = {
-
     // always check for useradmin, user needs to be in admin list no ifs ands or buts.
     if (permission == Public) {
       true
@@ -198,7 +192,7 @@ case class WithPermission(permission: Permission) extends Authorization {
   }
 
   def checkUserAdmin(user: Identity) = {
-     (user != null) && user.email.nonEmpty && appConfiguration.adminExists(user.email.get)
+     (user != null) && user.email.nonEmpty && AppConfiguration.checkAdmin(user.email.get)
   }
 
 	def checkFileOwnership(user: Identity, permission: Permission, resource: UUID): Boolean = {
@@ -255,5 +249,4 @@ case class WithPermission(permission: Permission) extends Authorization {
 			}
 		}
 	}
-
 }
