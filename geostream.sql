@@ -237,6 +237,9 @@ CREATE INDEX streams_gix ON streams USING gist (geog);
 
 CREATE INDEX streams_sensor_id_idx ON streams USING btree (sensor_id);
 
+CREATE INDEX geoindex_times ON datapoints (start_time, end_time);
+
+CREATE INDEX geoindex_stream_id ON datapoints (stream_id);
 
 --
 -- PostgreSQL database dump complete

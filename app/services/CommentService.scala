@@ -37,3 +37,4 @@ trait CommentService {
   def removeComment(id: UUID)
     
 }
+
