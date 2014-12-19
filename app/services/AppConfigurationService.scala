@@ -55,10 +55,6 @@ trait AppConfigurationService {
  * Object to handle some common configuration options.
  */
 object AppConfiguration {
-  lazy val themes = ResourceLister.listFiles("public/stylesheets/themes/", ".*.css")
-    .filter(s => s.contains("/themes/"))
-    .map(s => s.replaceAll(".*/themes/", ""))
-
   val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   // ----------------------------------------------------------------------
@@ -68,6 +64,12 @@ object AppConfiguration {
 
   /** Get the default theme */
   def getTheme: String = appConfig.getProperty[String]("theme", "simplex.min.css")
+
+  /** Get list of available themes */
+  def themes: List[String] = {
+    ResourceLister.listFiles("public.stylesheets.themes", ".*.css")
+      .map(s => s.replaceAll(".*.themes.", ""))
+  }
 
   // ----------------------------------------------------------------------
 
