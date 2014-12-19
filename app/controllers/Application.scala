@@ -70,9 +70,11 @@ class Application @Inject() (files: FileService) extends SecuredController {
         routes.javascript.Admin.getIndexes,
         routes.javascript.Tags.search,
         routes.javascript.Admin.setTheme,
-        
-        api.routes.javascript.Admin.removeAdmin,
-        
+        routes.javascript.Admin.getAdapters,
+        routes.javascript.Admin.getExtractors,
+        routes.javascript.Admin.getMeasures,
+        routes.javascript.Admin.getIndexers,       
+        api.routes.javascript.Admin.removeAdmin,        
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,
