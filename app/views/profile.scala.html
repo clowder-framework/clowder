@@ -7,7 +7,7 @@
       <td valign="top">
         @profile.avatarUrl match{
           case Some(info) => {
-            <img src=@info+"?s=256" class="profilePicture">
+            <img src="@info?s=256" class="profilePicture">
           }
           case None => {
             <img src="http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=256" class="profilePicture">
