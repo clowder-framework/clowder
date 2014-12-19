@@ -22,14 +22,13 @@ import scala.io.Source
  *
  */
 object Previewers extends Controller with SecuredController {
-  lazy val previewers = ResourceLister.listFiles("public/javascripts/previewers", "package.json")
-
   def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
     Ok(views.html.previewers(findPreviewers()))
   }
 
   def findPreviewers(): Array[Previewer] = {
     var result = Array[Previewer]()
+    val previewers = ResourceLister.listFiles("public.javascripts.previewers", "package.json")
     for (previewer <- previewers) {
       Play.resourceAsStream(previewer) match {
         case Some(stream) => {
@@ -52,6 +51,7 @@ object Previewers extends Controller with SecuredController {
 
   def findCollectionPreviewers(): Array[Previewer] = {
     var result = Array[Previewer]()
+    val previewers = ResourceLister.listFiles("public.javascripts.previewers", "package.json")
     for (previewer <- previewers) {
       Play.resourceAsStream(previewer) match {
         case Some(stream) => {
