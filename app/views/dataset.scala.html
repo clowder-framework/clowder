@@ -423,21 +423,31 @@
 				}
 				</table>
 
-				<div class="requiresLogin ui-widget" id="collectionsUi">
-					<div>Add to existing collection</div>
-					<div class="input-group input-group-sm col-md-8">
-						<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
-						@collectionsOutside.map { collection =>
-							<option value="@(collection.id)">@(collection.name)</option>
-						}
-						</select>
-						<span class="input-group-btn">
-							<button class="btn btn-default btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
-								<span class="glyphicon glyphicon-plus"></span>
-							</button>
-						</span>
-					</div>
-					<span id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
+				<div class="requiresLogin ui-widget requiresLoginCommunity" id="collectionsUi">
+					    <div>Add to existing collection</div>
+						<div class="input-group input-group-sm col-md-8"">
+							<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
+							@collectionsOutside.map { collection =>
+								@if(user.isDefined) {
+									@if(!collection.author.isDefined){
+										<option value="@(collection.id)">@(collection.name)</option>
+									}
+									@if(collection.author.isDefined){
+										@if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
+											<option value="@(collection.id)">@(collection.name)</option>
+										}
+									}					
+								}								
+							}					  
+							</select>
+							<span class="input-group-btn">
+								<button class="btn btn-primary btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
+                                    <span class="glyphicon glyphicon-plus"></span>
+                                </button>
+							</span>
+						</div><br/>
+						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif"  id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
+				
 				</div>
 
 				<script type="text/javascript">
@@ -451,10 +461,10 @@
 					</script>
 				<script>
 						$('body').on('click','#addCollBtn',function(e){
-							if($("#doesNotExistErrorCollections").css('display') == 'inline')
+							if($("#doesNotExistErrorCollections").css('display') == 'block')
 								return;
 							if($("#selectingInputCollections").val() == ""){
-								$("#doesNotExistErrorCollections").css('display','inline');
+								$("#doesNotExistErrorCollections").css('display','block');
 								return;
 							}
 							

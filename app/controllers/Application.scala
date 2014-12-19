@@ -1,15 +1,10 @@
 package controllers
 
+import api.{Permission, WithPermission}
 import play.api.Routes
-import play.api.mvc.Controller
-import api.Sections
-import api.WithPermission
-import api.Permission
-import models.AppAppearance
 import javax.inject.{Singleton, Inject}
 import play.api.mvc.Action
-import services.FileService
-import services.AppAppearanceService
+import services.{AppConfiguration, FileService}
 import play.api.Logger
 
 /**
@@ -18,10 +13,7 @@ import play.api.Logger
  * @author Luigi Marini
  */
 @Singleton
-class Application  @Inject() (files: FileService) extends SecuredController {
-  
-  val appAppearance: AppAppearanceService = services.DI.injector.getInstance(classOf[AppAppearanceService])
-
+class Application @Inject() (files: FileService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    * @param path the path minus the slash
@@ -35,10 +27,9 @@ class Application  @Inject() (files: FileService) extends SecuredController {
    * Main page.
    */
   def index = SecuredAction(authorization = WithPermission(Permission.Public)) { request =>
-	implicit val user = request.user
-	val latestFiles = files.latest(5)
-	val appAppearanceGet = appAppearance.getDefault.get
-	Ok(views.html.index(latestFiles, appAppearanceGet.displayedName, appAppearanceGet.welcomeMessage))
+  	implicit val user = request.user
+  	val latestFiles = files.latest(5)
+    Ok(views.html.index(latestFiles, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
   
   def options(path:String) = SecuredAction() { implicit request =>

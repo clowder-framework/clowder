@@ -1,0 +1,34 @@
+@echo off
+
+REM MEDICI_CLASSPATH
+REM
+REM The Medici implementation will look on the classpath for 'themes' and
+REM 'previewers'. To add additional directories where Medici should look for
+REM files, set the MEDICI_CLASSPATH environment variable, for example:
+REM
+REM   set MEDICI_CLASSPATH="/path/to/themes/:/path/to/previewers/"
+REM
+REM MEDICI_JAVA_OPTS
+REM
+REM If you need to specify java options specific to Medici, you can set the
+REM MEDICI_JAVA_OPTS environment variable. If not specified, the JAVA_OPTS
+REM environment variable will be used. If that is not specified, reasonable
+REM defaults for Medici will be used.
+
+cd %~dp0\..
+
+set MAINCLASS=play.core.server.NettyServer
+set BINDIR=%cd%\bin
+set LIBDIR=%cd%\lib
+set USERDIR=%cd%
+set CLASSPATH=%LIBDIR%\*
+
+set JOPTS=-Xms1024m -Xmx1024m -XX:MaxPermSize=256m -XX:ReservedCodeCacheSize=128m
+
+if defined MEDICI_JAVA_OPTS (
+        set JOPTS="%MEDICI_JAVA_OPTS%"
+) else if defined JAVA_OPTS (
+        set JOPTS="%JAVA_OPTS%"
+)
+
+java %JOPTS% -Duser.dir="%USERDIR%" -cp "%CLASSPATH%;%MEDICI_CLASSPATH%" %MAINCLASS% %*

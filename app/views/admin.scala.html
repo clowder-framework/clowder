@@ -1,4 +1,4 @@
-@(theme: Int, appAppearance: models.AppAppearance, appConfiguration: AppConfiguration)(implicit user: Option[securesocial.core.Identity])
+@(theme: String, displayName: String, welcomeMessage: String)(implicit user: Option[securesocial.core.Identity])
 @main("Administration") {
 
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
@@ -20,11 +20,11 @@
 			<form role="form-horizontal">
 			  <div class="form-group">
 			    <label for="displayNameField">Display name</label>
-			    <input id="displayNameField" name="displayNameField" type="text" value="@(appAppearance.displayedName)"></input>
+			    <input id="displayNameField" name="displayNameField" type="text" value="@(displayName)"></input>
 			    <span id="displayNameField_error" style="display:none;">Must have a display name</span>
 			    <br /><br />
 			    <label for="welcomingField">Welcoming message</label>
-				<textarea name="welcomingField" id="welcomingField" style="width:300%;">@(appAppearance.welcomeMessage)</textarea>
+				<textarea name="welcomingField" id="welcomingField" style="width:300%;">@(welcomeMessage)</textarea>
 				<br /><br />
 				<button class="btn btn-default" onclick="return submitAppearance();">Submit</button>	
 			  </div>
@@ -65,4 +65,3 @@
 	</script>
 }
 	
-		
