@@ -18,7 +18,7 @@ import play.api.Logger
  * @author Luigi Marini
  */
 @Singleton
-class Application  @Inject() (files: FileService) extends SecuredController {
+class Application @Inject() (files: FileService) extends SecuredController {
   
   val appAppearance: AppAppearanceService = services.DI.injector.getInstance(classOf[AppAppearanceService])
 

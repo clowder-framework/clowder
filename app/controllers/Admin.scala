@@ -28,9 +28,8 @@ import scala.concurrent._
  *
  */
 @Singleton
-
-class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance: AppAppearanceService, sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
-
+class Admin @Inject() (appConfiguration: AppConfigurationService, appAppearance: AppAppearanceService,
+                       sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
 
   private val themes = "bootstrap/bootstrap.css" ::
     "bootstrap-amelia.min.css" ::
