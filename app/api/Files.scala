@@ -111,7 +111,7 @@ class Files @Inject()(
   @ApiOperation(value = "List all files", notes = "Returns list of files and descriptions.", responseClass = "None", httpMethod = "GET")
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
     request =>
-      val list = for (f <- files.listFiles()) yield jsonFile(f)
+      val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f)
 
       Ok(toJson(list))
   }
