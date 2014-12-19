@@ -23,6 +23,8 @@ import scala.Some
 import play.api.libs.json.JsObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
+import collection.JavaConverters._
+
 /**
  * Created by lmarini on 2/17/14.
  */
@@ -47,6 +49,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
 
   def findByDatasetId(id: UUID): List[Preview] = {
     PreviewDAO.find(MongoDBObject("dataset_id" -> new ObjectId(id.stringify))).toList
+  }
+
+  def findByCollectionId(id: UUID): List[Preview] = {
+    PreviewDAO.find(MongoDBObject("collection_id" -> new ObjectId(id.stringify))).toList
   }
 
   /**
@@ -183,9 +189,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(p.id.stringify)))
   }
 
-  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[UUID], json: JsValue) {
+  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue) {
     json match {
       case JsObject(fields) => {
+        Logger.debug("attachToFile: extractorId is '" + extractorId.toString + "'.")
         // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
         val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
         PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
@@ -197,17 +204,84 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     }
   }
 
+  def attachToCollection(previewId: UUID, collectionId: UUID, previewType: String, extractorId: Option[String], json: JsValue) {
+    json match {
+      case JsObject(fields) => {
+        Logger.debug("attachToCollection: extractorId is '" + extractorId.toString + "'.")
+        // "extractor_id" is stored at the top level of "Preview".  Remove it from the "metadata" field to avoid dup.
+        val metadata = (fields.toMap - "extractor_id").flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+          $set("metadata" -> metadata, "collection_id" -> new ObjectId(collectionId.stringify),
+            "extractor_id" -> extractorId, "preview_type" -> previewType),
+          false, false, WriteConcern.Safe)
+        Logger.debug("Updating previews.collections " + previewId + " with " + metadata)
+      }
+      case _ => Logger.error(s"Received something else: $json")
+    }
+  }
+
   def updateMetadata(previewId: UUID, json: JsValue) {
     json match {
       case JsObject(fields) => {
         val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-        PreviewDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
-          $set("metadata" -> metadata, "section_id" -> new ObjectId(metadata("section_id").asInstanceOf[String])), false, false, WriteConcern.Safe)
-        Logger.debug("Updating previews.files " + previewId + " with " + metadata)
+        // TODO figure out a way to do it all together
+        // aways update metadata
+        PreviewDAO.dao.collection.update(
+          MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+          $set("metadata" -> metadata),
+          false, false, WriteConcern.Safe)
+        // update section_id if it exists
+        if (metadata.contains("section_id")) {
+          val section_id = metadata("section_id").asInstanceOf[String]
+          Logger.debug("Updating previews.files " + previewId + " with section_id=" + section_id)
+          PreviewDAO.dao.collection.update(
+            MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+            $set("section_id" -> new ObjectId(section_id)),
+            false, false, WriteConcern.Safe)
+        }
+        // update file_id if it exists
+        if (metadata.contains("file_id")) {
+          val file_id = metadata("file_id").asInstanceOf[String]
+          Logger.debug("Updating previews.files " + previewId + " with file_id=" + file_id)
+          PreviewDAO.dao.collection.update(
+            MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+            $set("file_id" -> new ObjectId(file_id)),
+            false, false, WriteConcern.Safe)
+        }
+	      Logger.debug("Updating previews.files " + previewId + " with " + metadata)
       }
       case _ => Logger.error("Expected a JSObject")
     }
   }
+  
+  /**
+   * Get metadata from the mongo db as a map. 
+   * 
+   */
+   def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any] = {
+    PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => new scala.collection.immutable.HashMap[String,Any]
+      case Some(x) => {
+        val returnedMetadata = x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
+        returnedMetadata
+      }
+    }
+  }
+  
+    def getExtractorId(id: UUID):Option[String] = {     
+      var extractor_id = getMetadata(id)("extractor_id") match{
+	  	case ex_id=> {
+	  		Logger.debug("MongoDBPreviewService: metadata for preview " + id + " contains extractor id = " + ex_id)
+	  		Some(ex_id.toString)
+	    }
+	  	case none =>{
+	  		Logger.debug("MongoDBPreviewService: metadata  for preview " + id + " DOES NOT contain extractor id")
+	  		None
+	  	}	              
+      }
+      extractor_id
+   }
+    
 }
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
@@ -216,3 +290,4 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
     case Some(x) => new SalatDAO[Preview, ObjectId](collection = x.collection("previews.files")) {}
   }
 }
+

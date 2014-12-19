@@ -1,36 +1,42 @@
-import com.mongodb.casbah.Imports._
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
-import play.api.Play.current
-import services.mongodb.MongoSalatPlugin
+
+import play.filters.gzip.GzipFilter
+
+import play.libs.Akka
+import services.AppConfiguration
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
+import models.{ServerStartTime, CORSFilter, ExtractionInfoSetUp}
+import java.util.Calendar
+import play.api.mvc.WithFilters
+import akka.actor.Cancellable
+import julienrf.play.jsonp.Jsonp
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
  *
  * @author Luigi Marini
  */
-object Global extends GlobalSettings {
+object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) with GlobalSettings {
+  var extractorTimer: Cancellable = null
 
   override def onStart(app: Application) {
-    // create mongo indexes if plugin is loaded
-    current.plugin[MongoSalatPlugin].map {
-      mongo =>
-        mongo.sources.values.map {
-          source =>
-            Logger.debug("Ensuring indexes on " + source.uri)
-            source.collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
-            source.collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
-            source.collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-            source.collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-            source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
-            source.collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
-            source.collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
-        }
+    ServerStartTime.startTime = Calendar.getInstance().getTime
+    Logger.debug("\n----Server Start Time----" + ServerStartTime.startTime + "\n \n")
+
+    // set admins
+    AppConfiguration.setDefaultAdmins()
+
+    extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
+      ExtractionInfoSetUp.updateExtractorsInfo()
     }
+
     Logger.info("Application has started")
   }
 
   override def onStop(app: Application) {
+    extractorTimer.cancel()
     Logger.info("Application shutdown")
   }
 

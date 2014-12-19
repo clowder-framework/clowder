@@ -88,7 +88,13 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
           f =>
             Logger.debug("Uploading file " + f.filename)
             // store file
-            val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, f.contentType))
+            //change stored preview type for zoom.it previews to avoid messup with uploaded XML metadata files
+            var realContentType = f.contentType
+            if(f.contentType.getOrElse("application/octet-stream").equals("application/xml"))
+              realContentType = Some("application/dzi")
+            
+            val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, realContentType))
+            Logger.debug("ctp: "+realContentType)
             // for IIP server references, store the IIP URL, key and filename on the IIP server for possible later deletion of the previewed file
             if (f.filename.endsWith(".imageurl")) {
               val iipRefReader = new BufferedReader(new FileReader(f.ref.file));
@@ -117,6 +123,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Upload preview metadata.
    *
    */
+
   def uploadMetadata(id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
       request =>
@@ -133,6 +140,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
             }
           }
           case _ => Logger.error("Expected a JSObject"); BadRequest(toJson("Expected a JSObject"))
+
         }
     }
 

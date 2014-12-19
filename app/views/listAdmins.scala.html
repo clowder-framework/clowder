@@ -1,0 +1,38 @@
+@(admins: List[String])(implicit user: Option[securesocial.core.Identity])
+
+@main("Admins") {
+	<script src="@routes.Assets.at("javascripts/manageAdmins.js")" type="text/javascript"></script>
+	<script>
+		function handleRemoval(email, theElement){
+			var couldRemove = removeAdmin(email);
+			$(theElement).parent().parent().remove();				
+		}
+	</script>
+	<div class="page-header">
+		<h1>Admins</h1>
+	</div>
+	@if(admins.size == 0) {
+	<div class="row">
+		<div class="col-md-12">
+			No admins present.
+		</div>
+	</div>
+	}
+	@if(admins.size > 0) {
+	<table class="table">
+	     <tbody>
+	    @for(a <- admins) {
+	      <tr>
+			<td>
+				@a
+			</td>
+			<td><a href="#" onclick="handleRemoval('@a',this);">Remove</a></td>			
+		  </tr>
+		}
+		</tbody>
+		</table>
+	}
+
+
+
+}

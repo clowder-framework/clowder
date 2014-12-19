@@ -1,11 +1,11 @@
-@(theme: Int)
+@(theme: String)
 <form role="form-horizontal">
   <div class="form-group">
     <label for="theme">Theme</label>
 	<select id="themeSelect" class="form-control">
-	  <option value="0">Default</option>
-	  <option value="1">Amelia</option>
-	  <option value="2">Simplex</option>
+      @for(t <- services.AppConfiguration.themes) {
+          <option value="@t">@t.replaceAll(".min.css", "")</option>
+      }
 	</select>
   </div>
 </form>
@@ -15,7 +15,7 @@
 		$("#themeSelect").val('@theme');
 		
 		$('#themeSelect').bind('change', function(ev) {
-			var value = parseInt($(this).val());
+			var value = $(this).val();
 			console.log(value);
 
 		    var request = jsRoutes.controllers.Admin.setTheme().ajax({
@@ -30,9 +30,11 @@
 		     });
 		     
 		     request.fail(function (jqXHR, textStatus, errorThrown){
-		        console.error(
-		            "The following error occured: "+textStatus, errorThrown      
-		        );
+		    	 console.error("The following error occured: "+textStatus, errorThrown);
+                 var errMsg = "You must be logged in to change the theme.";                    
+                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                     alert("The theme was not changed due to : " + errorThrown);
+                 }
 		     });
 		   });
 	});

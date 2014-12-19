@@ -1,57 +1,144 @@
-@(datasets: List[models.Dataset], prev: String, next: String, limit: Int, userSelections: List[String])(implicit user: Option[securesocial.core.Identity])
+@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, userSelections: List[String])(implicit user: Option[securesocial.core.Identity])
+
+@import _root_.util.Formatters.ellipsize
 
 @main("Datasets") {
+
+@util.masonry()
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 
 <div class="page-header">
   <h1>Datasets</h1>
 </div>
 
 <div class="row">
-	<div class="col-md-12">
-	<div class="container">
-	<div class="row">
+    <div class="col-md-12">
+        <div class="btn-group btn-group-sm pull-right">
+            <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
+            <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
+        </div>
+        <script>
+            $(function() {
+                $('#tile-view-btn').click(function() {
+                  console.log('tile view');
+                  $('#tile-view').removeClass('hidden');
+                  $('#list-view').addClass('hidden');
+                  $('#tile-view-btn').addClass('active');
+                  $('#list-view-btn').removeClass('active');
+                });
+                $('#list-view-btn').click(function() {
+                  console.log('list view');
+                  $('#tile-view').addClass('hidden');
+                  $('#list-view').removeClass('hidden');
+                  $('#list-view-btn').addClass('active');
+                  $('#tile-view-btn').removeClass('active');
+                });
+            });
+        </script>
+    </div>
+</div>
+
+<div class="row" id="tile-view">
 	<div class="col-md-12">
 		<div id="masonry" class="js-masonry" data-masonry-options='{ "itemSelector": ".post-box", "columnWidth": ".post-box", "transitionDuration": 4 }'>
 		@datasets.map { dataset =>
 		  <div class="post-box col-lg-3 col-md-3 col-sm-3">
-		  <div class="panel panel-default">
-
-            @if(user.isDefined) {
-                  @if(userSelections.contains(dataset.id.stringify)) {
-                    <a href="#" title="Click to deselect dataset" class="pull-right select" data-id="@dataset.id">
-                      <span class="glyphicon glyphicon-ok"></span>
-                    </a>
-                  } else {
-                    <a href="#" title="Click to select dataset" class="pull-right select" data-id="@dataset.id">
-                      <span class="glyphicon glyphicon-plus"></span>
-                    </a>
+              <div class="panel panel-default">
+                  @if(user.isDefined) {
+                      @if(userSelections.contains(dataset.id.stringify)) {
+                          <a href="#" title="Click to deselect dataset" class="pull-right select" data-id="@dataset.id">
+                              <span class="glyphicon glyphicon-ok"></span>
+                          </a>
+                      } else {
+                          <a href="#" title="Click to select dataset" class="pull-right select" data-id="@dataset.id">
+                              <span class="glyphicon glyphicon-plus"></span>
+                          </a>
+                      }
                   }
-            }
 
-  			<div class="panel-body">
-			  		@if(!dataset.thumbnail_id.isEmpty){
-						<a href="@(routes.Datasets.dataset(dataset.id))">
-							<img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)">
-						</a>
-					}
-			  	<div class="caption">
-                    <h4><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
-                    <p>@util.Formatters.ellipsize(dataset.description, 200)</p>
-                </div>
-			</div>
-              <!-- Dataset Info -->
-              <ul class="list-group">
-                  <li class="list-group-item">
+                  <div class="panel-body">
+                        @if(!dataset.thumbnail_id.isEmpty){
+                            <a href="@(routes.Datasets.dataset(dataset.id))">
+                                <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)">
+                            </a>
+                        }
+                        <div class="caption">
+                            <h4 class="no-overflow oneline"><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
+                            <p>@ellipsize(dataset.description, 200)</p>
+                        </div>
+                  </div>
+                  <!-- Dataset Info -->
+                  <ul class="list-group">
+                    <li class="list-group-item">
                       <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
                       <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
-                      <span class="glyphicon glyphicon glyphicon-list" title="@dataset.userMetadata.keys.size metadata fields"></span>  @dataset.userMetadata.keys.size
-                  </li>
-              </ul>
-			</div>
+                      <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span>  @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
+                      <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span>  @(comments.get(dataset.id))
+					  @if(user.isDefined) {
+									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
+							    		<span class="glyphicon glyphicon-trash"></span></a>
+									}													
+							}					  
+                    </li>
+                  </ul>
+              </div>
     	  </div>
 		}
 		</div>
+	</div>
+</div>
 
+<div class="row hidden" id="list-view">
+	<div class="col-md-12">
+		<table class="table table-bordered table-hover">
+			<thead>
+				<tr>
+					@if(user.isDefined) {
+						<th style="width: 25%">Name</th>
+						<th style="width: 15%">Created</th>
+						<th style="width: 40%">Description</th>
+						<th style="width: 15%">Preview</th>
+						<th style="width: 5%">Delete</th>
+					}
+					@if(!user.isDefined) {
+						<th style="width: 25%">Name</th>
+						<th style="width: 15%">Created</th>
+						<th style="width: 45%">Description</th>
+						<th style="width: 15%">Preview</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				@datasets.map { dataset =>
+					<tr>
+						<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
+						<td>@dataset.created.format("MMM dd, yyyy")</td>
+						<td style="white-space:pre-line">@dataset.description</td>
+						<td>
+							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
+							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
+						</td>
+						<td class="requiresLogin">
+							@if(user.isDefined) {
+									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
+							    		<span class="glyphicon glyphicon-trash"></span></a>
+									}													
+							}
+						</td>	
+						
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+@util.masonry()
+
+<div class="row">
+    <div class="col-md-12">
         <ul class="pager">
             @if(prev != "") {
             <li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
@@ -60,17 +147,9 @@
             <li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
             }
         </ul>
-
-	</div>
-	</div>
-	</div>
-	</div>
+    </div>
 </div>
-<script language="javascript">	
-	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
-</script>
+
 <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/lib/masonry.pkgd.min.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/lib/imagesloaded.pkgd.min.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/select.js")" type="text/javascript"></script>
 }

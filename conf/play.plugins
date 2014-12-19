@@ -1,6 +1,6 @@
 9990:services.mongodb.MongoSalatPlugin
 9991:com.typesafe.plugin.CommonsMailerPlugin
-9992:services.RabbitmqPlugin
+#9992:services.RabbitmqPlugin
 9994:services.mongodb.MongoDBAuthenticatorStore
 9995:securesocial.core.DefaultIdGenerator
 9996:securesocial.core.providers.utils.DefaultPasswordValidator
@@ -15,3 +15,9 @@
 #10005:services.PostgresPlugin
 #10006:services.FileDumpService
 #10008:services.RDFUpdateService
+#10009:services.MailerPlugin
+#10010:services.AdminsNotifierPlugin
+#10013:services.RDFExportService
+#10014:services.irods.IRODSPlugin
+#10100:services.TempFilesPlugin
+#10101:services.RDFExporterPlugin

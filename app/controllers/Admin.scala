@@ -1,30 +1,20 @@
-/**
- *
- */
 package controllers
 
-import play.api.mvc.Controller
-import play.api.mvc.Action
-import play.api.Routes
-import securesocial.core.SecureSocial._
-import securesocial.core.SecureSocial
-import api.ApiController
 import api.WithPermission
 import api.Permission
-import services.{AppConfigurationService, VersusPlugin}
+import models.{UUID, VersusIndexTypeName}
+import play.api.libs.json.{Json, JsValue}
+import services.{SectionIndexInfoService, AppConfiguration, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
-import models.AppConfiguration
-import play.api.libs.json.Json
-import play.api.libs.json.Json._
 import play.api.Logger
 
 import scala.concurrent._
-import play.api.libs.ws.WS
-import play.api.libs.ws.Response
-import play.api.libs.concurrent.Promise
 import javax.inject.{Inject, Singleton}
+
+import play.api.data.Form
+import play.api.data.Forms._
 
 /**
  * Administration pages.
@@ -33,17 +23,18 @@ import javax.inject.{Inject, Singleton}
  *
  */
 @Singleton
-class Admin @Inject() (appConfiguration: AppConfigurationService) extends SecuredController {
-
-  private val themes = "bootstrap/bootstrap.css" ::
-    "bootstrap-amelia.min.css" ::
-    "bootstrap-simplex.min.css" :: Nil
+class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
 
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
-    val themeId = themes.indexOf(getTheme)
-    Logger.debug("Theme id " + themeId)
+    val theme = AppConfiguration.getTheme
+    Logger.debug("Theme id " + theme)
     implicit val user = request.user
-    Ok(views.html.admin(themeId))
+    Ok(views.html.admin(theme, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+  }
+  
+  def adminIndex = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
+    implicit val user = request.user
+    Ok(views.html.adminIndex())
   }
 
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
@@ -172,83 +163,118 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
 
   }
 
-  // Get adapter, extractor,measure and indexer value and send it to VersusPlugin to send a create index request to Versus 
-  def createIndex() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) {
-    implicit request =>
-      Async {
-        current.plugin[VersusPlugin] match {
+  /**
+   * Get adapter, extractor,measure and indexer value and send it to VersusPlugin to send a create index request to Versus
+   * If an index has type and/or name, store them in mongo db.
+   * 
+   */ 
+   def createIndex() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) {
+     implicit request =>
+       Async {
+         current.plugin[VersusPlugin] match {
+           case Some(plugin) => {
+             Logger.trace("Contr.Admin.CreateIndex()")
+             val adapter = (request.body \ "adapter").as[String]
+             val extractor = (request.body \ "extractor").as[String]
+             val measure = (request.body \ "measure").as[String]
+             val indexer = (request.body \ "indexer").as[String]
+             val indexType = (request.body \ "indexType").as[String]      
+             val indexName = (request.body \ "name").as[String]
+             //create index and get its id
+              val indexIdFuture :Future[models.UUID] = plugin.createIndex(adapter, extractor, measure, indexer)            
+              //save index type (census sections, face sections, etc) to the mongo db
+             if (indexType != null && indexType.length !=0){
+             	indexIdFuture.map(sectionIndexInfo.insertType(_, indexType))          
+             }             
+             //save index name to the mongo db
+             if (indexName != null && indexName.length !=0){
+             	indexIdFuture.map(sectionIndexInfo.insertName(_, indexName))
+             }           
+              Future(Ok("Index created successfully"))     
+           } //end of case some plugin
 
-          case Some(plugin) => {
-            Logger.debug("INSIDE CreateIndex()")
-            val adapter = (request.body \ "adapter").as[String]
-            val extractor = (request.body \ "extractor").as[String]
-            val measure = (request.body \ "measure").as[String]
-            val indexer = (request.body \ "indexer").as[String]
-            Logger.debug("Form Parameters: " + adapter + " " + extractor + " " + measure + " " + indexer);
-            var reply = plugin.createIndex(adapter, extractor, measure, indexer)
-            for (response <- reply) yield Ok(response.body)
-          } //case some
+           case None => {
+             Future(Ok("No Versus Service"))
+           }
+         } //match
 
-          case None => {
-            Future(Ok("No Versus Service"))
-          }
-        } //match
-
-      } //Async
-  }
-
-  //Get list the of indexes from Versus 
+       } //Async
+   }
+   
+  /**
+   * Gets indexes from Versus, using VersusPlugin. Checks in mongo on Medici side if these indexes
+   * have type and/or name. Adds type and/or name to json object and calls view template to display.
+   */
   def getIndexes() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-
-      Async {
+      Async {        
         current.plugin[VersusPlugin] match {
-
           case Some(plugin) => {
-           Logger.debug("::::Inside getIndexes()::::")
+           Logger.trace(" Admin.getIndexes()")
             var indexListResponse = plugin.getIndexes()
-
             for {
               indexList <- indexListResponse
             } yield {
-             if(indexList.body.isEmpty())
-              { 
-                Logger.debug(":::::::::::No:indexList.json")
-                Ok("No Index")
-                
-              }
+            	if(indexList.body.isEmpty())
+            	{ 
+            		Ok(Json.toJson(""))
+            	}
                 else{
-                  Ok(indexList.json)
-                }
-            }
+                  var finalJson :JsValue=null
+                  val jsArray = indexList.json
+                  //make sure we got correctly formatted list of values
+                  jsArray.validate[List[VersusIndexTypeName]].fold(
+                		  // Handle the case for invalid incoming JSON.
+                		  // Note: JSON created in Versus IndexResource.listJson must have the same names as Medici models.VersusIndexTypeName 
+                		  error => {
+                		    Logger.error("Admin.getIndexes - validation error")
+                		    InternalServerError("Received invalid JSON response from remote service.")
+                		    },
+                		 
+                		    // Handle a deserialized array of List[VersusIndexTypeName]
+                		    indexes => {
+                		    	Logger.debug("Admin.getIndexes indexes received = " + indexes)   								  
+                		    	val indexesWithNameType = indexes.map{
+                		    		index=>
+                		    		  	//check in mongo for name/type of each index
+                		    			val indType = sectionIndexInfo.getType(UUID(index.indexID)).getOrElse("")
+                		    			val indName = sectionIndexInfo.getName(UUID(index.indexID)).getOrElse("")
 
+                		    			//add type/name to index
+                		    			VersusIndexTypeName.addTypeAndName(index, indType, indName)
+   								  }                		    
+                		    	indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index with name = " + i))
+                		    
+                		    	// Serialize as JSON, requires the implicit `format` defined earlier in VersusIndexTypeName
+                		    	finalJson = Json.toJson(indexesWithNameType)    			
+                		    }
+                		  ) //end of fold                
+                		  Ok(finalJson)
+                	}
+            }
           } //case some
 
           case None => {
             Future(Ok("No Versus Service"))
           }
         } //match
-
       } //Async
   }
+ 
 
   //build a specific index in Versus
   def buildIndex(id: String) = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-
+           Logger.trace("Inside Admin.buildIndex(), index = " + id)
       Async {
         current.plugin[VersusPlugin] match {
-
           case Some(plugin) => {
-
-            var buildResponse = plugin.buildIndex(id)
-
+            var buildResponse = plugin.buildIndex(UUID(id))
             for {
               buildRes <- buildResponse
             } yield {
               Ok(buildRes.body)
             }
-
           } //case some
 
           case None => {
@@ -263,13 +289,12 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   //Delete a specific index in Versus
   def deleteIndex(id: String)=SecuredAction(authorization=WithPermission(Permission.Admin)){
     request =>
-      
     Async{  
       current.plugin[VersusPlugin] match {
      
         case Some(plugin)=>{
         	 
-        	var deleteIndexResponse= plugin.deleteIndex(id)
+        	var deleteIndexResponse= plugin.deleteIndex(UUID(id))
         	 
         	for{
         	  deleteIndexRes<-deleteIndexResponse
@@ -295,7 +320,7 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
 
       Async {
         current.plugin[VersusPlugin] match {
-
+        	
           case Some(plugin) => {
 
             var deleteAllResponse = plugin.deleteAllIndexes()
@@ -317,9 +342,9 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
   }
   
   def setTheme() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { implicit request =>
-    request.body.\("theme").asOpt[Int] match {
+    request.body.\("theme").asOpt[String] match {
       case Some(theme) => {
-        appConfiguration.setTheme(themes(theme))
+        AppConfiguration.setTheme(theme)
         Ok("""{"status":"ok"}""").as(JSON)
       }
       case None => {
@@ -329,5 +354,50 @@ class Admin @Inject() (appConfiguration: AppConfigurationService) extends Secure
     }
   }
 
-  def getTheme(): String = appConfiguration.getTheme()
+  val adminForm = Form(
+  single(
+    "email" -> email
+  )verifying("Admin already exists.", fields => fields match {
+     		case adminMail => !AppConfiguration.checkAdmin(adminMail)
+     	})
+)
+  
+  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+  	Ok(views.html.newAdmin(adminForm))
+  }
+  
+  def submitNew() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
+          adminForm.bindFromRequest.fold(
+            errors => BadRequest(views.html.newAdmin(errors)),
+            newAdmin => {
+              AppConfiguration.addAdmin(newAdmin)
+              Redirect(routes.Admin.listAdmins())
+            }
+          )
+        } else {
+          Unauthorized("Not authorized")
+        }
+      }
+    }
+  }
+  
+  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
+          val admins = AppConfiguration.getAdmins
+          Ok(views.html.listAdmins(admins))
+        } else {
+          Unauthorized("Not authorized")
+        }
+      }
+    }
+  }
+
 }

@@ -13,11 +13,18 @@
         @Messages(msg)
     </div>
     }
-
-    <form action="@securesocial.core.providers.utils.RoutesHelper.handleStartSignUp().absoluteURL(IdentityProvider.sslEnabled)"
-          class="form-horizontal"
-          autocomplete="off" method="post"
-    >
+	@if(!play.Play.application().configuration().getBoolean("registerThroughAdmins")){
+	    <form action="@securesocial.core.providers.utils.RoutesHelper.handleStartSignUp().absoluteURL(IdentityProvider.sslEnabled)"
+	          class="form-horizontal"
+	          autocomplete="off" method="post"
+	    >
+    }
+    @if(play.Play.application().configuration().getBoolean("registerThroughAdmins")){
+	    <form action="@routes.Users.handleStartSignUp().absoluteURL(IdentityProvider.sslEnabled)"
+	          class="form-horizontal"
+	          autocomplete="off" method="post"
+	    >
+    }
         <fieldset>
             @helper.inputText(
             startForm("email"),
@@ -26,8 +33,8 @@
             )
 
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">@Messages("securesocial.signup.createAccount")</button>
-                <a class="btn btn-default" href="@securesocial.core.providers.utils.RoutesHelper.login()">@Messages("securesocial.signup.cancel")</a>
+                <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-ok"></span> @Messages("securesocial.signup.createAccount")</button>
+                <a class="btn btn-default" href="@securesocial.core.providers.utils.RoutesHelper.login()"><span class="glyphicon glyphicon-remove"></span> @Messages("securesocial.signup.cancel")</a>
             </div>
 
         </fieldset>

@@ -47,20 +47,58 @@ $(function() {
 					var textBox = document.createElement('input');
 					textBox.classList.add('usr_md_');		   
 					textBox.setAttribute('type', 'text');
-					textBox.value = $(this).parent().children("span").get(0).innerHTML;  
+					var fullTextValue = $(this).parent().children("span").get(0).innerHTML;
+					textBox.value = fullTextValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
 					   
-					$(this).parent().get(0).insertBefore(textBox, $(this).parent().children("span").get(0));					
-					$(this).parent().children('span').remove();
+					var toRemove = $(this).parent().children("span").get(0);
+					
+					$(this).parent().get(0).insertBefore(textBox, toRemove);					
+										
+					var newPropertyIgnoreCaseBox = document.createElement('input');
+					newPropertyIgnoreCaseBox.classList.add('usr_md_');								   
+					newPropertyIgnoreCaseBox.setAttribute('type', 'checkbox');
+					newPropertyIgnoreCaseBox.setAttribute('value', 'not');
+					newPropertyIgnoreCaseBox.checked=(fullTextValue.indexOf(" IGNORE CASE") > -1);
+					
+					var newPropertyIgnoreCaseBoxText = document.createElement('span');
+					newPropertyIgnoreCaseBoxText.classList.add('usr_md_');
+					newPropertyIgnoreCaseBoxText.innerHTML = " Ignore case";
+					
+					$(this).parent().get(0).insertBefore(newPropertyIgnoreCaseBox, toRemove);
+					$(this).parent().get(0).insertBefore(newPropertyIgnoreCaseBoxText, toRemove);
+					
+					var newPropertyAnywhereBox = document.createElement('input');
+					newPropertyAnywhereBox.classList.add('usr_md_');								   
+					newPropertyAnywhereBox.setAttribute('type', 'checkbox');
+					newPropertyAnywhereBox.setAttribute('value', 'not');
+					newPropertyAnywhereBox.checked=(fullTextValue.indexOf(" ANYWHERE") > -1);
+					
+					var newPropertyAnywhereBoxText = document.createElement('span');
+					newPropertyAnywhereBoxText.classList.add('usr_md_');
+					newPropertyAnywhereBoxText.innerHTML = " Anywhere in value";
+					
+					$(this).parent().get(0).insertBefore(newPropertyAnywhereBox, toRemove);
+					$(this).parent().get(0).insertBefore(newPropertyAnywhereBoxText, toRemove);
+					
+					$(toRemove).remove();
 					   
 					$(this).html("Ok");							   		   			   
 				  }
 				  else if($(this).html() == "Ok"){
 				  	var textSpan = document.createElement('span');
 					textSpan.classList.add('usr_md_');
-					textSpan.innerHTML = $(this).parent().children("input").get(0).value;  
+					textSpan.innerHTML = $(this).parent().children("input").get(0).value.trim();
+					
+					if($(this).parent().children("input").get(1).checked)
+						textSpan.innerHTML = textSpan.innerHTML + " IGNORE CASE";
+					if($(this).parent().children("input").get(2).checked)
+						textSpan.innerHTML = textSpan.innerHTML + " ANYWHERE";
+					
+					$(this).parent().children("span").remove();
 						
 					$(this).parent().get(0).insertBefore(textSpan, $(this).parent().children("input").get(0));
-					$(this).parent().get(0).removeChild($(this).parent().children("input").get(0));
+					
+					$(this).parent().children("input").remove();
 						 
 					$(this).html("Modify");			
 				  }			  
@@ -98,6 +136,7 @@ $(function() {
 					newPropertyNotBox.classList.add('usr_md_');								   
 					newPropertyNotBox.setAttribute('type', 'checkbox');
 					newPropertyNotBox.setAttribute('value', 'not');
+					newPropertyNotBox.checked=false;
 					
 					var newPropertyNotBoxText = document.createElement('span');
 					newPropertyNotBoxText.classList.add('usr_md_');
@@ -245,6 +284,32 @@ $(function() {
 						textBox.textContent = "";
 						$(this).parent().get(0).insertBefore(textBox, $(this).get(0));
 						
+						var newPropertyIgnoreCaseBox = document.createElement('input');
+						newPropertyIgnoreCaseBox.classList.add('usr_md_');								   
+						newPropertyIgnoreCaseBox.setAttribute('type', 'checkbox');
+						newPropertyIgnoreCaseBox.setAttribute('value', 'not');
+						newPropertyIgnoreCaseBox.checked=true;
+						
+						var newPropertyIgnoreCaseBoxText = document.createElement('span');
+						newPropertyIgnoreCaseBoxText.classList.add('usr_md_');
+						newPropertyIgnoreCaseBoxText.innerHTML = " Ignore case";
+						
+						$(this).parent().get(0).insertBefore(newPropertyIgnoreCaseBox, $(this).get(0));
+						$(this).parent().get(0).insertBefore(newPropertyIgnoreCaseBoxText, $(this).get(0));
+						
+						var newPropertyAnywhereBox = document.createElement('input');
+						newPropertyAnywhereBox.classList.add('usr_md_');								   
+						newPropertyAnywhereBox.setAttribute('type', 'checkbox');
+						newPropertyAnywhereBox.setAttribute('value', 'not');
+						newPropertyAnywhereBox.checked=true;
+						
+						var newPropertyAnywhereBoxText = document.createElement('span');
+						newPropertyAnywhereBoxText.classList.add('usr_md_');
+						newPropertyAnywhereBoxText.innerHTML = " Anywhere in value";
+						
+						$(this).parent().get(0).insertBefore(newPropertyAnywhereBox, $(this).get(0));
+						$(this).parent().get(0).insertBefore(newPropertyAnywhereBoxText, $(this).get(0));
+						
 						$(this).html("Ok");
 						
 						var newDeleteButton = document.createElement('button'); 	
@@ -282,7 +347,7 @@ $(function() {
 				  else if($(this).html() == "Select node"){				  	
 		  				
 						var selectTag = $(this).parent().children('input')[0];
-						var selectedProperty = selectTag.value;
+						var selectedProperty = selectTag.value.trim();
 						var selectedPropertyType = "Node";				
 
 						var isNot = "";
@@ -312,7 +377,7 @@ $(function() {
 				  else if($(this).html() == "Select leaf"){				  	
 		  				
 						var selectTag = $(this).parent().children('input')[0];
-						var selectedProperty = selectTag.value;
+						var selectedProperty = selectTag.value.trim();
 						var selectedPropertyType = "String";				
 
 						var isNot = "";
@@ -327,14 +392,41 @@ $(function() {
 						newPropertyKey.classList.add('usr_md_');
 						newPropertyKey.innerHTML = isNot + selectedProperty + ":";
 						$(this).parent().get(0).insertBefore(newPropertyKey, $(this).prev().get(0));						
-	   
-						
+	   						
 						var textBox = document.createElement('input');
 						textBox.classList.add('usr_md_');
 									   
 						textBox.setAttribute('type', 'text');
 						textBox.textContent = "";
 						$(this).parent().get(0).insertBefore(textBox, $(this).prev().get(0));
+						
+						
+						var newPropertyIgnoreCaseBox = document.createElement('input');
+						newPropertyIgnoreCaseBox.classList.add('usr_md_');								   
+						newPropertyIgnoreCaseBox.setAttribute('type', 'checkbox');
+						newPropertyIgnoreCaseBox.setAttribute('value', 'not');
+						newPropertyIgnoreCaseBox.checked=true;
+						
+						var newPropertyIgnoreCaseBoxText = document.createElement('span');
+						newPropertyIgnoreCaseBoxText.classList.add('usr_md_');
+						newPropertyIgnoreCaseBoxText.innerHTML = " Ignore case";
+						
+						$(this).parent().get(0).insertBefore(newPropertyIgnoreCaseBox, $(this).prev().get(0));
+						$(this).parent().get(0).insertBefore(newPropertyIgnoreCaseBoxText, $(this).prev().get(0));
+						
+						var newPropertyAnywhereBox = document.createElement('input');
+						newPropertyAnywhereBox.classList.add('usr_md_');								   
+						newPropertyAnywhereBox.setAttribute('type', 'checkbox');
+						newPropertyAnywhereBox.setAttribute('value', 'not');
+						newPropertyAnywhereBox.checked=true;
+						
+						var newPropertyAnywhereBoxText = document.createElement('span');
+						newPropertyAnywhereBoxText.classList.add('usr_md_');
+						newPropertyAnywhereBoxText.innerHTML = " Anywhere in value";
+						
+						$(this).parent().get(0).insertBefore(newPropertyAnywhereBox, $(this).prev().get(0));
+						$(this).parent().get(0).insertBefore(newPropertyAnywhereBoxText, $(this).prev().get(0));
+						
 						
 						$(this).html("Delete");
 						$(this).prev().html("Ok");
@@ -386,17 +478,20 @@ $(function() {
 						        	var createdDateArray = respJSON[i].created.split(" ");
 						        	var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
 						        	var removeCell = "";
-						        	if(window["userDefined"] == true){
+						        	if(window["userIsAdmin"] || window["userId"] == respJSON[i].authorId){
 						        		removeCell = "<td><a href='#!' onclick='removeDataset(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
-						        	}					        	
+						        	}
+						        	else if(window["userDefined"]){
+						        		removeCell = "<td></td>";
+						        	}
 						        	var datasetThumbnail = "";
 						        	if(respJSON[i].thumbnail != "None")
-						        		datasetThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+						        		datasetThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
 						        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
-						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
 						        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
 						        								+ "<td>" + createdDate + "</td>"
-						        								+ "<td>" + respJSON[i].description + "</td>"
+						        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 						        								+ "<td>" + datasetThumbnail + "</td>"
 						        								+ removeCell + "</tr>");
 						        }
@@ -406,14 +501,17 @@ $(function() {
 						        	//var createdDateArray = respJSON[i].created.split(" ");
 						        	//var createdDate = createdDateArray.slice(1,3).join(" ") + ", " + createdDateArray[5];
 						        	var removeCell = "";
-						        	if(window["userDefined"] == true){
+						        	if(window["userIsAdmin"] || window["userId"] == respJSON[i].authorId){
 						        		removeCell = "<td><a href='#!' onclick='removeFile(\"" + respJSON[i].id + "\",event)'>Remove</a></td>";
-						        	}					        	
+						        	}
+						        	else if(window["userDefined"]){
+						        		removeCell = "<td></td>";
+						        	}
 						        	var fileThumbnail = "";
 						        	if(respJSON[i].thumbnail != "None")
-						        		fileThumbnail = "<img src='" + "http://" + hostIp + ":" + window.location.port + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
+						        		fileThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
 						        							+ "alt='Thumbnail of " + respJSON[i].filename + "' height='120' width='120'>";
-						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + "http://" + hostIp + ":" + window.location.port
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
 						        								+ "/files/" + respJSON[i].id + "'>"+ respJSON[i].filename + "</a></td>"
 						        								+ "<td>" + respJSON[i].contentType + "</td>"
 						        								+ "<td>" + respJSON[i].dateCreated + "</td>"

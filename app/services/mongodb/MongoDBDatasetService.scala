@@ -297,7 +297,7 @@ class MongoDBDatasetService @Inject() (
       datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
 
     toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description,
-      "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail))
+      "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.identityId.userId))
   }
 
   def isInCollection(datasetId: UUID, collectionId: UUID): Boolean = {
@@ -318,7 +318,7 @@ class MongoDBDatasetService @Inject() (
 
   def updateThumbnail(datasetId: UUID, thumbnailId: UUID) {
     Dataset.dao.collection.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
 
   def createThumbnail(datasetId: UUID) {
@@ -482,7 +482,26 @@ class MongoDBDatasetService @Inject() (
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
+  
+  /**
+   * Implementation of updateInformation defined in services/DatasetService.scala.
+   */
+  def updateInformation(id: UUID, description: String, name: String) {
+      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
+          $set("description" -> description, "name" -> name), 
+          false, false, WriteConcern.Safe);
+  }
 
+  /**
+   * Implementation of updateLicenseing defined in services/DatasetService.scala.
+   */
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {      
+      val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
+      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
+          $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
+          false, false, WriteConcern.Safe);      
+  }
+  
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
@@ -579,10 +598,34 @@ class MongoDBDatasetService @Inject() (
           if (reqValue.isInstanceOf[String]) {
             val currValue = reqValue.asInstanceOf[String]
             if (keyTrimmed.endsWith("__not")) {
-              builder += MongoDBObject(actualKey -> MongoDBObject("$ne" -> currValue))
+              if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                if(!currValue.contains(" ANYWHERE")){
+                  realValue = "^"+realValue+"$";
+                }
+                if(currValue.contains(" IGNORE CASE")){
+                  realValue = "(?i)"+realValue;
+                }
+                builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  realValue.r))
+              }
+              else{
+                builder += MongoDBObject(actualKey -> MongoDBObject("$ne" ->  currValue))
+              }
             }
             else {
-              builder += MongoDBObject(actualKey -> currValue)
+              if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                if(!currValue.contains(" ANYWHERE")){
+                  realValue = "^"+realValue+"$";
+                }
+                if(currValue.contains(" IGNORE CASE")){
+                  realValue = "(?i)"+realValue;
+                }
+                builder += MongoDBObject(actualKey -> realValue.r)
+              }
+              else{
+                builder += MongoDBObject(actualKey -> currValue)
+              }
             }
           } else {
             //recursive
@@ -606,10 +649,34 @@ class MongoDBDatasetService @Inject() (
               if (reqValue.isInstanceOf[String]) {
                 val currValue = reqValue.asInstanceOf[String]
                 if (keyTrimmed.endsWith("__not")) {
-                  objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" -> currValue))
+                  if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
+	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+	                if(!currValue.contains(" ANYWHERE")){
+	                  realValue = "^"+realValue+"$";
+	                }
+	                if(currValue.contains(" IGNORE CASE")){
+	                  realValue = "(?i)"+realValue;
+	                }
+	                objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  realValue.r))
+                  }
+                  else{
+                	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
+                  }
                 }
                 else {
-                  objectForEach += MongoDBObject(tempActualKey -> currValue)
+                  if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
+	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+	                if(!currValue.contains(" ANYWHERE")){
+	                  realValue = "^"+realValue+"$";
+	                }
+	                if(currValue.contains(" IGNORE CASE")){
+	                  realValue = "(?i)"+realValue;
+	                }
+	                objectForEach += MongoDBObject(tempActualKey -> realValue.r)
+                  }
+                  else{
+                	objectForEach += MongoDBObject(tempActualKey -> currValue)
+                  }
                 }
               } else {
                 //recursive
@@ -735,11 +802,11 @@ class MongoDBDatasetService @Inject() (
   }
 
   def addCollection(datasetId: UUID, collectionId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("collections" -> collectionId), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("collections" -> collectionId.stringify), false, false, WriteConcern.Safe)
   }
 
   def removeCollection(datasetId: UUID, collectionId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("collections" -> collectionId), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("collections" -> collectionId.stringify), false, false, WriteConcern.Safe)
   }
 
   def removeFile(datasetId: UUID, fileId: UUID) {
@@ -819,18 +886,39 @@ class MongoDBDatasetService @Inject() (
 
         val xmlMd = getXMLMetadataJSON(id)
         Logger.debug("xmlmd=" + xmlMd)
+        
+        var fileDsId = ""
+        var fileDsName = ""          
+        for(file <- dataset.files){
+          fileDsId = fileDsId + file.id.stringify + "  "
+          fileDsName = fileDsName + file.filename + "  "
+        }
+        
+        var dsCollsId = ""
+        var dsCollsName = ""
+          
+        for(collection <- collections.listInsideDataset(dataset.id)){
+          dsCollsId = dsCollsId + collection.id.stringify + " %%% "
+          dsCollsName = dsCollsName + collection.name + " %%% "
+        }
 
+        val formatter = new SimpleDateFormat("dd/MM/yyyy")
+       
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "dataset", id,
-            List(("name", dataset.name), ("description", dataset.description), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+            List(("name", dataset.name), ("description", dataset.description), ("author",dataset.author.fullName),("created",formatter.format(dataset.created)), ("fileId",fileDsId),("fileName",fileDsName), ("collId",dsCollsId),("collName",dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
         }
       }
       case None => Logger.error("Dataset not found: " + id)
     }
   }
+  
+  def setNotesHTML(id: UUID, notesHTML: String){
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
+  }
 }
 
-object  Dataset extends ModelCompanion[Dataset, ObjectId] {
+object Dataset extends ModelCompanion[Dataset, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
@@ -843,3 +931,18 @@ object DatasetXMLMetadata extends ModelCompanion[DatasetXMLMetadata, ObjectId] {
     case Some(x) => new SalatDAO[DatasetXMLMetadata, ObjectId](collection = x.collection("datasetxmlmetadata")) {}
   }
 }
+
+/**
+ * ModelCompanion object for the models.LicenseData class. Specific to MongoDB implementation, so should either
+ * be in it's own utility class within services, or, as it is currently implemented, within one of the common
+ * services classes that utilize it.
+ */
+object LicenseData extends ModelCompanion[LicenseData, ObjectId] {
+//  val collection = MongoConnection()("test-alt")("licensedata")
+//  val dao = new SalatDAO[LicenseData, ObjectId](collection = collection) {}
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[LicenseData, ObjectId](collection = x.collection("licensedata")) {}
+  }
+}
+

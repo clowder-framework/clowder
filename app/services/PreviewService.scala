@@ -19,6 +19,8 @@ trait PreviewService {
 
   def findByDatasetId(id: UUID): List[Preview]
 
+  def findByCollectionId(id: UUID): List[Preview]
+
   /**
    * Save blob.
    */
@@ -43,7 +45,14 @@ trait PreviewService {
 
   def removePreview(p: Preview)
 
-  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[UUID], json: JsValue)
+  def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue)
+
+  def attachToCollection(previewId: UUID, collectionId: UUID, previewType: String, extractorId: Option[String], json: JsValue)
 
   def updateMetadata(previewId: UUID, json: JsValue)
+  
+  def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any]
+  
+  def getExtractorId(id: UUID):Option[String] 
+  
 }

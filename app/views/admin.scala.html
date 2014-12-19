@@ -1,7 +1,10 @@
-@(theme: Int)(implicit user: Option[securesocial.core.Identity])
+@(theme: String, displayName: String, welcomeMessage: String)(implicit user: Option[securesocial.core.Identity])
 @main("Administration") {
+
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    
 	<div class="page-header">
-		<h1>Administration</h1>
+		<h1>Customize</h1>
 	</div>
 	
 	<legend>Select a Theme</legend>
@@ -10,586 +13,55 @@
 		<div class="col-md-2">@themes(theme)</div>
 	</div>
 	
-	<legend>Create an Index</legend>
+	<legend>Select a display name for the application and a welcoming message</legend>
 	
-	<div class="container-fluid">
-        
-      <div class="row">
-      
-       <div class="col-md-12">
-			<div class="col-md-3">
-				<h5>Choose an Adapter</h5>
-				<select id="adapterDropDown" onchange="setAdapterState()">
-					<option value="invalid">--Adapter--</option>
-				</select>
-				<div style="text-align: left;">			
-      			 <input id="create" type="submit" class="btn btn-default btn-sm" value="Create" />
-      			 </div>
-      			 <br>
-      			 <br>
-      			 <div id="createIndex"style="text-align: left;">
-      			 </div>
-				
-			</div>		
-				
-		<div class="col-md-3">	
-			<h5>Choose an Extractor</h5>
-				<select id="extractor" onchange="setExtractorState()">
-					<option value="invalid">--Extractor--</option>
-				</select>	
-	 		</div>
-	 		
-	 		<div class="col-md-3" style="margin-right:5px;">
-				<h5>Choose a Measure</h5>
-				<select id="measure" onchange="setMeasureState()">
-					<option value="invalid">--Measure--</option>
-				</select>
-				
-			</div>
-			<div class="col-md-3">
-				<h5>Choose an Indexer </h5>
-				<select id="indexer" onchange="setIndexerState()">
-					<option value="invalid">--Indexer--</option>
-				</select>
-				
-			</div>
-  		</div>
+	<div class="row">
+		<div class="col-md-2">
+			<form role="form-horizontal">
+			  <div class="form-group">
+			    <label for="displayNameField">Display name</label>
+			    <input id="displayNameField" name="displayNameField" type="text" value="@(displayName)"></input>
+			    <span id="displayNameField_error" style="display:none;">Must have a display name</span>
+			    <br /><br />
+			    <label for="welcomingField">Welcoming message</label>
+				<textarea name="welcomingField" id="welcomingField" style="width:300%;">@(welcomeMessage)</textarea>
+				<br /><br />
+				<button class="btn btn-default" onclick="return submitAppearance();">Submit</button>	
+			  </div>
+			</form>			
+		</div>
 	</div>
-</div>
-<br>
-<br>
-<legend> Build an Index</legend>
-<div class="row">
-	   <div class="col-md-12">
-	   	<div class="col-md-3">
-				<h5>Choose an Index </h5>
-				<select id="index" onchange="setIndexState()">
-					<option value="invalid">--Index--</option>
-				</select>
-				<div style="text-align: left;">
-				<input id="build" class="btn btn-default btn-sm" type="submit" value="Build Index">
-				</div>
-				<div id="buildIndex"style="text-align: left;">
-      			 </div>
-		</div>		
-	</div>
-</div>
-
-<br>
-<br>
-
-<legend> List All Index</legend>
-<div class="row">
-<div class="col-md-12">
-	   <div style="text-align: left;">			
-       <input id="list" type="submit" class="btn btn-default btn-sm" value="List All Indexes" />
-       </div>
-       <div id="list1">
-       </div>
-    </div>
-</div>
-<br>
-<br>
-<legend> Delete an Index</legend>
-<div class="row">
-	   <div class="col-md-12">
-	   	<div class="col-md-3">
-				<h5>Choose an Index </h5>
-				<select id="indexDel" onchange="setIndexDelState()">
-					<option value="invalid">--Index--</option>
-				</select>
-				<div style="text-align: left;">
-				<input id="delete" class="btn btn-default btn-sm" type="submit" value="Delete Index">
-				</div>
-				<br>
-				<br>
-				<div id="deleteIndex"style="text-align: left;">
-      			 </div>
-		</div>		
-	</div>
-</div>
-<br>
-<div class="row">
-<div class="col-md-12">
-	   <div style="text-align: left;">			
-       <input id="deleteAll" type="submit" class="btn btn-default btn-sm btn-danger" value="Delete All" />
-       </div>
-         <div id="deleteAllIndex"style="text-align: left;">
-      </div>
-   </div>  
-</div>
-	
-
-
-<script language="javascript">
-var adapterMimeType;
-var adapterState= false;
-var extractorState=false;
-var measureState= false;
-var indexerState=false;
-var indexState=false;
-
-var adapterselected;
-var extractorselected;
-var measureselected;
-var indexerselected;
-var indexselected="";
-
-
-var adapterList = [];
-var extractorList=[];
-var measureList=[];
-var indexerList=[];
-var indexList=[];
-
-$(document).ready(function setAvailableAdapters(){
-	getAdapters();//global car adapterList is now set
-});
-
-function getAdapters() {
-
-$.ajax({
-            type : "GET",
-            url : "@routes.Admin.getAdapters()",
-            dataType : "json",
-            success : function(data) {
-            	console.log('Call succedded');
-            	
-               // $('#test1').text(data.message);
-                setAdapterList(data);
-            },
-            error : function(xhr, textStatus, errorThrown) {
-                console.log('Make call failed ' +  errorThrown);
-            }
-        });
-}
-//set the adapter options, pulled from the versus server
-
-
-function setAdapterList(json){
-
-
-	var availableAdapters = "";
-	for(var i=0; i<json.length; i++){
-		availableAdapters  = availableAdapters+'<option value="'+json[i].id+'" >'+json[i].name+'</option>';
-		//adapterList[i] = {id:json[i].id,mimeTypes:json[i].supportedMimeTypes};
-		adapterList[i] = {name:json[i].name,id:json[i].id,mimeTypes:json[i].supportedMimeTypes};
-	}
-	$("#adapterDropDown").html('<option value="invalid">--Adapter--</option>'+availableAdapters);
-}
-
-function setAdapterState(){
-
-	if($("#adapterDropDown").val() == "invalid"){
-		adapterState = false;
-	}
-	else{
-		adapterState    = true;
-		for( var i=0; i<adapterList.length; i++){
-			if($("#adapterDropDown").val() == adapterList[i].id ){
-				console.log("AdapterDropdown",$("#adapterDropDown").val());
-				console.log("Adapter name selected",adapterList[i].name,"adapterList[i].id=",adapterList[i].id);
-				adapterMimeType = adapterList[i].mimeTypes;
-				adapterselected=adapterList[i].id.split(" ")[1];
+	<script language="javascript">
+		function submitAppearance(){
+			var displayName = $("#displayNameField").val().trim();
+			var welcomeMessage = $("#welcomingField").val().trim();
+			
+			if(displayName == ""){
+				$("#displayNameField_error").css("display","inline");
+				return false;
+			}else{
+				$("#displayNameField_error").css("display","none");
 			}
+			
+			console.log("Display name: "+displayName);
+			console.log("Welcoming message: "+welcomeMessage);
+			
+			var request = $.ajax({
+				url:  "@api.routes.Admin.submitAppearance",
+				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage}),
+				type: "POST",
+				contentType: "application/json",
+	     	});
+			request.done(function (response, textStatus, jqXHR){ 
+				console.log("Response: " + response);
+				alert("Done");
+			});
+			request.fail(function (jqXHR, textStatus, errorThrown){
+				console.error("The following error occured: " + textStatus, errorThrown);
+				alert("The application appearance was not updated due to : " + errorThrown);
+			});						
+			return false;			
 		}
-		console.log("adapterMimeType",adapterMimeType);
-		console.log(adapterselected[1]);
-	}
-	//toggleSubmitButton();
+	</script>
 }
-
-
-function getExtractors() {
-		$.ajax({
-            type : 'GET',
-            url : "@routes.Admin.getExtractors()",
-            dataType : "json",
-            success : function(data) {
-            	console.log('Call succedded');
-            	
-               // $('#test1').text(data.message);
-                setExtractorList(data);
-                
-            },
-            error : function(xhr, textStatus, errorThrown) {
-                console.log('Make call failed ' +  errorThrown);
-            }
-        });
-}
-//set the adapter options, pulled from the versus server
-$(document).ready(function setAvailableExtractors(){
-	getExtractors();//global car extractorList is now set
-});
-
-function setExtractorList(json){
-	var availableExtractors = "";
-	for(var i=0; i<json.length; i++){
-		availableExtractors  = availableExtractors+'<option value="'+json[i].id+'" >'+json[i].name+'</option>';
-		//adapterList[i] = {id:json[i].id,mimeTypes:json[i].supportedMimeTypes};
-		extractorList[i] = {name:json[i].name,id:json[i].id,supportedFeature:json[i].supportedFeature};
-	}
-	$("#extractor").html('<option value="invalid">--Extractor--</option>'+availableExtractors);
-}
-
-
-function setExtractorState(){
-	if($("#extractor").val() == "invalid"){
-		extractorState = false;
-	}
-	else{
-		extractorState    = true;
-		for( var i=0; i<extractorList.length; i++){
-			if($("#extractor").val() == extractorList[i].id ){
-				console.log("extractorList",$("#extractor").val());
-				console.log("Extractor name selected",extractorList[i].name,"extractorList[i].id=",extractorList[i].id);
-				extractorSupportedFeature = extractorList[i].supportedFeature;
-				extractorselected=extractorList[i].id.split(" ")[1];
-			}
-		}
-		console.log("extractorSupportedFeatures:",extractorSupportedFeature);
-		console.log(extractorselected[1]);
-	}
-	//toggleSubmitButton();
-}
-
-function getMeasures() {
-$.ajax({
-            type : 'GET',
-            url : "@routes.Admin.getMeasures()",
-            dataType : "json",
-            success : function(data) {
-            	console.log('Call succedded');
-            	
-              //  $('#test1').text(data.message);
-                
-                setMeasureList(data);
-            },
-            error : function(xhr, textStatus, errorThrown) {
-                console.log('Make call failed ' +  errorThrown);
-            }
-        });
 	
-}
-//set the measure options, pulled from the versus server
-$(document).ready(function setAvailableMeasures(){
-	getMeasures();//global  measureList is now set
-});
-
-function setMeasureList(json){
-	var availableMeasures = "";
-	for(var i=0; i<json.length; i++){
-		availableMeasures  = availableMeasures+'<option value="'+json[i].id+'" >'+json[i].name+'</option>';
-		//adapterList[i] = {id:json[i].id,mimeTypes:json[i].supportedMimeTypes};
-		measureList[i] = {name:json[i].name,id:json[i].id,supportedFeatureType:json[i].supportedFeatureType};
-	}
-	$("#measure").html('<option value="invalid">--Measure--</option>'+availableMeasures);
-}
-
-
-function setMeasureState(){
-	if($("#measure").val() == "invalid"){
-		measureState = false;
-	}
-	else{
-		measureState    = true;
-		for( var i=0; i<measureList.length; i++){
-			if($("#measure").val() == measureList[i].id ){
-				console.log("measureList",$("#measure").val());
-				console.log("Measure name selected: ",measureList[i].name," measureList[i].id=",measureList[i].id);
-				//measureSupportedFeatureType = measureList[i].supportedFeatureType;
-				measureselected=measureList[i].id.split(" ")[1];
-			}
-		}
-		//console.log("MeasureSupportedFeatureType:",measureSupportedFeatureType);
-		console.log(measureselected[1]);
-	}
-	//toggleSubmitButton();
-}
-
-//Indexer set
-function getIndexers() {
-$.ajax({
-            type : 'GET',
-            url : "@routes.Admin.getIndexers()",
-            dataType : "json",
-            success : function(data) {
-            	console.log('Call succedded');
-            	
-              //  $('#test1').text(data.message);
-                
-                setIndexerList(data);
-            },
-            error : function(xhr, textStatus, errorThrown) {
-                console.log('Make call failed ' +  errorThrown);
-            }
-        });
-	
-}
-//set the indexer options, pulled from the versus server
-$(document).ready(function setAvailableIndexer(){
-	getIndexers();//global  indexerList is now set
-});
-
-function setIndexerList(json){
-	var availableIndexers = "";
-	for(var i=0; i<json.length; i++){
-		availableIndexers = availableIndexers+'<option value="'+json[i].id+'" >'+json[i].name+'</option>';
-		//adapterList[i] = {id:json[i].id,mimeTypes:json[i].supportedMimeTypes};
-	    indexerList[i] = {name:json[i].name,id:json[i].id};
-	}
-	$("#indexer").html('<option value="invalid">--Indexer--</option>'+availableIndexers);
-}
-
-
-function setIndexerState(){
-	if($("#indexer").val() == "invalid"){
-		indexerState = false;
-	}
-	else{
-		indexerState    = true;
-		for( var i=0; i<indexerList.length; i++){
-			if($("#indexer").val() == indexerList[i].id ){
-				console.log("indexerList",$("#indexer").val());
-				console.log("Indexer name selected: ",indexerList[i].name," indexerList[i].id=",indexerList[i].id);
-				//measureSupportedFeatureType = measureList[i].supportedFeatureType;
-				indexerselected=indexerList[i].id;
-			}
-		}
-		//console.log("MeasureSupportedFeatureType:",measureSupportedFeatureType);
-		console.log(indexerselected);
-	}
-	//toggleSubmitButton();
-}
-
-
-//set the indexer options, pulled from the versus server
-$(document).ready(function setAvailableIndexes(){
-	getIndexes();//global  indexerList is now set
-});
-
-function getIndexes() {
-	$.ajax({
-            type : 'GET',
-            url : "@routes.Admin.getIndexes()",
-            dataType : "json",
-            success : function(data) {
-            	console.log('Call succedded');
-            	
-              //  $('#test1').text(data.message);
-                
-                setIndexList(data);
-            },
-            error : function(xhr, textStatus, errorThrown) {
-                console.log('Make call failed ' +  errorThrown);
-            }
-        });
-	
-}
-
-
-function setIndexList(json){
-	var availableIndexes = "";
-	for(var i=0; i<json.length; i++){
-		availableIndexes = availableIndexes+'<option value="'+json[i].indexID+'" >'+json[i].indexID+'</option>';
-		indexList[i] = {indexID:json[i].indexID,MIMEtype:json[i].MIMEtype,Extractor:json[i].Extractor, Measure:json[i].Measure,Indexer:json[i].Indexer};
-	}
-	$("#index").html('<option value="invalid">--Index--</option>'+availableIndexes);
-	$("#indexDel").html('<option value="invalid">--Index--</option>'+availableIndexes);
-}
-
-
-function setIndexState(){
-	if($("#index").val() == "invalid"){
-		indexState = false;
-	}
-	else{
-		indexState    = true;
-		for( var i=0; i<indexList.length; i++){
-			if($("#index").val() == indexList[i].indexID ){
-				console.log("indexList",$("#index").val());
-				console.log("Index name selected: ",indexList[i].indexID);
-				
-				indexselected=indexList[i].indexID;
-			}
-		}
-		
-		console.log("indexselected=",indexselected);
-	}
-	
-}
-
-function setIndexDelState(){
-	if($("#indexDel").val() == "invalid"){
-		indexState = false;
-	}
-	else{
-		indexState    = true;
-		for( var i=0; i<indexList.length; i++){
-			if($("#indexDel").val() == indexList[i].indexID ){
-				console.log("indexList",$("#indexDel").val());
-				console.log("Index name selected: ",indexList[i].indexID);
-				
-				indexselected=indexList[i].indexID;
-			}
-		}
-		
-		console.log("indexselected=",indexselected);
-	}
-	
-}
-
-
-
-
-var createBtn=document.getElementById('create');
-    createBtn.onclick=function(evt){
-    console.log("I am inside click function");
-     // var fdata="adapter="+adapterselected+"&extractor="+extractorselected+"&measure="+measureselected+"&indexer="+indexerselected;
-    	$.ajax({
-            type : 'POST',
-            url : "@routes.Admin.createIndex()",
-            contentType: "application/json",
-           // dataType : "json",
-             data:JSON.stringify({"adapter":adapterselected,"extractor":extractorselected,"measure":measureselected,"indexer":indexerselected}),
-           
-            success : function(data1) {
-            	//console.log('Call succedded');
-            	
-              //  $('#test1').text(data1.message);
-                console.log("data1:", data1);
-                console.log("Sucessfully created");
-                $('#createIndex').text("Sucessfully created index with id:  "+ data1);
-                //alert("Sucessfully created");
-            },
-            error : function(xhr, textStatus, errorThrown) {
-                console.log('Make call failed ' +  errorThrown);
-            }
-        });
-        
-    }	
-    			
-	var buildBtn=document.getElementById('build');
-    buildBtn.onclick=function(evt){
-    
-    	console.log("I am inside Build click function", indexselected);
-    
-    	var id=indexselected;
-    
-    	var request=jsRoutes.controllers.Admin.buildIndex(id).ajax({
-   					 type:'POST'
-    				});
-    				request.done(function (response, textStatus, jqXHR){
-    				$('#buildIndex').text(response);
-					console.log("Response =" + response);
-   					 });
-    	    }						
-    	
-var listBtn=document.getElementById('list');
-    listBtn.onclick=function(evt){
-    
-    	console.log("I am inside list click function");
-    
-    	
-    
-    	var request=jsRoutes.controllers.Admin.getIndexes().ajax({
-   					 type:'GET',
-   					 dataType: "json",
-    				});
-    				request.done(function (json, textStatus, jqXHR){
-						console.log("Response =" + json);
-						var availableIndexes = "";
-						var tab=[];
-						tab.push('<table id="inputTable" class="table table-bordered table-striped" style="display:inline;"><th>IndexId</th><th>Extractor</th><th>Measure</th><th>Indexer</th>');
-                        
-
-						for(var i=0; i<json.length; i++){
-								//availableIndexes = availableIndexes+'<option value="'+json[i].indexID+'" >'+json[i].indexID+'</option>';
-							
-								indexList[i] = {indexID:json[i].indexID,MIMEtype:json[i].MIMEtype,Extractor:json[i].Extractor, Measure:json[i].Measure,Indexer:json[i].Indexer};
-									tab.push('<tr id=i >',
-							      	'<td>', json[i].indexID, '</td>',
-							      	'<td>',json[i].Extractor,' </td>',
-							      	'<td>',json[i].Measure,'</td>',
-							      	'<td>',json[i].Indexer,'</td>',
-							      	'</tr>');
-							
-							}
-						tab.push('</table>');
-						document.getElementById('list1').innerHTML=tab.join('');
-					  // $("#list1").html(tab);
-					
-					
-   					 });
-    	    }		
-
-
-var deleteBtn=document.getElementById('delete');
-    deleteBtn.onclick=function(evt){
- 
-    	var id=indexselected;
-
-    var id=indexselected;
-
-    	console.log("I am inside delete click function");
-    	var request=jsRoutes.controllers.Admin.deleteIndex(id).ajax({
-   					 type:'DELETE'
-    				});
-    				request.done(function (response, textStatus, jqXHR){
-    				$('#deleteIndex').text(response);
-					console.log("Response =" + response);
-   					 });
-    }		
-    
-   var deleteAllBtn=document.getElementById('deleteAll');
-    deleteAllBtn.onclick=function(evt){
-    
-    	console.log("I am inside delete All click function");
-    	
-    	var request=jsRoutes.controllers.Admin.deleteAllIndexes().ajax({
-   					 type:'DELETE'
-    				});
-    				request.done(function (response, textStatus, jqXHR){
-    				$('#deleteAllIndex').text(response);
-					console.log("Response =" + response);
-   					 });
-    
-    }	 
-   
-   /*$('#testButton').click(function(evt) {
-        $('#errors').hide();
-        console.log("inside Test button");
-        $.ajax({
-            type : 'GET',
-            url : "@routes.Admin.test()",
-            dataType : "json",
-            success : function(data) {
-            	console.log('Test Call succedded');
-                $('#test1').text(data.message);
-            },
-            error : function(xhr, textStatus, errorThrown) {
-                console.log('Make call failed ' +  errorThrown);
-            }
-        });
-        return false;
-    });*/
-  /* $('#secureTestButton').click(function(evt) {
-       $('#errors').hide();
-       $.ajax({
-           type : 'GET',
-           url : "@routes.Admin.secureTest()",
-           dataType : "json",
-           success : function(data) {
-           	console.log('Call succedded');
-               $('#test1').text(data.message);
-           },
-           error : function(xhr, textStatus, errorThrown) {
-               console.log('Make call failed' +  errorThrown);
-               $('#test1').text(errorThrown);
-           }
-       });
-       return false;
-   });*/
-   
-</script>
-}

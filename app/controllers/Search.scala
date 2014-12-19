@@ -1,5 +1,10 @@
 package controllers
 
+
+import play.Logger
+import scala.collection.JavaConversions.mapAsScalaMap
+//import services.Services
+
 import services._
 import play.Logger
 import scala.collection.JavaConversions.mapAsScalaMap
@@ -35,15 +40,18 @@ class Search @Inject() (
    * Search results.
    */
   def search(query: String) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+    implicit val user = request.user
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         Logger.debug("Searching for: " + query)
-        var fileList = ListBuffer.empty[models.File]
-        var datasetList = ListBuffer.empty[models.Dataset]
-        var mapdatasetIds= new scala.collection.mutable.HashMap[String,(String,String)]
+        var listOfFiles = ListBuffer.empty[models.File]
+        var listOfdatasets = ListBuffer.empty[models.Dataset]
+        var listOfcollections = ListBuffer.empty[models.Collection]
+        var mapdatasetIds = new scala.collection.mutable.HashMap[String, ListBuffer[(String, String)]]
+        var mapcollectionIds = new scala.collection.mutable.HashMap[String, ListBuffer[(String, String)]]
         if (query != "") {
-          import play.api.Play.current
-          val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query) }
+          import play.api.Play.current          
+          val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([:/\\\\])", "\\\\$1"))}
           result match {
             case Some(searchResponse) => {
               for (hit <- searchResponse.getHits().getHits()) {
@@ -52,31 +60,87 @@ class Search @Inject() (
                 for ((key, value) <- mapAsScalaMap(hit.getFields())) {
                   Logger.info(value.getName + " = " + value.getValue())
                 }
+
                 if (hit.getType() == "file") {
                   files.get(UUID(hit.getId())) match {
-                    case Some(file) =>{
+                    case Some(file) => {
                       Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
                       Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
                       //Logger.debug("Search result found file " + hit.getId()); files += file
-                       mapdatasetIds.put(hit.getId(), (hit.getSource().get("datasetId").toString(),hit.getSource.get("datasetName").toString))
-                      fileList += file
+
+                      var datasetsList = ListBuffer(): ListBuffer[(String, String)]
+                      if ((hit.getSource().get("datasetId") != null) && (hit.getSource().get("datasetName") != null)) {
+                        val datasetsIdsList = hit.getSource().get("datasetId").toString().split(" %%% ").toList
+                        val datasetsNamesList = hit.getSource().get("datasetName").toString().split(" %%% ").toList.iterator
+                        for (currentDatasetId <- datasetsIdsList) {
+                          datasetsList = datasetsList :+(currentDatasetId, datasetsNamesList.next())
+                        }
+                      }
+
+                      mapdatasetIds.put(hit.getId(), datasetsList)
+                      listOfFiles += file
                     }
                     case None => Logger.debug("File not found " + hit.getId())
                   }
-                } else if (hit.getType() == "dataset") {
-                Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
-                  Logger.debug("DATASETS:Dataset.id="+hit.getId());
+                }
+
+                else if (hit.getType() == "dataset") {
+                  Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
+                  Logger.debug("DATASETS:Dataset.id=" + hit.getId());
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
-                   datasets.get(UUID(hit.getId())) match {
-                    case Some(dataset) =>
-                      Logger.debug("Search result found dataset" + hit.getId()); datasetList += dataset
+
+                  datasets.get(UUID(hit.getId())) match {
+                    case Some(dataset) => {
+                      Logger.debug("Search result found dataset" + hit.getId())
+
+                      var collectionsList = ListBuffer(): ListBuffer[(String, String)]
+                      Logger.debug("src: " + hit.getSource().toString())
+                      val collectionsIdsList = hit.getSource().get("collId").toString().split(" %%% ").toList
+                      val collectionsNamesList = hit.getSource().get("collName").toString().split(" %%% ").toList.iterator
+                      for (currentCollectionId <- collectionsIdsList) {
+                        collectionsList = collectionsList :+(currentCollectionId, collectionsNamesList.next())
+                      }
+
+                      mapcollectionIds.put(hit.getId(), collectionsList)
+
+                      listOfdatasets += dataset
+                    }
                     case None => {
                       Logger.debug("Dataset not found " + hit.getId())
-                  	Redirect(routes.Datasets.dataset(UUID(hit.getId)))
-                  }
+                      Redirect(routes.Datasets.dataset(UUID(hit.getId)))
+
+                    }
                   }
                 }
-                Ok(views.html.searchResults(query, fileList.toArray, datasetList.toArray,mapdatasetIds))
+
+                else if (hit.getType() == "collection") {
+                  Logger.debug("COLLECTIONS:hits.hits._source: Search result found collection " + hit.getSource().get("name"))
+                  Logger.debug("COLLECTIONS:Collection.id=" + hit.getId());
+                  //Dataset.findOneById(new ObjectId(hit.getId())) match {
+                  collections.get(UUID(hit.getId())) match {
+                    case Some(collection) =>
+                      Logger.debug("Search result found collection" + hit.getId());
+                      var collectionThumbnail: Option[String] = None
+                      try {
+                        for (dataset <- collection.datasets) {
+                          if (!dataset.thumbnail_id.isEmpty) {
+                            collectionThumbnail = dataset.thumbnail_id
+                            throw ThumbnailFound
+                          }
+                        }
+                      } catch {
+                        case ThumbnailFound =>
+                      }
+                      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+                      listOfcollections += collectionWithThumbnail
+                    case None => {
+                      Logger.debug("Collection not found " + hit.getId())
+                      Redirect(routes.Collections.collection(UUID(hit.getId)))
+                    }
+                  }
+                }
+
+                Ok(views.html.searchResults(query, listOfFiles.toArray, listOfdatasets.toArray, listOfcollections.toArray, mapdatasetIds, mapcollectionIds))
               }
             }
             case None => {
@@ -84,7 +148,10 @@ class Search @Inject() (
             }
           }
         }
-        Ok(views.html.searchResults(query, fileList.toArray, datasetList.toArray,mapdatasetIds))
+
+        Logger.debug("newquery: " + query.replaceAll("([:/\\\\])", "\\\\$1"))
+        Ok(views.html.searchResults(query, listOfFiles.toArray, listOfdatasets.toArray, listOfcollections.toArray, mapdatasetIds, mapcollectionIds))
+
       }
       case None => {
         Logger.debug("Search plugin not enabled")
@@ -103,7 +170,7 @@ class Search @Inject() (
    * Search MultimediaFeatures.
    */
   def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
-    Logger.debug("Searching multimedia index")
+     Logger.debug("Searching multimedia index " + section_id.stringify)
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
     queries.findFeatureBySection(section_id) match {
@@ -169,247 +236,304 @@ class Search @Inject() (
     Logger.debug("Searching for" + query)
     Ok("")
   }
-
-  //GET the query image from the URL and compare within the database and show the result
   
-  def searchbyURL(queryurl: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-
-    Async {
-      current.plugin[VersusPlugin] match {
-
-        case Some(plugin) => {
-
-          var indexListResponse = plugin.getIndexes()
-
-          var indexSeqFuture = for {
-            list <- indexListResponse
-
-            listIn = list.json.as[Seq[models.VersusIndexList.VersusIndexList]]
-
-            indexSeqT = listIn.map {
-              ind => (ind.indexID, ind.MIMEtype, ind.ex, ind.me, ind.indxr)
-            }
-          } yield {
-            indexSeqT
-          }
-
-          var finalR = for {
-            indexSeq <- indexSeqFuture
-          } yield {
-            var resultSeqFuture = indexSeq.map {
-              index =>
-                var u = for {
-                  indexResult <- plugin.queryURL(queryurl, index._1)
-                } yield {
-                  (indexResult, index._3, index._4, index._5)
-                }
-                u
-            } //end of indexSeq.map
-
-            var hashResult = for {
-              result <- scala.concurrent.Future.sequence(resultSeqFuture)
-            } yield {
-              val t = result.toArray
-              
-              var hm = new scala.collection.mutable.HashMap[String, (String, String, String, ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
-              for (k <- 0 to t.length - 1) {
-                hm.put(t(k)._1._1, (t(k)._2, t(k)._3, t(k)._4, t(k)._1._2))
-              }
-              hm
-            }
-
-            hashResult
-          } //End yield- outer for 
-
-          for {
-            xFinal <- finalR
-            yFinal <- xFinal
-          } yield {
-            val keys = yFinal.keySet
-            var keysArray = new ArrayBuffer[String]
-            keys.copyToBuffer(keysArray)
-            Ok(views.html.contentbasedSearchResults(keysArray,queryurl , queryurl, yFinal.size, yFinal))
-            /*Services.queries.getFile(id) match {
-              case Some(file) => {
-                Ok(views.html.contentbasedSearchResults(keysArray, file.filename, id, yFinal.size, yFinal))
-          }
-              case None => {
-                Ok(id + " not found")
-              }
-            }*/
-          }
-
-        } // case some
-        case None => {
-          Future(Ok("No Versus Service"))
-        }
-      } //match
-    } //Async
-  }
 
   /*
-   * 
-   * Finds similar images/objects in Multiple index for a given query image/object
-   * 
+   * GET the query file from a URL and compare within the database and show the result   
    * */
-  def findSimilar(id:UUID) = SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
- 
-   Async{ 
-      
-    	current.plugin[VersusPlugin] match {
-     
-        case Some(plugin)=>{
-        	 
-        	 var indexListResponse=plugin.getIndexes()
-        	 
-        	 var indexSeqFuture= for {
-        		 list<-indexListResponse
-        		
-        		 listIn=list.json.as[Seq[models.VersusIndexList.VersusIndexList]]
-        		 
-        		 indexSeqT=listIn.map{
-        		  		    ind=>(ind.indexID,ind.MIMEtype,ind.ex,ind.me,ind.indxr)
-        		  		 }
-        		} yield {
-        	       indexSeqT
-        		 }
-        	         
-           var finalR=for{
-            		indexSeq<-indexSeqFuture
-            		} yield {
-            				var resultSeqFuture=indexSeq.map{
-            						index=>
-                var u = for {
-            							indexResult<-plugin.queryIndex(id.stringify, index._1)
-            							} yield {
-                  (indexResult, index._3, index._4, index._5)
-            							}
-            							u
-            					  }//end of indexSeq.map
-              
-            			
-                        var hashResult=for{
-                        	   				result<-scala.concurrent.Future.sequence(resultSeqFuture)
-                        	   		   } yield {
-              val t = result.toArray
-              
-              var hm = new scala.collection.mutable.HashMap[String, (String, String, String, ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
-                        	   				for(k<-0 to t.length-1){
-                hm.put(t(k)._1._1, (t(k)._2, t(k)._3, t(k)._4, t(k)._1._2))
-                        	   				}
-                        	   				
-                        	   				hm
-                        	   		   }
-            	   			
-                        	   		
-                        hashResult	   		
-            		}//End yield- outer for 
-            		
-		                			for{
-		                				xFinal<-finalR
-		                				yFinal<-xFinal
-          } yield {
-		                			  val keys=yFinal.keySet
-		                			  var keysArray=new ArrayBuffer[String]
-		                			  keys.copyToBuffer(keysArray)
-		                			  
-            queries.getFile(id) match {
-		                			  	case Some(file)=>{ 
-                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id.stringify, yFinal.size, yFinal))
-		                			  	}
-		                			  	case None=>{
-		                			  			Ok(id +" not found")
-		                			  			}
-		                			  }
-		                			}
-              
+  def searchbyURL(queryURL: String)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+   	Async{         
+   	  current.plugin[VersusPlugin] match {    		
+    	case Some(plugin)=>{      	  
+    		val futureFutureListResults = for {
+    			indexList<-plugin.getIndexesAsFutureList()
+    		} yield { 	      				
+    			val resultListOfFutures=indexList.map{
+    				index=>    
+    				  plugin.queryIndexForURL(queryURL, index.id).map{
+    				    queryResult=>
+    				      (index, queryResult)
+    				  }    								  
+    			}  	
+    			//convert list of futures into a Future[list]
+    			scala.concurrent.Future.sequence(resultListOfFutures)
+           	}//End yield- outer for    	           
+    		for{
+    			futureListResults<-futureFutureListResults
+    			listOfResults<-futureListResults   			    		
+    		} yield {
+    		  //added a placeholder for UUID, to work with the new version of template
+    		  Ok(views.html.multimediaSearchResults(queryURL, null, listOfResults))     
+    		}              
         } //case some
                     
         case None => {
           Future(Ok("No Versus Service"))
         }
-      } //match
-            
+      } //match            
     } //Async
   }
 
- /*Find similar images/objects in Multiple index for an image in the Medici repository*/
-  def findSimilarFile(id: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    Async {
+  /** 
+   * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is NOT id db, just uploaded by user)
+   **/
+  def findSimilar(fileID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
+   	Logger.debug("Finding similar files")
+    Async{ 
+   		//query file will be stored in MultimediaQueryService
+   		//in controllers/Files -> uploadSelectQuery
+   		var contentTypeStr="";
+   		queries.get(fileID) match {
+   			case Some((inputStream, filename, contentType, length)) => {                
+   				contentTypeStr=contentType;
+   				current.plugin[VersusPlugin] match {    		
+   					case Some(plugin)=>{          	
+   						val futureFutureListResults = for {    	  
+   							indexList<-plugin.getIndexesForContentTypeAsFutureList(contentTypeStr)
+   						} yield { 	      				
+   							val resultListOfFutures=indexList.map{
+   								index=>    
+   									plugin.queryIndexForNewFile(fileID, index.id).map{
+   										queryResult=>(index, queryResult)
+   									}    								  
+   							}  	
+   							//convert list of futures into a Future[list]
+   							scala.concurrent.Future.sequence(resultListOfFutures)    			
+   						}//End yield    		
+    		
+   						for{
+   							futureListResults<-futureFutureListResults
+   							listOfResults<-futureListResults      		
+   						} yield {  
+   							Ok(views.html.multimediaSearchResults(filename, fileID, listOfResults))             		
+   						}    		            
+   					} //end of case Some(plugin)   
 
-      current.plugin[VersusPlugin] match {
-
-        case Some(plugin) => {
-
-          var indexListResponse = plugin.getIndexes()
-
-          var indexSeqFuture = for {
-            list <- indexListResponse
-
-            listIn = list.json.as[Seq[models.VersusIndexList.VersusIndexList]]
-
-            indexSeqT = listIn.map {
-              ind => (ind.indexID, ind.MIMEtype, ind.ex, ind.me, ind.indxr)
-            }
-          } yield {
-            indexSeqT
-          }
-
-          var finalR = for {
-            indexSeq <- indexSeqFuture
-          } yield {
-            var resultSeqFuture = indexSeq.map {
-              index =>
-                val u = for {
-                  indexResult <- plugin.queryIndexFile(id.stringify, index._1)
-                } yield {
-                  (indexResult, index._3, index._4, index._5)
-                }
-                u
-            } //end of indexSeq.map
-
-            var hashResult = for {
-              result <- scala.concurrent.Future.sequence(resultSeqFuture)
-            } yield {
-              val t = result.toArray
-              var hm = new scala.collection.mutable.HashMap[String, (String, String, String, ArrayBuffer[(String, String, Double, String, Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]])])]()
-              for (k <- 0 to t.length - 1) {
-                hm.put(t(k)._1._1, (t(k)._2, t(k)._3, t(k)._4, t(k)._1._2))
-              }
-              hm
-            }
-
-            hashResult
-          } //End yield- outer for 
-
-          for {
-            xFinal <- finalR
-            yFinal <- xFinal
-          } yield {
-            val keys = yFinal.keySet
-            var keysArray = new ArrayBuffer[String]
-            keys.copyToBuffer(keysArray)
-
-            files.get(id) match {
-              case Some(file) => {
-                Ok(views.html.contentbasedSearchResults2(keysArray, file.filename, id.stringify, yFinal.size, yFinal))
-              }
-              case None => {
-                Ok(id + " not found")
-              }
-            }
-          }
-
-        } //case some
-
-        case None => {
-          Future(Ok("No Versus Service"))
-        }
-      } //match
-
+   					case None => {
+   						Future(Ok("No Versus Service"))
+   					}
+   				} //current.plugin[VersusPlugin] match  
+   			}//case Some((inputStream...
+   			
+   			case None=>{
+   				Logger.debug("File with id " +fileID +" not found")
+   				Future(Ok("File with id " +fileID +" not found"))
+   			}
+   		}//end of queries.get(imageID) match 
     } //Async
-
   }
+  
+  /**      
+  * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is already in db)
+  *  
+  **/
+  def findSimilarFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+  	//
+    //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
+  	//also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
+  	//
+    Logger.debug("Finding similar file for " + inputFileId)
+    
+  Async{       	   
+  		//file will be stored in FileService
+   	   	var contentTypeStr="";
+   	   	files.getBytes(inputFileId) match {
+   	   		case Some((inputStream, filename, contentType, length)) => {  
+   	   			contentTypeStr = contentType
+   	   			current.plugin[VersusPlugin] match {    		
+   	   				case Some(plugin)=>{      	  
+   	   					val futureFutureListResults = for {
+   	   						indexList<-plugin.getIndexesForContentTypeAsFutureList(contentTypeStr)
+   	   					} yield { 	      				
+   	   						val resultListOfFutures=indexList.map{
+   	   							index=>    
+   	   								plugin.queryIndexForExistingFile(inputFileId, index.id).map{
+   	   									queryResult=>  (index, queryResult)
+   	   								}    								  
+   	   						}  	
+   	   						//convert list of futures into a Future[list]
+   	   						scala.concurrent.Future.sequence(resultListOfFutures)
+   	   					}//End yield- outer for    	
+    		
+   	   					for{
+   	   						futureListResults<-futureFutureListResults
+   	   						listOfResults<-futureListResults      		
+   	   					} yield {     			             
+   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  listOfResults))          
+   	   					}    		             
+   	   				} //end of case Some(plugin)                   
+
+   	   				case None => {
+   	   					Future(Ok("No Versus Service"))
+   	   				}
+   	   			} //current.plugin[VersusPlugin] match  
+   			}//case Some((inputStream...
+   			
+   			case None=>{
+   				Logger.debug("Could not find similar for file id " +inputFileId )
+   				Future(Ok("Could not find similar for file id " +inputFileId ))
+   			}
+   		}//end of files.getBytes(inputFileId) match 
+    } //Async
+  }
+     
+
+/**
+   *Checks that input has file id, index id, and weight, and that they all are correct.  
+   * Returns 
+   * 	boolean: true if errors are present
+   * 	String: error message
+   * 	List[Double] : weights
+   */
+  def validateInput(input: Map[String, Seq[String]]):(Boolean, String, List[Double])={
+	  var inputErrors = false
+	  var errorMessage=""
+	  var weightsList = List(0.0)
+	  Logger.debug("Search.validateInput = " + input.toString)
+    
+	  if(  !input.contains( "FileID" ) || !input.contains("IndexID") || !input.contains("Weight") ){  
+	    inputErrors = true
+	    return(inputErrors, "Not all fields are present", List(0.0))
+	  } 
+	  //now deal with weights	 		  
+	  try {
+	    weightsList = input("Weight").map(w=>w.toDouble).toList
+	  }catch {
+	   		case e:Exception => return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))
+	   }
+	  Logger.debug("Search.validateInput  weightsList = " + weightsList)    
+     
+	   var sum=0.0 	
+	   for (w<- weightsList){
+		   if (w<0) return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))		   
+		   sum+=w
+	   } 	  
+	  if (sum != 1)  return (true, "sum of weights must be 1", List(0.0))	       
+      
+	  //no errors, return list of weights 
+      (false, "", weightsList)
+  }
+    
+  /**
+   * For a list of maps and a corresponding list of weights, finds linear combination
+   * of the maps.
+   */ 
+  def mergeMaps(maps:List[scala.collection.immutable.HashMap[String, Double]], 
+      weights:List[Double]):scala.collection.immutable.HashMap[String, Double]={
+
+    Logger.debug("Longth of maps = " + maps.length)
+    //merge the first two maps
+    var mergedMap = mergeTwoMaps(maps(0), maps(1), weights(0), weights(1))
+   						  //merge the rest of the maps
+   						  for( ind <- 2 to weights.length-1){
+   						    mergedMap = mergeTwoMaps(mergedMap, maps(ind), 1.0, weights(ind))
+   						  }    
+    mergedMap
+  }
+  
+  /**
+   * For two maps and two corresponding weights, will find linear combinations of corresponding values, 
+   * 	using the weights provided
+   */
+  def mergeTwoMaps (mapOne:collection.immutable.HashMap[String, Double], 
+		  			mapTwo:collection.immutable.HashMap[String, Double], 
+		  			w1:Double, w2:Double):scala.collection.immutable.HashMap[String, Double]={
+        
+	  	mapOne.merged(mapTwo)({ case ((file,proxOne),(_,proxTwo)) => (file,w1*proxOne+w2*proxTwo)  })  
+   		//mergedMap    
+  }
+   							
+  
+
+ /**
+   *   Pass a list of indexes and a list of weights to this method. Will calculate the weighted combination
+   * of the indexes.
+   */  
+     def findSimilarWeightedIndexes() = 
+    						SecuredAction(parse.multipartFormData, 
+    								authorization = WithPermission(Permission.SearchDatasets)){
+      implicit request => 	
+       Logger.debug("top of findSimilarWeightedIndexes")
+     
+       Async {     
+        Logger.debug("Search.findSimilarWeightedIndexes request data parts = " + request.body.dataParts.toString  )  
+        //using a helper method to validate input and get weights
+         val (inputErrors, errorMessage, weights) = validateInput(request.body.dataParts)
+                         
+         if (inputErrors == false){
+           //file id in dataParts is a sequence of just one element
+        	 val fileId = UUID(request.body.dataParts("FileID").head)
+        	 val indexIDs = request.body.dataParts("IndexID").map(i=>UUID(i)).toList        	 
+   	  	
+   	  		//query file will be stored in MultimediaQueryService
+   	  		//in controllers/Files -> uploadSelectQuery
+   	  		queries.get(fileId) match {
+//        	   case Some((inputStream, filename, contentType, length)) => {        
+   	  			case Some(fileInfo) => {                
+   	  				val filename = fileInfo._2
+   	  				current.plugin[VersusPlugin] match {    		
+   	  					case Some(plugin)=>{     						   						
+   	  						val queryResults = for {
+   	  						indexId<-indexIDs
+   	  					} yield {
+   							plugin.queryIndexSorted(fileId.stringify, indexId.stringify)   						  
+   						}
+   						//change a list of futures into a future list
+   						var futureListResults = scala.concurrent.Future.sequence(queryResults)   		   								
+   						
+   						for{
+   						  maps<- futureListResults
+   						}yield{   						  
+   							Logger.debug("list of maps = " + maps + "\nlength of maps = " + maps.length)  							
+   							
+   							//Calling helper method to merge all the maps. The magic happens here.
+   							var mergedMaps = mergeMaps(maps, weights)   										
+   							
+   							val mergedResult = for {
+   								(fileURL, prox)<-mergedMaps
+   							  } yield{   							    	
+   								Logger.debug("Search.findSimilarWeightedIndexes: fileURL = " + fileURL + ", prox = " + prox)   	   								
+   								val begin = fileURL.lastIndexOf("/");                       
+   								val end = fileURL.lastIndexOf("?")
+   								val result_id_str = fileURL.substring(begin + 1, end);
+   								val result_id = UUID(result_id_str);
+   								Logger.debug("result_id = " + result_id)   
+   								var oneFileName=""
+   								var oneThumbnlId=""
+   								files.get(result_id) match {
+   									case Some(file)=>{
+   										oneFileName = file.filename
+   										oneThumbnlId=file.thumbnail_id.getOrElse("")
+   									}
+   									case None=>{}      							    			
+   								}    
+   							    (result_id, oneFileName, oneThumbnlId, prox) 							  
+   							  }
+   							  Logger.debug("total merged result is = " + mergedResult)
+   							  //sort by combined proximity values
+   							  var sortedMergedResults= mergedResult.toList sortBy{_._4}
+   							  Logger.debug("sorted merged Results = " + sortedMergedResults)   							 
+   							  Ok(views.html.multimediaSearchResultsCombined(filename, sortedMergedResults))    							 
+   						}//end of yield   					
+   					} //end of case Some(plugin)   
+   					case None => {
+   						Future(Ok("No Versus Service"))
+   					}
+   				} //current.plugin[VersusPlugin] match  
+   			}//case Some((inputStream...
+   			
+   			case None=>{
+   				Logger.debug("File with id " +fileId +" not found")
+   				Future(Ok("File with id " +fileId +" not found"))
+   			}
+   		}//end of queries.get(imageID) match 
+       }//end of if no validation errors
+         else {Future(Ok("Form validation errors: " + errorMessage))}
+    } //Async
+  }
+     
+
+//  def Filterby(id: String) = TODO
 
   def uploadquery() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
     request.body.file("picture").map { picture =>

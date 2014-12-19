@@ -1,0 +1,11 @@
+@(weightedTags: List[(String, Double)])(implicit user: Option[securesocial.core.Identity])
+
+@main("Tag list") {
+    <div class="row">
+        <div id="tagList" class="col-md-12" style="text-align: justify">
+        @for(weightedTag <- weightedTags.sorted) {
+            <a href="@routes.Tags.search(weightedTag._1)" style="font-size: @(weightedTag._2)em">@weightedTag._1</a>
+        }
+        </div>
+    </div>
+}

@@ -4,22 +4,56 @@
 	<form class="form-inline">
 		<textarea id="commentField_@id" class="comment-input-box"></textarea>
 		<br />
-		<button class="btn btn-default" onclick="return postComment('@id', '@posturl');">Comment</button>
+		<button class="btn btn-primary" onclick="return postComment('@id', '@posturl');" title="Post Comment"><span class="glyphicon glyphicon-comment"></span> Post</button>
 	</form>
 	
 	<script language="javascript">
+       var origText = "";
+	
+	   function showEditComment(id) {
+		   var commentText = $("#comment-body_" + id).html();
+		   origText = commentText;
+		   if ($("#commentField_" + id).length == 0) {
+               var form="<form class=\"form-inline\">";               
+               form += "<textarea id=\"editField_" + id + "\" class=\"comment-input-box\"></textarea>";
+               form += "<br />";
+               form += "<button class=\"btn btn-primary btn-sm\" title=\"Submit Edit\" onclick=\"return updateComment('" + id + "');\" style=\"margin-right:5px;\"><span class=\"glyphicon glyphicon-ok\"></span> Submit</button>";
+               form += "<button class=\"btn btn-default btn-sm\" title=\"Cancel\" onclick=\"return cancelEditComment('" + id + "');\"><span class=\"glyphicon glyphicon-remove\"></span> Cancel</button>";
+               form += "</form>";
+               $("#comment-body_" + id).html("<div class=\"comment-edit\" id=\"edit-form_" + id + "\">" + form + "</div>");
+               $("#editField_" + id).val(commentText);               
+           }
+		   else {
+			   alert("Error in showEditComment");
+		   }
+           return false;
+	   }
+	   
+	   function updateComment(id) {
+		   var text = $("#editField_" + id).val();	
+		   editComment(id, text);		   		   
+		   return false;
+	   }
+	   
+	   function cancelEditComment(id) {           
+           $("#comment-body_" + id).html(origText);
+           return false;
+       }
+	   
 		function showReplyComment(id) {
 			if ($("#commentField_" + id).length == 0) {
 				var form="<form class=\"form-inline\">";
 				form += "<textarea id=\"commentField_" + id + "\" class=\"comment-input-box\"></textarea>";
 				form += "<br />";
-				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return replyComment('" + id + "')\">Reply</button>";
-				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return cancelComment('" + id + "')\">Cancel</button>";
+				form += "<button class=\"btn btn-primary btn-sm\" onclick=\"return replyComment('" + id + "')\" title=\"Confirm\" style=\"margin-right:5px;\">";
+				form += "<span class=\"glyphicon glyphicon-ok\"></span> Submit</button>";
+				form += "<button class=\"btn btn-default btn-sm\" onclick=\"return cancelComment('" + id + "')\" title=\"Cancel\">";
+				form += "<span class=\"glyphicon glyphicon-remove\"></span> Cancel</button>";
 				form += "</form>";
 				$("#reply_" + id).prepend("<div class=\"comment-thread\" id=\"form_" + id + "\">" + form + "</div>");
 			}
 			return false;
-		}
+		}				
 		
 		function replyComment(id) {
 			postComment(id, "@api.routes.Comments.comment(UUID(id))".replace("@id", id));
@@ -47,10 +81,9 @@
 					contentType: "application/json",
 		     	});
 		     
-				request.done(function (response, textStatus, jqXHR) { 
-					console.log("Response " + response);
+				request.done(function (response, textStatus, jqXHR) {							            			
 					var date = new Date();
-					var post="<div class=\"comment\">";
+					var post="<div class=\"comment\" id=\"comment_" + response +"\">";
 					post += "<div class=\"media\">";
 					post += "<a class='pull-left' href='#'>";
   					post += "<div class='thumbnail'>";
@@ -59,12 +92,15 @@
 					post += "<div class='media-body'>";
 					post += "<div class=\"comment-header\">";
 					post += "<div class=\"comment-author\"><a href='#'>@user.get.fullName</a></div>";
-					@* TODO add dateformat plugin *@
-					post += "<div class=\"comment-date\">" + date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDay() + "</div>";
+					//TODO - figure out how to get hour:minute:second on the date format as well...
+					var formatted = $.datepicker.formatDate('MM dd, yy', new Date());
+					//post += "<div class=\"comment-date\">" + date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDay() + "</div>";
+					post += "<div class=\"comment-date\">" + formatted + "</div>";
 					post += "<div style=\"clear: both;\"></div>";
 					post += "</div>";
-					post += "<div class=\"comment-body\">" + text + "</div>";
-					post += "<div class=\"comment-footer\"><a href=\"javascript:void(0)\" onclick=\"return showReplyComment('" + response + "');\">reply</a></div>";
+					post += "<div class=\"comment-body\" id=\"comment-body_" + response + "\">" + text + "</div>";
+					//Note, no check for comment owner in this case because this case is only displayed immediately after the comment creator posts the comment. MMF - 09/2014
+					post += "<div class=\"comment-footer\"><a href=\"#\" class=\"btn btn-primary btn-sm\" title=\"Reply To Comment\" onclick=\"return showReplyComment('" + response + "');\"><span class=\"glyphicon glyphicon-share-alt\"></span> Reply</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-default btn-sm\" title=\"Edit Comment\" onclick=\"return showEditComment('" + response + "');\"><span class=\"glyphicon glyphicon-edit\"></span> Edit</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-danger btn-sm\" title=\"Delete Comment\" onclick=\"return deleteComment('" + response + "');\"><span class=\"glyphicon glyphicon-trash\"></span> Delete</a> </div>";
 					post += "<div class=\"comment-reply\">";
 					post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">";
 					post += "</div>";
@@ -72,12 +108,15 @@
 					post += "</div>";
 					post += "</div>";
 					post += "</div>";
-					$("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");
+					$("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");			        
 				});
 	
-				request.fail(function (jqXHR, textStatus, errorThrown){
-					console.error("The following error occured: " + textStatus, errorThrown);
-					alert("The comment was not posted due to : " + textStatus);
+				request.fail(function (jqXHR, textStatus, errorThrown){         
+					console.error("The following error occured: "+textStatus, errorThrown);
+					var errMsg = "You must be logged in to post a comment.";					
+                    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                        alert("The comment was not posted due to : " + errorThrown);
+                    }
 				});
 			}
 			return false;
@@ -85,3 +124,4 @@
 	</script>
 	
 }
+

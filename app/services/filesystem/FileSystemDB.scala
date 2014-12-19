@@ -1,6 +1,7 @@
 package services.filesystem
 
 import java.io.InputStream
+import javax.inject.Inject
 import play.api.Play
 import play.Logger
 import java.io.FileInputStream
@@ -10,6 +11,7 @@ import org.bson.types.ObjectId
 import java.io.File
 import com.mongodb.casbah.commons.MongoDBObject
 import securesocial.core.Identity
+import services._
 import services.mongodb.{FileDAO, MongoDBFileService}
 import models.UUID
 
@@ -19,8 +21,23 @@ import models.UUID
  * @author Luigi Marini
  *
  */
-trait FileSystemDB {
-  this: MongoDBFileService =>
+class FileSystemDB @Inject() (
+  datasets: DatasetService,
+  collections: CollectionService,
+  sections: SectionService,
+  comments: CommentService,
+  previews: PreviewService,
+  threeD: ThreeDService,
+  sparql: RdfSPARQLService)
+
+extends MongoDBFileService(
+  datasets,
+  collections,
+  sections,
+  comments,
+  previews,
+  threeD,
+  sparql) {
 
   /**
    * Save a file to the file system and store metadata about it in Mongo.

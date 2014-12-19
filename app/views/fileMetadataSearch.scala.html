@@ -38,16 +38,17 @@
 </div>
 <script language="javascript">
 	window["userDefined"] = false;
+	window["userId"] = "";
 </script>
 @if(user.isDefined) {
 	<script language="javascript">
 		window["userDefined"] = true;
+		window["userId"] = "@user.get.identityId.userId";
 	</script>
 }
 <script language="javascript">	
 	var queryIp = "@api.routes.Files.searchFilesUserMetadata";
 	var modelIp = "@(routes.Assets.at("filesUserMetadataModel"))";
-	var hostIp = "@play.Play.application().configuration().getString("hostIp")";
 	var searchOn = "files";
 	var searchFor = "userMetadata";
 </script>

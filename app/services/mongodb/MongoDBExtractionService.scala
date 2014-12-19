@@ -8,6 +8,8 @@ import com.novus.salat.dao.ModelCompanion
 import com.novus.salat.dao.SalatDAO
 import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
+import java.util.Date
+import play.api.Logger
 
 /**
  * Created by lmarini on 2/21/14.
@@ -20,7 +22,7 @@ class MongoDBExtractionService extends ExtractionService {
     for (currentExtraction <- allOfFile) {
       extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
     }
-    return extractorsArray.values.exists(_ != "DONE.")
+    return extractorsArray.values.exists(_ != "DONE")
   }
 
   def findAll(): List[Extraction] = {
@@ -30,6 +32,29 @@ class MongoDBExtractionService extends ExtractionService {
   def insert(extraction: Extraction) {
     Extraction.insert(extraction)
   }
+  
+  /**
+   * Returns list of extractors and their corresponding status for a specified file
+   */
+  
+  def getExtractorList(fileId:UUID):collection.mutable.Map[String,String] = {
+    val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
+	var extractorsArray:collection.mutable.Map[String,String] = collection.mutable.Map()
+	for(currentExtraction <- allOfFile){
+	  extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
+	}
+    return extractorsArray
+  }
+
+  def getExtractionTime(fileId:UUID):List[Date] ={
+  val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
+	var extractorsTimeArray=List[Date]()
+	for(currentExtraction <- allOfFile){
+	    extractorsTimeArray = currentExtraction.start.get :: extractorsTimeArray
+	}
+  return extractorsTimeArray
+} 
+  
 }
 
 object Extraction extends ModelCompanion[Extraction, ObjectId] {

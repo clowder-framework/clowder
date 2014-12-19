@@ -1,5 +1,7 @@
 @(title: String)(content: Html)(implicit user: Option[securesocial.core.Identity] = None)
 
+@import services.AppConfiguration
+
 <!DOCTYPE html>
 
 <html lang="en">
@@ -10,7 +12,7 @@
     <meta name="author" content="">
 <title>@title</title>
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-<link rel="stylesheet" href="@routes.Assets.at("stylesheets/" + services.DI.injector.getInstance(classOf[services.AppConfigurationService]).getTheme())">
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/themes/" + AppConfiguration.getTheme)">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("javascripts/jquery-ui-1.10.3.custom.min.css")">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/pdf.css")">
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/tableborder.css")">
@@ -42,7 +44,7 @@
 				      <span class="glyphicon-bar"></span>
 				      <span class="glyphicon-bar"></span>
 				    </button>
-					<a class="navbar-brand" href="@routes.Application.index">Medici</a>
+					<a class="navbar-brand" href="@routes.Application.index">@(AppConfiguration.getDisplayName)</a>
 				</div>
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
@@ -71,6 +73,13 @@
 						   	<li><a href="@routes.Files.generalMetadataSearch">General metadata search</a></li>
 						   </ul>
 						</li>
+						<li class="dropdown">
+						   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags<b class="caret"></b></a>
+						   <ul class="dropdown-menu">
+                               <li><a href="@routes.Tags.tagCloud">Tag cloud</a></li>
+                               <li><a href="@routes.Tags.tagList">Tag list</a></li>
+						   </ul>
+						</li>
                         <li><a href="@routes.Assets.at("docs/api/index.html")">API</a></li>
                         <li><a href="@routes.Selected.get">Selected</a></li>
 					</ul>
@@ -89,24 +98,31 @@
 						}
 						case None => {}
 					}
-					
 
 					<ul class="nav navbar-nav navbar-right">
-					
-					
-					@user match {
-    					case Some(x) => {
-    						<li>
-								<a  class="navbar-link" href="@securesocial.controllers.routes.LoginPage.logout">Logout (@x.fullName)</a>
-							</li>
-						}
-    					case None => {
-    						<li>
-								<a class="navbar-link" href="@securesocial.controllers.routes.LoginPage.login">Login</a>
-							</li>
-						}
-					}
-					<li><a class="" href="@routes.Admin.main">Admin</a></li>
+                        @user match {
+                            case Some(x) => {
+                                <li>
+                                    <a  class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.logout" title="Logout from the system"><span class="glyphicon glyphicon-log-out"></span> Logout (@x.fullName)</a>
+                                </li>
+                            }
+                            case None => {
+                                <li>
+                                    <a class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.login" title="Login to the system"><span class="glyphicon glyphicon-log-in"></span> Login</a>
+                                </li>
+                            }
+                        }
+
+                        <li class="dropdown">
+                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Administration<b class="caret"></b></a>
+                           <ul class="dropdown-menu" role="menu">
+                            <li><a href="@routes.Admin.main">Customize</a></li>
+                            <li><a href="@routes.Admin.listAdmins">List adminstrators</a></li>
+                            <li><a href="@routes.Admin.newAdmin">Add administrator</a></li>
+                            <li><a href="@routes.Extractors.listAllExtractions">Extractions</a></li>
+                            <li><a href="@routes.Admin.adminIndex">Indexes</a></li>
+                           </ul>
+                        </li>
 					</ul>
 				</div>
 		</div>

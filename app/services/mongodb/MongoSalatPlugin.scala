@@ -1,10 +1,10 @@
 package services.mongodb
 
-import play.api.{ Plugin, Logger, Application, Configuration }
+import com.mongodb.casbah.Imports._
+import play.api.{ Plugin, Logger, Application }
+import play.api.Play.current
 import com.mongodb.casbah.MongoURI
 import com.mongodb.casbah.MongoConnection
-import play.api.Mode
-import com.mongodb.MongoException
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
@@ -16,125 +16,87 @@ import com.mongodb.casbah.gridfs.GridFS
  *
  */
 class MongoSalatPlugin(app: Application) extends Plugin {
+  // URI to the mongodatabase, for example mongodb://127.0.0.1:27017/medici
+  var mongoURI: MongoURI = null
 
-  case class MongoSource(uri: MongoURI) {
-    var conn : MongoConnection = null;
-    lazy val db = open.getDB(uri.database.getOrElse("medici"))
-    
-    def collection(name: String): MongoCollection = db(name)
-    
-    def open = {
-      if (conn == null) {
-        conn = uri.connect.fold(l => throw(l), r => r)
-      }
-      conn
-    }
-
-     def close = {
-       if (conn != null) {
-         conn.close
-         conn = null
-       }  
-     }
-  }
-
-  object MongoSource {
-    lazy val conn = MongoConnection()
-  }
-
-  lazy val configuration = app.configuration.getConfig("mongodb").getOrElse(Configuration.empty)
-  lazy val sources: Map[String, MongoSource] = configuration.subKeys.map { sourceKey =>
-    val uri = configuration.getString(sourceKey)
-    val source = uri match {
-      case None => null
-      case Some(x) => MongoSource(MongoURI(x))
-    }
-    sourceKey -> source
-  }.toMap
+  // hold the connection, if connection failed it will be tried to open next time
+  var mongoConnection: MongoConnection = null
 
   override def onStart() {
-    if (sources.isEmpty) {
-      Logger.error("no connections specificed in conf file.")
+    mongoURI = if (play.api.Play.configuration.getString("mongodbURI").isDefined) {
+      MongoURI(play.api.Play.configuration.getString("mongodbURI").get)
+    } else if (play.api.Play.configuration.getString("mongodb.default").isDefined) {
+      Logger.info("mongodb.default is deprecated, please use mongodbURI")
+      MongoURI(play.api.Play.configuration.getString("mongodb.default").get)
+    } else {
+      Logger.info("no connection to mongo specified in , will use default URI mongodb://127.0.0.1:27017/medici")
+      MongoURI("mongodb://127.0.0.1:27017/medici")
     }
-    app.mode match {
-      case Mode.Test =>
-      case _ => {
-        sources.map { source =>
-          try {
-            source._2.db.collectionNames
-          } catch {
-            case e: MongoException => throw configuration.reportError("mongodb." + source._1, "couldn't connect to [" + source._2.uri + "]", Some(e))
-          } finally {
-            Logger.info("[mongoplugin]  connected '" + source._1 + "' to " + source._2.uri)
-          }
-        }
-      }
-    }
+
+    // connect to the database
+    mongoConnection = mongoURI.connect.fold(l => throw l, r => r)
+
+    // create indices.
+    Logger.debug("Ensuring indices exist")
+    collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
+    collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
+    collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
+    collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
+    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+    collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+    collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
+    collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
+
   }
 
   override def onStop() {
-    sources.map { source =>
-	  try {
-      // Only close connection if not in test mode
-      if (app.mode != Mode.Test) source._2.close
-	  } catch {
-	    case e: MongoException => throw configuration.reportError("mongodb." + source._1, "couldn't close [" + source._2.uri + "]", Some(e))
-	  } finally {
-	    Logger.info("[mongoplugin] closed '" + source._1 + "' to " + source._2.uri)
-	  }
-    }
+    if (mongoConnection != null)
+      mongoConnection.close()
+    mongoConnection = null
   }
 
-  override def enabled = !configuration.subKeys.isEmpty
-  
   /**
-   * Returns the MongoSource that has been configured in application.conf
-   * @param source The source name ex. default
-   * @return A MongoSource
+   * Returns the database for the connection
    */
-  def source(source: String): MongoSource = {
-    sources.get(source).getOrElse(throw configuration.reportError("mongodb." + source, source + " doesn't exist"))
-  }
- 
-  /**
-   * Returns MongoDB for configured source
-   * @param sourceName The source name ex. default
-   * @return A MongoDB
-   */
-  def db(sourceName:String = "default"): MongoDB = source(sourceName).db
+  def getDB: MongoDB = mongoConnection.getDB(mongoURI.database.getOrElse("medici"))
 
   /**
-   * Returns MongoCollection that has been configured in application.conf
-   * @param collectionName The MongoDB collection name
-   * @param sourceName The source name ex. default
-   * @return A MongoCollection
+   * Returns a collection in the database
    */
-  def collection(collectionName: String, sourceName: String = "default"): MongoCollection = source(sourceName).collection(collectionName)
-  
+  def collection(collection: String): MongoCollection = getDB(collection)
   
   /**
-   * Returns GridFS for configured source
-   * @param bucketName The bucketName for the GridFS instance
-   * @param sourceName The source name ex. default
-   * @return A GridFS
+   * Returns a GridFS for writing files, the files will be placed in
+   * two collections that start with the prefix (&lt;prefix&gt;.fs and
+   * &lt;prefix.chunks&gt;).
    */
-  def gridFS(bucketName: String = "fs", sourceName:String = "default"): GridFS = GridFS(source(sourceName).db, bucketName)
+  def gridFS(prefix: String = "fs"): GridFS = GridFS(getDB, prefix)
 
+  /**
+   * Drop all collections
+   */
   def dropAllData() {
-    sources.values.map { source =>
-      Logger.debug("**DANGER** Deleting data collections **DANGER**")
-      source.collection("collections").drop()
-      source.collection("datasets").drop()
-      source.collection("previews.chunks").drop()
-      source.collection("previews.files").drop()
-      source.collection("sections").drop()
-      source.collection("uploads.chunks").drop()
-      source.collection("uploads.files").drop()
-      source.collection("uploadquery").drop()
-      source.collection("extractions").drop()
-      source.collection("streams").drop()
-      Logger.debug("**DANGER** Data deleted **DANGER**")
-    }
+    Logger.debug("**DANGER** Deleting data collections **DANGER**")
+    collection("collections").drop()
+    collection("comments").drop()
+    collection("datasets").drop()
+    collection("dtsrequests").drop()
+    collection("extractions").drop()
+    collection("extractor.servers").drop()
+    collection("extractor.names").drop()
+    collection("extractor.inputtypes").drop()
+    collection("multimedia.features").drop()
+    collection("previews.chunks").drop()
+    collection("previews.files").drop()
+    collection("sections").drop()
+    collection("streams").drop()
+    collection("thumbnails.chunks").drop()
+    collection("thumbnails.files").drop()
+    collection("uploads.chunks").drop()
+    collection("uploads.files").drop()
+    collection("uploadquery.files").drop()
+    collection("versus.descriptors").drop()
+    Logger.debug("**DANGER** Data deleted **DANGER**")
   }
-
 }
