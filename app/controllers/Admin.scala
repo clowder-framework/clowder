@@ -2,6 +2,8 @@ package controllers
 
 import api.WithPermission
 import api.Permission
+import models.{UUID, VersusIndexTypeName}
+import play.api.libs.json.{Json, JsValue}
 import services.{SectionIndexInfoService, AppConfiguration, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -215,8 +217,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
             } yield {
             	if(indexList.body.isEmpty())
             	{ 
-            		var res :JsValue= Json.toJson("")  
-            		Ok(res)
+            		Ok(Json.toJson(""))
             	}
                 else{
                   var finalJson :JsValue=null
