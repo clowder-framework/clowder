@@ -266,7 +266,7 @@ class Datasets @Inject()(
     user match {
       case Some(identity) => {
         datasetForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
+          errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
 	      dataset => {
 	           request.body.file("file").map { f =>
 	             //Uploaded file selected
