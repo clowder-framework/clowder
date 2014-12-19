@@ -195,7 +195,7 @@ def getChannelInfo(cid: String): Future[Response]={
 
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
 
-  val appHttpPort = play.api.Play.configuration.getString("http.port").get
+  val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
   val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
  
   def receive = {
