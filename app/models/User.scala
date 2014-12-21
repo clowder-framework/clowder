@@ -1,6 +1,8 @@
 package models
 
 import play.api.libs.json._
+import play.api.Play.current
+import java.security.MessageDigest
 
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
@@ -21,8 +23,49 @@ case class User(
   pastprojects: Option[String] = None,
   position: Option[String] = None,
   friends: Option[List[String]] = None,
-  viewed: Option[List[UUID]] = None
-)
+  viewed: Option[List[UUID]] = None) {
+
+
+  /**
+   * Get the avatar URL for this user's profile
+   * If user has no avatar URL, this will return a unique URL based on
+   * the hash of this user's email address. Gravatar provide an image
+   * as specified in application.conf
+   * 
+   * @return Full gravatar URL for the user's profile picture
+   */
+  def getAvatarUrl: String = {
+    val size = "256"
+    avatarUrl match {
+      case Some(url) => {
+        url+"?s="+size
+      }
+      case None => {
+        val configuration = play.api.Play.configuration
+        val default_gravatar = configuration.getString("default_gravatar").getOrElse("")
+        val emailHash = getEmailHash()
+
+        "http://www.gravatar.com/avatar/"+
+          emailHash+
+          "?s="+size+
+          "&d="+default_gravatar
+      }
+    }
+  }
+
+  /**
+   * @param email
+   * 
+   * @return lower case md5 hash of the user's email
+   */
+  def getEmailHash(): String = {
+    MessageDigest.getInstance("MD5")
+      .digest(email.getBytes("UTF-8"))
+      .map("%02X".format(_))
+      .mkString
+      .toLowerCase
+  }
+}
 
 case class Info(
   avatarUrl: Option[String],
