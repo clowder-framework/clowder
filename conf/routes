@@ -27,7 +27,7 @@ GET     /utils/authenticationRequiredMessage/:msg/:url       @controllers.Redire
 # DTS Information
 GET      /extractions/requests          								    @controllers.ExtractionInfo.getDTSRequests()
 GET      /extractions/servers_ips								  		    @controllers.ExtractionInfo.getExtractorServersIP()
-GET      /extractions/extractors_names         					 		    @controllers.ExtractionInfo.getExtractorNames() 
+GET      /extractions/extractors_names         					 		    @controllers.ExtractionInfo.getExtractorNames()
 GET      /extractions/supported_input_types        				   			@controllers.ExtractionInfo.getExtractorInputTypes()
 
 #DTS Bookmarklet
@@ -90,7 +90,7 @@ GET      /multimediasearch                                                   @co
 #GET     /multimediaserach1                                                  @controllers.Search.multimediasearch1(f, id: UUID)
 GET      /advanced                                                           @controllers.Search.advanced
 GET      /SearchByText                                                       @controllers.Search.SearchByText(query: String ?= "")
-POST     /uploadquery                                                        @controllers.Search.uploadquery	
+POST     /uploadquery                                                        @controllers.Search.uploadquery
 GET      /searchbyURL                                                        @controllers.Search.searchbyURL(query:String?="")
 GET      /searchbyfeature/:section_id                                        @controllers.Search.searchMultimediaIndex(section_id: UUID)
 GET      /files/:id/similar                                                  @controllers.Search.findSimilarFile(id: UUID)
@@ -178,7 +178,10 @@ GET     /api/files/:id/blob                  					@api.Files.download(id: UUID)
 POST	/api/files/:id/remove									@api.Files.removeFile(id: UUID)
 GET     /api/files/:id/metadata           						@api.Files.get(id: UUID)
 POST    /api/files/:id/metadata           						@api.Files.addMetadata(id: UUID)
-POST    /api/files/:id/versus_metadata                          @api.Files.addVersusMetadata(id:UUID) 
+
+POST    /api/files/:id/versus_metadata                          @api.Files.addVersusMetadata(id:UUID)
+GET     /api/files/:id/versus_metadata                          @api.Files.getVersusMetadataJSON(id:UUID)
+
 POST    /api/files/:id/usermetadata	  							@api.Files.addUserMetadata(id: UUID)
 GET     /api/files/:id/versus_metadata                          @api.Files.getVersusMetadataJSON(id:UUID)
 GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnicalMetadataJSON(id: UUID)
@@ -196,12 +199,13 @@ POST    /api/files/:id/tags/remove_all                          @api.Files.remov
 DELETE	/api/files/:id/tags                              		@api.Files.removeTags(id: UUID)
 POST    /api/files/:id/license                                	@api.Files.updateLicense(id: UUID)
 GET     /api/files/:id/extracted_metadata                       @api.Files.extract(id:UUID)
+POST     /api/files/:id/reindex                                  @api.Files.reindex(id:UUID)
 
 #This may change depending on our discussion on identifying the details of extraction in DTS service
 # DTS Information
 GET       /api/extractions/requests                    		@api.Extractions.getDTSRequests()
 GET       /api/extractions/servers_ips				      	@api.Extractions.getExtractorServersIP()
-GET       /api/extractions/extractors_names                 @api.Extractions.getExtractorNames() 
+GET       /api/extractions/extractors_names                 @api.Extractions.getExtractorNames()
 GET       /api/extractions/supported_input_types      		@api.Extractions.getExtractorInputTypes()
 
 #API for temporary fix for BD-289
@@ -242,6 +246,7 @@ POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDa
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
 DELETE	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
 POST	/api/collections/:coll_id/remove											@api.Collections.removeCollection(coll_id: UUID)
+POST     /api/collections/:coll_id/reindex										    @api.Collections.reindex(coll_id: UUID, recursive: Boolean ?= true)
 GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id: UUID)
 DELETE	/api/collections/:coll_id													@api.Collections.removeCollection(coll_id: UUID)
 POST    /api/collections/:c_id/previews/:p_id     						            @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
@@ -266,6 +271,7 @@ GET     /api/datasets/:id/usermetadatajson           				@api.Datasets.getUserMe
 GET 	/api/datasets/:id/listFiles		 							@api.Datasets.datasetFilesList(id: UUID)
 POST    /api/datasets/:id/comment									@api.Datasets.comment(id: UUID)
 POST    /api/datasets/:id/setNotesHTML								@api.Datasets.setNotesHTML(id: UUID)
+POST     /api/datasets/:id/reindex                                   @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 
 POST 	/api/datasets/:id/removeTag 								@api.Datasets.removeTag(id: UUID)
 GET     /api/datasets/:id/tags                                  	@api.Datasets.getTags(id: UUID)
