@@ -123,7 +123,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
-    } else if (parts.length == 0) {
+    } else if (parts.length == 0 && sensor_name.isDefined) {
       st.setString(1, sensor_name.getOrElse(""))
     }
     st.setFetchSize(50)

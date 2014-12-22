@@ -80,15 +80,12 @@ object Geostreams extends ApiController {
 
   def searchSensors(geocode: Option[String], sensor_name: Option[String]) =
     Action { request =>
-      Logger.debug("Searching sensors " + geocode)
+      Logger.debug("Searching sensors " + geocode + sensor_name)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          geocode -> geocode.getOrElse("").toString
-          sensor_name -> sensor_name.getOrElse("").toString
           plugin.searchSensors(geocode, sensor_name) match {
-            case Some(data) => {
-              jsonp(data, request)
-            }
+            case Some(data) => Ok(data)
+            case None => jsonp(Json.parse("""{"status":"No data found"}"""), request)
           }
         }
         case None => pluginNotEnabled
