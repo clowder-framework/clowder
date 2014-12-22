@@ -593,7 +593,7 @@
                         <table>
                            <tr>
                             <td><b>Owner: </b></td>
-                            <td id="aboutowner" style="padding-left:10px;">@dataset.author.fullName</td>
+                            <td id="aboutowner" style="padding-left:10px;"><a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></td>
                            </tr>
                            <tr>
                             <td style="vertical-align:top;"><b>Description: </b></td>
@@ -761,10 +761,10 @@
 					</script>
 					<script>
 						$('body').on('click','#addFileBtn',function(e){
-							if($("#doesNotExistErrorFiles").css('display') == 'inline')
+							if($("#doesNotExistErrorFiles").css('display') == 'block')
 								return;
 							if($("#selectingInputFiles").val() == ""){
-								$("#doesNotExistErrorFiles").css('display','inline');
+								$("#doesNotExistErrorFiles").css('display','block');
 								return;
 							}
 							
@@ -879,7 +879,7 @@
                                     <span class="glyphicon glyphicon-plus"></span>
                                 </button>
 							</span>
-						</div>
+						</div><br/>
 						<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif"  id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
 
 				</div>
@@ -896,10 +896,10 @@
 					</script>
 					<script>
 						$('body').on('click','#addCollBtn',function(e){
-							if($("#doesNotExistErrorCollections").css('display') == 'inline')
+							if($("#doesNotExistErrorCollections").css('display') == 'block')
 								return;
 							if($("#selectingInputCollections").val() == ""){
-								$("#doesNotExistErrorCollections").css('display','inline');
+								$("#doesNotExistErrorCollections").css('display','block');
 								return;
 							}
 							

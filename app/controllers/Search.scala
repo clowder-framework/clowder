@@ -95,12 +95,13 @@ class Search @Inject() (
 
                       var collectionsList = ListBuffer(): ListBuffer[(String, String)]
                       Logger.debug("src: " + hit.getSource().toString())
-                      val collectionsIdsList = hit.getSource().get("collId").toString().split(" %%% ").toList
-                      val collectionsNamesList = hit.getSource().get("collName").toString().split(" %%% ").toList.iterator
-                      for (currentCollectionId <- collectionsIdsList) {
-                        collectionsList = collectionsList :+(currentCollectionId, collectionsNamesList.next())
+                      if ((hit.getSource().get("collId") != null) && (hit.getSource().get("collName") != null)) {
+                        val collectionsIdsList = hit.getSource().get("collId").toString().split(" %%% ").toList
+                        val collectionsNamesList = hit.getSource().get("collName").toString().split(" %%% ").toList.iterator
+                        for (currentCollectionId <- collectionsIdsList) {
+                          collectionsList = collectionsList :+(currentCollectionId, collectionsNamesList.next())
+                        }
                       }
-
                       mapcollectionIds.put(hit.getId(), collectionsList)
 
                       listOfdatasets += dataset

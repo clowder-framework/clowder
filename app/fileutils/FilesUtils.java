@@ -21,36 +21,51 @@ public class FilesUtils {
 		String mainFileType = "multi/files-zipped";
 		
 		try {
-			if(filename.startsWith("MEDICI2DATASET_") && containerType.equals("dataset"))
+			if(filename.startsWith("MEDICI2ZIPPED_"))
 				return "multi/files-zipped";
 			
 			ZipFile zipFile = new ZipFile(compressedFile);			
 			Enumeration zipEntries = zipFile.entries();
 			
-            while (zipEntries.hasMoreElements()) {                            	
-                String fileName = ((ZipEntry)zipEntries.nextElement()).getName();
-                if(fileName.toLowerCase().endsWith(".x3d")){
-                	zipFile.close();
-                	mainFileType = "model/x3d-zipped";
-                	return mainFileType;
-                }
-                if(fileName.toLowerCase().endsWith(".obj")){
-                	zipFile.close();
-                	mainFileType = "model/obj-zipped";
-                	return mainFileType;
-                }
-                if(fileName.toLowerCase().endsWith(".lp")){
-                	zipFile.close();
-                	mainFileType = "imageset/ptmimages-zipped";
-                	return mainFileType;
-                }
-                if(fileName.toLowerCase().endsWith(".sfmdataset")){
-                	zipFile.close();
-                	mainFileType = "model/sfm-zipped";
-                	return mainFileType;
-                } 
+			String allPTMsFlag = "notfound";
+			
+            while (zipEntries.hasMoreElements()) {
+            	ZipEntry currEntry = ((ZipEntry)zipEntries.nextElement());
+            	if(!currEntry.isDirectory()){
+	                String fileName = currEntry.getName(); 
+	                if(fileName.toLowerCase().endsWith(".x3d")){
+	                	zipFile.close();
+	                	mainFileType = "model/x3d-zipped";
+	                	return mainFileType;
+	                }
+	                if(fileName.toLowerCase().endsWith(".obj")){
+	                	zipFile.close();
+	                	mainFileType = "model/obj-zipped";
+	                	return mainFileType;
+	                }
+	                if(fileName.toLowerCase().endsWith(".lp")){
+	                	zipFile.close();
+	                	mainFileType = "imageset/ptmimages-zipped";
+	                	return mainFileType;
+	                }
+	                if(fileName.toLowerCase().endsWith(".sfmdataset")){
+	                	zipFile.close();
+	                	mainFileType = "model/sfm-zipped";
+	                	return mainFileType;
+	                }
+	                if(fileName.toLowerCase().endsWith(".ptm") && allPTMsFlag.equals("notfound")){
+	                	allPTMsFlag = "found";
+	                }
+	                else if(!fileName.toLowerCase().endsWith(".ptm")){
+	                	allPTMsFlag = "noptm";
+	                }                
+            	}
             }
             zipFile.close();
+            
+            if(allPTMsFlag.equals("found"))
+            	return "multi/files-ptm-zipped";
+            
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			return ("ERROR: " + e.getMessage());

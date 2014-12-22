@@ -111,7 +111,7 @@ class Files @Inject()(
   @ApiOperation(value = "List all files", notes = "Returns list of files and descriptions.", responseClass = "None", httpMethod = "GET")
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
     request =>
-      val list = for (f <- files.listFiles()) yield jsonFile(f)
+      val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f)
 
       Ok(toJson(list))
   }
@@ -295,13 +295,13 @@ class Files @Inject()(
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
-  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
       request.user match {
         case Some(user) => {
         	request.body.file("File").map { f =>        
 	          var nameOfFile = f.filename
-	          var flags = ""
+	          var flags = flagsFromPrevious
 	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 		          	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 		              if(thirdSeparatorIndex >= 0){
@@ -344,7 +344,11 @@ class Files @Inject()(
 	            		Logger.error(fileType.substring(7))
 	            		InternalServerError(fileType.substring(7))
 	            	}
-	            	if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+	            	if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")){
+	            				if(fileType.equals("multi/files-ptm-zipped")){
+	            				    fileType = "multi/files-zipped";
+	            				  }
+	            	  
 					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 					              if(thirdSeparatorIndex >= 0){
 					                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -364,7 +368,7 @@ class Files @Inject()(
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files$", "")
+                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files$", "").replaceAll("/api/files/withFlags/.*$", "")
 
                   /*---- Insert DTS Request to database---*/  
 
@@ -430,6 +434,28 @@ class Files @Inject()(
   
 
   /**
+   * Reindex a file.
+   */
+  @ApiOperation(value = "Reindex a file",
+    notes = "Reindex the existing file.",
+    responseClass = "None", httpMethod = "GET")
+  def reindex(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+    request =>
+      files.get(id) match {
+        case Some(file) => {
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.index(file)
+          }
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => {
+          Logger.error("Error getting dataset" + id)
+          BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+        }
+      }
+  }
+
+    /**
    * Send job for file preview(s) generation at a later time.
    */
   @ApiOperation(value = "(Re)send preprocessing job for file",
@@ -484,14 +510,14 @@ class Files @Inject()(
   @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets), Some(dataset_id)) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets), Some(dataset_id)) { implicit request =>
     request.user match {
      case Some(user) => {
       datasets.get(dataset_id) match {
        case Some(dataset) => {
         request.body.file("File").map { f =>
           var nameOfFile = f.filename
-          var flags = ""
+          var flags = flagsFromPrevious
           if(nameOfFile.toLowerCase().endsWith(".ptm")){
               var thirdSeparatorIndex = nameOfFile.indexOf("__")
               if(thirdSeparatorIndex >= 0){
@@ -535,7 +561,11 @@ class Files @Inject()(
                   Logger.error(fileType.substring(7))
                   InternalServerError(fileType.substring(7))
                 }
-                if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped")) {
+                if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")) {
+                  if(fileType.equals("multi/files-ptm-zipped")){
+	            	fileType = "multi/files-zipped";
+	              }
+                  
                   var thirdSeparatorIndex = nameOfFile.indexOf("__")
                     if(thirdSeparatorIndex >= 0){
                       var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -555,7 +585,7 @@ class Files @Inject()(
               // TODO RK need to replace unknown with the server name
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-              val host = Utils.baseUrl(request) + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
+              val host = Utils.baseUrl(request) + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "").replaceAll("api/uploadToDataset/withFlags/[A-Za-z0-9_]*/.*$", "")
 	          
               // Insert DTS Requests
               val clientIP = request.remoteAddress

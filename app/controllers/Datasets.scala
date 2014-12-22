@@ -35,6 +35,7 @@ class Datasets @Inject()(
   extractions: ExtractionService,
   dtsrequests:ExtractionRequestsService,
   sparql: RdfSPARQLService,
+  users: UserService,
   previewService: PreviewService) extends SecuredController {
 
   object ActivityFound extends Exception {}
@@ -55,7 +56,7 @@ class Datasets @Inject()(
   def newDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
     implicit request =>
       implicit val user = request.user
-      val filesList = for (file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename)
+      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
       Ok(views.html.newDataset(datasetForm, filesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
 
@@ -120,7 +121,100 @@ class Datasets @Inject()(
       }
       Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
   }
+  def userDatasets(when: String, date: String, limit: Int, email: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
+    implicit request =>
+      implicit val user = request.user
+      var direction = "b"
+      if (when != "") direction = when
+      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+      var prev, next = ""
+      var datasetList = List.empty[models.Dataset]
+      if (direction == "b") {
+        datasetList = datasets.listDatasetsBefore(date, limit)
+      } else if (direction == "a") {
+        datasetList = datasets.listDatasetsAfter(date, limit)
+      } else {
+        badRequest
+      }
+      // latest object
+      val latest = datasets.latest()
+      // first object
+      val first = datasets.first()
+      var firstPage = false
+      var lastPage = false
+      if (latest.size == 1) {
+        firstPage = datasetList.exists(_.id.equals(latest.get.id))
+        lastPage = datasetList.exists(_.id.equals(first.get.id))
+        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
+        Logger.debug("first " + first.get.id + " last page " + lastPage)
+      }
+      if (datasetList.size > 0) {
+        if (date != "" && !firstPage) {
+          // show prev button
+          prev = formatter.format(datasetList.head.created)
+        }
+        if (!lastPage) {
+          // show next button
+          next = formatter.format(datasetList.last.created)
+        }
+      }
+      
+      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
 
+      
+
+      val commentMap = datasetList.map{dataset =>
+        var allComments = comments.findCommentsByDatasetId(dataset.id)
+        dataset.files.map { file =>
+          allComments ++= comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+        }
+        dataset.id -> allComments.size
+      }.toMap
+
+
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part 
+      //of the datasets names or descriptions
+      val aBuilder = new StringBuilder()
+      for (aDataset <- datasetList) {
+          decodeDatasetElements(aDataset)
+      }
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
+  }
+
+
+  def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {
+      user match{
+            case Some(viewer) => {
+              implicit val email = viewer.email
+              email match {
+                case Some(addr) => {
+                  implicit val modeluser = users.findByEmail(addr.toString())
+                  modeluser match {
+                    case Some(muser) => {
+                       muser.viewed match {
+                        case Some(viewList) =>{
+                          users.addUserDatasetView(addr, id)
+                        }
+                        case None => {
+                          val newList: List[UUID] = List(id)
+                          users.createNewListInUser(addr, "viewed", newList)
+                        }
+                      }
+                  }
+                  case None => {
+                    Ok("NOT WORKS")
+                  }
+                 }
+                }
+              }
+            }
+
+
+          }
+  }
 
   /**
    * Dataset.
@@ -266,7 +360,7 @@ class Datasets @Inject()(
     user match {
       case Some(identity) => {
         datasetForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
+          errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
 	      dataset => {
 	           request.body.file("file").map { f =>
 	             //Uploaded file selected
@@ -311,7 +405,11 @@ class Datasets @Inject()(
 					             Logger.error(fileType.substring(7))
 					             InternalServerError(fileType.substring(7))
 					          }
-					          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+					          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped") ){
+					            if(fileType.equals("multi/files-ptm-zipped")){
+	            				    fileType = "multi/files-zipped";
+	            				  }
+					            
 					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 					              if(thirdSeparatorIndex >= 0){
 					                var firstSeparatorIndex = nameOfFile.indexOf("_")
