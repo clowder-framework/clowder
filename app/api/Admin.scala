@@ -3,9 +3,7 @@ package api
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
-import models.AppConfiguration
-import services._
-import models.AppAppearance
+import services.{AppConfiguration, AppConfigurationService}
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 
@@ -15,9 +13,6 @@ import play.api.Logger
  * @author Luigi Marini
  */
 object Admin extends Controller with ApiController {
-  
-  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
-  val appAppearance: AppAppearanceService = services.DI.injector.getInstance(classOf[AppAppearanceService])
 
   /**
    * DANGER: deletes all data, keep users.
@@ -33,12 +28,12 @@ object Admin extends Controller with ApiController {
 
     request.user match {
       case Some(user) => {
-        if(user.email.nonEmpty && appConfiguration.adminExists(user.email.get)) {
+        if(user.email.nonEmpty && AppConfiguration.checkAdmin(user.email.get)) {
           (request.body \ "email").asOpt[String].map { email =>
-            appConfiguration.adminExists(email) match {
+            AppConfiguration.checkAdmin(email) match {
               case true => {
                 Logger.debug("Removing admin with email " + email)
-                appConfiguration.removeAdmin(email)
+                AppConfiguration.removeAdmin(email)
 
                 Ok(toJson(Map("status" -> "success")))
               }
@@ -59,35 +54,14 @@ object Admin extends Controller with ApiController {
   }
   
   
-  def submitAppearance = SecuredAction(parse.json, authorization=WithPermission(Permission.Admin)) { request =>  
-    
+  def submitAppearance = SecuredAction(parse.json, authorization=WithPermission(Permission.Admin)) { request =>
     (request.body \ "displayName").asOpt[String] match {
-      case Some(displayName) =>{
-        appAppearance.setDisplayedName(displayName)
-        (request.body \ "welcomeMessage").asOpt[String] match {
-          case Some(welcomeMessage) => {
-            appAppearance.setWelcomeMessage(welcomeMessage)
-            (request.body \ "sensors").asOpt[String] match {
-              case Some(sensors) => {
-                appAppearance.setSensorsTitle(sensors)
-                (request.body \ "sensor").asOpt[String] match {
-                  case Some(sensor) => {
-                    appAppearance.setSensorTitle(sensor)
-                  }
-                  case None => {}
-                }
-              }
-            }
-          }
-        }
-        Ok(toJson(Map("status" -> "success")))
-      }
-
-      case None =>{
-        Logger.error("Missing parameter [displayName].")
-    	BadRequest(toJson("Missing parameter [displayName]"))
-      }      
-    }  
+      case Some(displayName) => AppConfiguration.setDisplayName(displayName)
+    }
+    (request.body \ "welcomeMessage").asOpt[String] match {
+      case Some(welcomeMessage) => AppConfiguration.setWelcomeMessage(welcomeMessage)
+    }
+    Ok(toJson(Map("status" -> "success")))
   }
 
 }

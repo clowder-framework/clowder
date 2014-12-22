@@ -1,6 +1,9 @@
+import com.typesafe.sbt.packager.Keys._
 import sbt._
 import Keys._
 import play.Project._
+import com.typesafe.sbt.SbtNativePackager._
+import NativePackagerKeys._
 
 object ApplicationBuild extends Build {
 
@@ -77,8 +80,14 @@ object ApplicationBuild extends Build {
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",   
-    resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public"
-   
+    resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public",
+
+    // add custom folder to the classpath, use this to add/modify medici:
+    // custom/public/stylesheets/themes     - for custom themes
+    // custom/public/javascripts/previewers - for custom previewers
+    // custom/custom.conf                   - to customize application.conf
+    scriptClasspath += "../custom"
+
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
 
