@@ -17,13 +17,8 @@ body {
   margin: 0 auto -60px;
 }
 
-.oneline {
-    white-space: nowrap;
-}
-
-.no-overflow {
-    overflow: hidden;
-    text-overflow: ellipsis;
+.break-word {
+    word-wrap: break-word;
 }
 
 .fit-in-space {
@@ -267,6 +262,21 @@ button.tech_md_ {
 	position:relative;
 	top:-17px;
 	left:20px;
+}
+
+.profilePicture {
+  margin-bottom:12px;
+  max-width:256px;
+  max-height:256px;
+}
+
+#editProfileFieldSet .control-group .controls input[type='text']{
+  width:450px;
+  height:30px;
+}
+#editProfileFieldSet .control-group .controls textarea{
+  width:450px;
+  height:100px;
 }
 
 #nameDescrFieldSet .control-group .controls textarea{

@@ -4,8 +4,7 @@
 package api
 
 import java.util.Date
-import com.wordnik.swagger.annotations.Api
-import com.wordnik.swagger.annotations.ApiOperation
+import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import models._
 import play.api.Logger
 import play.api.libs.json.JsValue
@@ -125,6 +124,30 @@ class Datasets @Inject()(
         }.getOrElse(BadRequest(toJson("Missing parameter [file_id]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
+  }
+
+  /**
+   * Reindex the given dataset, if recursive is set to true it will
+   * also reindex all files in that dataset.
+   */
+  @ApiOperation(value = "Reindex a dataset",
+    notes = "Reindex the existing dataset, if recursive is set to true if will also reindex all files in that dataset.",
+    httpMethod = "GET")
+  def reindex(id: UUID, recursive: Boolean) =
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateDatasets)) {
+    request =>
+      datasets.get(id) match {
+        case Some(ds) => {
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.index(ds, recursive)
+          }
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => {
+          Logger.error("Error getting dataset" + id)
+          BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+        }
+      }
   }
 
   @ApiOperation(value = "Attach existing file to dataset",
