@@ -17,13 +17,8 @@ body {
   margin: 0 auto -60px;
 }
 
-.oneline {
-    white-space: nowrap;
-}
-
-.no-overflow {
-    overflow: hidden;
-    text-overflow: ellipsis;
+.break-word {
+    word-wrap: break-word;
 }
 
 .fit-in-space {
