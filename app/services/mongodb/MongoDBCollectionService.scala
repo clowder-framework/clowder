@@ -21,6 +21,7 @@ import services.AdminsNotifierPlugin
 import services.ElasticsearchPlugin
 
 
+
 /**
  * Use Mongodb to store collections.
  * 
@@ -152,11 +153,17 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
                 $addToSet("datasets" ->  Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)
               //add collection to dataset
               datasets.addCollection(dataset.id, collection.id)
+              
+              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
+                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
+                  $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+              }
+
               datasets.index(dataset.id)
               index(collection.id)
- 
+
               if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
-            	  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
+                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
                   $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
               }
 
@@ -191,6 +198,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
             		  $pull("datasets" ->  MongoDBObject( "_id" -> new ObjectId(dataset.id.stringify))), false, false, WriteConcern.Safe)
               //remove collection from dataset
               datasets.removeCollection(dataset.id, collection.id)
+              
+              if(!collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
+	        	  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+	        		  createThumbnail(collection.id)
+	        	  }		                        
+	          }
+              
               datasets.index(dataset.id)
               index(collection.id)
               
@@ -238,9 +252,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
           datasets.index(dataset.id)
         }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
+
         current.plugin[ElasticsearchPlugin].foreach {
           _.delete("data", "collection", collection.id.stringify)
         }
+
         Success
       }
       case None => Success
@@ -256,30 +272,31 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
   
   def updateThumbnail(collectionId: UUID, thumbnailId: UUID) {
-	    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
-	      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
-	  
-	  def createThumbnail(collectionId:UUID){
-	    get(collectionId) match{
-		    case Some(collection) => {
-		    		val selecteddatasets = collection.datasets map { ds =>{
-		    			datasets.get(ds.id).getOrElse{None}
-		    		}}
-				    for(dataset <- selecteddatasets){
-				      if(dataset.isInstanceOf[models.Dataset]){
-				          val theDataset = dataset.asInstanceOf[models.Dataset]
-					      if(!theDataset.thumbnail_id.isEmpty){
-					    	Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
-					        return
-					      }
+  
+  def createThumbnail(collectionId:UUID){
+    get(collectionId) match{
+	    case Some(collection) => {
+	    		val selecteddatasets = collection.datasets map { ds =>{
+	    			datasets.get(ds.id).getOrElse{None}
+	    		}}
+			    for(dataset <- selecteddatasets){
+			      if(dataset.isInstanceOf[models.Dataset]){
+			          val theDataset = dataset.asInstanceOf[models.Dataset]
+				      if(!theDataset.thumbnail_id.isEmpty){
+				        Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+				        return
 				      }
-				    }
-				    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
-		    }
-		    case None =>
-	    }  
-	  }
+			      }
+			    }
+			    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+	    }
+	    case None =>
+    }
+  }
+
 
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {

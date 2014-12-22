@@ -88,7 +88,7 @@ class Sections @Inject()(
    * REST endpoint: POST: Add tags to a section.
    * Requires that the request body contains a "tags" field of List[String] type.
    */
-  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTags)) {
+  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTagsSections)) {
     implicit request =>
       val (not_found, error_str) = tags.addTagsHelper(TagCheck_Section, id, request)
 
@@ -109,7 +109,7 @@ class Sections @Inject()(
    * REST endpoint: POST: remove tags.
    * Requires that the request body contains a "tags" field of List[String] type.
    */
-  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsSections)) {
     implicit request =>
       val (not_found, error_str) = tags.removeTagsHelper(TagCheck_Section, id, request)
 
@@ -128,7 +128,7 @@ class Sections @Inject()(
   /**
    * REST endpoint: POST: remove all tags.
    */
-  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTags)) {
+  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsSections)) {
     implicit request =>
       Logger.info("Removing all tags for section with id: " + id)
       sections.get(id) match {

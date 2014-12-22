@@ -1,8 +1,6 @@
 package services
 
-import play.api.{ Plugin, Logger, Application }
-import org.elasticsearch.node.NodeBuilder._
-import org.elasticsearch.node.Node
+import play.api.{Plugin, Logger, Application}
 import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
@@ -11,14 +9,11 @@ import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.index.query.QueryBuilders
-import models.{ UUID, Dataset }
+import models.{UUID, Collection, Dataset, File}
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
-import org.elasticsearch.action.index.IndexResponse
-import org.elasticsearch.client.Client
-import play.api.Play.current 
-import org.elasticsearch.common.settings.Settings
+import play.api.Play.current
 
 
 /**
@@ -29,6 +24,7 @@ import org.elasticsearch.common.settings.Settings
  */
 class ElasticsearchPlugin(application: Application) extends Plugin {
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
+  val files: FileService = DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   var client: Option[TransportClient] = null
@@ -105,11 +101,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           .startObject()
         fields.map(fv => builder.field(fv._1, fv._2))
         builder.endObject()
-        val response = x.prepareIndex(index, docType, id.toString)
+        val response = x.prepareIndex(index, docType, id.toString())
           .setSource(builder)
           .execute()
           .actionGet()
-        Logger.info("Indexing document: " + response.getId())
+        Logger.info("Indexing document: " + response.getId)
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }
@@ -119,7 +115,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     client match {
       case Some(x) => {
         val response = x.prepareDelete(index, docType, id).execute().actionGet()
-        Logger.info("Deleting document: " + response.getId())
+        Logger.info("Deleting document: " + response.getId)
 
       }
       case None => Logger.error("Could not call index because we are not connected.")
@@ -127,7 +123,37 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   }
 
-  def indexDataset(dataset: Dataset) {
+  /**
+   * Reindex the given collection, if recursive is set to true it will
+   * also reindex all datasets and files.
+   */
+  def index(collection: Collection, recursive: Boolean) {
+    var dsCollsId = ""
+    var dsCollsName = ""
+
+    for (dataset <- collection.datasets) {
+      if (recursive) {
+        index(dataset, recursive)
+      }
+      dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
+      dsCollsName = dsCollsName + dataset.name + " %%% "
+    }
+
+    val formatter = new SimpleDateFormat("dd/MM/yyyy")
+
+    index("data", "collection", collection.id,
+      List(("name", collection.name),
+        ("description", collection.description),
+        ("created", formatter.format(collection.created)),
+        ("datasetId", dsCollsId),
+        ("datasetName", dsCollsName)))
+  }
+
+  /**
+   * Reindex the given dataset, if recursive is set to true it will
+   * also reindex all files.
+   */
+  def index(dataset: Dataset, recursive: Boolean) {
     var tagListBuffer = new ListBuffer[String]()
 
     for (tag <- dataset.tags) {
@@ -136,7 +162,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     val tagsJson = new JSONArray(tagListBuffer.toList)
 
-    Logger.debug("tagStr=" + tagsJson);
+    Logger.debug("tagStr=" + tagsJson)
 
     val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(dataset.id, false)) yield {
       comment.text
@@ -157,6 +183,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var fileDsId = ""
     var fileDsName = ""
     for (file <- dataset.files) {
+      if (recursive) {
+        index(file)
+      }
       fileDsId = fileDsId + file.id.stringify + "  "
       fileDsName = fileDsName + file.filename + "  "
     }
@@ -172,10 +201,73 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
     index("data", "dataset", dataset.id,
-    List(("name", dataset.name), ("description", dataset.description), ("author", dataset.author.fullName), 
-    ("created", formatter.format(dataset.created)), ("fileId", fileDsId), ("fileName", fileDsName), 
-    ("collId", dsCollsId), ("collName", dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString),
-    ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+    List(("name", dataset.name),
+      ("description", dataset.description),
+      ("author", dataset.author.fullName),
+      ("created", formatter.format(dataset.created)),
+      ("fileId", fileDsId),
+      ("fileName", fileDsName),
+      ("collId", dsCollsId),
+      ("collName", dsCollsName),
+      ("tag", tagsJson.toString()),
+      ("comments", commentJson.toString()),
+      ("usermetadata", usrMd),
+      ("technicalmetadata", techMd),
+      ("xmlmetadata", xmlMd)))
+  }
+
+  /**
+   * Reindex the given file.
+   */
+  def index(file: File) {
+    var tagListBuffer = new ListBuffer[String]()
+
+    for (tag <- file.tags) {
+      tagListBuffer += tag.name
+    }
+
+    val tagsJson = new JSONArray(tagListBuffer.toList)
+
+    Logger.debug("tagStr=" + tagsJson)
+
+    val commentsByFile = for (comment <- comments.findCommentsByFileId(file.id)) yield {
+      comment.text
+    }
+    val commentJson = new JSONArray(commentsByFile)
+
+    Logger.debug("commentStr=" + commentJson.toString())
+
+    val usrMd = files.getUserMetadataJSON(file.id)
+    Logger.debug("usrmd=" + usrMd)
+
+    val techMd = files.getTechnicalMetadataJSON(file.id)
+    Logger.debug("techmd=" + techMd)
+
+    val xmlMd = files.getXMLMetadataJSON(file.id)
+    Logger.debug("xmlmd=" + xmlMd)
+
+    var fileDsId = ""
+    var fileDsName = ""
+
+    for (dataset <- datasets.findByFileId(file.id)) {
+      fileDsId = fileDsId + dataset.id.stringify + " %%% "
+      fileDsName = fileDsName + dataset.name + " %%% "
+    }
+
+    val formatter = new SimpleDateFormat("dd/MM/yyyy")
+
+    index("data", "file", file.id,
+      List(("filename", file.filename),
+        ("contentType", file.contentType),
+        ("author", file.author.fullName),
+        ("uploadDate", formatter.format(file.uploadDate)),
+        ("datasetId", fileDsId),
+        ("datasetName", fileDsName),
+        ("tag", tagsJson.toString()),
+        ("comments", commentJson.toString()),
+        ("usermetadata", usrMd),
+        ("technicalmetadata", techMd),
+        ("xmlmetadata", xmlMd)))
   }
 
   override def onStop() {

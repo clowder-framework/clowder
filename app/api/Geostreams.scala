@@ -17,6 +17,7 @@ import play.api.Play.current
 import java.text.SimpleDateFormat
 import play.api.Logger
 import java.sql.Timestamp
+import play.filters.gzip.Gzip
 import services.PostgresPlugin
 import scala.collection.mutable.ListBuffer
 import play.api.libs.iteratee.{Enumeratee, Enumerator}
@@ -581,8 +582,9 @@ object Geostreams extends ApiController {
           cacheFetch(description) match {
             case Some(data) => {
               if (format == "csv") {
-                Ok.chunked(data)
-                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                Ok.chunked(data &> Gzip.gzip())
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"),
+                               ("Content-Encoding", "gzip"))
                   .as(withCharset("text/csv"))
               } else {
                 jsonp(data.through(Enumeratee.map(new String(_))), request)
@@ -601,8 +603,10 @@ object Geostreams extends ApiController {
               val data = calculate(operator, filtered, since, until, semi.isDefined)
 
               if (format == "csv") {
-                Ok.chunked(cacheWrite(description, jsonToCSV(data)))
-                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
+                Ok.chunked(cacheWrite(description, jsonToCSV(data)) &> toByteArray  &> Gzip.gzip())
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"),
+                               ("Content-Encoding", "gzip"))
                   .as(withCharset("text/csv"))
               } else {
                 jsonp(cacheWrite(description, formatResult(data, format)), request)
@@ -1263,9 +1267,14 @@ object Geostreams extends ApiController {
    * @param request request made to server
    */
   def jsonp(data:Enumerator[String], request: Request[Any]) = {
+    val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
     request.getQueryString("callback") match {
-      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");")).as(JAVASCRIPT)
-      case None => Ok.chunked(data).as(JSON)
+      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");") &> toByteArray &> Gzip.gzip())
+        .withHeaders(("Content-Encoding", "gzip"))
+        .as(JAVASCRIPT)
+      case None => Ok.chunked(data &> toByteArray &> Gzip.gzip())
+        .withHeaders(("Content-Encoding", "gzip"))
+        .as(JSON)
     }
   }
 
@@ -1357,10 +1366,10 @@ object Geostreams extends ApiController {
         if (file.exists) {
           val data = Json.parse(Source.fromFile(new File(x, filename + ".json")).mkString)
           Parsers.parseString(data.\("format")) match {
-            case "csv" => Ok.chunked(Enumerator.fromFile(file)).as(withCharset("text/csv"))
-            case "json" => Ok.chunked(Enumerator.fromFile(file)).as(JSON)
-            case "geojson" => Ok.chunked(Enumerator.fromFile(file)).as(JSON)
-            case _ => Ok.chunked(Enumerator.fromFile(file)).as(TEXT)
+            case "csv" => Ok.chunked(Enumerator.fromFile(file) &> Gzip.gzip()).as(withCharset("text/csv"))
+            case "json" => Ok.chunked(Enumerator.fromFile(file) &> Gzip.gzip()).as(JSON)
+            case "geojson" => Ok.chunked(Enumerator.fromFile(file) &> Gzip.gzip()).as(JSON)
+            case _ => Ok.chunked(Enumerator.fromFile(file) &> Gzip.gzip()).as(TEXT)
           }
         } else {
           NotFound("File not found in cache")
