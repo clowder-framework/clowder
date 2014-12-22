@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
     <div class="container">
         <div class="page-header">
-            <h1>@(services.DI.injector.getInstance(classOf[AppAppearanceService]).getDefault.get.sensor) Information</h1>
+            <h1>@(AppConfiguration.getSensorsTitle) Information</h1>
         </div>
 
         <form class="form-horizontal" role="form" id="new">
@@ -24,13 +24,13 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="sensorFullName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
-                                        title="The full description of the @(services.DI.injector.getInstance(classOf[AppAppearanceService]).getDefault.get.sensor.toLowerCase), typically provided by the Data Source. Should be concise, but descriptive.">Descriptive Name</label>
+                                        title="The full description of the @(AppConfiguration.getSensorTitle.toLowerCase), typically provided by the Data Source. Should be concise, but descriptive.">Descriptive Name</label>
                                         <div class="col-sm-8">
                                             <input type="text" class="form-control input-sm" id="sensorFullName" name="sensorFullName" placeholder="White River Falls in Duvall County (required)" required>
                                         </div>
                                         <label for="sensor_name" class="col-sm-4 paddingTop7 control-label"
                                         data-toggle="tooltip" data-placement="left"
-                                        title="A short, unique identifier for this location for when it is displayed along with many other @(services.DI.injector.getInstance(classOf[AppAppearanceService]).getDefault.get.sensors.toLowerCase) (like on a map).">Location ID</label>
+                                        title="A short, unique identifier for this location for when it is displayed along with many other @(AppConfiguration.getSensorsTitle.toLowerCase) (like on a map).">Location ID</label>
                                         <div class="col-sm-8">
                                             <input type="text" class="form-control input-sm" id="sensor_name" name="sensor_name" placeholder="DC105-WRF (required)" required>
                                         </div>
@@ -56,7 +56,7 @@
                                         </div>
                                         <div class="col-sm-4"></div>
                                         <div class="col-sm-8 paddingTop7">
-                                            <p>Site Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> sensor<span id="sensorTypeMultipleSensors"></span>.</p>
+                                            <p>Site Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> @(AppConfiguration.getSensorTitle.toLowerCase)<span id="sensorTypeMultipleSensors"></span>.</p>
                                         </div>
                                         <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
                                         <div class="col-sm-4">
@@ -78,17 +78,17 @@
                             </div>
                         </div>
                         <div class="panel-footer">
-                            <p>Each location will contain at least one sensor, depending on it's Site Type.</p>
+                            <p>Each location will contain at least one @(AppConfiguration.getSensorTitle.toLowerCase), depending on it's Site Type.</p>
 
                         </div>
                     </div>
                 </div>
             </div>
             <div id="additionalSensors">
-                <!-- additional sensors will be added here as the "Add a Sensor" button is clicked -->
+                <!-- additional sensors will be added here as the "Add Sensor" button is clicked -->
             </div>
 
-            <div class="btn btn-default" id="addSensor" style="display: none">Add a Sensor</div>
+            <div class="btn btn-default" id="addSensor" style="display: none">Add @(AppConfiguration.getSensorTitle)</div>
 
             <br />
 
@@ -111,7 +111,7 @@
                         <div class="panel-heading" role="tab" id="sensor-heading-{{sensorNumber}}">
                             <h4 class="panel-title">
                                 <a data-toggle="collapse" data-parent="#sensor-group-{{sensorNumber}}" href="#sensor-contents-{{sensorNumber}}" id="sensor-link-{{sensorNumber}}" aria-expanded="true" aria-controls="collapseOne">
-                                    Sensor #{{sensorNumber}} Information
+                                    @(AppConfiguration.getSensorTitle) #{{sensorNumber}} Information
                                 </a>
                             </h4>
                         </div>
@@ -119,8 +119,17 @@
                             <div class="panel-body">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <h3>Sensor Device Info</h3>
+                                        <h3>@(AppConfiguration.getSensorTitle) Device Info</h3>
                                         <div class="form-group">
+                                            <label for="sensorName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
+                                            title="The full description of the @(AppConfiguration.getSensorTitle.toLowerCase), typically provided by the Data Source. Should be concise, but descriptive.">@(AppConfiguration.getSensorTitle) Name</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="sensorName" name="sensorName" placeholder="Falls Creek Northeast Temperature Monitor">
+                                            </div>
+                                            <label for="sensorID" class="col-sm-4 paddingTop7 control-label">@(AppConfiguration.getSensorTitle) ID</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="sensorID" name="sensorID" placeholder="FCN-01">
+                                            </div>
                                             <label for="sensorMake" class="col-sm-4 paddingTop7 control-label">Make</label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control input-sm" id="sensorMake" name="sensorMake" placeholder="PISCES">
@@ -137,7 +146,7 @@
                                             <div id="hasDepth" style="display: none">
                                                 <label for="sensorVerticalOffset" class="col-sm-4 paddingTop7 control-label"
                                                 data-toggle="tooltip" data-placement="left"
-                                                title="An 'offset' sensor is above or below the surface.">
+                                                title="An 'offset' @(AppConfiguration.getSensorTitle.toLowerCase)is above or below the surface.">
                                                     Vertical Offset
                                                 </label>
                                                 <div class="col-sm-4">
@@ -156,7 +165,7 @@
                                                 </div>
                                                 <label for="sensorHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
                                                 data-toggle="tooltip" data-placement="left"
-                                                title="An 'horizontal offset' sensor is at the same lat/long, but positioned slightly away.">
+                                                title="An 'horizontal offset' @(AppConfiguration.getSensorTitle.toLowerCase) is at the same lat/long, but positioned slightly away.">
                                                     Horizontal Offset
                                                 </label>
                                                 <div class="col-sm-4">
@@ -301,7 +310,7 @@
 
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <h3>@(services.DI.injector.getInstance(classOf[AppAppearanceService]).getDefault.get.sensor) Parameters</h3>
+                                        <h3>@(AppConfiguration.getSensorTitle) Parameters</h3>
                                         <div class="form-group">
                                             <label for="sensorParametersAvailable" class="col-sm-4 paddingTop7 control-label"
                                             data-toggle="tooltip" data-placement="left"
@@ -346,7 +355,7 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="pull-right">
-                                            <div class="btn btn-primary btn-sm removeSensor" id="sensor-delete-{{sensorNumber}}" data-id="{{sensorNumber}}">Remove Sensor #{{sensorNumber}}</div>
+                                            <div class="btn btn-primary btn-sm removeSensor" id="sensor-delete-{{sensorNumber}}" data-id="{{sensorNumber}}">Remove @(AppConfiguration.getSensorTitle) #{{sensorNumber}}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -368,15 +377,13 @@
 </script>
 <script type="text/javascript">
     $(document).ready(function() {
-        // enable tooltips
-        $('[data-toggle="tooltip"]').tooltip();
 
         // setup form validation
         var sensorForm = $('#new');
         sensorForm.validate({
             messages: {
                 sensorFullName: "You must provide a name",
-                sensor_name: "You must provide a @(services.DI.injector.getInstance(classOf[AppAppearanceService]).getDefault.get.sensor.toLowerCase) ID",
+                sensor_name: "You must provide a sensor ID",
                 sensorDataSource: "You must identify the provider of this data",
                 sensorRegion: "You must specify the region. All sensors are grouped into regions on the dashboard."
             }
@@ -418,10 +425,10 @@
                 case "6":
                 case "7":
                     hasDepth.show();
-                    sensorTypeSensorCount.text('many');
+                    sensorTypeSensorCount.text('multiple');
                     sensorTypeMultipleSensors.text('s');
                     sensorContents1.collapse('hide');
-                    sensorLink1.text('Sensor #1 Information');
+                    sensorLink1.text('@(AppConfiguration.getSensorTitle) #1 Information');
                     addSensor.show();
                     break;
                 default:
@@ -434,6 +441,10 @@
                 break;
             }
         });
+
+        // enable tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+
 
         $("#formSubmit").click(function(event) {
             event.preventDefault();

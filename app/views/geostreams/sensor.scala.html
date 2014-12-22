@@ -1,8 +1,8 @@
 @(sensor: play.api.libs.json.JsValue, id: String)
-
+@import services.AppConfiguration
 @main("Sensor") {
     <div class="page-header">
-        <h1>Sensor</h1>
+        <h1>@(AppConfiguration.getSensorTitle)</h1>
     </div>
     <div class="row"><div class="col-md-12">ID: <a href="@(api.routes.Geostreams.getSensor(id))">@id</a></div></div>
     <div class="row"><div class="col-md-12">Name: @(sensor \ "name")</div></div>

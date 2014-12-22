@@ -9,7 +9,7 @@
  <script src="@routes.Assets.at("javascripts/leaflet-src.js")" type="text/javascript"></script>
 
 	<div class="page-header">
-		<h1>@(services.DI.injector.getInstance(classOf[AppAppearanceService]).getDefault.get.sensors)</h1>
+		<h1>@(AppConfiguration.getSensorsTitle)</h1>
 	</div>
 	<div class="row">
 		<div class="col-md-10">
