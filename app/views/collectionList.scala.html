@@ -83,7 +83,6 @@
     </div>
 </div>
 
-
 @if(mode == "list") {
   <div class="row hidden" id="tile-view">
 } else {
@@ -107,7 +106,6 @@
                             <h4 class="no-overflow oneline"><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></h4>
                             <p>@ellipsize(collection.description, 200)</p>
                         </div>
-
                     </div>                    
                     <!-- Collection Info -->
                     <ul class="list-group">
@@ -131,7 +129,6 @@
         </div>
     </div>
 </div>
-
 
 @if(mode == "list") {
   <div class="row" id="list-view">
@@ -198,7 +195,6 @@
         </ul>
     </div>
 </div>
-
 
 	@if(!user.isDefined) {
 		<script type="text/javascript">
