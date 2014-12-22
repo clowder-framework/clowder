@@ -13,8 +13,25 @@ case class User(
   lastName: String,
   fullName: String,
   email: String,
-  avatarUrl : Option[String],
-  friends: Option[List[UUID]] = None
+  avatarUrl: Option[String] = None,
+  biography: Option[String] = None,
+  currentprojects: Option[String] = None,
+  institution: Option[String] = None,
+  orcidID: Option[String] = None,
+  pastprojects: Option[String] = None,
+  position: Option[String] = None,
+  friends: Option[List[String]] = None,
+  viewed: Option[List[UUID]] = None
+)
+
+case class Info(
+  avatarUrl: Option[String],
+  biography: Option[String],
+  currentprojects: Option[String],
+  institution: Option[String],
+  orcidID: Option[String] = None,
+  pastprojects: Option[String],
+  position: Option[String]
 )
 
 object User {

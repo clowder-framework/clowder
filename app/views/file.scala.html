@@ -362,7 +362,7 @@
                     <tr><td><b>Filename:</b></td><td>@file.filename</td></tr>
                     <tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
                     <tr><td><b>Uploaded on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
-                    <tr><td><b>Uploaded by:</b></td><td>@file.author.fullName</td></tr>
+                    <tr><td><b>Uploaded by:</b></td><td> <a href = "@routes.Profile.viewProfile(file.author.email)"> @file.author.fullName</a></td></tr>
                 </table>
             </div>
 
