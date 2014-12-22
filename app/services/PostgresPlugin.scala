@@ -242,6 +242,9 @@ class PostgresPlugin(application: Application) extends Plugin {
       "(SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text, start_time, end_time, params FROM streams"
     if (parts.length == 3) {
       query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+      if (stream_name.isDefined) {
+        query += " AND name = ?"
+      }
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       query += " WHERE ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
       i = 0
@@ -250,9 +253,13 @@ class PostgresPlugin(application: Application) extends Plugin {
         i += 2
       }
       query += "ST_MakePoint(?, ?)])), geog)"
-      if (stream_name.isDefined) query += " AND name = ?"
+      if (stream_name.isDefined) {
+        query += " AND name = ?"
+      }
     } else if (parts.length == 0) {
-      if (stream_name.isDefined) query += " WHERE name = ?"
+      if (stream_name.isDefined) {
+        query += " WHERE name = ?"
+      }
     }
     query += ") As t;"
     val st = conn.prepareStatement(query)
@@ -261,6 +268,9 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
       st.setDouble(i + 3, parts(2).toDouble * 1000)
+      if (stream_name.isDefined) {
+        st.setString(i + 4, stream_name.getOrElse(""))
+      }
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       while (i < parts.length) {
         st.setDouble(i + 1, parts(i+1).toDouble)
@@ -269,6 +279,9 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
+      if (stream_name.isDefined) {
+        st.setString(i + 3, stream_name.getOrElse(""))
+      }
     } else if (parts.length == 0 && stream_name.isDefined) {
       st.setString(1, stream_name.getOrElse(""))
     }
