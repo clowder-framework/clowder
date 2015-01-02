@@ -99,9 +99,6 @@
     	window.onload = function() {
     		isPageLoaded = true;
     	}
-
-
-    	
     </script>
 
 	<div class="row">
@@ -145,99 +142,11 @@
 	    		</script>
     		}
 
-<!-- start of new code part1-->
-<h5>Choose download format</h5>
-<select id="fileDownloadFormat" onchange="setDownloadFormat()">
-					<option value="invalid">--Default?--</option>
-				</select>	
-				
-				<div id="message">00000000</div>
-				
-		<!-- end of new code part 1 -->
- <div class="row">
+        <div class="row">
             <div class="col-md-12 button-margins">
-                <button id="downloadButton" 
-                    	class="btn btn-primary" 
-                    	title="You don't have permission to download this file" 
-                    	disabled="disabled">
-                	<span class="glyphicon glyphicon-save"></span> Download
-                </button>                
+                <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>                
             </div>
         </div>
-        
-        
-<!-- start of new code part 2 -->
-<script>
-
-$(document).ready(function (){
-	console.log("docready");
-	populateFormats();
-//	message.html("download page");
-});
-
-
-function downloadFile() {
-    var downloadRoute = "@routes.Files.download(UUID(id))";
-    window.open(downloadRoute, '_blank');                    
-}
-
-function populateFormats(){
-	//ajax call to get available formats
-	//get them in JSON format
-	//var json = some-method-to-get-All-Formats();
-	//setAvailableFormats(json);
-	setAvailableFormats();
-	
-}
-function setAvailableFormats(){
-	console.log("top of set avail formats");
-	var availableFormats = 	'<option value="invalid">--Default--</option>'+
-							'<option value="doc">--Document--</option>' + 
-							'<option value="image">--Image--</option>';
-	
-	$("#fileDownloadFormat").html(availableFormats);
-}
-
-function setDownloadFormat(){
-	$("#message").html('22222');
-	
-	console.log("set download format");
-	var selectedFormat="";	
-	if($("#fileDownloadFormat").val() == "invalid"){
-		selectedFormat = "";
-	} else {
-		selectedFormat = $("#fileDownloadFormat").val() ;
-		document.getElementById("message").innerHTML = "Message: setting format";
-		var downloadButton = document.getElementById("downloadButton");
-		downloadButton.innerHTML = "Download " + selectedFormat;
-		console.log("selectedFormat " + selectedFormat);
-		
-	}
-}
-
-	var	downloadButton = document.getElementById("downloadButton");
-    downloadButton.onclick=function(){ 
-	console.log("button clicked");
-			return downloadFile(); 
-	
-}
-
-function downloadFunction(selectedFormat){
-	console.log("I am inside download button click function123, selected format = " + selectedFormat);      
-	$("#message").html("button clicked");
-	
-}
-
-
-
-
-</script>
-
-
-				
-
-
-<!--  end of new code part 2 -->       
 
 			<!-- sections -->
 			@if(sections.size > 0) {
@@ -534,7 +443,7 @@ function downloadFunction(selectedFormat){
                     else {
                         if (fileAllowDownload == "true" || userName == owner) {
                         	$("#downloadButton").removeAttr("disabled");
-                            $("#downloadButton").attr("title", "Download the file456");    
+                            $("#downloadButton").attr("title", "Download the file");    
                         }
                         else {
                         	$("#downloadButton").attr("disabled", "disabled");
@@ -544,7 +453,10 @@ function downloadFunction(selectedFormat){
                     
                 });
 
-                
+                function downloadFile() {
+                    var downloadRoute = "@routes.Files.download(UUID(id))";
+                    window.open(downloadRoute, '_blank');                    
+                }
                 </script>
             </div>
             <!-- End License elements -->
