@@ -130,35 +130,36 @@ EOF
 chmod 755 /home/medici/update-medici.sh
 ```
 
-A small patch to the medici install, to allow for local changes
+## Medici2 Customization
 
-```
-cat > /home/medici/medici.diff << EOF
-290d289
-< declare -r conf_dir="\$(realpath "\${app_home}/../conf")"
-EOF
-```
+Any customization for medici should be placed in the folder custom. The following files/folders are currently supported:
 
-Get the latest version of the application.conf so you can modify it. This is not required and it will use the defaults, best is to change modify them.
-
+custom/custom.conf:
+This file allows you to override any settings in conf/*.conf. If you make any changes to this file you will need to restart medici. For example you can use this to change the permissions of this medici instance from public to private, and have an admin approve new users  by adding the following to custom.conf:
 ```
-wget -O /home/medici/application.conf "https://opensource.ncsa.illinois.edu/stash/projects/MMDB/repos/medici-play/browse/conf/application.conf?at=develop&raw"
-wget -O /home/medici/securesocial.conf "https://opensource.ncsa.illinois.edu/stash/projects/MMDB/repos/medici-play/browse/conf/securesocial.conf?at=develop&raw"
+permissions=private
+initialAdmins="<your-email-address>"
+registerThroughAdmins=true
 ```
 
-Common things you might want to modify in application.con are:
+Common things you might want to modify in custom.conf are:
 
 - hostIp : set this to the fully qualified hostname.
 - permissions : public or private server.
 - initialAdmins and registerThroughAdmins :  if you want to prevent anybody from signing up.
 - application.context : if you have a web server running in front of medici.
 - commKey and application.secret : change these since the defaults are not secure.
-
-Things to change in securesocial.conf are:
-
 - smtp.from : set this to the user all email should come from.
-- onLoginGoTo and onLogoutGoTo : prefix the path with the same path as used for application.context, default assumes root context.
-- ssl : set this to true if you run on https (which you really should).
+- securesocial.onLoginGoTo and securesocial.onLogoutGoTo : prefix the path with the same path as used for application.context, default assumes root context.
+- securesocial.ssl : set this to true if you run on https (which you really should).
+
+
+custom/public/stylesheets/themes/:
+This folder can contain any custom stylesheets you want to use in medici. These themes will be applied to the whole system. The themes are based on the bootstrap them. You can place new files in this folder and the system will find them without a restart.
+
+custom/public/javascript/previewers/:
+This folder can contain any custom previewers you want to use in medici. These previewers will be be picked up with a restart of medici. THIS FEATURE HAS NOT BEEN TESTED YET!
+
 
 Finally install medici using the update script. You can from now on, just call this script to install the latest version of medici.
 

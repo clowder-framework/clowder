@@ -17,13 +17,8 @@ body {
   margin: 0 auto -60px;
 }
 
-.oneline {
-    white-space: nowrap;
-}
-
-.no-overflow {
-    overflow: hidden;
-    text-overflow: ellipsis;
+.break-word {
+    word-wrap: break-word;
 }
 
 .fit-in-space {
@@ -33,10 +28,6 @@ body {
 /* Set the fixed height of the footer here */
 #push, #footer {
   height: 60px;
-}
-
-#footer {
-  background-color: #f5f5f5;
 }
 
 /* Lastly, apply responsive CSS fixes as necessary */
@@ -259,6 +250,21 @@ button.tech_md_ {
 	left:20px;
 }
 
+.profilePicture {
+  margin-bottom:12px;
+  max-width:256px;
+  max-height:256px;
+}
+
+#editProfileFieldSet .control-group .controls input[type='text']{
+  width:450px;
+  height:30px;
+}
+#editProfileFieldSet .control-group .controls textarea{
+  width:450px;
+  height:100px;
+}
+
 #nameDescrFieldSet .control-group .controls textarea{
 	width:208px;
 }
@@ -295,7 +301,6 @@ fieldset #email_field .controls #email{
 	height:30px;
 }
 
-
 #adminMailFieldSet .control-group .controls input[type='text']{
 	width:208px;
 	height:30px;
@@ -305,6 +310,7 @@ fieldset #email_field .controls #email{
 	width:208px;
 	height:30px;
 }
+
 
 
 :-webkit-full-screen x3d {
@@ -439,9 +445,4 @@ textarea, input[type='text'], input[type='password']{
 
 #tagCloudCanvas {
     border:1px solid #e6e6e6;
-}
-
-#tagList > a {
-    color: black;
-    text-decoration: none;
 }

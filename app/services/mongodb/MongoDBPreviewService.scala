@@ -290,3 +290,4 @@ object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
     case Some(x) => new SalatDAO[Preview, ObjectId](collection = x.collection("previews.files")) {}
   }
 }
+
