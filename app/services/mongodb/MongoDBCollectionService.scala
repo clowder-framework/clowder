@@ -17,7 +17,9 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import MongoContext.context
 import play.api.Play.current
+import services.AdminsNotifierPlugin
 import services.ElasticsearchPlugin
+
 
 
 /**
@@ -49,9 +51,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   def listCollectionsAfter(date: String, limit: Int): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
     if (date == "") {
-      Collection.findAll.sort(order).limit(limit).toList
+    	Collection.findAll.sort(order).limit(limit).toList
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
       Collection.find("created" $lt sinceDate).sort(order).limit(limit).toList
     }
@@ -63,14 +65,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   def listCollectionsBefore(date: String, limit: Int): List[Collection] = {
     var order = MongoDBObject("created" -> -1)
     if (date == "") {
-      Collection.findAll.sort(order).limit(limit).toList
+    	Collection.findAll.sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("created" -> 1)
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
-      var collectionList = Collection.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
-      collectionList = collectionList.filter(_ != collectionList.last)
-      collectionList
+      Collection.find("created" $gt sinceDate).sort(order).limit(limit).toList.reverse
     }
   }
 
@@ -134,8 +134,8 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
 
   def isInDataset(dataset: Dataset, collection: Collection): Boolean = {
-    for (dsColls <- dataset.collections) {
-      if (dsColls == collection.id.toString())
+    for (dsColls <- dataset.collections  ) {
+      if (dsColls == collection.id.stringify)
         return true
     }
     return false
@@ -153,8 +153,20 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
                 $addToSet("datasets" ->  Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)
               //add collection to dataset
               datasets.addCollection(dataset.id, collection.id)
+              
+              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
+                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
+                  $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+              }
+
               datasets.index(dataset.id)
               index(collection.id)
+
+              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
+                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
+                  $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+              }
+
               Logger.debug("Adding dataset to collection completed")
             }
             else{
@@ -176,18 +188,32 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
 
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
-    Collection.findOneById(new ObjectId(collectionId.stringify)) match{
+	 Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
         datasets.get(datasetId) match {
           case Some(dataset) => {
             if(isInCollection(dataset,collection)){
               // remove dataset from collection
-              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+            	Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
             		  $pull("datasets" ->  MongoDBObject( "_id" -> new ObjectId(dataset.id.stringify))), false, false, WriteConcern.Safe)
               //remove collection from dataset
               datasets.removeCollection(dataset.id, collection.id)
+              
+              if(!collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
+	        	  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+	        		  createThumbnail(collection.id)
+	        	  }		                        
+	          }
+              
               datasets.index(dataset.id)
               index(collection.id)
+              
+              if(!collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
+	        	  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+	        		  createThumbnail(collection.id)
+	        	  }		                        
+	          }
+
               Logger.info("Removing dataset from collection completed")
             }
             else{
@@ -218,7 +244,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
 
   def delete(collectionId: UUID) = Try {
-    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+	Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
         for(dataset <- collection.datasets){
           //remove collection from dataset
@@ -226,9 +252,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
           datasets.index(dataset.id)
         }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
+
         current.plugin[ElasticsearchPlugin].foreach {
           _.delete("data", "collection", collection.id.stringify)
         }
+
         Success
       }
       case None => Success
@@ -244,30 +272,31 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
   
   def updateThumbnail(collectionId: UUID, thumbnailId: UUID) {
-	    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
-	      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
-	  }
-	  
-	  def createThumbnail(collectionId:UUID){
-	    get(collectionId) match{
-		    case Some(collection) => {
-		    		val selecteddatasets = collection.datasets map { ds =>{
-		    			datasets.get(ds.id).getOrElse{None}
-		    		}}
-				    for(dataset <- selecteddatasets){
-				      if(dataset.isInstanceOf[models.Dataset]){
-				          val theDataset = dataset.asInstanceOf[models.Dataset]
-					      if(!theDataset.thumbnail_id.isEmpty){
-					        Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
-					        return
-					      }
+    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
+  }
+  
+  def createThumbnail(collectionId:UUID){
+    get(collectionId) match{
+	    case Some(collection) => {
+	    		val selecteddatasets = collection.datasets map { ds =>{
+	    			datasets.get(ds.id).getOrElse{None}
+	    		}}
+			    for(dataset <- selecteddatasets){
+			      if(dataset.isInstanceOf[models.Dataset]){
+			          val theDataset = dataset.asInstanceOf[models.Dataset]
+				      if(!theDataset.thumbnail_id.isEmpty){
+				        Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+				        return
 				      }
-				    }
-				    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
-		    }
-		    case None =>
-	    }  
-	  }
+			      }
+			    }
+			    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+	    }
+	    case None =>
+    }
+  }
+
 
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {

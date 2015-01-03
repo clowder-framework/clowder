@@ -55,7 +55,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
 
   def addDatapoint(start: java.util.Date, end: Option[java.util.Date], geoType: String, data: String, lat: Double, lon: Double, alt: Double, stream_id: String) {
-    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog) VALUES(?, ?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326));")
+    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES(?, ?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW());")
     ps.setTimestamp(1, new Timestamp(start.getTime))
     if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime))
     else ps.setDate(2, null)
@@ -89,10 +89,10 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams" +
     			") " +
     			"SELECT row_to_json(t, true) FROM (" +
-    			"SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, to_char(min(stream_info.start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS min_start_time, to_char(max(stream_info.end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS max_end_time, array_agg(distinct stream_info.param) as parameters " +
+    			"SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, to_char(min(stream_info.start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS min_start_time, to_char(max(stream_info.end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS max_end_time, array_agg(distinct stream_info.param) as parameters " +
     			"FROM sensors " +
     			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid "
-	if (parts.length == 3) {
+	  if (parts.length == 3) {
       query += "WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       query += "WHERE ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
@@ -143,7 +143,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
     			") " +
     			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
-    			"SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, to_char(min(stream_info.start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS created as min_start_time, to_char(max(stream_info.end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') as max_end_time, array_agg(distinct stream_info.param) as parameters " +
+    			"SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, to_char(min(stream_info.start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS min_start_time, to_char(max(stream_info.end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') as max_end_time, array_agg(distinct stream_info.param) as parameters " +
     			"FROM sensors " +
     			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid " +
     			"WHERE sensors.gid=?" +
@@ -188,28 +188,12 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else Some(data)
   }
   
-  def updateSensorStats(sensor_id: Option[String]) {
-    var query = "WITH stream_sub1 AS (" +
-    			"SELECT stream_id, start_time, end_time, json_object_keys(data) AS param FROM datapoints" +
-    			")," +
-    			"stream_sub2 AS (" +
-    			"SELECT stream_id, min(start_time) AS start_time, max(end_time) AS end_time, array_agg(distinct param) as params FROM stream_sub1 GROUP BY stream_id" +
-    			")" +
-    			"UPDATE streams SET start_time=stream_sub2.start_time, end_time=stream_sub2.end_time, params=stream_sub2.params FROM stream_sub2  WHERE gid=stream_id"
-    if (sensor_id.isDefined) query += " AND sensor_id = ?"
-    val st = conn.prepareStatement(query)
-    if (sensor_id.isDefined) st.setInt(1, sensor_id.get.toInt)
-    Logger.debug("updateSensorStats statement: " + st)
-    st.execute()
-	  st.close()
-  }
-  
   def getSensorStats(id: String): Option[String] = {
     val query = "WITH stream_info AS (" +
     			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
     			") " +
     			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
-    			"SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') As min_start_time, to_char(max(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') As max_start_time, array_agg(distinct param) AS parameters FROM stream_info" +
+    			"SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_start_time, array_agg(distinct param) AS parameters FROM stream_info" +
     			") As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
@@ -247,22 +231,6 @@ class PostgresPlugin(application: Application) extends Plugin {
     generatedKey.toString
   }
 
-  def updateStreamStats(stream_id: Option[String]) {
-    var query = "WITH stream_sub1 AS (" +
-    			"SELECT stream_id, start_time, end_time, json_object_keys(data) AS param FROM datapoints"
-    if (stream_id.isDefined) query += " WHERE stream_id = ?"    
-	query += ")," +
-			 "stream_sub2 AS (" +
-			 "SELECT stream_id, min(start_time) AS start_time, max(end_time) AS end_time, array_agg(distinct param) as params FROM stream_sub1 GROUP BY stream_id" +
-			 ")" +
-			 "UPDATE streams SET start_time=stream_sub2.start_time, end_time=stream_sub2.end_time, params=stream_sub2.params FROM stream_sub2  WHERE gid=stream_id"
-    val st = conn.prepareStatement(query)
-    if (stream_id.isDefined) st.setInt(1, stream_id.get.toInt)
-    Logger.debug("updateStreamStats statement: " + st)
-    st.execute()
-	  st.close()
-  }
-
   def searchStreams(geocode: Option[String]): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
@@ -271,7 +239,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     var data = ""
     var i = 0
     var query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text, start_time, end_time, params FROM streams"
+      "(SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text, start_time, end_time, params FROM streams"
     if (parts.length == 3) {
       query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
@@ -316,7 +284,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getStream(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_stream FROM " +
-      "(SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text, start_time, end_time, params FROM streams WHERE gid=?) As t;"
+      "(SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text, start_time, end_time, params FROM streams WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Streams get statement: " + st)
@@ -385,7 +353,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       case None => Array[String]()
     }
     var query = "SELECT to_json(t) As datapoint FROM " +
-      "(SELECT datapoints.gid As id, to_char(datapoints.start_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS start_time, to_char(datapoints.end_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
+      "(SELECT datapoints.gid As id, to_char(datapoints.created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, to_char(datapoints.start_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS start_time, to_char(datapoints.end_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
       " WHERE sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid"
 //    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
     if (since.isDefined) query += " AND datapoints.start_time >= ?"
@@ -529,7 +497,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getDatapoint(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +
-      "(SELECT gid As id, to_char(start_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS start_time, to_char(end_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH:MI:SSZ') AS end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id:text FROM datapoints WHERE gid=?) As t;"
+      "(SELECT gid As id, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, to_char(start_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS start_time, to_char(end_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id:text FROM datapoints WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Datapoints get statement: " + st)
@@ -548,6 +516,62 @@ class PostgresPlugin(application: Application) extends Plugin {
 
   def listSensors() {
     val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM (SELECT gid As id, start_time, end_time, data, ST_AsGeoJson(1, geog, 15, 0)::json As geometry FROM datapoints"
+  }
+
+  // ----------------------------------------------------------------------
+  // CODE TO UPDATE STATISTICS OF STREAMS AND SENSORS
+  // ----------------------------------------------------------------------
+
+  def updateSensorStats(sensor_id: Option[String]) {
+    // always update the empty streams list first
+    updateEmptyStats()
+
+    // next update the streams associated with the sensor
+    var query = "UPDATE streams SET start_time=n.start_time, end_time=n.end_time, params=n.params FROM ("
+    query += "  SELECT stream_id, min(datapoints.start_time) AS start_time, max(datapoints.end_time) AS end_time, array_agg(distinct keys) AS params"
+    if (!sensor_id.isDefined) {
+      query += "    FROM datapoints, json_object_keys(data) data(keys)"
+    } else {
+      query += "    FROM datapoints, json_object_keys(data) data(keys), streams"
+      query += "    WHERE streams.gid=datapoints.stream_id AND streams.sensor_id=?"
+    }
+    query += "    GROUP by stream_id) n"
+    query += "  WHERE n.stream_id=streams.gid;"
+
+    val st = conn.prepareStatement(query)
+    if (sensor_id.isDefined) st.setInt(1, sensor_id.get.toInt)
+    Logger.debug("updateSensorStats statement: " + st)
+    st.execute()
+    st.close()
+  }
+
+  def updateStreamStats(stream_id: Option[String]) {
+    // always update the empty streams list first
+    updateEmptyStats()
+
+    // next update the streams
+    var query = "UPDATE streams SET start_time=n.start_time, end_time=n.end_time, params=n.params FROM ("
+    query += "  SELECT stream_id, min(datapoints.start_time) AS start_time, max(datapoints.end_time) AS end_time, array_agg(distinct keys) AS params"
+    query += "    FROM datapoints, json_object_keys(data) data(keys)"
+    if (stream_id.isDefined) query += " WHERE stream_id = ?"
+    query += "    GROUP BY stream_id) n"
+    query += "  WHERE n.stream_id=streams.gid;"
+
+    val st = conn.prepareStatement(query)
+    if (stream_id.isDefined) st.setInt(1, stream_id.get.toInt)
+    Logger.debug("updateStreamStats statement: " + st)
+    st.execute()
+    st.close()
+  }
+
+  def updateEmptyStats() {
+    val query = "update streams set start_time=null, end_time=null, params=null " +
+      "where not exists (select gid from datapoints where streams.gid=datapoints.stream_id)"
+
+    val st = conn.prepareStatement(query)
+    Logger.debug("updateEmptyStats statement: " + st)
+    st.execute()
+    st.close()
   }
 
   def test() {

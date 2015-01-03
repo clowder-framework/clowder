@@ -33,22 +33,3 @@ object VersusIndexTypeName {
         index.copy(indexType = Some(indType), indexName = Some(indName))
     }
 }
-
-/**
-   * Creates a Format[T] by resolving case class fields & required implicits at COMPILE-time
-   *
-   * If any missing implicit is discovered, compiler will break with corresponding error.
-   * {{{
-   *   import play.api.libs.json.Json
-   *
-   *   case class User(name: String, age: Int)
-   *
-   *   implicit val userWrites = Json.format[User]
-   *   // macro-compiler replaces Json.format[User] by injecting into compile chain
-   *   // the exact code you would write yourself. This is strictly equivalent to:
-   *   implicit val userWrites = (
-   *      (__ \ 'name).format[String] and
-   *      (__ \ 'age).format[Int]
-   *   )(User.apply, unlift(User.unapply))
-   * }}}
-   */

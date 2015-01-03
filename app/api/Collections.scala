@@ -1,19 +1,17 @@
 package api
 
-import models.{UUID, Collection}
 import play.api.Logger
 import play.api.Play.current
-import services.DatasetService
-import services.CollectionService
-import services.AdminsNotifierPlugin
+import models.{UUID, Collection}
+import services._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
-import services.{PreviewService, DatasetService, CollectionService}
 import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import java.util.Date
+import controllers.Utils
 
 /**
  * Manipulate collections.
@@ -24,6 +22,7 @@ import java.util.Date
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService) extends ApiController {
 
+    
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
@@ -49,19 +48,43 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollections)) { request =>
+                    authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
 
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
     }
   }
-  
+
+  /**
+   * Reindex the given collection, if recursive is set to true it will
+   * also reindex all datasets and files.
+   */
+  @ApiOperation(value = "Reindex a collection",
+    notes = "Reindex the existing collection, if recursive is set to true it will also reindex all datasets and files.",
+    httpMethod = "GET")
+  def reindex(id: UUID, recursive: Boolean) =
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollections)) {
+    request =>
+      collections.get(id) match {
+        case Some(coll) => {
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.index(coll, recursive)
+          }
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => {
+          Logger.error("Error getting collection" + id)
+          BadRequest(toJson(s"The given collection id $id is not a valid ObjectId."))
+        }
+      }
+  }
+
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollections)) { request =>
+                    authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
 
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
@@ -73,8 +96,16 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "Does not delete the individual datasets in the collection.",
       responseClass = "None", httpMethod = "POST")
   def removeCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-                       authorization=WithPermission(Permission.DeleteCollections)) { request =>
-    collections.delete(collectionId)
+    authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        collections.delete(collectionId)
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
+        }
+      }
+    }
+    //Success anyway, as if collection is not found it is most probably deleted already
     Ok(toJson(Map("status" -> "success")))
   }
 
@@ -86,7 +117,17 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
     Ok(toJson(list))
   }
-  
+
+  @ApiOperation(value = "Get a specific collection",
+    responseClass = "Collection", httpMethod = "GET")
+  def getCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
+    authorization=WithPermission(Permission.ShowCollection)) { request =>
+    collections.get(collectionId) match {
+      case Some(x) => Ok(jsonCollection(x))
+      case None => BadRequest(toJson("collection not found"))
+    }
+  }
+
   def jsonCollection(collection: Collection): JsValue = {
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
                "created" -> collection.created.toString))
@@ -139,3 +180,4 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   }
 
 }
+

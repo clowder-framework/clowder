@@ -5,15 +5,17 @@ import play.api.data.Forms._
 import models.{UUID, Collection}
 import java.util.Date
 import play.api.Logger
+import play.api.Play.current
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
-import play.api.Play.current
-import javax.inject.{Singleton, Inject}
+import javax.inject.{ Singleton, Inject }
+import services.{ DatasetService, CollectionService }
 import services._
+
 
 object ThumbnailFound extends Exception {}
 
@@ -28,7 +30,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       "name" -> nonEmptyText,
       "description" -> nonEmptyText
     )
-      ((name, description) => Collection(name = name, description = description, created = new Date))
+      ((name, description) => Collection(name = name, description = description, created = new Date, author = null))
       ((collection: Collection) => Some((collection.name, collection.description)))
   )
 
@@ -40,7 +42,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
   /**
    * List collections.
-   */
+   */	
   def list(when: String, date: String, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ListCollections)) {
     implicit request =>
       implicit val user = request.user
@@ -56,6 +58,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       } else {
         badRequest
       }
+
       // latest object
       val latest = collections.latest()
       // first object
@@ -103,30 +106,35 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   def jsonCollection(collection: Collection): JsValue = {
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description, "created" -> collection.created.toString))
   }
-
+  
   /**
    * Create collection.
    */
   def submit() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>
       implicit val user = request.user
-
-      collectionForm.bindFromRequest.fold(
-        errors => BadRequest(views.html.newCollection(errors)),
-        collection => {
-          Logger.debug("Saving collection " + collection.name)
-          collections.insert(collection)
-          
-          // index collection
+      user match {
+	      case Some(identity) => {
+	      
+	      collectionForm.bindFromRequest.fold(
+	        errors => BadRequest(views.html.newCollection(errors)),
+	        collection => {
+	          Logger.debug("Saving collection " + collection.name)
+	          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity)))
+	          
+	          // index collection
 		            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id, 
-		                List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-          
-          Redirect(routes.Collections.collection(collection.id))
-          current.plugin[AdminsNotifierPlugin].foreach{
-            _.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
-		  Redirect(routes.Collections.collection(collection.id))
-        })
+		            List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+	                    
+	          // redirect to collection page
+	          Redirect(routes.Collections.collection(collection.id))
+	          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
+	          Redirect(routes.Collections.collection(collection.id))
+	        })
+	      }
+	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
+      }
   }
 
   /**
@@ -137,7 +145,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
       collections.get(id) match {
-        case Some(collection) => {
+        case Some(collection) => { 
           Logger.debug(s"Found collection $id")
           // only show previewers that have a matching preview object associated with collection
           Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
@@ -152,7 +160,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           Logger.debug("Num previewers " + filteredPreviewers.size)
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
-          Ok(views.html.collectionofdatasets(collection.datasets, collection.name, collection.id.toString(), filteredPreviewers.toList))
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection, filteredPreviewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
@@ -174,3 +182,4 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
   }
 }
+

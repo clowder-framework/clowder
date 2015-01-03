@@ -34,13 +34,14 @@
 			No results found
 		</div>
 	</div>
-	} else {
+	} else {	
+			
 	<table>
-	@** Fix for Chrome - otherwise <tbody> tag would be automatically inserted and valign set to "middle"**@
+
+	@** Fix to align results at the top - otherwise <tbody> tag would be automatically inserted and valign set to "middle"**@
 	<tbody valign="top">	
 	<tr>  
-	@for((index, previewsAndFiles) <- resultsList) {		
-
+	@for((index, previewsAndFiles) <- resultsList) {
 		<td>
 		<h3>Index name</h3>
 		Extractor:@index.extractorID<br>Measure:@index.measureID<br>Indexer:@index.indexerType<p><p>
@@ -107,23 +108,20 @@
 					    @if(oneResult.searchResultPreview.datasetIdList.size==0){
 					    	No dataset associated with this image 
 					    }
-					  
-					    @if(oneResult.searchResultPreview.datasetIdList.size>0){
-					    	<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
-					    	@oneResult.searchResultPreview.datasetIdList.map{ id=>					   
-					     			<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
-					    	}
-					    }
-					    @*** END OF: displaying datasets ***@
-					  
-					    <br>
-					     <a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
-					     		View File @oneResult.searchResultPreview.fileTitle</a>
-					     	<br>
-					     		Shot start time: @oneResult.searchResultPreview.shotStartTime					     		
-					    						    
 
-						}@* end of If Preview *@											     
+					  @if(oneResult.searchResultPreview.datasetIdList.size>0){
+					  		<b>Belongs to  @oneResult.searchResultPreview.datasetIdList.size dataset(s)</b>
+					  		@oneResult.searchResultPreview.datasetIdList.map{id=>					   
+					     			<br><a href=@routes.Datasets.dataset(UUID(id))> View Dataset </a>
+					     			<br>					     		
+					    	}  						  	 
+					    }					    
+					     @*** END OF: displaying datasets ***@
+					    <a href="@(routes.Files.file(UUID(oneResult.searchResultPreview.fileIdString)))">
+					     		View File @oneResult.searchResultPreview.fileTitle</a>
+					     <br>
+					     		Shot start time: @oneResult.searchResultPreview.shotStartTime					     		
+						}@* end of If Preview *@
 
 					  </div>
 					</div>
@@ -137,15 +135,14 @@
 	}
 	</tr>
 
-</tbody> </table>
+	</tbody></table>
 	@***********  End of search results for each index  ******************@
 	
-	
-<br>@************ form to combine search results ************@
-		 @form(action = routes.Search.findSimilarWeightedIndexes,  'id->"form-weights", 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
-				 <div id="validation"></div>
-				 
-				 <fieldset>
+	<br>@************ form to combine search results - if two or more indexes ************@
+
+	@if(resultsList.size >=2) {
+		 @form(action = routes.Search.findSimilarWeightedIndexes, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+			    <fieldset>
 			      <legend>Combine search results</legend>			     
 			    	 <input type="hidden" name="FileID" value="@fileId" id="file_hidden">			    
 			     	@for((index, previewsAndFiles) <- resultsList) {	
@@ -158,7 +155,8 @@
 		          		<input type="submit" class="btn btn-primary" value="Combine Results"/>
 		        	</div>
 		}
-		@************ end of form ************@
+	}<!--end of if(resultsList.size >=2) -->
+@************ end of form ************@
 
 <script language="javascript">
 		//============================================================================

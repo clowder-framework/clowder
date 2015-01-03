@@ -2,13 +2,9 @@ package services
 
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
-import services.DI.injector
 import models.UUID
 
 class AdminsNotifierPlugin(application:Application) extends Plugin {
-
-  val appConfiguration: AppConfigurationService = injector.getInstance(classOf[AppConfigurationService])
-
   override def onStart() {
     Logger.debug("Starting Admins Notifier Plugin")
   }
@@ -38,7 +34,7 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
       }
       case _=> {
         val mailHTML = if (eventType.equals("added")) {
-          "The " + resourceType.toLowerCase() + " is available at <a href='" + resourceUrl + "'>" + resourceUrl + "</a>"
+          "The " + resourceType.toLowerCase + " is available at <a href='" + resourceUrl + "'>" + resourceUrl + "</a>"
         } else if (eventType.equals("removed")) {
           resourceType + " had id " + resourceId + "."
         } else ""
@@ -49,7 +45,8 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
           }
           case _=> {
 	          var adminsNotSent = ""
-	          for(admin <- appConfiguration.getDefault.get.admins) {
+            val admins = AppConfiguration.getAdmins
+	          for(admin <- admins) {
 	            var wasSent = false
 	            current.plugin[MailerPlugin].foreach{currentPlugin => {
 		    	      wasSent = wasSent || currentPlugin.sendMail(admin, mailHTML, mailSubject)}}
@@ -68,3 +65,4 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
     }
   }
 }
+

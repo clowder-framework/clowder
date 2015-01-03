@@ -54,7 +54,7 @@
                             </a>
                         }
                         <div class="caption">
-                            <h4 class="no-overflow oneline"><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
+                            <h4 class="break-word"><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
                             <p>@ellipsize(dataset.description, 200)</p>
                         </div>
                   </div>
@@ -65,11 +65,12 @@
                       <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
                       <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span>  @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
                       <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span>  @(comments.get(dataset.id))
-                      @if(user.isDefined) {
-					  <a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
-					     <span class="glyphicon glyphicon-trash"></span>
-					  </a>
-					  }
+					  @if(user.isDefined) {
+									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
+							    		<span class="glyphicon glyphicon-trash"></span></a>
+									}													
+							}					  
                     </li>
                   </ul>
               </div>
@@ -109,17 +110,23 @@
 							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
-						@if(user.isDefined) {
-							<td><a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
-							    <span class="glyphicon glyphicon-trash"></span></a>
-							</td>
-						}
+						<td class="requiresLogin">
+							@if(user.isDefined) {
+									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
+							    		<span class="glyphicon glyphicon-trash"></span></a>
+									}													
+							}
+						</td>	
+						
 					</tr>
 				}
 			</tbody>
 		</table>
 	</div>
 </div>
+
+@util.masonry()
 
 <div class="row">
     <div class="col-md-12">

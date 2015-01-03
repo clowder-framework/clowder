@@ -35,7 +35,9 @@ import play.api.libs.concurrent.Execution.Implicits._
  *
  */
 class RabbitmqPlugin(application: Application) extends Plugin {
-val files: FileService =  DI.injector.getInstance(classOf[FileService])
+
+  val files: FileService =  DI.injector.getInstance(classOf[FileService])
+
   var extractQueue: Option[ActorRef] = None
 
   var channel:Channel=null
@@ -193,36 +195,48 @@ def getChannelInfo(cid: String): Future[Response]={
 
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
 
+  val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
+  val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
+ 
   def receive = {
-    case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey) => {
-      var theDatasetId = ""
-      if(datasetId != null)
-        theDatasetId = datasetId.stringify
-      
-      val msgMap = scala.collection.mutable.Map(
-        "id" -> Json.toJson(id.stringify),
-        "intermediateId" -> Json.toJson(intermediateId.stringify),
-        "fileSize" -> Json.toJson(fileSize),
-        "host" -> Json.toJson(host),
-        "datasetId" -> Json.toJson(theDatasetId),
-        "flags" -> Json.toJson(flags),
-        "secretKey" -> Json.toJson(secretKey)
-      )
-      // add extra fields
-      metadata.foreach(kv => msgMap.put(kv._1, Json.toJson(kv._2)))
-      val msg = Json.toJson(msgMap.toMap)
-      Logger.info(msg.toString())
-      // correlation id used for rpc call
-      val corrId = java.util.UUID.randomUUID().toString() // TODO switch to models.UUID?
-      // setup properties
-      val basicProperties = new BasicProperties().builder()
-        .contentType("application\\json")
-        .correlationId(corrId)
-        .replyTo(replyQueueName)
-        .build()
-      channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
-    }
+      case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey) => {
+        var theDatasetId = ""
+        if(datasetId != null)
+        	theDatasetId = datasetId.stringify
+        
+        var actualHost = host
+        //Tell the extractors to use https if webserver is so configured
+        if(!appHttpsPort.equals("")){
+          actualHost = host.replaceAll("^http:", "https:").replaceFirst(":"+appHttpPort, ":"+appHttpsPort)
+        }
+        
+        Logger.debug("actualHost: "+ actualHost)
+        Logger.debug("http: "+ appHttpPort)
+        Logger.debug("https: "+ appHttpsPort)
 
+        val msgMap = scala.collection.mutable.Map(
+            "id" -> Json.toJson(id.stringify),
+            "intermediateId" -> Json.toJson(intermediateId.stringify),
+            "fileSize" -> Json.toJson(fileSize),
+            "host" -> Json.toJson(actualHost),
+            "datasetId" -> Json.toJson(theDatasetId),
+            "flags" -> Json.toJson(flags),
+            "secretKey" -> Json.toJson(secretKey)
+            )
+        // add extra fields
+        metadata.foreach(kv => msgMap.put(kv._1,Json.toJson(kv._2)))
+        val msg = Json.toJson(msgMap.toMap)
+        Logger.info(msg.toString())
+        // correlation id used for rpc call
+        val corrId = java.util.UUID.randomUUID().toString()  // TODO switch to models.UUID?
+        // setup properties
+        val basicProperties = new BasicProperties().builder()
+        	.contentType("application\\json")
+        	.correlationId(corrId)
+            .replyTo(replyQueueName)
+        	.build()
+        channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
+      }
     case _ => {
       Logger.error("Unknown message type submitted.")
     }
@@ -260,22 +274,26 @@ class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(ch
 }
 
 class EventFilter(channel: Channel, queue: String) extends Actor {
+  val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
    def receive = {
      case statusBody: String => 
             Logger.info("Received extractor status: " + statusBody)
             val json = Json.parse(statusBody)
             val file_id = UUID((json \ "file_id").as[String])
-           
             val extractor_id = (json \ "extractor_id").as[String]
             val status = (json \ "status").as[String]
             val start = (json \ "start").asOpt[String]
-            //val end = (json \ "end").asOpt[String]
             val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             val startDate = formatter.parse(start.get)
-            //val endDate=formatter.parse(end.get)
             Logger.info("Status start: " + startDate)
-            val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
-            extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
+            var updatedStatus = status.toUpperCase()
+            //TODO : Enforce consistent status updates: STARTED, DONE, ERROR and other detailed status updates to logs when we start implementing distributed logging
+            if(updatedStatus.contains("DONE")){
+              extractions.insert(Extraction(UUID.generate, file_id, extractor_id,"DONE", Some(startDate), None))
+            }else{
+              extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
+            }
+            Logger.debug("updatedStatus= "+updatedStatus + " status= "+status)
             models.ExtractionInfoSetUp.updateDTSRequests(file_id,extractor_id)
    }
 

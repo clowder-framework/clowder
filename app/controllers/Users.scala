@@ -1,32 +1,24 @@
 package controllers
 
-import play.api.mvc._
-import models.User
-import org.bson.types.ObjectId
-import play.api.Play.current
-import play.api.data._
-import play.api.data.Forms._
-import play.api.data.Form
-import play.api.data.validation.Constraint
-import play.api.data.validation.Valid
-import play.api.data.validation.Invalid
-import play.api.data.validation.ValidationError
+import _root_.java.util.UUID
+
 import com.typesafe.plugin._
+import models.User
+import org.joda.time.DateTime
+import play.api.Play.current
+import play.api.data.Form
+import play.api.data.Forms._
+import play.api.data.validation.{Constraint, Invalid, Valid, ValidationError}
+import play.api.i18n.Messages
+import play.api.libs.concurrent.Akka
+import play.api.mvc._
+import play.api.templates.Html
+import play.api.{Logger, Play}
 import securesocial.controllers.TemplatesPlugin
 import securesocial.core.UserService
-import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.providers.utils.Mailer
-import securesocial.controllers.Registration
-import securesocial.core.providers.Token
-import _root_.java.util.UUID
-import org.joda.time.DateTime
-import play.api.Play
-import play.api.i18n.Messages
-import models.AppConfiguration
-import play.api.templates.Html
-import play.api.Logger
-import play.api.libs.concurrent.Akka
-import services.AppConfigurationService
+import securesocial.core.providers.{Token, UsernamePasswordProvider}
+import services.AppConfiguration
 
 /**
  * Manage users.
@@ -34,46 +26,6 @@ import services.AppConfigurationService
  * @author Luigi Marini
  */
 object Users extends Controller {
-  
-  val appConfiguration: AppConfigurationService = services.DI.injector.getInstance(classOf[AppConfigurationService])
-  
-  /**
-   * List users.
-   */
-  def list() = Action {
-    val users = User.findAll
-    Ok(views.html.list(users))
-  }
-
-  /**
-   * List users by country.
-   */
-  def listByCountry(country: String) = Action {
-    val users = User.findByCountry(country)
-    Ok(views.html.list(users))
-  }
-
-  /**
-   * View user.
-   */
-  def view(id: String) = Action {
-    User.findOneById(new ObjectId(id)).map( user =>
-      Ok(views.html.user(user))
-    ).getOrElse(NotFound)
-  }
-
-  /**
-   * Create new user.
-   */
-  def create(username: String) = Action {
-    val user = User(
-      username = username,
-      password = "1234"
-    )
-    User.save(user)
-    Ok(views.html.user(user))
-  }
-  
   //Custom signup initiation code, to be used if config is set to send signup link emails to admins to forward to users
   
   val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
@@ -118,12 +70,13 @@ object Users extends Controller {
             case None => {
               val token = createToken(email, isSignUp = true)
               val theHTML = views.html.signUpEmailThroughAdmin(token._1, email)
-              for(admin <- appConfiguration.getDefault.get.admins){
+              val admins = AppConfiguration.getAdmins
+              for(admin <- admins) {
             	  sendEmail(Messages(SignUpEmailSubject), admin, theHTML)
               }
             }
           }
-          Redirect(onHandleStartSignUpGoTo).flashing(Success -> Messages(ThankYouCheckEmail), Email -> email)
+          Redirect(onHandleStartSignUpGoTo).flashing(Success -> play.Play.application().configuration().getString("messageOnStartRegistrationWithAdmin") , Email -> email)
         }
       )
     }
@@ -146,8 +99,9 @@ object Users extends Controller {
   
   private def sendEmail(subject: String, recipient: String, body: Html) {
     import com.typesafe.plugin._
-    import scala.concurrent.duration._
     import play.api.libs.concurrent.Execution.Implicits._
+
+import scala.concurrent.duration._
 
     if ( Logger.isDebugEnabled ) {
       Logger.debug("Sending registration email to %s".format(recipient))

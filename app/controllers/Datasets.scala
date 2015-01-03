@@ -26,7 +26,6 @@ import org.apache.commons.lang.StringEscapeUtils
  * @author Luigi Marini
  *
  */
-
 class Datasets @Inject()(
   datasets: DatasetService,
   files: FileService,
@@ -36,8 +35,8 @@ class Datasets @Inject()(
   extractions: ExtractionService,
   dtsrequests:ExtractionRequestsService,
   sparql: RdfSPARQLService,
+  users: UserService,
   previewService: PreviewService) extends SecuredController {
-
 
   object ActivityFound extends Exception {}
 
@@ -57,7 +56,7 @@ class Datasets @Inject()(
   def newDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
     implicit request =>
       implicit val user = request.user
-      val filesList = for (file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename)
+      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
       Ok(views.html.newDataset(datasetForm, filesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
 
@@ -122,33 +121,124 @@ class Datasets @Inject()(
       }
       Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
   }
+  def userDatasets(when: String, date: String, limit: Int, email: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
+    implicit request =>
+      implicit val user = request.user
+      var direction = "b"
+      if (when != "") direction = when
+      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+      var prev, next = ""
+      var datasetList = List.empty[models.Dataset]
+      if (direction == "b") {
+        datasetList = datasets.listDatasetsBefore(date, limit)
+      } else if (direction == "a") {
+        datasetList = datasets.listDatasetsAfter(date, limit)
+      } else {
+        badRequest
+      }
+      // latest object
+      val latest = datasets.latest()
+      // first object
+      val first = datasets.first()
+      var firstPage = false
+      var lastPage = false
+      if (latest.size == 1) {
+        firstPage = datasetList.exists(_.id.equals(latest.get.id))
+        lastPage = datasetList.exists(_.id.equals(first.get.id))
+        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
+        Logger.debug("first " + first.get.id + " last page " + lastPage)
+      }
+      if (datasetList.size > 0) {
+        if (date != "" && !firstPage) {
+          // show prev button
+          prev = formatter.format(datasetList.head.created)
+        }
+        if (!lastPage) {
+          // show next button
+          next = formatter.format(datasetList.last.created)
+        }
+      }
+      
+      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
 
+      
+
+      val commentMap = datasetList.map{dataset =>
+        var allComments = comments.findCommentsByDatasetId(dataset.id)
+        dataset.files.map { file =>
+          allComments ++= comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+        }
+        dataset.id -> allComments.size
+      }.toMap
+
+
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part 
+      //of the datasets names or descriptions
+      val aBuilder = new StringBuilder()
+      for (aDataset <- datasetList) {
+          decodeDatasetElements(aDataset)
+      }
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
+  }
+
+
+  def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {
+      user match{
+            case Some(viewer) => {
+              implicit val email = viewer.email
+              email match {
+                case Some(addr) => {
+                  implicit val modeluser = users.findByEmail(addr.toString())
+                  modeluser match {
+                    case Some(muser) => {
+                       muser.viewed match {
+                        case Some(viewList) =>{
+                          users.addUserDatasetView(addr, id)
+                        }
+                        case None => {
+                          val newList: List[UUID] = List(id)
+                          users.createNewListInUser(addr, "viewed", newList)
+                        }
+                      }
+                  }
+                  case None => {
+                    Ok("NOT WORKS")
+                  }
+                 }
+                }
+              }
+            }
+
+
+          }
+  }
 
   /**
    * Dataset.
    */
   def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
-    implicit request =>
-      implicit val user = request.user
-      Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
-      datasets.get(id) match {
-        case Some(dataset) => {
+	  implicit request =>
+	      implicit val user = request.user
+	      Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
+	      datasets.get(id) match {
+	        case Some(dataset) => {
+	          val filesInDataset = dataset.files.map(f => files.get(f.id).get)
 
-          val filesInDataset = dataset.files.map(f => files.get(f.id).get)
-          
-          //Search whether dataset is currently being processed by extractor(s)
-          var isActivity = false
-          try {
-            for (f <- filesInDataset) {
-              extractions.findIfBeingProcessed(f.id) match {
-                case false =>
-                case true => isActivity = true; throw ActivityFound
-              }
-            }
-          } catch {
-            case ActivityFound =>
-          }
-
+	          //Search whether dataset is currently being processed by extractor(s)
+	          var isActivity = false
+	          try {
+	            for (f <- filesInDataset) {
+	              extractions.findIfBeingProcessed(f.id) match {
+	                case false =>
+	                case true => isActivity = true; throw ActivityFound
+	              }
+	            }
+	          } catch {
+	            case ActivityFound =>
+	          }
 
           val datasetWithFiles = dataset.copy(files = filesInDataset)
           decodeDatasetElements(datasetWithFiles)
@@ -190,6 +280,7 @@ class Datasets @Inject()(
               fileWithSections -> ff
             }
           }
+
           val metadata = datasets.getMetadata(id)
           Logger.debug("Metadata: " + metadata)
           for (md <- metadata) {
@@ -198,21 +289,21 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
-          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
-          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
+	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
+	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
+	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
 
-          var commentsByDataset = comments.findCommentsByDatasetId(id)
-          filesInDataset.map {
-            file =>
-              commentsByDataset ++= comments.findCommentsByFileId(file.id)
-              sections.findByFileId(UUID(file.id.toString)).map { section =>
-                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
-              }
-          }
-          commentsByDataset = commentsByDataset.sortBy(_.posted)
-
-          val isRDFExportEnabled = play.Play.application().configuration().getString("rdfexporter").equals("on")
+	          var commentsByDataset = comments.findCommentsByDatasetId(id)
+	          filesInDataset.map {
+	            file =>
+	              commentsByDataset ++= comments.findCommentsByFileId(file.id)
+	              sections.findByFileId(UUID(file.id.toString)).map { section =>
+	                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
+	              }
+	          }
+	          commentsByDataset = commentsByDataset.sortBy(_.posted)
+	          
+	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
         }
@@ -263,14 +354,13 @@ class Datasets @Inject()(
   /**
    * Upload file.
    */
-
-def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+	def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     
     user match {
       case Some(identity) => {
         datasetForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFiles.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
+          errors => BadRequest(views.html.newDataset(errors, for(file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename))),
 	      dataset => {
 	           request.body.file("file").map { f =>
 	             //Uploaded file selected
@@ -315,7 +405,11 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					             Logger.error(fileType.substring(7))
 					             InternalServerError(fileType.substring(7))
 					          }
-					          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+					          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped") ){
+					            if(fileType.equals("multi/files-ptm-zipped")){
+	            				    fileType = "multi/files-zipped";
+	            				  }
+					            
 					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 					              if(thirdSeparatorIndex >= 0){
 					                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -326,27 +420,24 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 					              }
 					        	  files.setContentType(f.id, fileType)
 					          }
-					        }
-					        else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
+					        } else if(nameOfFile.toLowerCase().endsWith(".mov")) {
+							  		fileType = "ambiguous/mov";
 					        }
 					        
 					        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 					        
-					    	// TODO RK need to replace unknown with the server name
-					    	val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-		//			        val key = "unknown." + "file."+ "application.x-ptm"
-					    	
-			                val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
-        
+					    		// TODO RK need to replace unknown with the server name
+					    		val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
+
+									val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
+
 					        // add file to dataset 
 					        val dt = dataset.copy(files = List(f), author=identity)					        
 					        // TODO create a service instead of calling salat directly
 				            datasets.update(dt)				            
-				            
+
 						        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dt.id, flags))}
 						        //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType)))}
-
 					        
 					        val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 					        
@@ -360,26 +451,28 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 										  
 										  //index the file
 										  current.plugin[ElasticsearchPlugin].foreach{
-								  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dt.id.toString()),("datasetName",dt.name), ("xmlmetadata", xmlToJSON)))
+								  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dt.id.toString()),("datasetName",dt.name), ("xmlmetadata", xmlToJSON)))
+
 								  		  }
 								  		  // index dataset
 								  		  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
 								  		  List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
-							  }
-							  else{
+							  } else {
 								  //index the file
-								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dt.id.toString),("datasetName",dt.name)))}
+
+								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dt.id.toString),("datasetName",dt.name)))}
+
 								  // index dataset
 								  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
 								  List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName","")))}
 							  }
-					    	// TODO RK need to replace unknown with the server name and dataset type		            
-		 			    	
-					        // index the file using Versus for content-based retrieval
-                            current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 					        
-                            val dtkey = "unknown." + "dataset."+ "unknown"
-					        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
+					      // index the file using Versus for content-based retrieval
+					      current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+
+					    	// TODO RK need to replace unknown with the server name and dataset type		            
+		 			    	val dtkey = "unknown." + "dataset."+ "unknown"
+									current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 		 			    	
 		 			    	//add file to RDF triple store if triple store is used
 		 			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -391,17 +484,14 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 						             case _ => {}
 					             }
 				             }
-		 			    	
-		 			    	  	
-		 			    	/*---- Insert DTS Request to the database   ----*/
 
+		 			    	// Insert DTS Request to the database
 		 			    	val clientIP=request.remoteAddress
 		 			    	val serverIP= request.host
 		 			    	dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-			    			/*--------------------------------------------*/
+		 			    	
 				            // redirect to dataset page
 				            Redirect(routes.Datasets.dataset(dt.id))
-		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
 					      
 					      case None => {
@@ -414,8 +504,6 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 				            current.plugin[AdminsNotifierPlugin].foreach{
                       _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
 				            Redirect(routes.Datasets.dataset(dt.id))
-
-		//		            Ok(views.html.dataset(dt, Previewers.searchFileSystem))
 					      }
 					    }   	                 
 	                 }
@@ -443,53 +531,52 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		          
 				  val dt = dataset.copy(files = List(theFileGet), author=identity, thumbnail_id=thisFileThumbnailString)
 				  datasets.update(dt)
-				  
+		  
 				  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-			      
-		          if(!theFileGet.xmlMetadata.isEmpty){
-		            val xmlToJSON = files.getXMLMetadataJSON(UUID(fileId))
-		            datasets.addXMLMetadata(dt.id, UUID(fileId), xmlToJSON)
-		            // index dataset
-		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
-			        List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
-		          }else{
-		            // index dataset
-		        	  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id, 
-			    	   List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName","")))}
-		          }
-		          
-		          //reindex file
-		          files.index(theFileGet.id)
-		          
-		          val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
-				  // TODO RK need to replace unknown with the server name and dataset type		            
-				  val dtkey = "unknown." + "dataset."+ "unknown"
+
+					if(!theFileGet.xmlMetadata.isEmpty){
+						val xmlToJSON = files.getXMLMetadataJSON(UUID(fileId))
+						datasets.addXMLMetadata(dt.id, UUID(fileId), xmlToJSON)
+						// index dataset
+						current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id,
+					List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
+					}else{
+						// index dataset
+						current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dt.id,
+					 List(("name",dt.name), ("description", dt.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",theFileGet.id.toString),("fileName",theFileGet.filename), ("collId",""),("collName","")))}
+					}
+
+					//reindex file
+					files.index(theFileGet.id)
+					val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
+					// TODO RK need to replace unknown with the server name and dataset type
+					val dtkey = "unknown." + "dataset."+ "unknown"
+
 				  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dt.id, dt.id, host, dtkey, Map.empty, "0", dt.id, ""))}
 
-		          //link file to dataset in RDF triple store if triple store is used
-		          if(theFileGet.filename.endsWith(".xml")){
-				             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-					             case "yes" => {
-					               sparql.linkFileToDataset(UUID(fileId), dt.id)
-					             }
-					             case _ => {}
-				             }
-				   }
-		          //***** Inserting DTS Requests   **//  
-		          Logger.debug("The file already exists")
-		          val clientIP=request.remoteAddress
-		          val domain=request.domain
-		          val keysHeader=request.headers.keys
-		          Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-		          val serverIP= request.host
-		          dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
-						            
-				//****************************//
+		      //link file to dataset in RDF triple store if triple store is used
+		      if(theFileGet.filename.endsWith(".xml")) {
+						play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+							case "yes" => {
+								sparql.linkFileToDataset(UUID(fileId), dt.id)
+							}
+							case _ => {}
+						}
+				  }
+		          
+					// Inserting DTS Requests
+					Logger.debug("The file already exists")
+					val clientIP=request.remoteAddress
+					val domain=request.domain
+					val keysHeader=request.headers.keys
+					Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
+					val serverIP= request.host
+					dtsrequests.insertRequest(serverIP,clientIP, theFileGet.filename, theFileGet.id, theFileGet.contentType, theFileGet.length,theFileGet.uploadDate)
 		          
 				  // redirect to dataset page
 				  Redirect(routes.Datasets.dataset(dt.id))
 				  current.plugin[AdminsNotifierPlugin].foreach{
-            _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
+					  _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dt.id.stringify, dt.name)}
 				  Redirect(routes.Datasets.dataset(dt.id)) 
 	            }	            
 	          }  
@@ -498,7 +585,6 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
 		 )
         }
         case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
-
       }
   }
 
@@ -514,3 +600,4 @@ def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermissi
       Ok(views.html.generalMetadataSearch())
   }
 }
+

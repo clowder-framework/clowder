@@ -1,6 +1,9 @@
+import com.typesafe.sbt.packager.Keys._
 import sbt._
 import Keys._
 import play.Project._
+import com.typesafe.sbt.SbtNativePackager._
+import NativePackagerKeys._
 
 object ApplicationBuild extends Build {
 
@@ -8,11 +11,11 @@ object ApplicationBuild extends Build {
   val appVersion = "1.0-SNAPSHOT"
 
   val appDependencies = Seq(
-    filters,
+  	filters,
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "com.rabbitmq" % "amqp-client" % "3.0.0",
-    "org.elasticsearch" % "elasticsearch" % "0.90.2",
+    "org.elasticsearch" % "elasticsearch" % "1.3.4",
     "com.spatial4j" % "spatial4j" % "0.3",
     "org.mongodb" %% "casbah" % "2.6.3",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
@@ -37,10 +40,10 @@ object ApplicationBuild extends Build {
     "gr.forth.ics" % "flexigraph" % "1.0",
     "com.google.inject" % "guice" % "3.0",
     "com.google.inject.extensions" % "guice-assistedinject" % "3.0",
-    "com.netflix.astyanax" % "astyanax-core" % "1.56.43",
-    "com.netflix.astyanax" % "astyanax-thrift" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12"),
-    "com.netflix.astyanax" % "astyanax-cassandra" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12"),
-    "com.netflix.astyanax" % "astyanax-recipes" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12"),
+    "com.netflix.astyanax" % "astyanax-core" % "1.56.43" exclude("org.jboss.netty", "netty"),
+    "com.netflix.astyanax" % "astyanax-thrift" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty"),
+    "com.netflix.astyanax" % "astyanax-cassandra" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty") ,
+    "com.netflix.astyanax" % "astyanax-recipes" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty"),
     "org.apache.httpcomponents" % "httpclient" % "4.2.3",
     "org.apache.httpcomponents" % "httpcore" % "4.2.3",
     "org.apache.httpcomponents" % "httpmime" % "4.2.3",
@@ -51,7 +54,8 @@ object ApplicationBuild extends Build {
     "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
     "org.springframework" % "spring" % "2.5.6",
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
-    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1"
+    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
+    "org.julienrf" %% "play-jsonp-filter" % "1.1"
   )
 
 
@@ -63,7 +67,9 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
+    offline := true,
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
+    javaOptions in Test += "-Dconfig.file=" + Option(System.getProperty("config.file")).getOrElse("conf/application.conf"),
     testOptions in Test := Nil, // overwrite spec2 config to use scalatest instead
     routesImport += "models._",
     routesImport += "Binders._",
@@ -72,9 +78,16 @@ object ApplicationBuild extends Build {
     resolvers += Resolver.url("sbt-plugin-snapshots", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
-    resolvers += "Forth" at "http://139.91.183.63/repository",
+    //resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",   
-    resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public"
-   
+    resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public",
+
+    // add custom folder to the classpath, use this to add/modify medici:
+    // custom/public/stylesheets/themes     - for custom themes
+    // custom/public/javascripts/previewers - for custom previewers
+    // custom/custom.conf                   - to customize application.conf
+    scriptClasspath += "../custom"
+
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
+
