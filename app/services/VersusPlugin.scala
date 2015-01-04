@@ -1,7 +1,7 @@
 package services
 
 import models.{SearchResultFile, SearchResultPreview, PreviewFilesSearchResult,  UUID}
-import play.api.{Plugin, Logger}
+import play.api.{Plugin, Logger, Application}
 import play.api.libs.json.{Json, JsValue}
 import play.api.libs.ws.{WS, Response}
 import play.api.Play.current
