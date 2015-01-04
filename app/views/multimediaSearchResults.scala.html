@@ -141,7 +141,10 @@
 	<br>@************ form to combine search results - if two or more indexes ************@
 
 	@if(resultsList.size >=2) {
-		 @form(action = routes.Search.findSimilarWeightedIndexes, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+		 @form(action = routes.Search.findSimilarWeightedIndexes, 'id->"form-weights", 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+		       
+		        <div id="validation"></div> 
+		       
 			    <fieldset>
 			      <legend>Combine search results</legend>			     
 			    	 <input type="hidden" name="FileID" value="@fileId" id="file_hidden">			    
@@ -163,7 +166,7 @@
 		//validate input on submit
 		//============================================================================
 		document.getElementById('form-weights').onsubmit =function(){
-			alert('top of vaLIDATION');
+			//alert('top of validation');
 			
 			var errors = "";
 			
@@ -171,7 +174,6 @@
 			document.getElementById("validation").innerHTML = "";
 	        
 			console.log("hidden file = " + document.getElementById('file_hidden'));
-			
 			
 			var w;
 			var sum = 0.0;
@@ -198,7 +200,6 @@
 				sum += floatVal;
 				
 			}//end of for((index, previewsAndFiles) <- resultsList) 
-			//alert ("sum = " + sum);
 			if (sum != 1.0) {
 				 errors += "<li>Sum of weights must be 1 </li>";
 			}
@@ -208,7 +209,7 @@
 		        document.getElementById("validation").style.backgroundColor = "#FFCCCC";
 		        return false;
 		    } else {
-		    	alert("input OK");
+		    	//alert("input OK");
 		    	return true;
 		    }
 			//return false;
