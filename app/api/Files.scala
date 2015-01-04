@@ -1009,6 +1009,44 @@ class Files @Inject()(
       }
   }
   
+  
+  /**
+   * Add thumbnail to query.
+   */
+  @ApiOperation(value = "Add thumbnail to file", notes = "Attaches an already-existing thumbnail to a file.", responseClass = "None", httpMethod = "POST")
+  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+    implicit request =>
+      Logger.debug("~~~~~attachTHumbnail for fileid = " + query_id + " and thumbnail_id = " + thumbnail_id )
+      queries.get(query_id) match {
+        case Some(file) => {
+          Logger.debug("file exists")
+          thumbnails.get(thumbnail_id) match {
+            case Some(thumbnail) => {
+              Logger.debug("thumbnal exists")
+              queries.updateThumbnail(query_id, thumbnail_id)
+             // val datasetList = datasets.findByFileId(file.id)
+              //for (dataset <- datasetList) {
+                //if (dataset.thumbnail_id.isEmpty) {
+                  //datasets.updateThumbnail(dataset.id, thumbnail_id)                 
+                //}
+              //}
+
+              Ok(toJson(Map("status" -> "success")))
+            }
+            case None => {
+                            Logger.debug("Thumbnail not found")
+
+              BadRequest(toJson("Thumbnail not found"))
+            }
+          }
+        }
+        case None => {
+          Logger.debug("File not found")
+          BadRequest(toJson("File not found " + query_id))
+        }
+      }
+  }
+  
 
   /**
    * Find geometry file for given 3D file and geometry filename.
@@ -1633,11 +1671,15 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-          Logger.debug("Deleting file: " + file.filename)
-          files.removeFile(id)
+          
+           //this stmt has to be before files.removeFile
+          Logger.debug("Deleting file from indexes" + file.filename)
           current.plugin[VersusPlugin].foreach {        
             _.removeFromIndexes(id)        
           }
+          Logger.debug("Deleting file: " + file.filename)
+          files.removeFile(id)
+          
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "file", id.stringify)
           }
