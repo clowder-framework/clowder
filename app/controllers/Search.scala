@@ -2,25 +2,18 @@ package controllers
 
 
 import play.Logger
-import scala.collection.JavaConversions.mapAsScalaMap
-//import services.Services
-
 import services._
-import play.Logger
 import scala.collection.JavaConversions.mapAsScalaMap
 import edu.illinois.ncsa.isda.lsva.ImageMeasures
 import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{HashMap, ListBuffer}
 import util.DistancePriorityQueue
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
-import scala.collection.mutable.ArrayBuffer
-import api.Permission
+import api.{Permission, WithPermission}
 import javax.inject.Inject
 import scala.concurrent.Future
 import scala.Some
-import api.WithPermission
 import util.SearchResult
 import models.UUID
 
@@ -280,13 +273,9 @@ class Search @Inject() (
    * Finds similar objects(images, pdfs, etc) in Multiple index for a temporary file 
    * Input file is NOT in db, just uploaded by user.
    **/
-  //  def findSimilar(fileID:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
-
- // def findSimilarToNewFile(fileID:UUID, dataParts:Map[String, Seq[String]])=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
-  def findSimilarToQueryFile(fileID:UUID, typeToSearch:String, sectionsSelected:List[String])=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
+   def findSimilarToQueryFile(fileID:UUID, typeToSearch:String, sectionsSelected:List[String])=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
   
-  Logger.debug("====22222==== Search.findSimilarToNewFile typeToSearch = " + typeToSearch)
-  Logger.debug("====22222==== Search.findSimilarToNewFile sectionsSelected = " + sectionsSelected)
+   	Logger.debug("Search.findSimilarToQueryFile typeToSearch = " + typeToSearch + " sectionsSelected = " + sectionsSelected)
     Async{ 
     
    		//query file is a new/temp file, it will be stored in MultimediaQueryService
@@ -341,16 +330,14 @@ class Search @Inject() (
   * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is already in db)
   *  
   **/
-    //def findSimilarFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
-
-  def findSimilarToExistingFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
+   def findSimilarToExistingFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
   	//
     //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
   	//also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
   	//
     Logger.debug("Search.findSimilarToExistingFile file id = " + inputFileId)
     
-  Async{       	   
+    Async{       	   
   		//file will be stored in FileService
    	   	//var contentTypeStr="";
    	   	files.getBytes(inputFileId) match {
@@ -467,10 +454,8 @@ class Search @Inject() (
     						SecuredAction(parse.multipartFormData, 
     								authorization = WithPermission(Permission.SearchDatasets)){
       implicit request => 	
-       Logger.debug("top of findSimilarWeightedIndexes")
      
        Async {     
-        Logger.debug("Search.findSimilarWeightedIndexes request data parts = " + request.body.dataParts.toString  )  
         //using a helper method to validate input and get weights
          val (inputErrors, errorMessage, weights) = validateInput(request.body.dataParts)
                          
@@ -497,21 +482,17 @@ class Search @Inject() (
    						
    						for{
    						  maps<- futureListResults
-   						}yield{   						  
-   							Logger.debug("list of maps = " + maps + "\nlength of maps = " + maps.length)  							
-   							
+   						}yield{   						  						
    							//Calling helper method to merge all the maps. The magic happens here.
    							var mergedMaps = mergeMaps(maps, weights)   										
    							
    							val mergedResult = for {
    								(fileURL, prox)<-mergedMaps
    							  } yield{   							    	
-   								Logger.debug("Search.findSimilarWeightedIndexes: fileURL = " + fileURL + ", prox = " + prox)   	   								
    								val begin = fileURL.lastIndexOf("/");                       
    								val end = fileURL.lastIndexOf("?")
    								val result_id_str = fileURL.substring(begin + 1, end);
    								val result_id = UUID(result_id_str);
-   								Logger.debug("result_id = " + result_id)   
    								var oneFileName=""
    								var oneThumbnlId=""
    								files.get(result_id) match {
