@@ -222,7 +222,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              }
 	          }
 	        
-	        Logger.debug("contr 200 Uploading file " + nameOfFile)
+	        Logger.debug("Uploading file " + nameOfFile)
 
 	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
@@ -620,7 +620,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              }
       	}
         
-        Logger.debug("contr 528 Uploading file " + nameOfFile)
+        Logger.debug("Uploading file " + nameOfFile)
         
         // store file       
         // TODO is this still used? if so replace null with user
@@ -726,36 +726,26 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     //dataParts are from the form in multimediasearch.scala.html
     //pass them on to Search.findSimilarToNewFile - will be processed there
     //
-    Logger.debug("Files.uploadSelectQuery request.body.dataParts = " + request.body)
-
     var dataParts = request.body.dataParts
     
    // Logger.debug("Files.uploadSelectQuery request.body.dataParts index type = " + request.body.dataParts("indexType"))
     //indexType in dataParts is a sequence of just one element
     //validateInput(request.body.dataParts)
     val typeToSearch = dataParts("indexType").head
-    Logger.debug("Files.uploadSelectQuery typeToSearch = " + typeToSearch)
     
     var sections:List[String] = List.empty[String]
     
     if  ( typeToSearch.equals("sectionsSome")  &&  dataParts.contains("sections") )
     {
-        Logger.debug("=== Files.uploadSelectQuery type is  some sections ")
         sections = dataParts("sections").toList
     }
                
     Logger.debug(" Files.uploadSelectQuery  sections = " + sections)
-    /*var sections:List[String] = List.empty[String]
-    if (typeToSearch.equals("sectionsSome")){     
-    	sections = dataParts("sections").toList
-    	Logger.debug("Files.uploadSelectQuery sections = " + sections)      
-    }*/
+   
     //sectionName in dataParts is a sequence of several elements
     //val sectionName = request.body.dataParts("sectionName")
     //val text = request.body.dataParts("MyText")
-    //Logger.debug("Files.uploadSelectQuery section name = " + sectionName)
-     //Logger.debug("Files.uploadSelectQuery text = " + text)
-   Logger.debug("====1111==== Files.uploadSelectQuery request = " + request.body)
+    
     //============== END OF: testing searching within just images or just sections or both=====
     
     request.body.file("File").map { f =>
@@ -858,12 +848,9 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	             }
 	            }
             
-            // redirect to file page]
-            Logger.debug("Query file id= "+id+ " path= "+path);
-             //Redirect(routes.Search.findSimilarToNewFile(f.id, request.body.dataParts))
+            // redirect to file page
              Redirect(routes.Search.findSimilarToQueryFile(f.id, typeToSearch, sections))
 
-             //Redirect(routes.Search.findSimilarToNewFile(path.toString())) 
          }
           case None => {
             Logger.error("Could not retrieve file that was just saved.")
@@ -890,7 +877,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	              }
       	}
         
-        Logger.debug("contr 789 Uploading file " + nameOfFile)
+        Logger.debug("Uploading file " + nameOfFile)
         
         // store file
         Logger.info("uploadDragDrop")
@@ -998,7 +985,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		              }
 			      }	
 			    
-				  Logger.debug("contr 891 Uploading file " + nameOfFile)
+				  Logger.debug("Uploading file " + nameOfFile)
 				  val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 				  // store file
 				  val file = files.save(new FileInputStream(f.ref.file), nameOfFile,f.contentType, identity, showPreviews)
