@@ -1,23 +1,14 @@
 package controllers
 
-import api.WithPermission
-import api.Permission
-
+import api.{WithPermission, Permission}
 import models.{UUID, VersusIndexTypeName}
 import services.{SectionIndexInfoService, AppConfiguration, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
-
-import play.api.libs.json.Json
 import play.api.libs.json.{Json, JsValue}
-import play.api.libs.json.Json._
-import play.api.libs.json._
-
 import play.api.Logger
-
-import scala.concurrent._
+import scala.concurrent.Future
 import javax.inject.{Inject, Singleton}
-
 import play.api.data.Form
 import play.api.data.Forms._
 
@@ -27,6 +18,7 @@ import play.api.data.Forms._
  * @author Luigi Marini
  *
  */
+
 @Singleton
 class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
 
@@ -50,18 +42,12 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
     Ok("""{"message":"test"}""").as(JSON)
   }
   
-  /*def secureTest = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { 
-    implicit request =>
-       Async {
-         Future(Ok("done"))
-       }
-       }*/
-  
   def secureTest = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { request =>
     Ok("""{"message":"secure test"}""").as(JSON)
   }
-
-  //get the available Adapters from Versus
+/**
+  *get the available Adapters from Versus
+  */
   def getAdapters() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
 
@@ -75,7 +61,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
             for {
               adapterList <- adapterListResponse
             } yield {
-              Logger.debug("Admin getAdapters adapterList.json = " + adapterList.json)
               Ok(adapterList.json)
             }
 
@@ -93,12 +78,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
   def getSections() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request=>
         val types = sectionIndexInfo.getDistinctTypes
-        Logger.debug("Admin getSections distinct index types are " + types)     
-       
-		val json = Json.toJson(types)		
-		Logger.debug("Admin getSections json = " + json)
-        Logger.debug("Admin getSections Json.stringify(json) = " + Json.stringify(json))
-        
+		val json = Json.toJson(types)				        
         //both seem to work
         //Ok(Json.stringify(json))
         Ok(json)
@@ -261,7 +241,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
                 		 
                 		    // Handle a deserialized array of List[VersusIndexTypeName]
                 		    indexes => {
-                		    	Logger.debug("Admin.getIndexes indexes received = " + indexes)   								  
                 		    	val indexesWithNameType = indexes.map{
                 		    		index=>
                 		    		  	//check in mongo for name/type of each index
