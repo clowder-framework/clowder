@@ -1,7 +1,4 @@
 package services.mongodb
-///
-import collection.JavaConverters._
-///
 
 import services.{TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
@@ -58,20 +55,6 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     PreviewDAO.find(MongoDBObject("collection_id" -> new ObjectId(id.stringify))).toList
   }
 
-  /**
-   * Get metadata from the mongo db as a map. 
-   * 
-   */
-   def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any] = {
-    PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
-      case None => new scala.collection.immutable.HashMap[String,Any]
-      case Some(x) => {
-        val returnedMetadata = x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
-        returnedMetadata
-      }
-    }
-  }     
-  
   /**
    * Save blob.
    */
@@ -271,7 +254,21 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     }
   }
   
-  def getExtractorId(id: UUID):Option[String] = {     
+  /**
+   * Get metadata from the mongo db as a map. 
+   * 
+   */
+   def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any] = {
+    PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => new scala.collection.immutable.HashMap[String,Any]
+      case Some(x) => {
+        val returnedMetadata = x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
+        returnedMetadata
+      }
+    }
+  }
+  
+    def getExtractorId(id: UUID):Option[String] = {     
       var extractor_id = getMetadata(id)("extractor_id") match{
 	  	case ex_id=> {
 	  		Logger.debug("MongoDBPreviewService: metadata for preview " + id + " contains extractor id = " + ex_id)
@@ -284,8 +281,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
       }
       extractor_id
    }
-
-  
+    
 }
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
