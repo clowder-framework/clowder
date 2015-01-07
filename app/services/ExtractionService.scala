@@ -22,5 +22,6 @@ trait ExtractionService {
   def getExtractionTime(fileId:UUID):List[Date]
   
   def save(webpr: WebPageResource): UUID
+  
   def getWebPageResource(id: UUID): Map[String,String]
 }

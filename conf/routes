@@ -219,7 +219,7 @@ POST    /api/extractions/upload_file                            @api.Extractions
 GET     /api/extractions/:id/status                             @api.Extractions.checkExtractorsStatus(id:UUID)
 POST    /api/extractions/:id/submit                             @api.Extractions.submitExtraction(id:UUID)
 GET     /api/extractions/:id/metadata                           @api.Extractions.fetch(id:UUID)
-GET     /api/extractions/:id/statuses                              @api.Extractions.checkExtractionsStatuses(id:UUID)
+GET     /api/extractions/:id/statuses                           @api.Extractions.checkExtractionsStatuses(id:UUID)
 
 # End of change segment
 

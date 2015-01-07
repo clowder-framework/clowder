@@ -61,6 +61,14 @@ class MongoDBExtractionService extends ExtractionService {
     webpr.id
   }
   
+  def getWebPageResource(id: UUID): Map[String,String]={
+    val wpr=WebPageResource.findOne(MongoDBObject("_id"->new ObjectId(id.stringify)))
+    var wprlist= wpr.map{e=>Logger.debug("resource id:" + id.toString);
+                e.URLs}.getOrElse(Map.empty)
+       wprlist         
+                
+  }
+  
 }
 
 object Extraction extends ModelCompanion[Extraction, ObjectId] {

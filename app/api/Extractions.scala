@@ -284,7 +284,8 @@ class Extractions @Inject() (
          var urlsplit = fileurl.split("/")
          var filename = urlsplit(urlsplit.length - 1) 
          var contentType = MimeTypes.forFileName(filename.toLowerCase()).getOrElse(ContentTypes.BINARY)
-         val futureResponse = WS.url(fileurl).withTimeout(3000).get()
+         val futureResponse = WS.url(fileurl).get()
+         //.withTimeout(3000)
          
          var fid=for{
              response<-futureResponse
@@ -292,9 +293,27 @@ class Extractions @Inject() (
               if(response.status==200){
                var inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
                var file=files.save(inputStream,filename,Some(contentType),user,null)
-               file.map{f=> (fileurl,f.id.toString)}.get
+                file match {
+                case Some(f) => {
+                  var fileType = f.contentType
+				  val id = f.id
+                  fileType = f.contentType
+                  val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+                  val host = Utils.baseUrl(request)
+                  current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
+                  /*--- Insert DTS Requests  ---*/
+                  val clientIP = request.remoteAddress
+                  val serverIP = request.host
+                  dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+                 }
+                case None => {
+                  Logger.error("Could not retrieve file that was just saved.")
+                  //InternalServerError("Error uploading file")
+                }
+               }             
+               file.map{f=> (f.id.toString, fileurl)}.get
               }else{
-                (fileurl,"")
+                ("failed-"+UUID.generate.toString,fileurl)
               }
              }
             fid 
@@ -303,7 +322,10 @@ class Extractions @Inject() (
        for {x<-scala.concurrent.Future.sequence(listIds)}yield{
          val uuid=UUID.generate
            extractions.save(new WebPageResource(uuid,pageurl,x.toMap))
-           Ok(toJson(Map("id"->uuid.toString)))
+           var uuidMap=Map("id"->uuid.toString)
+           val y=uuidMap++x.toMap
+          // Ok(toJson(Map("id"->uuid.toString)))
+          Ok(toJson(y))
          }
        }
       case None =>Future(BadRequest(toJson("Not authorized.")))
@@ -465,18 +487,20 @@ class Extractions @Inject() (
   @ApiOperation(value = "Checks for the status of all files with id",
     notes = " A list of status of all extractors responsible for extractions on the file and the final status of extraction job",
     responseClass = "None", httpMethod = "GET")
-  def checkExtractionsStatuses(id:models.UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
-  Async{
+  def checkExtractionsStatuses(id:models.UUID) = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+ Async{
     request.user match {
       case Some(user) => {
         val configuration = play.api.Play.configuration
         current.plugin[RabbitmqPlugin] match {
         case Some(plugin) => {
+          Logger.debug("Inside Checkstatuses-----------")
          var mapIdUrl=extractions.getWebPageResource(id)
          var listStatus=  for{
-                         (url,fid)<-mapIdUrl
-                         }yield{
-                          var statuses= files.get(UUID(fid)) match {
+                            (fid,url)<-mapIdUrl
+                          }yield{
+                           Logger.debug("---fid---"+ fid)
+                           var statuses= files.get(UUID(fid)) match {
                               case Some(file) => {
                                //Get the list of extractors processing the file 
                                val l = extractions.getExtractorList(file.id) 
@@ -487,17 +511,17 @@ class Extractions @Inject() (
                             			   rkeyResponse <- blist
                             		   } yield {
                             			   val status = computeStatus(rkeyResponse, file, l)
-                            					   //l += "Status" -> status
                             					   Logger.debug(" CheckStatus: l.toString : " + l.toString)
-                            					  // toJson(l.toMap)
-                            					   Map(id.toString->status)
-                            					   //Ok(toJson(l.toMap))
+                            					 // Map(file.id.toString->status) 
+                            					   Map("id"->file.id.toString, "status"->status) 
+                            					   
                             		   } //end of yield
                                  fstatus
                               } //end of some file
                               case None => {
                             	  //Future(Ok("no file"))
-                            	  Future((Map(id.toString->"No File Id found")))
+                            	 // Future((Map(id.toString->"No File Id found")))
+                                 Future((Map("id"->id.toString,"status"->"No File Id found")))
                               }
             
                           } //end of match file
@@ -506,24 +530,27 @@ class Extractions @Inject() (
             }//end of outer yield
             for{ls<-scala.concurrent.Future.sequence(listStatus)
                 }yield{
+                  Logger.debug("list status"+ ls)
+                  var u=ls.toList
                 Ok(toJson(ls))
               }           
         
         }//rabbitmq plugin
 
         case None => {
-          Future(Ok("No Rabbitmq Service"))
+          Future(Ok(toJson(Map("No Rabbitmq Service"->""))))
         }
       }
         
         
         
-        Future(Ok("Success"))
-        
+      //  Future(Ok(toJson(Map("Success"->""))))
+        //  Ok(toJson(Map("Success"->"")))        
       } //end of match user
-      case None => Future(BadRequest(toJson("Not authorized.")))
-    }
-  } 
+      case None => Future(BadRequest(toJson(Map("request"->"Not authorized."))))
+     //  case None => BadRequest(toJson(Map("request"->"Not authorized.")))
+    }//user
+  }//Async 
   }
   
   
