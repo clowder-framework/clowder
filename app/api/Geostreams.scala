@@ -17,6 +17,7 @@ import play.api.Play.current
 import java.text.SimpleDateFormat
 import play.api.Logger
 import java.sql.Timestamp
+import play.filters.gzip.Gzip
 import services.PostgresPlugin
 import scala.collection.mutable.ListBuffer
 import play.api.libs.iteratee.{Enumeratee, Enumerator}
@@ -513,7 +514,46 @@ object Geostreams extends ApiController {
           val month = counter.getMonthOfYear
           val date = new DateTime(year,month,15,12,0,0,0)
           result.put(label, Json.obj("year" -> year, "month" -> month, "date" -> iso.print(date)))
-          counter = counter.plusYears(1)
+          counter = counter.plusMonths(1)
+        }
+      }
+      case "day" => {
+        var counter = startTime
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val label = DateTimeFormat.forPattern("YYYY-MM-dd").print(counter)
+          val year = counter.getYear
+          val month = counter.getMonthOfYear
+          val day = counter.getDayOfMonth
+          val date = new DateTime(year,month,day,12,0,0,0)
+          result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "date" -> iso.print(date)))
+          counter = counter.plusDays(1)
+        }
+      }
+      case "hour" => {
+        var counter = startTime
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val label = DateTimeFormat.forPattern("YYYY-MM-dd HH").print(counter)
+          val year = counter.getYear
+          val month = counter.getMonthOfYear
+          val day = counter.getDayOfMonth
+          val hour = counter.getHourOfDay
+          val date = new DateTime(year,month,day,hour,30,0,0)
+          result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "hour" -> hour, "date" -> iso.print(date)))
+          counter = counter.plusHours(1)
+        }
+      }
+      case "minute" => {
+        var counter = startTime
+        while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val label = DateTimeFormat.forPattern("YYYY-MM-dd HH:mm").print(counter)
+          val year = counter.getYear
+          val month = counter.getMonthOfYear
+          val day = counter.getDayOfMonth
+          val hour = counter.getHourOfDay
+          val minute = counter.getMinuteOfHour
+          val date = new DateTime(year,month,day,hour,minute,30,0)
+          result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "hour" -> hour, "minute" -> minute, "date" -> iso.print(date)))
+          counter = counter.plusMinutes(1)
         }
       }
       case _ => // do nothing
@@ -539,8 +579,9 @@ object Geostreams extends ApiController {
           cacheFetch(description) match {
             case Some(data) => {
               if (format == "csv") {
-                Ok.chunked(data)
-                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                Ok.chunked(data &> Gzip.gzip())
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"),
+                               ("Content-Encoding", "gzip"))
                   .as(withCharset("text/csv"))
               } else {
                 jsonp(data.through(Enumeratee.map(new String(_))), request)
@@ -559,8 +600,10 @@ object Geostreams extends ApiController {
               val data = calculate(operator, filtered, since, until, semi.isDefined)
 
               if (format == "csv") {
-                Ok.chunked(cacheWrite(description, jsonToCSV(data)))
-                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"))
+                val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
+                Ok.chunked(cacheWrite(description, jsonToCSV(data)) &> toByteArray  &> Gzip.gzip())
+                  .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"),
+                               ("Content-Encoding", "gzip"))
                   .as(withCharset("text/csv"))
               } else {
                 jsonp(cacheWrite(description, formatResult(data, format)), request)
@@ -675,10 +718,17 @@ object Geostreams extends ApiController {
         if (nextObject.isDefined) {
           true
         } else {
-          nextObject = operator.toLowerCase match {
-            case "averages" => computeAverage(peekIter)
-            case "trends" => computeTrends(peekIter, trendStart, trendEnd, semiGroup)
-            case _ => None
+          try {
+            nextObject = operator.toLowerCase match {
+              case "averages" => computeAverage(peekIter)
+              case "trends" => computeTrends(peekIter, trendStart, trendEnd, semiGroup)
+              case _ => None
+            }
+          } catch {
+            case t:Throwable => {
+               nextObject = None
+              Logger.error("Error computing next value.", t)
+            }
           }
           nextObject.isDefined
         }
@@ -988,8 +1038,12 @@ object Geostreams extends ApiController {
             jsProperties(f._1 + "_interval_average") =  Json.toJson(avgTrend)
             // TODO fix this for better grouping see MMDB-1678
             if (semiGroup) {
-              val avgLast = propertiesLast(f._1).right.get / counterLast(f._1)
-              jsProperties(f._1 + "_last_average") = Json.toJson(avgLast)
+              if (propertiesLast(f._1).isRight) {
+                val avgLast = propertiesLast(f._1).right.get / counterLast(f._1)
+                jsProperties(f._1 + "_last_average") = Json.toJson(avgLast)
+              } else {
+                Logger.debug("Error getting last value, non number as last value.")
+              }
             }
             jsProperties(f._1 + "_percentage_change") = Json.toJson(((avgTrend - avgAll) / avgAll) * 100.0)
             null
@@ -1210,9 +1264,14 @@ object Geostreams extends ApiController {
    * @param request request made to server
    */
   def jsonp(data:Enumerator[String], request: Request[Any]) = {
+    val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
     request.getQueryString("callback") match {
-      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");")).as(JAVASCRIPT)
-      case None => Ok.chunked(data).as(JSON)
+      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");") &> toByteArray &> Gzip.gzip())
+        .withHeaders(("Content-Encoding", "gzip"))
+        .as(JAVASCRIPT)
+      case None => Ok.chunked(data &> toByteArray &> Gzip.gzip())
+        .withHeaders(("Content-Encoding", "gzip"))
+        .as(JSON)
     }
   }
 
@@ -1304,10 +1363,10 @@ object Geostreams extends ApiController {
         if (file.exists) {
           val data = Json.parse(Source.fromFile(new File(x, filename + ".json")).mkString)
           Parsers.parseString(data.\("format")) match {
-            case "csv" => Ok.chunked(Enumerator.fromFile(file)).as(withCharset("text/csv"))
-            case "json" => Ok.chunked(Enumerator.fromFile(file)).as(JSON)
-            case "geojson" => Ok.chunked(Enumerator.fromFile(file)).as(JSON)
-            case _ => Ok.chunked(Enumerator.fromFile(file)).as(TEXT)
+            case "csv" => Ok.chunked(Enumerator.fromFile(file) &> Gzip.gzip()).as(withCharset("text/csv"))
+            case "json" => Ok.chunked(Enumerator.fromFile(file) &> Gzip.gzip()).as(JSON)
+            case "geojson" => Ok.chunked(Enumerator.fromFile(file) &> Gzip.gzip()).as(JSON)
+            case _ => Ok.chunked(Enumerator.fromFile(file) &> Gzip.gzip()).as(TEXT)
           }
         } else {
           NotFound("File not found in cache")

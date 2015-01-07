@@ -43,12 +43,34 @@
 
 			foreach($lines as $line) {
 				if($line[0] != '#') {
-					$parts = explode("\t", $line);
+					$parts = explode(" ", $line, 2);
 					$input_filename = $parts[0];
 					$outputs = explode(',', $parts[1]);
 
 					foreach($outputs as $output) {
 						$count++;
+						$POSITIVE = true;
+						$output = trim($output);
+
+						//Check for negative tests
+						if($output[0] == '!') {
+							$POSITIVE = false;
+							$output = substr($output, 1);
+						}	
+
+						//Check for input files
+						if($output[0] == '"') {
+							$output = substr($output, 1, -1);
+						}else{
+							$output = trim(file_get_contents($output));
+						}
+						
+						//Add the the '!' back for negative tests
+						if(!$POSITIVE) {
+							$output = '!' . $output;
+						}
+
+						//List test
 						$json[$count-1]["file"] = $input_filename;
 						$json[$count-1]["output"] = $output;
 						
@@ -102,7 +124,8 @@
 
 				var dts = document.getElementById('dts').value;
 				var url = 'test.php?dts=' + encodeURIComponent(dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
-	
+				//console.log(url);
+
 				$.get(url, function(success) {
 					//Check result
 					if(success > 0) {

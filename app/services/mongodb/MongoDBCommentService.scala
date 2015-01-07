@@ -87,3 +87,4 @@ object Comment extends ModelCompanion[Comment, ObjectId] {
     case Some(x) => new SalatDAO[Comment, ObjectId](collection = x.collection("comments")) {}
   }
 }
+

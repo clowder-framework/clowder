@@ -47,7 +47,9 @@
 				</div>
 			</div>
 			<script>
-				$("#filediv_@file.id.stringify br").last().remove();
+
+				$("#filediv_@file.id.toString br").last().remove();
+
 			</script>
 			}
 			</div>
@@ -70,7 +72,7 @@
 				<dl class="dl-horizontal">
 					<dt> Name:</dt>
 					<dd><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></dd>
-					<dt>  Description:</dt>
+					<dt>  Descriptions:</dt>
 					<dd> @dataset.description</dd>
 					<dt>Collection name(s):</dt>
 					<dd>
@@ -82,7 +84,7 @@
 			</div>
 		</div>
 		<script>
-				$("#datasetdiv_@dataset.id.stringify br").last().remove();
+				$("#datasetdiv_@dataset.id.toString br").last().remove();
 		</script>
 		}
 		</div>

@@ -10,7 +10,7 @@
   		</a>
 		<div class="media-body">
 			<div class="comment-header">
-				<div class="comment-author"><a href="#">@c.author.fullName</a></div>
+				<div class="comment-author"><a href="@routes.Profile.viewProfile(c.author.email)">@c.author.fullName</a></div>
 			<div class="comment-date">@c.posted.format("MMM dd, yyyy HH:mm:ss")</div>
 			<div style="clear: both;"></div>
 			</div>
@@ -61,3 +61,4 @@
     });
   </script>
 }
+

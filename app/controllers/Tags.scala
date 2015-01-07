@@ -1,11 +1,19 @@
 package controllers
 
-import api.Permission
+import models.Dataset
+import models.Tag
+
 import api.WithPermission
+import api.Permission
+import scala.collection.mutable.ListBuffer
+import play.api.Logger
+import scala.collection.mutable.Map
+import services.{SectionService, FileService, DatasetService}
 import javax.inject.Inject
 import play.api.Logger
 import services.{CollectionService, DatasetService, FileService, SectionService}
 import play.api.Play.current
+
 
 
 /**
@@ -36,13 +44,17 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
 
     val tags = computeTagWeights
 
-    val minFont = current.configuration.getDouble("tag.list.minFont").getOrElse(1.0)
-    val maxFont = current.configuration.getDouble("tag.list.maxFont").getOrElse(5.0)
-    val maxWeight =  tags.maxBy(_._2)._2
-    val minWeight =  tags.minBy(_._2)._2
-    val divide = (maxFont - minFont) / (maxWeight - minWeight)
+    if (tags.isEmpty) {
+      Ok(views.html.tagList(List.empty[(String, Double)]))
+    } else {
+      val minFont = current.configuration.getDouble("tag.list.minFont").getOrElse(1.0)
+      val maxFont = current.configuration.getDouble("tag.list.maxFont").getOrElse(5.0)
+      val maxWeight =  tags.maxBy(_._2)._2
+      val minWeight =  tags.minBy(_._2)._2
+      val divide = (maxFont - minFont) / (maxWeight - minWeight)
 
-    Ok(views.html.tagList(tags.map{case (k, v) => (k, minFont + (v - minWeight) * divide) }))
+      Ok(views.html.tagList(tags.map{case (k, v) => (k, minFont + (v - minWeight) * divide) }))
+    }
   }
 
   def computeTagWeights() = {
