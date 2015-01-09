@@ -19,7 +19,7 @@ import scala.collection.JavaConversions._
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.WriteConcern
 import play.api.Logger
-import com.mongodb.casbah.gridfs.GridFS
+import com.mongodb.casbah.gridfs.{GridFSInputFile, GridFS}
 import scala.Some
 import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
@@ -50,7 +50,8 @@ class MongoDBFileService @Inject() (
   comments: CommentService,
   previews: PreviewService,
   threeD: ThreeDService,
-  sparql: RdfSPARQLService) extends FileService {
+  sparql: RdfSPARQLService,
+  storage: ByteStorageService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -118,59 +119,53 @@ class MongoDBFileService @Inject() (
   }
 
   /**
-   * Store file metadata.
+   * Save blob.
    */
-  def storeFileMD(id: UUID, filename: String, contentType: Option[String], author: Identity): Option[File] = {
-    val files = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => x.gridFS("uploads")
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
+    // use a special case if the storage is in mongo as well
+    val mongoFile = if (storage.isInstanceOf[MongoDBByteStorage]) {
+      // leverage of the fact that we can use the special save method
+      storage.asInstanceOf[MongoDBByteStorage].save(inputStream, "uploads") match {
+        case Some(x) => {
+          x.put("path", x.getAs[String]("_id").getOrElse(""))
+          x
+        }
+        case None => return None
+      }
+    } else {
+      // create the element to hold the metadata
+      val files = current.plugin[MongoSalatPlugin] match {
+        case None    => {
+          Logger.error("No MongoSalatPlugin")
+          return None
+        }
+        case Some(x) =>  x.gridFS("uploads")
+      }
+
+      // required to avoid race condition on save
+      files.db.setWriteConcern(WriteConcern.Safe)
+
+      // write empty array
+      val x = files.createFile(Array[Byte]())
+      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
+
+      // save the bytes, metadata goes to mongo
+      x.put("path", storage.save(inputStream, "uploads", id))
+      x
     }
 
-    // required to avoid race condition on save
-    files.db.setWriteConcern(WriteConcern.Safe)
-
-    val mongoFile = files.createFile(Array[Byte]())
     mongoFile.filename = filename
     var ct = contentType.getOrElse(ContentTypes.BINARY)
     if (ct == ContentTypes.BINARY) {
       ct = MimeTypes.forFileName(filename).getOrElse(ContentTypes.BINARY)
     }
     mongoFile.contentType = ct
-    mongoFile.put("path", id.stringify)
-    mongoFile.put("author", SocialUserDAO.toDBObject(author))
-    mongoFile.save
-    val oid = mongoFile.getAs[ObjectId]("_id").get
-
-    Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
-  }
-
-  /**
-   * Save blob.
-   */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
-    val files = current.plugin[MongoSalatPlugin] match {
-      case None    => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) =>  x.gridFS("uploads")
-    }
-
-    // required to avoid race condition on save
-    files.db.setWriteConcern(WriteConcern.Safe)
-
-    val mongoFile = files.createFile(inputStream)
-    Logger.debug("Uploading file " + filename)
-    mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
-    mongoFile.contentType = ct
     mongoFile.put("showPreviews", showPreviews)
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
-    val oid = mongoFile.getAs[ObjectId]("_id").get
 
-    //No LicenseData needed here, as on creation, default arg handles it. MMF - 5/2014
-    Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
+    val id = UUID(mongoFile.getAs[ObjectId]("_id").get.toString)
+    Some(File(id, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
   }
 
   /**
@@ -179,10 +174,25 @@ class MongoDBFileService @Inject() (
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => Some(file.inputStream,
-        file.getAs[String]("filename").getOrElse("unknown-name"),
-        file.getAs[String]("contentType").getOrElse("unknown"),
-        file.getAs[Long]("length").getOrElse(0))
+      case Some(file) => {
+        val inputStream = if (storage.isInstanceOf[MongoDBByteStorage]) {
+          file.inputStream
+        } else {
+          file.getAs[String]("path") match {
+            case Some(path) => {
+              storage.load(path, "uploads") match {
+                case Some(is) => is
+                case None => return None
+              }
+            }
+            case None => return None
+          }
+        }
+        Some((inputStream,
+            file.getAs[String]("filename").getOrElse("unknown-name"),
+            file.getAs[String]("contentType").getOrElse("unknown"),
+            file.getAs[Long]("length").getOrElse(0l)))
+      }
       case None => None
     }
   }
@@ -637,7 +647,7 @@ class MongoDBFileService @Inject() (
           if(!file.thumbnail_id.isEmpty)
             Thumbnail.removeById(new ObjectId(file.thumbnail_id.get))
         }
-        FileDAO.removeById(new ObjectId(file.id.stringify))
+        storage.delete(file.id.stringify, "uploads")
       }
       case None => Logger.debug("File not found")
     }
