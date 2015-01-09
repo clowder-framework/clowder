@@ -17,9 +17,9 @@ class DiskByteStorageService extends ByteStorageService {
    * Save the bytes to disk
    */
   def save(inputStream: InputStream, prefix: String, id: UUID): Option[String] = {
-    Play.current.configuration.getString("medici2.files.path") match {
+    Play.current.configuration.getString("medici2.diskStorage.path") match {
       case Some(root) => {
-        var depth = Play.current.configuration.getInt("medici2.files.depth").getOrElse(3)
+        var depth = Play.current.configuration.getInt("medici2.diskStorage.depth").getOrElse(3)
 
         var relativePath = ""
         var idstr = id.stringify
@@ -67,7 +67,7 @@ class DiskByteStorageService extends ByteStorageService {
    * Get the bytes from disk
    */
   def load(relativePath: String, prefix: String): Option[InputStream] = {
-    Play.current.configuration.getString("medici2.files.path") match {
+    Play.current.configuration.getString("medici2.diskStorage.path") match {
       case Some(root) => {
         // combine all pieces
         val filePath = makePath(root, prefix, relativePath)
@@ -88,7 +88,7 @@ class DiskByteStorageService extends ByteStorageService {
    * Delete actualy bytes from disk
    */
   def delete(relativePath: String, prefix: String): Boolean = {
-    Play.current.configuration.getString("medici2.files.path") match {
+    Play.current.configuration.getString("medici2.diskStorage.path") match {
       case Some(root) => {
         // combine all pieces
         val filePath = makePath(root, prefix, relativePath)

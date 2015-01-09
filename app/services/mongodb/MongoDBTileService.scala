@@ -1,6 +1,7 @@
 package services.mongodb
 
-import services.{PreviewService, TileService}
+import com.mongodb.casbah.WriteConcern
+import services.{ByteStorageService, PreviewService, TileService}
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import MongoContext.context
@@ -11,10 +12,6 @@ import com.mongodb.casbah.commons.MongoDBObject
 import models.{UUID, Tile}
 import play.api.libs.json.{JsValue, JsObject}
 import com.mongodb.casbah.Imports._
-import scala.Some
-import com.mongodb.WriteConcern
-import play.api.libs.json.Json._
-import scala.Some
 import play.api.Logger
 import javax.inject.{Inject, Singleton}
 
@@ -22,7 +19,7 @@ import javax.inject.{Inject, Singleton}
  * Created by lmarini on 2/27/14.
  */
 @Singleton
-class MongoDBTileService @Inject() (previews: PreviewService) extends TileService {
+class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStorageService) extends TileService {
 
   def get(tileId: UUID): Option[Tile] = {
     TileDAO.findOneById(new ObjectId(tileId.stringify))
@@ -37,7 +34,7 @@ class MongoDBTileService @Inject() (previews: PreviewService) extends TileServic
             case Some(tile) =>
               val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
               TileDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(tileId.stringify)),
-                $set("metadata" -> metadata, "preview_id" -> new ObjectId(previewId.stringify), "level" -> level), false, false, WriteConcern.SAFE)
+                $set("metadata" -> metadata, "preview_id" -> new ObjectId(previewId.stringify), "level" -> level), false, false, WriteConcern.Safe)
             case None => Logger.error("Tile not found")
           }
         }
@@ -64,17 +61,41 @@ class MongoDBTileService @Inject() (previews: PreviewService) extends TileServic
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
+    // create the element to hold the metadata
     val files = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => x.gridFS("tiles")
+      case None    => {
+        Logger.error("No MongoSalatPlugin")
+        return ""
+      }
+      case Some(x) =>  x.gridFS("tiles")
     }
-    val mongoFile = files.createFile(inputStream)
-    //    Logger.debug("Uploading file " + filename)
-    mongoFile.filename = filename
+
+    // required to avoid race condition on save
+    files.db.setWriteConcern(WriteConcern.Safe)
+
+    // use a special case if the storage is in mongo as well
+    val usemongo = current.configuration.getBoolean("medici2.mongodb.storeTiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+    val mongoFile = if (usemongo) {
+      // leverage of the fact that we save in mongo
+      val x = files.createFile(inputStream)
+      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
+      x.put("path", id)
+      x
+    } else {
+      // write empty array
+      val x = files.createFile(Array[Byte]())
+      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
+
+      // save the bytes, metadata goes to mongo
+      x.put("path", storage.save(inputStream, "tiles", id))
+      x
+    }
+
     var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
     if (ct == play.api.http.ContentTypes.BINARY) {
       ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
     }
+    mongoFile.filename = filename
     mongoFile.contentType = ct
     mongoFile.save
     mongoFile.getAs[ObjectId]("_id").get.toString
@@ -86,10 +107,27 @@ class MongoDBTileService @Inject() (previews: PreviewService) extends TileServic
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "tiles")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => Some(file.inputStream,
-        file.getAs[String]("filename").getOrElse("unknown-name"),
-        file.getAs[String]("contentType").getOrElse("unknown"),
-        file.getAs[Long]("length").getOrElse(0))
+      case Some(file) => {
+        // use a special case if the storage is in mongo as well
+        val usemongo = current.configuration.getBoolean("medici2.mongodb.storeTiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+        val inputStream = if (usemongo) {
+          file.inputStream
+        } else {
+          file.getAs[String]("path") match {
+            case Some(path) => {
+              storage.load(path, "tiles") match {
+                case Some(is) => is
+                case None => return None
+              }
+            }
+            case None => return None
+          }
+        }
+        Some((inputStream,
+          file.getAs[String]("filename").getOrElse("unknown-name"),
+          file.getAs[String]("contentType").getOrElse("unknown"),
+          file.getAs[Long]("length").getOrElse(0l)))
+      }
       case None => None
     }
   }

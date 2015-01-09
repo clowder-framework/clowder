@@ -122,29 +122,27 @@ class MongoDBFileService @Inject() (
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
+    // create the element to hold the metadata
+    val files = current.plugin[MongoSalatPlugin] match {
+      case None    => {
+        Logger.error("No MongoSalatPlugin")
+        return None
+      }
+      case Some(x) =>  x.gridFS("uploads")
+    }
+
+    // required to avoid race condition on save
+    files.db.setWriteConcern(WriteConcern.Safe)
+
     // use a special case if the storage is in mongo as well
-    val mongoFile = if (storage.isInstanceOf[MongoDBByteStorage]) {
-      // leverage of the fact that we can use the special save method
-      storage.asInstanceOf[MongoDBByteStorage].save(inputStream, "uploads") match {
-        case Some(x) => {
-          x.put("path", x.getAs[String]("_id").getOrElse(""))
-          x
-        }
-        case None => return None
-      }
+    val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+    val mongoFile = if (usemongo) {
+      // leverage of the fact that we save in mongo
+      val x = files.createFile(inputStream)
+      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
+      x.put("path", id)
+      x
     } else {
-      // create the element to hold the metadata
-      val files = current.plugin[MongoSalatPlugin] match {
-        case None    => {
-          Logger.error("No MongoSalatPlugin")
-          return None
-        }
-        case Some(x) =>  x.gridFS("uploads")
-      }
-
-      // required to avoid race condition on save
-      files.db.setWriteConcern(WriteConcern.Safe)
-
       // write empty array
       val x = files.createFile(Array[Byte]())
       val id = UUID(x.getAs[ObjectId]("_id").get.toString)
@@ -154,11 +152,11 @@ class MongoDBFileService @Inject() (
       x
     }
 
-    mongoFile.filename = filename
     var ct = contentType.getOrElse(ContentTypes.BINARY)
     if (ct == ContentTypes.BINARY) {
       ct = MimeTypes.forFileName(filename).getOrElse(ContentTypes.BINARY)
     }
+    mongoFile.filename = filename
     mongoFile.contentType = ct
     mongoFile.put("showPreviews", showPreviews)
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
@@ -175,7 +173,9 @@ class MongoDBFileService @Inject() (
     val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => {
-        val inputStream = if (storage.isInstanceOf[MongoDBByteStorage]) {
+        // use a special case if the storage is in mongo as well
+        val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+        val inputStream = if (usemongo) {
           file.inputStream
         } else {
           file.getAs[String]("path") match {

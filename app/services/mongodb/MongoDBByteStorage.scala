@@ -22,17 +22,6 @@ class MongoDBByteStorage extends ByteStorageService {
    * ignored.
    */
   def save(inputStream: InputStream, collection: String, id: UUID): Option[String] = {
-    save(inputStream, collection) match {
-      case Some(mongoFile) => mongoFile.getAs[String]("_id")
-      case None => None
-    }
-  }
-
-  /**
-   * Special case will return a GridFSInputFile that can be used by mongo to add
-   * more metadata.
-   */
-  def save(inputStream: InputStream, collection: String): Option[GridFSInputFile] = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
         Logger.error("No MongoSalatPlugin")
@@ -46,10 +35,10 @@ class MongoDBByteStorage extends ByteStorageService {
 
         // save the bytes
         Logger.debug("Saving file to " + collection)
-        Some(files.createFile(inputStream))
+        val file = files.createFile(inputStream)
+        file.getAs[String]("_id")
       }
     }
-
   }
 
   /**

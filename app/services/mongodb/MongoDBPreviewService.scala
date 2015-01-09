@@ -1,6 +1,6 @@
 package services.mongodb
 
-import services.{TileService, FileService, PreviewService}
+import services.{ByteStorageService, TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.io.{InputStreamReader, BufferedReader, InputStream}
 import play.api.Logger
@@ -29,7 +29,7 @@ import collection.JavaConverters._
  * Created by lmarini on 2/17/14.
  */
 @Singleton
-class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) extends PreviewService {
+class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, storage: ByteStorageService) extends PreviewService {
 
   def get(previewId: UUID): Option[Preview] = {
     PreviewDAO.findOneById(new ObjectId(previewId.stringify))
@@ -59,17 +59,41 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
+    // create the element to hold the metadata
     val files = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => x.gridFS("previews")
+      case None    => {
+        Logger.error("No MongoSalatPlugin")
+        return ""
+      }
+      case Some(x) =>  x.gridFS("previews")
     }
-    val mongoFile = files.createFile(inputStream)
-    Logger.debug("Uploading file " + filename)
-    mongoFile.filename = filename
+
+    // required to avoid race condition on save
+    files.db.setWriteConcern(WriteConcern.Safe)
+
+    // use a special case if the storage is in mongo as well
+    val usemongo = current.configuration.getBoolean("medici2.mongodb.storePreviews").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+    val mongoFile = if (usemongo) {
+      // leverage of the fact that we save in mongo
+      val x = files.createFile(inputStream)
+      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
+      x.put("path", id)
+      x
+    } else {
+      // write empty array
+      val x = files.createFile(Array[Byte]())
+      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
+
+      // save the bytes, metadata goes to mongo
+      x.put("path", storage.save(inputStream, "previews", id))
+      x
+    }
+
     var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
     if (ct == play.api.http.ContentTypes.BINARY) {
       ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
     }
+    mongoFile.filename = filename
     mongoFile.contentType = ct
     mongoFile.save
     mongoFile.getAs[ObjectId]("_id").get.toString
@@ -81,10 +105,27 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => Some(file.inputStream,
-        file.getAs[String]("filename").getOrElse("unknown-name"),
-        file.getAs[String]("contentType").getOrElse("unknown"),
-        file.getAs[Long]("length").getOrElse(0))
+      case Some(file) => {
+        // use a special case if the storage is in mongo as well
+        val usemongo = current.configuration.getBoolean("medici2.mongodb.storePreviews").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+        val inputStream = if (usemongo) {
+          file.inputStream
+        } else {
+          file.getAs[String]("path") match {
+            case Some(path) => {
+              storage.load(path, "previews") match {
+                case Some(is) => is
+                case None => return None
+              }
+            }
+            case None => return None
+          }
+        }
+        Some((inputStream,
+          file.getAs[String]("filename").getOrElse("unknown-name"),
+          file.getAs[String]("contentType").getOrElse("unknown"),
+          file.getAs[Long]("length").getOrElse(0l)))
+      }
       case None => None
     }
   }
