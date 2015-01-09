@@ -40,14 +40,15 @@ GET      /extractions/supported_input_types        				   			@controllers.Extrac
 GET     /bookmarklet														@controllers.ExtractionInfo.getBookmarkletPage()
 GET     /bookmarklet.js                                                     @controllers.Application.bookmarklet
 
+
 #This may not require; This is only for testing. It will change in subsequent version
 GET     /extraction/form                  @controllers.Files.extractFile
 POST    /extraction/upload                @controllers.Files.uploadExtract()
 #End
 
 # Files
-GET		/files					          @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12)
-GET		/files/new					      @controllers.Files.uploadFile
+GET     /files                            @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+GET     /files/new                        @controllers.Files.uploadFile
 GET     /files/metadataSearch          	  @controllers.Files.metadataSearch
 GET     /files/generalMetadataSearch      @controllers.Files.generalMetadataSearch
 GET		/files/:id					      @controllers.Files.file(id: UUID)
