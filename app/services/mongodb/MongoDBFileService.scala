@@ -49,6 +49,7 @@ class MongoDBFileService @Inject() (
   sections: SectionService,
   comments: CommentService,
   previews: PreviewService,
+  thumbnails: ThumbnailService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
   storage: ByteStorageService) extends FileService {
@@ -645,9 +646,17 @@ class MongoDBFileService @Inject() (
             ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
           if(!file.thumbnail_id.isEmpty)
-            Thumbnail.removeById(new ObjectId(file.thumbnail_id.get))
+            thumbnails.remove(UUID(file.thumbnail_id.get))
         }
-        storage.delete(file.id.stringify, "uploads")
+
+        // finally delete the actual file
+        val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+        if (usemongo) {
+          val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
+          files.remove(new ObjectId(id.stringify))
+        } else {
+          storage.delete(file.id.stringify, "uploads")
+        }
       }
       case None => Logger.debug("File not found")
     }

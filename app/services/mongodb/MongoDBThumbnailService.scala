@@ -99,6 +99,17 @@ class MongoDBThumbnailService @Inject()(storage: ByteStorageService) extends Thu
       case None => None
     }
   }
+
+  def remove(id: UUID): Unit = {
+    // finally delete the actual file
+    val usemongo = current.configuration.getBoolean("medici2.mongodb.storeThumbnails").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+    if (usemongo) {
+      val files = GridFS(SocialUserDAO.dao.collection.db, "thumbnails")
+      files.remove(new ObjectId(id.stringify))
+    } else {
+      storage.delete(id.stringify, "thumbnails")
+    }
+  }
 }
 
 object Thumbnail extends ModelCompanion[Thumbnail, ObjectId] {

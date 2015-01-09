@@ -1,5 +1,6 @@
 package services.mongodb
 
+import org.bson.types.ObjectId
 import services.{ByteStorageService, TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.io.{InputStreamReader, BufferedReader, InputStream}
@@ -178,7 +179,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
 
   def removePreview(p: Preview) {
     for (tile <- tiles.get(p.id)) {
-      TileDAO.remove(MongoDBObject("_id" -> new ObjectId(tile.id.stringify)))
+      tiles.remove(tile.id)
     }
     // for IIP server references, also delete the files being referenced on the IIP server they reside
     if (!p.iipURL.isEmpty) {
@@ -227,7 +228,14 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
         frameRefReader.close()
       }
 
-    PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(p.id.stringify)))
+    // finally delete the actual file
+    val usemongo = current.configuration.getBoolean("medici2.mongodb.storePreviews").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+    if (usemongo) {
+      val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
+      files.remove(new ObjectId(p.id.stringify))
+    } else {
+      storage.delete(p.id.stringify, "previews")
+    }
   }
 
   def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue) {

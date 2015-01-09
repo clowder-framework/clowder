@@ -131,6 +131,17 @@ class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStora
       case None => None
     }
   }
+
+  def remove(id: UUID): Unit = {
+    // finally delete the actual file
+    val usemongo = current.configuration.getBoolean("medici2.mongodb.storeTiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+    if (usemongo) {
+      val files = GridFS(SocialUserDAO.dao.collection.db, "tiles")
+      files.remove(new ObjectId(id.stringify))
+    } else {
+      storage.delete(id.stringify, "tiles")
+    }
+  }
 }
 
 object TileDAO extends ModelCompanion[Tile, ObjectId] {
