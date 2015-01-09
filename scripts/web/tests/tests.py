@@ -7,8 +7,10 @@ import time
 import smtplib
 import socket
 import time
+import urllib2
 
 host = 'http://kgm-d3.ncsa.illinois.edu:9000/'
+#host = 'http://dts1.ncsa.illinois.edu:9000/'
 key = 'r1ek3rs'
 
 def main():
@@ -22,18 +24,38 @@ def main():
 
 		for line in lines:
 			if not line.startswith('#'):
-				parts = line.split('\t')
+				parts = line.split(' ', 1)
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
 
 				for output in outputs:
-					output = output.strip();
 					count += 1
+					POSITIVE = True
+					output = output.strip();
 
-					print(input_filename + ' -> "' + output + '"'),
+					#Check for negative tests
+					if(output[0] == '!'):
+						POSITIVE = False
+						output = output[1:]
+
+					#Check for input files
+					if(output[0] == '"'):
+						output = output[1:-1]
+					else:
+						if output.startswith("http://"):
+							output = urllib2.urlopen(output).read(1000).strip()
+						else:
+							output = open(output).read(1000).strip()
+					
+					#Print out test
+					if POSITIVE:	
+						print(input_filename + ' -> "' + output + '"'),
+					else:
+						print(input_filename + ' -> !"' + output + '"'),
 
 					#Run test
 					metadata = extract(host, key, input_filename)
+					#print metadata
 				
 					#Write derived data to a file for later reference
 					output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(os.path.basename(input_filename))[0] + '.txt'
@@ -44,7 +66,7 @@ def main():
 					os.chmod(output_filename, 0776)		#Give web application permission to overwrite
 
 					#Check for expected output
-					if output[0] is '!' and metadata.find(output) is -1:
+					if not POSITIVE and metadata.find(output) is -1:
 						print '\t\033[92m[OK]\033[0m'
 					elif metadata.find(output) > -1:
 						print '\t\033[92m[OK]\033[0m'
@@ -59,7 +81,12 @@ def main():
 								watcher = watcher.strip()
 
 								message = 'Subject: DTS Test Failed\n\n'
-								message += 'Test-' + str(count) + ' failed.  Expected output "' + output + '" was not extracted from:\n\n' + input_filename + '\n\n'
+								message += 'Test-' + str(count) + ' failed.  Expected output "'
+								
+								if not POSITIVE:
+									message += '!'
+
+								message += output + '" was not extracted from:\n\n' + input_filename + '\n\n'
 								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?run=false&start=true\n'
 								
 								mailserver.sendmail('', watcher, message)

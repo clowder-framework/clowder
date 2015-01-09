@@ -43,10 +43,9 @@ extends MongoDBFileService(
    * Save a file to the file system and store metadata about it in Mongo.
    */
   override  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[models.File] = {
-    Play.current.configuration.getString("files.path") match {
-      case Some(path) => {
-        val id = UUID.generate
-        val filePath = if (path.last != '/') path + "/" + id else path + id
+    val id = UUID.generate
+    generateFileName(id) match {
+      case Some(filePath) => {
         Logger.info("Copying file to " + filePath)
         // FIXME is there a better way than casting to FileInputStream?
         val f = inputStream.asInstanceOf[FileInputStream].getChannel()
@@ -87,6 +86,27 @@ extends MongoDBFileService(
             }
           }
           case None => None
+        }
+      }
+      case None => None
+    }
+  }
+
+  def generateFileName(id: UUID): Option[String] = {
+    Play.current.configuration.getString("files.path") match {
+      case Some(path) => {
+        var depth = Play.current.configuration.getInt("files.path.depth").getOrElse(3)
+        var folder = if (path.last != java.io.File.separatorChar) path + java.io.File.separatorChar else path
+        var idstr = id.stringify
+        while(depth > 0 && idstr.length > 4) {
+          depth -= 1
+          folder = folder + java.io.File.separatorChar + idstr.substring(0, 2)
+          idstr = idstr.substring(2)
+        }
+        if (new File(folder).mkdirs()) {
+          Some(folder + idstr)
+        } else {
+          None
         }
       }
       case None => None
