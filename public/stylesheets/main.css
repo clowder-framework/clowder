@@ -446,3 +446,12 @@ textarea, input[type='text'], input[type='password']{
 #tagCloudCanvas {
     border:1px solid #e6e6e6;
 }
+
+.input-table-cell {
+	padding-top: 10px;
+	padding-bottom: 10px:
+}
+
+.horizontal-radio {
+	margin-right: 25px;
+}

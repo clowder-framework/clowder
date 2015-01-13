@@ -30,7 +30,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
   <script>
     function clearUpload(){
         $('#file').val('');
-    }
+    }        
   </script> 
 <div class="container">
   <div class="page-header">
@@ -49,89 +49,176 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
             <p>@message</p>
         </div>
     }
-       
-    <!-- The file upload form used as target for the file upload widget -->
-    <form id="fileupload" action='@routes.Datasets.submit' method="POST" enctype="multipart/form-data">
-        <!-- Redirect browsers with JavaScript disabled to the origin page -->
-        <noscript><input type="hidden" name="redirect" value="https://blueimp.github.io/jQuery-File-Upload/"></noscript>
-        <fieldset id="nameDescrFieldSet">
-          @inputText(myForm("name"), '_label -> "Name")
-          @textarea(myForm("description"), '_label -> "Description")
-        </fieldset>
-        <fieldset>
-          @select(
-            myForm("existingFile"),
-            ("__nofile" -> "--NONE--") +: filesList.map{ oneFile =>
-                oneFile._1 -> (oneFile._2)
-            },
-            '_label -> "Choose existing file, or upload a new one. NOTE: Single file only."
-        )
-        </fieldset>
-        <fieldset id="datasetRadioFieldSet">
-          @inputRadioGroup(
-              myForm("datasetLevel").copy(value=myForm("datasetLevel").value.orElse(Some("DatasetLevel")) ),
-              options = options("DatasetLevel"->"Everywhere","FileLevel"->"On file page","None"->"Nowhere"),
-              '_label -> "Show file preview(s)",
-              '_error -> myForm("datasetLevel").error.map(_.withMessage("Select where the preview will be viewable.")))
-        </fieldset>
-        <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
-        <div class="row fileupload-buttonbar">
-            <div class="col-lg-7">
-                <!-- The fileinput-button span is used to style the file input field as button -->
-                <span class="btn btn-primary fileinput-button">
-                    <i class="glyphicon glyphicon-plus"></i>
-                    <span>Add files</span>
-                    <!-- The file input had "multiple" removed for the current dataset creation method. -->
-                    <input type="file" name="files[]">
-                    <input type="hidden" name="datasetLevel" value="DatasetLevel">
-                </span>
-                <button type="submit" class="btn btn-default start" title="Create the Dataset">
-                    <i class="glyphicon glyphicon-upload"></i>
-                    <span>Create Dataset</span>
-                </button>
-                <button type="reset" class="btn btn-default cancel">
-                    <i class="glyphicon glyphicon-ban-circle"></i>
-                    <span>Cancel upload</span>
-                </button>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                <label>
-                    <input type="checkbox" class="toggle"> Select all
-                </label>
-                <button type="button" class="btn btn-link delete" style="margin-bottom: 0px">
-                    <i class="glyphicon glyphicon-trash"></i>
-                    <span>Delete selected</span>
-                </button>
-                <!-- The global file processing state -->
-                <span class="fileupload-process"></span>
-                
-            </div>
-            <!-- The global progress state -->
-            <div class="col-lg-5 fileupload-progress fade">
-                <!-- The global progress bar -->
-                <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar progress-bar-success" style="width:0%;"></div>
-                </div>
-                <!-- The extended global progress state -->
-                <div class="progress-extended">&nbsp;</div>
-            </div>
-        </div>
-        <!-- The table listing the files available for upload/download -->
-        <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
-    </form>
-    </div>
-    </div>
-</div>
+    <table style="width: 100%;">
+        <tr>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
+            <td class="input-table-cell">
+                <textarea cols=40 rows=4 type="text" id="name"></textarea>                                            
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Description:</td>
+            <td class="input-table-cell">
+                <textarea cols=40 rows=4 type="text" id="description"></textarea>                                            
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Show File Previews for:</td>
+            <td class="input-table-cell">
+                <input type="radio" name="radiogroup" value="DatasetLevel" checked> Everywhere&nbsp;&nbsp;&nbsp;</input>
+                <input type="radio" name="radiogroup" value="FileLevel"> On File Page&nbsp;&nbsp;&nbsp;</input>
+                <input type="radio" name="radiogroup" value="None"> Nowhere&nbsp;&nbsp;&nbsp;</input>
+            </td>
+        </tr>
+    </table>
+    <p>
+    <!-- 
+    <fieldset id="nameDescrFieldSet">
+      @inputText(myForm("name"), '_label -> "Name")
+      @textarea(myForm("description"), '_label -> "Description")
+    </fieldset>
+    <fieldset>
+      @select(
+        myForm("existingFile"),
+        ("__nofile" -> "--NONE--") +: filesList.map{ oneFile =>
+            oneFile._1 -> (oneFile._2)
+        },
+        '_label -> "Choose existing file, or upload a new one. NOTE: Single file only."
+    )
+    </fieldset>
+    <fieldset id="datasetRadioFieldSet">
+      @inputRadioGroup(
+          myForm("datasetLevel").copy(value=myForm("datasetLevel").value.orElse(Some("DatasetLevel")) ),
+          options = options("DatasetLevel"->"Everywhere","FileLevel"->"On file page","None"->"Nowhere"),
+          '_label -> "Show file preview(s)",
+          '_error -> myForm("datasetLevel").error.map(_.withMessage("Select where the preview will be viewable.")))
+    </fieldset>
+    -->
     
-    <!-- The blueimp Gallery widget -->
-<div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls" data-filter=":even">
-    <div class="slides"></div>
-    <h3 class="title"></h3>
-    <a class="prev">‹</a>
-    <a class="next">›</a>
-    <a class="close">×</a>
-    <a class="play-pause"></a>
-    <ol class="indicator"></ol>
-</div>
+    <div class="tabbable" id="createDatasetTabbable"> <!-- Only required for left/right tabs -->
+              <ul class="nav nav-tabs">
+                <li class="active"><a href="#tab1" data-toggle="tab">New Files</a></li>
+                <li><a href="#tab2" data-toggle="tab">Existing Files</a></li>
+              </ul>
+              <div class="tab-content">
+                <div class="tab-pane active" id="tab1">              
+                    <!-- The file upload form used as target for the file upload widget -->
+				    <form id="fileupload" action='@routes.Datasets.submit' method="POST" enctype="multipart/form-data">
+				        <!-- Redirect browsers with JavaScript disabled to the origin page -->
+				        <noscript>Javascript is required in order to use the uploader to create a new dataset.</noscript>
+				        
+				        <input type="hidden" name="name" id="hiddenname" value="not set">
+				        <input type="hidden" name="description" id="hiddendescription" value="not set">
+				        <input type="hidden" name="datasetLevel" id="hiddenlevel" value="DatasetLevel">
+				        <input type="hidden" name="existingFile" id="hiddenexisting" value="__nofile">
+				        <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
+				        <div class="row fileupload-buttonbar">
+				            <div class="col-lg-7">
+				                <!-- The fileinput-button span is used to style the file input field as button -->
+				                <span class="btn btn-primary fileinput-button">
+				                    <i class="glyphicon glyphicon-plus"></i>
+				                    <span>Add files</span>
+				                    <!-- The file input had "multiple" removed for the current dataset creation method. -->
+				                    <input type="file" name="files[]" multiple>				                    
+				                </span>
+				                <button type="submit" class="btn btn-default start" title="Create the Dataset" onclick="return submitData();">
+				                    <i class="glyphicon glyphicon-upload"></i>
+				                    <span>Create Dataset</span>
+				                </button>
+				                <button type="reset" class="btn btn-default cancel">
+				                    <i class="glyphicon glyphicon-ban-circle"></i>
+				                    <span>Cancel upload</span>
+				                </button>
+				                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				                <label>
+				                    <input type="checkbox" class="toggle"> Select all
+				                </label>
+				                <button type="button" class="btn btn-link delete" style="margin-bottom: 0px">
+				                    <i class="glyphicon glyphicon-trash"></i>
+				                    <span>Delete selected</span>
+				                </button>
+				                <!-- The global file processing state -->
+				                <span class="fileupload-process"></span>
+				                
+				            </div>
+				            <!-- The global progress state -->
+				            <div class="col-lg-5 fileupload-progress fade">
+				                <!-- The global progress bar -->
+				                <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+				                    <div class="progress-bar progress-bar-success" style="width:0%;"></div>
+				                </div>
+				                <!-- The extended global progress state -->
+				                <div class="progress-extended">&nbsp;</div>
+				            </div>
+				        </div>
+				        <!-- The table listing the files available for upload/download -->
+				        <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
+				    </form>
+                <script type="text/javascript">
+                
+                //FIGURE OUT HOW TO GET THE CALLBACKS WORKING?? OR NEED TO FIGURE OUT HOW TO INTERCEPT THE INDIVIDUAL
+                //FILE UPLOAD SUBMITS...TEST OTHER BINDINGS TO SEE IF ANY WORK. ALSO CHECK FORUM.
+                    $('#fileupload').bind('fileuploadadd', function (e, data) {
+                        console.log('submit binding');
+                        //Programmatic input we are adding to the form 
+                        var name = $('#name');
+                        var desc = $('#description');
+                        data.formData = {name: name.val()};
+                        data.formData = {description: desc.val()};  
+                        console.log("formData is " + data.formData);
+                    });
+                    
+                    function submitData() {
+                        console.log("in submit data");   
+                        var name = $('#name');
+                        var desc = $('#description');
+                        var radios = document.getElementsByName("radiogroup");
+                        for (var elem in radios) {
+                        	if (radios[elem].checked) {
+                        		$('#hiddenlevel').val(radios[elem].value);
+                        	}
+                        }
+                        $('#hiddenname').val(name.val());
+                        $('#hiddendescription').val(desc.val());
+                        console.log("datasetlevel val is " + $('#hiddenlevel').val());
+                        return false;
+                    }
+                </script>
+    
+				    <!-- The blueimp Gallery widget -->
+					<div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls" data-filter=":even">
+					    <div class="slides"></div>
+					    <h3 class="title"></h3>
+					    <a class="prev">‹</a>
+					    <a class="next">›</a>
+					    <a class="close">×</a>
+					    <a class="play-pause"></a>
+					    <ol class="indicator"></ol>
+					</div> 
+                </div> <!-- End 1st Tab content -->
+                <div class="tab-pane" id="tab2">
+                  @form(action = routes.Datasets.submit(), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {     			        
+			        <button id="uploadCLearBtn" style="position: relative;  margin-top:10px; margin-bottom:10px;" onclick="clearUpload();return false;">Clear</button>
+			        <fieldset>
+			          @select(
+			            myForm("existingFile"),
+			            ("__nofile" -> "--NONE--") +: filesList.map{ oneFile =>
+			                oneFile._1 -> (oneFile._2)
+			            },
+			            '_label -> "or select an existing file"
+			        )
+			        </fieldset>			        
+			        <div class="form-actions">
+			          <button type="submit" class="btn btn-primary btn-large" title="Create the Dataset"><span class="glyphicon glyphicon-ok"></span> Create</button>
+			        </div>
+			       }
+                </div> <!-- End 2nd Tab content -->
+              </div>
+            </div>
+    </div>
+    </div>
+</div>       
+    
 
 <!-- The template to display files available for upload -->
 <script id="template-upload" type="text/x-tmpl">
@@ -240,7 +327,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 <!-- The File Upload validation plugin -->
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-validate.js")"></script>
 <!-- The File Upload user interface plugin -->
-<script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-single-ui.js")"></script>
+<script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-ui.js")"></script>
 <!-- The main application script -->
 <script src="@routes.Assets.at("javascripts/file-uploader/main.js")"></script>
 <!-- The XDomainRequest Transport is included for cross-domain file deletion for IE 8 and IE 9 -->
