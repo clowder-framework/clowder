@@ -391,3 +391,10 @@ POST 			/api/users/addUserFriend												@api.Users.addUserFriend(email: Stri
 POST 			/api/users/addUserDatasetView 											@api.Users.addUserDatasetView(email: String, dataset: UUID)
 
 POST 			/api/users/createNewListInUser 											@api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])															
+
+
+# ----------------------------------------------------------------------
+# MEDICI STATUS API
+# ----------------------------------------------------------------------
+GET     /api/version                @api.Status.version
+GET     /api/status                 @api.Status.status
