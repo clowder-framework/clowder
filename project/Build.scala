@@ -45,7 +45,7 @@ object ApplicationBuild extends Build {
   }
 
   def getBambooBuild: String = {
-    sys.props.getOrElse("bamboo.buildNumber", default = "local")
+    sys.env.getOrElse("bamboo_buildNumber", default = "local")
   }
 
   val appDependencies = Seq(
