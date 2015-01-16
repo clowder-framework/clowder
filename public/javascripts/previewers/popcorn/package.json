@@ -1,4 +1,4 @@
-{ "name" : "Video (popcorn player)",
+{ "name" : "Video",
   "main" : "popcorn.js",
-  "contentType" : ["video/mp4"]
+  "contentType" : ["video/webm"]
   }
