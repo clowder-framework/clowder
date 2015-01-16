@@ -13,5 +13,5 @@
   $(Configuration.tab).append(			  
      "<video width='750px' id='ourvideo' controls><source src='" + Configuration.url + "'></source></video>"
   );
-    
+     
 }(jQuery, Configuration));
