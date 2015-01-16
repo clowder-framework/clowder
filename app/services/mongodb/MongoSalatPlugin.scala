@@ -38,13 +38,24 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // create indices.
     Logger.debug("Ensuring indices exist")
+    collection("collections").ensureIndex(MongoDBObject("created" -> -1))
+    
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("files._id" -> 1))
+    
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
+    collection("uploads.files").ensureIndex(MongoDBObject("tags" -> 1))
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
+    
     collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+    
+    collection("textures.files").ensureIndex(MongoDBObject("file_id" -> 1))
+    collection("tiles.files").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
+    
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+    
     collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
 
