@@ -616,16 +616,16 @@
                             <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                             @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){                                
                                 <span class="align-right" style="padding-right:12px;">
-                                    <button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Detach Files and Delete">
-                                    <span class="glyphicon glyphicon-trash"></span> Detach Delete</button>
-                                    <button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Cascade Delete of Dataset and Contents">
+                                    <button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
+                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                                    <button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
                                     <span class="glyphicon glyphicon-trash"></span> Delete All</button>
                                 </span>
                             } else {                                
                                 <span class="align-right" style="padding-right:12px;">
-                                    <button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Detach Files and Delete">
-                                    <span class="glyphicon glyphicon-trash"></span> Detach Delete</button>
-                                    <button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Cascade Delete of Dataset and Contents">
+                                    <button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
+                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                                    <button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
                                     <span class="glyphicon glyphicon-trash"></span> Delete All</button>
                                 </span>                                                                                                   
                             } 

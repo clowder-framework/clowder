@@ -27,7 +27,7 @@
         <script type="text/javascript" language="javascript">
             var viewMode = '@mode';
             $.cookie.raw = true;
-            //$.cookie.json = true;
+
             $(function() {
                 $('#tile-view-btn').click(function() {
                   console.log('tile view');
@@ -120,10 +120,10 @@
 					  @if(user.isDefined) {
 					        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
 							@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-					    		<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Cascade Delete of Dataset and Contents">
+					    		<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                       <span class="glyphicon glyphicon-trash"></span></button>
 							} else {
-							    <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Cascade Delete of Dataset and Contents">
+							    <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                       <span class="glyphicon glyphicon-trash"></span></button>
 							}											
 						}					  
