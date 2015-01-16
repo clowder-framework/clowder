@@ -140,7 +140,9 @@
   
   <div id="footer">
     <div class="container">
-      <p class="muted credit">Powered by <a href="http://medici.ncsa.illinois.edu">Medici</a>.</p>
+      <p class="muted credit">Powered by <a href="http://medici.ncsa.illinois.edu">Medici</a>
+		  (@sys.props.getOrElse("build.version", default = "0.0.0")#@sys.props.getOrElse("build.bamboo", default = "development")
+		  branch:@sys.props.getOrElse("build.branch", default = "unknown") sha1:@sys.props.getOrElse("build.gitsha1", default = "unknown")).</p>
     </div>
   </div>
   
