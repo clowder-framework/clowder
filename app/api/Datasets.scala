@@ -90,7 +90,7 @@ class Datasets @Inject()(
       notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
       responseClass = "None", httpMethod = "POST")
   def createDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>
-    Logger.debug("Creating new dataset")
+    Logger.debug("--- API Creating new dataset ----")
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>
         (request.body \ "file_id").asOpt[String].map { file_id =>
@@ -113,7 +113,7 @@ class Datasets @Inject()(
                       _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
                     }
                   }
-                  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}
+                  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}                  
                   Ok(toJson(Map("id" -> id)))
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
@@ -121,6 +121,28 @@ class Datasets @Inject()(
             case None => BadRequest(toJson("Bad file_id = " + file_id))
           }
         }.getOrElse(BadRequest(toJson("Missing parameter [file_id]")))
+      }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
+    }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
+  }
+  
+  /**
+   * Create new dataset with no file required
+   */
+  @ApiOperation(value = "Create new dataset with no file",
+      notes = "New dataset containing zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name and description.",
+      responseClass = "None", httpMethod = "POST")
+  def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>
+    Logger.debug("--- API Creating new dataset ----")
+    (request.body \ "name").asOpt[String].map { name =>
+      (request.body \ "description").asOpt[String].map { description =>        
+          val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData())
+          datasets.insert(d) match {
+            case Some(id) => {              
+              Logger.debug("--- Dataset created, ID is " + id + " ----")
+              Ok(toJson(Map("id" -> id)))
+            }
+            case None => Ok(toJson(Map("status" -> "error")))
+          }            
       }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }

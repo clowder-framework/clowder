@@ -39,6 +39,9 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
   
     <div class="row">
     <div class="col-md-12">
+    <div>
+        <span class="error" id="messageerror">An Error Message</span>
+    </div>
     @if(myForm.hasErrors) {
         <div class="alert alert-error">
             <p>Please fix all errors</p>
@@ -49,25 +52,38 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
             <p>@message</p>
         </div>
     }
-    <table style="width: 100%;">
+    <table style="width: 100%; margin-bottom: 40px;">
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
-            <td class="input-table-cell">
+            <td style="width: 35%; vertical-align:top;" class="input-table-cell">
                 <textarea cols=40 rows=4 type="text" id="name"></textarea>                                            
+            </td>
+            <td style="vertical-align:top;" class="input-table-cell">
+                <span class="error" id="nameerror"> The name is a required field</span><br>
             </td>
         </tr>
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Description:</td>
-            <td class="input-table-cell">
+            <td style="width: 35%; vertical-align:top;" class="input-table-cell">
                 <textarea cols=40 rows=4 type="text" id="description"></textarea>                                            
+            </td>
+            <td style="vertical-align:top;" class="input-table-cell">
+                <span class="error" id="descerror"> This description is a required field</span><br>
             </td>
         </tr>
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Show File Previews for:</td>
             <td class="input-table-cell">
-                <input type="radio" name="radiogroup" value="DatasetLevel" checked> Everywhere&nbsp;&nbsp;&nbsp;</input>
+                <input type="radio" name="radiogroup" value="DatasetLevel" id="everywhere" checked> Everywhere&nbsp;&nbsp;&nbsp;</input>
                 <input type="radio" name="radiogroup" value="FileLevel"> On File Page&nbsp;&nbsp;&nbsp;</input>
                 <input type="radio" name="radiogroup" value="None"> Nowhere&nbsp;&nbsp;&nbsp;</input>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button style="margin-top: 10px;" class="btn btn-default" title="Reset Values" onclick="return resetValues();">
+		          <span class="glyphicon glyphicon-refresh"></span> Reset Fields
+		        </button>
             </td>
         </tr>
     </table>
@@ -97,8 +113,8 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
     
     <div class="tabbable" id="createDatasetTabbable"> <!-- Only required for left/right tabs -->
               <ul class="nav nav-tabs">
-                <li class="active"><a href="#tab1" data-toggle="tab">New Files</a></li>
-                <li><a href="#tab2" data-toggle="tab">Existing Files</a></li>
+                <li class="active" id="tab1"><a href="#tab1" data-toggle="tab">New Files</a></li>
+                <li id="tab2"><a href="#tab2" data-toggle="tab">Existing Files</a></li>
               </ul>
               <div class="tab-content">
                 <div class="tab-pane active" id="tab1">              
@@ -111,6 +127,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 				        <input type="hidden" name="description" id="hiddendescription" value="not set">
 				        <input type="hidden" name="datasetLevel" id="hiddenlevel" value="DatasetLevel">
 				        <input type="hidden" name="existingFile" id="hiddenexisting" value="__nofile">
+				        <input type="hidden" name="datasetid" id="hiddenid" value="__noval">
 				        <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
 				        <div class="row fileupload-buttonbar">
 				            <div class="col-lg-7">
@@ -121,7 +138,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 				                    <!-- The file input had "multiple" removed for the current dataset creation method. -->
 				                    <input type="file" name="files[]" multiple>				                    
 				                </span>
-				                <button type="submit" class="btn btn-default start" title="Create the Dataset" onclick="return submitData();">
+				                <button type="submit" class="btn btn-default start" title="Create the Dataset">
 				                    <i class="glyphicon glyphicon-upload"></i>
 				                    <span>Create Dataset</span>
 				                </button>
@@ -155,34 +172,174 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 				        <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
 				    </form>
                 <script type="text/javascript">
-                
-                //FIGURE OUT HOW TO GET THE CALLBACKS WORKING?? OR NEED TO FIGURE OUT HOW TO INTERCEPT THE INDIVIDUAL
-                //FILE UPLOAD SUBMITS...TEST OTHER BINDINGS TO SEE IF ANY WORK. ALSO CHECK FORUM.
-                    $('#fileupload').bind('fileuploadadd', function (e, data) {
-                        console.log('submit binding');
-                        //Programmatic input we are adding to the form 
-                        var name = $('#name');
-                        var desc = $('#description');
-                        data.formData = {name: name.val()};
-                        data.formData = {description: desc.val()};  
-                        console.log("formData is " + data.formData);
-                    });
+                    //Flag to signal that dataset creation has started                
+	                var asynchStarted = false;
+                    //The id of the new dataset, to share among the file uploads
+	                var id = "__notset";
+                    //The original data to be submitted, for the initial file that handles the ajax call
+                    //to create the dataset
+	                var origData = null;
+	                
+                    $(document).ready(function() {
+                        clearErrors();
+                        enableFields();
+                        resetDatasetItems();                        
+                    });                                        
                     
-                    function submitData() {
-                        console.log("in submit data");   
-                        var name = $('#name');
-                        var desc = $('#description');
-                        var radios = document.getElementsByName("radiogroup");
-                        for (var elem in radios) {
-                        	if (radios[elem].checked) {
-                        		$('#hiddenlevel').val(radios[elem].value);
-                        	}
-                        }
-                        $('#hiddenname').val(name.val());
-                        $('#hiddendescription').val(desc.val());
-                        console.log("datasetlevel val is " + $('#hiddenlevel').val());
-                        return false;
+                    function disableFields() {
+                    	$('#name').attr("disabled", true);
+                    	$('#description').attr("disabled", true);
+                    	$("input[name=radiogroup]").attr('disabled', true);                    	
                     }
+                    
+                    function enableFields() {
+                    	$('#name').attr("disabled", false);
+                        $('#description').attr("disabled", false);
+                        $("input[name=radiogroup]").attr('disabled', false);                    	
+                    }
+                    
+                    function clearErrors() {
+                    	$('.error').hide();
+                    }
+                    
+                    function resetDatasetItems() {
+                    	asynchStarted = false;
+                    	id = "__notset";
+                    	origData = null;
+                    	//Ensure both tabs are shown
+                    	$('#tab1').show();
+                    	$('#tab2').show();
+                    }
+                    
+                    function clearFields() {
+                    	$('#name').val("");
+                    	$('#description').val("");
+                    }
+                    
+                    function resetValues() {
+                    	enableFields();
+                    	resetDatasetItems();
+                    	clearFields();
+                    	$('#everywhere').prop('checked', true);
+                    }
+                    
+                    //Utility method to allow calls for files to be uploaded to wait until the dataset ID is
+                    //in place before finally proceeding with their submit.
+                    function holdForId(data) {
+                       console.log("In hold for Id");
+                   	   setTimeout(function(){
+                   	      if (id == "__notset") {
+                   	    	  console.log("About to recurse");
+                   	    	  // recurse
+                              holdForId(data); 
+                   	      }
+                   	      else {
+                   	    	  console.log("holdForId - submitting data");
+                   	    	  data.submit();
+                   	      }                   	    
+                   	  }, 500);
+                   	}
+                    
+	                $(function () {	                	                 
+	                	//Callback for any submit call, whether it is the overall one, or individual files
+	                    $('#fileupload').bind('fileuploadsubmit', function (e, data) {
+	                    	//First, check if the id value is set and if an asych call is started. 
+	                    	if (asynchStarted && id == "__notset") {	                    		
+	                            //If so, wait for the ID to be set.
+	                    		holdForId(data);
+	                    		return false;
+	                    	}
+	                    	else {
+	                    		  //In this case either asynch has started or the ID is set, so trip the flag 
+	                    		  //and set the original data in the first case, and this is basically a no-op
+	                    		  //in the latter case.	                    		  
+	                    		  asynchStarted = true;
+	                    		  origData = data;
+	                    	}
+	                    	console.log("submit callback")	                    	
+	                    	//Remove error messages if present
+	                    	clearErrors();
+	                    	
+	                    	//Disable input elements
+	                    	disableFields();
+	                    	
+	                    	//Hide the other tab
+	                    	$('#tab2').hide();
+	                    	
+	                    	//Update the input we are adding to the form programmatically      
+	                    	var name = $('#name');
+	                        var desc = $('#description');
+	                        
+	                        //Add errors and return false if validation fails
+	                        var error = false;
+	                        if (!name.val()) {
+	                        	$('#nameerror').show();
+	                        	error = true;
+	                        }
+	                        if (!desc.val()) {                                
+                                $('#descerror').show();
+                                error = true;
+                            }
+	                        if (error) {
+	                        	data.context.find('button').prop('disabled', false);
+	                        	return false;
+	                        }
+	                        
+	                        //No field errors, so set the input values	                        
+	                        var radios = document.getElementsByName("radiogroup");
+	                        console.log('submit binding');                        
+	                        for (var elem in radios) {
+	                            if (radios[elem].checked) {
+	                                $('#hiddenlevel').val(radios[elem].value);
+	                            }
+	                        }
+	                        $('#hiddenname').val(name.val());
+	                        $('#hiddendescription').val(desc.val());
+	                        console.log("-- setting ID in submit callback, it is " + id);
+	                        $('#hiddenid').val(id);
+	                       
+	                        if (id == "__notset") {
+	                        	//Case for the primary file that is submitted. It will create the dataset and obtain the id.
+	                        	console.log("About to call ajax for createEmptyDataset")
+	                        	var jsonData = JSON.stringify({"name":name.val(), "description":desc.val()});
+		                        var request = null;		                         	                        
+	                            request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
+	                                data: jsonData,
+	                                type: 'POST',
+	                                contentType: "application/json",
+	                            });
+	                        	                        	                        
+		                        request.done(function (response, textStatus, jqXHR){	                            
+		                            //Sucessful creation of the dataset. Set the id so that all files can
+		                            //proceed to finish their submit.
+		                            id = response["id"];
+		                            console.log("Successful response from createEmptyDataset. ID is " + id);
+		                            $('#hiddenid').val(id);   
+		                            //Now call the submit for the primary file that was submitted that triggered the dataset
+		                            //creation.
+		                            origData.submit();
+		                        });
+	
+	
+		                        request.fail(function (jqXHR, textStatus, errorThrown){
+		                            console.error("The following error occured: " + textStatus, errorThrown);
+		                            var errMsg = "You must be logged in to create a new dataset.";                                
+		                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+		                            	$('#messageerror').html("Error in creating dataset. : " + errorThrown);
+		                            	$('#messageerror').show();
+		                            }  
+		                        });
+		                        //This block is the primary file, so don't submit yet, don't re-enable the buttons either.
+		                        //The submission of this data will occur on the successful callback for the dataset creation.
+		                        return false;
+                            }
+
+	                    });
+	                	
+	                    $('#fileupload').bind('fileuploaddone', function (e, data) {	   
+	                    	console.log("--- In DONE callback ---");
+	                    });
+	                });                                    
                 </script>
     
 				    <!-- The blueimp Gallery widget -->

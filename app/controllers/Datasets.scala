@@ -361,9 +361,11 @@ class Datasets @Inject()(
     var testName = request.body. asFormUrlEncoded.getOrElse("name", null)
     var testDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
     var testLevel = request.body.asFormUrlEncoded.get("datasetLevel")
+    var testId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
     Logger.debug("------- name is " + testName + "-------------")
 	Logger.debug("------- description is " + testDesc + "-------------")
 	Logger.debug("------- datasetLevel is " + testLevel + "-------------")
+	Logger.debug("------- datasetid is " + testId + "-------------")
 	
 	if (testName == null || testDesc == null) {
 		//Changed to return appropriate data and message to the upload interface
@@ -380,41 +382,35 @@ class Datasets @Inject()(
 	     )
 	     Ok(toJson(retMap))
 	}
+    
+    if (testId == null) {
+		//Changed to return appropriate data and message to the upload interface
+	    var retMap = Map("files" -> 
+	        Seq(
+	            toJson(
+	                Map(
+	                    "name" -> toJson("Dataset was not created correctly."),
+	                    "size" -> toJson(0),
+	                    "error" -> toJson("Dataset not created correctly. Please try again.")
+	                )
+	            )
+	        )
+	     )
+	     Ok(toJson(retMap))
+	}
+    
     user match {
       case Some(identity) => {
           var nameOfFile : String = null
           request.body.file("files[]").map { f =>                     
 	          nameOfFile = f.filename
           }
-          //The reference for the new dataset
-          var dataset : Dataset = null
+          //The reference for the new dataset          
+          datasets.get(UUID(testId(0))) match {
           
-          //Lock and check to ensure that the dataset does't exist already
-          datasets.synchronized {
-              val listOfDatasets = datasets.listDatasetsChronoReverse
-              def findDataset(name: String, description: String, theList: List[Dataset]) : Unit = {
-                  theList match {
-                      case element :: restOfList => {
-                          if (element.name == name && element.description == description) {
-                              //It is found, so assign and done
-                              dataset = element
-                          }
-                          else {
-                              //Not found, so recurse with the rest of the list
-                              findDataset(name, description, restOfList)
-                          }
-                      }
-                      case Nil => {
-                          //No datasets, so create one and return
-                          //No LicenseData needed here, as on creation, default arg handles it. 
-                          dataset = Dataset(name = name, description = description, created = new Date, author = identity)
-                          datasets.update(dataset)
-                      }
-                  }
-              }
-              findDataset(testName(0), testDesc(0), listOfDatasets)
-          }    	          	          	     
-                    	   
+              case Some(dataset) => {
+                           
+               Logger.info("----- dataset successfully found! Name is " + dataset.name + " -----------")   
 	           request.body.file("files[]").map { f =>
 	             //Uploaded file selected
 	             
@@ -660,6 +656,22 @@ class Datasets @Inject()(
 	            }	            
 	          }  
 	        }
+            }
+              case None => {
+                  var retMap = Map("files" -> 
+						        Seq(
+						            toJson(
+						                Map(
+						                    "name" -> toJson("Dataset ID Invalid."),
+						                    "size" -> toJson(0),
+						                    "error" -> toJson("Dataset with the specified ID was not found. Please try again.")
+						                )
+						            )
+						        )
+						     )
+						     Ok(toJson(retMap))
+              }
+          }
         }
         case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
       }
