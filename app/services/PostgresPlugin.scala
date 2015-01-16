@@ -79,7 +79,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.close()
   }
 
-  def searchSensors(geocode: Option[String]): Option[String] = {
+  def searchSensors(geocode: Option[String], sensor_name: Option[String]): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
@@ -94,6 +94,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid "
 	  if (parts.length == 3) {
       query += "WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+      if (sensor_name.isDefined) query += " AND name = ?"
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       query += "WHERE ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
       i = 0
@@ -102,6 +103,9 @@ class PostgresPlugin(application: Application) extends Plugin {
         i += 2
       }
       query += "ST_MakePoint(?, ?)])), geog)"
+      if (sensor_name.isDefined) query += " AND name = ?"
+    } else if (parts.length == 0) {
+      if (sensor_name.isDefined) query += " WHERE name = ?"
     }
     query += " GROUP BY id"
     query += " ORDER BY name"
@@ -112,6 +116,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
       st.setDouble(i + 3, parts(2).toDouble * 1000)
+      if (sensor_name.isDefined) st.setString(i + 4, sensor_name.getOrElse(""))
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       while (i < parts.length) {
         st.setDouble(i + 1, parts(i+1).toDouble)
@@ -120,6 +125,9 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
+      if (sensor_name.isDefined) st.setString(i + 3, sensor_name.getOrElse(""))
+    } else if (parts.length == 0 && sensor_name.isDefined) {
+      st.setString(1, sensor_name.getOrElse(""))
     }
     st.setFetchSize(50)
     Logger.debug("Sensors search statement: " + st)

@@ -344,7 +344,7 @@ GET     /api/geostreams/sensors/:id          api.Geostreams.getSensor(id: String
 GET     /api/geostreams/sensors/:id/stats    api.Geostreams.getSensorStatistics(id: String)
 GET     /api/geostreams/sensors/:id/streams  api.Geostreams.getSensorStreams(id: String)
 GET     /api/geostreams/sensors/:id/update   api.Geostreams.updateStatisticsSensor(id: String)
-GET     /api/geostreams/sensors              api.Geostreams.searchSensors(geocode: Option[String] ?= None)
+GET     /api/geostreams/sensors              api.Geostreams.searchSensors(geocode: Option[String] ?= None, sensor_name: Option[String] ?= None)
 
 POST    /api/geostreams/streams			     api.Geostreams.createStream
 GET     /api/geostreams/streams/update       api.Geostreams.updateStatisticsStreamSensor()
