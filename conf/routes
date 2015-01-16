@@ -350,7 +350,7 @@ POST    /api/geostreams/streams			     api.Geostreams.createStream
 GET     /api/geostreams/streams/update       api.Geostreams.updateStatisticsStreamSensor()
 GET     /api/geostreams/streams/:id          api.Geostreams.getStream(id: String)
 GET     /api/geostreams/streams/:id/update   api.Geostreams.updateStatisticsStream(id: String)
-GET     /api/geostreams/streams              api.Geostreams.searchStreams(geocode: Option[String] ?= None)
+GET     /api/geostreams/streams              api.Geostreams.searchStreams(geocode: Option[String] ?= None, stream_name: Option[String] ?= None)
 DELETE  /api/geostreams/streams/:id          api.Geostreams.deleteStream(id: String)
 
 DELETE  /api/geostreams/dropall              api.Geostreams.deleteAll
