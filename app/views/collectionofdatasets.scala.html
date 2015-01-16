@@ -39,14 +39,14 @@
                             @if(collection.author.isDefined && user.get.identityId.userId.equals(collection.author.get.identityId.userId)){                    
                                 <span class="align-right">
                                     <button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" 
-                                            style="margin-right:15px;" class="btn btn-primary" title="Detach Datasets and Delete Collection">
-                                    <span class="glyphicon glyphicon-trash"></span> Detach Delete</button>
+                                            style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
+                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
                                 </span>
                             } else {
                                 <span class="align-right">
                                     <button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" 
-                                            style="margin-right:15px;" class="btn btn-primary" title="Detach Datasets and Delete Collection">
-                                    <span class="glyphicon glyphicon-trash"></span> Detach Delete</button>
+                                            style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
+                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
                                 </span>
                             }                   
                         }
