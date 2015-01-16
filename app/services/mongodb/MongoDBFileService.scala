@@ -98,7 +98,7 @@ class MongoDBFileService @Inject() (
   }
 
   def latest(): Option[File] = {
-    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
+    val results = FileDAO.find("isIntermediate" $ne true).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
@@ -110,7 +110,7 @@ class MongoDBFileService @Inject() (
   }
 
   def first(): Option[File] = {
-    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
+    val results = FileDAO.find("isIntermediate" $ne true).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
