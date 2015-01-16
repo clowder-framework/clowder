@@ -31,6 +31,13 @@ import services.ElasticsearchPlugin
 @Singleton
 class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends CollectionService {
   /**
+   * Count all collections
+   */
+  def count(): Long = {
+    Collection.count(MongoDBObject())
+  }
+
+  /**
    * List all collections in the system.
    */
   def listCollections(): List[Collection] = {

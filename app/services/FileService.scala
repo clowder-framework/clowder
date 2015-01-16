@@ -15,6 +15,11 @@ import play.api.libs.json.{JsObject, JsArray, JsValue}
  */
 trait FileService {
   /**
+   * The number of files
+   */
+  def count(): Long
+
+  /**
    * Save a file from an input stream.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File]

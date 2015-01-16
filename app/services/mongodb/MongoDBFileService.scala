@@ -57,6 +57,13 @@ class MongoDBFileService @Inject() (
   object MustBreak extends Exception {}
 
   /**
+   * Count all files
+   */
+  def count(): Long = {
+    FileDAO.count(MongoDBObject())
+  }
+
+  /**
    * List all files.
    */
   def listFiles(): List[File] = {
