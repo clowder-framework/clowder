@@ -18,13 +18,18 @@ trait FileService {
    * Save a file from an input stream.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File]
-  
+
   /**
    * Get the input stream of a file given a file id.
    * Returns input stream, file name, content type, content length.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)]
-  
+
+  /**
+   * Remove the file from mongo
+   */
+  def removeFile(id: UUID)
+
   /**
    * List all files in the system.
    */
@@ -65,11 +70,6 @@ trait FileService {
    */
   def first(): Option[File]
   
-  /**
-   * Store file metadata.
-   */
-  def storeFileMD(id: UUID, filename: String, contentType: Option[String], author: Identity): Option[File]
-
   def index(id: UUID)
 
   /**
@@ -127,8 +127,6 @@ trait FileService {
   def setContentType(id: UUID, newType: String)
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean)
-
-  def removeFile(id: UUID)
 
   def removeTemporaries()
 

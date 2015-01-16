@@ -20,4 +20,6 @@ trait TileService {
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String
 
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)]
+
+  def remove(id: UUID)
 }
