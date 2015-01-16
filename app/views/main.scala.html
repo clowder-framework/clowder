@@ -19,7 +19,7 @@
 <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
 <script src="@routes.Assets.at("javascripts/jquery-1.10.2.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.3.custom.min.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/bootstrap.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/bootstrap.min.js")" type="text/javascript"></script>
 <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
 
 <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -98,14 +98,22 @@
 
 					<ul class="nav navbar-nav navbar-right">
                         @user match {
-                            case Some(x) => {
-                                <li>
-                                    <a  class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.logout" title="Logout from the system"><span class="glyphicon glyphicon-log-out"></span> Logout (@x.fullName)</a>
-                                </li>
+							case Some(x) => {
+								<li class="dropdown">
+									<a href="#" class="dropdown-toggle" data-toggle="dropdown">@x.fullName<b class="caret"></b></a>
+									<ul class="dropdown-menu" role="menu">
+										<li>
+											<a href="@routes.Profile.viewProfile(x.email)">View Profile</a>
+										</li>
+										<li>
+											<a href="@securesocial.controllers.routes.LoginPage.logout" title="Logout from the system"><span class="glyphicon glyphicon-log-out"></span> Logout </a>
+										</li>
+									</ul>
+								 </li>
                             }
                             case None => {
                                 <li>
-                                    <a class="btn btn-link" href="@securesocial.controllers.routes.LoginPage.login" title="Login to the system"><span class="glyphicon glyphicon-log-in"></span> Login</a>
+                                    <a href="@securesocial.controllers.routes.LoginPage.login" title="Login to the system"><span class="glyphicon glyphicon-log-in"></span> Login</a>
                                 </li>
                             }
                         }
@@ -132,7 +140,9 @@
   
   <div id="footer">
     <div class="container">
-      <p class="muted credit">Powered by <a href="http://medici.ncsa.illinois.edu">Medici</a>.</p>
+      <p class="muted credit">Powered by <a href="http://medici.ncsa.illinois.edu">Medici</a>
+		  (@sys.props.getOrElse("build.version", default = "0.0.0")#@sys.props.getOrElse("build.bamboo", default = "development")
+		  branch:@sys.props.getOrElse("build.branch", default = "unknown") sha1:@sys.props.getOrElse("build.gitsha1", default = "unknown")).</p>
     </div>
   </div>
   

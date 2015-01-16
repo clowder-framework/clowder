@@ -44,6 +44,13 @@ class MongoDBDatasetService @Inject() (
   object MustBreak extends Exception {}
 
   /**
+   * Count all datasets
+   */
+  def count(): Long = {
+    Dataset.count(MongoDBObject())
+  }
+
+  /**
    * List all datasets in the system.
    */
   def listDatasets(): List[Dataset] = {

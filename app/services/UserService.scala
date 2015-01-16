@@ -14,6 +14,11 @@ import models.{UUID, User}
  */
 trait UserService {
   /**
+   * The number of users
+   */
+  def count(): Long
+
+  /**
    * List all users in the system.
    */
   def list: List[User]
@@ -27,4 +32,23 @@ trait UserService {
    * Return a specific user based on the email provided.
    */
   def findByEmail(email: String): Option[User]
+  
+  /**
+  * Updates a value in the User Model
+  */
+
+  def updateUserField(email: String, field: String, fieldText: Any)
+
+  /**
+  * Adds a friend
+  */
+  def addUserFriend(email: String, newFriend: String)
+  /**
+  * Adds a dataset view
+  */
+  def  addUserDatasetView(email: String, dataset: UUID)
+  /** 
+  *Creates a new list in User Model for friends, or viewed
+  */
+  def createNewListInUser(email: String, field: String, fieldList: List[Any])
 }

@@ -1,11 +1,52 @@
+import com.typesafe.sbt.packager.Keys._
 import sbt._
 import Keys._
 import play.Project._
+import com.typesafe.sbt.SbtNativePackager._
+import NativePackagerKeys._
 
 object ApplicationBuild extends Build {
 
   val appName = "medici-play"
-  val appVersion = "1.0-SNAPSHOT"
+  val version = "2.0.0"
+
+  def appVersion: String = {
+    if (gitBranchName == "master") {
+      version
+    } else {
+      s"${version}-SNAPSHOT"
+    }
+  }
+
+  def exec(cmd: String): Seq[String] = {
+    val r = java.lang.Runtime.getRuntime()
+    val p = r.exec(cmd)
+    p.waitFor()
+    val ret = p.exitValue()
+    if (ret != 0) {
+      sys.error("Command failed: " + cmd)
+    }
+    val is = p.getInputStream
+    val res = scala.io.Source.fromInputStream(is).getLines()
+    res.toSeq
+  }
+
+  def gitShortHash: String = {
+    val hash = exec("git rev-parse --short HEAD")
+    assert(hash.length == 1)
+    hash(0)
+  }
+
+  def gitBranchName: String = {
+    val branch = exec("git rev-parse --abbrev-ref HEAD")
+    assert(branch.length == 1)
+    if (branch(0) == "HEAD") return "detached"
+    branch(0)
+  }
+
+  def getBambooBuild: String = {
+    sys.env.getOrElse("bamboo_buildNumber", default = "local")
+  }
 
   val appDependencies = Seq(
   	filters,
@@ -77,8 +118,25 @@ object ApplicationBuild extends Build {
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",   
-    resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public"
-   
+    resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public",
+
+    // add custom folder to the classpath, use this to add/modify medici:
+    // custom/public/stylesheets/themes     - for custom themes
+    // custom/public/javascripts/previewers - for custom previewers
+    // custom/custom.conf                   - to customize application.conf
+    scriptClasspath += "../custom",
+
+    // add build number so we can use it in templates
+    bashScriptExtraDefines += "addJava \"-Dbuild.version=" + version + "\"",
+    bashScriptExtraDefines += "addJava \"-Dbuild.bamboo=" + getBambooBuild + "\"",
+    bashScriptExtraDefines += "addJava \"-Dbuild.branch=" + gitBranchName + "\"",
+    bashScriptExtraDefines += "addJava \"-Dbuild.gitsha1=" + gitShortHash + "\"",
+
+    batScriptExtraDefines += "addJava \"-Dbuild.version=" + version + "\"",
+    batScriptExtraDefines += "addJava \"-Dbuild.bamboo=" + getBambooBuild + "\"",
+    batScriptExtraDefines += "addJava \"-Dbuild.branch=" + gitBranchName + "\"",
+    batScriptExtraDefines += "addJava \"-Dbuild.gitsha1=" + gitShortHash + "\""
+
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
 

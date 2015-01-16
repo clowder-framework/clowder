@@ -15,6 +15,13 @@ import models.File
  */
 class CassandraDataset extends DatasetService {
  /**
+  * Count all datasets
+  */
+ def count(): Long = {
+  -1
+ }
+
+ /**
    * List all datasets in the system.
    */
   def listDatasets(): List[Dataset] = {

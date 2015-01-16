@@ -1,0 +1,85 @@
+@(profile: User, ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
+@main("Profile") {
+<div class="page-header">
+
+  <table>
+    <tr>
+      <td valign="top">
+        <img src=@profile.getAvatarUrl class="profilePicture">
+        <div align="center">
+          <h4><a href="@routes.Datasets.userDatasets("", "", 12, "", profile.email)">View Datasets</a> </h4>
+          @user match {
+            case Some(viewer) => {
+              @ownProfile match {
+                case Some(sameProfile) =>{
+                <h4>
+                  <a href="@routes.Profile.editProfile">Edit Profile</a>
+                </h4>
+                }
+                case None => {
+                  <h4>
+                    <a href="@routes.Profile.addFriend(profile.email)">Add Friend</a>
+                  </h4>
+                }
+              }
+            }
+            case None => {}
+          }
+        </div>
+      </td>
+      <td>
+        <div style="margin-left: 45px;">
+          <h1>@profile.fullName</h1>
+          <h5>
+            @profile.position
+            @profile.position match{
+              case Some(info) => {
+                @profile.institution match{
+                  case Some(info) => {at}
+                  case None => {}
+                }
+              }
+              case None => {}
+            }
+            @profile.institution
+          </h5>
+          
+          <p style="margin-bottom: 24px">@profile.email</p>
+
+          @profile.orcidID match{
+            case Some(info) => {
+              <h4>Orcid ID</h4>
+              <a href="http://orcid.org/@info" target="_blank"> <p>@info</p> </a>
+            }
+            case None => {}
+          }
+
+          @profile.biography match{
+            case Some(info) => {
+              <h4>Biography</h4>
+              <p>@info</p>
+            }
+            case None => {}
+          }
+          @profile.currentprojects match{
+            case Some(info) => {
+              <h4>Current Projects</h4>
+              <p>@info</p>
+            }
+            case None => {}
+          }
+          @profile.pastprojects match{
+            case Some(info) => {
+              <h4>Past Projects</h4>
+              <p>@info</p>
+            }
+            case None => {}
+          }
+
+        </div>
+      </td> 
+    </tr>
+  </table>
+
+</div>
+}

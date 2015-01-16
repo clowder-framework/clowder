@@ -65,6 +65,7 @@
     <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
     
 	<script>
 		tinymce.init({selector:'.notesArea',
@@ -145,8 +146,24 @@
     		}
 
         <div class="row">
-            <div class="col-md-12 button-margins">
-                <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>                
+            <div class="col-md-12 button-margins">                
+            	<span class="button-bar">
+                    <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
+                </span>
+                @if(user.isDefined) {
+                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
+                        <span class="align-right">
+				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
+						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
+					    </span>
+					} else {
+					    <span class="align-right">
+                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
+                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                        </span>
+					}					
+				}				               
             </div>
         </div>
 
@@ -362,7 +379,7 @@
                     <tr><td><b>Filename:</b></td><td>@file.filename</td></tr>
                     <tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
                     <tr><td><b>Uploaded on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
-                    <tr><td><b>Uploaded by:</b></td><td>@file.author.fullName</td></tr>
+                    <tr><td><b>Uploaded by:</b></td><td> <a href = "@routes.Profile.viewProfile(file.author.email)"> @file.author.fullName</a></td></tr>
                 </table>
             </div>
 
