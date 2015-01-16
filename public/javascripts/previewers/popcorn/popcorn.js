@@ -1,9 +1,11 @@
 (function ($, Configuration) {
   console.log("video previewer for " + Configuration.id);
   
+  var pathJs = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + Configuration.jsPath + "/";
+  
   var s = document.createElement("script");
   s.type = "text/javascript";
-  s.src = window.location.protocol + "//popcornjs.org/code/dist/popcorn-complete.min.js";
+  s.src = pathJs + "popcorn-complete.min.js";
     
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);
