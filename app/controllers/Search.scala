@@ -274,41 +274,35 @@ class Search @Inject() (
    * Input file is NOT in db, just uploaded by user.
    **/
    def findSimilarToQueryFile(fileID:UUID, typeToSearch:String, sectionsSelected:List[String])=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request => 	
-  
-   	Logger.debug("Search.findSimilarToQueryFile typeToSearch = " + typeToSearch + " sectionsSelected = " + sectionsSelected)
-    Async{ 
-    
+   	Async{     
    		//query file is a new/temp file, it will be stored in MultimediaQueryService
    		//in controllers/Files -> uploadSelectQuery
-   		//var contentTypeStr="";
    		queries.get(fileID) match {
    			case Some((inputStream, filename, contentType, length)) => { 
-  				current.plugin[VersusPlugin] match {    		
+   				current.plugin[VersusPlugin] match {    		
    					case Some(plugin)=>{   
    					 
-   					 var indexesToSeachFuture =  for {
-   					    indexesForContent<-plugin.getIndexesForContentTypeAsFutureList(contentType)
-   					    indexesForType<- plugin.getIndexesForType(typeToSearch, sectionsSelected)
-   					  } yield indexesForContent.intersect(indexesForType)
+   						val indexesToSearchFuture =  for {
+    						indexesForContent<-plugin.getIndexesForContentTypeAsFutureList(contentType)
+    						indexesForType<- plugin.getIndexesForType(typeToSearch, sectionsSelected)
+   					  	} yield indexesForContent.intersect(indexesForType)
    										     					  
-   					   val futureFutureListResults = for {    						 
-   						  indexesToSeach <- indexesToSeachFuture
-   					  } yield {    					    
-   						  val resultListOfFutures=indexesToSeach.map{
-   							  index=> plugin.queryIndexForNewFile(fileID, index.id).map{queryResult=>(index, queryResult)}    								  
-   							} 	
+   					  	val futureFutureListResults = for {    						 
+   					  		indexesToSeach <- indexesToSearchFuture
+   					  	} yield {    					    
+   					  		val resultListOfFutures=indexesToSeach.map{
+   					  			index=> plugin.queryIndexForNewFile(fileID, index.id).map{queryResult=>(index, queryResult)}    								  
+   					  		} 	
    						 
-   					    //convert list of futures into a Future[list]
-   							scala.concurrent.Future.sequence(resultListOfFutures)    			
-   						}//End yield    		
+   					  		//convert list of futures into a Future[list]
+   					  		scala.concurrent.Future.sequence(resultListOfFutures)    			
+   					  	}//End yield    		
     		
    						for{
    							futureListResults<-futureFutureListResults
    							listOfResults<-futureListResults
    						} yield {  
-   						  // var thumb_id = file.thumbnail_id.getOrElse("")	
-   							Ok(views.html.multimediaSearchResults(filename, fileID, null, listOfResults))             		
-
+   							Ok(views.html.multimediaSearchResults(filename, fileID, null, listOfResults)) 		
    						}    		            
    					} //end of case Some(plugin)   
 
@@ -331,15 +325,9 @@ class Search @Inject() (
   *  
   **/
    def findSimilarToExistingFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
-  	//
-    //almost exact copy of findSimilar, calls plugin.queryIndexFile instead of plugin.queryIndex
-  	//also towards the end, use "files.getFile(imageID)" instead of "queries.getFile(imageID)
-  	//
-    Logger.debug("Search.findSimilarToExistingFile file id = " + inputFileId)
-    
+  	    
     Async{       	   
   		//file will be stored in FileService
-   	   	//var contentTypeStr="";
    	   	files.getBytes(inputFileId) match {
    	   		case Some((inputStream, filename, contentType, length)) => {  
    	   			//contentTypeStr = contentType
@@ -399,17 +387,17 @@ class Search @Inject() (
 	  } 
 	  //now deal with weights	 		  
 	  try {
-	    weightsList = input("Weight").map(w=>w.toDouble).toList
+		  weightsList = input("Weight").map(w=>w.toDouble).toList
 	  }catch {
-	   		case e:Exception => return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))
-	   }
+	  	case e:Exception => return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))
+	  }
 	  Logger.debug("Search.validateInput validate weightsList = " + weightsList)    
      
-	   var sum=0.0 	
-	   for (w<- weightsList){
-		   if (w<0) return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))		   
-		   sum+=w
-	   } 	  
+	  var sum=0.0 	
+	  for (w<- weightsList){
+		  if (w<0) return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))		   
+				  sum+=w
+	  } 	  
 	  if (sum != 1)  return (true, "sum of weights must be 1", List(0.0))	       
       
 	  //no errors, return list of weights 
@@ -423,7 +411,6 @@ class Search @Inject() (
   def mergeMaps(maps:List[scala.collection.immutable.HashMap[String, Double]], 
       weights:List[Double]):scala.collection.immutable.HashMap[String, Double]={
 
-    Logger.debug("Length of maps = " + maps.length)
     //merge the first two maps
     var mergedMap = mergeTwoMaps(maps(0), maps(1), weights(0), weights(1))
    	//merge the rest of the maps
@@ -442,7 +429,7 @@ class Search @Inject() (
 		  			w1:Double, w2:Double):scala.collection.immutable.HashMap[String, Double]={
         
 	  	mapOne.merged(mapTwo)({ case ((file,proxOne),(_,proxTwo)) => (file,w1*proxOne+w2*proxTwo)  })  
-   		//mergedMap    
+   		    
   }
    							
   
@@ -467,7 +454,6 @@ class Search @Inject() (
    	  		//query file will be stored in MultimediaQueryService
    	  		//in controllers/Files -> uploadSelectQuery
    	  		queries.get(fileId) match {
-//        	   case Some((inputStream, filename, contentType, length)) => {        
    	  			case Some(fileInfo) => {                
    	  				val filename = fileInfo._2
    	  				current.plugin[VersusPlugin] match {    		
@@ -478,13 +464,13 @@ class Search @Inject() (
    							plugin.queryIndexSorted(fileId.stringify, indexId.stringify)   						  
    						}
    						//change a list of futures into a future list
-   						var futureListResults = scala.concurrent.Future.sequence(queryResults)   		   								
+   						val futureListResults = scala.concurrent.Future.sequence(queryResults)   		   								
    						
    						for{
    						  maps<- futureListResults
    						}yield{   						  						
    							//Calling helper method to merge all the maps. The magic happens here.
-   							var mergedMaps = mergeMaps(maps, weights)   										
+   							val mergedMaps = mergeMaps(maps, weights)   										
    							
    							val mergedResult = for {
    								(fileURL, prox)<-mergedMaps
@@ -506,7 +492,7 @@ class Search @Inject() (
    							  }
    							  Logger.debug("total merged result is = " + mergedResult)
    							  //sort by combined proximity values
-   							  var sortedMergedResults= mergedResult.toList sortBy{_._4}
+   							  val sortedMergedResults= mergedResult.toList sortBy{_._4}
    							  Logger.debug("sorted merged Results = " + sortedMergedResults)   							 
    							  Ok(views.html.multimediaSearchResultsCombined(filename, sortedMergedResults))    							 
    						}//end of yield   					
