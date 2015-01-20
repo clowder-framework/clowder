@@ -56,7 +56,6 @@ GET		/files/:id/blob			          @controllers.Files.download(id: UUID)
 #GET     /queries/:id/blob				  @controllers.Files.downloadquery(id: UUID)
 #GET     /files/:id/similar               @controllers.Files.findSimilar(id: UUID)
 POST    /upload					          @controllers.Files.upload
-POST   /uploadSelect                      @controllers.Files.uploadSelect
 POST   /uploadSelectQuery                 @controllers.Files.uploadSelectQuery
 #POST   	/uploadAjax					  @controllers.Files.uploadAjax
 POST   	/uploaddnd/:id					  @controllers.Files.uploaddnd(id: UUID)
