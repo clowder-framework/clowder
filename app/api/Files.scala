@@ -1011,38 +1011,27 @@ class Files @Inject()(
   
   
   /**
-   * Add thumbnail to query.
+   * Add thumbnail to query file.
    */
-  @ApiOperation(value = "Add thumbnail to file", notes = "Attaches an already-existing thumbnail to a file.", responseClass = "None", httpMethod = "POST")
+  @ApiOperation(value = "Add thumbnail to a query image", notes = "Attaches an already-existing thumbnail to a query image.", responseClass = "None", httpMethod = "POST")
   def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
-      Logger.debug("~~~~~attachTHumbnail for fileid = " + query_id + " and thumbnail_id = " + thumbnail_id )
       queries.get(query_id) match {
         case Some(file) => {
-          Logger.debug("file exists")
           thumbnails.get(thumbnail_id) match {
             case Some(thumbnail) => {
-              Logger.debug("thumbnal exists")
-              queries.updateThumbnail(query_id, thumbnail_id)
-             // val datasetList = datasets.findByFileId(file.id)
-              //for (dataset <- datasetList) {
-                //if (dataset.thumbnail_id.isEmpty) {
-                  //datasets.updateThumbnail(dataset.id, thumbnail_id)                 
-                //}
-              //}
-
+              queries.updateThumbnail(query_id, thumbnail_id)  
               Ok(toJson(Map("status" -> "success")))
             }
             case None => {
-                            Logger.debug("Thumbnail not found")
-
-              BadRequest(toJson("Thumbnail not found"))
+            	Logger.error("Thumbnail not found")
+            	BadRequest(toJson("Thumbnail not found"))
             }
           }
         }
         case None => {
-          Logger.debug("File not found")
-          BadRequest(toJson("File not found " + query_id))
+          Logger.error("File not found")
+          BadRequest(toJson("Query file not found " + query_id))
         }
       }
   }
