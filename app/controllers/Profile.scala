@@ -119,7 +119,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.addUserFriend(addr.toString(),  addr.toString())
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profile(other, None))
+                        Redirect(routes.Profile.viewProfile(Option(other.email)))
                       }
                     }
                   }
@@ -128,7 +128,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.createNewListInUser(addr.toString(), "friends", newList)
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profile(other, None))
+                        Redirect(routes.Profile.viewProfile(Option(other.email)))
                       }
                     }
                   }

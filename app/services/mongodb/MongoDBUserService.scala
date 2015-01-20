@@ -20,6 +20,13 @@ import com.mongodb.casbah.Imports._
  */
 class MongoDBUserService extends UserService {
   /**
+   * Count all users
+   */
+  def count(): Long = {
+    UserDAO.count(MongoDBObject())
+  }
+
+  /**
    * List all users in the system.
    */
   override def list(): List[User] = {
