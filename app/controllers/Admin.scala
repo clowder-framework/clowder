@@ -224,7 +224,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
             } yield {
             	if(indexList.body.isEmpty())
             	{ 
-            		//Ok("No Index")
             		Ok(Json.toJson(""))
             	}
                 else{
