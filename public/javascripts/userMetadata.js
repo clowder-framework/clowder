@@ -174,21 +174,17 @@
 				       type: 'POST',
 				       url:  window["uploadIp"+topId],
 				       data: JSON.stringify(data),
-				       contentType: "application/json",
+				       contentType: "application/json"
 				     });
 					 
 					  request.done(function (response, textStatus, jqXHR){
-					        console.log("Response " + response);
-							alert("Metadata added successfully.");
-		     			});
+						  notify('Metadata added successfully.', 'success');
+					  });
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
-		        		console.error(
-		            		"The following error occured: "+
-		            		textStatus, errorThrown		            
-		        			);
-		        		alert("ERROR: " + errorThrown +". Metadata not added." );
-		     			});
+						  console.error("The following error occured: "+ textStatus, errorThrown);
+						  alert("ERROR: " + errorThrown +". Metadata not added." );
+					  });
 					 
 					 
 				  }
