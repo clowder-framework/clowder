@@ -23,6 +23,8 @@ def main():
 	for o, a in opts:
 		if o == '-h':
 			host = 'http://' + a + ':9000/'
+		elif o == '-k':
+			key = a
 		elif o == '-s':
 			suppress = True
 		else:
