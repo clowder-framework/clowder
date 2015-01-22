@@ -1,4 +1,4 @@
-@(fileName:String, resultsList:List[(models.UUID, String, String, Double)])   		
+@(fileName:String="Query file", thumbnailId:Option[UUID], resultsList:List[(models.UUID, String, String, Double)])   		
 
 @********************************************************************@
 @****   Template to display combined weighted search results    ***@
@@ -9,7 +9,15 @@
 @main("Search Results") {		
 	<div class="page-header">
 		<h2>Combined Weighted Search Results For <medium>@fileName</medium></h2>
-	</div>
+
+        @if(thumbnailId.isDefined) {
+       <img class='mmd-img media-object' 
+          src='@(routes.Files.thumbnail(thumbnailId.get))'
+          title='Thumbnail of query file'>
+        </img>
+    }
+  </div>
+  
 	@if(resultsList.size == 0) {
 	<div class="row">
 		<div class="col-md-12">
@@ -33,8 +41,7 @@
 									alt='Thumbnail of @fileName' 
 									title='Thumbnail of @fileName'>
 								</img>
-							}
-							@if(thumbnailId.isEmpty){No thumbnail available}						
+							} else {No thumbnail available}						
 							</a>
 					  <div class="media-body">
 					    <h4 class="media-heading">@fileName</h4>
