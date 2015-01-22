@@ -14,6 +14,6 @@ case class TempFile(
   uploadDate: Date,
   contentType: String,
   length: Long = 0,
-  thumbnail_id: Option[String] = None
+  thumbnail_id: Option[UUID] = None
   )
 
