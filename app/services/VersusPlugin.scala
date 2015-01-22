@@ -337,6 +337,8 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val indexId = configuration.getString("versus.index").getOrElse("")
+    //fileURL will be used from versus comparison resource to get file's bytes
+    //need 'blob' in fileURL
     val fileURL = client + "/api/files/" + fileId + "/blob?key=" + configuration.getString("commKey").get
     index(fileURL, fileType)
   }
@@ -455,7 +457,7 @@ class VersusPlugin(application:Application) extends Plugin{
   /*
    * Searches for entries similar to the input file, which is already in the db.
    */
-  	def queryIndexForExistingFile(inputFileId: UUID, indexId: String): Future[List[PreviewFilesSearchResult]] = {
+  def queryIndexForExistingFile(inputFileId: UUID, indexId: String): Future[List[PreviewFilesSearchResult]] = {
 		  //called when multimedia search -> find similar is clicked    
 		  Logger.trace("VersusPlugin - queryIndexForExistingFile  - file id = " + inputFileId )   		  
     		  
@@ -519,11 +521,15 @@ class VersusPlugin(application:Application) extends Plugin{
             //or
             //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5/blob?key=r1ek3rs
             //        
-            //parse docID to get preivew id or file id - string between '/' and '?'
-            val end = result.docID.lastIndexOf("?")
-            val begin = result.docID.lastIndexOf("/");                       
-            val resultId = UUID(result.docID.substring(begin + 1, end));
-          
+            //parse docID to get preivew id or file id - string between next to last '/' and '/blob?'
+            
+            //resultId now contains 'blob' as in example above. Getting file id string.
+            
+            val lastSlash = result.docID.lastIndexOf("/")
+            //Returns the index within this string of the last occurrence of the specified substring, searching backward starting at the specified index.
+            val nextToLastSlash = result.docID.lastIndexOf("/", lastSlash-1)                            
+            val resultId = UUID(result.docID.substring(nextToLastSlash + 1, lastSlash));
+                      
             //
             //check if this is a file or a video preview
             //
@@ -553,18 +559,18 @@ class VersusPlugin(application:Application) extends Plugin{
             
             //in case of still images AND non-image file formats
             if (isFile) {
-              files.get(resultId) match {               	  
-                case Some (file)=>{  
-                	//use helper method to get the results
-               	    val oneFileResult = getFileSeachResult(resultId, file, result)
-               	    resultList += new PreviewFilesSearchResult("file", oneFileResult, null  )                  	                  	  
-               	    }               	  
-                case None => {}                 }
-          }//end of if (isFile)        
-        } // End of similarity map      
-        resultList.toList
-    	}   
-    }
+                files.get(resultId) match {               	  
+                  case Some (file)=>{  
+                  	//use helper method to get the results
+                 	    val oneFileResult = getFileSeachResult(resultId, file, result)
+                 	    resultList += new PreviewFilesSearchResult("file", oneFileResult, null  )                  	                  	  
+                 	    }               	  
+                  case None => {}                 }
+            }//end of if (isFile)        
+          } // End of similarity map      
+          resultList.toList
+      	}   
+      }
   
 
  /**
@@ -599,7 +605,6 @@ class VersusPlugin(application:Application) extends Plugin{
       	   //"if(c) p else q" equivalent to java "c ? p : q"     	   
       	   (res.docID, if(res.maxProximity==0)  res.proximity else (res.proximity / res.maxProximity))
       	 }.toList
-         
        val resultsHM = new scala.collection.mutable.HashMap[String, Double]
        toupleList foreach {
        		case (key, value) =>
@@ -614,23 +619,23 @@ class VersusPlugin(application:Application) extends Plugin{
     /*
     * Helper method. Called from queryIndex    
     */
-   def getFileSeachResult(result_id:UUID, file:models.File, result:models.VersusSimilarityResult.VersusSimilarityResult):SearchResultFile=
-   {    	     
-		  //=== find list of datasets ids
-		  //this file can belong to 0 or 1 or more  datasets
-		  var dataset_id_list = datasets.findByFileId(file.id).map{
-			  dataset=>dataset.id.stringify             		  		  
-		  }           
-              
-		  val formatter = new DecimalFormat("#.#####")
-		  val proxvalue = formatter.format(result.proximity).toDouble     
-		  val normalizedProxvalue = formatter.format(result.proximity/result.maxProximity).toDouble  
-           
-		  var thumb_id = file.thumbnail_id.getOrElse("")		  
-		  
-		  val oneFileResult = new SearchResultFile(result_id, result.docID, normalizedProxvalue, file.filename, dataset_id_list.toList, thumb_id)
-		  return oneFileResult			            
-   }
+  def getFileSeachResult(result_id:UUID, file:models.File, result:models.VersusSimilarityResult.VersusSimilarityResult):SearchResultFile=
+	   {    	     
+			  //=== find list of datasets ids
+			  //this file can belong to 0 or 1 or more  datasets
+			  var dataset_id_list = datasets.findByFileId(file.id).map{
+				  dataset=>dataset.id.stringify             		  		  
+			  }           
+	              
+			  val formatter = new DecimalFormat("#.#####")
+			  val proxvalue = formatter.format(result.proximity).toDouble     
+			  val normalizedProxvalue = formatter.format(result.proximity/result.maxProximity).toDouble  
+	           
+			  var thumb_id = file.thumbnail_id.getOrElse("")		  
+			  
+			  val oneFileResult = new SearchResultFile(result_id, result.docID, normalizedProxvalue, file.filename, dataset_id_list.toList, thumb_id)
+			  return oneFileResult			            
+	   }
    
    /*
     * Helper method. Called from queryIndex
