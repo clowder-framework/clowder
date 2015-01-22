@@ -279,9 +279,9 @@ class Search @Inject() (
    		//in controllers/Files -> uploadSelectQuery
    		queries.get(fileID) match {
    			case Some((inputStream, filename, contentType, length)) => { 
+   			  
    				current.plugin[VersusPlugin] match {    		
    					case Some(plugin)=>{   
-   					 
    						val indexesToSearchFuture =  for {
     						indexesForContent<-plugin.getIndexesForContentTypeAsFutureList(contentType)
     						indexesForType<- plugin.getIndexesForType(typeToSearch, sectionsSelected)
@@ -291,9 +291,9 @@ class Search @Inject() (
    					  		indexesToSeach <- indexesToSearchFuture
    					  	} yield {    					    
    					  		val resultListOfFutures=indexesToSeach.map{
-   					  			index=> plugin.queryIndexForNewFile(fileID, index.id).map{queryResult=>(index, queryResult)}    								  
+   					  			index=> plugin.queryIndexForNewFile(fileID, index.id).map{queryResult=>(index, queryResult)}
    					  		} 	
-   						 
+
    					  		//convert list of futures into a Future[list]
    					  		scala.concurrent.Future.sequence(resultListOfFutures)    			
    					  	}//End yield    		
@@ -302,7 +302,11 @@ class Search @Inject() (
    							futureListResults<-futureFutureListResults
    							listOfResults<-futureListResults
    						} yield {  
-   							Ok(views.html.multimediaSearchResults(filename, fileID, null, listOfResults)) 		
+   							// string thumbnail
+   							// will change to UUID once models.File.thumbnail_id is changed to UUID
+   							val thumb_id:String = queries.getFile(fileID).flatMap(_.thumbnail_id).map(_.stringify).getOrElse("")
+   							Ok(views.html.multimediaSearchResults(filename, fileID, thumb_id, listOfResults))             		
+
    						}    		            
    					} //end of case Some(plugin)   
 
@@ -349,8 +353,10 @@ class Search @Inject() (
    	   					for{
    	   						futureListResults<-futureFutureListResults
    	   						listOfResults<-futureListResults      		
-   	   					} yield {     			             
-   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  null, listOfResults)) 
+   	   					} yield {   
+   	   						//get  string thumbnail id for this file and pass on to view
+   	   						val thumb_id= files.get(inputFileId).flatMap(_.thumbnail_id).getOrElse("")
+   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  thumb_id, listOfResults)) 
    	   					}    		             
    	   				} //end of case Some(plugin)                   
 
@@ -447,8 +453,8 @@ class Search @Inject() (
          val (inputErrors, errorMessage, weights) = validateInput(request.body.dataParts)
                          
          if (inputErrors == false){
-           //file id in dataParts is a sequence of just one element
-        	 val fileId = UUID(request.body.dataParts("FileID").head)
+        	 //fileId in dataParts is a sequence of just one element
+        	 val fileId = UUID(request.body.dataParts("FileID").head)        	     	 
         	 val indexIDs = request.body.dataParts("IndexID").map(i=>UUID(i)).toList        	 
    	  	
    	  		//query file will be stored in MultimediaQueryService
@@ -474,13 +480,14 @@ class Search @Inject() (
    							
    							val mergedResult = for {
    								(fileURL, prox)<-mergedMaps
-   							  } yield{   							    	
-   								val begin = fileURL.lastIndexOf("/");                       
-   								val end = fileURL.lastIndexOf("?")
-   								val result_id_str = fileURL.substring(begin + 1, end);
-   								val result_id = UUID(result_id_str);
-   								var oneFileName=""
-   								var oneThumbnlId=""
+   							  } yield{ 
+   								  //fileURL = http://localhost:9000/api/files/54bebcb919aff1ea8c8145ac/blob?key=r1ek3rs
+   								  val lastSlash = fileURL.lastIndexOf("/")
+   							  	  val nextToLastSlash = fileURL.lastIndexOf("/", lastSlash-1)
+   							  	  val result_id = UUID(fileURL.substring(nextToLastSlash + 1, lastSlash));
+   								
+   								var oneFileName=""   								
+   								var oneThumbnlId = ""
    								files.get(result_id) match {
    									case Some(file)=>{
    										oneFileName = file.filename
@@ -490,11 +497,11 @@ class Search @Inject() (
    								}    
    							    (result_id, oneFileName, oneThumbnlId, prox) 							  
    							  }
-   							  Logger.debug("total merged result is = " + mergedResult)
    							  //sort by combined proximity values
    							  val sortedMergedResults= mergedResult.toList sortBy{_._4}
-   							  Logger.debug("sorted merged Results = " + sortedMergedResults)   							 
-   							  Ok(views.html.multimediaSearchResultsCombined(filename, sortedMergedResults))    							 
+   							  //get an option of thumbnail id for this image and pass on to view
+   							  val thumb_id = queries.getFile(fileId).flatMap(_.thumbnail_id)   							  
+   							  Ok(views.html.multimediaSearchResultsCombined(filename, thumb_id, sortedMergedResults))    							 
    						}//end of yield   					
    					} //end of case Some(plugin)   
    					case None => {
