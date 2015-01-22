@@ -42,7 +42,7 @@ def main():
 		lines = tests_file.readlines()
 		count = 0;
 		mailserver = smtplib.SMTP('localhost')
-		report = ''
+		failure_report = ''
 		t0 = time.time()
 
 		for line in lines:
@@ -103,7 +103,7 @@ def main():
 							message += '!'
 
 						message += output + '" was not extracted from:\n\n' + input_filename + '\n\n'
-						report += message;
+						failure_report += message;
 						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?run=false&start=true\n'
 						message = 'Subject: DTS Test Failed\n\n' + message;
 
@@ -115,19 +115,29 @@ def main():
 									watcher = watcher.strip()
 									mailserver.sendmail('', watcher, message)
 
-		print 'Elapsed time: ' + timeToString(time.time() - t0)
+		dt = time.time() - t0
+		print 'Elapsed time: ' + timeToString(dt)
 
 		#Send a final report of failures
-		if report:
-			report = 'Subject: DTS Test Failure Report\n\n' + report
-			report += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?run=false&start=true\n'
+		if failure_report:
+			failure_report = 'Subject: DTS Test Failure Report\n\n' + failure_report
+			failure_report += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?run=false&start=true\n\n'
+			failure_report += 'Elapsed time: ' + timeToString(dt)
 
 			with open('watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.readlines()
 
 				for watcher in watchers:
 					watcher = watcher.strip()
-					mailserver.sendmail('', watcher, report)
+					mailserver.sendmail('', watcher, failure_report)
+		else:
+			with open('watchers.txt', 'r') as watchers_file:
+				watchers = watchers_file.readlines()
+
+				for watcher in watchers:
+					message = 'Subject: DTS Test Passed\n\n';
+					message += 'Elapsed time: ' + timeToString(dt)
+					mailserver.sendmail('', watcher, message)
 
 		mailserver.quit()
 
