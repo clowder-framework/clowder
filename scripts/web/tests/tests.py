@@ -135,7 +135,7 @@ def main():
 				watchers = watchers_file.readlines()
 
 				for watcher in watchers:
-					message = 'Subject: DTS Test Passed\n\n';
+					message = 'Subject: DTS Tests Passed\n\n';
 					message += 'Elapsed time: ' + timeToString(dt)
 					mailserver.sendmail('', watcher, message)
 
