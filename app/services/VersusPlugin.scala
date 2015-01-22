@@ -450,8 +450,7 @@ class VersusPlugin(application:Application) extends Plugin{
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
     val host = configuration.getString("versus.host").getOrElse("")
-    var queryurl = host + "/indexes/" + indexId + "/query"
-    queryIndex(queryurl, indexId)
+    queryIndex(fileURL, indexId)
   }
   
   /*
@@ -609,7 +608,6 @@ class VersusPlugin(application:Application) extends Plugin{
        toupleList foreach {
        		case (key, value) =>
        				resultsHM.put(key, value)    
-       				Logger.debug(key + "  ==>>   " + value)       
        }       
        var result = collection.immutable.HashMap(resultsHM.toSeq:_*)
        result
