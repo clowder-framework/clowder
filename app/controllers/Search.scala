@@ -256,8 +256,10 @@ class Search @Inject() (
     			futureListResults<-futureFutureListResults
     			listOfResults<-futureListResults   			    		
     		} yield {
-    		  //added a placeholder for UUID, to work with the new version of template
-    		  Ok(views.html.multimediaSearchResults(queryURL, null, null, listOfResults))     
+    		  //get the last part of the image url, send it to the view
+    		  val lastSlash = queryURL.lastIndexOf("/")
+    		  val fileName = queryURL.substring(lastSlash+1)
+    		  Ok(views.html.multimediaSearchResults(fileName, None, None, listOfResults))     
 
     		}              
         } //case some
@@ -305,7 +307,7 @@ class Search @Inject() (
    							// string thumbnail
    							// will change to UUID once models.File.thumbnail_id is changed to UUID
    							val thumb_id:String = queries.getFile(fileID).flatMap(_.thumbnail_id).map(_.stringify).getOrElse("")
-   							Ok(views.html.multimediaSearchResults(filename, fileID, thumb_id, listOfResults))             		
+   							Ok(views.html.multimediaSearchResults(filename, Some(fileID), Some(thumb_id), listOfResults))             		
 
    						}    		            
    					} //end of case Some(plugin)   
@@ -334,7 +336,6 @@ class Search @Inject() (
   		//file will be stored in FileService
    	   	files.getBytes(inputFileId) match {
    	   		case Some((inputStream, filename, contentType, length)) => {  
-   	   			//contentTypeStr = contentType
    	   			current.plugin[VersusPlugin] match {    		
    	   				case Some(plugin)=>{      	  
    	   					val futureFutureListResults = for {
@@ -356,7 +357,7 @@ class Search @Inject() (
    	   					} yield {   
    	   						//get  string thumbnail id for this file and pass on to view
    	   						val thumb_id= files.get(inputFileId).flatMap(_.thumbnail_id).getOrElse("")
-   	   						Ok(views.html.multimediaSearchResults(filename, inputFileId,  thumb_id, listOfResults)) 
+   	   						Ok(views.html.multimediaSearchResults(filename, Some(inputFileId),  Some(thumb_id), listOfResults)) 
    	   					}    		             
    	   				} //end of case Some(plugin)                   
 
@@ -454,7 +455,7 @@ class Search @Inject() (
                          
          if (inputErrors == false){
         	 //fileId in dataParts is a sequence of just one element
-        	 val fileId = UUID(request.body.dataParts("FileID").head)        	     	 
+        	 val fileId = UUID(request.body.dataParts("FileID").head)  
         	 val indexIDs = request.body.dataParts("IndexID").map(i=>UUID(i)).toList        	 
    	  	
    	  		//query file will be stored in MultimediaQueryService

@@ -1,4 +1,4 @@
-@(fileName:String="Query file", fileId:models.UUID, thumbnailId:models.UUID, resultsList:List[(VersusIndex,  List[PreviewFilesSearchResult])])   						
+@(fileName:String="Query file", fileId:Option[models.UUID], queryThumbnailId:Option[String], resultsList:List[(VersusIndex,  List[PreviewFilesSearchResult])])   						
 
 @**********************************************************************@
 @****   Template to display search results for each index           ***@
@@ -21,9 +21,18 @@
 
 	<div class="page-header">
 		<h1>Search Results For <medium>@fileName</medium></h1>
-		 <h4> All distances are normalized to be between 0.0 and 1.0</h4>		
+		   		  
+	     @if(!queryThumbnailId.isEmpty){ 
+	       <img class='mmd-img media-object' 
+            src='@(routes.Files.thumbnail(UUID(queryThumbnailId.get)))'
+            title='Thumbnail of query file'>
+          </img>
+       }
+  
+    <h4> All distances are normalized to be between 0.0 and 1.0</h4>		
 	</div>
-	@if(resultsList.size == 0) {
+  
+  @if(resultsList.size == 0){
 	<div class="row">
 		<div class="col-md-12">
 			No results found
@@ -48,16 +57,16 @@
 					  
 						@****** result is File ******@
 						@if(oneResult.fileOrPreview.equalsIgnoreCase("file")){
-							
+						
 							<a class="pull-left" href=@oneResult.searchResultFile.url>							
-							@if(!oneResult.searchResultFile.thumbnailIdString.isEmpty){
+							@if(!oneResult.searchResultFile.thumbnailId.isEmpty){
 								<img class='mmd-img media-object' 
-									src='@(routes.Files.thumbnail(UUID(oneResult.searchResultFile.thumbnailIdString)))'
+									src='@(routes.Files.thumbnail(UUID(oneResult.searchResultFile.thumbnailId)))'
 									alt='Thumbnail of @(oneResult.searchResultFile.title)' 
 									title='Distance @oneResult.searchResultFile.distance'>
 								</img>
-							}
-							@if(oneResult.searchResultFile.thumbnailIdString.isEmpty){No thumbnail available}						
+								
+							}	else {No thumbnail available}						
 							<br>
 							
 							</a>
@@ -133,16 +142,20 @@
 	</tbody></table>
 	@***********  End of search results for each index  ******************@
 	
-	<br>@************ form to combine search results - if two or more indexes ************@
-
-	@if(resultsList.size >=2) {
+	<br>
+	    @************ form to combine search results - if two or more indexes ************@
+      @**** only offer to combine search results if fileId is defined, i.e. requests came from 
+            findSimilarToExistingFile or findSimilarToQueryFile.
+            If request came from searchByURL - do NOT display the form ****@
+      
+	@if(resultsList.size >=2 && fileId.isDefined) {
 		 @form(action = routes.Search.findSimilarWeightedIndexes, 'id->"form-weights", 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 		       
 		        <div id="validation"></div> 
 		       
 			    <fieldset>
 			      <legend>Combine search results</legend>			     
-			    	 <input type="hidden" name="FileID" value="@fileId" id="file_hidden">			    
+		  	      <input type="hidden" name="FileID" value="@fileId" id="file_hidden">			    	 		    
 			     	@for((index, previewsAndFiles) <- resultsList) {	
 			     		<p>Please select weight for index @index.extractorID / @index.measureID  			
 			     		<input type="text" name="Weight" id="@index.id">			
