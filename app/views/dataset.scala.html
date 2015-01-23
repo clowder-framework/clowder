@@ -84,25 +84,27 @@
     
 	<div class="page-header">
 		<h1>@dataset.name
-			<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-			@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-				<div class="btn-group btn-group-xs pull-right">
-					<button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-						class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
-						<span class="glyphicon glyphicon-trash"></span> Delete</button>
-					<button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-						class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
-						<span class="glyphicon glyphicon-trash"></span> Delete All</button>
-				</div>
-			} else {
-				<div class="btn-group btn-group-xs pull-right">
-					<button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-						class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
-						<span class="glyphicon glyphicon-trash"></span> Delete</button>
-					<button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-						class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
-						<span class="glyphicon glyphicon-trash"></span> Delete All</button>
-				</div>
+			@if(user.isDefined) {
+				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+				@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+					<div class="btn-group btn-group-xs pull-right">
+						<button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+							class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
+							<span class="glyphicon glyphicon-trash"></span> Delete</button>
+						<button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+							class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
+							<span class="glyphicon glyphicon-trash"></span> Delete All</button>
+					</div>
+				} else {
+					<div class="btn-group btn-group-xs pull-right">
+						<button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+							class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
+							<span class="glyphicon glyphicon-trash"></span> Delete</button>
+						<button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+							class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
+							<span class="glyphicon glyphicon-trash"></span> Delete All</button>
+					</div>
+				}
 			}
 		</h1>
 	</div>
@@ -163,9 +165,9 @@
                  	@if(user.isDefined) {
 						<tr>
 						 	<td colspan="2">
-								<a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
-								   data-parent="#accordion7" href="#collapseSeven" id="editabout"
-								   title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
+								<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="collapse"
+									data-parent="#accordion7" href="#collapseSeven" id="editabout"
+									title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
 								<div id="collapseSeven" class="accordion-body collapse">
 									<div class="panel panel-info">
 										<div class="panel-body">
@@ -267,12 +269,12 @@
 				</table>
 				<p>
 				@if(user.isDefined) {
-					<a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
+					<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="collapse"
 					data-parent="#accordion6" href="#collapseSix" id="editlicense"
 					title="Edit License Information">
 						<span class="glyphicon glyphicon-chevron-down"></span> Edit
 					</a>
-			}
+				}
 
 				<div id="collapseSix" class="accordion-body collapse">
 					<div class="panel panel-primary">
