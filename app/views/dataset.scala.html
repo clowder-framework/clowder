@@ -87,23 +87,52 @@
 			@if(user.isDefined) {
 				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 				@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+
+					@*<div class="btn-group btn-group-xs pull-right">*@
+						@*<button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"*@
+							@*class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">*@
+							@*<span class="glyphicon glyphicon-trash"></span> Delete</button>*@
+						@*<button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"*@
+							@*class="btn btn-primary" title="Delete Dataset and Enclosed Contents">*@
+							@*<span class="glyphicon glyphicon-trash"></span> Delete All</button>*@
+					@*</div>*@
+
 					<div class="btn-group btn-group-xs pull-right">
 						<button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-							class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
-							<span class="glyphicon glyphicon-trash"></span> Delete</button>
-						<button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-							class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
-							<span class="glyphicon glyphicon-trash"></span> Delete All</button>
+							type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete</button>
+						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+							<span class="caret"></span>
+							<span class="sr-only">Toggle Dropdown</span>
+						</button>
+						<ul class="dropdown-menu" role="menu">
+							<li>
+								<a id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+									href="#">Delete dataset and enclosed contents</a></li>
+						</ul>
 					</div>
+
+
 				} else {
+					@*<div class="btn-group btn-group-xs pull-right">*@
+						@*<button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"*@
+							@*class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">*@
+							@*<span class="glyphicon glyphicon-trash"></span> Delete</button>*@
+						@*<button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"*@
+							@*class="btn btn-primary" title="Delete Dataset and Enclosed Contents">*@
+							@*<span class="glyphicon glyphicon-trash"></span> Delete All</button>*@
+					@*</div>*@
+
 					<div class="btn-group btn-group-xs pull-right">
-						<button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-							class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
-							<span class="glyphicon glyphicon-trash"></span> Delete</button>
-						<button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-							class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
-							<span class="glyphicon glyphicon-trash"></span> Delete All</button>
+						<button disabled type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete</button>
+						<button disabled type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+							<span class="caret"></span>
+							<span class="sr-only">Toggle Dropdown</span>
+						</button>
+						<ul class="dropdown-menu" role="menu">
+							<li><a href="#">Delete dataset and enclosed contents</a></li>
+						</ul>
 					</div>
+
 				}
 			}
 		</h1>
