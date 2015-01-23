@@ -1,16 +1,21 @@
 package api
 
+import javax.inject.Inject
+
 import com.wordnik.swagger.annotations.ApiOperation
 import play.api.Play._
 import play.api.libs.json.{JsValue, Json}
-import services.{ElasticsearchPlugin, PostgresPlugin}
+import services._
 
 /**
  * class that contains all status/version information about medici.
  *
  * @author Rob Kooper
  */
-class Status extends ApiController {
+class Status @Inject()(collections: CollectionService,
+                       datasets: DatasetService,
+                       files: FileService,
+                       users: UserService) extends ApiController {
   @ApiOperation(value = "version",
     notes = "returns the version information",
     responseClass = "None", httpMethod = "GET")
@@ -24,8 +29,17 @@ class Status extends ApiController {
   def status = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
+      "counts" -> getCounts,
       "elasticsearch" -> current.plugin[ElasticsearchPlugin].isDefined,
       "geostream" -> current.plugin[PostgresPlugin].isDefined))
+  }
+
+  def getCounts: JsValue = {
+    Json.obj("collections" -> collections.count(),
+      "datasets" -> datasets.count(),
+      "files" -> files.count(),
+      "users" -> users.count())
+
   }
 
   def getVersionInfo: JsValue = {

@@ -117,6 +117,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 	    	}
 		}
 
+      //Pass the viewMode into the view
       Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit, viewMode))
   }
 

@@ -6,7 +6,9 @@
 
 @util.masonry()
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>  
+
 
 <div class="page-header">
   <h1>Datasets</h1>
@@ -58,7 +60,7 @@
                 });
             });
             
-            $(document).ready(function() {            	
+            $(document).ready(function() {            	            
             	console.log("on load, cookies are " + $.cookie('view-mode'));
                 console.log("on load, viewMode is " + viewMode); 
                 var aMode = $.cookie('view-mode');
@@ -114,11 +116,15 @@
                       <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span>  @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
                       <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span>  @(comments.get(dataset.id))
 					  @if(user.isDefined) {
-									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
-							    		<span class="glyphicon glyphicon-trash"></span></a>
-									}													
-							}					  
+					        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
+							@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+					    		<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                      <span class="glyphicon glyphicon-trash"></span></button>
+							} else {
+							    <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                      <span class="glyphicon glyphicon-trash"></span></button>
+							}											
+						}					  
                     </li>
                   </ul>
               </div>
@@ -164,9 +170,13 @@
 						</td>
 						<td class="requiresLogin">
 							@if(user.isDefined) {
+							        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
-							    		<span class="glyphicon glyphicon-trash"></span></a>
+										<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <span class="glyphicon glyphicon-trash"></span></button>
+									} else {
+									    <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <span class="glyphicon glyphicon-trash"></span></button>
 									}													
 							}
 						</td>	
@@ -194,6 +204,5 @@
     </div>
 </div>
 
-<script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
 
 }

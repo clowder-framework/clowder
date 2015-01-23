@@ -23,6 +23,9 @@ class ConfigurationModule extends AbstractModule {
 
     bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
 
+    // ByteStorageService is used to store the actual bytes
+    bind(classOf[ByteStorageService]).to(get("service.byteStorage", "services.mongodb.MongoDBByteStorage"))
+
     bind(classOf[DatasetService]).to(get("service.datasets", "services.mongodb.MongoDBDatasetService"))
     bind(classOf[FileService]).to(get("service.files", "services.mongodb.MongoDBFileService"))
     bind(classOf[MultimediaQueryService]).to(get("service.multimediaQuery", "services.mongodb.MongoDBMultimediaQueryService"))

@@ -45,11 +45,11 @@ body {
 
 /* Basic button bars */
 span.button-bar {
-	width:50%;	
+    width:50%;  
 }
 
 span.align-right { 
-	float:right;
+    float:right;
 }
 
 /* Not required for template or sticky footer method. */
