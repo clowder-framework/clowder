@@ -83,7 +83,28 @@
 	</script>
     
 	<div class="page-header">
-		<h1 id="aboutname">@dataset.name</h1>
+		<h1>@dataset.name
+			<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+			@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+				<div class="btn-group btn-group-xs pull-right">
+					<button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+						class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
+						<span class="glyphicon glyphicon-trash"></span> Delete</button>
+					<button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+						class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
+						<span class="glyphicon glyphicon-trash"></span> Delete All</button>
+				</div>
+			} else {
+				<div class="btn-group btn-group-xs pull-right">
+					<button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+						class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
+						<span class="glyphicon glyphicon-trash"></span> Delete</button>
+					<button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+						class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
+						<span class="glyphicon glyphicon-trash"></span> Delete All</button>
+				</div>
+			}
+		</h1>
 	</div>
 	
 	<div class="row">	
@@ -123,127 +144,116 @@
 		<div class="col-md-4 col-left-border">
 		  <!-- Dataset information elements -->
             <div id="aboutDiv" class="row ds-section-sm">
-                <table>
-                   <tr>
-                    <td><b>Owner: </b></td>
-                    <td id="aboutowner" style="padding-left:10px;"><a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></td>
-                   </tr>
-                   <tr>
-                    <td style="vertical-align:top;"><b>Description: </b></td>
-                    <td id="aboutdesc" style="padding-left:10px;">@dataset.description</td>
-                   </tr>
-                   <tr>
-                    <td><b>Created: </b></td>
-                    <td id="aboutcreate" style="padding-left:10px;">@dataset.created.format("MMM dd, yyyy")</td>
-                   </tr>
-                </table>
-                <p>
-                 @if(user.isDefined) {
-                    <span class="button-bar">
-                        <a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
-                           data-parent="#accordion7" href="#collapseSeven" id="editabout" style="padding-left:5px;"
-                           title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
-                    </span>
-                    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-                        <span class="align-right" style="padding-right:12px;">
-                            <button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
-                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                            <button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
-                            <span class="glyphicon glyphicon-trash"></span> Delete All</button>
-                        </span>
-                    } else {
-                        <span class="align-right" style="padding-right:12px;">
-                            <button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">
-                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                            <button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-primary" title="Delete Dataset and Enclosed Contents">
-                            <span class="glyphicon glyphicon-trash"></span> Delete All</button>
-                        </span>
-                    }
-                 }
+                <table width="100%">
+					<tr>
+                    	<td><b>Owner:</b></td>
+						<td id="aboutowner">
+							<a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a>
+						</td>
+                   	</tr>
+                   	<tr>
+                    	<td><b>Created:</b></td>
+                    	<td id="aboutcreate">@dataset.created.format("MMM dd, yyyy")</td>
+                   	</tr>
+					<tr>
+						<td colspan="2"><b>Description:</b></td>
+					</tr>
+					<tr><td colspan="2" id="aboutdesc">@dataset.description</td></tr>
+
+                 	@if(user.isDefined) {
+						<tr>
+						 	<td colspan="2">
+								<a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
+								   data-parent="#accordion7" href="#collapseSeven" id="editabout"
+								   title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down"></span> Edit</a>
+								<div id="collapseSeven" class="accordion-body collapse">
+									<div class="panel panel-info">
+										<div class="panel-body">
+										@if(user.isDefined) {
+											<form class="form-inline" id="form2">
+												<table>
+													<tr>
+														<td style="width: 30%; vertical-align:top;">Name: </td>
+														<td>
+															<textarea cols=30 rows=4 type="text" id="editname">@dataset.name</textarea>
+														</td>
+													</tr>
+													<tr>
+														<td style="width: 30%; vertical-align:top;">Description: </td>
+														<td>
+															<textarea cols=30 rows=4 type="text" id="editdesc">@dataset.description</textarea>
+														</td>
+													</tr>
+												</table>
+
+												<button class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');"
+													title="Update Information"><span class="glyphicon glyphicon-edit"></span> Submit</button>
+												<button class="btn btn-default" onclick="return closeAboutEdit();"
+													title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span> Close</button>
+											</form>
+										}
+										</div>
+									</div>
+								</div>
+								<script type="text/javascript" language="javascript">
+									function closeAboutEdit() {
+									//Reset the data to the current values
+									var text = $("#aboutdesc").text();
+									$("#editdesc").val(text);
+									text = $("#aboutname").text();
+									$("#editname").val(text);
+
+									//Close the edit form
+									$("#editabout").addClass('collapsed');
+									$("#collapseSeven").collapse('toggle');
+									return false;
+									}
+
+									function updateAboutData(datasetId) {
+									var description = $("#editdesc").val();
+									var name = $("#editname").val();
+									var encName = htmlEncode(name);
+									var encDescription = htmlEncode(description);
+									var jsonData = JSON.stringify({"description":encDescription, "name":encName});
+
+									var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
+									data: jsonData,
+									type: 'POST',
+									contentType: "application/json"
+									});
+
+									request.done(function (response, textStatus, jqXHR){
+									///console.log("Response " + response);
+									//Sucessful update of the DB - update the interface
+
+									$("#aboutdesc").text(htmlDecode(encDescription));
+									$("#aboutname").text(htmlDecode(encName));
+
+									closeAboutEdit();
+									});
+
+									request.fail(function (jqXHR, textStatus, errorThrown){
+									console.error("The following error occured: "+textStatus, errorThrown);
+									var errMsg = "You must be logged in to update the information about a dataset.";
+									if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+									alert("The dataset information was not updated due to : " + errorThrown);
+									}
+									});
+
+									return false;
+									}
+								</script>
+
+								<script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+									<!-- End dataset information elements -->
+						 	</td>
+					 	</tr>
+                 	}
+				</table>
             </div>
-            <div id="collapseSeven" class="accordion-body collapse" style="padding:5px 9px 5px 6px;">
-                <div class="panel panel-info">
-                    <div class="panel-body">
-                    @if(user.isDefined) {
-                        <form class="form-inline" id="form2">
-                            <table style="width: 100%;">
-                                <tr>
-                                    <td style="width: 30%; vertical-align:top;">Name:</td>
-                                    <td>
-                                        <textarea cols=30 rows=4 type="text" id="editname">@dataset.name</textarea>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="width: 30%; vertical-align:top;">Description:</td>
-                                    <td>
-                                        <textarea cols=30 rows=4 type="text" id="editdesc">@dataset.description</textarea>
-                                    </td>
-                                </tr>
-                            </table>
-                            <br>
-
-                            <button class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');" title="Update Information"><span class="glyphicon glyphicon-edit"></span> Submit</button>
-                            <button class="btn btn-default" onclick="return closeAboutEdit();" title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span> Close</button>
-                         </form>
-                    }
-                    </div>
-                </div>
-            </div>
-                <script type="text/javascript" language="javascript">
-                    function closeAboutEdit() {
-                    //Reset the data to the current values
-                    var text = $("#aboutdesc").text();
-                    $("#editdesc").val(text);
-                    text = $("#aboutname").text();
-                    $("#editname").val(text);
-
-                    //Close the edit form
-                    $("#editabout").addClass('collapsed');
-                    $("#collapseSeven").collapse('toggle');
-                    return false;
-                    }
-
-                    function updateAboutData(datasetId) {
-                        var description = $("#editdesc").val();
-                        var name = $("#editname").val();
-                        var encName = htmlEncode(name);
-                        var encDescription = htmlEncode(description);
-                        var jsonData = JSON.stringify({"description":encDescription, "name":encName});
-
-                        var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
-                            data: jsonData,
-                            type: 'POST',
-                            contentType: "application/json"
-                        });
-
-                        request.done(function (response, textStatus, jqXHR){
-                            ///console.log("Response " + response);
-                            //Sucessful update of the DB - update the interface
-
-                            $("#aboutdesc").text(htmlDecode(encDescription));
-                            $("#aboutname").text(htmlDecode(encName));
-
-                            closeAboutEdit();
-                        });
-
-                        request.fail(function (jqXHR, textStatus, errorThrown){
-                            console.error("The following error occured: "+textStatus, errorThrown);
-                            var errMsg = "You must be logged in to update the information about a dataset.";
-                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                alert("The dataset information was not updated due to : " + errorThrown);
-                            }
-                        });
-
-                        return false;
-                    }
-                </script>
-
-                <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
-                    <!-- End dataset information elements -->
 
 			<div class="row ds-section-sm border-top">
-					<!-- License elements -->
+				<!-- License elements -->
 				<h4>License Information</h4>
 				<table>
 					<tr>
