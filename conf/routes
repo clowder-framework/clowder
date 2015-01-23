@@ -11,6 +11,7 @@ GET  /*path/                                                                 @co
 # Home page
 GET      /                                                                   @controllers.Application.index
 
+
 # Map static resources from the /public folder to the /assets URL path
 #GET      /documentation/api/*testFile                                        controllers.Assets.at(path="/public/docs/api", testFile)
 GET      /assets/img/glyphicons-halflings-white.png                          controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
