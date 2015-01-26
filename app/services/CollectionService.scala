@@ -10,12 +10,16 @@ import scala.util.Try
  *
  */
 trait CollectionService {
+  /**
+   * The number of collections
+   */
+  def count(): Long
 
-   /**
+  /**
    * List all collections in the system.
    */
   def listCollections(): List[Collection]
-  
+
   /**
    * List all collections in the system in reverse chronological order.
    */

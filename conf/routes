@@ -11,6 +11,7 @@ GET  /*path/                                                                 @co
 # Home page
 GET      /                                                                   @controllers.Application.index
 
+
 # Map static resources from the /public folder to the /assets URL path
 #GET      /documentation/api/*testFile                                        controllers.Assets.at(path="/public/docs/api", testFile)
 GET      /assets/img/glyphicons-halflings-white.png                          controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
@@ -65,8 +66,8 @@ POST    /uploadDragDrop					  @controllers.Files.uploadDragDrop
 GET		/fileThumbnail/:id/blob			  @controllers.Files.thumbnail(id: UUID)
 
 # Datasets
-GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12)
-GET     /datasets/userDatasets            @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, email: String)
+GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+GET     /datasets/userDatasets            @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile", email: String)
 GET     /datasets/new                     @controllers.Datasets.newDataset
 GET     /datasets/metadataSearch          @controllers.Datasets.metadataSearch
 GET     /datasets/generalMetadataSearch   @controllers.Datasets.generalMetadataSearch
@@ -75,7 +76,7 @@ GET     /datasets_by_section/:id          @controllers.Datasets.datasetBySection
 POST    /dataset/submit                   @controllers.Datasets.submit
 
 # Collections
-GET      /collections                                                        @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12)
+GET      /collections                                                        @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
 GET      /collections/new                                                    @controllers.Collections.newCollection
 POST     /collection/submit                                                  @controllers.Collections.submit
 GET      /collection/:id                                                     @controllers.Collections.collection(id: UUID)
@@ -297,6 +298,7 @@ GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)
 POST	/api/datasets/:ds_id/files/:file_id							@api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
 GET 	/api/datasets/:id				 							@api.Datasets.datasetFilesList(id: UUID)
 DELETE	/api/datasets/:id											@api.Datasets.deleteDataset(id: UUID)
+POST    /api/datasets/:id/detachdelete                              @api.Datasets.detachAndDeleteDataset(id: UUID)
 
 GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					@api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			@api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
@@ -345,13 +347,13 @@ GET     /api/geostreams/sensors/:id          api.Geostreams.getSensor(id: String
 GET     /api/geostreams/sensors/:id/stats    api.Geostreams.getSensorStatistics(id: String)
 GET     /api/geostreams/sensors/:id/streams  api.Geostreams.getSensorStreams(id: String)
 GET     /api/geostreams/sensors/:id/update   api.Geostreams.updateStatisticsSensor(id: String)
-GET     /api/geostreams/sensors              api.Geostreams.searchSensors(geocode: Option[String] ?= None)
+GET     /api/geostreams/sensors              api.Geostreams.searchSensors(geocode: Option[String] ?= None, sensor_name: Option[String] ?= None)
 
 POST    /api/geostreams/streams			     api.Geostreams.createStream
 GET     /api/geostreams/streams/update       api.Geostreams.updateStatisticsStreamSensor()
 GET     /api/geostreams/streams/:id          api.Geostreams.getStream(id: String)
 GET     /api/geostreams/streams/:id/update   api.Geostreams.updateStatisticsStream(id: String)
-GET     /api/geostreams/streams              api.Geostreams.searchStreams(geocode: Option[String] ?= None)
+GET     /api/geostreams/streams              api.Geostreams.searchStreams(geocode: Option[String] ?= None, stream_name: Option[String] ?= None)
 DELETE  /api/geostreams/streams/:id          api.Geostreams.deleteStream(id: String)
 
 DELETE  /api/geostreams/dropall              api.Geostreams.deleteAll
@@ -392,3 +394,10 @@ POST 			/api/users/addUserFriend												@api.Users.addUserFriend(email: Stri
 POST 			/api/users/addUserDatasetView 											@api.Users.addUserDatasetView(email: String, dataset: UUID)
 
 POST 			/api/users/createNewListInUser 											@api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])															
+
+
+# ----------------------------------------------------------------------
+# MEDICI STATUS API
+# ----------------------------------------------------------------------
+GET     /api/version                @api.Status.version
+GET     /api/status                 @api.Status.status

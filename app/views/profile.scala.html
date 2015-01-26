@@ -5,30 +5,26 @@
   <table>
     <tr>
       <td valign="top">
-        @profile.avatarUrl match{
-          case Some(info) => {
-            <img src="@info?s=256" class="profilePicture">
-          }
-          case None => {
-            <img src="http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=256" class="profilePicture">
-          }
-        }
+        <img src=@profile.getAvatarUrl class="profilePicture">
         <div align="center">
-          <h4><a href="@routes.Datasets.userDatasets("", "", 12, profile.email)">View Datasets</a> </h4>
+          <h4><a href="@routes.Datasets.userDatasets("", "", 12, "", profile.email)">View Datasets</a> </h4>
           @user match {
             case Some(viewer) => {
               @ownProfile match {
                 case Some(sameProfile) =>{
-                <h4><a href="@routes.Profile.editProfile">Edit Profile</a></h4>
+                <h4>
+                  <a href="@routes.Profile.editProfile">Edit Profile</a>
+                </h4>
                 }
                 case None => {
-                  <h4><a href="@routes.Profile.addFriend(profile.email)">Add Friend</a> </h4>
+                  <h4>
+                    <a href="@routes.Profile.addFriend(profile.email)">Add Friend</a>
+                  </h4>
                 }
               }
             }
             case None => {}
           }
-
         </div>
       </td>
       <td>
