@@ -7,7 +7,7 @@ import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
 import play.api.Play.configuration
-import services.{CollectionService, DatasetService, FileService, AppConfiguration}
+import services._
 
  /**
   * A request that adds the User for the current call
@@ -28,6 +28,11 @@ object Permission extends Enumeration {
 		EditCollection,
 		ListCollections,
 		ShowCollection,
+		CreateSpaces,
+		DeleteSpaces,
+		EditSpace,
+		ListSpaces,
+		ShowSpace,
 		CreateDatasets,
 		DeleteDatasets,
 		ListDatasets,
@@ -88,7 +93,8 @@ case class WithPermission(permission: Permission) extends Authorization {
 
   val files: FileService = services.DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = services.DI.injector.getInstance(classOf[DatasetService])
-  val collections: CollectionService = services.DI.injector.getInstance(classOf[CollectionService])
+	val collections: CollectionService = services.DI.injector.getInstance(classOf[CollectionService])
+	val spaces: SpaceService = services.DI.injector.getInstance(classOf[SpaceService])
 
 	def isAuthorized(user: Identity): Boolean = {
 		isAuthorized(if (user == null) None else Some(user), None)
@@ -141,6 +147,8 @@ case class WithPermission(permission: Permission) extends Authorization {
       case (_, ShowFile, _)             => true
       case (_, ShowFilesMetadata, _)    => true
       case (_, ShowDatasetsMetadata, _) => true
+			case (_, ListSpaces, _)           => true
+			case (_, ShowSpace, _)            => true
       case (_, SearchStreams, _)        => true
       case (_, ListSensors, _)          => true
       case (_, GetSensors, _)           => true
@@ -219,6 +227,9 @@ case class WithPermission(permission: Permission) extends Authorization {
 
 				case CreateCollections => Some(checkCollectionOwnership(user, resource.get))
 				case DeleteCollections => Some(checkCollectionOwnership(user, resource.get))
+
+				case CreateSpaces => Some(checkSpaceOwnership(user, resource.get))
+				case DeleteSpaces => Some(checkSpaceOwnership(user, resource.get))
 				case _ => None
 			}
 		} else {
@@ -272,6 +283,26 @@ case class WithPermission(permission: Permission) extends Authorization {
 			}
 			case None => {
 				Logger.error("Collection requested to be accessed not found. Denying request.")
+				false
+			}
+		}
+	}
+
+	/**
+	 * Check to see if the user is the owner of the space pointed to by the resource.
+	 */
+	def checkSpaceOwnership(user: Option[Identity], resource: UUID): Boolean = {
+		(spaces.get(resource), user) match {
+			case (Some(space), Some(u)) => {
+				if (space.author.isDefined) {
+					space.author.id == u.identityId || checkUserAdmin(user)
+				} else {
+					false
+				}
+			}
+			case (Some(space), None) => false
+			case (None, _) => {
+				Logger.error("Space requested to be accessed not found. Denying request.")
 				false
 			}
 		}
