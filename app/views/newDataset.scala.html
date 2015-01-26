@@ -1,4 +1,4 @@
-@(myForm: Form[Dataset], filesList: List[(String, String)])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(filesList: List[(String, String)])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 
 
@@ -6,7 +6,7 @@
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 <!-- 
-The majority of this file has now been changed to be based off elements from the demonstration HTML page
+The sections of this file dealing with the multi file uploader library are loosely based on the demo 
 of the blueimp jQuery File Upload library. An open source project locatd here: http://blueimp.github.io/jQuery-File-Upload/
  -->
 
@@ -31,6 +31,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
   <!-- Custom items for the create dataset workflow -->
   <script src="@routes.Assets.at("javascripts/dataset-create-fileuploader.js")" type="text/javascript"></script>
   <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+  <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
   
 <div class="container">
   <div class="page-header">
@@ -42,6 +43,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
     <div>
         <span class="error" id="messageerror">An Error Message</span>
     </div>    
+    <!-- Common elements to all workflows for creating new datasets. -->
     <table style="width: 100%; margin-bottom: 40px;">
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
@@ -77,30 +79,9 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
             </td>
         </tr>
     </table>
-    <p>
-    <!-- 
-    <fieldset id="nameDescrFieldSet">
-      @inputText(myForm("name"), '_label -> "Name")
-      @textarea(myForm("description"), '_label -> "Description")
-    </fieldset>
-    <fieldset>
-      @select(
-        myForm("existingFile"),
-        ("__nofile" -> "--NONE--") +: filesList.map{ oneFile =>
-            oneFile._1 -> (oneFile._2)
-        },
-        '_label -> "Choose existing file, or upload a new one. NOTE: Single file only."
-    )
-    </fieldset>
-    <fieldset id="datasetRadioFieldSet">
-      @inputRadioGroup(
-          myForm("datasetLevel").copy(value=myForm("datasetLevel").value.orElse(Some("DatasetLevel")) ),
-          options = options("DatasetLevel"->"Everywhere","FileLevel"->"On file page","None"->"Nowhere"),
-          '_label -> "Show file preview(s)",
-          '_error -> myForm("datasetLevel").error.map(_.withMessage("Select where the preview will be viewable.")))
-    </fieldset>
-    -->
+    <p>    
     
+    <!-- Create tabs for the two different versions of sourcing files for new datasets. -->
     <div class="tabbable" id="createDatasetTabbable"> <!-- Only required for left/right tabs -->
               <ul class="nav nav-tabs">
                 <li class="active" id="tab1anchor"><a href="#tab1" data-toggle="tab">New Files</a></li>
@@ -108,70 +89,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
               </ul>
               <div class="tab-content">
                 <div class="tab-pane active" id="tab1">              
-                    <!-- The file upload form used as target for the file upload widget -->
-				    <form id="fileupload" action='@routes.Datasets.submit' method="POST" enctype="multipart/form-data">
-				        <!-- Redirect browsers with JavaScript disabled to the origin page -->
-				        <noscript>Javascript is required in order to use the uploader to create a new dataset.</noscript>
-				        
-				        <input type="hidden" name="name" id="hiddenname" value="not set">
-				        <input type="hidden" name="description" id="hiddendescription" value="not set">
-				        <input type="hidden" name="datasetLevel" id="hiddenlevel" value="DatasetLevel">
-				        <input type="hidden" name="existingFile" id="hiddenexisting" value="__nofile">
-				        <input type="hidden" name="datasetid" id="hiddenid" value="__noval">
-				        <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
-				        <div class="row fileupload-buttonbar">
-				            <div class="col-lg-7">
-				                <!-- The fileinput-button span is used to style the file input field as button -->
-				                <span class="btn btn-primary fileinput-button">
-				                    <i class="glyphicon glyphicon-plus"></i>
-				                    <span>Add files</span>
-				                    <!-- The file input had "multiple" removed for the current dataset creation method. -->
-				                    <input type="file" name="files[]" multiple>				                    
-				                </span>
-				                <button type="submit" class="btn btn-default start" title="Create the Dataset">
-				                    <i class="glyphicon glyphicon-upload"></i>
-				                    <span>Create Dataset</span>
-				                </button>
-				                <button type="reset" class="btn btn-default cancel">
-				                    <i class="glyphicon glyphicon-ban-circle"></i>
-				                    <span>Cancel upload</span>
-				                </button>
-				                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				                <label>
-				                    <input type="checkbox" class="toggle"> Select all
-				                </label>
-				                <button type="button" class="btn btn-link delete" style="margin-bottom: 0px">
-				                    <i class="glyphicon glyphicon-trash"></i>
-				                    <span>Delete selected</span>
-				                </button>
-				                <!-- The global file processing state -->
-				                <span class="fileupload-process"></span>
-				                
-				            </div>
-				            <!-- The global progress state -->
-				            <div class="col-lg-5 fileupload-progress fade">
-				                <!-- The global progress bar -->
-				                <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-				                    <div class="progress-bar progress-bar-success" style="width:0%;"></div>
-				                </div>
-				                <!-- The extended global progress state -->
-				                <div class="progress-extended">&nbsp;</div>
-				            </div>
-				        </div>
-				        <!-- The table listing the files available for upload/download -->
-				        <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
-				    </form>
-    
-				    <!-- The blueimp Gallery widget -->
-					<div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls" data-filter=":even">
-					    <div class="slides"></div>
-					    <h3 class="title"></h3>
-					    <a class="prev">‹</a>
-					    <a class="next">›</a>
-					    <a class="close">×</a>
-					    <a class="play-pause"></a>
-					    <ol class="indicator"></ol>
-					</div> 
+                    @addNewFiles(filesList) 
                 </div> <!-- End 1st Tab content -->
                 <div class="tab-pane" id="tab2">
                     @addExistingFiles(filesList)                    	     							       

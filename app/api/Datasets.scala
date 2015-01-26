@@ -127,27 +127,25 @@ class Datasets @Inject()(
   }
   
   /**
-   * Create new dataset with no file required, however if there are comma separated file IDs passed in, add all of those as existing
-   * files.
+   * Create new dataset with no file required. However if there are comma separated file IDs passed in, add all of those as existing
+   * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
+   * added as part of dataset creation.
+   * 
+   * A JSON document is the payload for this endpoint. Required elements are name and description. Optional element is existingfiles,
+   * which will be a comma separated String of existing file IDs to be added to the new dataset. 
    */
   @ApiOperation(value = "Create new dataset with no file",
       notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name and description. Optional list of existing file ids to add.",
       responseClass = "None", httpMethod = "POST")
-  def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>
-    Logger.debug("--- API Creating new dataset ----")
+  def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>    
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>        
           val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData())
           datasets.insert(d) match {
             case Some(id) => {              
-              Logger.debug("--- Dataset created, ID is " + id + " ----")
               (request.body \ "existingfiles").asOpt[String].map { fileString =>
                   var idArray = fileString.split(",").map(_.trim())
-                  //TODO Here, calling attachExistingFile. Need to determine if we need to break that functionality into a helper
-                  //and have it return meaningfully in order to pass error messages. This is true for the helpers created for
-                  //dataset delete/detach in MMDB-1700. Also may need to review MMDB-1701
-                  for (anId <- idArray) {
-                      Logger.debug(" ------- attempting to attach a file with id " + anId + " -------------")
+                  for (anId <- idArray) {                      
                       datasets.get(UUID(id)) match {
 					      case Some(dataset) => {
 					          files.get(UUID(anId)) match {
@@ -200,8 +198,16 @@ class Datasets @Inject()(
       }
   }
   
+  /**
+   * Functionality broken out from attachExistingFile, in order to allow the core work of file attachment to be called from
+   * multiple API endpoints.
+   * 
+   * @param dsId A UUID that specifies the dataset that will be modified
+   * @param fileId A UUID that specifies the file to attach to the dataset
+   * @param dataset Reference to the model of the dataset that is specified
+   * @param file Reference to the model of the file that is specified   
+   */
   def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File) = {
-      Logger.debug("---- attachExistingFileHelper ----")
       if (!files.isInDataset(file, dataset)) {
             datasets.addFile(dsId, file)	            
             files.index(fileId)
