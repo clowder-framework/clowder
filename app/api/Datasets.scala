@@ -126,10 +126,11 @@ class Datasets @Inject()(
   }
   
   /**
-   * Create new dataset with no file required
+   * Create new dataset with no file required, however if there are comma separated file IDs passed in, add all of those as existing
+   * files.
    */
   @ApiOperation(value = "Create new dataset with no file",
-      notes = "New dataset containing zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name and description.",
+      notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name and description. Optional list of existing file ids to add.",
       responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>
     Logger.debug("--- API Creating new dataset ----")
@@ -139,7 +140,34 @@ class Datasets @Inject()(
           datasets.insert(d) match {
             case Some(id) => {              
               Logger.debug("--- Dataset created, ID is " + id + " ----")
-              Ok(toJson(Map("id" -> id)))
+              (request.body \ "existingfiles").asOpt[String].map { fileString =>
+                  var idArray = fileString.split(",").map(_.trim())
+                  //TODO Here, calling attachExistingFile. Need to determine if we need to break that functionality into a helper
+                  //and have it return meaningfully in order to pass error messages. This is true for the helpers created for
+                  //dataset delete/detach in MMDB-1700. Also may need to review MMDB-1701
+                  for (anId <- idArray) {
+                      Logger.debug(" ------- attempting to attach a file with id " + anId + " -------------")
+                      datasets.get(UUID(id)) match {
+					      case Some(dataset) => {
+					          files.get(UUID(anId)) match {
+					              case Some(file) => {
+					            	  attachExistingFileHelper(UUID(id), UUID(anId), dataset, file)
+					            	  Ok(toJson(Map("status" -> "success")))
+					              }
+					              case None => {
+					            	  Logger.error("Error getting file" + anId)
+					            	  BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
+					              }
+					          }
+				        }
+				        case None => {
+				            Logger.error("Error getting dataset" + id)
+				            BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+				        }
+				      }                      
+                  }
+                  Ok(toJson(Map("id" -> id)))
+              }.getOrElse(Ok(toJson(Map("id" -> id))))              
             }
             case None => Ok(toJson(Map("status" -> "error")))
           }            
@@ -170,50 +198,55 @@ class Datasets @Inject()(
         }
       }
   }
+  
+  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File) = {
+      Logger.debug("---- attachExistingFileHelper ----")
+      if (!files.isInDataset(file, dataset)) {
+            datasets.addFile(dsId, file)	            
+            files.index(fileId)
+            if (!file.xmlMetadata.isEmpty){
+              datasets.index(dsId)
+            }	            
+   
+            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+                datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
+                
+                for(collectionId <- dataset.collections){
+                  collections.get(UUID(collectionId)) match{
+                    case Some(collection) =>{
+                    	if(collection.thumbnail_id.isEmpty){ 
+                    		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
+                    	}
+                    }
+                    case None=>Logger.debug(s"No collection found with id $collectionId") 
+              }
+            }
+        }
+        
+        //add file to RDF triple store if triple store is used
+        if (file.filename.endsWith(".xml")) {
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
+            case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
+          }
+        }
+        Logger.info("Adding file to dataset completed")
+      } else {
+          Logger.info("File was already in dataset.")
+      }
+  }
 
   @ApiOperation(value = "Attach existing file to dataset",
       notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
       responseClass = "None", httpMethod = "POST")
   def attachExistingFile(dsId: UUID, fileId: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(dsId)) {
+    authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(dsId)) {      
 	request =>
      datasets.get(dsId) match {
       case Some(dataset) => {
         files.get(fileId) match {
           case Some(file) => {
-            if (!files.isInDataset(file, dataset)) {
-	            datasets.addFile(dsId, file)	            
-	            files.index(fileId)
-	            if (!file.xmlMetadata.isEmpty){
-                  datasets.index(dsId)
-	            }	            
-       
-	            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-		                        datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
-		                        
-		                        for(collectionId <- dataset.collections){
-		                          collections.get(UUID(collectionId)) match{
-		                            case Some(collection) =>{
-		                            	if(collection.thumbnail_id.isEmpty){ 
-		                            		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
-		                            	}
-		                            }
-		                            case None=>Logger.debug(s"No collection found with id $collectionId") 
-		                          }
-		                        }
-	            }
-	            
-	            //add file to RDF triple store if triple store is used
-                if (file.filename.endsWith(".xml")) {
-                  configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                    case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
-                    case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-                  }
-                }
-                Logger.info("Adding file to dataset completed")
-              } else {
-                  Logger.info("File was already in dataset.")
-              }
+        	  attachExistingFileHelper(dsId, fileId, dataset, file)
               Ok(toJson(Map("status" -> "success")))
             }
             case None => {

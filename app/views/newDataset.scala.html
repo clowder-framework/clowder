@@ -29,13 +29,9 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 @main("Medici 2.0") {
 
   <!-- Custom items for the create dataset workflow -->
-  <script src="@routes.Assets.at("javascripts/dataset-create-fileuploader.js")"></script>
-
-  <script>
-    function clearUpload(){
-        $('#file').val('');
-    }        
-  </script> 
+  <script src="@routes.Assets.at("javascripts/dataset-create-fileuploader.js")" type="text/javascript"></script>
+  <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+  
 <div class="container">
   <div class="page-header">
     <h1>Create New Dataset</h1>
@@ -45,17 +41,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
     <div class="col-md-12">
     <div>
         <span class="error" id="messageerror">An Error Message</span>
-    </div>
-    @if(myForm.hasErrors) {
-        <div class="alert alert-error">
-            <p>Please fix all errors</p>
-        </div>
-    }
-    @flash.get("error").map { message =>
-        <div class="alert alert-error">
-            <p>@message</p>
-        </div>
-    }
+    </div>    
     <table style="width: 100%; margin-bottom: 40px;">
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
@@ -187,18 +173,8 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 					    <ol class="indicator"></ol>
 					</div> 
                 </div> <!-- End 1st Tab content -->
-                <div class="tab-pane" id="tab2">                       			        
-			        <button id="uploadCLearBtn" style="position: relative;  margin-top:10px; margin-bottom:10px;" onclick="clearUpload();return false;">Clear</button>
-			        <p>
-			        <select multiple name="files" size="15">
-			        @filesList.map { file =>  
-                        <option value="@(file._1)">@(file._2)</option>
-                    }					 
-					</select>	         
-			        			        
-			        <div class="form-actions">
-			          <button type="submit" class="btn btn-primary btn-large" title="Create the Dataset"><span class="glyphicon glyphicon-ok"></span> Create</button>
-			        </div>			       
+                <div class="tab-pane" id="tab2">
+                    @addExistingFiles(filesList)                    	     							       
                 </div> <!-- End 2nd Tab content -->
               </div>
             </div>
