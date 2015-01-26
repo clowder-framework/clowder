@@ -147,8 +147,8 @@ case class WithPermission(permission: Permission) extends Authorization {
       case (_, ShowFile, _)             => true
       case (_, ShowFilesMetadata, _)    => true
       case (_, ShowDatasetsMetadata, _) => true
-			case (_, ListSpaces, _)           => true
-			case (_, ShowSpace, _)            => true
+      case (_, ListSpaces, _)           => true
+      case (_, ShowSpace, _)            => true
       case (_, SearchStreams, _)        => true
       case (_, ListSensors, _)          => true
       case (_, GetSensors, _)           => true
@@ -293,13 +293,7 @@ case class WithPermission(permission: Permission) extends Authorization {
 	 */
 	def checkSpaceOwnership(user: Option[Identity], resource: UUID): Boolean = {
 		(spaces.get(resource), user) match {
-			case (Some(space), Some(u)) => {
-				if (space.author.isDefined) {
-					space.author.id == u.identityId || checkUserAdmin(user)
-				} else {
-					false
-				}
-			}
+			case (Some(space), Some(u)) => true
 			case (Some(space), None) => false
 			case (None, _) => {
 				Logger.error("Space requested to be accessed not found. Denying request.")
