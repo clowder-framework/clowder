@@ -270,24 +270,17 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
   }
 
   def updateMetadata(previewId: UUID, json: JsValue) {
-    Logger.debug("=======> MongnoPreviewService, updateMetadata top previewId = " + previewId + ",json = " + json)
     json match {
       case JsObject(fields) => {
-        Logger.debug("=======> MongnoPreviewService, updateMetadata got JSObect, fields = " + fields)
-        val metadata = fields.toMap//.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
-        Logger.debug("=======> MongnoPreviewService, fields.toMap = " + metadata)
-        //val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
+        val metadata = fields.toMap.flatMap(tuple => MongoDBObject(tuple._1 -> tuple._2.as[String]))
         // TODO figure out a way to do it all together
         // aways update metadata
-        Logger.debug("=======> MongnoPreviewService, updateMetadata, metadata = " + metadata)
         PreviewDAO.dao.collection.update(
           MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
           $set("metadata" -> metadata),
           false, false, WriteConcern.Safe)
-          Logger.debug("=======> MongnoPreviewService, 333333333333")
         // update section_id if it exists
         if (metadata.contains("section_id")) {
-          Logger.debug("=======> MongnoPreviewService, updateMetadata, metadata.contains section_id")
           val section_id = metadata("section_id").asInstanceOf[String]
           Logger.debug("Updating previews.files " + previewId + " with section_id=" + section_id)
           PreviewDAO.dao.collection.update(
@@ -326,11 +319,11 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
   
     def getExtractorId(id: UUID):Option[String] = {     
       var extractor_id = getMetadata(id)("extractor_id") match{
-	  	case Some(ex_id)=> {
+	  	case ex_id=> {
 	  		Logger.debug("MongoDBPreviewService: metadata for preview " + id + " contains extractor id = " + ex_id)
 	  		Some(ex_id.toString)
 	    }
-	  	case None =>{
+	  	case none =>{
 	  		Logger.debug("MongoDBPreviewService: metadata  for preview " + id + " DOES NOT contain extractor id")
 	  		None
 	  	}	              
