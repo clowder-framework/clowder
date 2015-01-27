@@ -127,20 +127,19 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   def uploadMetadata(id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
       request =>
-        Logger.debug("====>api.Previews.uploadMetadata - top  -  request.body.toString = " + request.body.toString)
+        Logger.debug(request.body.toString)
         request.body match {
           case JsObject(fields) => {
-            Logger.debug("====>api.Previews.uploadMetadata - got JsObject " + fields.toString)
+            Logger.debug(fields.toString)
             previews.get(id) match {
               case Some(preview) =>
-                 Logger.debug("====>api.Previews.uploadMetadata - got some preview")
                 previews.updateMetadata(id, request.body)
 
                 Ok(toJson(Map("status" -> "success")))
               case None => BadRequest(toJson("Preview not found"))
             }
           }
-          case _ => Logger.error("====>api.Previews.uploadMetadata  Expected a JSObject"); BadRequest(toJson("Expected a JSObject"))
+          case _ => Logger.error("Expected a JSObject"); BadRequest(toJson("Expected a JSObject"))
 
         }
     }
