@@ -10,9 +10,7 @@ import models.{Feature, UUID, MultimediaFeatures}
 import play.api.libs.json.JsObject
 import scala.Some
 import controllers.Utils
-
 import play.api.Logger
-
 
 /**
  * Index data.
@@ -27,7 +25,6 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
    * Submit section, preview, file for indexing.
    */
   def index() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
-          	            Logger.debug("top of indexes index")
 
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
@@ -43,8 +40,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
 	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, null, ""))}
 	            var fileType = p.contentType
 	            var extractor_id =p.extractor_id
-	            Logger.debug("Index index = before calling indexPreview for preview id = " +id )
-	           // passing extractor id - for some additional functionality
+	            // passing extractor id - for some additional functionality
 	            // current.plugin[VersusPlugin].foreach{ _.indexPreview(id, fileType, extractor_id) }
 	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id, fileType) }
 	            Ok(toJson("success"))
