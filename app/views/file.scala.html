@@ -364,8 +364,7 @@
                     <tr><td><b>Uploaded on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded by:</b></td><td> <a href = "@routes.Profile.viewProfile(file.author.email)"> @file.author.fullName</a></td></tr>
 					@if(user.isDefined) {
-						@if(!file.followers.contains(user.get.email)) {
-							@*TODO: "List.contains()" is not working!*@
+						@if(!file.followers.contains(user.get.email.getOrElse())) {
 							<tr><td><a id="followButton" href="#">Follow</a></td></tr>
 						} else {
 							<tr><td><a id="followButton" href="#">Unfollow</a></td></tr>
