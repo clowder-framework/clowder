@@ -46,4 +46,14 @@ trait UserService {
   *Creates a new list in User Model for friends, or viewed
   */
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
+
+  /**
+   * Adds the following relationship between two users
+   */
+  def addFollowingRelationship(followeeEmail: String, followerEmail: String)
+
+  /**
+   * Removes the following relationship between two users
+   */
+  def removeFollowingRelationship(followeeEmail: String, followerEmail: String)
 }

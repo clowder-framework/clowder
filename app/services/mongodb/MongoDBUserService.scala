@@ -44,7 +44,7 @@ class MongoDBUserService extends UserService {
       val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText));      
   }
 
-override def addUserFriend(email: String, newFriend: String) {      
+  override def addUserFriend(email: String, newFriend: String) {      
       val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("friends" -> newFriend));      
   }
 
@@ -54,6 +54,22 @@ override def addUserFriend(email: String, newFriend: String) {
 
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {      
       val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));      
+  }
+
+  /**
+   * Adds the following relationship between two users
+   */
+  override def addFollowingRelationship(followeeEmail: String, followerEmail: String) {
+    UserDAO.dao.update(MongoDBObject("email" -> followerEmail), $addToSet("followsUsers" -> followeeEmail));
+    UserDAO.dao.update(MongoDBObject("email" -> followeeEmail), $addToSet("followedByUsers" -> followerEmail));
+  }
+
+  /**
+   * Removes the following relationship between two users
+   */
+  override def removeFollowingRelationship(followeeEmail: String, followerEmail: String): Unit = {
+    UserDAO.dao.update(MongoDBObject("email" -> followerEmail), $pull("followsUsers" -> followeeEmail));
+    UserDAO.dao.update(MongoDBObject("email" -> followeeEmail), $pull("followedByUsers" -> followerEmail));
   }
 }
 
