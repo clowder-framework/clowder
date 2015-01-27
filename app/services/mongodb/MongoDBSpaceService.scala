@@ -3,11 +3,13 @@ package services.mongodb
 import javax.inject.{Inject, Singleton}
 
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.MongoDBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models.{UserSpace, ProjectSpace, UUID}
 import play.api.Play._
 import services._
 import MongoContext.context
+import util.Direction._
 
 /**
  * Store Spaces in MongoDB.
@@ -20,6 +22,11 @@ class MongoDBSpaceService @Inject() (
   collections: CollectionService,
   files: FileService,
   datasets: DatasetService) extends SpaceService {
+
+  def count(filter: Option[Map[String, String]] = None): Long = {0}
+  def list(start: Option[String] = None, limit: Integer = 20,
+           order: Option[String] = None, direction: Direction=DESC,
+           filter: Option[Map[String, String]] = None): List[ProjectSpace]={List.empty}
 
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
