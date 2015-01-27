@@ -232,7 +232,7 @@ function setAdapterTypeAndAvailableExtractors(){
 function setShortExtractorList(interfacesArray){
 	//interfaces that this adapter is extending
 	var availableExtractors ="";
-	for(var i=0; i<allExtractorList.length; i++){		
+	for(var i=0; i<allExtractorList.length; i++){
 		var supportedAdaptersArray = allExtractorList[i].supportedAdapters;
 
 		//need to find intersection of two arrays - interfaces and supportedAdapters.
@@ -248,7 +248,7 @@ function setShortExtractorList(interfacesArray){
     		}
 		}		
 		if (results.length ==0){
-			console.log("no intersection found => no extactors for this adapter found.");
+			console.log("no intersection found => no extactors for this adapter found." + allExtractorList[i].name);
 		} else {
 			//intersection is non empty => this extractor supports this adapter, so add it to the short list.
 			availableExtractors  = availableExtractors+'<option value="'+allExtractorList[i].id+'" >'+allExtractorList[i].name+'</option>';			
