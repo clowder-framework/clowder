@@ -583,6 +583,46 @@
 
 		<!-- right column -->
 		<div class="col-md-4">
+
+		@if(user.isDefined) {
+			<div>
+				@if(!dataset.followers.contains(user.get.email.get)) {
+					<a id="followButton" href="#">Follow</a>
+				} else {
+					<a id="followButton" href="#">Unfollow</a>
+				}
+			</div>
+
+			<script>
+				$("#followButton" ).on('click', function () {
+					if ($(this ).text() === 'Follow') {
+						var followRequest = jsRoutes.api.Datasets.follow('@dataset.id').ajax({
+							type: 'POST'
+						});
+
+						followRequest.done(function (response, textStatus, jqXHR) {
+							$('#followButton' ).text('Unfollow');
+						});
+
+						followRequest.fail(function (jqXHR, textStatus, errorThrown){
+							console.error('Failed to follow!');
+						});
+					} else if ($(this ).text() === 'Unfollow') {
+						var unfollowRequest = jsRoutes.api.Datasets.unfollow('@dataset.id').ajax({
+							type: 'POST'
+						});
+
+						unfollowRequest.done(function (response, textStatus, jqXHR) {
+							$('#followButton' ).text('Follow');
+						});
+
+						unfollowRequest.fail(function (jqXHR, textStatus, errorThrown){
+							console.error('Failed to unfollow!');
+						});
+					}
+				});
+			</script>
+		}
 		
 		  <!-- Dataset information elements --> 
           <div id="aboutDiv" class="row ds-section-sm" style="margin-top:20px; width: 370px; padding-left:15px;">        

@@ -27,6 +27,7 @@ case class Dataset(
   datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
-  notesHTML: Option[String] = None)
+  notesHTML: Option[String] = None,
+  followers: List[String] = List.empty)
 
 

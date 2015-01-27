@@ -56,4 +56,14 @@ trait UserService {
    * Unfollow a file.
    */
   def unfollowFile(email: String, fileId: UUID)
+
+  /**
+   * Follow a dataset.
+   */
+  def followDataset(email: String, datasetId: UUID)
+
+  /**
+   * Unfollow a dataset.
+   */
+  def unfollowDataset(email: String, datasetId: UUID)
 }

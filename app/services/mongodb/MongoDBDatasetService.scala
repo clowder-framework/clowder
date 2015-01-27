@@ -868,6 +868,25 @@ class MongoDBDatasetService @Inject() (
   def setNotesHTML(id: UUID, notesHTML: String){
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
+
+  def addFollower(id: UUID, userEmail: String) {
+    Logger.debug("Adding follower to dataset " + id + " : " + userEmail)
+    val dataset = get(id).get
+    val existingFollowers = dataset.followers
+    if (!existingFollowers.contains(userEmail)) {
+      Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $push("followers" -> userEmail), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeFollower(id: UUID, userEmail: String) {
+    Logger.debug("Removing follower from dataset " + id + " : " + userEmail)
+    val dataset = get(id).get
+    val existingFollowers = dataset.followers
+    if (existingFollowers.contains(userEmail)) {
+      Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("followers" -> userEmail), false, false, WriteConcern.Safe)
+    }
+
+  }
 }
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {

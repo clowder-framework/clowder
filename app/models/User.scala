@@ -22,7 +22,8 @@ case class User(
   position: Option[String] = None,
   friends: Option[List[String]] = None,
   viewed: Option[List[UUID]] = None,
-  followedFiles: List[String] = List.empty
+  followedFiles: List[String] = List.empty,
+  followedDatasets: List[String] = List.empty
 )
 
 case class Info(

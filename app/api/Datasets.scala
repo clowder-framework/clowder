@@ -50,7 +50,8 @@ class Datasets @Inject()(
   comments: CommentService,
   previews: PreviewService,
   extractions: ExtractionService,
-  rdfsparql: RdfSPARQLService) extends ApiController {
+  rdfsparql: RdfSPARQLService,
+  userService: UserService) extends ApiController {
 
   /**
    * List all datasets.
@@ -1104,6 +1105,71 @@ class Datasets @Inject()(
     }
   }
 
+  @ApiOperation(value = "Follow dataset.",
+    notes = "Add user to dataset followers and add dataset to user followed datasets.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset /* TODO: change this. */ )) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(identity) => {
+          datasets.get(id) match {
+            case Some(dataset) => {
+              identity.email match {
+                case Some(userEmail) => {
+                  datasets.addFollower(id, userEmail)
+                  userService.followDataset(userEmail, id)
+                  Ok
+                }
+                case None => {
+                  NotFound
+                }
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  @ApiOperation(value = "Unfollow dataset.",
+    notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset  /* TODO: change this. */ )) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(identity) => {
+          datasets.get(id) match {
+            case Some(dataset) => {
+              identity.email match {
+                case Some(userEmail) => {
+                  datasets.removeFollower(id, userEmail)
+                  userService.unfollowDataset(userEmail, id)
+                  Ok
+                }
+                case None => {
+                  NotFound
+                }
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
 }
 
 object ActivityFound extends Exception {}
