@@ -188,6 +188,8 @@ GET     /api/files/:id/versus_metadata                          @api.Files.getVe
 GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnicalMetadataJSON(id: UUID)
 GET     /api/files/:id/xmlmetadatajson           				@api.Files.getXMLMetadataJSON(id: UUID)
 GET     /api/files/:id/usermetadatajson           				@api.Files.getUserMetadataJSON(id: UUID)
+POST	/api/files/:id/follow									@api.Files.follow(id: UUID)
+POST	/api/files/:id/unfollow									@api.Files.unfollow(id: UUID)
 POST    /api/files/:id/comment									@api.Files.comment(id: UUID)
 POST    /api/files/:id/setNotesHTML								@api.Files.setNotesHTML(id: UUID)
 DELETE	/api/files/:id											@api.Files.removeFile(id: UUID)

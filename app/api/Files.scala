@@ -89,7 +89,8 @@ class Files @Inject()(
   previews: PreviewService,
   threeD: ThreeDService,
   sqarql: RdfSPARQLService,
-  thumbnails: ThumbnailService) extends ApiController {
+  thumbnails: ThumbnailService,
+  userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Retrieve physical file object metadata",
       notes = "Get metadata of the file object (not the resource it describes) as JSON. For example, size of file, date created, content type, filename.",
@@ -1745,6 +1746,72 @@ class Files @Inject()(
 	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
 	  }
     }
+
+  @ApiOperation(value = "Follow file",
+    notes = "Add user to file followers and add file to user followed files.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles /* Not sure. */)) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(identity) => {
+          files.get(id) match {
+            case Some(file) => {
+              identity.email match {
+                case Some(userEmail) => {
+                  files.addFollower(id, userEmail)
+                  userService.followFile(userEmail, id)
+                  Ok
+                }
+                case None => {
+                  NotFound
+                }
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  @ApiOperation(value = "Unfollow file",
+    notes = "Remove user from file followers and remove file from user followed files.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles /* Not sure. */)) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(identity) => {
+          files.get(id) match {
+            case Some(file) => {
+              identity.email match {
+                case Some(userEmail) => {
+                  files.removeFollower(id, userEmail)
+                  userService.unfollowFile(userEmail, id)
+                  Ok
+                }
+                case None => {
+                  NotFound
+                }
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
 
 }
 

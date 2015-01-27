@@ -93,6 +93,8 @@ class Application  @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Files.updateLicense,
         api.routes.javascript.Files.extract,
         api.routes.javascript.Files.removeFile,
+        api.routes.javascript.Files.follow,
+        api.routes.javascript.Files.unfollow,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,

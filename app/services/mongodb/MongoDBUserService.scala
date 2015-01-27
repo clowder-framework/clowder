@@ -1,9 +1,11 @@
 package services.mongodb
 
+import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models.{UUID, User}
 import org.bson.types.ObjectId
+import play.api.Logger
 import services.UserService
 import play.api.Play.current
 import MongoContext.context
@@ -54,6 +56,22 @@ override def addUserFriend(email: String, newFriend: String) {
 
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {      
       val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));      
+  }
+
+  override def followFile(email: String, fileId: UUID) {
+    Logger.debug("Adding followed file " + fileId + " to user " + email)
+    val user = findByEmail(email).get
+    if (!user.followedFiles.contains(fileId.toString())) {
+      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)), $push("followedFiles" -> fileId.toString()), false, false, WriteConcern.Safe)
+    }
+  }
+
+  override def unfollowFile(email: String, fileId: UUID) {
+    Logger.debug("Removing followed file " + fileId + " from user " + email)
+    val user = findByEmail(email).get
+    if (user.followedFiles.contains(fileId.toString())) {
+      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)), $pull("followedFiles" -> fileId.toString()), false, false, WriteConcern.Safe)
+    }
   }
 }
 

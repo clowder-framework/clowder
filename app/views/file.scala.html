@@ -363,6 +363,14 @@
                     <tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
                     <tr><td><b>Uploaded on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded by:</b></td><td> <a href = "@routes.Profile.viewProfile(file.author.email)"> @file.author.fullName</a></td></tr>
+					@if(user.isDefined) {
+						@if(!file.followers.contains(user.get.email)) {
+							@*TODO: "List.contains()" is not working!*@
+							<tr><td><a id="followButton" href="#">Follow</a></td></tr>
+						} else {
+							<tr><td><a id="followButton" href="#">Unfollow</a></td></tr>
+						}
+					}
                 </table>
             </div>
 
@@ -457,7 +465,34 @@
                             $("#downloadButton").attr("title", "You don't have permission to download this file");
                         }
                     }
-                    
+
+					$("#followButton" ).on('click', function () {
+						if ($(this ).text() === 'Follow') {
+							var followRequest = jsRoutes.api.Files.follow('@file.id').ajax({
+								type: 'POST'
+							});
+
+							followRequest.done(function (response, textStatus, jqXHR) {
+								$('#followButton' ).text('Unfollow');
+							});
+
+							followRequest.fail(function (jqXHR, textStatus, errorThrown){
+								console.error('Failed to follow!');
+							});
+						} else if ($(this ).text() === 'Unfollow') {
+							var unfollowRequest = jsRoutes.api.Files.unfollow('@file.id').ajax({
+								type: 'POST'
+							});
+
+							unfollowRequest.done(function (response, textStatus, jqXHR) {
+								$('#followButton' ).text('Follow');
+							});
+
+							unfollowRequest.fail(function (jqXHR, textStatus, errorThrown){
+								console.error('Failed to unfollow!');
+							});
+						}
+					});
                 });
 
                 function downloadFile() {

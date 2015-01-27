@@ -46,4 +46,14 @@ trait UserService {
   *Creates a new list in User Model for friends, or viewed
   */
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
+
+  /**
+   * Follow a file.
+   */
+  def followFile(email: String, fileId: UUID)
+
+  /**
+   * Unfollow a file.
+   */
+  def unfollowFile(email: String, fileId: UUID)
 }

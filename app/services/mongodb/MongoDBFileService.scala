@@ -795,6 +795,24 @@ class MongoDBFileService @Inject() (
 	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
   }
 
+  def addFollower(id: UUID, userEmail: String) {
+    Logger.debug("Adding follower to file " + id + " : " + userEmail)
+    val file = get(id).get
+    val existingFollowers = file.followers
+    if (!existingFollowers.contains(userEmail)) {
+      FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $push("followers" -> userEmail), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeFollower(id: UUID, userEmail: String) {
+    Logger.debug("Removing follower from file " + id + " : " + userEmail)
+    val file = get(id).get
+    val existingFollowers = file.followers
+    if (existingFollowers.contains(userEmail)) {
+      FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("followers" -> userEmail), false, false, WriteConcern.Safe)
+    }
+  }
+
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
