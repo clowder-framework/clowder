@@ -75,4 +75,47 @@ class Users @Inject()(users: UserService) extends ApiController {
     Ok(Json.obj("status" -> "success"))
   }
 
+  @ApiOperation(value = "Follow a user",
+    responseClass = "None", httpMethod = "POST")
+  def addFollowingRelationship(followeeEmail: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        loggedInUser.email match {
+          case Some(followerEmail) => {
+            users.addFollowingRelationship(followeeEmail, followerEmail)
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => {
+            Ok(Json.obj("status" -> "fail"))
+          }
+        }
+      }
+      case None => {
+        Ok(Json.obj("status" -> "fail"))
+      }
+    }
+  }
+
+  @ApiOperation(value = "Unfollow a user",
+    responseClass = "None", httpMethod = "POST")
+  def removeFollowingRelationship(followeeEmail: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        loggedInUser.email match {
+          case Some(followerEmail) => {
+            users.removeFollowingRelationship(followeeEmail, followerEmail)
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => {
+            Ok(Json.obj("status" -> "fail"))
+          }
+        }
+      }
+      case None => {
+        Ok(Json.obj("status" -> "fail"))
+      }
+    }
+  }
 }

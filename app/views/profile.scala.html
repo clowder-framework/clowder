@@ -15,6 +15,10 @@
         }
         <div align="center">
           <h4><a href="@routes.Datasets.userDatasets("", "", 12, profile.email)">View Datasets</a> </h4>
+          <h4>Followed by @profile.followedByUsers.size people</h4>
+          <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#followingModal">
+            Followers and followees
+          </button>
           @user match {
             case Some(viewer) => {
               @ownProfile match {
@@ -22,7 +26,67 @@
                 <h4><a href="@routes.Profile.editProfile">Edit Profile</a></h4>
                 }
                 case None => {
-                  <h4><a href="@routes.Profile.addFriend(profile.email)">Add Friend</a> </h4>
+                  <h4>
+                    <button
+                      id="followButton"
+                      type="button"
+                      class="
+                        @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
+                          active btn btn-success
+                        }else {
+                          btn btn-success
+                        }
+                      "
+                      data-toggle="button"
+                      aria-pressed="
+                        @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
+                          true
+                        }else {
+                          false
+                        }
+                      "
+                      autocomplete="off"
+                    >
+                      <!-- Is there a way to store a scala variable somewhere?... -->
+                      @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
+                        Following
+                      } else {
+                        Follow
+                      }
+                    </button>
+                  </h4>
+                  <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
+                  <script>
+                    var profileEmail = "@profile.email";
+                    $(document ).ready(function() {
+                      var followButton = $("#followButton");
+                      followButton.click(function() {
+                        if (followButton.text( ).trim() === "Follow") {
+                          jsRoutes.api.Users.addFollowingRelationship(profileEmail).ajax({
+                            type: "POST"
+                          })
+                            .done(function(data) {
+                              followButton.text("Unfollow");
+                            })
+                            .fail(function(data) {
+                              console.log(data);
+                              console.log("Failed to follow");
+                            });
+                        } else {
+                          jsRoutes.api.Users.removeFollowingRelationship(profileEmail).ajax({
+                            type: "POST"
+                          })
+                            .done(function(data) {
+                              followButton.text("Follow");
+                            })
+                            .fail(function(data) {
+                              console.log(data);
+                              console.log("Failed to unfollow");
+                            });
+                        }
+                      });
+                    });
+                  </script>
                 }
               }
             }
@@ -85,5 +149,46 @@
     </tr>
   </table>
 
+</div>
+
+<!-- Modal -->
+<div
+  class="modal fade"
+  id="followingModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="followingModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="followingModalLabel">@profile.fullName</h4>
+      </div>
+      <div class="modal-body">
+        <table width="100%">
+          <thead>
+            <th>Following</th>
+            <th>Followed by</th>
+          </thead>
+          <tbody>
+            <!-- This is loaded when the page loads, might not reflect up-to-date data -->
+            @for(row <- profile.followsUsers.zipAll(profile.followedByUsers, "", "")) {
+              <tr>
+                <td><a href="@routes.Profile.viewProfile(Option(row._1))">@row._1</a></td>
+                <td><a href="@routes.Profile.viewProfile(Option(row._2))">@row._2</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 }

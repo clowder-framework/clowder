@@ -42,20 +42,20 @@ class MongoDBUserService extends UserService {
     UserDAO.dao.findOne(MongoDBObject("email" -> email))
   }
 
-  override def updateUserField(email: String, field: String, fieldText: Any) {      
-      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText));      
+  override def updateUserField(email: String, field: String, fieldText: Any) {
+    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText));
   }
 
-override def addUserFriend(email: String, newFriend: String) {      
-      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("friends" -> newFriend));      
+  override def addUserFriend(email: String, newFriend: String) {
+    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("friends" -> newFriend));
   }
 
-  override def addUserDatasetView(email: String, dataset: UUID) {      
-      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("viewed" -> dataset));      
+  override def addUserDatasetView(email: String, dataset: UUID) {
+    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("viewed" -> dataset));
   }
 
-  override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {      
-      val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));      
+  override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
+    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));
   }
 
   override def followFile(email: String, fileId: UUID) {
@@ -79,7 +79,7 @@ override def addUserFriend(email: String, newFriend: String) {
     val user = findByEmail(email).get
     if (!user.followedDatasets.contains(datasetId.toString())) {
       UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
-                      $push("followedDatasets" -> datasetId.toString()), false, false, WriteConcern.Safe)
+        $push("followedDatasets" -> datasetId.toString()), false, false, WriteConcern.Safe)
     }
   }
 
@@ -88,14 +88,31 @@ override def addUserFriend(email: String, newFriend: String) {
     val user = findByEmail(email).get
     if (user.followedDatasets.contains(datasetId.toString())) {
       UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
-                                    $pull("followedDatasets" -> datasetId.toString()), false, false, WriteConcern.Safe)
+        $pull("followedDatasets" -> datasetId.toString()), false, false, WriteConcern.Safe)
     }
   }
-}
 
-object UserDAO extends ModelCompanion[User, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
-  }
+    /**
+     * Adds the following relationship between two users
+     */
+    override def addFollowingRelationship(followeeEmail: String, followerEmail: String)
+    {
+      UserDAO.dao.update(MongoDBObject("email" -> followerEmail), $addToSet("followsUsers" -> followeeEmail));
+      UserDAO.dao.update(MongoDBObject("email" -> followeeEmail), $addToSet("followedByUsers" -> followerEmail));
+    }
+
+    /**
+     * Removes the following relationship between two users
+     */
+    override def removeFollowingRelationship(followeeEmail: String, followerEmail: String): Unit = {
+      UserDAO.dao.update(MongoDBObject("email" -> followerEmail), $pull("followsUsers" -> followeeEmail));
+      UserDAO.dao.update(MongoDBObject("email" -> followeeEmail), $pull("followedByUsers" -> followerEmail));
+    }
+}
+  object UserDAO extends ModelCompanion[User, ObjectId] {
+    val dao = current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
+    }
+
 }

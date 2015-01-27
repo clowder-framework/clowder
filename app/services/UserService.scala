@@ -48,6 +48,7 @@ trait UserService {
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
 
   /**
+<<<<<<< HEAD
    * Follow a file.
    */
   def followFile(email: String, fileId: UUID)
@@ -66,4 +67,13 @@ trait UserService {
    * Unfollow a dataset.
    */
   def unfollowDataset(email: String, datasetId: UUID)
+  /*
+   * Adds the following relationship between two users
+   */
+  def addFollowingRelationship(followeeEmail: String, followerEmail: String)
+
+  /**
+   * Removes the following relationship between two users
+   */
+  def removeFollowingRelationship(followeeEmail: String, followerEmail: String)
 }
