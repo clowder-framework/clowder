@@ -10,7 +10,6 @@ import models.{Feature, UUID, MultimediaFeatures}
 import play.api.libs.json.JsObject
 import scala.Some
 import controllers.Utils
-import play.api.Logger
 
 /**
  * Index data.
@@ -25,12 +24,10 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
    * Submit section, preview, file for indexing.
    */
   def index() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
-
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
             previews.get(UUID(preview_id)) match {
       	      case Some(p) =>
-
 	      	    // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
 	            val host = Utils.baseUrl(request) + request.path.replaceAll("api/indexes$", "")
@@ -39,10 +36,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
                 // TODO replace null with None
 	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, null, ""))}
 	            var fileType = p.contentType
-	            var extractor_id =p.extractor_id
-	            // passing extractor id - for some additional functionality
-	            // current.plugin[VersusPlugin].foreach{ _.indexPreview(id, fileType, extractor_id) }
-	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id, fileType) }
+	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id,fileType) }
 	            Ok(toJson("success"))
       	      case None => BadRequest(toJson("Missing parameter [preview_id]"))
             }
