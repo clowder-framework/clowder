@@ -15,3 +15,4 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "0.8.0-RC2")
 
 // Show all licenses
 addSbtPlugin("com.typesafe.sbt" % "sbt-license-report" % "1.0.0")
+
