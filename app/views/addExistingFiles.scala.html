@@ -5,12 +5,12 @@
 
 <div>
 	<p>                                                             
-	<button class="btn btn-primary btn-large" title="Create the Dataset" onclick="attachFiles();return false;"><span class="glyphicon glyphicon-ok"></span> Create</button>
-	<button id="filesCLearBtn" class="btn btn-default btn-large" style="margin-left:10px;" onclick="clearFiles();return false;">Clear Selected Files</button>
+	<button class="btn btn-primary btn-large button-margins" title="Create the Dataset" onclick="attachFiles();return false;"><span class="glyphicon glyphicon-ok"></span> Create</button>
+	<button id="filesCLearBtn" class="btn btn-default btn-large button-margins" style="margin-left:10px;" onclick="clearFiles();return false;">Clear Selected Files</button>
 	<span id="status" class="success">A Status Message</span>
 	                                                              
 	<p>
-	<select multiple name="files" size="15" id="filelist">
+	<select multiple name="files" size="15" id="filelist" style="width: 500px;">
 		@filesList.map { file =>  
 		    <option value="@(file._1)">@(file._2)</option>
 		}                    

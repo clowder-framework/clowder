@@ -68,13 +68,17 @@ function resetValues() {
 //in place before finally proceeding with their submit.
 function holdForId(data) {   
    setTimeout(function(){
-      if (id == "__notset") {
-    	  // recurse
-          holdForId(data); 
-      }
-      else {    	  
-    	  data.submit();
-      }                   	    
+	   //Only proceed to hold and submit if the asynchStarted value remains true.
+	   //Otherwise, it has been reset and there is no reason to continue to hold.
+	   if (asynchStarted) {
+	      if (id == "__notset") {
+	    	  // recurse
+	          holdForId(data); 
+	      }
+	      else {     	  
+	    	  data.submit();
+	      }
+	   }
   }, 500);
 }
 
@@ -119,9 +123,11 @@ $(function () {
             error = true;
         }
         if (error) {
+        	//On error, re-enable things to allow the user to fix items
         	data.context.find('button').prop('disabled', false);
         	enableFields();
-        	$('#tab2anchor').show();
+        	//Also, reset the dataset elements, since the workflow is starting over.
+        	resetDatasetItems();
         	return false;
         }
         
@@ -169,6 +175,11 @@ $(function () {
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                 	$('#messageerror').html("Error in creating dataset. : " + errorThrown);
                 	$('#messageerror').show();
+                	//On error, re-enable things to allow the user to fix items
+                	data.context.find('button').prop('disabled', false);
+                	enableFields();
+                	//Also, reset the dataset elements, since the workflow is starting over.
+                	resetDatasetItems();
                 }  
             });
             //This block is the primary file, so don't submit yet, don't re-enable the buttons either.
