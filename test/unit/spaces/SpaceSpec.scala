@@ -1,6 +1,6 @@
 package unit.spaces
 
-import models.{ProjectSpace, Space}
+import models.{ProjectSpace}
 import org.scalatest.mock.MockitoSugar._
 import unit.UnitSpec
 
