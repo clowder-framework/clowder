@@ -250,6 +250,12 @@ POST           /api/remove-admin                                                
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 # ----------------------------------------------------------------------
+# SPACES ENDPOINT
+# ----------------------------------------------------------------------
+DELETE         /api/spaces/:space_id                                                    @api.Spaces.removeSpace(space_id: UUID)
+
+
+# ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
 # ----------------------------------------------------------------------
 GET            /api/collections                                                         @api.Collections.listCollections
