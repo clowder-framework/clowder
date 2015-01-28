@@ -26,7 +26,7 @@ function removeSpace(spaceId,event){
 
 //Method to remove the space and redirect back to a specific URL on completion
 function removeSpaceAndRedirect(spaceId, url){
-	if(url === undefined) reloadPage = "/collections";
+	if(url === undefined) reloadPage = "/spaces";
 	
 	var request = jsRoutes.api.Spaces.removeSpace(spaceId).ajax({
 		type: 'DELETE'
