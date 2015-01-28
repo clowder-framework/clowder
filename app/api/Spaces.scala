@@ -14,6 +14,7 @@ import services.{AdminsNotifierPlugin, SpaceService}
  *
  * @author Luigi Marini
  * @author Rob Kooper
+ * @author Jong Lee
  *
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
