@@ -32,7 +32,7 @@
                       type="button"
                       class="
                         @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
-                          active btn btn-success
+                          btn btn-danger
                         }else {
                           btn btn-success
                         }
@@ -49,7 +49,7 @@
                     >
                       <!-- Is there a way to store a scala variable somewhere?... -->
                       @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
-                        Following
+                        Unfollow
                       } else {
                         Follow
                       }
@@ -67,6 +67,8 @@
                           })
                             .done(function(data) {
                               followButton.text("Unfollow");
+                              followButton.removeClass('btn-success');
+                              followButton.addClass('btn-danger');
                             })
                             .fail(function(data) {
                               console.log(data);
@@ -78,6 +80,8 @@
                           })
                             .done(function(data) {
                               followButton.text("Follow");
+                              followButton.removeClass('btn-danger');
+                              followButton.addClass('btn-success');
                             })
                             .fail(function(data) {
                               console.log(data);

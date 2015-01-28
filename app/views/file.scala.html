@@ -146,7 +146,14 @@
 
         <div class="row">
             <div class="col-md-12 button-margins">
-                <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>                
+                <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
+				@if(user.isDefined) {
+					@if(!file.followers.contains(user.get.email.getOrElse())) {
+						<tr><td><button id="followButton" class="btn btn-success" href="#">Follow</button></td></tr>
+					} else {
+						<tr><td><button id="followButton" class="btn btn-danger" href="#">Unfollow</button></td></tr>
+					}
+				}
             </div>
         </div>
 
@@ -363,13 +370,6 @@
                     <tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
                     <tr><td><b>Uploaded on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded by:</b></td><td> <a href = "@routes.Profile.viewProfile(file.author.email)"> @file.author.fullName</a></td></tr>
-					@if(user.isDefined) {
-						@if(!file.followers.contains(user.get.email.getOrElse())) {
-							<tr><td><a id="followButton" href="#">Follow</a></td></tr>
-						} else {
-							<tr><td><a id="followButton" href="#">Unfollow</a></td></tr>
-						}
-					}
                 </table>
             </div>
 
@@ -472,7 +472,10 @@
 							});
 
 							followRequest.done(function (response, textStatus, jqXHR) {
-								$('#followButton' ).text('Unfollow');
+								var $followButton = $('#followButton');
+								$followButton.text('Unfollow');
+								$followButton.removeClass('btn-success');
+								$followButton.addClass('btn-danger');
 							});
 
 							followRequest.fail(function (jqXHR, textStatus, errorThrown){
@@ -484,7 +487,10 @@
 							});
 
 							unfollowRequest.done(function (response, textStatus, jqXHR) {
-								$('#followButton' ).text('Follow');
+								var $followButton = $('#followButton');
+								$followButton.text('Follow');
+								$followButton.removeClass('btn-danger');
+								$followButton.addClass('btn-success');
 							});
 
 							unfollowRequest.fail(function (jqXHR, textStatus, errorThrown){
