@@ -1,6 +1,6 @@
 package unit.spaces
 
-import models.{ProjectSpace, Space}
+import models.{ProjectSpace}
 import org.scalatest.mock.MockitoSugar._
 import unit.UnitSpec
 
@@ -11,7 +11,6 @@ class SpaceSpec extends UnitSpec {
 
   val mockSpace = mock[ProjectSpace]
 
-  val privateSpace =
 
   "A space" should "have a name" in {
     assert(mockSpace.name != null)
