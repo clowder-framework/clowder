@@ -45,6 +45,13 @@ function resetDatasetItems() {
 	//Ensure both tabs are shown
 	$('#tab1anchor').show();
 	$('#tab2anchor').show();
+	hideStatus();
+	$('#uploadcreate').html("Create Dataset");
+	$('#existingcreate').html("Create Dataset");
+}
+
+//Hide the status items
+function hideStatus() {
 	$('#status').hide();
 }
 
@@ -180,6 +187,7 @@ function createEmptyDataset(data) {
             
             $('#status').html("Creation successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
             $('#status').show();
+            $('#uploadcreate').html(" Attach Files");
         });
 
 
@@ -226,72 +234,110 @@ function clearFiles() {
 //Call on Create button click. Move to create a dataset as specified, and attach any files if they are specified.
 function attachFiles() {			
 	//Remove error messages if present
-	clearErrors();
-	
-	//Disable input elements
-	disableFields();
-	
-	//Hide the other tab
-	$('#tab1anchor').hide();
-	
-	//Update the input we are adding to the form programmatically      
-	var name = $('#name');
-    var desc = $('#description');
+	clearErrors();		
     
-    //Add errors and return false if validation fails
-    var error = false;
-    if (!name.val()) {
-    	$('#nameerror').show();
-    	error = true;
-    }
-    if (!desc.val()) {                                
-        $('#descerror').show();
-        error = true;
-    }
-    if (error) {
-    	enableFields();
-    	$('#tab1anchor').show();
-    	return false;
-    }
-    
-    var ids = $("#filelist option:selected").map(function(){ return this.value }).get().join(",");
-    //Create the empty dataset, but pass the existing file ids if present, so it knows to append those afterwards
-	console.log("About to call createEmptyDataset for existing files, ids length is " + ids.length)
-	
-	var encName = htmlEncode(name.val());
-	var encDescription = htmlEncode(desc.val());
+    var ids = $("#filelist option:selected").map(function(){ return this.value }).get().join(",");    		
 	var jsonData = null;
-	if (ids.length == 0) {
-		jsonData = JSON.stringify({"name":encName, "description":encDescription});
+	var request = null;	
+	
+	if (id == "__notset") {
+		//Create the empty dataset, but pass the existing file ids if present, so it knows to append those afterwards
+		
+		//Disable input elements
+		disableFields();
+		
+		//Hide the other tab
+		$('#tab1anchor').hide();
+		
+		//Update the input we are adding to the form programmatically      
+		var name = $('#name');
+	    var desc = $('#description');
+	    
+	    //Add errors and return false if validation fails
+	    var error = false;
+	    if (!name.val()) {
+	    	$('#nameerror').show();
+	    	error = true;
+	    }
+	    if (!desc.val()) {                                
+	        $('#descerror').show();
+	        error = true;
+	    }
+	    if (error) {
+	    	enableFields();
+	    	$('#tab1anchor').show();
+	    	return false;
+	    }
+	    
+	    var encName = htmlEncode(name.val());
+		var encDescription = htmlEncode(desc.val());
+	    
+		if (ids.length == 0) {
+			jsonData = JSON.stringify({"name":encName, "description":encDescription});
+		}
+		else {
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "existingfiles":ids});
+		}	
+	    	                         	                        
+	    request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
+	        data: jsonData,
+	        type: 'POST',
+	        contentType: "application/json",
+	    });
+		                        	                        
+	    request.done(function (response, textStatus, jqXHR){	    
+	    	//Successful creation and file attachment. Update the staus label accordingly.
+	        id = response["id"];
+	        console.log("Successful response from createEmptyDataset existing files. ID is " + id);
+	        $('#status').html("Creation successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
+	        $('#status').show();
+	        $('#existingcreate').html(" Attach Files");
+	    });
+	
+	
+	    request.fail(function (jqXHR, textStatus, errorThrown){
+	        console.error("The following error occured: " + textStatus, errorThrown);
+	        var errMsg = "You must be logged in to create a new dataset.";                                
+	        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+	        	$('#messageerror').html("Error in creating dataset with exising files.");
+	        	$('#messageerror').show();
+	        }  
+	    });
 	}
 	else {
-		jsonData = JSON.stringify({"name":encName, "description":encDescription, "existingfiles":ids});
-	}	
-	var datasetId = null;
-    var request = null;		                         	                        
-    request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
-        data: jsonData,
-        type: 'POST',
-        contentType: "application/json",
-    });
-	                        	                        
-    request.done(function (response, textStatus, jqXHR){	    
-    	//Successful creation and file attachment. Update the staus label accordingly.
-        datasetId = response["id"];
-        console.log("Successful response from createEmptyDataset existing files. ID is " + datasetId);
-        $('#status').html("Creation successful. Go to the <a href=\"/datasets/" + datasetId + "\">Dataset</a>");
-        $('#status').show();
-    });
-
-
-    request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to create a new dataset.";                                
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-        	$('#messageerror').html("Error in creating dataset with exising files. : " + errorThrown);
+		//In this case, the process is simply attaching files
+		if (ids.length == 0) {
+			hideStatus();
+			//No files selected, show error.
+			$('#messageerror').html("No files selected to attach. Please select some files.");
         	$('#messageerror').show();
-        }  
-    });
+        	return false;
+		}
+		
+		jsonData = JSON.stringify({"datasetid":id, "existingfiles":ids});
+		request = jsRoutes.api.Datasets.attachMultipleFiles().ajax({
+	        data: jsonData,
+	        type: 'POST',
+	        contentType: "application/json",
+	    });
+		                        	                        
+	    request.done(function (response, textStatus, jqXHR){	    
+	    	//Successful attachment of multiple files
+	        console.log("Successful response from attachMultipleFiles.");
+	        $('#status').html("Attach files successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
+	        $('#status').show();
+	    });
+	
+	
+	    request.fail(function (jqXHR, textStatus, errorThrown){
+	        console.error("The following error occured: " + textStatus, errorThrown);
+	        var errMsg = "You must be logged in to attach files to a dataset.";                                
+	        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+	        	$('#messageerror').html("Error in attaching exising files to a dataset. " + errorThrown);
+	        	$('#messageerror').show();
+	        }  
+	    });
+	}
     
     return false;
 }

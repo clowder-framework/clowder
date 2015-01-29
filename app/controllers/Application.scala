@@ -71,6 +71,7 @@ class Application @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Comments.editComment,        
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.createEmptyDataset,
+        api.routes.javascript.Datasets.attachMultipleFiles,
         api.routes.javascript.Datasets.deleteDataset,
         api.routes.javascript.Datasets.detachAndDeleteDataset,
         api.routes.javascript.Datasets.getTags,

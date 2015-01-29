@@ -173,6 +173,46 @@ class Datasets @Inject()(
       }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
+  
+  /**
+   * Create new dataset with no file required. However if there are comma separated file IDs passed in, add all of those as existing
+   * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
+   * added as part of dataset creation.
+   * 
+   * A JSON document is the payload for this endpoint. Required elements are name and description. Optional element is existingfiles,
+   * which will be a comma separated String of existing file IDs to be added to the new dataset. 
+   */
+  @ApiOperation(value = "Attach multiple files to an existing dataset",
+      notes = "Add multiple files, by ID, to a dataset that is already in the system. Requires file ids and dataset id.",
+      responseClass = "None", httpMethod = "POST")
+  def attachMultipleFiles() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request => 
+      (request.body \ "datasetid").asOpt[String].map { dsId =>
+          (request.body \ "existingfiles").asOpt[String].map { fileString =>
+                  var idArray = fileString.split(",").map(_.trim())
+                  for (anId <- idArray) {                      
+                      datasets.get(UUID(dsId)) match {
+					      case Some(dataset) => {
+					          files.get(UUID(anId)) match {
+					              case Some(file) => {
+					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file)
+					            	  Ok(toJson(Map("status" -> "success")))
+					              }
+					              case None => {
+					            	  Logger.error("Error getting file" + anId)
+					            	  BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
+					              }
+					          }
+				        }
+				        case None => {
+				            Logger.error("Error getting dataset" + dsId)
+				            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+				        }
+				      }                      
+                  }
+                  Ok(toJson(Map("id" -> dsId)))
+              }.getOrElse(BadRequest(toJson("Missing parameter [existingfiles]")))
+      }.getOrElse(BadRequest(toJson("Missing parameter [datasetid]")))
+  }
 
   /**
    * Reindex the given dataset, if recursive is set to true it will
