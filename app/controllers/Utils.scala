@@ -28,11 +28,11 @@ object Utils {
     if (httpsPort == request.host.split(':').last)  "https" else "http"
   }
 
-/*
+  /*
   val urlFormat2 = new Formatter[URL] {
     def bind(key: String, data: Map[String, String]) = {
       stringFormat.bind(key, data).right.flatMap { value =>
-        scala.util.control.Exception.allCatch[String]
+        scala.util.control.Exception.allCatch[URL]
           .either(toURL(value))
           .left.map(e => Seq(FormError(key, "error.url", Nil)))
       }

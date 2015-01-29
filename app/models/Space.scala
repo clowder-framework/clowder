@@ -12,13 +12,15 @@ import play.api.libs.json.JsObject
  * @author Luigi Marini
  *
  */
+case class DataMap(homePage: String)
+
 case class ProjectSpace (
   id: UUID = UUID.generate,
   name: String = "N/A",
   description: String = "N/A",
   created: Date,
   creator: (UUID, String), // attribution:UUID ?
-  homePage: List[URL],
+  homePage: List[DataMap],
   logoURL: Option[URL],
   bannerURL: Option[URL],
   usersByRole: Map[UUID, List[UUID]], // roleId -> userId

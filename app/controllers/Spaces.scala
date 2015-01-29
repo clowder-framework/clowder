@@ -1,9 +1,10 @@
 package controllers
 
+import java.net.URL
 import javax.inject.Inject
 
 import api.{Permission, WithPermission}
-import models.{ProjectSpace, UUID}
+import models.{DataMap, ProjectSpace, UUID}
 import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.data.Forms._
@@ -23,16 +24,18 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
    * New project space form.
    */
 
+
   val spaceForm = Form(
     mapping(
       "name" -> nonEmptyText,
       "description" -> nonEmptyText,
       "logoUrl" -> optional(Utils.CustomMappings.urlType),
-      "bannerUrl" -> optional(Utils.CustomMappings.urlType)
+      "bannerUrl" -> optional(Utils.CustomMappings.urlType),
+      "homePages" -> Forms.list(mapping("homePage" -> text)(DataMap.apply)(DataMap.unapply))
     )
-      ((name, description, logoUrl, bannerUrl) => ProjectSpace(name = name, description = description, created = new Date, creator = (UUID.apply(""),""),
-          homePage = List.empty, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
-      ((space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL)))
+      ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description, created = new Date, creator = (UUID.apply(""),""),
+          homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
+      ((space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage)))
   )
 
   def newSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
@@ -57,8 +60,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 
               val (id, name) = identity.email match{
                 case Some(userEmail)=>{
-                  val cr = users.findByEmail(userEmail).get
-                  (cr.id, cr.fullName)
+                  val creator = users.findByEmail(userEmail).get
+                  (creator.id, creator.fullName)
                 }
                 case None =>{(UUID.apply(""), "")}
               }
