@@ -15,15 +15,18 @@ from pymongo import MongoClient
 def main():
 	"""Run extraction bus tests."""
 	host = ni.ifaddresses('eth0')[2][0]['addr']
+	port = '9000'
 	key = 'r1ek3rs'
 	all_failures = False
 
 	#Arguments
-	opts, args = getopt.getopt(sys.argv[1:], 'h:k:a')
+	opts, args = getopt.getopt(sys.argv[1:], 'h:p:k:a')
 
 	for o, a in opts:
 		if o == '-h':
 			host = a
+		elif o == '-p':
+			port = a
 		elif o == '-k':
 			key = a
 		elif o == '-a':
@@ -31,7 +34,7 @@ def main():
 		else:
 			assert False, "unhandled option"
 
-	print 'Testing: ' + host
+	print 'Testing: ' + host + '\n'
 
 	#Remove previous outputs
 	for output_filename in os.listdir('tmp'):
@@ -78,7 +81,7 @@ def main():
 						print(input_filename + ' -> !"' + output + '"'),
 
 					#Run test
-					metadata = extract(host, key, input_filename)
+					metadata = extract(host, port, key, input_filename)
 					#print metadata
 				
 					#Write derived data to a file for later reference
@@ -91,11 +94,11 @@ def main():
 
 					#Check for expected output
 					if not POSITIVE and metadata.find(output) is -1:
-						print '\t\033[92m[OK]\033[0m'
+						print '\t\033[92m[OK]\033[0m\n'
 					elif metadata.find(output) > -1:
-						print '\t\033[92m[OK]\033[0m'
+						print '\t\033[92m[OK]\033[0m\n'
 					else:
-						print '\t\033[91m[Failed]\033[0m'
+						print '\t\033[91m[Failed]\033[0m\n'
 
 						report = 'Test-' + str(count) + ' failed.  Expected output "'
 								
@@ -157,23 +160,26 @@ def main():
 
 		mailserver.quit()
 
-def extract(host, key, file):
+def extract(host, port, key, file):
 	"""Pass file to Medici extraction bus."""
 	#Upload file
 	headers = {'Content-Type': 'application/json'}
 	data = {}
 	data["fileurl"] = file
-	file_id = requests.post('http://' + host + ':9000/api/extractions/upload_url?key=' + key, headers=headers, data=json.dumps(data)).json()['id']
+	file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, headers=headers, data=json.dumps(data)).json()['id']
 
 	#Poll until output is ready (optional)
 	while True:
-		status = requests.get('http://' + host + ':9000/api/extractions/' + file_id + '/status').json()
+		status = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/status').json()
 		if status['Status'] == 'Done': break
 		time.sleep(1)
 
-	#Display extracted content
-	metadata = requests.get('http://' + host + ':9000/api/extractions/' + file_id + '/metadata').json()
-	return json.dumps(metadata)
+	#Display extracted content (TODO: needs to be one endpoint!!!)
+	metadata = json.dumps(requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json())
+	metadata += '\n'
+	metadata += json.dumps(requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson').json())
+
+	return metadata
 
 def timeToString(t):
 	"""Return a string represntation of the give elapsed time"""
