@@ -84,7 +84,7 @@ function holdForId(data) {
 
 $(function () {	                	                 
 	//Callback for any submit call, whether it is the overall one, or individual files, in the multi-file-uploader
-    $('#fileupload').bind('fileuploadsubmit', function (e, data) {
+    $('#fileupload').bind('fileuploadsubmit', function (e, data) {    	    	
     	//First, check if the id value is set and if an asych call is started. 
     	if (asynchStarted && id == "__notset") {	                    		
             //If so, wait for the ID to be set.
@@ -98,97 +98,123 @@ $(function () {
     		  asynchStarted = true;
     		  origData = data;
     	}
-    	                 	
-    	//Remove error messages if present
-    	clearErrors();
     	
-    	//Disable input elements
-    	disableFields();
-    	
-    	//Hide the other tab
-    	$('#tab2anchor').hide();
-    	
-    	//Update the input we are adding to the form programmatically      
-    	var name = $('#name');
-        var desc = $('#description');
-        
-        //Add errors and return false if validation fails
-        var error = false;
-        if (!name.val()) {
-        	$('#nameerror').show();
-        	error = true;
-        }
-        if (!desc.val()) {                                
-            $('#descerror').show();
-            error = true;
-        }
-        if (error) {
-        	//On error, re-enable things to allow the user to fix items
-        	data.context.find('button').prop('disabled', false);
-        	enableFields();
-        	//Also, reset the dataset elements, since the workflow is starting over.
-        	resetDatasetItems();
-        	return false;
-        }
-        
-        //No field errors, so set the input values	                        
-        var radios = document.getElementsByName("radiogroup");                        
-        for (var elem in radios) {
-            if (radios[elem].checked) {
-                $('#hiddenlevel').val(radios[elem].value);
-            }
-        }
-        
-        var encName = htmlEncode(name.val());
-  	  	var encDescription = htmlEncode(desc.val());
-        
-        $('#hiddenname').val(encName);
-        $('#hiddendescription').val(encDescription);
-        //Set the ID as it currently stands
-        $('#hiddenid').val(id);
-       
-        if (id == "__notset") {
-        	//Case for the primary file that is submitted. It will create the dataset and obtain the id.        	
-        	var jsonData = JSON.stringify({"name":encName, "description":encDescription});
-            var request = null;		                         	                        
-            request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
-                data: jsonData,
-                type: 'POST',
-                contentType: "application/json",
-            });
-        	                        	                        
-            request.done(function (response, textStatus, jqXHR){	                            
-                //Sucessful creation of the dataset. Set the id so that all files can
-                //proceed to finish their submit.
-                id = response["id"];
-                console.log("Successful response from createEmptyDataset. ID is " + id);
-                $('#hiddenid').val(id);   
-                //Now call the submit for the primary file that was submitted that triggered the dataset
-                //creation.
-                origData.submit();
-            });
-
-
-            request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
-                var errMsg = "You must be logged in to create a new dataset.";                                
-                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                	$('#messageerror').html("Error in creating dataset. : " + errorThrown);
-                	$('#messageerror').show();
-                	//On error, re-enable things to allow the user to fix items
-                	data.context.find('button').prop('disabled', false);
-                	enableFields();
-                	//Also, reset the dataset elements, since the workflow is starting over.
-                	resetDatasetItems();
-                }  
-            });
-            //This block is the primary file, so don't submit yet, don't re-enable the buttons either.
-            //The submission of this data will occur on the successful callback for the dataset creation.
-            return false;
-        }
-
-    });	
+    	return createEmptyDataset(data);    
+    });	    
 });        
+
+function createEmptyDataset(data) {
+ 	
+	//Remove error messages if present
+	clearErrors();
+	
+	//Disable input elements
+	disableFields();
+	
+	//Hide the other tab
+	$('#tab2anchor').hide();
+	
+	//Update the input we are adding to the form programmatically      
+	var name = $('#name');
+    var desc = $('#description');
+    
+    //Add errors and return false if validation fails
+    var error = false;
+    if (!name.val()) {
+    	$('#nameerror').show();
+    	error = true;
+    }
+    if (!desc.val()) {                                
+        $('#descerror').show();
+        error = true;
+    }
+    if (error) {
+    	if (data != null) {
+	    	//On error, re-enable things to allow the user to fix items
+	    	data.context.find('button').prop('disabled', false);
+    	}
+    	enableFields();
+    	//Also, reset the dataset elements, since the workflow is starting over.
+    	resetDatasetItems();
+    	return false;
+    }
+    
+    //No field errors, so set the input values	                        
+    var radios = document.getElementsByName("radiogroup");                        
+    for (var elem in radios) {
+        if (radios[elem].checked) {
+            $('#hiddenlevel').val(radios[elem].value);
+        }
+    }
+    
+    var encName = htmlEncode(name.val());
+	var encDescription = htmlEncode(desc.val());
+    
+    $('#hiddenname').val(encName);
+    $('#hiddendescription').val(encDescription);
+    //Set the ID as it currently stands
+    $('#hiddenid').val(id);
+   
+    if (id == "__notset") {
+    	//Case for the primary file that is submitted. It will create the dataset and obtain the id.        	
+    	var jsonData = JSON.stringify({"name":encName, "description":encDescription});
+        var request = null;		                         	                        
+        request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
+            data: jsonData,
+            type: 'POST',
+            contentType: "application/json",
+        });
+    	                        	                        
+        request.done(function (response, textStatus, jqXHR){	                            
+            //Sucessful creation of the dataset. Set the id so that all files can
+            //proceed to finish their submit.
+            id = response["id"];
+            console.log("Successful response from createEmptyDataset. ID is " + id);
+            $('#hiddenid').val(id);   
+            
+            if (asynchStarted) {
+	            //Now call the submit for the primary file that was submitted that triggered the dataset
+	            //creation.
+	            origData.submit();
+            }
+            
+            $('#status').html("Creation successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
+            $('#status').show();
+        });
+
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to create a new dataset.";                                
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            	$('#messageerror').html("Error in creating dataset. : " + errorThrown);
+            	$('#messageerror').show();
+            	if (data != null) {
+	            	//On error, re-enable things to allow the user to fix items
+	            	data.context.find('button').prop('disabled', false);
+            	}
+            	enableFields();
+            	//Also, reset the dataset elements, since the workflow is starting over.
+            	resetDatasetItems();
+            }  
+        });
+        //This block is the primary file, so don't submit yet, don't re-enable the buttons either.
+        //The submission of this data will occur on the successful callback for the dataset creation.
+        return false;
+    }
+    return true;
+}
+
+function checkZeroFiles() {
+	var numFiles = $('#fileupload').fileupload('option').getNumberOfFiles();
+	//Only needs to be checked if asynch hasn't already been started, otherwise dataset already created.
+	if (!asynchStarted && id == "__notset") {
+		if (numFiles == 0) {
+			//Here, attempt to create the dataset since the user has simply clicked the button with no files added.
+			createEmptyDataset(null);
+		}
+	}
+}
 
 //Existing file upload functions below
 
@@ -253,7 +279,7 @@ function attachFiles() {
     	//Successful creation and file attachment. Update the staus label accordingly.
         datasetId = response["id"];
         console.log("Successful response from createEmptyDataset existing files. ID is " + datasetId);
-        $('#status').html("Dataset creation successful.")
+        $('#status').html("Creation successful. Go to the <a href=\"/datasets/" + datasetId + "\">Dataset</a>");
         $('#status').show();
     });
 
