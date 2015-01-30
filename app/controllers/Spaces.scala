@@ -42,7 +42,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
     implicit request =>
       implicit val user = request.user
       //TODO - bug in html page. If there is an error with one of the fields, the delete button for home pages disappears
-      Ok(views.html.newSpace(spaceForm))
+      //inserting the following snippet inside the @repeat block in the newSpace.scala.html shows the delete button on error, one too many though
+     /* @if(myForm.hasErrors && myForm("homePages").indexes.length > 1) {
+      <div class="home-page-delete"><a href="#">delete</a></div>
+    }
+    */
+    Ok(views.html.newSpace(spaceForm))
   }
 
   /**

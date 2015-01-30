@@ -27,7 +27,7 @@
                     <div class = "homePages">
                         @repeat(myForm("homePages"), min = 1) {homePage =>
                             @inputText(homePage, '_label -> "Home Page")
-                            }
+                        }
                         <div class="home-page-add"><a href="#">add</a></div>
                     </div>
                     @inputText(myForm("logoUrl"), '_label-> "Logo URL")
