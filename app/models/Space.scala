@@ -12,7 +12,7 @@ import play.api.libs.json.JsObject
  * @author Luigi Marini
  *
  */
-case class DataMap(homePage: String)
+case class DataMap(homePage: URL)
 
 case class ProjectSpace (
   id: UUID = UUID.generate,
