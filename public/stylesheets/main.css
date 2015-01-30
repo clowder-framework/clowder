@@ -64,6 +64,14 @@ span.align-right {
 	text-align:left;
 }
 
+.hiddencomplete {
+    display: none;
+}
+
+.hiddenholdspace {
+    visibility: hidden;
+}
+
 /* Not required for template or sticky footer method. */
 #wrap > .container {
   padding-top: 60px;
