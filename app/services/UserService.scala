@@ -14,6 +14,11 @@ import models.{UUID, User}
  */
 trait UserService {
   /**
+   * The number of users
+   */
+  def count(): Long
+
+  /**
    * List all users in the system.
    */
   def list: List[User]

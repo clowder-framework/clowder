@@ -42,6 +42,16 @@ body {
 
 /* Custom page CSS
 -------------------------------------------------- */
+
+/* Basic button bars */
+span.button-bar {
+    width:50%;  
+}
+
+span.align-right { 
+    float:right;
+}
+
 /* Not required for template or sticky footer method. */
 #wrap > .container {
   padding-top: 60px;

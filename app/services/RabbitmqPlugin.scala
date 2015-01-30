@@ -195,7 +195,7 @@ def getChannelInfo(cid: String): Future[Response]={
 
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
 
-  val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
+  val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("9000")
   val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
  
   def receive = {
@@ -206,10 +206,11 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
         
         var actualHost = host
         //Tell the extractors to use https if webserver is so configured
-        if(!appHttpsPort.equals("")){
+       /*if(!appHttpsPort.equals("")){
           actualHost = host.replaceAll("^http:", "https:").replaceFirst(":"+appHttpPort, ":"+appHttpsPort)
         }
-        
+        */
+        // actualHost = "https:" + host.replaceAll("^http:", "").replaceFirst(":"+appHttpPort, ":"+appHttpsPort)
         Logger.debug("actualHost: "+ actualHost)
         Logger.debug("http: "+ appHttpPort)
         Logger.debug("https: "+ appHttpsPort)

@@ -3,6 +3,7 @@ package controllers
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.mvc.Cookie
 import java.io.FileInputStream
 import play.api.Play.current
 import services._
@@ -63,8 +64,8 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
-    implicit request =>
+  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
+    implicit request =>      
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when
@@ -78,6 +79,7 @@ class Datasets @Inject()(
       } else {
         badRequest
       }
+      
       // latest object
       val latest = datasets.latest()
       // first object
@@ -119,9 +121,28 @@ class Datasets @Inject()(
       for (aDataset <- datasetList) {
           decodeDatasetElements(aDataset)
       }
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
+      
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+	    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+	    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14	
+		var viewMode = mode;
+		//Always check to see if there is a session value          
+		request.cookies.get("view-mode") match {
+	    	case Some(cookie) => {
+	    		viewMode = cookie.value
+	    	}
+	    	case None => {
+	    		//If there is no cookie, and a mode was not passed in, default it to tile
+	    	    if (viewMode == null || viewMode == "") {
+	    	        viewMode = "tile"
+	    	    }
+	    	}
+		}
+      
+      //Pass the viewMode into the view
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
   }
-  def userDatasets(when: String, date: String, limit: Int, email: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
+  def userDatasets(when: String, date: String, limit: Int, mode: String, email: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
     implicit request =>
       implicit val user = request.user
       var direction = "b"
@@ -181,7 +202,26 @@ class Datasets @Inject()(
       for (aDataset <- datasetList) {
           decodeDatasetElements(aDataset)
       }
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit))
+      
+      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14      
+      var viewMode = mode;
+      
+      //Always check to see if there is a session value          
+      request.cookies.get("view-mode") match {
+          case Some(cookie) => {                  
+              viewMode = cookie.value
+          }
+          case None => {
+              //If there is no cookie, and viewMode is not set, default it to tile
+              if (viewMode == null || viewMode == "") {
+                  viewMode = "tile"
+              }
+          }
+      }                       
+      
+      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
   }
 
 

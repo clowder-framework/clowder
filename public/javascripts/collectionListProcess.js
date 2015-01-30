@@ -19,3 +19,25 @@ function removeCollection(collectionId,event){
         }   		
 	});
 }
+
+//Method to remove the collection and redirect back to a specific URL on completion
+function removeCollectionAndRedirect(collectionId, url){
+	if(url === undefined) reloadPage = "/collections";
+	
+	var request = jsRoutes.api.Collections.removeCollection(collectionId).ajax({
+		type: 'DELETE'
+	});
+
+	request.done(function (response, textStatus, jqXHR){
+		console.log("Response " + response);		
+		window.location.href=url;
+	});
+	
+	request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to delete a collection from the system.";        
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            alert("The collection was not deleted from the system due to : " + errorThrown);
+        }
+	});	
+}
