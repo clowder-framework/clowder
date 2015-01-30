@@ -1,8 +1,8 @@
-@(filesList: List[(String, String)])(implicit user: Option[securesocial.core.Identity])
+@(filesList: List[(String, String)], datasetId: String)(implicit user: Option[securesocial.core.Identity])
 
 <!-- Snippet to contain elements that are required for displaying the multi file uploader library and configuring it for adding new files
-     to a dataset that is being created. -->
-<!-- This file is currently referenced from newDataset.scala.hml. -->
+     to a dataset that is being created. It is also re-used in the workflow for attaching new files to an existing dataset. -->
+<!-- This file is currently referenced from newDataset.scala.html and from addToExistingDataset.scala.html. -->
 
 
 <!-- The file upload form used as target for the file upload widget -->
@@ -14,7 +14,7 @@
     <input type="hidden" name="description" id="hiddendescription" value="not set">
     <input type="hidden" name="datasetLevel" id="hiddenlevel" value="DatasetLevel">
     <input type="hidden" name="existingFile" id="hiddenexisting" value="__nofile">
-    <input type="hidden" name="datasetid" id="hiddenid" value="__noval">
+    <input type="hidden" name="datasetid" id="hiddenid" value="@datasetId">
     <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
     <div class="row fileupload-buttonbar button-margins">
         <div class="col-lg-7">

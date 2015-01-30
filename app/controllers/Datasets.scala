@@ -52,6 +52,13 @@ class Datasets @Inject()(
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
       Ok(views.html.newDataset(filesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
+  
+  def addToDataset(id: UUID, name: String, desc: String) = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
+    implicit request =>
+      implicit val user = request.user
+      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
+      Ok(views.html.addToExistingDataset(filesList, id, name, desc)).flashing("error" -> "Cannot add to the dataset")
+  }
 
   /**
    * List datasets.
@@ -392,26 +399,9 @@ class Datasets @Inject()(
 	def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
-    var dsName = request.body. asFormUrlEncoded.getOrElse("name", null)
-    var dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+    var dsName = "No Value"
     var dsLevel = request.body.asFormUrlEncoded.get("datasetLevel")
-    var dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)    
-	
-	if (dsName == null || dsDesc == null) {
-		//Changed to return appropriate data and message to the upload interface
-	    var retMap = Map("files" -> 
-	        Seq(
-	            toJson(
-	                Map(
-	                    "name" -> toJson("Mising Form Data"),
-	                    "size" -> toJson(0),
-	                    "error" -> toJson("Please ensure that there is a name and a description set.")
-	                )
-	            )
-	        )
-	     )
-	     Ok(toJson(retMap))
-	}
+    var dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)    		
     
     if (dsId == null) {
 		//Changed to return appropriate data and message to the upload interface
@@ -631,7 +621,7 @@ class Datasets @Inject()(
               }
           }
         }
-        case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
+        case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to modify datasets.")
       }
   }
 	
