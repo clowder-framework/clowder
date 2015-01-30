@@ -81,7 +81,7 @@ def main():
 						print(input_filename + ' -> !"' + output + '"'),
 
 					#Run test
-					metadata = extract(host, port, key, input_filename)
+					metadata = extract(host, port, key, input_filename, 60)
 					#print metadata
 				
 					#Write derived data to a file for later reference
@@ -160,7 +160,7 @@ def main():
 
 		mailserver.quit()
 
-def extract(host, port, key, file):
+def extract(host, port, key, file, wait):
 	"""Pass file to Medici extraction bus."""
 	#Upload file
 	headers = {'Content-Type': 'application/json'}
@@ -169,10 +169,11 @@ def extract(host, port, key, file):
 	file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, headers=headers, data=json.dumps(data)).json()['id']
 
 	#Poll until output is ready (optional)
-	while True:
+	while wait > 0:
 		status = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/status').json()
 		if status['Status'] == 'Done': break
 		time.sleep(1)
+		wait -= 1
 
 	#Display extracted content (TODO: needs to be one endpoint!!!)
 	metadata = json.dumps(requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json())
