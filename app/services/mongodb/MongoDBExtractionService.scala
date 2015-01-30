@@ -11,6 +11,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import java.util.Date
 import play.api.Logger
 import models.WebPageResource
+import com.mongodb.casbah.Imports._
 
 /**
  * Created by lmarini on 2/21/14.
@@ -57,16 +58,17 @@ class MongoDBExtractionService extends ExtractionService {
 }
 
   def save(webpr:WebPageResource):UUID={
-    WebPageResource.insert(webpr)
+    WebPageResource.insert(webpr,WriteConcern.Safe)
     webpr.id
   }
   
   def getWebPageResource(id: UUID): Map[String,String]={
     val wpr=WebPageResource.findOne(MongoDBObject("_id"->new ObjectId(id.stringify)))
-    var wprlist= wpr.map{e=>Logger.debug("resource id:" + id.toString);
-                e.URLs}.getOrElse(Map.empty)
-       wprlist         
-                
+    var wprlist= wpr.map{
+      e=>Logger.debug("resource id:" + id.toString)
+         e.URLs
+    }.getOrElse(Map.empty)
+    wprlist         
   }
   
 }
