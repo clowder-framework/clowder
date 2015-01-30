@@ -15,9 +15,9 @@ function removeSpaceAndRedirect(spaceId, url){
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occurred: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to delete a collection from the system.";        
+        var errMsg = "You must be logged in to delete a space from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            alert("The collection was not deleted from the system due to : " + errorThrown);
+            alert("The space was not deleted from the system due to : " + errorThrown);
         }
 	});	
 }
