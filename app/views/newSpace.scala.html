@@ -25,8 +25,8 @@
                     @inputText(myForm("name"), '_label -> "Name")
                     @textarea(myForm("description"), '_label -> "Description")
                     <div class = "homePages">
-                        @repeat(myForm("homePages"), min = 1) {pageMap =>
-                            @inputText(pageMap("homePage"), '_label -> "Home Page")
+                        @repeat(myForm("homePages"), min = 1) {homePage =>
+                            @inputText(homePage, '_label -> "Home Page")
                             }
                         <div class="home-page-add"><a href="#">add</a></div>
                     </div>
@@ -43,13 +43,13 @@
     var renumberDataMap = function() {
     Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
     var label = $(next).children('label');
-    label.attr('for', label.attr('for').replace(/_\d+__/, '_' + i + '__'));
+    label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
 
     var input = $(next).find('input');
-    input.attr('id', input.attr('id').replace(/_\d+__/, '_' + i + '__'));
+    input.attr('id', input.attr('id').replace(/_\d+_/, '_' + i + '_'));
     input.attr('name', input.attr('name').replace(/\[\d+\]/, '[' + i + ']'));
 
-    if (input.attr('id').match(/homePages_\d+__homePage/)) {
+    if (input.attr('id').match(/homePages_\d+_/)) {
     return i + 1;
     }
 

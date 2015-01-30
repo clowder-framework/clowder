@@ -28,6 +28,7 @@ object Utils {
     if (httpsPort == request.host.split(':').last)  "https" else "http"
   }
 
+  //TODO UrlFormat2 definition is fine, have not been able to get it to work in Mapping. I think UrlFormat is better choice anyway
   /*
   val urlFormat2 = new Formatter[URL] {
     def bind(key: String, data: Map[String, String]) = {

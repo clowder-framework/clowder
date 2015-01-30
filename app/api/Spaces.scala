@@ -21,6 +21,7 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
   @ApiOperation(value = "Create a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
+  //TODO- Minimal Space created with Name and description. URLs are not yet put in
   def createSpace() = SecuredAction(authorization=WithPermission(Permission.CreateSpaces)) {
     request =>
       Logger.debug("Creating new space")

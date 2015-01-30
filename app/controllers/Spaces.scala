@@ -31,7 +31,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "description" -> nonEmptyText,
       "logoUrl" -> optional(Utils.CustomMappings.urlType),
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
-      "homePages" -> Forms.list(mapping("homePage" -> Utils.CustomMappings.urlType)(DataMap.apply)(DataMap.unapply))
+      "homePages" -> Forms.list(Utils.CustomMappings.urlType)
     )
       ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description, created = new Date, creator = (UUID.apply(""),""),
           homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))

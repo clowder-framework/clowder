@@ -20,7 +20,7 @@ case class ProjectSpace (
   description: String = "N/A",
   created: Date,
   creator: (UUID, String), // attribution:UUID ?
-  homePage: List[DataMap],
+  homePage: List[URL],
   logoURL: Option[URL],
   bannerURL: Option[URL],
   usersByRole: Map[UUID, List[UUID]], // roleId -> userId
