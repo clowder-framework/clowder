@@ -20,15 +20,23 @@ $(document).ready(function() {
 
 //Disable common input fields
 function disableFields() {
-	$('#name').attr("disabled", true);
-	$('#description').attr("disabled", true);
-	$("input[name=radiogroup]").attr('disabled', true);                    	
+	var name=$('#name').val();
+	var desc=$('#description').val();
+	$('#name').addClass("hiddenholdspace");
+	$('#description').addClass("hiddenholdspace");	
+	$("input[name=radiogroup]").attr('disabled', true);
+	$('#namelabel').html(name);
+	$('#namelabel').show();
+	$('#desclabel').html(desc);
+	$('#desclabel').show();
 }
 
 //Enable common input fields
 function enableFields() {
-	$('#name').attr("disabled", false);
-    $('#description').attr("disabled", false);
+	$('#namelabel').hide();
+	$('#desclabel').hide();
+	$('#name').removeClass("hiddenholdspace");
+    $('#description').removeClass("hiddenholdspace");
     $("input[name=radiogroup]").attr('disabled', false);                    	
 }
 
@@ -46,6 +54,7 @@ function resetDatasetItems() {
 	$('#tab1anchor').show();
 	$('#tab2anchor').show();
 	hideStatus();
+	clearErrors();
 	$('#uploadcreate').html("Create Dataset");
 	$('#existingcreate').html("Create Dataset");
 }
