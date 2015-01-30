@@ -253,6 +253,7 @@ POST           /api/changeAppearance                                            
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
 POST           /api/spaces                                                             @api.Spaces.createSpace()
+DELETE         /api/spaces/:space_id                                                    @api.Spaces.removeSpace(space_id: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
