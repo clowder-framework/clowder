@@ -4,7 +4,7 @@ import java.net.URL
 import javax.inject.Inject
 
 import api.{Permission, WithPermission}
-import models.{DataMap, ProjectSpace, UUID}
+import models.{ProjectSpace, UUID}
 import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.data.Forms._
@@ -41,6 +41,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   def newSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
     implicit request =>
       implicit val user = request.user
+      //TODO - bug in html page. If there is an error with one of the fields, the delete button for home pages disappears
       Ok(views.html.newSpace(spaceForm))
   }
 
@@ -57,7 +58,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
             errors => BadRequest(views.html.newSpace(errors)),
             space => {
               Logger.debug("Saving space " + space.name)
-
+              //TODO - get user id from Rob's changed user.
               val (id, name) = identity.email match{
                 case Some(userEmail)=>{
                   val creator = users.findByEmail(userEmail).get

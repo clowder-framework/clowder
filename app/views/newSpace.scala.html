@@ -39,38 +39,56 @@
             }
         </div>
     </div>
+
     <script language="javascript">
-    var renumberDataMap = function() {
-    Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
-    var label = $(next).children('label');
-    label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
+        // as fields are added, they get the same default homePages[0] name For automatic binding the names need to
+        // be homePages[0], homePages[1],.. etc. This function renumbers all the fields appropriately even if a field in the
+        // middle of the list is deleted.
+    var renumberHomePageMap = function() {
+        Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
+            var label = $(next).children('label');
+            label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
 
-    var input = $(next).find('input');
-    input.attr('id', input.attr('id').replace(/_\d+_/, '_' + i + '_'));
-    input.attr('name', input.attr('name').replace(/\[\d+\]/, '[' + i + ']'));
+            var input = $(next).find('input');
+            input.attr('id', input.attr('id').replace(/_\d+_/, '_' + i + '_'));
+            input.attr('name', input.attr('name').replace(/\[\d+\]/, '[' + i + ']'));
 
-    if (input.attr('id').match(/homePages_\d+_/)) {
-    return i + 1;
-    }
+            if (input.attr('id').match(/homePages_\d+_/)) {
+                return i + 1;
+            }
 
-    return i;
-    }, 0);
+            return i;
+        }, 0);
     }
 
     $('.homePages').on('click', '.home-page-delete a', function () {
-    $(this).parent().next().remove();
-    $(this).parent().remove();
-
-    renumberDataMap();
+        $(this).parent().prev().remove();
+        $(this).parent().remove();
+        renumberHomePageMap();
     });
 
     $('.home-page-add').click(function () {
-    var value = $(this).prev().clone();
+        var value = $(this).prev().clone();
 
-    $(this).prev().after($('<div class="home-page-delete"><a href="#">delete</a></div>'));
-    value.find('input').val('');
-    $(this).before(value);
-    renumberDataMap();
+        $(this).prev().after($('<div class="home-page-delete"><a href="#">delete</a></div>'));
+        value.find('input').val('');
+        $(this).before(value);
+        renumberHomePageMap();
     });
+
+      //remove blank lines before submitting
+    $('form').submit(function () {
+        $('.homePages .control-group').each(function () {
+            var valueInput = $(this).find('input');
+
+            if (valueInput.val() === '') {
+                $(this).next().remove();
+                $(this).remove();
+                renumberHomePageMap();
+            }
+
+        });
+    });
+
     </script>
 }
