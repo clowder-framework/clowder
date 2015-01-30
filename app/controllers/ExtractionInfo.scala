@@ -111,4 +111,13 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
       Ok(views.html.dtsbookmarklet(Utils.baseUrl(request)))
   }
 
+    /**
+   * DTS Chrome Extension page
+   */
+   def getExtensionPage() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+
+      Ok(views.html.dtsChromeExtension(Utils.baseUrl(request)))
+  }
+   
+   
 }

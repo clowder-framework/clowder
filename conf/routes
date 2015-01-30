@@ -40,6 +40,10 @@ GET      /extractions/supported_input_types        				   			@controllers.Extrac
 GET     /bookmarklet														@controllers.ExtractionInfo.getBookmarkletPage()
 GET     /bookmarklet.js                                                     @controllers.Application.bookmarklet
 
+#DTS Chrome extension
+GET    /extension                                                          @controllers.ExtractionInfo.getExtensionPage()
+GET    /dtsextension.crx                                                   @controllers.Application.chromeextension
+
 #This may not require; This is only for testing. It will change in subsequent version
 GET     /extraction/form                  @controllers.Files.extractFile
 POST    /extraction/upload                @controllers.Files.uploadExtract()
