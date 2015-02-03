@@ -23,6 +23,44 @@ import java.io.FileReader
  * 
  */
 
+// trait FakeMultipartUpload {
+//   implicit def writeableOf_multiPartFormData(implicit codec: Codec): Writeable[MultipartFormData[TemporaryFile]] = {
+//     val builder = MultipartEntityBuilder.create().setBoundary("--boundary---")
+
+//     def transform(multipart: MultipartFormData[TemporaryFile]): Array[Byte] = {
+//       multipart.files.foreach { file =>
+//         val part = new FileBody(file.ref.file, ContentType.create(file.contentType.getOrElse("application/octet-stream")), file.filename)
+//         builder.addPart(file.key, part)
+//       }
+
+//       val outputStream = new ByteArrayOutputStream
+//       builder.build.writeTo(outputStream)
+//       outputStream.toByteArray
+//     }
+
+//     new Writeable[MultipartFormData[TemporaryFile]](transform, Some(builder.build.getContentType.getValue))
+//   }
+
+//   def fileUpload(key: String, file: File, contentType: String): MultipartFormData[TemporaryFile] = {
+//     MultipartFormData(
+//       dataParts = Map(),
+//       files = Seq(FilePart[TemporaryFile](key, file.getName, Some(contentType), TemporaryFile(file))),
+//       badParts = Seq(),
+//       missingFileParts = Seq())
+//   }
+
+//   case class WrappedFakeRequest[A](fr: FakeRequest[A]) {
+//     def withFileUpload(key: String, file: File, contentType: String) = {
+//       fr.withBody(fileUpload(key, file, contentType))
+//     }
+//   }
+
+//   implicit def toWrappedFakeRequest[A](fr: FakeRequest[A]) = WrappedFakeRequest(fr)
+// }
+
+
+
+
 
 class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite {
   val excludedPlugins = List(
@@ -55,6 +93,59 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite {
 
  	
  "The OneAppPerSuite for Files API Router test" must {
+  //   "respond to the Upload File URL" in {
+  //     val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+  //     val fileurl = "http://www.ncsa.illinois.edu/assets/img/logos_ncsa.png"
+  //     val request = FakeRequest(POST, "/api/extractions/upload_url?key=" + secretKey).withJsonBody(Json.toJson(Map("fileurl" -> fileurl)))
+  //     val result = route(request).get
+  //     info("Status=" + status(result))
+  //     status(result) mustEqual OK
+  //     info("contentType=" + contentType(result))
+  //     contentType(result) mustEqual Some("application/json")
+  //     contentAsString(result) must include("id")
+  //     info("contentAsString" + contentAsString(result))
+  //   }
+
+  //   "respond to the Upload File" in {
+  //     val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+  //     val workingDir = System.getProperty("user.dir")
+  //     info("Working Directory: " + workingDir)
+  //     val file1 = new java.io.File(workingDir + "/test/data/morrowplots.jpg")
+  //     if (file1.isFile && file1.exists) {
+  //       Logger.debug("File1 is File:True")
+  //     }
+  //     val req = FakeRequest(POST, "/api/extractions/upload_file?key=" + secretKey).
+  //       withFileUpload("File", file1, "image/jpg")
+  //     val result = route(req).get
+
+  //     info("Status=" + status(result))
+  //     status(result) mustEqual OK
+  //     info("contentType=" + contentType(result))
+  //     contentType(result) mustEqual Some("application/json")
+  //     contentAsString(result) must include("id")
+  //     info("contentAsString" + contentAsString(result))
+  //   }
+
+  // "respond to the Thumbnail File Upload " in {
+  //     val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+  //     val workingDir = System.getProperty("user.dir")
+  //     info("Working Directory: " + workingDir)
+  //     val file1 = new java.io.File(workingDir + "/test/data/morrowplots-thumb.jpg")
+  //     if (file1.isFile && file1.exists) {
+  //       Logger.debug("File1 is File:True")
+  //     }
+  //     val req = FakeRequest(POST, "/api/fileThumbnail?key=" + secretKey).
+  //       withFileUpload("File", file1, "image/jpg")
+  //     val result = route(req).get
+
+  //     info("Status=" + status(result))
+  //     status(result) mustEqual OK
+  //     info("contentType=" + contentType(result))
+  //     contentType(result) mustEqual Some("application/json")
+  //     contentAsString(result) must include("id")
+  //     info("contentAsString" + contentAsString(result))
+  //   }
+
  "respond to the list() function routed by GET /api/files" in {
       val Some(result) = route(FakeRequest(GET, "/api/files"))
       info("Status="+status(result))
@@ -181,8 +272,6 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite {
       }
     }
 
-
-
     "respond to the get(id: UUID) function routed by GET /api/files/:id/metadata" in {
       val Some(result) = route(FakeRequest(GET, "/api/files"))
       info("Status="+status(result))
@@ -250,7 +339,6 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite {
       info("content"+contentAsString(result))
     }
 
-
     "respond to the searchFilesUserMetadata() function routed by POST /api/files/searchmetadata  " in {
 
       //link up json file here before fake request.
@@ -281,8 +369,60 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite {
       info("content"+contentAsString(result))
     }
 
+    "respond to the attachThumbnail(file_id:UUID, thumbnail:UUID) function routed by POST /api/files/:file_id/thumbnails/:thumbnails_id  " in {
 
-    // "respond to the removeFile(id:UUID) function routed by DELETE /api/files/:id  " in {
+      //link up json file here before fake request.
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/files"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("filename")
+      info("content"+contentAsString(result))
+      val json: JsValue = Json.parse(contentAsString(result))
+      val readableString: String = Json.prettyPrint(json)
+      info("Pretty JSON format")
+      info(readableString)
+      val nameResult = json.validate[List[FileName]]
+      val fileInfo = nameResult match {
+        case JsSuccess(list : List[FileName], _) => list
+          info("Mapping file model to Json worked")
+          info("Number of files in System " + list.length.toString())
+          info(list.toString())
+          info(list.filter(_.filename contains "morrowplots.jpg").toString().split(",")(2))
+          val file_id = list.filter(_.filename contains "morrowplots.jpg").toString().split(",")(2)
+          val thumbnail = list.filter(_.filename contains "morrowplots-thumb.jpg").toString().split(",")(2)
+
+          // info(list.filter(_.filename contains "logos_ncsa.png").toString().split(",")(2))
+          // val id = list.filter(_.filename contains "logos_ncsa.png").toString().split(",")(2)
+
+          // After finding specific "id" of file call RESTful API to get JSON information
+          //info("POST /api/files/" + file_id + "/thumbnails/" + thumbnail)
+          //val Some(result_get) = route(FakeRequest(POST, "/api/files/" + file_id + "/thumbnails/" + thumbnail + "?key=" + secretKey))
+          info("POST /api/files/" + file_id + "/thumbnails/54cac3c1ef18c1b68e6fbe8e")
+          val Some(result_get) = route(FakeRequest(POST, "/api/files/" + file_id + "/thumbnails/54cac3c1ef18c1b68e6fbe8e?key=" + secretKey))
+          info("Status_Get="+status(result_get))
+          status(result_get) mustEqual OK
+          info("contentType_Get="+contentType(result_get))
+          contentType(result_get) mustEqual Some("application/json")
+          val json: JsValue = Json.parse(contentAsString(result_get))
+          val readableString: String = Json.prettyPrint(json)
+          info("Pretty JSON format")
+          info(readableString)
+        case e: JsError => {
+          info("Errors: " + JsError.toFlatJson(e).toString())
+        }
+      }
+    }
+
+
+
+// Update License Type
+// Add Tag/Remove Tag
+// Add Notes
+
+    // "respond to the removeFile(id:UUID) function routed by POST /api/files/:id/remove  " in {
 
     //   //link up json file here before fake request.
     //   val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
@@ -311,6 +451,51 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite {
 
     //       // After finding specific "id" of file call RESTful API to get JSON information
     //       info("DELETE /api/files/" + id)
+    //       val Some(result_get) = route(FakeRequest(POST, "/api/files/" + id + "/remove?key=" + secretKey))
+    //       info("Status_Get="+status(result_get))
+    //       status(result_get) mustEqual OK
+    //       info("contentType_Get="+contentType(result_get))
+    //       contentType(result_get) mustEqual Some("application/json")
+    //       val json: JsValue = Json.parse(contentAsString(result_get))
+    //       val readableString: String = Json.prettyPrint(json)
+    //       info("Pretty JSON format")
+    //       info(readableString)
+    //     case e: JsError => {
+    //       info("Errors: " + JsError.toFlatJson(e).toString())
+    //     }
+    //   }
+    // }
+
+
+    // "respond to the removeFile(id:UUID) function routed by DELETE /api/files/:id  " in {
+
+    //   //link up json file here before fake request.
+    //   val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+    //   val Some(result) = route(FakeRequest(GET, "/api/files"))
+    //   info("Status="+status(result))
+    //   status(result) mustEqual OK
+    //   info("contentType="+contentType(result))
+    //   contentType(result) mustEqual Some("application/json")
+    //   contentAsString(result) must include ("filename")
+    //   info("content"+contentAsString(result))
+    //   val json: JsValue = Json.parse(contentAsString(result))
+    //   val readableString: String = Json.prettyPrint(json)
+    //   info("Pretty JSON format")
+    //   info(readableString)
+    //   val nameResult = json.validate[List[FileName]]
+    //   val fileInfo = nameResult match {
+    //     case JsSuccess(list : List[FileName], _) => list
+    //       info("Mapping file model to Json worked")
+    //       info("Number of files in System " + list.length.toString())
+    //       info(list.toString())
+    //       // info(list.filter(_.filename contains "morrowplots.jpg").toString().split(",")(2))
+    //       // val id = list.filter(_.filename contains "morrowplots.jpg").toString().split(",")(2)
+
+    //       info(list.filter(_.filename contains "logos_ncsa.png").toString().split(",")(2))
+    //       val id = list.filter(_.filename contains "logos_ncsa.png").toString().split(",")(2)
+
+    //       // After finding specific "id" of file call RESTful API to get JSON information
+    //       info("DELETE /api/files/" + id)
     //       val Some(result_get) = route(FakeRequest(DELETE, "/api/files/" + id + "?key=" + secretKey))
     //       info("Status_Get="+status(result_get))
     //       status(result_get) mustEqual OK
@@ -325,6 +510,51 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite {
     //     }
     //   }
     // }
+
+    // "respond to the removeFile(id:UUID) function routed by DELETE /api/files/:id  " in {
+
+    //   //link up json file here before fake request.
+    //   val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+    //   val Some(result) = route(FakeRequest(GET, "/api/files"))
+    //   info("Status="+status(result))
+    //   status(result) mustEqual OK
+    //   info("contentType="+contentType(result))
+    //   contentType(result) mustEqual Some("application/json")
+    //   contentAsString(result) must include ("filename")
+    //   info("content"+contentAsString(result))
+    //   val json: JsValue = Json.parse(contentAsString(result))
+    //   val readableString: String = Json.prettyPrint(json)
+    //   info("Pretty JSON format")
+    //   info(readableString)
+    //   val nameResult = json.validate[List[FileName]]
+    //   val fileInfo = nameResult match {
+    //     case JsSuccess(list : List[FileName], _) => list
+    //       info("Mapping file model to Json worked")
+    //       info("Number of files in System " + list.length.toString())
+    //       info(list.toString())
+    //       info(list.filter(_.filename contains "morrowplots-thumb.jpg").toString().split(",")(2))
+    //       val id = list.filter(_.filename contains "morrowplots-thumb.jpg").toString().split(",")(2)
+
+    //       // After finding specific "id" of file call RESTful API to get JSON information
+    //       info("DELETE /api/files/" + id)
+    //       val Some(result_get) = route(FakeRequest(DELETE, "/api/files/" + id + "?key=" + secretKey))
+    //       info("Status_Get="+status(result_get))
+    //       status(result_get) mustEqual OK
+    //       info("contentType_Get="+contentType(result_get))
+    //       contentType(result_get) mustEqual Some("application/json")
+    //       val json: JsValue = Json.parse(contentAsString(result_get))
+    //       val readableString: String = Json.prettyPrint(json)
+    //       info("Pretty JSON format")
+    //       info(readableString)
+    //     case e: JsError => {
+    //       info("Errors: " + JsError.toFlatJson(e).toString())
+    //     }
+    //   }
+    // }
+
+
+// Add Preview/Remove Preview
+// Datasets containing the file
 
  }
 }
