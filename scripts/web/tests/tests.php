@@ -51,6 +51,7 @@
 						$count++;
 						$POSITIVE = true;
 						$output = trim($output);
+						$output_html = "";		//HTML version for display
 
 						//Check for negative tests
 						if($output[0] == '!') {
@@ -61,8 +62,9 @@
 						//Check for input files
 						if($output[0] == '"') {
 							$output = substr($output, 1, -1);
+							$output_html = $output;
 						}else{
-							$output = trim(file_get_contents($output));
+							$output_html = htmlentities(trim(file_get_contents($output)), ENT_QUOTES);
 						}
 						
 						//Add the the '!' back for negative tests
@@ -79,7 +81,7 @@
 						echo "<tr id=\"" . $count . "\">";
 						echo "<td>" . $count . "</td>";
 						echo "<td><a href=\"" . $input_filename . "\">" . $input_filename . "</a></td>";
-						echo "<td><a href=\"tmp/" . $count . "_" . $output_filename . "\">" . $output . "</a></td>";
+						echo "<td><a href=\"tmp/" . $count . "_" . $output_filename . "\">" . $output_html . "</a></td>";
 						echo "<td align=\"center\"><input type=\"button\" class=\"btn btn-xs btn-primary\" value=\"Run\" onclick=\"test(" . $count . ",'" . $input_filename . "','" . $output . "', false)\"></td>";
 						echo "</tr>\n";
 					}
@@ -124,7 +126,7 @@
 
 				var dts = document.getElementById('dts').value;
 				var url = 'test.php?dts=' + encodeURIComponent('http://' + dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
-				//console.log(url);
+				console.log(url);
 
 				$.get(url, function(success) {
 					//Check result

@@ -76,13 +76,13 @@ def main():
 					
 					#Print out test
 					if POSITIVE:	
-						print(input_filename + ' -> "' + output + '"'),
+						print(input_filename + ' -> "' + output + '"\t'),
 					else:
-						print(input_filename + ' -> !"' + output + '"'),
+						print(input_filename + ' -> !"' + output + '"\t'),
 
 					#Run test
 					metadata = extract(host, port, key, input_filename, 60)
-					#print metadata
+					print '\n' + metadata
 				
 					#Write derived data to a file for later reference
 					output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(os.path.basename(input_filename))[0] + '.txt'
@@ -94,11 +94,11 @@ def main():
 
 					#Check for expected output
 					if not POSITIVE and metadata.find(output) is -1:
-						print '\t\033[92m[OK]\033[0m\n'
+						print '\033[92m[OK]\033[0m\n'
 					elif metadata.find(output) > -1:
-						print '\t\033[92m[OK]\033[0m\n'
+						print '\033[92m[OK]\033[0m\n'
 					else:
-						print '\t\033[91m[Failed]\033[0m\n'
+						print '\033[91m[Failed]\033[0m\n'
 
 						report = 'Test-' + str(count) + ' failed.  Expected output "'
 								
@@ -176,9 +176,9 @@ def extract(host, port, key, file, wait):
 		wait -= 1
 
 	#Display extracted content (TODO: needs to be one endpoint!!!)
-	metadata = json.dumps(requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json())
-	metadata += '\n'
-	metadata += json.dumps(requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson').json())
+	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json()
+	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson').json()
+	metadata = json.dumps(metadata)
 
 	return metadata
 

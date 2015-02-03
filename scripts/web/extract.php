@@ -32,7 +32,16 @@ if(isset($_REQUEST['url'])){		//Extract information from file at given URL
 	}
 		
 	//Display extracted content
-	$metadata = file_get_contents($host . 'api/extractions/' . $file_id . '/metadata');
+	$options = array(
+		'http' => array(
+			'method' => 'GET',
+			'header' => 'Content-type: application/json'
+		)
+	);
+
+	$metadata = json_decode(file_get_contents($host . 'api/extractions/' . $file_id . '/metadata', false, stream_context_create($options)), true);
+	$metadata['technicalmetdata'] = json_decode(file_get_contents($host . 'api/files/' . $file_id . '/technicalmetadatajson', false, stream_context_create($options)), true);
+	$metadata = json_encode($metadata);
 	echo $metadata;
 }
 ?>
