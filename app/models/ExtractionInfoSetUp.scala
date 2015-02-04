@@ -16,7 +16,8 @@ import services.DI
 import scala.concurrent.Future
 import services.ExtractionRequestsService
 import java.net.InetAddress
-/*
+import play.api.libs.ws.Response
+/**
  * @author Smruti Padhy 
  * 
  *  DTS extractions information 
@@ -36,215 +37,25 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
   dtsrequests.updateRequest(file_id,extractor_id)
 }
 
-/**
- * Updates Extractors information:
- * IPs of servers on which extractors are running
- * Currently running extractors' names
- * Input types supported by currently running extractors  
- */
- def updateExtractorsInfo() = {
+  /**
+   * Updates Extractors information:
+   * IPs of servers on which extractors are running
+   * Currently running extractors' names
+   * Input types supported by currently running extractors
+   */
+  def updateExtractorsInfo() = {
+    Logger.debug("updateExtractorsInfo[invoked]")
     val updateStatus = current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         val configuration = play.api.Play.configuration
-        val consumerTag=configuration.getString("consumerTag").getOrElse("ctag")
-        var futureIPs = plugin.getChannelsList /* Get Channel IPs*/
-        var ips = for {
-          ipsResponse <- futureIPs /* Convert Future Response to Response*/
-        } yield {
-          val ipsjson = ipsResponse.json
-
-          val ipsjsonlist = ipsjson.as[List[JsObject]] /*Convert JsValue to List of JsObject(Channel Objects) that enables to traverse*/
-
-          val ulist = ipsjsonlist.map { //for each channel object get the Channel Name that contains IP address
-            svr =>
-
-              Logger.debug("Server Name : " + svr \ "name")
-              val ipl = (svr \ "name")    //Get the Channel name by traversing the JsObject
-              val ipltoString = ipl.toString //Convert from JsValue to To String
-              val ipls = ipltoString.substring(1, ipltoString.length() - 5) // get read of the quotation mark and String (1) in the end of the name
-              val url = java.net.URLEncoder.encode(ipls, "UTF-8")
-              val c = "%20"
-              val url1 = url.replaceAll("\\+", c) + "%20(1)"
-              (ipltoString, url1)
-          } //end of map
-          ulist
-        } //end of first yield
-
-        /*
-		* Get the channel details
-		* extract consumer_tags field
-		* if it is ctag, it denotes a consumer, otherwise a publisher
-		* We want consumers, that is server IPs that is running extractor and name of the extractor
-		*/
-
-        var finalResult = for {
-          chiplist <- ips /* get the channel IPs as response */
-        } yield { /* start of 2nd yield*/
-
-          //Loop through each Channel IP
-
-          var xylist = chiplist.map {
-            url1 =>
-              var chdetailFuture = plugin.getChannelInfo(url1._2) /*Get the Channel Details using the encoded url; i.e., url1._2*/
-
-              var dlist = for {
-                cdetailResponse <- chdetailFuture /*Get the response for the async call*/
-              } yield {
-                Logger.debug("---------IP:----- " + url1._1)
-                val cdetailjson = cdetailResponse.json
-                val cdetail = cdetailjson.as[JsObject] /*convert the json response to JsObject to make it traversable*/
-                val consumer_details_List = (cdetail \\ "consumer_details").toList
-                var consumer_tags = List[String]()
-                var queue: Seq[JsValue] = null
-                var queuename: Seq[JsValue] = null
-
-                for (ct <- consumer_details_List) {
-                  var ctag = ct \\ "consumer_tag"
-                  consumer_tags = ctag(0).toString :: consumer_tags
-                  queue = ct \\ "queue"
-                  queuename = queue(0) \\ "name"
-                  Logger.debug(" Queuename: " + queuename(0))
-                }
-
-                var flag = false
-                for (xt <- consumer_tags) {
-                  var str = xt
-                  var substr = str.substring(1, str.length - 1)
-                  if (substr.contains(consumerTag)) {
-                    Logger.debug(substr + " :::  CONSUMER")
-                    flag = true
-                  } else {
-                    Logger.debug(substr + " ::: PUBLISHER")
-                  }
-                } //end of for
-               (url1._1, flag, queuename(0).toString)
-
-              } //end of yield
-
-              dlist
-          } //end of for url1<- MAP
-
-          var listSequenced = for {
-            resultSequenced <- scala.concurrent.Future.sequence(xylist)
-          } yield {
-            resultSequenced
-          }
-
-          listSequenced
-
-        } //end of 2nd yield   
-
-      var updateExNameIPsStatus = for {
-    	 	fin <- finalResult
-    	 	finalResponse <- fin
-        	} yield {
-
-          var kslist = List[String]()
-          var qlist = List[String]()
-          var subi: String = ""
-          var subq: String = ""
-          //--- Temporary Fix for BD-289
-          var ipQnolist=List[ExtractorDetail]() 
-          var hostIp=""
-          //--- End of Temporary Fix  for BD-289 
-            
-          for (i <- finalResponse) { /*(ip,flag,queue name)*/
-            if (i._2 == true) { /* extractor running in server is a consumer*/
-
-              subi = i._1.substring(1, i._1.length - 1) /*to get rid of quotation marks in ip address*/
-              subq = i._3.substring(1, i._3.length - 1) /*to get rid of quotation marks in queue name,i.e., extractor name*/
-                           
-              val hostname=InetAddress.getLocalHost().getCanonicalHostName()
-              
-                                                       
-              if (subi.contains("[::1]") || subi.contains("127.0.0.1") ) {
-                 Logger.debug("LocalHost: The Extractor is running local to Rabbitmq Server")
-                 Logger.debug("GET the rabbitmq host name")
-               
-                 var host = configuration.getString("rabbitmq.host").getOrElse("")
-                                           
-                 if (!kslist.contains(host) && !kslist.contains("127.0.0.1") && !kslist.contains(hostname)){
-                  
-                  Logger.info("!contains hostname:= "+ !kslist.contains(hostname))
-                  //kslist = "127.0.0.1" :: kslist
-                  kslist = hostname :: kslist
-                  Logger.info("Appended ---HOSTNAME:  "+hostname)
-                  Logger.info("-------kslist = "+kslist.toString)
-                 } 
-                 hostIp=hostname //<-- Temporary Fix for BD-289
-              } else {
-                var iparr = subi.split('-')(0).split(':')
-                if (!kslist.contains(iparr(0)))
-                  kslist = iparr(0) :: kslist
-                
-                hostIp=iparr(0)  //<-- Temporary Fix  for BD-289
-              }
-              if (!qlist.contains(subq))
-                 qlist = subq :: qlist
-             //------- Temporary Fix for BD-289  
-              var ed=ipQnolist.find(l=>l.ip==hostIp && l.name==subq)
-              ed match {
-                 case Some(x)=>
-                        x.count=x.count+1
-                 case None=>
-                        ipQnolist= new ExtractorDetail(hostIp,subq,1) :: ipQnolist 
-               }
-            //------ End of Temporary Fix for BD-289 
-            }
-          }
-          
-          extractors.insertServerIPs(kslist)
-
-          extractors.insertExtractorNames(qlist)
-          
-          extractors.insertExtractorDetail(ipQnolist) // Temporary Fix for BD-289
-          
-          var rktypelist = qlist.map {
-            qn =>
-              var rktype = for {
-                qbindingResponse <- plugin.getQueueBindings(qn)
-              } yield {
-                var frk = ""
-                val qbindingjson = qbindingResponse.json
-                val qbindingList = qbindingjson.as[List[JsObject]]
-                val rkList = qbindingList.map {
-                  qb =>
-                    Logger.debug("queue name:" + qn + "   Routing Key: " + (qb \ "routing_key").toString())
-                    (qb \ "routing_key").toString()
-                } //end of map
-                for (rk <- rkList) {
-                  if (rk != qn) {
-                    frk = rk
-                  }
-                }
-                frk
-              }
-
-              rktype
-          } //end of qlist map
-
-        var updateInputTypeStatus= for {
-            	types <- scala.concurrent.Future.sequence(rktypelist)
-          	} yield {
-          		var inputTypes = List[String]()
-          		for (input <- types) {
-                var typearr = input.split("\\.")
-                if (!inputTypes.contains(typearr(2)))
-                  inputTypes = typearr(2) :: inputTypes
-                }
-            Logger.debug("inputTypes: " + inputTypes)
-            extractors.insertInputTypes(inputTypes)
-
-            "DONE"
-          }
-
-          updateInputTypeStatus 
-        } //end of yield
-
-        updateExNameIPsStatus
-
+        val exchange = configuration.getString("medici2.rabbitmq.exchange").getOrElse("medici")
+        if (exchange != "") {
+          Logger.debug("<Exchange is not an empty string>" + exchange)
+          updateAndGetStatus(plugin, exchange)
+        } else {
+          Future(Future("DONE"))
+        }
       } //end of case match
-
       case None => {
         Future(Future("DONE"))
       }
@@ -252,5 +63,171 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
     updateStatus
   }
   
+  /**
+   * Obtains the queues' details attached to an exchange
+   * updates the currently running extractors list, ips of the extractors, supported input types, number of extractors instances running
+   */
+   def updateAndGetStatus(plugin: services.RabbitmqPlugin, exchange: String) = {
+    var qDetailsFuture = getQDetailsFutures(plugin, exchange) /* Obtains queues's details as Futures of the List of responses*/
+    var status = for {
+      qDetailsFutureResponses <- qDetailsFuture
+      qDetailsResponses <- qDetailsFutureResponses
+    } yield {     
+      var exDetails = List[ExtractorDetail]()
+      var finalQList = updateInfoAndGetQueuesList(plugin, qDetailsResponses) /* updates the extractor details and ips list and obtains the list of currently running extractors*/
+      Logger.debug("<finalQueue List> : " + finalQList)
+      extractors.insertExtractorNames(finalQList)
+      var rklist = finalQList.map {
+        qn =>
+          var rk = getAllRoutingKeysForQueue(plugin, qn) 
+          rk
+      } //end of qlist map
+      var updateInputTypeStatus = for {
+        types <- scala.concurrent.Future.sequence(rklist)
+      } yield {
+        var inputTypes = List[String]()
+        for (input <- types) {
+          var typearr = input.split("\\.")
+          if (!inputTypes.contains(typearr(2)))
+            inputTypes = typearr(2) :: inputTypes
+        }
+        Logger.debug("inputTypes: " + inputTypes)
+        extractors.insertInputTypes(inputTypes)
+        "DONE"
+      } //
+      updateInputTypeStatus
+    } //end of outer yield qDetails Future
+    status
+  }//end of updateAndGetStatus method
+   
+  /**
+   *  Obtains the queues' names attached to an exchange where source is the exchange and destination is the queue
+   */ 
+  def getQDetailsFutures(plugin: services.RabbitmqPlugin, exchange: String) = {
+    for {
+      qNamesResponse <- plugin.getQueuesNamesForAnExchange(exchange)
+    } yield {
+      var qNameRKList = List[(String, String)]()
+      Logger.trace("<qNamesResponse>: " + qNamesResponse.json)
+      val qNamesJsObjectList = qNamesResponse.json.as[List[JsObject]]
+      qNamesJsObjectList.map {
+        qNameJsObject =>
+          Logger.debug("<destination Type>: " + (qNameJsObject \ "destination_type").as[String])
+          if ((qNameJsObject \ "destination_type").as[String].equals("queue")) {
+            qNameRKList = ((qNameJsObject \ "destination").as[String], (qNameJsObject \ "routing_key").as[String]) :: qNameRKList
+          }
+      }
+      Logger.debug("<qNameRKList>::" + qNameRKList)
+      var qdetailsListFuture = for {
+        (qname, rk) <- qNameRKList
+      } yield {
+        plugin.getQueueDetails(qname) // get the complete queue details and its consumer details
+      }
+      var qdetailsFutureList = scala.concurrent.Future.sequence(qdetailsListFuture)
+      qdetailsFutureList
+    } //end of yield qNamesResponse
+  }
+ 
+  /**
+   * updates : extractors details 
+   *           currently running extractors list
+   *           servers IPs where extractors are running
+   */
+  def updateInfoAndGetQueuesList(plugin: services.RabbitmqPlugin, qDetailsResponses: List[Response]) = {
+    var exDetails = List[ExtractorDetail]()
+    var qlistResult = List[String]()
+    for (qDetailsResponse <- qDetailsResponses) {
+      var qDetailJsObject = qDetailsResponse.json.as[JsObject]
+      var numConsumers = qDetailJsObject.\("consumers").as[Int]
+      var qname = (qDetailJsObject \ "name").as[String]
+      if (numConsumers != 0) {
+        val qConsumerDetails = qDetailJsObject.\("consumer_details").as[List[JsObject]]
+        var ipsList = List[String]()
+        var qlist = List[String]()
+        for (qcd <- qConsumerDetails) {
+          var peerHost = qcd.\("channel_details").\("peer_host").as[String]
+          var hostIP = InetAddress.getLocalHost().getHostAddress()
+          Logger.debug("[Peer Host] --->" + peerHost + "[hostIP] --->" + hostIP)
+          if (peerHost.contains("::1") || peerHost.contains("127.0.0.1")) {
+            Logger.debug("LocalHost: The Extractor is running local to Rabbitmq Server")
+            if (!ipsList.contains(hostIP)) {
+              ipsList = hostIP :: ipsList
+            }
+          } else {
+            if (!ipsList.contains(peerHost)) {
+              ipsList = peerHost :: ipsList
+            }
+            hostIP = peerHost
+          }
+          var ed = exDetails.find(l => l.ip == hostIP && l.name == qname)
+          ed match {
+            case Some(x) =>
+              x.count = x.count + 1
+            case None =>
+              {
+                Logger.trace("[Before Append] : exdetails :: " + exDetails)
+                exDetails = new ExtractorDetail(hostIP, qname, 1) :: exDetails
+                Logger.trace("[After Append] : exdetails :: " + exDetails)
+              }
+          }
+
+        } // end of for loop
+        Logger.debug("<<----exDetails--->>" + exDetails)
+        extractors.insertServerIPs(ipsList)
+        extractors.insertExtractorDetail(exDetails)
+        qlistResult = qname :: qlistResult
+      } //end of if
+      else {
+        ""
+      }
+    } //end of for  
+    qlistResult
+  }
+ 
+  /**
+   * Gets all routing keys for a given queue
+   */
+  def getAllRoutingKeysForQueue(plugin: services.RabbitmqPlugin, qname: String)={
+    for {
+      qbindingResponse <- plugin.getQueueBindings(qname)
+    } yield {
+      var frk = ""
+      val qbindingjson = qbindingResponse.json
+      val qbindingList = qbindingjson.as[List[JsObject]]
+      val rkList = qbindingList.map {
+        qb =>
+          Logger.debug("queue name:" + qname + "   Routing Key: " + (qb \ "routing_key").toString())
+          (qb \ "routing_key").toString()
+      } //end of map
+      for (rk <- rkList) {
+        if (rk != qname) {
+          frk = rk
+        }
+      }
+      frk
+    }
+  }
   
+  /**
+   * Get all exchanges for a given virtual host 
+   * TODO : It will be used for multiple exchanges attached to a virtual host in Future
+   */
+ def getExchangesFutureList(plugin: services.RabbitmqPlugin): Future[List[String]] = {
+    for {
+      exResponse <- plugin.getExchanges
+    } yield {
+      val exjsonlist = exResponse.json.as[List[JsObject]]
+      var exlist = List[String]()
+      exjsonlist.map {
+        ex =>
+          Logger.trace("internal: " +(ex \"internal")+"  name:"+(ex \"name").as[String])
+          if ((ex \ "internal").as[Boolean] == false) {
+            var name = (ex \ "name").as[String]
+            exlist = name :: exlist
+          } else {}
+      }
+      Logger.debug("exchanges List:" + exlist.toString)
+      exlist
+    }
+  }
 }
