@@ -2,7 +2,6 @@ package models
 
 import java.net.URL
 import java.util.Date
-
 import play.api.libs.json.JsObject
 
 /**
@@ -17,7 +16,7 @@ case class ProjectSpace (
   name: String = "N/A",
   description: String = "N/A",
   created: Date,
-  creator: (UUID, String), // attribution:UUID ?
+  creator: UUID, // attribution:UUID ?
   homePage: List[URL],
   logoURL: Option[URL],
   bannerURL: Option[URL],

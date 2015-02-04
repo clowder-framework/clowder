@@ -5,7 +5,10 @@ import org.scalatest.mock.MockitoSugar._
 import unit.UnitSpec
 
 /**
- * Created by lmarini on 1/23/15.
+ * Placeholder for spaces unit test.
+ *
+ * @author Luigi Marini
+ *
  */
 class SpaceSpec extends UnitSpec {
 
