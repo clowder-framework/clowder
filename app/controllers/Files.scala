@@ -99,7 +99,6 @@ class Files @Inject() (
         	else
         		s.copy(preview = None)
         }
-        Logger.debug("Sections available: " + sectionsWithPreviews) 
 
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
