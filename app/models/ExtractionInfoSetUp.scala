@@ -50,7 +50,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
         val configuration = play.api.Play.configuration
         val exchange = configuration.getString("medici2.rabbitmq.exchange").getOrElse("medici")
         if (exchange != "") {
-          Logger.debug("<Exchange is not an empty string>" + exchange)
+          Logger.debug("Exchange is not an empty string: " + exchange)
           updateAndGetStatus(plugin, exchange)
         } else {
           Future(Future("DONE"))
@@ -75,7 +75,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
     } yield {     
       var exDetails = List[ExtractorDetail]()
       var finalQList = updateInfoAndGetQueuesList(plugin, qDetailsResponses) /* updates the extractor details and ips list and obtains the list of currently running extractors*/
-      Logger.debug("<finalQueue List> : " + finalQList)
+      Logger.debug("finalQueue List : " + finalQList)
       extractors.insertExtractorNames(finalQList)
       var rklist = finalQList.map {
         qn =>
@@ -108,16 +108,16 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       qNamesResponse <- plugin.getQueuesNamesForAnExchange(exchange)
     } yield {
       var qNameRKList = List[(String, String)]()
-      Logger.trace("<qNamesResponse>: " + qNamesResponse.json)
+      Logger.trace("qNamesResponse: " + qNamesResponse.json)
       val qNamesJsObjectList = qNamesResponse.json.as[List[JsObject]]
       qNamesJsObjectList.map {
         qNameJsObject =>
-          Logger.debug("<destination Type>: " + (qNameJsObject \ "destination_type").as[String])
+          Logger.debug("destination Type: " + (qNameJsObject \ "destination_type").as[String])
           if ((qNameJsObject \ "destination_type").as[String].equals("queue")) {
             qNameRKList = ((qNameJsObject \ "destination").as[String], (qNameJsObject \ "routing_key").as[String]) :: qNameRKList
           }
       }
-      Logger.debug("<qNameRKList>::" + qNameRKList)
+      Logger.debug("qNameRKList: " + qNameRKList)
       var qdetailsListFuture = for {
         (qname, rk) <- qNameRKList
       } yield {
@@ -147,7 +147,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
         for (qcd <- qConsumerDetails) {
           var peerHost = qcd.\("channel_details").\("peer_host").as[String]
           var hostIP = InetAddress.getLocalHost().getHostAddress()
-          Logger.debug("[Peer Host] --->" + peerHost + "[hostIP] --->" + hostIP)
+          Logger.debug("Peer Host: " + peerHost + " hostIP: " + hostIP)
           if (peerHost.contains("::1") || peerHost.contains("127.0.0.1")) {
             Logger.debug("LocalHost: The Extractor is running local to Rabbitmq Server")
             if (!ipsList.contains(hostIP)) {
@@ -165,14 +165,14 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
               x.count = x.count + 1
             case None =>
               {
-                Logger.trace("[Before Append] : exdetails :: " + exDetails)
+                Logger.trace("Before Append : exdetails : " + exDetails)
                 exDetails = new ExtractorDetail(hostIP, qname, 1) :: exDetails
-                Logger.trace("[After Append] : exdetails :: " + exDetails)
+                Logger.trace("After Append : exdetails : " + exDetails)
               }
           }
 
         } // end of for loop
-        Logger.debug("<<----exDetails--->>" + exDetails)
+        Logger.debug("exDetails: " + exDetails)
         extractors.insertServerIPs(ipsList)
         extractors.insertExtractorDetail(exDetails)
         qlistResult = qname :: qlistResult
@@ -196,7 +196,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       val qbindingList = qbindingjson.as[List[JsObject]]
       val rkList = qbindingList.map {
         qb =>
-          Logger.trace("queue name:" + qname + "   Routing Key: " + (qb \ "routing_key").toString())
+          Logger.trace("queue name: " + qname + "   Routing Key: " + (qb \ "routing_key").toString())
           (qb \ "routing_key").toString()
       } //end of map
       for (rk <- rkList) {
@@ -226,7 +226,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
             exlist = name :: exlist
           } else {}
       }
-      Logger.debug("exchanges List:" + exlist.toString)
+      Logger.debug("exchanges List: " + exlist.toString)
       exlist
     }
   }

@@ -53,7 +53,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 
     val configuration = play.api.Play.configuration
     val uri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
-    Logger.debug("uri="+uri)
+    Logger.debug("uri= "+ uri)
     try {
       factory = Some(new ConnectionFactory())
       factory.get.setUri(uri)
@@ -108,11 +108,11 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       connection = Some(factory.get.newConnection())
       channel = Some(connection.get.createChannel())
 
-      Logger.trace("<vhost>: "+vhost)
-      if(vhost=="/"){
-        vhost="%2F" //TODO url encoded
+      Logger.trace("vhost: "+ vhost)
+      if(vhost == "/"){
+        vhost = "%2F" //TODO url encoded
       }
-      Logger.debug("<vhost>: "+vhost)
+      Logger.debug("vhost: "+ vhost)
       
       // setup exchange if provided
       if (exchange != "") {
@@ -189,7 +189,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     restURL match {
       case Some(x) => {
         val url = x + path
-        Logger.trace("<RESTURL>:"+url)
+        Logger.trace("RESTURL: "+ url)
         WS.url(url).withHeaders("Accept" -> "application/json").withAuth(username, password, AuthScheme.BASIC).get()
       }
       case None => {
