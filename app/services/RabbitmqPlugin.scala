@@ -47,13 +47,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
-
-  override def onStart() {
+  
+    override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
 
     val configuration = play.api.Play.configuration
     val uri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
-
+    Logger.debug("uri="+uri)
     try {
       factory = Some(new ConnectionFactory())
       factory.get.setUri(uri)
@@ -104,15 +104,21 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       vhost = factory.get.getVirtualHost
       username = factory.get.getUsername
       password = factory.get.getPassword
-
+            
       connection = Some(factory.get.newConnection())
       channel = Some(connection.get.createChannel())
 
+      Logger.trace("<vhost>: "+vhost)
+      if(vhost=="/"){
+        vhost="%2F" //TODO url encoded
+      }
+      Logger.debug("<vhost>: "+vhost)
+      
       // setup exchange if provided
       if (exchange != "") {
         channel.get.exchangeDeclare(exchange, "topic", true)
       }
-
+     
       // create an anonymous queue for replies
       val replyQueueName = channel.get.queueDeclare().getQueue
       Logger.debug("Reply queue name: " + replyQueueName)
@@ -183,6 +189,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     restURL match {
       case Some(x) => {
         val url = x + path
+        Logger.trace("<RESTURL>:"+url)
         WS.url(url).withHeaders("Accept" -> "application/json").withAuth(username, password, AuthScheme.BASIC).get()
       }
       case None => {
@@ -192,6 +199,20 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     }
   }
 
+ /**
+ * Get the exchange list for a given host
+ */
+  def getExchanges : Future[Response] = {
+    getRestEndPoint("/api/exchanges/" + vhost )
+  }
+  
+  /**
+   * get list of queues attached to an exchange
+   */
+  def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
+    getRestEndPoint("/api/exchanges/"+ vhost +"/"+ exchange +"/bindings/source")
+  }
+  
   /**
    * Get the binding lists (lists of routing keys) from the rabbitmq broker
    */
@@ -206,6 +227,15 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   def getChannelsList: Future[Response] = {
     getRestEndPoint("/api/channels")
   }
+  
+  /**
+   * Get queue details for a given queue
+   */
+
+  def getQueueDetails(qname: String): Future[Response] = {
+    getRestEndPoint("/api/queues/" + vhost + "/" + qname)
+  }
+
 
   /**
    * Get queue bindings for a given host and queue from rabbitmq broker

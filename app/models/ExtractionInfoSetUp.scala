@@ -196,7 +196,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       val qbindingList = qbindingjson.as[List[JsObject]]
       val rkList = qbindingList.map {
         qb =>
-          Logger.debug("queue name:" + qname + "   Routing Key: " + (qb \ "routing_key").toString())
+          Logger.trace("queue name:" + qname + "   Routing Key: " + (qb \ "routing_key").toString())
           (qb \ "routing_key").toString()
       } //end of map
       for (rk <- rkList) {
