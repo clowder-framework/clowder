@@ -97,14 +97,12 @@
                         </div>
                         <div class="panel-body">
                             @if(!space.logoURL.isEmpty) {
-                                <!-- TODO add (routes.Spaces.get(space.id)) -->
-                                <a href="">
+                                <a href="@routes.Spaces.getSpace(space.id)">
                                     <img class="img-responsive" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
                                 </a>
                             }
                         <div class="caption">
-                            <!-- TODO add (routes.Spaces.get(space.id)) -->
-                            <h4 class="no-overflow oneline"><a href="">@space.name</a></h4>
+                            <h4 class="no-overflow oneline"><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h4>
                             <p>@ellipsize(space.description, 200)</p>
                         </div>
                         </div>
@@ -160,8 +158,7 @@
                 <tbody>
                 @spaces.map { space =>
                     <tr>
-                        <!-- TODO add (routes.Spaces.get(space.id)) -->
-                        <td><a href="">@space.name</a></td>
+                        <td><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></td>
                         <td>@space.created.format("MMM dd, yyyy")</td>
                         <td style="white-space : pre-line">@space.description</td>
                         <td>
