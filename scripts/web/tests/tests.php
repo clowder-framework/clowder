@@ -70,6 +70,7 @@
 						//Add the the '!' back for negative tests
 						if(!$POSITIVE) {
 							$output = '!' . $output;
+							$output_html = "!" . $output_html;
 						}
 
 						//List test

@@ -38,7 +38,7 @@ def main():
 
 	#Remove previous outputs
 	for output_filename in os.listdir('tmp'):
-		if(output_filename[0] != '.'):
+		if(output_filename[0] != '.' and output_filename != 'failures.txt'):
 			os.unlink('tmp/' + output_filename)
 
 	#Read in tests
@@ -134,6 +134,11 @@ def main():
 
 		#Send a final report of failures
 		if failure_report:
+			#Save current failure report to a file
+			with open('tmp/failures.txt', 'w') as output_file:
+				output_file.write(failure_report)
+		
+			#Send failure notification emails
 			with open('failure_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 	
@@ -147,16 +152,37 @@ def main():
 				for watcher in watchers:
 					mailserver.sendmail('', watcher, message)
 		else:
-			with open('pass_watchers.txt', 'r') as watchers_file:
-				watchers = watchers_file.read().splitlines()
+			if os.path.isfile('tmp/failures.txt'):
+				#Send failure rectification emails
+				with open('tmp/failures.txt', 'r') as report_file:
+					failure_report = report_file.read()
+					os.unlink('tmp/failures.txt')
+		
+					with open('failure_watchers.txt', 'r') as watchers_file:
+						watchers = watchers_file.read().splitlines()
+	
+						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+						message += 'To: ' + ', '.join(watchers) + '\n'
+						message += 'Subject: DTS Tests Now Passing\n\n'
+						message += 'Previous failures:\n\n'
+						message += failure_report			
+						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
+						message += 'Elapsed time: ' + timeToString(dt)
 
-				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-				message += 'To: ' + ', '.join(watchers) + '\n'
-				message += 'Subject: DTS Tests Passed\n\n';
-				message += 'Elapsed time: ' + timeToString(dt)
+						for watcher in watchers:
+							mailserver.sendmail('', watcher, message)
+			else:
+				#Send success notification emails
+				with open('pass_watchers.txt', 'r') as watchers_file:
+					watchers = watchers_file.read().splitlines()
 
-				for watcher in watchers:
-					mailserver.sendmail('', watcher, message)
+					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+					message += 'To: ' + ', '.join(watchers) + '\n'
+					message += 'Subject: DTS Tests Passed\n\n';
+					message += 'Elapsed time: ' + timeToString(dt)
+
+					for watcher in watchers:
+						mailserver.sendmail('', watcher, message)
 
 		mailserver.quit()
 
