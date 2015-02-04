@@ -52,6 +52,26 @@ span.align-right {
     float:right;
 }
 
+.error { 
+	color: red;
+	padding-left: 10px;
+	text-align:left;
+}
+
+.success {
+	color: green;
+	padding-left: 10px;
+	text-align:left;
+}
+
+.hiddencomplete {
+    display: none;
+}
+
+.hiddenholdspace {
+    visibility: hidden;
+}
+
 /* Not required for template or sticky footer method. */
 #wrap > .container {
   padding-top: 60px;
@@ -456,4 +476,13 @@ textarea, input[type='text'], input[type='password']{
 
 #tagCloudCanvas {
     border:1px solid #e6e6e6;
+}
+
+.input-table-cell {
+	padding-top: 10px;
+	padding-bottom: 10px:
+}
+
+.horizontal-radio {
+	margin-right: 25px;
 }

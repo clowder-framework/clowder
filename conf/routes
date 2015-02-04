@@ -263,6 +263,8 @@ GET     /api/collections/:coll_id													@api.Collections.getCollection(col
 
 GET    	/api/datasets					  							@api.Datasets.list
 POST    /api/datasets                                           	@api.Datasets.createDataset
+POST    /api/datasets/createempty                                   @api.Datasets.createEmptyDataset
+POST    /api/datasets/attachmultiple                                @api.Datasets.attachMultipleFiles
 POST	/api/datasets/searchusermetadata							@api.Datasets.searchDatasetsUserMetadata
 POST	/api/datasets/searchmetadata								@api.Datasets.searchDatasetsGeneralMetadata
 
