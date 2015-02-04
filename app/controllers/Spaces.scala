@@ -4,7 +4,7 @@ import java.net.URL
 import javax.inject.Inject
 
 import api.{Permission, WithPermission}
-import models.{ProjectSpace, UUID}
+import models.{Dataset, Collection, ProjectSpace, UUID}
 import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.data.Forms._
@@ -20,11 +20,10 @@ import services.{UserService, SpaceService}
  *
  */
 class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
+
   /**
    * New project space form.
    */
-
-
   val spaceForm = Form(
     mapping(
       "name" -> nonEmptyText,
@@ -33,10 +32,23 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
       "homePages" -> Forms.list(Utils.CustomMappings.urlType)
     )
-      ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description, created = new Date, creator = (UUID.apply(""),""),
-          homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
+      ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description,
+        created = new Date, creator = UUID(""),
+          homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0,
+        datasetCount=0, userCount=0, metadata=List.empty))
       ((space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage)))
   )
+
+  /**
+   * Space main page.
+   */
+  def getSpace(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => Ok(views.html.spaces.space(s, List.empty[Collection], List.empty[Dataset]))
+      case None => InternalServerError("Space not found")
+    }
+  }
 
   def newSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
     implicit request =>
@@ -73,8 +85,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
               }
 
               //TODO - uncomment the commented out variables when serializing of URL's is done by Salat
-              spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description, created = space.created, creator = (id, name),
-                homePage = List.empty/*space.homePage*/, logoURL = None/*space.logoURL*/, bannerURL = None /*space.bannerURL*/, usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
+              spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
+                created = space.created, creator = id,
+                homePage = List.empty/*space.homePage*/, logoURL = None/*space.logoURL*/,
+                bannerURL = None /*space.bannerURL*/, usersByRole= Map.empty, collectionCount=0, datasetCount=0,
+                userCount=0, metadata=List.empty))
               //TODO - Put Spaces in Elastic Search?
               // index collection
               // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -92,7 +107,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       }
   }
   //TODO Dummy function remove when real function is put in
-  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListSpaces)) {
+  def list(when: String, date: String, limit: Int, mode: String) =
+    SecuredAction(authorization = WithPermission(Permission.ListSpaces)) {
     implicit request =>
       implicit val user = request.user
       Ok(views.html.newSpace(spaceForm))

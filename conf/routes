@@ -82,7 +82,9 @@ POST           /collection/submit                                               
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
+# Spaces
 GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID)
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
@@ -252,7 +254,7 @@ POST           /api/changeAppearance                                            
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
-POST           /api/spaces                                                             @api.Spaces.createSpace()
+POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:space_id                                                    @api.Spaces.removeSpace(space_id: UUID)
 
 # ----------------------------------------------------------------------
