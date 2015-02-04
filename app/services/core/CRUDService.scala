@@ -24,20 +24,19 @@ trait CRUDService[A] {
   /**
    * The number of objects that are available based on the filter
    */
-  def count(filter: Option[Map[String, String]] = None): Long
+  def count(filter: Option[String] = None): Long
 
   /**
    * Return a list objects that are available based on the filter as well as the other options.
    *
-   * @param start the first element that should be returned based on the order key
-   * @param limit the maximum number of elements to return
    * @param order the key to use to order the data, default is natural ordering of underlying implementation
    * @param direction the direction to order the data in
-   * @param filter is a map of values that are used to filter, a * can be used to indicate any sequence of characters,
-   *               if the value is NULL it means the key should be absent
+   * @param start the first element that should be returned based on the order key
+   * @param limit the maximum number of elements to return
+   * @param filter is a json representation of the filter to be applied
    *
    */
-  def list(start: Option[String] = None, limit: Integer = 20,
-           order: Option[String] = None, direction: Direction=DESC,
-           filter: Option[Map[String, String]] = None): List[A]
+  def list(order: Option[String] = None, direction: Direction=DESC,
+           start: Option[String] = None, limit: Integer = 20,
+           filter: Option[String] = None): List[A]
 }

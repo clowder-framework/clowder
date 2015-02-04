@@ -82,8 +82,10 @@ POST           /collection/submit                                               
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
+# ----------------------------------------------------------------------
 # Spaces
-GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+# ----------------------------------------------------------------------
+GET            /spaces                                                                  @controllers.Spaces.list(order: Option[String] ?= None, direction: String ?= "asc", start: Option[String] ?= None, limit: Int ?= 12, filter: Option[String] ?= None, mode: String ?= "tile")
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID)
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
 POST           /spaces/submit                                                           @controllers.Spaces.submit
@@ -233,8 +235,6 @@ POST           /api/extractions/:id/submit                                      
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 
 # End of change segment
-
-
 POST           /api/files/:id/previews/:p_id                                            @api.Files.attachPreview(id: UUID, p_id: UUID)
 GET            /api/files/:id/listpreviews                                              @api.Files.filePreviewsList(id: UUID)
 GET            /api/files/:id/getPreviews                                               @api.Files.getPreviews(id: UUID)
@@ -254,6 +254,8 @@ POST           /api/changeAppearance                                            
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
+GET		       /api/spaces													            @api.Spaces.list()
+GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:space_id                                                    @api.Spaces.removeSpace(space_id: UUID)
 

@@ -11,6 +11,7 @@ import play.api.data.Forms._
 import play.api.data.format.Formats._
 import java.util.Date
 import services.{UserService, SpaceService}
+import util.Direction._
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -33,7 +34,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "homePages" -> Forms.list(Utils.CustomMappings.urlType)
     )
       ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description,
-        created = new Date, creator = UUID(""),
+        created = new Date, creator = UUID.generate(),
           homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0,
         datasetCount=0, userCount=0, metadata=List.empty))
       ((space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage)))
@@ -86,10 +87,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 
               //TODO - uncomment the commented out variables when serializing of URL's is done by Salat
               spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
-                created = space.created, creator = id,
-                homePage = List.empty/*space.homePage*/, logoURL = None/*space.logoURL*/,
-                bannerURL = None /*space.bannerURL*/, usersByRole= Map.empty, collectionCount=0, datasetCount=0,
-                userCount=0, metadata=List.empty))
+                created = space.created, creator = id, homePage = List.empty/*space.homePage*/,
+                logoURL = None/*space.logoURL*/, bannerURL = None /*space.bannerURL*/, usersByRole= Map.empty,
+                collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
               //TODO - Put Spaces in Elastic Search?
               // index collection
               // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -106,12 +106,33 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
         case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create new spaces.")
       }
   }
-  //TODO Dummy function remove when real function is put in
-  def list(when: String, date: String, limit: Int, mode: String) =
+
+  /**
+   * Show the list page
+   */
+  def list(order: Option[String]=None, direction: String="asc", start: Option[String]=None, limit: Int=20,
+           filter: Option[String]=None, mode: String="tile") =
     SecuredAction(authorization = WithPermission(Permission.ListSpaces)) {
     implicit request =>
       implicit val user = request.user
-      Ok(views.html.newSpace(spaceForm))
+      val d = if (direction.toLowerCase.startsWith("a")) {
+        ASC
+      } else if (direction.toLowerCase.startsWith("d")) {
+        DESC
+      } else if (direction == "1") {
+        ASC
+      } else if (direction == "-1") {
+        DESC
+      } else {
+        ASC
+      }
+      // TODO fetch 1 extra space so we have the next/prev item
+      val s = spaces.list(order, d, start, limit, None)
+      // TODO fill in
+      val canDelete = false
+      // TODO fetch page before/after so we have prev item
+      val prev = ""
+      val next = ""
+      Ok(views.html.spaceList(s, order, direction, start, limit, filter, mode, canDelete, prev, next))
   }
-
 }
