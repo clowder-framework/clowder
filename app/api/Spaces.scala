@@ -25,15 +25,15 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
     notes = "",
     responseClass = "None", httpMethod = "POST")
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
-  def createSpace() = SecuredAction(authorization=WithPermission(Permission.CreateSpaces)) {
+  def createSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
     request =>
       Logger.debug("Creating new space")
       val nameOpt = (request.body \ "name").asOpt[String]
       val descOpt = (request.body \ "description").asOpt[String]
-      (nameOpt, descOpt) match{
-        case(Some(name), Some(description)) =>{
-          val c = ProjectSpace(name = name, description = description, created = new Date(), creator = (UUID.apply(""),""),
-            homePage = List.empty, logoURL = None, bannerURL = None, usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty)
+      (nameOpt, descOpt) match {
+        case (Some(name), Some(description)) => {
+          val c = ProjectSpace(name = name, description = description, created = new Date(), creator = (UUID.apply(""), ""),
+            homePage = List.empty, logoURL = None, bannerURL = None, usersByRole = Map.empty, collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty)
           spaces.insert(c) match {
             case Some(id) => {
               Ok(toJson(Map("id" -> id)))
@@ -42,7 +42,7 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
           }
 
         }
-        case (_,_) =>BadRequest(toJson("Missing required parameters"))
+        case (_, _) => BadRequest(toJson("Missing required parameters"))
       }
   }
 
@@ -61,5 +61,31 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
     }
     //Success anyway, as if space is not found it is most probably deleted already
     Ok(toJson(Map("status" -> "success")))
+  }
+
+  @ApiOperation(value = "Get a space",
+    notes = "Retrieves information about a space",
+    responseClass = "None", httpMethod = "GET")
+  def get(id: UUID) = SecuredAction(parse.anyContent,
+    authorization = WithPermission(Permission.ShowSpace), resourceId = Some(id)) { request =>
+    spaces.get(id) match {
+      case Some(space) => Ok(spaceToJson(space))
+      case None => BadRequest("Space not found")
+    }
+  }
+
+  @ApiOperation(value = "List spaces",
+    notes = "Retrieves information about spaces",
+    responseClass = "None", httpMethod = "GET")
+  def list() = SecuredAction(parse.anyContent,
+    authorization = WithPermission(Permission.ListSpaces)) { request =>
+    Ok(toJson(spaces.list().map(spaceToJson)))
+  }
+
+  def spaceToJson(space: ProjectSpace) = {
+    toJson(Map("id" -> space.id.stringify,
+      "name" -> space.name,
+      "description" -> space.description,
+      "created" -> space.created))
   }
 }

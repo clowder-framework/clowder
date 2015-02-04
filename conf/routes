@@ -82,7 +82,10 @@ POST           /collection/submit                                               
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
-GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+# ----------------------------------------------------------------------
+# Spaces
+# ----------------------------------------------------------------------
+GET            /spaces                                                                  @controllers.Spaces.list(order: Option[String] ?= None, direction: String ?= "asc", start: Option[String] ?= None, limit: Int ?= 12, filter: Option[String] ?= None, mode: String ?= "tile")
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
@@ -252,7 +255,9 @@ POST           /api/changeAppearance                                            
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
-POST           /api/spaces                                                             @api.Spaces.createSpace()
+GET		       /api/spaces													            @api.Spaces.list()
+GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
+POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:space_id                                                    @api.Spaces.removeSpace(space_id: UUID)
 
 # ----------------------------------------------------------------------
