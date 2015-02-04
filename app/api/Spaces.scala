@@ -32,7 +32,7 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
       val descOpt = (request.body \ "description").asOpt[String]
       (nameOpt, descOpt) match {
         case (Some(name), Some(description)) => {
-          val c = ProjectSpace(name = name, description = description, created = new Date(), creator = (UUID.apply(""), ""),
+          val c = ProjectSpace(name = name, description = description, created = new Date(), creator = UUID.generate,
             homePage = List.empty, logoURL = None, bannerURL = None, usersByRole = Map.empty, collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty)
           spaces.insert(c) match {
             case Some(id) => {
@@ -86,6 +86,6 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
     toJson(Map("id" -> space.id.stringify,
       "name" -> space.name,
       "description" -> space.description,
-      "created" -> space.created))
+      "created" -> space.created.toString))
   }
 }

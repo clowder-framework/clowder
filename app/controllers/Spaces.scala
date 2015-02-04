@@ -34,7 +34,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
       "homePages" -> Forms.list(Utils.CustomMappings.urlType)
     )
-      ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description, created = new Date, creator = (UUID.apply(""),""),
+      ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description, created = new Date, creator = UUID.generate,
           homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
       ((space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage)))
   )
@@ -74,7 +74,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
               }
 
               //TODO - uncomment the commented out variables when serializing of URL's is done by Salat
-              spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description, created = space.created, creator = (id, name),
+              spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description, created = space.created, creator = id,
                 homePage = List.empty/*space.homePage*/, logoURL = None/*space.logoURL*/, bannerURL = None /*space.bannerURL*/, usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
               //TODO - Put Spaces in Elastic Search?
               // index collection
