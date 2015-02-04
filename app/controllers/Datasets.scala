@@ -258,26 +258,13 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
-	  implicit request =>
-	      implicit val user = request.user
-	      Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
-	      datasets.get(id) match {
-	        case Some(dataset) => {
-	          val filesInDataset = dataset.files.map(f => files.get(f.id).get)
+  def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) { implicit request =>
+      implicit val user = request.user
+      Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
+      datasets.get(id) match {
+        case Some(dataset) => {
 
-	          //Search whether dataset is currently being processed by extractor(s)
-	          var isActivity = false
-	          try {
-	            for (f <- filesInDataset) {
-	              extractions.findIfBeingProcessed(f.id) match {
-	                case false =>
-	                case true => isActivity = true; throw ActivityFound
-	              }
-	            }
-	          } catch {
-	            case ActivityFound =>
-	          }
+          val filesInDataset = dataset.files.map(f => files.get(f.id).get)
 
           val datasetWithFiles = dataset.copy(files = filesInDataset)
           decodeDatasetElements(datasetWithFiles)
@@ -296,7 +283,6 @@ class Datasets @Inject()(
               else
                 s.copy(preview = None)
             }
-            Logger.debug("Sections available: " + sectionsWithPreviews)
             val fileWithSections = f.copy(sections = sectionsWithPreviews)
 
 
@@ -344,7 +330,7 @@ class Datasets @Inject()(
 	          
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, isActivity, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError

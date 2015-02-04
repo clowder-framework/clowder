@@ -22,7 +22,7 @@
 		<div class="container">
 			<div class="jumbotron">
     		<h1>DTS Tests</h1>
-				<input id="dts" type="text" class="form-control" value="<?php echo "http://" . $_SERVER['SERVER_NAME']; ?>">
+				<input id="dts" type="text" class="form-control" value="<?php echo isset($_REQUEST['dts']) ? $_REQUEST['dts'] : $_SERVER['SERVER_NAME']; ?>">
 				<div id="failures" style="color:#999999;font-style:italic;font-size:90%;"></div>
 			</div>
 				
@@ -123,7 +123,7 @@
 				$(row).attr('class', 'info');		//Set it again in case this is a second attempt
 
 				var dts = document.getElementById('dts').value;
-				var url = 'test.php?dts=' + encodeURIComponent(dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
+				var url = 'test.php?dts=' + encodeURIComponent('http://' + dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
 				//console.log(url);
 
 				$.get(url, function(success) {
@@ -145,6 +145,7 @@
 							test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
 						}else{
 							document.getElementById('failures').appendChild(document.createTextNode(', Elapsed time: ' + timeToString((new Date).getTime() - t0)));
+							run = true; //Allow runs if currently disabled
 						}
 					}
 				});

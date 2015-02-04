@@ -326,7 +326,7 @@ class Extractions @Inject() (
                   (elist._1, elist._2)
               }
               //Get the bindings
-              var blist = plugin.getBindings()
+              var blist = plugin.getBindings
               for {
                 rkeyResponse <- blist
               } yield {
@@ -374,7 +374,7 @@ class Extractions @Inject() (
                   elist => (elist._1, elist._2)
                 }
 
-                var blist = plugin.getBindings()
+                var blist = plugin.getBindings
 
                 for {
                   rkeyResponse <- blist

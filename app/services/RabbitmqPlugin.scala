@@ -1,249 +1,23 @@
 package services
 
-import play.api.{Plugin, Logger, Application}
-import com.rabbitmq.client.AMQP.BasicProperties
-import com.rabbitmq.client.ConnectionFactory
-import com.rabbitmq.client.Connection
-import com.rabbitmq.client.Channel
-import play.libs.Akka
-import akka.actor.Props
-import akka.actor.Actor
-import akka.actor.ActorRef
-import play.api.libs.json.Json
-import play.api.Play.current
-import com.rabbitmq.client.DefaultConsumer
-import com.rabbitmq.client.Envelope
-import models.{UUID, Extraction}
+import java.io.IOException
+import java.net.URL
 import java.text.SimpleDateFormat
-import com.rabbitmq.client.ReturnListener
-import scala.concurrent.Future
-import play.api.libs.ws.WS
-import play.api.libs.ws.Response
-import play.api.libs.json._
+
+import akka.actor.{Actor, ActorRef, Props}
 import com.ning.http.client.Realm.AuthScheme
-import scala.util.parsing.json.JSON
+import com.rabbitmq.client.AMQP.BasicProperties
+import com.rabbitmq.client.{Channel, Connection, ConnectionFactory, DefaultConsumer, Envelope}
+import models.{Extraction, UUID}
+import play.api.Play.current
 import play.api.libs.json.Json
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsArray
-import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.ws.{Response, WS}
+import play.api.{Application, Logger, Plugin}
+import play.libs.Akka
 
-/**
- * Rabbitmq service.
- *
- * @author Luigi Marini
- *
- */
-class RabbitmqPlugin(application: Application) extends Plugin {
+import scala.concurrent.Future
 
-  val files: FileService =  DI.injector.getInstance(classOf[FileService])
-
-  var extractQueue: Option[ActorRef] = None
-
-  var channel:Channel=null
-  var connection:Connection=null
-
-  override def onStart() {
-    Logger.debug("Starting Rabbitmq Plugin")
-
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("rabbitmq.host").getOrElse("")
-    val port = configuration.getString("rabbitmq.port").getOrElse("")
-    val exchange = configuration.getString("rabbitmq.exchange").getOrElse("")
-    val user = configuration.getString("rabbitmq.user").getOrElse("")
-    val password = configuration.getString("rabbitmq.password").getOrElse("")
-
-    try {
-      val factory = new ConnectionFactory()
-      if (!host.equals("")) factory.setHost(host)
-      if (!port.equals("")) factory.setPort(port.toInt)
-      if (!user.equals("")) factory.setUsername(user)
-      if (!password.equals("")) factory.setPassword(password)
-       connection = factory.newConnection()
-      channel = connection.createChannel()
-      val replyQueueName = channel.queueDeclare().getQueue()
-      Logger.debug("Reply queue name: " + replyQueueName)
-      // extraction queue
-      channel.exchangeDeclare(exchange, "topic", true)
-      extractQueue = Some(Akka.system.actorOf(Props(new SendingActor(channel = channel, exchange = exchange, replyQueueName = replyQueueName))))
-      // status consumer
-      Logger.info("Starting extraction status receiver")
-
-      val event_filter = Akka.system.actorOf(
-        Props(new EventFilter(channel, replyQueueName)),
-        name = "EventFilter"
-      )
-
-      Logger.debug("Initializing a MsgConsumer for the EventFilter")
-      channel.basicConsume(
-        replyQueueName,
-        false, // do not auto ack
-        "event_filter", // tagging the consumer is important if you want to stop it later
-        new MsgConsumer(channel, event_filter)
-      )
-
-    } catch {
-      case ioe: java.io.IOException => Logger.error("Error connecting to rabbitmq broker " + ioe.toString)
-      case t: Throwable => Logger.error("Unknown error connecting to rabbitmq broker " + t.toString)
-    }
-  }
-
-  override def onStop() {
-    Logger.debug("Shutting down Rabbitmq Plugin")
-    if(channel!=null){   
-        Logger.debug("Channel closing")
-        channel.close()
-    }
-    if(connection!=null){
-      Logger.debug("Connection closing")
-      connection.close()
-    }
-  }//end of Rabbitmq on stop
-
-  override lazy val enabled = {
-    !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
-  }
-
-  def extract(message: ExtractorMessage) = {
-    Logger.debug("Sending message " + message)
-    extractQueue match {
-      case Some(x) => x ! message
-      case None => Logger.warn("Could not send message over RabbitMQ")
-    }
-  }
-  
-/**
- * Get the binding lists (lists of routing keys) from the rabbitmq broker 
- */
-  
-  def getBindings(): Future[Response] = {
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("rabbitmq.host").getOrElse("")
-    val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
-    
-     val ruser = configuration.getString("rabbitmq.user").getOrElse("")
-     val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
-       
-    val rUrl="http://"+host+":"+mgmt_api_port+"/api/bindings"
-   
-    val bindingList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
-    bindingList
-
-  }
- /**
-  *  Get Channel list from rabbitmq broker
-  */ 
-
-  def getChannelsList():Future[Response] = {
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("rabbitmq.host").getOrElse("")
-    val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
-    
-    val ruser = configuration.getString("rabbitmq.user").getOrElse("")
-    val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
-       
-    val rUrl="http://"+host+":"+mgmt_api_port+"/api/channels"
-    val ipList: Future[Response] = WS.url(rUrl).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
-    
-    ipList
-   }
- 
-  /**
-   * Get queue bindings for a given host and queue from rabbitmq broker
-   */
-  
-  def getQueueBindings(vhost:String,qname:String):Future[Response]={
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("rabbitmq.host").getOrElse("")
-    val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
-    
-    val ruser = configuration.getString("rabbitmq.user").getOrElse("")
-    val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
-    
-    var vhost1:String=""
-    if(vhost=="/"){
-      vhost1="%2F"
-    }
-       
-    val qbindUrl="http://"+host+":"+mgmt_api_port+"/api/queues/"+vhost1+"/"+qname+"/bindings"
-    
-    Logger.debug("-----query bind Url:  "+ qbindUrl)
-    
-    val rks=WS.url(qbindUrl).withHeaders("Accept" -> "application/json").withAuth(ruser,ruser_pwd, AuthScheme.BASIC).get()
-    rks 
-  }
- /**
-  *  Get Channel information from rabbitmq broker for given channel id 'cid'
-  */ 
-def getChannelInfo(cid: String): Future[Response]={
-     val configuration = play.api.Play.configuration
-     val host = configuration.getString("rabbitmq.host").getOrElse("")
-     val mgmt_api_port=configuration.getString("rabbitmq.mgmt_api_port").getOrElse("")
-    
-     val ruser = configuration.getString("rabbitmq.user").getOrElse("")
-     val ruser_pwd = configuration.getString("rabbitmq.password").getOrElse("")
-     val cUrl="http://"+host+":"+mgmt_api_port+"/api/channels"
-     val chInfo: Future[Response] = WS.url(cUrl+"/"+cid).withHeaders("Accept" -> "application/json").withAuth(ruser, ruser_pwd, AuthScheme.BASIC).get()
-    chInfo
-}
-
-
-}
-
-
-
-
-class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
-
-  val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
-  val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
- 
-  def receive = {
-      case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey) => {
-        var theDatasetId = ""
-        if(datasetId != null)
-        	theDatasetId = datasetId.stringify
-        
-        var actualHost = host
-        //Tell the extractors to use https if webserver is so configured
-        if(!appHttpsPort.equals("")){
-          actualHost = host.replaceAll("^http:", "https:").replaceFirst(":"+appHttpPort, ":"+appHttpsPort)
-        }
-        
-        Logger.debug("actualHost: "+ actualHost)
-        Logger.debug("http: "+ appHttpPort)
-        Logger.debug("https: "+ appHttpsPort)
-
-        val msgMap = scala.collection.mutable.Map(
-            "id" -> Json.toJson(id.stringify),
-            "intermediateId" -> Json.toJson(intermediateId.stringify),
-            "fileSize" -> Json.toJson(fileSize),
-            "host" -> Json.toJson(actualHost),
-            "datasetId" -> Json.toJson(theDatasetId),
-            "flags" -> Json.toJson(flags),
-            "secretKey" -> Json.toJson(secretKey)
-            )
-        // add extra fields
-        metadata.foreach(kv => msgMap.put(kv._1,Json.toJson(kv._2)))
-        val msg = Json.toJson(msgMap.toMap)
-        Logger.info(msg.toString())
-        // correlation id used for rpc call
-        val corrId = java.util.UUID.randomUUID().toString()  // TODO switch to models.UUID?
-        // setup properties
-        val basicProperties = new BasicProperties().builder()
-        	.contentType("application\\json")
-        	.correlationId(corrId)
-            .replyTo(replyQueueName)
-        	.build()
-        channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
-      }
-    case _ => {
-      Logger.error("Unknown message type submitted.")
-    }
-  }
-}
-
-// TODO make optional filds Option[UUID]
+// TODO make optional fields Option[UUID]
 case class ExtractorMessage(
   fileId: UUID,
   intermediateId: UUID,
@@ -253,11 +27,254 @@ case class ExtractorMessage(
   fileSize: String,
   datasetId: UUID,
   flags: String,
-  secretKey: String = play.api.Play.configuration.getString("commKey").getOrElse("")
-)
+  secretKey: String = play.api.Play.configuration.getString("commKey").getOrElse(""))
 
+/**
+ * Rabbitmq service.
+ *
+ * @author Luigi Marini
+ * @author Rob Kooper
+ * @author Smruti Padhy
+ */
+class RabbitmqPlugin(application: Application) extends Plugin {
+  val files: FileService = DI.injector.getInstance(classOf[FileService])
+
+  var extractQueue: Option[ActorRef] = None
+  var channel: Option[Channel] = None
+  var connection: Option[Connection] = None
+  var factory: Option[ConnectionFactory] = None
+  var restURL: Option[String] = None
+  var vhost: String = ""
+  var username: String = ""
+  var password: String = ""
+
+  override def onStart() {
+    Logger.debug("Starting Rabbitmq Plugin")
+
+    val configuration = play.api.Play.configuration
+    val uri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
+
+    try {
+      factory = Some(new ConnectionFactory())
+      factory.get.setUri(uri)
+      connect
+    } catch {
+      case t: Throwable => {
+        factory = None
+        Logger.error("Invalid URI for RabbitMQ", t)
+      }
+    }
+  }
+
+  override def onStop() {
+    Logger.debug("Shutting down Rabbitmq Plugin")
+    factory = None
+    extractQueue = None
+    restURL = None
+    vhost = ""
+    username = ""
+    password = ""
+    if (channel.isDefined) {
+      Logger.debug("Channel closing")
+      channel.get.close()
+      channel = None
+    }
+    if (connection.isDefined) {
+      Logger.debug("Connection closing")
+      connection.get.close()
+      connection = None
+    }
+  }
+
+  override lazy val enabled = {
+    !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
+  }
+
+  def connect: Boolean = {
+    if (channel.isDefined) return true
+    if (!factory.isDefined) return true
+
+    val configuration = play.api.Play.configuration
+    val exchange = configuration.getString("medici2.rabbitmq.exchange").getOrElse("medici")
+    val mgmtPort = configuration.getString("medici2.rabbitmq.managmentPort").getOrElse("15672")
+
+    try {
+      val protocol = if (factory.get.isSSL) "https://" else "http://"
+      restURL = Some(protocol + factory.get.getHost +  ":" + mgmtPort)
+      vhost = factory.get.getVirtualHost
+      username = factory.get.getUsername
+      password = factory.get.getPassword
+
+      connection = Some(factory.get.newConnection())
+      channel = Some(connection.get.createChannel())
+
+      // setup exchange if provided
+      if (exchange != "") {
+        channel.get.exchangeDeclare(exchange, "topic", true)
+      }
+
+      // create an anonymous queue for replies
+      val replyQueueName = channel.get.queueDeclare().getQueue
+      Logger.debug("Reply queue name: " + replyQueueName)
+
+      // status consumer
+      Logger.info("Starting extraction status receiver")
+
+      val event_filter = Akka.system.actorOf(
+        Props(new EventFilter(channel.get, replyQueueName)),
+        name = "EventFilter"
+      )
+
+      Logger.debug("Initializing a MsgConsumer for the EventFilter")
+      channel.get.basicConsume(
+        replyQueueName,
+        false, // do not auto ack
+        "event_filter", // tagging the consumer is important if you want to stop it later
+        new MsgConsumer(channel.get, event_filter)
+      )
+
+      // setup akka for sending messages
+      extractQueue = Some(Akka.system.actorOf(Props(new SendingActor(channel = channel.get,
+        exchange = exchange,
+        replyQueueName = replyQueueName))))
+
+      true
+    } catch {
+      case t: Throwable => {
+        Logger.error("Error connecting to rabbitmq broker", t)
+        extractQueue = None
+        restURL = None
+        vhost = ""
+        username = ""
+        password = ""
+        if (channel.isDefined) {
+          Logger.debug("Channel closing")
+          channel.get.close()
+          channel = None
+        }
+        if (connection.isDefined) {
+          Logger.debug("Connection closing")
+          connection.get.close()
+          connection = None
+        }
+        false
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------------
+  // EXTRACTOR MESSAGE
+  // ----------------------------------------------------------------------
+  def extract(message: ExtractorMessage) = {
+    Logger.debug("Sending message " + message)
+    connect
+    extractQueue match {
+      case Some(x) => x ! message
+      case None => Logger.warn("Could not send message over RabbitMQ")
+    }
+  }
+
+  // ----------------------------------------------------------------------
+  // RABBITMQ MANAGEMENT ENDPOINTS
+  // ----------------------------------------------------------------------
+  def getRestEndPoint(path: String): Future[Response] = {
+    connect
+
+    restURL match {
+      case Some(x) => {
+        val url = x + path
+        WS.url(url).withHeaders("Accept" -> "application/json").withAuth(username, password, AuthScheme.BASIC).get()
+      }
+      case None => {
+        Logger.warn("Could not get bindings")
+        Future.failed(new IOException("Not connected"))
+      }
+    }
+  }
+
+  /**
+   * Get the binding lists (lists of routing keys) from the rabbitmq broker
+   */
+  def getBindings: Future[Response] = {
+    getRestEndPoint("/api/bindings")
+  }
+
+  /**
+   * Get Channel list from rabbitmq broker
+   */
+
+  def getChannelsList: Future[Response] = {
+    getRestEndPoint("/api/channels")
+  }
+
+  /**
+   * Get queue bindings for a given host and queue from rabbitmq broker
+   */
+
+  def getQueueBindings(qname: String): Future[Response] = {
+    getRestEndPoint("/api/queues/" + vhost + "/" + qname + "/bindings")
+  }
+
+  /**
+   * Get Channel information from rabbitmq broker for given channel id 'cid'
+   */
+  def getChannelInfo(cid: String): Future[Response] = {
+    getRestEndPoint("/api/channels/" + cid)
+  }
+}
+
+  /**
+   * Send message on specified channel and exchange, and tells receiver to reply
+   * on specified queue.
+   */
+class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
+  val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
+  val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
+
+  def receive = {
+    case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey) => {
+      var theDatasetId = ""
+      if (datasetId != null)
+        theDatasetId = datasetId.stringify
+
+      var actualHost = host
+      //Tell the extractors to use https if webserver is so configured
+      if (!appHttpsPort.equals("")) {
+        actualHost = host.replaceAll("^http:", "https:").replaceFirst(":" + appHttpPort, ":" + appHttpsPort)
+      }
+
+      val msgMap = scala.collection.mutable.Map(
+        "id" -> Json.toJson(id.stringify),
+        "intermediateId" -> Json.toJson(intermediateId.stringify),
+        "fileSize" -> Json.toJson(fileSize),
+        "host" -> Json.toJson(actualHost),
+        "datasetId" -> Json.toJson(theDatasetId),
+        "flags" -> Json.toJson(flags),
+        "secretKey" -> Json.toJson(secretKey)
+      )
+      // add extra fields
+      metadata.foreach(kv => msgMap.put(kv._1, Json.toJson(kv._2)))
+      val msg = Json.toJson(msgMap.toMap)
+      // correlation id used for rpc call
+      val corrId = java.util.UUID.randomUUID().toString() // TODO switch to models.UUID?
+      // setup properties
+      val basicProperties = new BasicProperties().builder()
+          .contentType("application\\json")
+          .correlationId(corrId)
+          .replyTo(replyQueueName)
+          .build()
+      channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
+    }
+    case _ => {
+      Logger.error("Unknown message type submitted.")
+    }
+  }
+}
+
+/**
+ * Listen for responses coming back on replyQueue
+ */
 class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(channel) {
-
   override def handleDelivery(consumer_tag: String,
                               envelope: Envelope,
                               properties: BasicProperties,
@@ -267,36 +284,35 @@ class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(ch
 
     target ! body_text
     channel.basicAck(delivery_tag, false)
-
-
   }
-
 }
 
+/**
+ * Actual message on reply queue
+ */
 class EventFilter(channel: Channel, queue: String) extends Actor {
   val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
-   def receive = {
-     case statusBody: String => 
-            Logger.info("Received extractor status: " + statusBody)
-            val json = Json.parse(statusBody)
-            val file_id = UUID((json \ "file_id").as[String])
-            val extractor_id = (json \ "extractor_id").as[String]
-            val status = (json \ "status").as[String]
-            val start = (json \ "start").asOpt[String]
-            val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-            val startDate = formatter.parse(start.get)
-            Logger.info("Status start: " + startDate)
-            var updatedStatus = status.toUpperCase()
-            //TODO : Enforce consistent status updates: STARTED, DONE, ERROR and other detailed status updates to logs when we start implementing distributed logging
-            if(updatedStatus.contains("DONE")){
-              extractions.insert(Extraction(UUID.generate, file_id, extractor_id,"DONE", Some(startDate), None))
-            }else{
-              extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
-            }
-            Logger.debug("updatedStatus= "+updatedStatus + " status= "+status)
-            models.ExtractionInfoSetUp.updateDTSRequests(file_id,extractor_id)
-   }
 
+  def receive = {
+    case statusBody: String =>
+      Logger.debug("Received extractor status: " + statusBody)
+      val json = Json.parse(statusBody)
+      val file_id = UUID((json \ "file_id").as[String])
+      val extractor_id = (json \ "extractor_id").as[String]
+      val status = (json \ "status").as[String]
+      val start = (json \ "start").asOpt[String]
+      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+      val startDate = formatter.parse(start.get)
+      val updatedStatus = status.toUpperCase()
+      //TODO : Enforce consistent status updates: STARTED, DONE, ERROR and
+      //       other detailed status updates to logs when we start implementing
+      //       distributed logging
+      if (updatedStatus.contains("DONE")) {
+        extractions.insert(Extraction(UUID.generate, file_id, extractor_id, "DONE", Some(startDate), None))
+      } else {
+        extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
+      }
+      Logger.debug("updatedStatus=" + updatedStatus + " status=" + status + " startDate=" + startDate)
+      models.ExtractionInfoSetUp.updateDTSRequests(file_id, extractor_id)
+  }
 }
-
-
