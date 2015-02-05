@@ -506,7 +506,7 @@ class Extractions @Inject() (
                     //Get the list of extractors processing the file 
                     val l = extractions.getExtractorList(file.id)
                     //Get the bindings
-                    var blist = plugin.getBindings()
+                    var blist = plugin.getBindings
                     var fstatus = for {
                       rkeyResponse <- blist
                     } yield {
