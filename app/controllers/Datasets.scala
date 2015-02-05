@@ -109,7 +109,6 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
-      val aBuilder = new StringBuilder()
       for (aDataset <- datasetList) {
           decodeDatasetElements(aDataset)
       }
@@ -190,7 +189,6 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
-      val aBuilder = new StringBuilder()
       for (aDataset <- datasetList) {
           decodeDatasetElements(aDataset)
       }
@@ -378,7 +376,7 @@ class Datasets @Inject()(
 	def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
-    var dsName = request.body. asFormUrlEncoded.getOrElse("name", null)
+    var dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
     var dsLevel = request.body.asFormUrlEncoded.get("datasetLevel")
     var dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)    
