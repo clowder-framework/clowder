@@ -46,14 +46,6 @@ class Application @Inject() (files: FileService) extends SecuredController {
   }
   
   /**
-   *Chrome Extension 
-   */
-  def chromeextension() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
-    val protocol = Utils.protocol(request)
-    Ok(views.html.dtsChromeExtension(Utils.baseUrl(request))).as("application/crx")
-  }
-
-  /**
    *  Javascript routing.
    */
   def javascriptRoutes = SecuredAction() { implicit request =>

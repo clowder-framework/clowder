@@ -1,0 +1,13 @@
+@(baseUrl: String, hostname: String, extensionHostUrl: String)
+@import helper._
+@import collection.JavaConverters._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+@main("Extension") {
+<center>
+    <h1>Data Tilling Service (DTS)</h1>
+    <h2 style="color:gray;">Download and Drag & Drop the extension to Chrome->Extension Settings</h2>
+    <a href="@{extensionHostUrl + "/chrome/dtsextension_"+ hostname + ".crx"}">
+      <img src="@baseUrl/assets/javascripts/DTSbookmarklet/browndog-large-transparent.png" width="200" alt="DTS">
+    </a>
+</center>
+}

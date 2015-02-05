@@ -43,8 +43,7 @@ GET     /bookmarklet.js                                                     @con
 
 
 #DTS Chrome extension
-GET    /extension                                                          @controllers.ExtractionInfo.getExtensionPage()
-GET    /dtsextension.crx                                                   @controllers.Application.chromeextension
+GET    /extensions/dts/chrome                                                @controllers.ExtractionInfo.getExtensionPage()
 
 #This may not require; This is only for testing. It will change in subsequent version
 GET     /extraction/form                  @controllers.Files.extractFile
