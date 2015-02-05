@@ -91,7 +91,7 @@ class Datasets @Inject()(
       notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
       responseClass = "None", httpMethod = "POST")
   def createDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>
-    Logger.debug("Creating new dataset")
+    Logger.debug("--- API Creating new dataset ----")
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>
         (request.body \ "file_id").asOpt[String].map { file_id =>
@@ -114,7 +114,7 @@ class Datasets @Inject()(
                       _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
                     }
                   }
-                  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}
+                  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}                  
                   Ok(toJson(Map("id" -> id)))
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
@@ -124,6 +124,94 @@ class Datasets @Inject()(
         }.getOrElse(BadRequest(toJson("Missing parameter [file_id]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
+  }
+  
+  /**
+   * Create new dataset with no file required. However if there are comma separated file IDs passed in, add all of those as existing
+   * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
+   * added as part of dataset creation.
+   * 
+   * A JSON document is the payload for this endpoint. Required elements are name and description. Optional element is existingfiles,
+   * which will be a comma separated String of existing file IDs to be added to the new dataset. 
+   */
+  @ApiOperation(value = "Create new dataset with no file",
+      notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name and description. Optional list of existing file ids to add.",
+      responseClass = "None", httpMethod = "POST")
+  def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>    
+    (request.body \ "name").asOpt[String].map { name =>
+      (request.body \ "description").asOpt[String].map { description =>        
+          val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData())
+          datasets.insert(d) match {
+            case Some(id) => {              
+              (request.body \ "existingfiles").asOpt[String].map { fileString =>
+                  var idArray = fileString.split(",").map(_.trim())
+                  for (anId <- idArray) {                      
+                      datasets.get(UUID(id)) match {
+					      case Some(dataset) => {
+					          files.get(UUID(anId)) match {
+					              case Some(file) => {
+					            	  attachExistingFileHelper(UUID(id), UUID(anId), dataset, file)
+					            	  Ok(toJson(Map("status" -> "success")))
+					              }
+					              case None => {
+					            	  Logger.error("Error getting file" + anId)
+					            	  BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
+					              }
+					          }
+				        }
+				        case None => {
+				            Logger.error("Error getting dataset" + id)
+				            BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+				        }
+				      }                      
+                  }
+                  Ok(toJson(Map("id" -> id)))
+              }.getOrElse(Ok(toJson(Map("id" -> id))))              
+            }
+            case None => Ok(toJson(Map("status" -> "error")))
+          }            
+      }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
+    }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
+  }
+  
+  /**
+   * Create new dataset with no file required. However if there are comma separated file IDs passed in, add all of those as existing
+   * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
+   * added as part of dataset creation.
+   * 
+   * A JSON document is the payload for this endpoint. Required elements are name and description. Optional element is existingfiles,
+   * which will be a comma separated String of existing file IDs to be added to the new dataset. 
+   */
+  @ApiOperation(value = "Attach multiple files to an existing dataset",
+      notes = "Add multiple files, by ID, to a dataset that is already in the system. Requires file ids and dataset id.",
+      responseClass = "None", httpMethod = "POST")
+  def attachMultipleFiles() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request => 
+      (request.body \ "datasetid").asOpt[String].map { dsId =>
+          (request.body \ "existingfiles").asOpt[String].map { fileString =>
+                  var idArray = fileString.split(",").map(_.trim())
+                  for (anId <- idArray) {                      
+                      datasets.get(UUID(dsId)) match {
+					      case Some(dataset) => {
+					          files.get(UUID(anId)) match {
+					              case Some(file) => {
+					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file)
+					            	  Ok(toJson(Map("status" -> "success")))
+					              }
+					              case None => {
+					            	  Logger.error("Error getting file" + anId)
+					            	  BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
+					              }
+					          }
+				        }
+				        case None => {
+				            Logger.error("Error getting dataset" + dsId)
+				            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+				        }
+				      }                      
+                  }
+                  Ok(toJson(Map("id" -> dsId)))
+              }.getOrElse(BadRequest(toJson("Missing parameter [existingfiles]")))
+      }.getOrElse(BadRequest(toJson("Missing parameter [datasetid]")))
   }
 
   /**
@@ -149,50 +237,63 @@ class Datasets @Inject()(
         }
       }
   }
+  
+  /**
+   * Functionality broken out from attachExistingFile, in order to allow the core work of file attachment to be called from
+   * multiple API endpoints.
+   * 
+   * @param dsId A UUID that specifies the dataset that will be modified
+   * @param fileId A UUID that specifies the file to attach to the dataset
+   * @param dataset Reference to the model of the dataset that is specified
+   * @param file Reference to the model of the file that is specified   
+   */
+  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File) = {
+      if (!files.isInDataset(file, dataset)) {
+            datasets.addFile(dsId, file)	            
+            files.index(fileId)
+            if (!file.xmlMetadata.isEmpty){
+              datasets.index(dsId)
+            }	            
+   
+            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+                datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
+                
+                for(collectionId <- dataset.collections){
+                  collections.get(UUID(collectionId)) match{
+                    case Some(collection) =>{
+                    	if(collection.thumbnail_id.isEmpty){ 
+                    		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
+                    	}
+                    }
+                    case None=>Logger.debug(s"No collection found with id $collectionId") 
+              }
+            }
+        }
+        
+        //add file to RDF triple store if triple store is used
+        if (file.filename.endsWith(".xml")) {
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
+            case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
+          }
+        }
+        Logger.info("Adding file to dataset completed")
+      } else {
+          Logger.info("File was already in dataset.")
+      }
+  }
 
   @ApiOperation(value = "Attach existing file to dataset",
       notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
       responseClass = "None", httpMethod = "POST")
   def attachExistingFile(dsId: UUID, fileId: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(dsId)) {
+    authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(dsId)) {      
 	request =>
      datasets.get(dsId) match {
       case Some(dataset) => {
         files.get(fileId) match {
           case Some(file) => {
-            if (!files.isInDataset(file, dataset)) {
-	            datasets.addFile(dsId, file)	            
-	            files.index(fileId)
-	            if (!file.xmlMetadata.isEmpty){
-                  datasets.index(dsId)
-	            }	            
-       
-	            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-		                        datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
-		                        
-		                        for(collectionId <- dataset.collections){
-		                          collections.get(UUID(collectionId)) match{
-		                            case Some(collection) =>{
-		                            	if(collection.thumbnail_id.isEmpty){ 
-		                            		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
-		                            	}
-		                            }
-		                            case None=>Logger.debug(s"No collection found with id $collectionId") 
-		                          }
-		                        }
-	            }
-	            
-	            //add file to RDF triple store if triple store is used
-                if (file.filename.endsWith(".xml")) {
-                  configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                    case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
-                    case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-                  }
-                }
-                Logger.info("Adding file to dataset completed")
-              } else {
-                  Logger.info("File was already in dataset.")
-              }
+        	  attachExistingFileHelper(dsId, fileId, dataset, file)
               Ok(toJson(Map("status" -> "success")))
             }
             case None => {

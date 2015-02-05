@@ -1,0 +1,17 @@
+@(filesList: List[(String, String)])(implicit user: Option[securesocial.core.Identity])
+
+<!-- Snippet to contain elements that are required for listing existing files and allowing them to be selected and added to a dataset. -->
+<!-- This file is currently referenced from newDataset.scala.hml. -->
+
+<div>
+	<p>                                                             
+	<button class="btn btn-primary btn-large button-margins" title="Create the Dataset" onclick="attachFiles();return false;"><span class="glyphicon glyphicon-upload"></span> <span id="existingcreate"> Create Dataset</span></button>
+	<button id="filesCLearBtn" class="btn btn-default btn-large button-margins" style="margin-left:10px;" onclick="clearFiles();return false;">Clear Selected Files</button>	
+	                                                              
+	<p>
+	<select multiple name="files" size="15" id="filelist" style="width: 500px;">
+		@filesList.map { file =>  
+		    <option value="@(file._1)">@(file._2)</option>
+		}                    
+	</select>
+</div>
