@@ -52,6 +52,26 @@ span.align-right {
     float:right;
 }
 
+.error { 
+	color: red;
+	padding-left: 10px;
+	text-align:left;
+}
+
+.success {
+	color: green;
+	padding-left: 10px;
+	text-align:left;
+}
+
+.hiddencomplete {
+    display: none;
+}
+
+.hiddenholdspace {
+    visibility: hidden;
+}
+
 /* Not required for template or sticky footer method. */
 #wrap > .container {
   padding-top: 60px;
@@ -130,11 +150,6 @@ ol.comment-threads {
 .comment-input-box {
 	width: 100%;
 	margin: 10px 0px;
-} 
-
-.file-list-cell {
-	text-align: right;
-	width: 80%;
 }
 
 .rubberbandDiv {
@@ -441,11 +456,17 @@ textarea, input[type='text'], input[type='password']{
   border-right: 1px solid #E1E1E8;
 }
 
-.border-top {
-  border-top: 1px solid #E1E1E8;
+.col-left-border {
+    border-left: 1px solid #E1E1E8;
 }
 
-.button-margins {
+.border-top {
+  border-top: 1px solid #E1E1E8;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.btn-margins {
   margin: 20px 0px;
 }
 
@@ -455,4 +476,25 @@ textarea, input[type='text'], input[type='password']{
 
 #tagCloudCanvas {
     border:1px solid #e6e6e6;
+}
+
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
+}
+
+.space-col-right {
+
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
+}
+
+.input-table-cell {
+	padding-top: 10px;
+	padding-bottom: 10px:
+}
+
+.horizontal-radio {
+	margin-right: 25px;
 }

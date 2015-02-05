@@ -37,16 +37,24 @@ object ApplicationBuild extends Build {
   }
 
   def gitShortHash: String = {
-    val hash = exec("git rev-parse --short HEAD")
-    assert(hash.length == 1)
-    hash(0)
+    try {
+      val hash = exec("git rev-parse --short HEAD")
+      assert(hash.length == 1)
+      hash(0)
+    } catch {
+      case e: Exception => "N/A"
+    }
   }
 
   def gitBranchName: String = {
-    val branch = exec("git rev-parse --abbrev-ref HEAD")
-    assert(branch.length == 1)
-    if (branch(0) == "HEAD") return "detached"
-    branch(0)
+    try {
+      val branch = exec("git rev-parse --abbrev-ref HEAD")
+      assert(branch.length == 1)
+      if (branch(0) == "HEAD") return "detached"
+      branch(0)
+    } catch {
+      case e: Exception => "N/A"
+    }
   }
 
   def getBambooBuild: String = {

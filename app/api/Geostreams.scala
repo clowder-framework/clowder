@@ -84,7 +84,7 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchSensors(geocode, sensor_name) match {
-            case Some(data) => Ok(data)
+            case Some(d) => jsonp(d, request)
             case None => jsonp(Json.parse("""{"status":"No data found"}"""), request)
           }
         }
@@ -201,7 +201,7 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           plugin.searchStreams(geocode, stream_name) match {
-            case Some(data) => Ok(data)
+            case Some(d) => jsonp(d, request)
             case None => jsonp("""{"status":"No data found"}""", request)
           }
         }

@@ -82,7 +82,11 @@ POST           /collection/submit                                               
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
-GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+# ----------------------------------------------------------------------
+# Spaces
+# ----------------------------------------------------------------------
+GET            /spaces                                                                  @controllers.Spaces.list(order: Option[String] ?= None, direction: String ?= "asc", start: Option[String] ?= None, limit: Int ?= 12, filter: Option[String] ?= None, mode: String ?= "tile")
+GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID)
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
@@ -231,8 +235,6 @@ POST           /api/extractions/:id/submit                                      
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 
 # End of change segment
-
-
 POST           /api/files/:id/previews/:p_id                                            @api.Files.attachPreview(id: UUID, p_id: UUID)
 GET            /api/files/:id/listpreviews                                              @api.Files.filePreviewsList(id: UUID)
 GET            /api/files/:id/getPreviews                                               @api.Files.getPreviews(id: UUID)
@@ -250,84 +252,94 @@ POST           /api/remove-admin                                                
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 # ----------------------------------------------------------------------
+# SPACES ENDPOINT
+# ----------------------------------------------------------------------
+GET		       /api/spaces													            @api.Spaces.list()
+GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
+POST           /api/spaces                                                              @api.Spaces.createSpace()
+DELETE         /api/spaces/:space_id                                                    @api.Spaces.removeSpace(space_id: UUID)
+
+# ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/collections                                                         @api.Collections.listCollections
-POST           /api/collections                                                         @api.Collections.createCollection()
-GET            /api/collections/list                                                    @api.Collections.listCollections
-POST           /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
-POST           /api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound          @api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
-DELETE         /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
-POST           /api/collections/:coll_id/remove                                         @api.Collections.removeCollection(coll_id: UUID)
-POST           /api/collections/:coll_id/reindex                                        @api.Collections.reindex(coll_id: UUID, recursive: Boolean ?= true)
-GET            /api/collections/:coll_id/getDatasets                                    @api.Datasets.listInCollection(coll_id: UUID)
-DELETE         /api/collections/:coll_id                                                @api.Collections.removeCollection(coll_id: UUID)
-POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
-GET            /api/collections/:coll_id                                                @api.Collections.getCollection(coll_id: UUID)
+GET		/api/collections														    @api.Collections.listCollections
+POST    /api/collections                                        					@api.Collections.createCollection()
+GET		/api/collections/list														@api.Collections.listCollections
+POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
+POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
+DELETE	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
+POST	/api/collections/:coll_id/remove											@api.Collections.removeCollection(coll_id: UUID)
+POST     /api/collections/:coll_id/reindex										    @api.Collections.reindex(coll_id: UUID, recursive: Boolean ?= true)
+GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id: UUID)
+DELETE	/api/collections/:coll_id													@api.Collections.removeCollection(coll_id: UUID)
+POST    /api/collections/:c_id/previews/:p_id     						            @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
+GET     /api/collections/:coll_id													@api.Collections.getCollection(coll_id: UUID)
 
-GET            /api/datasets                                                            @api.Datasets.list
-POST           /api/datasets                                                            @api.Datasets.createDataset
-POST           /api/datasets/searchusermetadata                                         @api.Datasets.searchDatasetsUserMetadata
-POST           /api/datasets/searchmetadata                                             @api.Datasets.searchDatasetsGeneralMetadata
+GET    	/api/datasets					  							@api.Datasets.list
+POST    /api/datasets                                           	@api.Datasets.createDataset
+POST    /api/datasets/createempty                                   @api.Datasets.createEmptyDataset
+POST    /api/datasets/attachmultiple                                @api.Datasets.attachMultipleFiles
+POST	/api/datasets/searchusermetadata							@api.Datasets.searchDatasetsUserMetadata
+POST	/api/datasets/searchmetadata								@api.Datasets.searchDatasetsGeneralMetadata
 
-GET            /api/datasets/listOutsideCollection/:coll_id                             @api.Datasets.listOutsideCollection(coll_id: UUID)
-POST           /api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound                @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
-DELETE         /api/datasets/:ds_id/:file_id                                            @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
-GET            /api/datasets/getRDFURLsForDataset/:id                                   @api.Datasets.getRDFURLsForDataset(id: UUID)
-GET            /api/datasets/rdfUserMetadata/:id                                        @api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
-POST           /api/datasets/:id/remove                                                 @api.Datasets.deleteDataset(id: UUID)
-POST           /api/datasets/:id/metadata                                               @api.Datasets.addMetadata(id: UUID)
-POST           /api/datasets/:id/usermetadata                                           @api.Datasets.addUserMetadata(id: UUID)
-GET            /api/datasets/:id/technicalmetadatajson                                  @api.Datasets.getTechnicalMetadataJSON(id: UUID)
-GET            /api/datasets/:id/xmlmetadatajson                                        @api.Datasets.getXMLMetadataJSON(id: UUID)
-GET            /api/datasets/:id/usermetadatajson                                       @api.Datasets.getUserMetadataJSON(id: UUID)
-GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID)
-POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
-POST           /api/datasets/:id/setNotesHTML                                           @api.Datasets.setNotesHTML(id: UUID)
-POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
+GET		/api/datasets/listOutsideCollection/:coll_id				@api.Datasets.listOutsideCollection(coll_id: UUID)
+POST	/api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound	@api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
+DELETE	/api/datasets/:ds_id/:file_id								@api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
+GET		/api/datasets/getRDFURLsForDataset/:id						@api.Datasets.getRDFURLsForDataset(id: UUID)
+GET		/api/datasets/rdfUserMetadata/:id							@api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
+POST	/api/datasets/:id/remove									@api.Datasets.deleteDataset(id: UUID)
+POST    /api/datasets/:id/metadata		  							@api.Datasets.addMetadata(id: UUID)
+POST    /api/datasets/:id/usermetadata	  							@api.Datasets.addUserMetadata(id: UUID)
+GET     /api/datasets/:id/technicalmetadatajson           			@api.Datasets.getTechnicalMetadataJSON(id: UUID)
+GET     /api/datasets/:id/xmlmetadatajson           				@api.Datasets.getXMLMetadataJSON(id: UUID)
+GET     /api/datasets/:id/usermetadatajson           				@api.Datasets.getUserMetadataJSON(id: UUID)
+GET 	/api/datasets/:id/listFiles		 							@api.Datasets.datasetFilesList(id: UUID)
+POST    /api/datasets/:id/comment									@api.Datasets.comment(id: UUID)
+POST    /api/datasets/:id/setNotesHTML								@api.Datasets.setNotesHTML(id: UUID)
+POST     /api/datasets/:id/reindex                                   @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 
-POST           /api/datasets/:id/removeTag                                              @api.Datasets.removeTag(id: UUID)
-GET            /api/datasets/:id/tags                                                   @api.Datasets.getTags(id: UUID)
-POST           /api/datasets/:id/tags                                                   @api.Datasets.addTags(id: UUID)
-POST           /api/datasets/:id/tags/remove                                            @api.Datasets.removeTags(id: UUID)
-POST           /api/datasets/:id/tags/remove_all                                        @api.Datasets.removeAllTags(id: UUID)
-DELETE         /api/datasets/:id/tags                                                   @api.Datasets.removeTags(id: UUID)
+POST 	/api/datasets/:id/removeTag 								@api.Datasets.removeTag(id: UUID)
+GET     /api/datasets/:id/tags                                  	@api.Datasets.getTags(id: UUID)
+POST    /api/datasets/:id/tags                                  	@api.Datasets.addTags(id: UUID)
+POST    /api/datasets/:id/tags/remove                           	@api.Datasets.removeTags(id: UUID)
+POST    /api/datasets/:id/tags/remove_all                       	@api.Datasets.removeAllTags(id: UUID)
+DELETE 	/api/datasets/:id/tags 										@api.Datasets.removeTags(id: UUID)
 
-POST           /api/datasets/:id/editing                                                @api.Datasets.updateInformation(id: UUID)
-POST           /api/datasets/:id/license                                                @api.Datasets.updateLicense(id: UUID)
+POST    /api/datasets/:id/editing                                   @api.Datasets.updateInformation(id: UUID)
+POST    /api/datasets/:id/license                                   @api.Datasets.updateLicense(id: UUID)  
 
-GET            /api/datasets/:id/isBeingProcessed                                       @api.Datasets.isBeingProcessed(id: UUID)
-GET            /api/datasets/:id/getPreviews                                            @api.Datasets.getPreviews(id: UUID)
-POST           /api/datasets/:ds_id/files/:file_id                                      @api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
-GET            /api/datasets/:id                                                        @api.Datasets.datasetFilesList(id: UUID)
-DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
-POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
+GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
+GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)
+POST	/api/datasets/:ds_id/files/:file_id							@api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
+GET 	/api/datasets/:id				 							@api.Datasets.datasetFilesList(id: UUID)
+DELETE	/api/datasets/:id											@api.Datasets.deleteDataset(id: UUID)
+POST    /api/datasets/:id/detachdelete                              @api.Datasets.detachAndDeleteDataset(id: UUID)
 
-GET            /api/previews/:preview_id/textures/dataset/:datasetid/json               @api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
-GET            /api/previews/:preview_id/textures/dataset/:dataset_id//:filename        @api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
-GET            /api/previews/:dzi_id_dir/:level/:filename                               @api.Previews.getTile(dzi_id_dir, level, filename)
-POST           /api/previews/:dzi_id/tiles/:tile_id/:level                              @api.Previews.attachTile(dzi_id: UUID, tile_id: UUID, level)
-POST           /api/previews/:id/metadata                                               @api.Previews.uploadMetadata(id: UUID)
-GET            /api/previews/:id/metadata                                               @api.Previews.getMetadata(id: UUID)
-POST           /api/previews/:id/annotationAdd                                          @api.Previews.attachAnnotation(id: UUID)
-POST           /api/previews/:id/annotationEdit                                         @api.Previews.editAnnotation(id: UUID)
-GET            /api/previews/:id/annotationsList                                        @api.Previews.listAnnotations(id: UUID)
-GET            /api/previews/:id                                                        @api.Previews.download(id: UUID)
-POST           /api/previews                                                            @api.Previews.upload(iipKey: String ?= "")
+GET     /api/previews/:preview_id/textures/dataset/:datasetid/json					@api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
+GET     /api/previews/:preview_id/textures/dataset/:dataset_id//:filename			@api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
+GET		/api/previews/:dzi_id_dir/:level/:filename									@api.Previews.getTile(dzi_id_dir, level, filename)
+POST    /api/previews/:dzi_id/tiles/:tile_id/:level     							@api.Previews.attachTile(dzi_id: UUID, tile_id: UUID, level)
+POST    /api/previews/:id/metadata        											@api.Previews.uploadMetadata(id: UUID)
+GET     /api/previews/:id/metadata        											@api.Previews.getMetadata(id: UUID)
+POST    /api/previews/:id/annotationAdd        									    @api.Previews.attachAnnotation(id: UUID)
+POST    /api/previews/:id/annotationEdit        									@api.Previews.editAnnotation(id: UUID)
+GET     /api/previews/:id/annotationsList        									@api.Previews.listAnnotations(id: UUID)
+GET     /api/previews/:id                 											@api.Previews.download(id: UUID)
+POST    /api/previews  																@api.Previews.upload(iipKey: String ?= "")
 
 
-POST           /api/indexes                                                             @api.Indexes.index
-POST           /api/indexes/features                                                    @api.Indexes.features
+POST     /api/indexes                                                        @api.Indexes.index
+POST     /api/indexes/features                                               @api.Indexes.features
 
-POST           /api/sections                                                            @api.Sections.add
-GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
-POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
+POST    /api/sections                                           @api.Sections.add
+GET     /api/sections/:id                                       @api.Sections.get(id: UUID)
+POST    /api/sections/:id/comments                              @api.Sections.comment(id: UUID)
 
-GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
-POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
-POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
-POST           /api/sections/:id/tags/remove_all                                        @api.Sections.removeAllTags(id: UUID)
-DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
+GET     /api/sections/:id/tags                                  @api.Sections.getTags(id: UUID)
+POST    /api/sections/:id/tags                                  @api.Sections.addTags(id: UUID)
+POST    /api/sections/:id/tags/remove                           @api.Sections.removeTags(id: UUID)
+POST    /api/sections/:id/tags/remove_all                       @api.Sections.removeAllTags(id: UUID)
+DELETE	/api/sections/:id/tags			                        @api.Sections.removeTags(id: UUID)
 
 
 # geostreaming

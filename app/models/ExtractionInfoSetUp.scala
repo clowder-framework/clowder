@@ -47,7 +47,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       case Some(plugin) => {
         val configuration = play.api.Play.configuration
         val consumerTag=configuration.getString("consumerTag").getOrElse("ctag")
-        var futureIPs = plugin.getChannelsList() /* Get Channel IPs*/
+        var futureIPs = plugin.getChannelsList /* Get Channel IPs*/
         var ips = for {
           ipsResponse <- futureIPs /* Convert Future Response to Response*/
         } yield {
@@ -202,7 +202,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
           var rktypelist = qlist.map {
             qn =>
               var rktype = for {
-                qbindingResponse <- plugin.getQueueBindings("/", qn)
+                qbindingResponse <- plugin.getQueueBindings(qn)
               } yield {
                 var frk = ""
                 val qbindingjson = qbindingResponse.json
