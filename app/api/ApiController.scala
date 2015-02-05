@@ -35,7 +35,7 @@ trait ApiController extends Controller {
 
       (secureSocialUser, basicAuth, keyAuth) match {
         case (Some(identity), _, _) => {
-          val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity))
+          val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
           if (authorization.isInstanceOf[WithPermission]) {
             if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId))
               f(RequestWithUser(Some(identity), user, request))
@@ -51,7 +51,7 @@ trait ApiController extends Controller {
           val credentials = header.split(":")
           UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword) match {
             case Some(identity) => {
-              val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity))
+              val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
               if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
                 if (authorization.isInstanceOf[WithPermission]) {
                   if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId)) {

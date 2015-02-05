@@ -26,7 +26,7 @@ trait SecuredController extends Controller {
       // Only check secure social, no other auth methods are allowed
       SecureSocial.currentUser(request) match { // calls from browser
         case Some(identity) => {
-          val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity))
+          val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
           if (authorization.isInstanceOf[WithPermission]){
             if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId)) {
               f(RequestWithUser(Some(identity), user, request))
