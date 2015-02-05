@@ -38,7 +38,7 @@ def main():
 
 	#Remove previous outputs
 	for output_filename in os.listdir('tmp'):
-		if(output_filename[0] != '.'):
+		if(output_filename[0] != '.' and output_filename != 'failures.txt'):
 			os.unlink('tmp/' + output_filename)
 
 	#Read in tests
@@ -76,13 +76,13 @@ def main():
 					
 					#Print out test
 					if POSITIVE:	
-						print(input_filename + ' -> "' + output + '"'),
+						print(input_filename + ' -> "' + output + '"\t'),
 					else:
-						print(input_filename + ' -> !"' + output + '"'),
+						print(input_filename + ' -> !"' + output + '"\t'),
 
 					#Run test
-					metadata = extract(host, port, key, input_filename)
-					#print metadata
+					metadata = extract(host, port, key, input_filename, 60)
+					print '\n' + metadata
 				
 					#Write derived data to a file for later reference
 					output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(os.path.basename(input_filename))[0] + '.txt'
@@ -94,11 +94,11 @@ def main():
 
 					#Check for expected output
 					if not POSITIVE and metadata.find(output) is -1:
-						print '\t\033[92m[OK]\033[0m\n'
+						print '\033[92m[OK]\033[0m\n'
 					elif metadata.find(output) > -1:
-						print '\t\033[92m[OK]\033[0m\n'
+						print '\033[92m[OK]\033[0m\n'
 					else:
-						print '\t\033[91m[Failed]\033[0m\n'
+						print '\033[91m[Failed]\033[0m\n'
 
 						report = 'Test-' + str(count) + ' failed.  Expected output "'
 								
@@ -113,7 +113,7 @@ def main():
 							with open('failure_watchers.txt', 'r') as watchers_file:
 								watchers = watchers_file.read().splitlines()
 								
-								message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
+								message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
 								message += 'To: ' + ', '.join(watchers) + '\n'
 								message += 'Subject: DTS Test Failed\n\n'
 								message += report
@@ -134,10 +134,15 @@ def main():
 
 		#Send a final report of failures
 		if failure_report:
+			#Save current failure report to a file
+			with open('tmp/failures.txt', 'w') as output_file:
+				output_file.write(failure_report)
+		
+			#Send failure notification emails
 			with open('failure_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 	
-				message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
+				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DTS Test Failure Report\n\n'
 				message += failure_report			
@@ -147,20 +152,41 @@ def main():
 				for watcher in watchers:
 					mailserver.sendmail('', watcher, message)
 		else:
-			with open('pass_watchers.txt', 'r') as watchers_file:
-				watchers = watchers_file.read().splitlines()
+			if os.path.isfile('tmp/failures.txt'):
+				#Send failure rectification emails
+				with open('tmp/failures.txt', 'r') as report_file:
+					failure_report = report_file.read()
+					os.unlink('tmp/failures.txt')
+		
+					with open('failure_watchers.txt', 'r') as watchers_file:
+						watchers = watchers_file.read().splitlines()
+	
+						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+						message += 'To: ' + ', '.join(watchers) + '\n'
+						message += 'Subject: DTS Tests Now Passing\n\n'
+						message += 'Previous failures:\n\n'
+						message += failure_report			
+						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
+						message += 'Elapsed time: ' + timeToString(dt)
 
-				message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
-				message += 'To: ' + ', '.join(watchers) + '\n'
-				message += 'Subject: DTS Tests Passed\n\n';
-				message += 'Elapsed time: ' + timeToString(dt)
+						for watcher in watchers:
+							mailserver.sendmail('', watcher, message)
+			else:
+				#Send success notification emails
+				with open('pass_watchers.txt', 'r') as watchers_file:
+					watchers = watchers_file.read().splitlines()
 
-				for watcher in watchers:
-					mailserver.sendmail('', watcher, message)
+					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+					message += 'To: ' + ', '.join(watchers) + '\n'
+					message += 'Subject: DTS Tests Passed\n\n';
+					message += 'Elapsed time: ' + timeToString(dt)
+
+					for watcher in watchers:
+						mailserver.sendmail('', watcher, message)
 
 		mailserver.quit()
 
-def extract(host, port, key, file):
+def extract(host, port, key, file, wait):
 	"""Pass file to Medici extraction bus."""
 	#Upload file
 	headers = {'Content-Type': 'application/json'}
@@ -169,15 +195,16 @@ def extract(host, port, key, file):
 	file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, headers=headers, data=json.dumps(data)).json()['id']
 
 	#Poll until output is ready (optional)
-	while True:
+	while wait > 0:
 		status = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/status').json()
 		if status['Status'] == 'Done': break
 		time.sleep(1)
+		wait -= 1
 
 	#Display extracted content (TODO: needs to be one endpoint!!!)
-	metadata = json.dumps(requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json())
-	metadata += '\n'
-	metadata += json.dumps(requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson').json())
+	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json()
+	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson').json()
+	metadata = json.dumps(metadata)
 
 	return metadata
 
