@@ -1,4 +1,13 @@
-@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
+@(dataset: models.Dataset,
+  comments: List[Comment],
+  previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
+  md: Map[String,Any],
+  usrmd: scala.collection.mutable.Map[String,Any],
+  collectionsOutside: List[models.Collection],
+  collectionsInside: List[models.Collection],
+  filesOutside: List[models.File],
+  rdfExported: Boolean,
+  space: Option[ProjectSpace])(implicit user: Option[securesocial.core.Identity])
 
 
 @import helper._
@@ -186,6 +195,19 @@
                     	<td><b>Created:</b></td>
                     	<td id="aboutcreate">@dataset.created.format("MMM dd, yyyy")</td>
                    	</tr>
+                    <tr>
+                        <td><b>Space:</b></td>
+                        <td>
+                            @if(space.isDefined) {
+                                <a href="@routes.Spaces.getSpace(space.get.id)">
+                                    @space.map(_.name).getOrElse("N/A")</a>
+                            }
+                            @if(space.isEmpty) {
+                                <a href="">Default</a>
+                            }
+                            <a href="javascript:changeSpace()"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a>
+                        </td>
+                    </tr>
 					<tr>
 						<td colspan="2"><b>Description:</b></td>
 					</tr>
@@ -748,5 +770,6 @@
 			</div>
 		</div>
 	</div>
+    <script src="@routes.Assets.at("javascripts/spaces/modify.min.js")" type="text/javascript"></script>
 }
 

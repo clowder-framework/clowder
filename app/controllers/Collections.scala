@@ -20,7 +20,11 @@ import services._
 object ThumbnailFound extends Exception {}
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService) extends SecuredController {
+class Collections @Inject()(
+  datasets: DatasetService,
+  collections: CollectionService,
+  previewsService: PreviewService,
+  spaces: SpaceService) extends SecuredController {
 
   /**
    * New dataset form.
@@ -178,7 +182,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           Logger.debug("Num previewers " + filteredPreviewers.size)
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection, filteredPreviewers.toList))
+
+          val space = collection.space.flatMap(spaces.get(_))
+
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection, filteredPreviewers.toList, space))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
