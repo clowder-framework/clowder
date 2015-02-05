@@ -76,18 +76,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
             errors => BadRequest(views.html.newSpace(errors)),
             space => {
               Logger.debug("Saving space " + space.name)
-              //TODO - get user id from Rob's changed user.
-              val (id, name) = identity.email match{
-                case Some(userEmail)=>{
-                  val creator = users.findByEmail(userEmail).get
-                  (creator.id, creator.fullName)
-                }
-                case None =>{(UUID.apply(""), "")}
-              }
+              val userId = request.mediciUser.fold(UUID.generate)(_.id)
 
               //TODO - uncomment the commented out variables when serializing of URL's is done by Salat
               spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
-                created = space.created, creator = id, homePage = List.empty/*space.homePage*/,
+                created = space.created, creator = userId, homePage = List.empty/*space.homePage*/,
                 logoURL = None/*space.logoURL*/, bannerURL = None /*space.bannerURL*/, usersByRole= Map.empty,
                 collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
               //TODO - Put Spaces in Elastic Search?
