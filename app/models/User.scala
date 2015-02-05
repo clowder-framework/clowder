@@ -14,7 +14,7 @@ case class User(
   firstName: String,
   lastName: String,
   fullName: String,
-  email: String,
+  email: Option[String],
   avatarUrl: Option[String] = None,
   biography: Option[String] = None,
   currentprojects: Option[String] = None,
@@ -54,13 +54,11 @@ case class User(
   }
 
   /**
-   * @param email
-   * 
    * @return lower case md5 hash of the user's email
    */
   def getEmailHash(): String = {
     MessageDigest.getInstance("MD5")
-      .digest(email.getBytes("UTF-8"))
+      .digest(email.getOrElse("").getBytes("UTF-8"))
       .map("%02X".format(_))
       .mkString
       .toLowerCase
