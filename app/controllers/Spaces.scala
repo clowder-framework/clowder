@@ -126,6 +126,6 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       // TODO fetch page before/after so we have prev item
       val prev = ""
       val next = ""
-      Ok(views.html.spaceList(s, order, direction, start, limit, filter, mode, canDelete, prev, next))
+      Ok(views.html.spaces.listSpaces(s, order, direction, start, limit, filter, mode, canDelete, prev, next))
   }
 }
