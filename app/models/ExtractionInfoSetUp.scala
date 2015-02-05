@@ -62,31 +62,30 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
     } //end of match
     updateStatus
   }
-  
+
   /**
    * Obtains the queues' details attached to an exchange
    * updates the currently running extractors list, ips of the extractors, supported input types, number of extractors instances running
    */
-   def updateAndGetStatus(plugin: services.RabbitmqPlugin, exchange: String) = {
+  def updateAndGetStatus(plugin: services.RabbitmqPlugin, exchange: String) = {
     var qDetailsFuture = getQDetailsFutures(plugin, exchange) /* Obtains queues's details as Futures of the List of responses*/
     var status = for {
       qDetailsFutureResponses <- qDetailsFuture
       qDetailsResponses <- qDetailsFutureResponses
-    } yield {     
+    } yield {
       var exDetails = List[ExtractorDetail]()
       var finalQList = updateInfoAndGetQueuesList(plugin, qDetailsResponses) /* updates the extractor details and ips list and obtains the list of currently running extractors*/
       Logger.debug("finalQueue List : " + finalQList)
       extractors.insertExtractorNames(finalQList)
-      var rklist = finalQList.map {
-        qn =>
-          var rk = getAllRoutingKeysForQueue(plugin, qn) 
-          rk
+      var ListOfFuturesRoutingKeys = finalQList.map {
+        qn => getAllRoutingKeysForQueue(plugin, qn, exchange)
       } //end of qlist map
       var updateInputTypeStatus = for {
-        types <- scala.concurrent.Future.sequence(rklist)
+        routingKeysLists <- scala.concurrent.Future.sequence(ListOfFuturesRoutingKeys)
       } yield {
         var inputTypes = List[String]()
-        for (input <- types) {
+        val routingKeys = routingKeysLists.flatten
+        for (input <- routingKeys) {
           var typearr = input.split("\\.")
           if (!inputTypes.contains(typearr(2)))
             inputTypes = typearr(2) :: inputTypes
@@ -183,28 +182,24 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
     } //end of for  
     qlistResult
   }
- 
+
   /**
    * Gets all routing keys for a given queue
    */
-  def getAllRoutingKeysForQueue(plugin: services.RabbitmqPlugin, qname: String)={
+  def getAllRoutingKeysForQueue(plugin: services.RabbitmqPlugin, qname: String, exchange: String) = {
     for {
       qbindingResponse <- plugin.getQueueBindings(qname)
     } yield {
-      var frk = ""
       val qbindingjson = qbindingResponse.json
       val qbindingList = qbindingjson.as[List[JsObject]]
-      val rkList = qbindingList.map {
-        qb =>
-          Logger.trace("queue name: " + qname + "   Routing Key: " + (qb \ "routing_key").toString())
-          (qb \ "routing_key").toString()
-      } //end of map
-      for (rk <- rkList) {
-        if (rk != qname) {
-          frk = rk
+      var routingKeysList = List[String]()
+      for (qbinding <- qbindingList) {
+        Logger.trace("queue name: " + qname + "   Routing Key: " + (qbinding \ "routing_key").toString())
+        if ((qbinding.\("source").as[String]) == exchange) {
+          routingKeysList = (qbinding \ "routing_key").as[String] :: routingKeysList
         }
       }
-      frk
+      routingKeysList
     }
   }
   

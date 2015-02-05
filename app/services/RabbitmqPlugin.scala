@@ -3,6 +3,7 @@ package services
 import java.io.IOException
 import java.net.URL
 import java.text.SimpleDateFormat
+import java.net.URLEncoder
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.ning.http.client.Realm.AuthScheme
@@ -14,8 +15,8 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{Response, WS}
 import play.api.{Application, Logger, Plugin}
 import play.libs.Akka
-
 import scala.concurrent.Future
+
 
 // TODO make optional fields Option[UUID]
 case class ExtractorMessage(
@@ -48,9 +49,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var username: String = ""
   var password: String = ""
   
-    override def onStart() {
+  override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
-
     val configuration = play.api.Play.configuration
     val uri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
     Logger.debug("uri= "+ uri)
@@ -101,17 +101,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     try {
       val protocol = if (factory.get.isSSL) "https://" else "http://"
       restURL = Some(protocol + factory.get.getHost +  ":" + mgmtPort)
-      vhost = factory.get.getVirtualHost
+      vhost = URLEncoder.encode(factory.get.getVirtualHost)
       username = factory.get.getUsername
       password = factory.get.getPassword
             
       connection = Some(factory.get.newConnection())
       channel = Some(connection.get.createChannel())
 
-      Logger.trace("vhost: "+ vhost)
-      if(vhost == "/"){
-        vhost = "%2F" //TODO url encoded
-      }
       Logger.debug("vhost: "+ vhost)
       
       // setup exchange if provided
