@@ -309,6 +309,13 @@ class Datasets @Inject()(
 	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
 	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
 
+	          for (aCollection <- collectionsOutside) {
+	              decodeCollectionElements(aCollection)
+	          }
+              for (aCollection <- collectionsInside) {
+                  decodeCollectionElements(aCollection)
+              }
+	          
 	          var commentsByDataset = comments.findCommentsByDatasetId(id)
 	          filesInDataset.map {
 	            file =>
@@ -341,6 +348,21 @@ class Datasets @Inject()(
   def decodeDatasetElements(dataset: Dataset) {      
       dataset.name = StringEscapeUtils.unescapeHtml(dataset.name)
       dataset.description = StringEscapeUtils.unescapeHtml(dataset.description)
+  }
+  
+  /**
+   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   * 
+   * Currently, the following collection elements are encoded:
+   * 
+   * name
+   * description
+   *  
+   */
+  def decodeCollectionElements(collection: Collection) {      
+      collection.name = StringEscapeUtils.unescapeHtml(collection.name)
+      collection.description = StringEscapeUtils.unescapeHtml(collection.description)
   }
 
   /**
