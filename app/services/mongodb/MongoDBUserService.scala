@@ -6,6 +6,7 @@ import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models.{UUID, User}
 import org.bson.types.ObjectId
 import play.api.Logger
+import securesocial.core.Identity
 import services.UserService
 import play.api.Play.current
 import MongoContext.context
@@ -22,6 +23,13 @@ import com.mongodb.casbah.Imports._
  */
 class MongoDBUserService extends UserService {
   /**
+   * Count all users
+   */
+  def count(): Long = {
+    UserDAO.count(MongoDBObject())
+  }
+
+  /**
    * List all users in the system.
    */
   override def list(): List[User] = {
@@ -33,6 +41,20 @@ class MongoDBUserService extends UserService {
    */
   override def findById(id: UUID): Option[User] = {
     UserDAO.dao.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
+  }
+
+  /**
+   * Return a specific user based on an Identity
+   */
+  override def findByIdentity(identity: Identity): Option[User] = {
+    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> identity.identityId.userId, "identityId.providerId" -> identity.identityId.providerId))
+  }
+
+  /**
+   * Return a specific user based on an Identity
+   */
+  override def findByIdentity(userId: String, providerId: String): Option[User] = {
+    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> userId, "identityId.providerId" -> providerId))
   }
 
   /**

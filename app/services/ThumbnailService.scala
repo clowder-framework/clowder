@@ -19,4 +19,9 @@ trait ThumbnailService {
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)]
+
+  /**
+   * Remove the blob.
+   */
+  def remove(id: UUID)
 }

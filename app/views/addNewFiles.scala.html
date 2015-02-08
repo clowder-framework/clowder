@@ -1,0 +1,71 @@
+@(filesList: List[(String, String)])(implicit user: Option[securesocial.core.Identity])
+
+<!-- Snippet to contain elements that are required for displaying the multi file uploader library and configuring it for adding new files
+     to a dataset that is being created. -->
+<!-- This file is currently referenced from newDataset.scala.hml. -->
+
+
+<!-- The file upload form used as target for the file upload widget -->
+<form id="fileupload" action='@routes.Datasets.submit' method="POST" enctype="multipart/form-data">
+    <!-- Redirect browsers with JavaScript disabled to the origin page -->
+    <noscript>Javascript is required in order to use the uploader to create a new dataset.</noscript>
+    
+    <input type="hidden" name="name" id="hiddenname" value="not set">
+    <input type="hidden" name="description" id="hiddendescription" value="not set">
+    <input type="hidden" name="datasetLevel" id="hiddenlevel" value="DatasetLevel">
+    <input type="hidden" name="existingFile" id="hiddenexisting" value="__nofile">
+    <input type="hidden" name="datasetid" id="hiddenid" value="__noval">
+    <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
+    <div class="row fileupload-buttonbar button-margins">
+        <div class="col-lg-7">
+            <!-- The fileinput-button span is used to style the file input field as button -->
+            <span class="btn btn-primary fileinput-button">
+                <i class="glyphicon glyphicon-plus"></i>
+                <span>Add files</span>
+                <!-- The file input had "multiple" removed for the current dataset creation method. -->
+                <input type="file" name="files[]" multiple>                                 
+            </span>
+            <button type="submit" class="btn btn-default start" onclick="checkZeroFiles();" title="Create the Dataset">
+                <i class="glyphicon glyphicon-upload"></i>
+                <span id="uploadcreate">Create Dataset</span>
+            </button>
+            <button type="reset" class="btn btn-default cancel">
+                <i class="glyphicon glyphicon-ban-circle"></i>
+                <span>Cancel upload</span>
+            </button>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <label>
+                <input type="checkbox" class="toggle"> Select all
+            </label>
+            <button type="button" class="btn btn-link delete" style="margin-bottom: 0px">
+                <i class="glyphicon glyphicon-trash"></i>
+                <span>Delete selected</span>
+            </button>
+            <!-- The global file processing state -->
+            <span class="fileupload-process"></span>
+            
+        </div>
+        <!-- The global progress state -->
+        <div class="col-lg-5 fileupload-progress fade">
+            <!-- The global progress bar -->
+            <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar progress-bar-success" style="width:0%;"></div>
+            </div>
+            <!-- The extended global progress state -->
+            <div class="progress-extended">&nbsp;</div>
+        </div>
+    </div>
+    <!-- The table listing the files available for upload/download -->
+    <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
+</form>
+
+<!-- The blueimp Gallery widget -->
+<div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls" data-filter=":even">
+    <div class="slides"></div>
+    <h3 class="title"></h3>
+    <a class="prev">‹</a>
+    <a class="next">›</a>
+    <a class="close">×</a>
+    <a class="play-pause"></a>
+    <ol class="indicator"></ol>
+</div>
