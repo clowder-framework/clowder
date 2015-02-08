@@ -42,6 +42,19 @@ class CassandraDataset extends DatasetService {
     List.empty[Dataset]
   }
   
+    /**
+   * List datasets after a specified date.
+   */
+  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset] = {
+    List.empty[Dataset]
+  }
+  
+  /**
+   * List datasets before a specified date.
+   */
+  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset] = {
+    List.empty[Dataset]
+  }
   /**
    * Get dataset.
    */
