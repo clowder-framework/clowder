@@ -30,4 +30,3 @@ case class Dataset(
   notesHTML: Option[String] = None,
   followers: List[String] = List.empty)
 
-

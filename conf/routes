@@ -40,13 +40,14 @@ GET            /extractions/supported_input_types                               
 GET            /bookmarklet                                                             @controllers.ExtractionInfo.getBookmarkletPage()
 GET            /bookmarklet.js                                                          @controllers.Application.bookmarklet
 
+
 #This may not require; This is only for testing. It will change in subsequent version
 GET            /extraction/form                                                         @controllers.Files.extractFile
 POST           /extraction/upload                                                       @controllers.Files.uploadExtract()
 #End
 
 # Files
-GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 10)
+GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
@@ -168,21 +169,27 @@ POST	/api/files/:three_d_file_id/geometries/:geometry_id		@api.Files.attachGeome
 POST	/api/files/:three_d_file_id/3dTextures/:texture_id		@api.Files.attachTexture(three_d_file_id: UUID,texture_id: UUID)
 POST	/api/files/:file_id/thumbnails/:thumbnail_id			@api.Files.attachThumbnail(file_id: UUID,thumbnail_id: UUID)
 GET     /api/files                        						@api.Files.list
-POST    /api/files                        						@api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "")
+POST    /api/files                        						@api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
+POST    /api/files/withFlags/:flags                        		@api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST	/api/files/searchusermetadata							@api.Files.searchFilesUserMetadata
 POST	/api/files/searchmetadata								@api.Files.searchFilesGeneralMetadata
 
-POST    /api/uploadToDataset/:id                        		@api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "")
+POST    /api/uploadToDataset/withFlags/:id/:flags               @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
+POST    /api/uploadToDataset/:id                        		@api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
 
 
 POST	/api/files/uploadIntermediate/:idAndFlags				@api.Files.uploadIntermediate(idAndFlags)
 POST	/api/files/sendJob/:fileId/:fileType					@api.Files.sendJob(fileId: UUID,fileType)
 GET		/api/files/getRDFURLsForFile/:id						@api.Files.getRDFURLsForFile(id: UUID)
 GET		/api/files/rdfUserMetadata/:id							@api.Files.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
+GET     /api/files/:id/blob                  					@api.Files.download(id: UUID)
 POST	/api/files/:id/remove									@api.Files.removeFile(id: UUID)
 GET     /api/files/:id/metadata           						@api.Files.get(id: UUID)
 POST    /api/files/:id/metadata           						@api.Files.addMetadata(id: UUID)
-POST    /api/files/:id/versus_metadata                          @api.Files.addVersusMetadata(id:UUID) 
+
+POST    /api/files/:id/versus_metadata                          @api.Files.addVersusMetadata(id:UUID)
+GET     /api/files/:id/versus_metadata                          @api.Files.getVersusMetadataJSON(id:UUID)
+
 POST    /api/files/:id/usermetadata	  							@api.Files.addUserMetadata(id: UUID)
 GET     /api/files/:id/versus_metadata                          @api.Files.getVersusMetadataJSON(id:UUID)
 GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnicalMetadataJSON(id: UUID)
@@ -202,6 +209,7 @@ POST    /api/files/:id/tags/remove_all                          @api.Files.remov
 DELETE	/api/files/:id/tags                              		@api.Files.removeTags(id: UUID)
 POST    /api/files/:id/license                                	@api.Files.updateLicense(id: UUID)
 GET     /api/files/:id/extracted_metadata                       @api.Files.extract(id:UUID)
+POST     /api/files/:id/reindex                                  @api.Files.reindex(id:UUID)
 
 
 #This may change depending on our discussion on identifying the details of extraction in DTS service
@@ -230,7 +238,6 @@ GET            /api/files/:id/isBeingProcessed                                  
 #GET		/api/files/:three_d_file_id/:filename			    @api.Files.getGeometry(three_d_file_id: UUID, filename)
 GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
 GET            /api/queries/:id                                                         @api.Files.downloadquery(id: UUID)
-GET            /api/files/:id/blob                                                      @api.Files.download(id: UUID)
 # TODO please use /api/files/:id/blob to get the actual data see MMDB-1685
 GET            /api/files/:id                                                           @api.Files.download(id: UUID)
 
@@ -250,6 +257,7 @@ POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDa
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
 DELETE	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
 POST	/api/collections/:coll_id/remove											@api.Collections.removeCollection(coll_id: UUID)
+POST     /api/collections/:coll_id/reindex										    @api.Collections.reindex(coll_id: UUID, recursive: Boolean ?= true)
 GET		/api/collections/:coll_id/getDatasets										@api.Datasets.listInCollection(coll_id: UUID)
 DELETE	/api/collections/:coll_id													@api.Collections.removeCollection(coll_id: UUID)
 POST    /api/collections/:c_id/previews/:p_id     						            @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
@@ -274,6 +282,7 @@ GET     /api/datasets/:id/usermetadatajson           				@api.Datasets.getUserMe
 GET 	/api/datasets/:id/listFiles		 							@api.Datasets.datasetFilesList(id: UUID)
 POST    /api/datasets/:id/comment									@api.Datasets.comment(id: UUID)
 POST    /api/datasets/:id/setNotesHTML								@api.Datasets.setNotesHTML(id: UUID)
+POST     /api/datasets/:id/reindex                                   @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 POST	/api/datasets/:id/follow									@api.Datasets.follow(id: UUID)
 POST	/api/datasets/:id/unfollow									@api.Datasets.unfollow(id: UUID)
 
@@ -389,5 +398,13 @@ POST           /api/users/addUserDatasetView                                    
 
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 
+POST 			/api/users/createNewListInUser 											@api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.addFollowingRelationship(followeeEmail: String)
 POST           /api/users/unfollow                                                      @api.Users.removeFollowingRelationship(followeeEmail: String)
+
+
+# ----------------------------------------------------------------------
+# MEDICI STATUS API
+# ----------------------------------------------------------------------
+GET     /api/version                @api.Status.version
+GET     /api/status                 @api.Status.status
