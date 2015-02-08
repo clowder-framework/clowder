@@ -254,6 +254,8 @@ POST           /api/changeAppearance                                            
 GET		/api/collections														    @api.Collections.listCollections
 POST    /api/collections                                        					@api.Collections.createCollection()
 GET		/api/collections/list														@api.Collections.listCollections
+POST	/api/collections/:id/follow													@api.Collections.follow(id: UUID)
+POST	/api/collections/:id/unfollow												@api.Collections.unfollow(id: UUID)
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
 DELETE	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
@@ -297,7 +299,7 @@ POST    /api/datasets/:id/tags/remove_all                       	@api.Datasets.r
 DELETE 	/api/datasets/:id/tags 										@api.Datasets.removeTags(id: UUID)
 
 POST    /api/datasets/:id/editing                                   @api.Datasets.updateInformation(id: UUID)
-POST    /api/datasets/:id/license                                   @api.Datasets.updateLicense(id: UUID)  
+POST    /api/datasets/:id/license                                   @api.Datasets.updateLicense(id: UUID)
 
 GET		/api/datasets/:id/isBeingProcessed							@api.Datasets.isBeingProcessed(id: UUID)
 GET		/api/datasets/:id/getPreviews								@api.Datasets.getPreviews(id: UUID)

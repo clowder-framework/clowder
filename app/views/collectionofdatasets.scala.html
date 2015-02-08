@@ -48,7 +48,51 @@
                                             style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
                                     <span class="glyphicon glyphicon-trash"></span> Delete</button>
                                 </span>
-                            }                   
+                            }
+
+                            <span class="align-right" style="margin-right: 10px;">
+                                @if(!collection.followers.contains(user.get.email.get)) {
+                                    <a id="followButton" class="btn btn-success" href="#">Follow</a>
+                                } else {
+                                    <a id="followButton" class="btn btn-danger" href="#">Unfollow</a>
+                                }
+                            </span>
+
+                            <script>
+                                $("#followButton").on('click', function () {
+                                    if ($(this).text() === 'Follow') {
+                                        var followRequest = jsRoutes.api.Collections.follow('@collection.id').ajax({
+                                            type: 'POST'
+                                        });
+
+                                        followRequest.done(function (response, textStatus, jqXHR) {
+                                            var $followButton = $('#followButton');
+                                            $followButton.text('Unfollow');
+                                            $followButton.removeClass('btn-success');
+                                            $followButton.addClass('btn-danger');
+                                        });
+
+                                        followRequest.fail(function (jqXHR, textStatus, errorThrown){
+                                            console.error('Failed to follow!');
+                                        });
+                                    } else if ($(this).text() === 'Unfollow') {
+                                        var unfollowRequest = jsRoutes.api.Collections.unfollow('@collection.id').ajax({
+                                            type: 'POST'
+                                        });
+
+                                        unfollowRequest.done(function (response, textStatus, jqXHR) {
+                                            var $followButton = $('#followButton');
+                                            $followButton.text('Follow');
+                                            $followButton.removeClass('btn-danger');
+                                            $followButton.addClass('btn-success');
+                                        });
+
+                                        unfollowRequest.fail(function (jqXHR, textStatus, errorThrown){
+                                            console.error('Failed to unfollow!');
+                                        });
+                                    }
+                                });
+                            </script>
                         }
 				
 	</div>

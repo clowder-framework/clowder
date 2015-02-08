@@ -26,6 +26,7 @@ case class User(
   viewed: Option[List[UUID]] = None,
   followedFiles: List[String] = List.empty,
   followedDatasets: List[String] = List.empty,
+  followedCollections: List[String] = List.empty,
   followsUsers: List[String] = List.empty,
   followedByUsers: List[String] = List.empty) {
 

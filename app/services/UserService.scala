@@ -88,6 +88,17 @@ trait UserService {
    * Unfollow a dataset.
    */
   def unfollowDataset(email: String, datasetId: UUID)
+
+  /**
+   * Follow a collection.
+   */
+  def followCollection(email: String, collectionId: UUID)
+
+  /**
+   * Unfollow a collection.
+   */
+  def unfollowCollection(email: String, collectionId: UUID)
+
   /*
    * Adds the following relationship between two users
    */

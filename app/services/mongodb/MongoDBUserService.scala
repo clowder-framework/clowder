@@ -130,6 +130,30 @@ class MongoDBUserService extends UserService {
       UserDAO.dao.update(MongoDBObject("email" -> followerEmail), $pull("followsUsers" -> followeeEmail));
       UserDAO.dao.update(MongoDBObject("email" -> followeeEmail), $pull("followedByUsers" -> followerEmail));
     }
+
+  /**
+   * Follow a collection.
+   */
+  def followCollection(email: String, collectionId: UUID) {
+    Logger.debug("Adding followed collection " + collectionId + " to user " + email)
+    val user = findByEmail(email).get
+    if (!user.followedCollections.contains(collectionId.toString())) {
+      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
+        $push("followedCollections" -> collectionId.toString()), false, false, WriteConcern.Safe)
+    }
+  }
+
+  /**
+   * Unfollow a collection.
+   */
+  def unfollowCollection(email: String, collectionId: UUID) {
+    Logger.debug("Removing followed collection " + collectionId + " from user " + email)
+    val user = findByEmail(email).get
+    if (user.followedCollections.contains(collectionId.toString())) {
+      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
+        $pull("followedCollections" -> collectionId.toString()), false, false, WriteConcern.Safe)
+    }
+  }
 }
   object UserDAO extends ModelCompanion[User, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {
