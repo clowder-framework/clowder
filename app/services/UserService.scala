@@ -70,7 +70,6 @@ trait UserService {
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
 
   /**
-<<<<<<< HEAD
    * Follow a file.
    */
   def followFile(email: String, fileId: UUID)
