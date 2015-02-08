@@ -1,33 +1,11 @@
 package controllers
-import javax.inject.Inject
 
-import api.{Permission, WithPermission}
-import play.api.Routes
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import api.Sections
-import models.AppAppearance
-import javax.inject.{Singleton, Inject}
-import play.api.mvc.Action
-import services.FileService
-import play.api.Logger
 import services.UserService
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.data.Form
-import play.api.data.Forms._
-import models.{UUID, Collection, Info, User}
-import java.util.Date
+import models.Info
 import play.api.Logger
-import java.text.SimpleDateFormat
-import views.html.defaultpages.badRequest
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json.toJson
-import api.WithPermission
-import api.Permission
-import play.api.Play.current
-import javax.inject.{Singleton, Inject}
-import services._
+import javax.inject.Inject
 
 
 class Profile @Inject()(users: UserService) extends  SecuredController {
@@ -141,7 +119,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.addUserFriend(addr.toString(),  addr.toString())
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profile(other, None))
+                        Redirect(routes.Profile.viewProfile(Option(other.email.getOrElse(""))))
                       }
                     }
                   }
@@ -150,7 +128,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.createNewListInUser(addr.toString(), "friends", newList)
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profile(other, None))
+                        Redirect(routes.Profile.viewProfile(Option(other.email.getOrElse(""))))
                       }
                     }
                   }

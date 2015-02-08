@@ -3,11 +3,10 @@ package api
 import play.api.Logger
 import play.api.Play.current
 import models.{UUID, Collection}
-import services.AdminsNotifierPlugin
+import services._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
-import services.{PreviewService, DatasetService, CollectionService}
 import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
@@ -21,7 +20,7 @@ import controllers.Utils
  */
 @Api(value = "/collections", listingPath = "/api-docs.json/collections", description = "Collections are groupings of datasets")
 @Singleton
-class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService) extends ApiController {
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService) extends ApiController {
 
     
   @ApiOperation(value = "Create a collection",
@@ -56,7 +55,31 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       case Failure(t) => InternalServerError
     }
   }
-  
+
+  /**
+   * Reindex the given collection, if recursive is set to true it will
+   * also reindex all datasets and files.
+   */
+  @ApiOperation(value = "Reindex a collection",
+    notes = "Reindex the existing collection, if recursive is set to true it will also reindex all datasets and files.",
+    httpMethod = "GET")
+  def reindex(id: UUID, recursive: Boolean) =
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollections)) {
+    request =>
+      collections.get(id) match {
+        case Some(coll) => {
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.index(coll, recursive)
+          }
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => {
+          Logger.error("Error getting collection" + id)
+          BadRequest(toJson(s"The given collection id $id is not a valid ObjectId."))
+        }
+      }
+  }
+
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
@@ -153,6 +176,72 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           }
         }
         case _ => Ok("received something else: " + request.body + '\n')
+      }
+  }
+
+  @ApiOperation(value = "Follow collection.",
+    notes = "Add user to collection followers and add collection to user followed collections.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection /* TODO: change this. */ )) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(identity) => {
+          collections.get(id) match {
+            case Some(collection) => {
+              identity.email match {
+                case Some(userEmail) => {
+                  collections.addFollower(id, userEmail)
+                  userService.followCollection(userEmail, id)
+                  Ok
+                }
+                case None => {
+                  NotFound
+                }
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  @ApiOperation(value = "Unfollow collection.",
+    notes = "Remove user from collection followers and remove collection from user followed collections.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection  /* TODO: change this. */ )) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(identity) => {
+          collections.get(id) match {
+            case Some(collection) => {
+              identity.email match {
+                case Some(userEmail) => {
+                  collections.removeFollower(id, userEmail)
+                  userService.unfollowCollection(userEmail, id)
+                  Ok
+                }
+                case None => {
+                  NotFound
+                }
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
       }
   }
 

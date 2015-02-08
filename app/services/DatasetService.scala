@@ -12,7 +12,11 @@ import models.File
  *
  */
 trait DatasetService {
-  
+  /**
+   * The number of datasets
+   */
+  def count(): Long
+
   /**
    * List all datasets in the system.
    */
@@ -208,5 +212,14 @@ trait DatasetService {
 
   def setNotesHTML(id: UUID, notesHTML: String)
 
+  /**
+   * Add follower to a dataset.
+   */
+  def addFollower(id: UUID, userEmail: String)
+
+  /**
+   * Remove follower from a dataset.
+   */
+  def removeFollower(id: UUID, userEmail: String)
 }
 

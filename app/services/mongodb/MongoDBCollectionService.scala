@@ -31,6 +31,13 @@ import services.ElasticsearchPlugin
 @Singleton
 class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends CollectionService {
   /**
+   * Count all collections
+   */
+  def count(): Long = {
+    Collection.count(MongoDBObject())
+  }
+
+  /**
    * List all collections in the system.
    */
   def listCollections(): List[Collection] = {
@@ -318,6 +325,30 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
         }
       }
       case None => Logger.error("Collection not found: " + id.stringify)
+    }
+  }
+
+  /**
+   * Add follower to a collection.
+   */
+  def addFollower(id: UUID, userEmail: String) {
+    Logger.debug("Adding follower to collection " + id + " : " + userEmail)
+    val collection = get(id).get
+    val existingFollowers = collection.followers
+    if (!existingFollowers.contains(userEmail)) {
+      Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $push("followers" -> userEmail), false, false, WriteConcern.Safe)
+    }
+  }
+
+  /**
+   * Remove follower from a collection.
+   */
+  def removeFollower(id: UUID, userEmail: String) {
+    Logger.debug("Removing follower from collection " + id + " : " + userEmail)
+    val collection = get(id).get
+    val existingFollowers = collection.followers
+    if (existingFollowers.contains(userEmail)) {
+      Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("followers" -> userEmail), false, false, WriteConcern.Safe)
     }
   }
 }

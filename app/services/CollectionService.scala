@@ -10,12 +10,16 @@ import scala.util.Try
  *
  */
 trait CollectionService {
+  /**
+   * The number of collections
+   */
+  def count(): Long
 
-   /**
+  /**
    * List all collections in the system.
    */
   def listCollections(): List[Collection]
-  
+
   /**
    * List all collections in the system in reverse chronological order.
    */
@@ -92,5 +96,15 @@ trait CollectionService {
    * Set new thumbnail.
    */
   def createThumbnail(collectionId: UUID)
+
+  /**
+   * Add follower to a collection.
+   */
+  def addFollower(id: UUID, userEmail: String)
+
+  /**
+   * Remove follower from a collection.
+   */
+  def removeFollower(id: UUID, userEmail: String)
 
 }

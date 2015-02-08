@@ -44,6 +44,13 @@ class MongoDBDatasetService @Inject() (
   object MustBreak extends Exception {}
 
   /**
+   * Count all datasets
+   */
+  def count(): Long = {
+    Dataset.count(MongoDBObject())
+  }
+
+  /**
    * List all datasets in the system.
    */
   def listDatasets(): List[Dataset] = {
@@ -636,10 +643,34 @@ class MongoDBDatasetService @Inject() (
           if (reqValue.isInstanceOf[String]) {
             val currValue = reqValue.asInstanceOf[String]
             if (keyTrimmed.endsWith("__not")) {
-              builder += MongoDBObject(actualKey -> MongoDBObject("$ne" -> currValue))
+              if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                if(!currValue.contains(" ANYWHERE")){
+                  realValue = "^"+realValue+"$";
+                }
+                if(currValue.contains(" IGNORE CASE")){
+                  realValue = "(?i)"+realValue;
+                }
+                builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  realValue.r))
+              }
+              else{
+                builder += MongoDBObject(actualKey -> MongoDBObject("$ne" ->  currValue))
+              }
             }
             else {
-              builder += MongoDBObject(actualKey -> currValue)
+              if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                if(!currValue.contains(" ANYWHERE")){
+                  realValue = "^"+realValue+"$";
+                }
+                if(currValue.contains(" IGNORE CASE")){
+                  realValue = "(?i)"+realValue;
+                }
+                builder += MongoDBObject(actualKey -> realValue.r)
+              }
+              else{
+                builder += MongoDBObject(actualKey -> currValue)
+              }
             }
           } else {
             //recursive
@@ -663,10 +694,34 @@ class MongoDBDatasetService @Inject() (
               if (reqValue.isInstanceOf[String]) {
                 val currValue = reqValue.asInstanceOf[String]
                 if (keyTrimmed.endsWith("__not")) {
-                  objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" -> currValue))
+                  if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
+	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+	                if(!currValue.contains(" ANYWHERE")){
+	                  realValue = "^"+realValue+"$";
+	                }
+	                if(currValue.contains(" IGNORE CASE")){
+	                  realValue = "(?i)"+realValue;
+	                }
+	                objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  realValue.r))
+                  }
+                  else{
+                	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
+                  }
                 }
                 else {
-                  objectForEach += MongoDBObject(tempActualKey -> currValue)
+                  if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
+	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+	                if(!currValue.contains(" ANYWHERE")){
+	                  realValue = "^"+realValue+"$";
+	                }
+	                if(currValue.contains(" IGNORE CASE")){
+	                  realValue = "(?i)"+realValue;
+	                }
+	                objectForEach += MongoDBObject(tempActualKey -> realValue.r)
+                  }
+                  else{
+                	objectForEach += MongoDBObject(tempActualKey -> currValue)
+                  }
                 }
               } else {
                 //recursive
@@ -905,6 +960,25 @@ class MongoDBDatasetService @Inject() (
   
   def setNotesHTML(id: UUID, notesHTML: String){
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
+  }
+
+  def addFollower(id: UUID, userEmail: String) {
+    Logger.debug("Adding follower to dataset " + id + " : " + userEmail)
+    val dataset = get(id).get
+    val existingFollowers = dataset.followers
+    if (!existingFollowers.contains(userEmail)) {
+      Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $push("followers" -> userEmail), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeFollower(id: UUID, userEmail: String) {
+    Logger.debug("Removing follower from dataset " + id + " : " + userEmail)
+    val dataset = get(id).get
+    val existingFollowers = dataset.followers
+    if (existingFollowers.contains(userEmail)) {
+      Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("followers" -> userEmail), false, false, WriteConcern.Safe)
+    }
+
   }
 }
 

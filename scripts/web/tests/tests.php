@@ -22,7 +22,7 @@
 		<div class="container">
 			<div class="jumbotron">
     		<h1>DTS Tests</h1>
-				<input id="dts" type="text" class="form-control" value="<?php echo "http://" . $_SERVER['SERVER_NAME']; ?>">
+				<input id="dts" type="text" class="form-control" value="<?php echo isset($_REQUEST['dts']) ? $_REQUEST['dts'] : $_SERVER['SERVER_NAME']; ?>">
 				<div id="failures" style="color:#999999;font-style:italic;font-size:90%;"></div>
 			</div>
 				
@@ -43,12 +43,37 @@
 
 			foreach($lines as $line) {
 				if($line[0] != '#') {
-					$parts = explode("\t", $line);
+					$parts = explode(" ", $line, 2);
 					$input_filename = $parts[0];
 					$outputs = explode(',', $parts[1]);
 
 					foreach($outputs as $output) {
 						$count++;
+						$POSITIVE = true;
+						$output = trim($output);
+						$output_html = "";		//HTML version for display
+
+						//Check for negative tests
+						if($output[0] == '!') {
+							$POSITIVE = false;
+							$output = substr($output, 1);
+						}	
+
+						//Check for input files
+						if($output[0] == '"') {
+							$output = substr($output, 1, -1);
+							$output_html = $output;
+						}else{
+							$output_html = htmlentities(trim(file_get_contents($output)), ENT_QUOTES);
+						}
+						
+						//Add the the '!' back for negative tests
+						if(!$POSITIVE) {
+							$output = '!' . $output;
+							$output_html = "!" . $output_html;
+						}
+
+						//List test
 						$json[$count-1]["file"] = $input_filename;
 						$json[$count-1]["output"] = $output;
 						
@@ -57,7 +82,7 @@
 						echo "<tr id=\"" . $count . "\">";
 						echo "<td>" . $count . "</td>";
 						echo "<td><a href=\"" . $input_filename . "\">" . $input_filename . "</a></td>";
-						echo "<td><a href=\"tmp/" . $count . "_" . $output_filename . "\">" . $output . "</a></td>";
+						echo "<td><a href=\"tmp/" . $count . "_" . $output_filename . "\">" . $output_html . "</a></td>";
 						echo "<td align=\"center\"><input type=\"button\" class=\"btn btn-xs btn-primary\" value=\"Run\" onclick=\"test(" . $count . ",'" . $input_filename . "','" . $output . "', false)\"></td>";
 						echo "</tr>\n";
 					}
@@ -101,8 +126,9 @@
 				$(row).attr('class', 'info');		//Set it again in case this is a second attempt
 
 				var dts = document.getElementById('dts').value;
-				var url = 'test.php?dts=' + encodeURIComponent(dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
-	
+				var url = 'test.php?dts=' + encodeURIComponent('http://' + dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
+				console.log(url);
+
 				$.get(url, function(success) {
 					//Check result
 					if(success > 0) {
@@ -122,6 +148,7 @@
 							test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
 						}else{
 							document.getElementById('failures').appendChild(document.createTextNode(', Elapsed time: ' + timeToString((new Date).getTime() - t0)));
+							run = true; //Allow runs if currently disabled
 						}
 					}
 				});

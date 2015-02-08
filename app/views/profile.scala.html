@@ -5,16 +5,9 @@
   <table>
     <tr>
       <td valign="top">
-        @profile.avatarUrl match{
-          case Some(info) => {
-            <img src="@info?s=256" class="profilePicture">
-          }
-          case None => {
-            <img src="http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=256" class="profilePicture">
-          }
-        }
+        <img src=@profile.getAvatarUrl class="profilePicture">
         <div align="center">
-          <h4><a href="@routes.Datasets.userDatasets("", "", 12, profile.email)">View Datasets</a> </h4>
+          <h4><a href="@routes.Datasets.userDatasets("", "", 12, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
           <h4>Followed by @profile.followedByUsers.size people</h4>
           <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#followingModal">
             Followers and followees
@@ -23,7 +16,9 @@
             case Some(viewer) => {
               @ownProfile match {
                 case Some(sameProfile) =>{
-                <h4><a href="@routes.Profile.editProfile">Edit Profile</a></h4>
+                <h4>
+                  <a href="@routes.Profile.editProfile">Edit Profile</a>
+                </h4>
                 }
                 case None => {
                   <h4>
@@ -32,7 +27,7 @@
                       type="button"
                       class="
                         @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
-                          active btn btn-success
+                          btn btn-danger
                         }else {
                           btn btn-success
                         }
@@ -49,7 +44,7 @@
                     >
                       <!-- Is there a way to store a scala variable somewhere?... -->
                       @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
-                        Following
+                        Unfollow
                       } else {
                         Follow
                       }
@@ -67,6 +62,8 @@
                           })
                             .done(function(data) {
                               followButton.text("Unfollow");
+                              followButton.removeClass('btn-success');
+                              followButton.addClass('btn-danger');
                             })
                             .fail(function(data) {
                               console.log(data);
@@ -78,6 +75,8 @@
                           })
                             .done(function(data) {
                               followButton.text("Follow");
+                              followButton.removeClass('btn-danger');
+                              followButton.addClass('btn-success');
                             })
                             .fail(function(data) {
                               console.log(data);
@@ -92,7 +91,6 @@
             }
             case None => {}
           }
-
         </div>
       </td>
       <td>
@@ -112,7 +110,7 @@
             @profile.institution
           </h5>
           
-          <p style="margin-bottom: 24px">@profile.email</p>
+          <p style="margin-bottom: 24px">@profile.email.getOrElse("")</p>
 
           @profile.orcidID match{
             case Some(info) => {

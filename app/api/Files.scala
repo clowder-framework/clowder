@@ -89,7 +89,8 @@ class Files @Inject()(
   previews: PreviewService,
   threeD: ThreeDService,
   sqarql: RdfSPARQLService,
-  thumbnails: ThumbnailService) extends ApiController {
+  thumbnails: ThumbnailService,
+  userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Retrieve physical file object metadata",
       notes = "Get metadata of the file object (not the resource it describes) as JSON. For example, size of file, date created, content type, filename.",
@@ -111,7 +112,7 @@ class Files @Inject()(
   @ApiOperation(value = "List all files", notes = "Returns list of files and descriptions.", responseClass = "None", httpMethod = "GET")
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
     request =>
-      val list = for (f <- files.listFiles()) yield jsonFile(f)
+      val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f)
 
       Ok(toJson(list))
   }
@@ -295,13 +296,13 @@ class Files @Inject()(
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
-  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
     implicit request =>
       request.user match {
         case Some(user) => {
         	request.body.file("File").map { f =>        
 	          var nameOfFile = f.filename
-	          var flags = ""
+	          var flags = flagsFromPrevious
 	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
 		          	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 		              if(thirdSeparatorIndex >= 0){
@@ -344,7 +345,11 @@ class Files @Inject()(
 	            		Logger.error(fileType.substring(7))
 	            		InternalServerError(fileType.substring(7))
 	            	}
-	            	if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") ){
+	            	if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")){
+	            				if(fileType.equals("multi/files-ptm-zipped")){
+	            				    fileType = "multi/files-zipped";
+	            				  }
+	            	  
 					        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
 					              if(thirdSeparatorIndex >= 0){
 					                var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -364,7 +369,7 @@ class Files @Inject()(
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files$", "")
+                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files$", "").replaceAll("/api/files/withFlags/.*$", "")
 
                   /*---- Insert DTS Request to database---*/  
 
@@ -430,6 +435,28 @@ class Files @Inject()(
   
 
   /**
+   * Reindex a file.
+   */
+  @ApiOperation(value = "Reindex a file",
+    notes = "Reindex the existing file.",
+    responseClass = "None", httpMethod = "GET")
+  def reindex(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+    request =>
+      files.get(id) match {
+        case Some(file) => {
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.index(file)
+          }
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => {
+          Logger.error("Error getting dataset" + id)
+          BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+        }
+      }
+  }
+
+    /**
    * Send job for file preview(s) generation at a later time.
    */
   @ApiOperation(value = "(Re)send preprocessing job for file",
@@ -484,14 +511,14 @@ class Files @Inject()(
   @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets), Some(dataset_id)) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets), Some(dataset_id)) { implicit request =>
     request.user match {
      case Some(user) => {
       datasets.get(dataset_id) match {
        case Some(dataset) => {
         request.body.file("File").map { f =>
           var nameOfFile = f.filename
-          var flags = ""
+          var flags = flagsFromPrevious
           if(nameOfFile.toLowerCase().endsWith(".ptm")){
               var thirdSeparatorIndex = nameOfFile.indexOf("__")
               if(thirdSeparatorIndex >= 0){
@@ -535,7 +562,11 @@ class Files @Inject()(
                   Logger.error(fileType.substring(7))
                   InternalServerError(fileType.substring(7))
                 }
-                if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped")) {
+                if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")) {
+                  if(fileType.equals("multi/files-ptm-zipped")){
+	            	fileType = "multi/files-zipped";
+	              }
+                  
                   var thirdSeparatorIndex = nameOfFile.indexOf("__")
                     if(thirdSeparatorIndex >= 0){
                       var firstSeparatorIndex = nameOfFile.indexOf("_")
@@ -555,7 +586,7 @@ class Files @Inject()(
               // TODO RK need to replace unknown with the server name
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-              val host = Utils.baseUrl(request) + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "")
+              val host = Utils.baseUrl(request) + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "").replaceAll("api/uploadToDataset/withFlags/[A-Za-z0-9_]*/.*$", "")
 	          
               // Insert DTS Requests
               val clientIP = request.remoteAddress
@@ -1745,6 +1776,72 @@ class Files @Inject()(
 	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
 	  }
     }
+
+  @ApiOperation(value = "Follow file",
+    notes = "Add user to file followers and add file to user followed files.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles /* Not sure. */)) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(identity) => {
+          files.get(id) match {
+            case Some(file) => {
+              identity.email match {
+                case Some(userEmail) => {
+                  files.addFollower(id, userEmail)
+                  userService.followFile(userEmail, id)
+                  Ok
+                }
+                case None => {
+                  NotFound
+                }
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  @ApiOperation(value = "Unfollow file",
+    notes = "Remove user from file followers and remove file from user followed files.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles /* Not sure. */)) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(identity) => {
+          files.get(id) match {
+            case Some(file) => {
+              identity.email match {
+                case Some(userEmail) => {
+                  files.removeFollower(id, userEmail)
+                  userService.unfollowFile(userEmail, id)
+                  Ok
+                }
+                case None => {
+                  NotFound
+                }
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
 
 }
 

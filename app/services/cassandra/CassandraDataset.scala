@@ -15,6 +15,13 @@ import models.File
  */
 class CassandraDataset extends DatasetService {
  /**
+  * Count all datasets
+  */
+ def count(): Long = {
+  -1
+ }
+
+ /**
    * List all datasets in the system.
    */
   def listDatasets(): List[Dataset] = {
@@ -192,6 +199,13 @@ class CassandraDataset extends DatasetService {
   
   def setNotesHTML(id: UUID, notesHTML: String) {}
 
+ /**
+  * Add follower to a dataset.
+  */
+ def addFollower(id: UUID, userEmail: String) {}
 
-
+ /**
+  * Remove follower from a dataset.
+  */
+ def removeFollower(id: UUID, userEmail: String) {}
 }

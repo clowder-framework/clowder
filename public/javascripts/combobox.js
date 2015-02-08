@@ -97,7 +97,7 @@ if ( valid ) {
 $("#" + this.element.attr("data-errorid")).css('display','none');	
 return;
 }
-$("#" + this.element.attr("data-errorid")).css('display','inline');	
+$("#" + this.element.attr("data-errorid")).css('display','block');	
 //////
 },
 _destroy: function() {

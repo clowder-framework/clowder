@@ -30,7 +30,8 @@ case class File(
   xmlMetadata: Map[String, Any] = Map.empty,
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
-  notesHTML: Option[String] = None ) {
+  notesHTML: Option[String] = None,
+  followers: List[String] = List.empty ) {
     
   /**
    * Utility method to check a given file and a given identity for permissions from the license 
@@ -54,4 +55,3 @@ case class Versus(
   fileId: UUID,
   descriptors: Map[String,Any]= Map.empty
 )
-
