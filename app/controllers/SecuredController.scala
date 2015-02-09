@@ -5,9 +5,11 @@ package controllers
 
 import api.{Permission, RequestWithUser, WithPermission}
 import models.UUID
+import play.api.Logger
 import play.api.mvc.{Action, BodyParser, Controller, Result, Results}
 import securesocial.core.providers.utils.RoutesHelper
 import securesocial.core._
+import services.DI
 
 /**
  * Enforce authentication and authorization.
@@ -24,9 +26,10 @@ trait SecuredController extends Controller {
       // Only check secure social, no other auth methods are allowed
       SecureSocial.currentUser(request) match { // calls from browser
         case Some(identity) => {
+          val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
           if (authorization.isInstanceOf[WithPermission]){
             if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId)) {
-              f(RequestWithUser(Some(identity), request))
+              f(RequestWithUser(Some(identity), user, request))
             } else if(SecureSocial.currentUser.isDefined) {  //User logged in but not authorized, so redirect to 'not authorized' page
               Results.Redirect(routes.Authentication.notAuthorized)
             } else {   //User not logged in, so redirect to login page
@@ -40,7 +43,7 @@ trait SecuredController extends Controller {
         }
         case None => {
           if (authorization.isAuthorized(null))
-            f(RequestWithUser(None, request))
+            f(RequestWithUser(None, None, request))
           else {
             if(SecureSocial.currentUser.isDefined){  //User logged in but not authorized, so redirect to 'not authorized' page
               Results.Redirect(routes.Authentication.notAuthorized)
