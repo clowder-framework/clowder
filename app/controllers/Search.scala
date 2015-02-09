@@ -280,8 +280,7 @@ class Search @Inject() (
    		//query file is a new/temp file, it will be stored in MultimediaQueryService
    		//in controllers/Files -> uploadSelectQuery
    		queries.get(fileID) match {
-   			case Some((inputStream, filename, contentType, length)) => { 
-   			  
+   			case Some((inputStream, filename, contentType, length)) => {    			  
    				current.plugin[VersusPlugin] match {    		
    					case Some(plugin)=>{   
    						val indexesToSearchFuture =  for {
@@ -308,7 +307,6 @@ class Search @Inject() (
    							// will change to UUID once models.File.thumbnail_id is changed to UUID
    							val thumb_id:String = queries.getFile(fileID).flatMap(_.thumbnail_id).map(_.stringify).getOrElse("")
    							Ok(views.html.multimediaSearchResults(filename, Some(fileID), Some(thumb_id), listOfResults))             		
-
    						}    		            
    					} //end of case Some(plugin)   
 
@@ -330,8 +328,7 @@ class Search @Inject() (
   * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is already in db)
   *  
   **/
-   def findSimilarToExistingFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>
-  	    
+   def findSimilarToExistingFile(inputFileId:UUID)=SecuredAction(authorization=WithPermission(Permission.SearchDatasets)) { implicit request =>	    
     Async{       	   
   		//file will be stored in FileService
    	   	files.getBytes(inputFileId) match {
@@ -483,20 +480,15 @@ class Search @Inject() (
    								(fileURL, prox)<-mergedMaps
    							  } yield{ 
    								  //fileURL = http://localhost:9000/api/files/54bebcb919aff1ea8c8145ac/blob?key=r1ek3rs
+   								  //get if of the result
    								  val lastSlash = fileURL.lastIndexOf("/")
    							  	  val nextToLastSlash = fileURL.lastIndexOf("/", lastSlash-1)
    							  	  val result_id = UUID(fileURL.substring(nextToLastSlash + 1, lastSlash));
-   								
-   								var oneFileName=""   								
-   								var oneThumbnlId = ""
-   								files.get(result_id) match {
-   									case Some(file)=>{
-   										oneFileName = file.filename
-   										oneThumbnlId=file.thumbnail_id.getOrElse("")
-   									}
-   									case None=>{}      							    			
-   								}    
-   							    (result_id, oneFileName, oneThumbnlId, prox) 							  
+   								  //find file name and thumbnail id for the result
+   								  val oneFileName = files.get(result_id).map (_.filename).getOrElse("")
+   								  val oneThumbnlId = files.get(result_id).flatMap (_.thumbnail_id).getOrElse("")
+   								  
+   								  (result_id, oneFileName, oneThumbnlId, prox) 							  
    							  }
    							  //sort by combined proximity values
    							  val sortedMergedResults= mergedResult.toList sortBy{_._4}
