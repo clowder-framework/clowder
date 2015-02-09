@@ -182,7 +182,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
              Future(Ok("No Versus Service"))
            }
          }
-       } 
+       }
+   }
    
   /**
    * Gets indexes from Versus, using VersusPlugin. Checks in mongo on Medici side if these indexes
