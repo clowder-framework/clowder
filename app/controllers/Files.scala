@@ -621,16 +621,15 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   
   
   /**
-   * Upload query to temporary folder
+   * Uploads query to temporary folder.
+   * Gets type of index and list of sections, and passes on to the Search controller
   */
   def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-
     //=== processing searching within files or sections of files or both ===    
     //dataParts are from the seach form in view/multimediasearch
     //get type of index and list of sections, and pass on to the Search controller
     //pass them on to Search.findSimilarToQueryFile for further processing
-    val dataParts = request.body.dataParts
-   
+    val dataParts = request.body.dataParts   
     //indexType in dataParts is a sequence of just one element
     val typeToSearch = dataParts("indexType").head
     //get a list of sections to be searched
@@ -638,10 +637,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     if  ( typeToSearch.equals("sectionsSome")  &&  dataParts.contains("sections") ){
         sections = dataParts("sections").toList
     }  
-    //END OF: processing searching within files or sections of files or both
-    
+    //END OF: processing searching within files or sections of files or both    
     request.body.file("File").map { f =>
-
         var nameOfFile = f.filename
       	var flags = ""
       	if(nameOfFile.toLowerCase().endsWith(".ptm")){
@@ -654,8 +651,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                         nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 	              }
-      	}
-        
+      	}        
         Logger.debug("Controllers/Files Uploading file " + nameOfFile)
         
         // store file       
@@ -698,13 +694,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             // TODO RK need to replace unknown with the server name
             //key needs to contain 'query' when uploading a query
             //since the thumbnail extractor during processing will need to upload to correct mongo collection.
-            val key = "unknown." + "query."+ fileType.replace("/", ".")
-           
-            //val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")            
+            val key = "unknown." + "query."+ fileType.replace("/", ".")           
             val host = Utils.baseUrl(request)
-
-            Logger.debug("Utils.baseUrl(request) = " + Utils.baseUrl(request) )
-            Logger.debug("request.path.replaceAll(...) " + request.path.replaceAll("upload$", ""))
             val id = f.id
             val path=f.path
 
@@ -716,10 +707,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              files.addXMLMetadata(id, xmlToJSON)
-	              
-	              Logger.debug("xmlmd=" + xmlToJSON)
-	              
+	              files.addXMLMetadata(id, xmlToJSON)	              
+	              Logger.debug("xmlmd=" + xmlToJSON)	              
 	              current.plugin[ElasticsearchPlugin].foreach{
 		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
 		            }
@@ -728,20 +717,17 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            current.plugin[ElasticsearchPlugin].foreach{
 		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
 		            }
-	            }
-	            
+	            }	            
 	            //add file to RDF triple store if triple store is used
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		             case "yes" => sparql.addFileToGraph(f.id)
 		             case _ => {}
 	             }
-	            }
-            
-            // redirect to file page
-             Redirect(routes.Search.findSimilarToQueryFile(f.id, typeToSearch, sections))
-
-         }
+	            }            
+	            // redirect to file page
+	            Redirect(routes.Search.findSimilarToQueryFile(f.id, typeToSearch, sections))
+          }
           case None => {
             Logger.error("Could not retrieve file that was just saved.")
             InternalServerError("Error uploading file")
@@ -819,10 +805,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
             //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              files.addXMLMetadata(id, xmlToJSON)
-	              
-	              Logger.debug("xmlmd=" + xmlToJSON)
-	              
+	              files.addXMLMetadata(id, xmlToJSON)	              
+	              Logger.debug("xmlmd=" + xmlToJSON)	              
 	              current.plugin[ElasticsearchPlugin].foreach{
 		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
 		            }
@@ -831,18 +815,15 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 		            current.plugin[ElasticsearchPlugin].foreach{
 		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
 		            }
-	            }
-	            
+	            }	            
 	            //add file to RDF triple store if triple store is used
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
 		             case "yes" => sparql.addFileToGraph(f.id)
 		             case _ => {}
 	             }
-	            }
-            
-           Ok(f.id.toString)
-         
+	            }            
+           Ok(f.id.toString)         
          }
           case None => {
             Logger.error("Could not retrieve file that was just saved.")
