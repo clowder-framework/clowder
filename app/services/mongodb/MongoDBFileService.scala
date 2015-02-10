@@ -167,7 +167,7 @@ class MongoDBFileService @Inject() (
     mongoFile.filename = filename
     mongoFile.contentType = ct
     mongoFile.put("showPreviews", showPreviews)
-    mongoFile.put("author", author)
+    mongoFile.put("author", SocialUserDAO.dao.toDBObject(author))
     mongoFile.save
 
     val id = UUID(mongoFile.getAs[ObjectId]("_id").get.toString)

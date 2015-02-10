@@ -39,7 +39,7 @@ trait GridFSDB {
     }
     mongoFile.contentType = ct
     mongoFile.put("showPreviews", showPreviews)
-    mongoFile.put("author", author)
+    mongoFile.put("author", SocialUserDAO.dao.toDBObject(author))
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
     Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))

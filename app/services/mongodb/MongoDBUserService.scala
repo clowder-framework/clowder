@@ -208,6 +208,4 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
       case Some(x) => new SalatDAO[Token, ObjectId](collection = x.collection("social.token")) {}
     }
   }
-
-  implicit def identityToDBObject(user: SocialUser): DBObject = com.novus.salat.grater[Identity].asDBObject(user)
 }
