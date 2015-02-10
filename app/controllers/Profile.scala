@@ -33,68 +33,53 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
     var pastprojects: Option[String] = None
     var position: Option[String] = None
     user match {
-      case Some(x) => {
-        print(x.email.toString())
-        implicit val email = x.email
-        email match {
-          case Some(addr) => {
-            implicit val modeluser = users.findByEmail(addr.toString())
-            modeluser match {
-              case Some(muser) => {
-                muser.avatarUrl match {
-                  case Some(url) => {
-                    val questionMarkIdx :Int = url.indexOf("?")
-                    if (questionMarkIdx > -1) {
-                      avatarUrl = Option(url.substring(0, questionMarkIdx))
-                    } else {
-                      avatarUrl = Option(url)
-                    }
-                  }
-                  case None => avatarUrl = None
-                }
-                muser.biography match {
-                  case Some(filledOut) => biography = Option(filledOut)
-                  case None => biography = None
-                }
-                muser.currentprojects match {
-                  case Some(filledOut) => currentprojects = Option(filledOut)
-                  case None => currentprojects = None
-                }
-                muser.institution match {
-                  case Some(filledOut) => institution = Option(filledOut)
-                  case None => institution = None
-                }
-                muser.orcidID match {
-                  case Some(filledOut) => orcidID = Option(filledOut)
-                  case None => orcidID = None
-                }
-                muser.pastprojects match {
-                  case Some(filledOut) => pastprojects = Option(filledOut)
-                  case None => pastprojects = None
-                }
-                muser.position match {
-                  case Some(filledOut) => position = Option(filledOut)
-                  case None => position = None
-                }
-
-                val newbioForm = bioForm.fill(Info(
-                  avatarUrl,
-                  biography,
-                  currentprojects,
-                  institution,
-                  orcidID,
-                  pastprojects,
-                  position
-                ))
-                Ok(views.html.editProfile(newbioForm))
-              }
-              case None => {
-                Logger.error("no user model exists for email " + addr.toString())
-                InternalServerError
-              }
+      case Some(muser) => {
+        muser.avatarUrl match {
+          case Some(url) => {
+            val questionMarkIdx :Int = url.indexOf("?")
+            if (questionMarkIdx > -1) {
+              avatarUrl = Option(url.substring(0, questionMarkIdx))
+            } else {
+              avatarUrl = Option(url)
             }
           }
+          case None => avatarUrl = None
         }
+        muser.biography match {
+          case Some(filledOut) => biography = Option(filledOut)
+          case None => biography = None
+        }
+        muser.currentprojects match {
+          case Some(filledOut) => currentprojects = Option(filledOut)
+          case None => currentprojects = None
+        }
+        muser.institution match {
+          case Some(filledOut) => institution = Option(filledOut)
+          case None => institution = None
+        }
+        muser.orcidID match {
+          case Some(filledOut) => orcidID = Option(filledOut)
+          case None => orcidID = None
+        }
+        muser.pastprojects match {
+          case Some(filledOut) => pastprojects = Option(filledOut)
+          case None => pastprojects = None
+        }
+        muser.position match {
+          case Some(filledOut) => position = Option(filledOut)
+          case None => position = None
+        }
+
+        val newbioForm = bioForm.fill(Info(
+          avatarUrl,
+          biography,
+          currentprojects,
+          institution,
+          orcidID,
+          pastprojects,
+          position
+        ))
+        Ok(views.html.editProfile(newbioForm))
       }
       case None => {
         Redirect(routes.RedirectUtility.authenticationRequired())
@@ -147,7 +132,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
     var ownProfile: Option[Boolean] = None
     email match {
       case Some(addr) => {
-        implicit val modeluser = users.findByEmail(addr.toString())
+        val modeluser = users.findByEmail(addr.toString())
         modeluser match {
           case Some(muser) => {
             user match{

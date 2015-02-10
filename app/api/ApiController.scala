@@ -3,11 +3,8 @@ package api
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
-import play.api.mvc.Action
-import play.api.mvc.BodyParser
-import play.api.mvc.Controller
-import play.api.mvc.Result
-import models.UUID
+import play.api.mvc._
+import models.{MediciUser, User, UUID}
 import securesocial.core.{AuthenticationMethod, Authorization, IdentityId, SecureSocial, SocialUser, UserService}
 import securesocial.core.providers.UsernamePasswordProvider
 import services.DI
@@ -19,7 +16,7 @@ import services.DI
  *
  */
 trait ApiController extends Controller {
-  val anonymous = new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
+  val anonymous = new MediciUser(UUID.generate(), new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, AuthenticationMethod.UserPassword)
 
   def SecuredAction[A](p: BodyParser[A] = parse.json, authorization: Authorization = WithPermission(Permission.Public), resourceId: Option[UUID] = None)(f: RequestWithUser[A] => Result) = Action(p) {
     implicit request => {
@@ -38,7 +35,7 @@ trait ApiController extends Controller {
           val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
           if (authorization.isInstanceOf[WithPermission]) {
             if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId))
-              f(RequestWithUser(Some(identity), user, request))
+              f(RequestWithUser(user, request))
             else
               Unauthorized("Not authorized")
           } else {
@@ -55,7 +52,7 @@ trait ApiController extends Controller {
               if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
                 if (authorization.isInstanceOf[WithPermission]) {
                   if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId)) {
-                    f(RequestWithUser(Some(identity), user, request))
+                    f(RequestWithUser(user, request))
                   } else {
                     if (SecureSocial.currentUser.isDefined) {  //User logged in but not authorized, so redirect to 'not authorized' page
                       Unauthorized("Not authorized")
@@ -86,7 +83,7 @@ trait ApiController extends Controller {
           if (key.length > 0) {
             if (key(0).equals(play.Play.application().configuration().getString("commKey"))) {
               if (authorization.isAuthorized(anonymous)) {
-                f(RequestWithUser(Some(anonymous), None, request))
+                f(RequestWithUser(Some(anonymous), request))
               }
               else
                 Unauthorized("Not authorized")
@@ -101,7 +98,7 @@ trait ApiController extends Controller {
         case (None, None, None) => {
           // no auth, see if no user can access this
           if (authorization.isAuthorized(null))
-            f(RequestWithUser(None, None, request))
+            f(RequestWithUser(None, request))
           else {
             Logger.debug("ApiController - Authentication failure")
             //Modified to return a message specifying that authentication is necessary, so that

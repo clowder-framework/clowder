@@ -167,7 +167,7 @@ class MongoDBFileService @Inject() (
     mongoFile.filename = filename
     mongoFile.contentType = ct
     mongoFile.put("showPreviews", showPreviews)
-    mongoFile.put("author", SocialUserDAO.toDBObject(author))
+    mongoFile.put("author", author)
     mongoFile.save
 
     val id = UUID(mongoFile.getAs[ObjectId]("_id").get.toString)
@@ -178,7 +178,7 @@ class MongoDBFileService @Inject() (
    * Get blob.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
+    val files = GridFS(FileDAO.dao.collection.db, "uploads")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => {
         // use a special case if the storage is in mongo as well
@@ -659,7 +659,7 @@ class MongoDBFileService @Inject() (
         // finally delete the actual file
         val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
         if (usemongo) {
-          val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
+          val files = GridFS(FileDAO.dao.collection.db, "uploads")
           files.remove(new ObjectId(id.stringify))
         } else {
           storage.delete(file.id.stringify, "uploads")

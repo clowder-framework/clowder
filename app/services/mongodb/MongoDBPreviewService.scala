@@ -104,7 +104,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
+    val files = GridFS(PreviewDAO.dao.collection.db, "previews")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => {
         // use a special case if the storage is in mongo as well
@@ -231,7 +231,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     // finally delete the actual file
     val usemongo = current.configuration.getBoolean("medici2.mongodb.storePreviews").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
     if (usemongo) {
-      val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
+      val files = GridFS(PreviewDAO.dao.collection.db, "previews")
       files.remove(new ObjectId(p.id.stringify))
     } else {
       storage.delete(p.id.stringify, "previews")

@@ -105,7 +105,7 @@ class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStora
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "tiles")
+    val files = GridFS(TileDAO.dao.collection.db, "tiles")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => {
         // use a special case if the storage is in mongo as well
@@ -136,7 +136,7 @@ class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStora
     // finally delete the actual file
     val usemongo = current.configuration.getBoolean("medici2.mongodb.storeTiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
     if (usemongo) {
-      val files = GridFS(SocialUserDAO.dao.collection.db, "tiles")
+      val files = GridFS(TileDAO.dao.collection.db, "tiles")
       files.remove(new ObjectId(id.stringify))
     } else {
       storage.delete(id.stringify, "tiles")

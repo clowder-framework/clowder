@@ -14,6 +14,8 @@ import java.io.FileWriter
 import java.io.FileReader
 import java.io.ByteArrayInputStream
 
+import securesocial.core.Identity
+
 import scala.collection.mutable.MutableList
 
 import java.util.ArrayList 
@@ -314,7 +316,7 @@ class Files @Inject()(
 	        
 	        Logger.debug("Uploading file " + nameOfFile)
 	        // store file
-	        var realUser = user
+	        var realUser = user.asInstanceOf[Identity]
 	          if(!originalZipFile.equals("")){
 	             files.get(new UUID(originalZipFile)) match{
 	               case Some(originalFile) => {
@@ -530,7 +532,7 @@ class Files @Inject()(
           
           Logger.debug("Uploading file " + nameOfFile)         
           // store file
-          var realUser = user
+          var realUser = user.asInstanceOf[Identity]
           if(!originalZipFile.equals("")) {
             files.get(new UUID(originalZipFile)) match {
               case Some(originalFile) => {

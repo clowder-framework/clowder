@@ -73,7 +73,7 @@ class MongoDBThumbnailService @Inject()(storage: ByteStorageService) extends Thu
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "thumbnails")
+    val files = GridFS(Thumbnail.dao.collection.db, "thumbnails")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => {
         // use a special case if the storage is in mongo as well
@@ -104,7 +104,7 @@ class MongoDBThumbnailService @Inject()(storage: ByteStorageService) extends Thu
     // finally delete the actual file
     val usemongo = current.configuration.getBoolean("medici2.mongodb.storeThumbnails").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
     if (usemongo) {
-      val files = GridFS(SocialUserDAO.dao.collection.db, "thumbnails")
+      val files = GridFS(Thumbnail.dao.collection.db, "thumbnails")
       files.remove(new ObjectId(id.stringify))
     } else {
       storage.delete(id.stringify, "thumbnails")

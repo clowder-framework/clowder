@@ -71,7 +71,7 @@ class MongoDBThreeDService extends ThreeDService {
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "textures")
+    val files = GridFS(ThreeDTextureDAO.dao.collection.db, "textures")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream,
         file.getAs[String]("filename").getOrElse("unknown-name"),
@@ -114,7 +114,7 @@ class MongoDBThreeDService extends ThreeDService {
    * Get blob.
    */
   def getGeometryBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "geometries")
+    val files = GridFS(GeometryDAO.dao.collection.db, "geometries")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream,
         file.getAs[String]("filename").getOrElse("unknown-name"),

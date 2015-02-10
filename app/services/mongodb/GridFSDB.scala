@@ -39,7 +39,7 @@ trait GridFSDB {
     }
     mongoFile.contentType = ct
     mongoFile.put("showPreviews", showPreviews)
-    mongoFile.put("author", SocialUserDAO.toDBObject(author))
+    mongoFile.put("author", author)
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
     Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
@@ -49,7 +49,7 @@ trait GridFSDB {
    * Get blob.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
+    val files = GridFS(FileDAO.dao.collection.db, "uploads")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       case Some(file) => Some(file.inputStream, 
           file.getAs[String]("filename").getOrElse("unknown-name"), 

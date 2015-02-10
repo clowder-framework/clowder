@@ -20,7 +20,7 @@ class Users @Inject()(users: UserService) extends ApiController {
   @ApiOperation(value = "List all users in the system",
     responseClass = "User", httpMethod = "GET")
   def list() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.UserAdmin)) { request =>
-    Ok(Json.toJson(users.list))
+    Ok(Json.toJson(users.list.map(userToJSON)))
   }
 
   /**
@@ -30,7 +30,7 @@ class Users @Inject()(users: UserService) extends ApiController {
     responseClass = "User", httpMethod = "GET")
   def findById(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
     users.findById(id) match {
-      case Some(x) => Ok(Json.toJson(x))
+      case Some(x) => Ok(userToJSON(x))
       case None => BadRequest("no user found with that id.")
     }
   }
@@ -42,7 +42,7 @@ class Users @Inject()(users: UserService) extends ApiController {
     responseClass = "User", httpMethod = "GET")
   def findByEmail(email: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
     users.findByEmail(email) match {
-      case Some(x) => Ok(Json.toJson(x))
+      case Some(x) => Ok(userToJSON(x))
       case None => BadRequest("no user found with that email.")
     }
   }
@@ -75,4 +75,12 @@ class Users @Inject()(users: UserService) extends ApiController {
     Ok(Json.obj("status" -> "success"))
   }
 
+  def userToJSON(user: User): JsValue = {
+    Json.obj("id" -> user.id.stringify,
+      "firstName" -> user.firstName,
+      "lastName" -> user.lastName,
+      "fullName" -> user.fullName,
+      "email" -> user.email,
+      "avatar" -> user.avatarUrl)
+  }
 }

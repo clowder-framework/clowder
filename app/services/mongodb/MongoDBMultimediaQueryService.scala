@@ -39,7 +39,7 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
   
    def get(id: UUID): Option[(InputStream, String, String, Long)] = {
     
-     val queries = GridFS(SocialUserDAO.dao.collection.db, "uploadquery")
+     val queries = GridFS(MultimediaFeaturesDAO.dao.collection.db, "uploadquery")
     
       queries.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       
