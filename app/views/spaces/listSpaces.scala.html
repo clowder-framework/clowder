@@ -142,32 +142,32 @@
                 <thead>
                     <tr>
                         @if(user.isDefined) {
-                            <th style="width : 25 %">Name</th>
-                            <th style="width : 15 %">Created</th>
-                            <th style="width : 40 %">Description</th>
-                            <th style="width : 15 %">Preview</th>
-                            <th style="width : 5 %">Delete</th>
+                            <th style="width : 15%">Logo</th>
+                            <th style="width : 25%">Name</th>
+                            <th style="width : 40%">Description</th>
+                            <th style="width : 15%">Created</th>
+                            <th style="width : 5%">Delete</th>
                         }
                         @if(!user.isDefined) {
-                            <th style="width : 25 %">Name</th>
-                            <th style="width : 15 %">Created</th>
-                            <th style="width : 45 %">Description</th>
-                            <th style="width : 15 %">Preview</th>
+                            <th style="width : 15%">Logo</th>
+                            <th style="width : 25%">Name</th>
+                            <th style="width : 45%">Description</th>
+                            <th style="width : 15%">Created</th>
                         }
                     </tr>
                 </thead>
                 <tbody>
                 @spaces.map { space =>
                     <tr>
-                        <td><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></td>
-                        <td>@space.created.format("MMM dd, yyyy")</td>
-                        <td style="white-space : pre-line">@space.description</td>
                         <td>
                             @if(!space.logoURL.isEmpty) {
                                 <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
                             }
                             @if(space.logoURL.isEmpty) {No thumbnail available}
                         </td>
+                        <td><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></td>
+                        <td style="white-space : pre-line">@space.description</td>
+                        <td>@space.created.format("MMM dd, yyyy")</td>
                         <td class="requiresLogin">
                         @if(user.isDefined) {
                                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
