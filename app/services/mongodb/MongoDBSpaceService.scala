@@ -8,6 +8,7 @@ import com.mongodb.util.JSON;
 import com.mongodb.DBObject;
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models.{UserSpace, ProjectSpace, UUID}
+import play.{Logger => log}
 import play.api.Play._
 import services._
 import MongoContext.context
@@ -88,6 +89,17 @@ class MongoDBSpaceService @Inject() (
       case None => raw
     }
     orderedBy.limit(limit).toList
+  }
+
+  /**
+   * Associate a collection with a space
+   *
+   * @param collection collection id
+   * @param space space id
+   */
+  def addCollection(collection: UUID, space: UUID): Unit = {
+    log.debug(s"adding $collection to $space")
+    collections.addToSpace(collection, space)
   }
 
   /**
