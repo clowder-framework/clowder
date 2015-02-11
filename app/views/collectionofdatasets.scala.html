@@ -1,4 +1,7 @@
-@(datasetsInCollection: List[models.Dataset], collection: models.Collection, previewers: List[Previewer])(implicit user: Option[securesocial.core.Identity])
+@(datasetsInCollection: List[models.Dataset],
+  collection: models.Collection,
+  previewers: List[Previewer],
+  space: Option[ProjectSpace])(implicit user: Option[securesocial.core.Identity])
 
 @import models.UUID
 
@@ -22,34 +25,42 @@
   <h1>@collection.name</h1>
 </div>
 <div class="row">
-	<div class="col-md-2">
-	
-	</div>
 	<div class="col-md-12">
 				<dl class="dl-horizontal">
 					@if(!collection.author.isEmpty){
 						<dt>Author:</dt>
 						<dd>@collection.author.get.fullName</dd>
 					}
+                    <dt>Space:</dt>
+                    <dd>
+                        @if(space.isDefined) {
+                            <a href="@routes.Spaces.getSpace(space.get.id)">
+                            @space.map(_.name).getOrElse("N/A")</a>
+                        }
+                        @if(space.isEmpty) {
+                            <a href="">Default</a>
+                        }
+                        <a href="javascript:changeSpace()"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a>
+                    </dd>
 					<dt>Description:</dt>
 					<dd>@collection.description</dd>																						            
 				</dl>
 				@if(user.isDefined) {
-                            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                            @if(collection.author.isDefined && user.get.identityId.userId.equals(collection.author.get.identityId.userId)){                    
-                                <span class="align-right">
-                                    <button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" 
-                                            style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
-                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                                </span>
-                            } else {
-                                <span class="align-right">
-                                    <button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" 
-                                            style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
-                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                                </span>
-                            }                   
-                        }
+                    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if(collection.author.isDefined && user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
+                        <span class="align-right">
+                            <button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
+                                    style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
+                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                        </span>
+                    } else {
+                        <span class="align-right">
+                            <button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
+                                    style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
+                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                        </span>
+                    }
+                }
 				
 	</div>
 </div>
@@ -151,5 +162,8 @@
 	var queryIp = "@api.routes.Datasets.listOutsideCollection(collection.id)";
 	var collectionId = "@collection.id.stringify";
 </script>
+    <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/spaces/modify.min.js")" type="text/javascript"></script>
 
 }
