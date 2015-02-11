@@ -78,22 +78,20 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
               Logger.debug("Saving space " + space.name)
               val userId = request.mediciUser.fold(UUID.generate)(_.id)
 
-              //TODO - uncomment the commented out variables when serializing of URL's is done by Salat
+              // insert space
               spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
-                created = space.created, creator = userId, homePage = List.empty/*space.homePage*/,
-                logoURL = None/*space.logoURL*/, bannerURL = None /*space.bannerURL*/, usersByRole= Map.empty,
+                created = space.created, creator = userId, homePage = space.homePage,
+                logoURL = space.logoURL, bannerURL = space.bannerURL, usersByRole= Map.empty,
                 collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
               //TODO - Put Spaces in Elastic Search?
               // index collection
               // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
               //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+              // Notify admins a new space is created
               //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-              //TODO -Uncomment when Space list is done
-              // redirect to collection page
-              //Redirect(routes.Spaces.space(space.id))
               //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
-              //Redirect(routes.Spaces.space(space.id))
-              Redirect(routes.Spaces.list()).flashing("error" -> "You created new space.")
+              // redirect to space page
+              Redirect(routes.Spaces.getSpace(space.id))
             })
         }
         case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create new spaces.")
