@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], order: Option[String], direction: String, start: Option[String], limit: Int, filter: Option[String], mode: String, canDelete: Boolean, prev: String, next: String)(implicit user: Option[securesocial.core.Identity])
+@(spaces: List[models.ProjectSpace], order: Option[String], direction: String, start: Option[String], limit: Int, filter: Option[String], mode: String, deletePermission: Boolean, prev: String, next: String)(implicit user: Option[securesocial.core.Identity])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -113,7 +113,7 @@
                                 <span class="glyphicon glyphicon-folder-closed" title="@space.collectionCount collections"></span> @space.collectionCount
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(canDelete) {
+                                    @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
                                         <button onclick="removeSpaceAndRedirect ( ' @(space.id) ',' @(routes.Spaces.list()) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
                                             <span class="glyphicon glyphicon-trash"></span>
                                         </button>
@@ -171,7 +171,7 @@
                         <td class="requiresLogin">
                         @if(user.isDefined) {
                                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                            @if(canDelete) {
+                            @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
                                 <button onclick="removeSpaceAndRedirect('@(space.id)', '@(routes.Spaces.list())')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </button>

@@ -1,6 +1,5 @@
 package controllers
 
-import java.net.URL
 import javax.inject.Inject
 
 import api.{Permission, WithPermission}
@@ -8,7 +7,6 @@ import models.{Dataset, Collection, ProjectSpace, UUID}
 import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.data.Forms._
-import play.api.data.format.Formats._
 import java.util.Date
 import services.{UserService, SpaceService}
 import util.Direction._
@@ -101,8 +99,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   /**
    * Show the list page
    */
-  def list(order: Option[String]=None, direction: String="asc", start: Option[String]=None, limit: Int=20,
-           filter: Option[String]=None, mode: String="tile") =
+  def list(order: Option[String], direction: String, start: Option[String], limit: Int,
+           filter: Option[String], mode: String) =
     SecuredAction(authorization = WithPermission(Permission.ListSpaces)) {
     implicit request =>
       implicit val user = request.user
@@ -117,13 +115,18 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       } else {
         ASC
       }
-      // TODO fetch 1 extra space so we have the next/prev item
-      val s = spaces.list(order, d, start, limit, None)
-      // TODO fill in
-      val canDelete = false
-      // TODO fetch page before/after so we have prev item
-      val prev = ""
-      val next = ""
-      Ok(views.html.spaces.listSpaces(s, order, direction, start, limit, filter, mode, canDelete, prev, next))
+      val spaceList = spaces.list(order, d, start, limit, filter)
+      val deletePermission = WithPermission(Permission.DeleteDatasets).isAuthorized(user)
+      val prev = if (spaceList.size > 0) {
+        spaces.getPrev(order, d, spaceList.head.created, limit, filter).getOrElse("")
+      } else {
+        ""
+      }
+      val next = if (spaceList.size > 0) {
+        spaces.getNext(order, d, spaceList.last.created, limit, filter).getOrElse("")
+      } else {
+        ""
+      }
+      Ok(views.html.spaces.listSpaces(spaceList, order, direction, start, limit, filter, mode, deletePermission, prev, next))
   }
 }
