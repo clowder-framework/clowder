@@ -371,14 +371,14 @@ object Geostreams extends ApiController {
       val sensor = data.next
 
       // get depth code
-      val depthCode = sensor.\("DEPTH_CODE") match {
+      val depthCode = sensor.\("properties").\("DEPTH_CODE") match {
         case x: JsUndefined => "NA"
         case x => Parsers.parseString(x)
       }
       val extras = Json.obj("depth_code" -> depthCode)
 
       // get source
-      val source = sensor.\("source") match {
+      val source = sensor.\("properties").\("source") match {
         case x: JsUndefined => ""
         case x => Parsers.parseString(x)
       }
