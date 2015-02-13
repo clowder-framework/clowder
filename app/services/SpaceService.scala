@@ -1,6 +1,6 @@
 package services
 
-import models.ProjectSpace
+import models.{UUID, ProjectSpace}
 import services.core.CRUDService
 
 /**
@@ -11,4 +11,5 @@ import services.core.CRUDService
  */
 trait SpaceService extends CRUDService[ProjectSpace] {
 
+  def addCollection(collection: UUID, space: UUID)
 }

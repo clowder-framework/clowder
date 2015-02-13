@@ -10,12 +10,14 @@
             <div class="modal-body">
                 <div class="row dts-top-buffer">
                     <div class="col-md-12">
-                        <select name="space">
-                            <option value="1">Space 1</option>
-                            <option value="2">Space 2</option>
-                            <option value="3">Space 3</option>
-                            <option value="4">Space 4</option>
-                        </select>
+                        <ul class="list-group">
+                            {{#spaces}}
+                                <li class="list-group-item" data-space-id="{{id}}">
+                                    <span class="badge">14</span>
+                                    {{name}}
+                                </li>
+                            {{/spaces}}
+                        </ul>
                     </div>
                 </div>
             </div>

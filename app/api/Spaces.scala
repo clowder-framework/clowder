@@ -91,4 +91,14 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
       "description" -> space.description,
       "created" -> space.created.toString))
   }
+
+  @ApiOperation(value = "Associate a collection with a space",
+    notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def addCollection(space: UUID) = SecuredAction(parse.json,
+    authorization = WithPermission(Permission.EditCollection)) { request =>
+    val collectionId = (request.body \ "collection_id").as[String]
+    spaces.addCollection(UUID(collectionId), space)
+    Ok(toJson("success"))
+  }
 }

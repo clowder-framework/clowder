@@ -97,4 +97,8 @@ trait CollectionService {
    */
   def createThumbnail(collectionId: UUID)
 
+  /**
+   * Associate a collection with a space
+   */
+  def addToSpace(collection: UUID, space: UUID)
 }
