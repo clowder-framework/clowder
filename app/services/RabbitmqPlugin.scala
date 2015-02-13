@@ -1,7 +1,7 @@
 package services
 
 import java.io.IOException
-import java.net.URL
+import java.net.{URI, URL}
 import java.text.SimpleDateFormat
 import java.net.URLEncoder
 
@@ -48,16 +48,18 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
-  
+  var rabbitmquri: String = ""
+
   override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
     val configuration = play.api.Play.configuration
-    val uri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
-    Logger.debug("uri= "+ uri)
+    rabbitmquri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
+    Logger.debug("uri= "+ rabbitmquri)
+
     try {
+      val uri = new URI(rabbitmquri)
       factory = Some(new ConnectionFactory())
       factory.get.setUri(uri)
-      connect
     } catch {
       case t: Throwable => {
         factory = None
