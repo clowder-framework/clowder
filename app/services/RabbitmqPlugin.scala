@@ -3,6 +3,7 @@ package services
 import java.io.IOException
 import java.net.URL
 import java.text.SimpleDateFormat
+import java.net.URLEncoder
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.ning.http.client.Realm.AuthScheme
@@ -14,8 +15,8 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{Response, WS}
 import play.api.{Application, Logger, Plugin}
 import play.libs.Akka
-
 import scala.concurrent.Future
+
 
 // TODO make optional fields Option[UUID]
 
@@ -48,13 +49,12 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
-
+  
   override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
-
     val configuration = play.api.Play.configuration
     val uri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
-
+    Logger.debug("uri= "+ uri)
     try {
       factory = Some(new ConnectionFactory())
       factory.get.setUri(uri)
@@ -102,18 +102,20 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     try {
       val protocol = if (factory.get.isSSL) "https://" else "http://"
       restURL = Some(protocol + factory.get.getHost +  ":" + mgmtPort)
-      vhost = factory.get.getVirtualHost
+      vhost = URLEncoder.encode(factory.get.getVirtualHost)
       username = factory.get.getUsername
       password = factory.get.getPassword
-
+            
       connection = Some(factory.get.newConnection())
       channel = Some(connection.get.createChannel())
 
+      Logger.debug("vhost: "+ vhost)
+      
       // setup exchange if provided
       if (exchange != "") {
         channel.get.exchangeDeclare(exchange, "topic", true)
       }
-
+     
       // create an anonymous queue for replies
       val replyQueueName = channel.get.queueDeclare().getQueue
       Logger.debug("Reply queue name: " + replyQueueName)
@@ -184,6 +186,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     restURL match {
       case Some(x) => {
         val url = x + path
+        Logger.trace("RESTURL: "+ url)
         WS.url(url).withHeaders("Accept" -> "application/json").withAuth(username, password, AuthScheme.BASIC).get()
       }
       case None => {
@@ -193,6 +196,20 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     }
   }
 
+ /**
+ * Get the exchange list for a given host
+ */
+  def getExchanges : Future[Response] = {
+    getRestEndPoint("/api/exchanges/" + vhost )
+  }
+  
+  /**
+   * get list of queues attached to an exchange
+   */
+  def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
+    getRestEndPoint("/api/exchanges/"+ vhost +"/"+ exchange +"/bindings/source")
+  }
+  
   /**
    * Get the binding lists (lists of routing keys) from the rabbitmq broker
    */
@@ -207,6 +224,15 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   def getChannelsList: Future[Response] = {
     getRestEndPoint("/api/channels")
   }
+  
+  /**
+   * Get queue details for a given queue
+   */
+
+  def getQueueDetails(qname: String): Future[Response] = {
+    getRestEndPoint("/api/queues/" + vhost + "/" + qname)
+  }
+
 
   /**
    * Get queue bindings for a given host and queue from rabbitmq broker
