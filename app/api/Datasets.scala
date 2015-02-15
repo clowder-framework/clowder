@@ -1290,7 +1290,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Follow dataset.",
     notes = "Add user to dataset followers and add dataset to user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset /* TODO: change this. */ )) {
+  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 
@@ -1316,7 +1316,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Unfollow dataset.",
     notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset  /* TODO: change this. */ )) {
+  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 

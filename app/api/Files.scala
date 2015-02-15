@@ -1780,7 +1780,7 @@ class Files @Inject()(
   @ApiOperation(value = "Follow file",
     notes = "Add user to file followers and add file to user followed files.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles /* Not sure. */)) {
+  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 
@@ -1806,7 +1806,7 @@ class Files @Inject()(
   @ApiOperation(value = "Unfollow file",
     notes = "Remove user from file followers and remove file from user followed files.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles /* Not sure. */)) {
+  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 

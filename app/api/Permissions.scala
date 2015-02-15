@@ -22,6 +22,7 @@ case class RequestWithUser[A](user: Option[Identity], mediciUser: Option[User], 
 object Permission extends Enumeration {
 	type Permission = Value
 	val Public,					// Page is public accessible, i.e. no login needed
+		LoggedIn,
 		Admin,
 		CreateCollections,
 		DeleteCollections,

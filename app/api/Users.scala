@@ -77,7 +77,7 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Follow a user",
     responseClass = "None", httpMethod = "POST")
-  def addFollowingRelationship(followeeUUID: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def addFollowingRelationship(followeeUUID: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
     implicit val user = request.mediciUser
     user match {
       case Some(loggedInUser) => {
@@ -93,7 +93,7 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
-  def removeFollowingRelationship(followeeUUID: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def removeFollowingRelationship(followeeUUID: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
     implicit val user = request.mediciUser
     user match {
       case Some(loggedInUser) => {
