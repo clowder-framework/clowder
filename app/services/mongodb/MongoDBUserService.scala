@@ -134,9 +134,9 @@ class MongoDBUserService extends UserService {
   /**
    * Follow a collection.
    */
-  def followCollection(email: String, collectionId: UUID) {
-    Logger.debug("Adding followed collection " + collectionId + " to user " + email)
-    val user = findByEmail(email).get
+  def followCollection(followerUUID: String, collectionId: UUID) {
+    Logger.debug("Adding followed collection " + collectionId + " to user " + followerUUID)
+    val user = findById(UUID(followerUUID)).get
     if (!user.followedCollections.contains(collectionId.toString())) {
       UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
         $push("followedCollections" -> collectionId.toString()), false, false, WriteConcern.Safe)
@@ -146,9 +146,9 @@ class MongoDBUserService extends UserService {
   /**
    * Unfollow a collection.
    */
-  def unfollowCollection(email: String, collectionId: UUID) {
-    Logger.debug("Removing followed collection " + collectionId + " from user " + email)
-    val user = findByEmail(email).get
+  def unfollowCollection(followerUUID: String, collectionId: UUID) {
+    Logger.debug("Removing followed collection " + collectionId + " from user " + followerUUID)
+    val user = findById(UUID(followerUUID)).get
     if (user.followedCollections.contains(collectionId.toString())) {
       UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
         $pull("followedCollections" -> collectionId.toString()), false, false, WriteConcern.Safe)

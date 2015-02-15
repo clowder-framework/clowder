@@ -184,22 +184,15 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "POST")
   def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection /* TODO: change this. */ )) {
     request =>
-      val user = request.user
+      val user = request.mediciUser
 
       user match {
-        case Some(identity) => {
+        case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              identity.email match {
-                case Some(userEmail) => {
-                  collections.addFollower(id, userEmail)
-                  userService.followCollection(userEmail, id)
-                  Ok
-                }
-                case None => {
-                  NotFound
-                }
-              }
+              collections.addFollower(id, loggedInUser.id.stringify)
+              userService.followCollection(loggedInUser.id.stringify, id)
+              Ok
             }
             case None => {
               NotFound
@@ -217,22 +210,15 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "POST")
   def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowCollection  /* TODO: change this. */ )) {
     request =>
-      val user = request.user
+      val user = request.mediciUser
 
       user match {
-        case Some(identity) => {
+        case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              identity.email match {
-                case Some(userEmail) => {
-                  collections.removeFollower(id, userEmail)
-                  userService.unfollowCollection(userEmail, id)
-                  Ok
-                }
-                case None => {
-                  NotFound
-                }
-              }
+              collections.removeFollower(id, loggedInUser.id.stringify)
+              userService.unfollowCollection(loggedInUser.id.stringify, id)
+              Ok
             }
             case None => {
               NotFound

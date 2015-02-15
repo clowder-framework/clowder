@@ -178,7 +178,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           Logger.debug("Num previewers " + filteredPreviewers.size)
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection, filteredPreviewers.toList))
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection, filteredPreviewers.toList, request.mediciUser))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

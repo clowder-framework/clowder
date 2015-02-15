@@ -92,12 +92,12 @@ trait UserService {
   /**
    * Follow a collection.
    */
-  def followCollection(email: String, collectionId: UUID)
+  def followCollection(followerUUID: String, collectionId: UUID)
 
   /**
    * Unfollow a collection.
    */
-  def unfollowCollection(email: String, collectionId: UUID)
+  def unfollowCollection(followerUUID: String, collectionId: UUID)
 
   /*
    * Adds the following relationship between two users
