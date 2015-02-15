@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
+@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean, viewerUser: Option[User])(implicit user: Option[securesocial.core.Identity])
 
 
 @import helper._
@@ -136,7 +136,7 @@
 				}
 
                 <div class="btn-group btn-group-xs pull-right" style="right: 10px;">
-                @if(!dataset.followers.contains(user.get.email.get)) {
+                @if(!dataset.followers.contains(viewerUser.get.id.stringify)) {
                     <button id="followButton" class="btn btn-success" href="#">Follow</button>
                 } else {
                     <button id="followButton" class="btn btn-danger" href="#">Unfollow</button>

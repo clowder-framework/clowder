@@ -1292,22 +1292,15 @@ class Datasets @Inject()(
     responseClass = "None", httpMethod = "POST")
   def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset /* TODO: change this. */ )) {
     request =>
-      val user = request.user
+      val user = request.mediciUser
 
       user match {
-        case Some(identity) => {
+        case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              identity.email match {
-                case Some(userEmail) => {
-                  datasets.addFollower(id, userEmail)
-                  userService.followDataset(userEmail, id)
-                  Ok
-                }
-                case None => {
-                  NotFound
-                }
-              }
+              datasets.addFollower(id, loggedInUser.id.stringify)
+              userService.followDataset(loggedInUser.id.stringify, id)
+              Ok
             }
             case None => {
               NotFound
@@ -1325,22 +1318,15 @@ class Datasets @Inject()(
     responseClass = "None", httpMethod = "POST")
   def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDataset  /* TODO: change this. */ )) {
     request =>
-      val user = request.user
+      val user = request.mediciUser
 
       user match {
-        case Some(identity) => {
+        case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              identity.email match {
-                case Some(userEmail) => {
-                  datasets.removeFollower(id, userEmail)
-                  userService.unfollowDataset(userEmail, id)
-                  Ok
-                }
-                case None => {
-                  NotFound
-                }
-              }
+              datasets.removeFollower(id, loggedInUser.id.stringify)
+              userService.unfollowDataset(loggedInUser.id.stringify, id)
+              Ok
             }
             case None => {
               NotFound

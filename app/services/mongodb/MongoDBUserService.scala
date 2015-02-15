@@ -96,18 +96,18 @@ class MongoDBUserService extends UserService {
     }
   }
 
-  override def followDataset(email: String, datasetId: UUID) {
-    Logger.debug("Adding followed dataset " + datasetId + " to user " + email)
-    val user = findByEmail(email).get
+  override def followDataset(followerUUID: String, datasetId: UUID) {
+    Logger.debug("Adding followed dataset " + datasetId + " to user " + followerUUID)
+    val user = findById(UUID(followerUUID)).get
     if (!user.followedDatasets.contains(datasetId.toString())) {
       UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
         $push("followedDatasets" -> datasetId.toString()), false, false, WriteConcern.Safe)
     }
   }
 
-  override def unfollowDataset(email: String, datasetId: UUID) {
-    Logger.debug("Removing followed dataset " + datasetId + " from user " + email)
-    val user = findByEmail(email).get
+  override def unfollowDataset(followerUUID: String, datasetId: UUID) {
+    Logger.debug("Removing followed dataset " + datasetId + " from user " + followerUUID)
+    val user = findById(UUID(followerUUID)).get
     if (user.followedDatasets.contains(datasetId.toString())) {
       UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
         $pull("followedDatasets" -> datasetId.toString()), false, false, WriteConcern.Safe)

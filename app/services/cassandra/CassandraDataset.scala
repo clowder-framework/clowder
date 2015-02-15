@@ -202,10 +202,10 @@ class CassandraDataset extends DatasetService {
  /**
   * Add follower to a dataset.
   */
- def addFollower(id: UUID, userEmail: String) {}
+ def addFollower(id: UUID, userUUID: String) {}
 
  /**
   * Remove follower from a dataset.
   */
- def removeFollower(id: UUID, userEmail: String) {}
+ def removeFollower(id: UUID, userUUID: String) {}
 }

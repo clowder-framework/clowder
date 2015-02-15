@@ -82,12 +82,12 @@ trait UserService {
   /**
    * Follow a dataset.
    */
-  def followDataset(email: String, datasetId: UUID)
+  def followDataset(followerUUID: String, datasetId: UUID)
 
   /**
    * Unfollow a dataset.
    */
-  def unfollowDataset(email: String, datasetId: UUID)
+  def unfollowDataset(followerUUID: String, datasetId: UUID)
 
   /**
    * Follow a collection.

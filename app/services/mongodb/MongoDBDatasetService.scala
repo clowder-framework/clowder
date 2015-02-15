@@ -962,21 +962,21 @@ class MongoDBDatasetService @Inject() (
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
 
-  def addFollower(id: UUID, userEmail: String) {
-    Logger.debug("Adding follower to dataset " + id + " : " + userEmail)
+  def addFollower(id: UUID, userUUID: String) {
+    Logger.debug("Adding follower to dataset " + id + " : " + userUUID)
     val dataset = get(id).get
     val existingFollowers = dataset.followers
-    if (!existingFollowers.contains(userEmail)) {
-      Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $push("followers" -> userEmail), false, false, WriteConcern.Safe)
+    if (!existingFollowers.contains(userUUID)) {
+      Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $push("followers" -> userUUID), false, false, WriteConcern.Safe)
     }
   }
 
-  def removeFollower(id: UUID, userEmail: String) {
-    Logger.debug("Removing follower from dataset " + id + " : " + userEmail)
+  def removeFollower(id: UUID, userUUID: String) {
+    Logger.debug("Removing follower from dataset " + id + " : " + userUUID)
     val dataset = get(id).get
     val existingFollowers = dataset.followers
-    if (existingFollowers.contains(userEmail)) {
-      Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("followers" -> userEmail), false, false, WriteConcern.Safe)
+    if (existingFollowers.contains(userUUID)) {
+      Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("followers" -> userUUID), false, false, WriteConcern.Safe)
     }
 
   }
