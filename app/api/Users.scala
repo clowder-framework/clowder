@@ -77,19 +77,13 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Follow a user",
     responseClass = "None", httpMethod = "POST")
-  def addFollowingRelationship(followeeEmail: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
-    implicit val user = request.user
+  def addFollowingRelationship(followeeUUID: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    implicit val user = request.mediciUser
     user match {
       case Some(loggedInUser) => {
-        loggedInUser.email match {
-          case Some(followerEmail) => {
-            users.addFollowingRelationship(followeeEmail, followerEmail)
-            Ok(Json.obj("status" -> "success"))
-          }
-          case None => {
-            Ok(Json.obj("status" -> "fail"))
-          }
-        }
+        val followerUUID = loggedInUser.id.stringify
+        users.addFollowingRelationship(followeeUUID, followerUUID)
+        Ok(Json.obj("status" -> "success"))
       }
       case None => {
         Ok(Json.obj("status" -> "fail"))
@@ -99,19 +93,13 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
-  def removeFollowingRelationship(followeeEmail: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
-    implicit val user = request.user
+  def removeFollowingRelationship(followeeUUID: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+    implicit val user = request.mediciUser
     user match {
       case Some(loggedInUser) => {
-        loggedInUser.email match {
-          case Some(followerEmail) => {
-            users.removeFollowingRelationship(followeeEmail, followerEmail)
-            Ok(Json.obj("status" -> "success"))
-          }
-          case None => {
-            Ok(Json.obj("status" -> "fail"))
-          }
-        }
+        val followerUUID = loggedInUser.id.stringify
+        users.removeFollowingRelationship(followeeUUID, followerUUID)
+        Ok(Json.obj("status" -> "success"))
       }
       case None => {
         Ok(Json.obj("status" -> "fail"))

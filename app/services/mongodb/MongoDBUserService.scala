@@ -117,18 +117,18 @@ class MongoDBUserService extends UserService {
     /**
      * Adds the following relationship between two users
      */
-    override def addFollowingRelationship(followeeEmail: String, followerEmail: String)
+    override def addFollowingRelationship(followeeUUID: String, followerUUID: String)
     {
-      UserDAO.dao.update(MongoDBObject("email" -> followerEmail), $addToSet("followsUsers" -> followeeEmail));
-      UserDAO.dao.update(MongoDBObject("email" -> followeeEmail), $addToSet("followedByUsers" -> followerEmail));
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerUUID)), $addToSet("followsUsers" -> followeeUUID));
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeUUID)), $addToSet("followedByUsers" -> followerUUID));
     }
 
     /**
      * Removes the following relationship between two users
      */
-    override def removeFollowingRelationship(followeeEmail: String, followerEmail: String): Unit = {
-      UserDAO.dao.update(MongoDBObject("email" -> followerEmail), $pull("followsUsers" -> followeeEmail));
-      UserDAO.dao.update(MongoDBObject("email" -> followeeEmail), $pull("followedByUsers" -> followerEmail));
+    override def removeFollowingRelationship(followeeUUID: String, followerUUID: String): Unit = {
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerUUID)), $pull("followsUsers" -> followeeUUID));
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeUUID)), $pull("followedByUsers" -> followerUUID));
     }
 
   /**

@@ -405,8 +405,8 @@ POST           /api/users/addUserDatasetView                                    
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 
 POST 			/api/users/createNewListInUser 											@api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
-POST           /api/users/follow                                                        @api.Users.addFollowingRelationship(followeeEmail: String)
-POST           /api/users/unfollow                                                      @api.Users.removeFollowingRelationship(followeeEmail: String)
+POST           /api/users/follow                                                        @api.Users.addFollowingRelationship(followeeUUID: String)
+POST           /api/users/unfollow                                                      @api.Users.removeFollowingRelationship(followeeUUID: String)
 
 
 # ----------------------------------------------------------------------

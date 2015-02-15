@@ -144,6 +144,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
 
   def viewProfile(email: Option[String]) = SecuredAction() { request =>
     implicit val user = request.user
+    val viewerUser = request.mediciUser
     var ownProfile: Option[Boolean] = None
     email match {
       case Some(addr) => {
@@ -163,7 +164,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
               }
               case None => { ownProfile = None }
             }
-            Ok(views.html.profile(muser, ownProfile))
+            Ok(views.html.profile(muser, viewerUser, ownProfile))
           }
           case None => {
             Logger.error("no user model exists for " + addr.toString())

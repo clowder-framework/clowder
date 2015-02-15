@@ -102,10 +102,10 @@ trait UserService {
   /*
    * Adds the following relationship between two users
    */
-  def addFollowingRelationship(followeeEmail: String, followerEmail: String)
+  def addFollowingRelationship(followeeUUID: String, followerUUID: String)
 
   /**
    * Removes the following relationship between two users
    */
-  def removeFollowingRelationship(followeeEmail: String, followerEmail: String)
+  def removeFollowingRelationship(followeeUUID: String, followerUUID: String)
 }

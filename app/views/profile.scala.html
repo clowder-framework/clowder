@@ -1,4 +1,4 @@
-@(profile: User, ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
+@(profile: User, viewerUser: Option[User], ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
 @main("Profile") {
 <div class="page-header">
 
@@ -12,7 +12,7 @@
           <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#followingModal">
             Followers and followees
           </button>
-          @user match {
+          @viewerUser match {
             case Some(viewer) => {
               @ownProfile match {
                 case Some(sameProfile) =>{
@@ -26,7 +26,7 @@
                       id="followButton"
                       type="button"
                       class="
-                        @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
+                        @if(profile.followedByUsers.contains(viewer.id.stringify)) {
                           btn btn-danger
                         }else {
                           btn btn-success
@@ -34,7 +34,7 @@
                       "
                       data-toggle="button"
                       aria-pressed="
-                        @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
+                        @if(profile.followedByUsers.contains(viewer.id.stringify)) {
                           true
                         }else {
                           false
@@ -43,7 +43,7 @@
                       autocomplete="off"
                     >
                       <!-- Is there a way to store a scala variable somewhere?... -->
-                      @if(profile.followedByUsers.contains(viewer.email.getOrElse(""))) {
+                      @if(profile.followedByUsers.contains(viewer.id.stringify)) {
                         Unfollow
                       } else {
                         Follow
@@ -52,12 +52,12 @@
                   </h4>
                   <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
                   <script>
-                    var profileEmail = "@profile.email";
+                    var profileUUID = "@profile.id.stringify";
                     $(document ).ready(function() {
                       var followButton = $("#followButton");
                       followButton.click(function() {
                         if (followButton.text( ).trim() === "Follow") {
-                          jsRoutes.api.Users.addFollowingRelationship(profileEmail).ajax({
+                          jsRoutes.api.Users.addFollowingRelationship(profileUUID).ajax({
                             type: "POST"
                           })
                             .done(function(data) {
@@ -70,7 +70,7 @@
                               console.log("Failed to follow");
                             });
                         } else {
-                          jsRoutes.api.Users.removeFollowingRelationship(profileEmail).ajax({
+                          jsRoutes.api.Users.removeFollowingRelationship(profileUUID).ajax({
                             type: "POST"
                           })
                             .done(function(data) {
