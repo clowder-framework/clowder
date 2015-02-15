@@ -72,12 +72,12 @@ trait UserService {
   /**
    * Follow a file.
    */
-  def followFile(email: String, fileId: UUID)
+  def followFile(followerUUID: String, fileId: UUID)
 
   /**
    * Unfollow a file.
    */
-  def unfollowFile(email: String, fileId: UUID)
+  def unfollowFile(followerUUID: String, fileId: UUID)
 
   /**
    * Follow a dataset.

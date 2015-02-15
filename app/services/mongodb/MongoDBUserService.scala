@@ -80,17 +80,17 @@ class MongoDBUserService extends UserService {
     val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));
   }
 
-  override def followFile(email: String, fileId: UUID) {
-    Logger.debug("Adding followed file " + fileId + " to user " + email)
-    val user = findByEmail(email).get
+  override def followFile(followerUUID: String, fileId: UUID) {
+    Logger.debug("Adding followed file " + fileId + " to user " + followerUUID)
+    val user = findById(UUID(followerUUID)).get
     if (!user.followedFiles.contains(fileId.toString())) {
       UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)), $push("followedFiles" -> fileId.toString()), false, false, WriteConcern.Safe)
     }
   }
 
-  override def unfollowFile(email: String, fileId: UUID) {
-    Logger.debug("Removing followed file " + fileId + " from user " + email)
-    val user = findByEmail(email).get
+  override def unfollowFile(followerUUID: String, fileId: UUID) {
+    Logger.debug("Removing followed file " + fileId + " from user " + followerUUID)
+    val user = findById(UUID(followerUUID)).get
     if (user.followedFiles.contains(fileId.toString())) {
       UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)), $pull("followedFiles" -> fileId.toString()), false, false, WriteConcern.Safe)
     }

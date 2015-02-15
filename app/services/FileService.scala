@@ -162,11 +162,11 @@ trait FileService {
   /**
    * Add follower to a file.
    */
-  def addFollower(id: UUID, userEmail: String)
+  def addFollower(id: UUID, userUUID: String)
 
   /**
    * Remove follower from a file.
    */
-  def removeFollower(id: UUID, userEmail: String)
+  def removeFollower(id: UUID, userUUID: String)
 
 }

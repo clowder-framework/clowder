@@ -1782,22 +1782,15 @@ class Files @Inject()(
     responseClass = "None", httpMethod = "POST")
   def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles /* Not sure. */)) {
     request =>
-      val user = request.user
+      val user = request.mediciUser
 
       user match {
-        case Some(identity) => {
+        case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              identity.email match {
-                case Some(userEmail) => {
-                  files.addFollower(id, userEmail)
-                  userService.followFile(userEmail, id)
-                  Ok
-                }
-                case None => {
-                  NotFound
-                }
-              }
+              files.addFollower(id, loggedInUser.id.stringify)
+              userService.followFile(loggedInUser.id.stringify, id)
+              Ok
             }
             case None => {
               NotFound
@@ -1815,22 +1808,15 @@ class Files @Inject()(
     responseClass = "None", httpMethod = "POST")
   def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles /* Not sure. */)) {
     request =>
-      val user = request.user
+      val user = request.mediciUser
 
       user match {
-        case Some(identity) => {
+        case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              identity.email match {
-                case Some(userEmail) => {
-                  files.removeFollower(id, userEmail)
-                  userService.unfollowFile(userEmail, id)
-                  Ok
-                }
-                case None => {
-                  NotFound
-                }
-              }
+              files.removeFollower(id, loggedInUser.id.stringify)
+              userService.unfollowFile(loggedInUser.id.stringify, id)
+              Ok
             }
             case None => {
               NotFound
