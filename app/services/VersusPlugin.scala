@@ -314,33 +314,55 @@ class VersusPlugin(application:Application) extends Plugin{
     indexId
   }
   
-  /*
-   * Sends a request to Versus to index a video preview file (first frame of each shot of a video)
+  /**
+   * Sends a request to Versus REST endpoint to index a preview 
+   *  - could be preview of video file - first frame of each shot of a video, e.g. produced by 'cinemetrics' extractor  
+   *  - could be a preview of still image file - e.g. produced by 'face' or 'census' extractor
    */
   def indexPreview(previewId: UUID, fileType: String) {
-	  //called from /app/api/Indexes.scala->index()
-	  //which is called from cinemetrics extractor ->uploadShot
-	  Logger.trace("VerusPlugin Top of index preview, id = " + previewId + ", fileType = " +fileType )
+	  //called from /app/api/Indexes.scala->index()  which is called from extractors,
+	  //(e.g. cinemetrics extractor ->uploadShot, or from face extractor, etc)        
 	  val configuration = play.api.Play.configuration
 	  val client = configuration.getString("versus.client").getOrElse("")
-	  val indexId = configuration.getString("versus.index").getOrElse("")
-	  val prevURL = client + "/api/previews/" + previewId + "?key=" + configuration.getString("commKey").get    
-	  index(prevURL, fileType)   
-}
+	  val host = configuration.getString("versus.host").getOrElse("")
+	  val prevURL = client + "/api/previews/" + previewId + "?key=" + configuration.getString("commKey").get 
+	  	  
+	  //find out what extractor created this preview
+	  val extractorId = previews.getExtractorId(previewId)
+
+	  //indexes that have TYPE parameter contain sections, and indexes that don't have TYPE parameter contain whole files.
+	  //go through all indexes and find ones that DO have the TYPE param and with type being a substring of the extractor id
+	  for (indexList <-getIndexesAsFutureList()){
+    	for (index<- indexList){	  
+    		val sectionType = sectionIndexInfo.getType(UUID(index.id))
+    		//if section type is defined  AND is a substring of extractor id - add this preview to this index   
+    		if (sectionType.isDefined && extractorId.contains(sectionType.get))
+	    			WS.url(host + "/indexes/" + index.id + "/add").post(Map("infile" -> Seq(prevURL)))    		
+    	}	
+	  }
+  }
   
-   /*
-   * Sends a request to Versus REST endpoint to index a still image file
+   /**
+   * Sends a request to Versus REST endpoint to index a file
+   * Sends request to indexes that (1)contain whole files (as opposed to sections) and (2)of matching fileType
    * 
    */
   def  indexFile  (fileId: UUID, fileType: String) {   
     //called from /app/controllers/Files.scala->upload()
     val configuration = play.api.Play.configuration
     val client = configuration.getString("versus.client").getOrElse("")
-    val indexId = configuration.getString("versus.index").getOrElse("")
-    //fileURL will be used from versus comparison resource to get file's bytes
+
+    //fileURL will be used by versus comparison resource to get file's bytes
     //need 'blob' in fileURL
     val fileURL = client + "/api/files/" + fileId + "/blob?key=" + configuration.getString("commKey").get
-    index(fileURL, fileType)
+    //indexes that have TYPE parameter contain sections, and indexes that don't have TYPE parameter contain whole files.
+    //go through all indexes and find ones that DONT'T have the TYPE param and send file for indexing in these indexes.
+    for (indexList <-getIndexesAsFutureList()){
+    	for (index<- indexList){ 
+    		val sectionType = sectionIndexInfo.getType(UUID(index.id))
+    		if (sectionType.isEmpty) addToIndex(fileURL, index, fileType)		    		
+    	}
+    }    
   }
   
   /**
@@ -354,9 +376,9 @@ class VersusPlugin(application:Application) extends Plugin{
   }
   
   /**
-   * Adds this file/section/preview to this index ONLY if mimetypes match.
+   * Adds this file to this index ONLY if mimetypes match.
    * Calls Versus REST endpoint.
-   *   url - url where the file/section/preview can be found and downloaded from
+   *  	url - url where the file can be found and downloaded from
    */
   def addToIndex(url:String, index:models.VersusIndex, fileType:String){
     Logger.trace("add to index , url = " + url)
@@ -368,9 +390,7 @@ class VersusPlugin(application:Application) extends Plugin{
     if (mimetypeStr.equals( fileType.split("/")(0)) || mimetypeStr.equals("*")) {	
     	//mimetypes match, send to versus to be added to index
     	WS.url(host + "/indexes/" + index.id + "/add").post(Map("infile" -> Seq(url)))
-    } else {
-      //mimetypes do not match, do nothing.
-    }
+    } 
  }
   
   /*
@@ -397,8 +417,7 @@ class VersusPlugin(application:Application) extends Plugin{
   				//These previews were indexed and are now part of Versus indexes.
   				//Have to remove these previews from the Versus indexes.
   				//
-  				if (file.contentType.contains("video/")){
-    			
+  				if (file.contentType.contains("video/")){    			
   					//find previews of type IMAGE and delete these from Versus
   					for(preview <- previews.findByFileId(file.id)){
   						if (preview.contentType.contains("image")){
@@ -424,11 +443,8 @@ class VersusPlugin(application:Application) extends Plugin{
   			case None => {
                 Logger.debug(" Could not remove file - not found.")
   			}
-  		}
-     
+  		}     
   	} 
-  
-  
     
   
   /*
@@ -518,53 +534,43 @@ class VersusPlugin(application:Application) extends Plugin{
           result =>            
             //example: result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db/blob?key=r1ek3rs
             //or
-            //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5/blob?key=r1ek3rs
-            //        
-            //parse docID to get preivew id or file id - string between next to last '/' and '/blob?'
-            
-            //resultId now contains 'blob' as in example above. Getting file id string.
-            
-            val lastSlash = result.docID.lastIndexOf("/")
-            //Returns the index within this string of the last occurrence of the specified substring, searching backward starting at the specified index.
-            val nextToLastSlash = result.docID.lastIndexOf("/", lastSlash-1)                            
-            val resultId = UUID(result.docID.substring(nextToLastSlash + 1, lastSlash));
-                      
-            //
+            //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs
+          
             //check if this is a file or a video preview
-            //
             val isFile = result.docID.contains("files")
             val isPreview = result.docID.contains("previews")
 
-            //when searching for videos - might get previews search results
+            //when searching for videos - might get previews search results, no 'blob' in preview doc id
             if (isPreview){ 
-               previews.getBlob(resultId) match{                            	
-                case Some (blob)=>{   
-              	  val previewName =blob._2
-              	   //use helper method to get the results
-              		getPrevSearchResult(resultId, previewName, result)  match {
-              	    	case Some (previewResult) => {
-              	    		resultList += new PreviewFilesSearchResult("preview", null, previewResult) 
-              	    	}
-              	    	case None =>{
-              	    		//no PreviewSearchResult - do nothing
-              	    	}              	    
-              		}     	
-                } 
-                case None=>{
-                  //no blob found - do nothing
-                }
-              }//end of previews.getBlob(result_id) match{ 
-            }//end of if (isPreview){    
-            
+            	//result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs              
+            	val lastSlash = result.docID.lastIndexOf("/")
+            	val questionMark = result.docID.lastIndexOf("?")
+            	//Returns the index within this string of the last occurrence of the specified substring, searching backward starting at the specified index.
+            	val nextToLastSlash = result.docID.lastIndexOf("/", lastSlash-1)                            
+            	val resultId = UUID(result.docID.substring(lastSlash + 1, questionMark));
+                          
+                for (blob <-previews.getBlob(resultId) ){
+                  val previewName =blob._2
+                  for (previewResult <- getPrevSearchResult(resultId, previewName, result)){
+                    resultList += new PreviewFilesSearchResult("preview", null, previewResult) 
+                  }
+                }                 
+            }//end of if (isPreview)                        
+                 
             //in case of still images AND non-image file formats
             if (isFile) {
-                files.get(resultId) match {               	  
-                  case Some (file)=>{  
+            	//resultId now contains 'blob' as in example above. Getting file id string.
+            	val lastSlash = result.docID.lastIndexOf("/")
+            	//Returns the index within this string of the last occurrence of the specified substring, searching backward starting at the specified index.
+            	val nextToLastSlash = result.docID.lastIndexOf("/", lastSlash-1)                            
+            	val resultId = UUID(result.docID.substring(nextToLastSlash + 1, lastSlash));                       
+                          
+                files.get(resultId) map {               	  
+                  file=>  
                   	//use helper method to get the results
-                 	    val oneFileResult = getFileSeachResult(resultId, file, result)
-                 	    resultList += new PreviewFilesSearchResult("file", oneFileResult, null  )                  	                  	  
-                 	    }               	  
-                  case None => {}                 }
+                  	val oneFileResult = getFileSeachResult(resultId, file, result)
+                  	resultList += new PreviewFilesSearchResult("file", oneFileResult, null  )                  	                  	  
+                }               	  
             }//end of if (isFile)        
           } // End of similarity map      
           resultList.toList
