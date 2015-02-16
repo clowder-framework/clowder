@@ -8,10 +8,10 @@
                     "@id": "http://dts.ncsa.illinois.edu/api/extractor/id",
                     "@type": "@id" // string associated with extractor_id is a IRI
                 },
-                "score": "http://www.vision.caltech.edu/Image_Datasets/Caltech101/score", // made up
+                "score": "http://www.vision.caltech.edu/Image_Datasets/Caltech101/score",
                 "category": "http://www.vision.caltech.edu/Image_Datasets/Caltech101/category"
             }],
-        "created_at": "Fri Jan 16 15:57:20 CST 2015", // change to Fri Jan 16 15:57:20 -0700 2015 ?
+        "created_at": "Fri Jan 16 15:57:20 CST 2015",
         "agent": {
             "@type": "cat:extractor", // cat definited in prov.jsonld
             "extractor_id": "http://dts.ncsa.illinois.edu/api/extractors/ncsa.cv.caltech101" // definited in local context
