@@ -98,8 +98,19 @@ class MongoDBSpaceService @Inject() (
    * @param space space id
    */
   def addCollection(collection: UUID, space: UUID): Unit = {
-    log.debug(s"adding $collection to $space")
+    log.debug(s"Adding $collection to $space")
     collections.addToSpace(collection, space)
+  }
+
+  /**
+   * Associate a dataset with a space
+   *
+   * @param collection dataset id
+   * @param space space id
+   */
+  def addDataset(dataset: UUID, space: UUID): Unit = {
+    log.debug(s"Adding $dataset to $space")
+    datasets.addToSpace(dataset, space)
   }
 
   /**

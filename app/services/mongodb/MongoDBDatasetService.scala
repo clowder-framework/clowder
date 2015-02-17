@@ -923,6 +923,13 @@ class MongoDBDatasetService @Inject() (
   def setNotesHTML(id: UUID, notesHTML: String){
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
+
+  def addToSpace(datasetId: UUID, spaceId: UUID): Unit = {
+    val result = Dataset.update(
+      MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
+      $set("space" -> Some(new ObjectId(spaceId.stringify))),
+      false, false)
+  }
 }
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
