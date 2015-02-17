@@ -4,6 +4,8 @@ import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
+import util.License
+
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
 import java.util.{Calendar, ArrayList}
@@ -170,8 +172,15 @@ class MongoDBFileService @Inject() (
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
 
-    val id = UUID(mongoFile.getAs[ObjectId]("_id").get.toString)
-    Some(File(id, None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
+    // resave the file to make sure all metadata is saved to mongo
+    get(UUID(mongoFile.getAs[ObjectId]("_id").get.toString)) match {
+      case Some(x) => {
+        val fix = x.copy(licenseData=License.fromAppConfig())
+        FileDAO.save(fix)
+        Some(fix)
+      }
+      case None => None
+    }
   }
 
   /**
