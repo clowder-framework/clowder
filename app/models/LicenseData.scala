@@ -1,18 +1,21 @@
 package models
 
+import play.api.Play.current
+import play.api.Play.configuration
+
 /**
  * case class to handle specific license information. Currently attached to individual Datasets and Files.  
  */
 case class LicenseData (
         id: UUID = UUID.generate(),
-        m_licenseType: String = "license1",
-        m_licenseUrl: String = "",
-        m_licenseText: String = "All Rights Reserved",
-        m_rightsHolder: String = "", 
-        m_ccAllowCommercial: Boolean = false,
-        m_ccAllowDerivative: Boolean = false,
-        m_ccRequireShareAlike: Boolean = false,
-        m_allowDownload: Boolean = false               
+        m_licenseType: String = configuration.getString("medici2.license.type").getOrElse("license1"),
+        m_licenseUrl: String = configuration.getString("medici2.license.url").getOrElse(""),
+        m_licenseText: String = configuration.getString("medici2.license.text").getOrElse("All Rights Reserved"),
+        m_rightsHolder: String = configuration.getString("medici2.license.holder").getOrElse(""),
+        m_ccAllowCommercial: Boolean = configuration.getBoolean("medici2.license.commercial").getOrElse(false),
+        m_ccAllowDerivative: Boolean = configuration.getBoolean("medici2.license.derivative").getOrElse(false),
+        m_ccRequireShareAlike: Boolean = configuration.getBoolean("medici2.license.share").getOrElse(false),
+        m_allowDownload: Boolean = configuration.getBoolean("medici2.license.download").getOrElse(false)
 ) {
     /**
      * Utility method to check if the license allows the file to be downloaded. Currently, if the license type is NOT
