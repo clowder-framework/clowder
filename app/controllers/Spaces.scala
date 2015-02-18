@@ -29,13 +29,17 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "description" -> nonEmptyText,
       "logoUrl" -> optional(Utils.CustomMappings.urlType),
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
-      "homePages" -> Forms.list(Utils.CustomMappings.urlType)
+      "homePages" -> Forms.list(Utils.CustomMappings.urlType),
+      "buttonValue" -> text
     )
-      ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description,
-        created = new Date, creator = UUID.generate(),
-          homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0,
-        datasetCount=0, userCount=0, metadata=List.empty))
-      ((space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage)))
+      (
+          (name, description, logoUrl, bannerUrl, homePages, _) => ProjectSpace(name = name, description = description,
+            created = new Date, creator = UUID.generate(), homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl,
+            usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty)
+        )
+      (
+          (space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage, "create"))
+        )
   )
 
   /**
@@ -66,81 +70,63 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   /**
    * Create collection.
    */
-  def submit() = SecuredAction(parse.anyContent ){
+  def submit() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateSpaces )) {
     implicit request =>
-      request.body.asFormUrlEncoded.get("action").headOption match {
-      case Some("Create") => InternalServerError("Create")//{addNewSpace()}
-      case Some("update") => InternalServerError("Update") //{updateSpace()}
-      case _ => BadRequest("This action is not allowed")
-    }
-  }
-
-  def updateSpace() = SecuredAction(authorization = WithPermission(Permission.EditSpace)){
-    implicit request =>
-      implicit val user = request.user
-      user match {
-        case Some(identity) => {
-
-          spaceForm.bindFromRequest.fold(
-            errors => BadRequest(views.html.spaces.newSpace(errors)),
-            space => {
-              Logger.debug("Saving space " + space.name)
+      request.body.asMultipartFormData.get.dataParts.get("buttonValue").headOption match {
+        case Some(x) => {
+          implicit val user = request.user
+          user match {
+            case Some(identity) => {
               val userId = request.mediciUser.fold(UUID.generate)(_.id)
+              x(0) match {
+                case ("Create") => {
+                  spaceForm.bindFromRequest.fold(
+                    errors => BadRequest(views.html.spaces.newSpace(errors)),
+                    space => {
+                      Logger.debug("Saving space " + space.name)
 
-              // insert space
-              spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
-                created = space.created, creator = userId, homePage = space.homePage,
-                logoURL = space.logoURL, bannerURL = space.bannerURL, usersByRole= Map.empty,
-                collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
-              //TODO - Put Spaces in Elastic Search?
-              // index collection
-              // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-              //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-              // Notify admins a new space is created
-              //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-              //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
-              // redirect to space page
-              Redirect(routes.Spaces.getSpace(space.id))
-            })
+                      // insert space
+                      spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
+                        created = space.created, creator = userId, homePage = space.homePage,
+                        logoURL = space.logoURL, bannerURL = space.bannerURL, usersByRole = Map.empty,
+                        collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty))
+                      //TODO - Put Spaces in Elastic Search?
+                      // index collection
+                      // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                      //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+                      // Notify admins a new space is created
+                      //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+                      //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
+                      // redirect to space page
+                      Redirect(routes.Spaces.getSpace(space.id))
+                    })
+                }
+                case ("Update") => {             // TODO: update space
+                  spaceForm.bindFromRequest.fold(
+                    errors => BadRequest(views.html.spaces.newSpace(errors)),
+                    space => {
+                      Logger.debug("updating space " + space.name)
+                      spaces.get(space.id) match {
+                        case Some(existing_space) =>{
+                        val edited_space = existing_space.copy(name=space.name, description = space.description, logoURL = space.logoURL, bannerURL = space.bannerURL, homePage = space.homePage)
+                          spaces.update(edited_space)
+                      }
+                        case None => {BadRequest("The space does not exist")}
+                      }
+                   Redirect(routes.Spaces.getSpace(space.id))
+                })}
+                case (_) => BadRequest("")
+              }
+            }
+
+          }
         }
-        case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create new spaces.")
-      }
+        case None => BadRequest("This action is not allowed")
 
-  }
-
-  def addNewSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)){
-    implicit request =>
-      implicit val user = request.user
-      user match {
-        case Some(identity) => {
-
-          spaceForm.bindFromRequest.fold(
-            errors => BadRequest(views.html.spaces.newSpace(errors)),
-            space => {
-              Logger.debug("Saving space " + space.name)
-              val userId = request.mediciUser.fold(UUID.generate)(_.id)
-
-              // insert space
-              spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
-                created = space.created, creator = userId, homePage = space.homePage,
-                logoURL = space.logoURL, bannerURL = space.bannerURL, usersByRole= Map.empty,
-                collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
-              //TODO - Put Spaces in Elastic Search?
-              // index collection
-              // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-              //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-              // Notify admins a new space is created
-              //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-              //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
-              // redirect to space page
-              Redirect(routes.Spaces.getSpace(space.id))
-            })
-        }
-        case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create new spaces.")
       }
   }
 
-  /**
+   /**
    * Show the list page
    */
   def list(order: Option[String], direction: String, start: Option[String], limit: Int,
