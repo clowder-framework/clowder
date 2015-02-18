@@ -52,26 +52,70 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   def newSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
     implicit request =>
       implicit val user = request.user
-      //TODO - bug in html page. If there is an error with one of the fields, the delete button for home pages disappears
-      //inserting the following snippet inside the @repeat block in the newSpace.scala.html shows the delete button on error, one too many though
-     /* @if(myForm.hasErrors && myForm("homePages").indexes.length > 1) {
-      <div class="home-page-delete"><a href="#">delete</a></div>
-    }
-    */
-    Ok(views.html.newSpace(spaceForm))
+    Ok(views.html.spaces.newSpace(spaceForm))
   }
 
+  def updateSpace(id:UUID) = SecuredAction(authorization = WithPermission(Permission.EditSpace)) {
+    implicit request =>
+      implicit val user = request.user
+      spaces.get(id) match {
+        case Some(s) => {Ok(views.html.spaces.editSpace(spaceForm.fill(s)))}
+        case None => InternalServerError("Space not found")
+      }
+    }
   /**
    * Create collection.
    */
-  def submit() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
+  def submit() = SecuredAction(parse.anyContent ){
+    implicit request =>
+      request.body.asFormUrlEncoded.get("action").headOption match {
+      case Some("Create") => InternalServerError("Create")//{addNewSpace()}
+      case Some("update") => InternalServerError("Update") //{updateSpace()}
+      case _ => BadRequest("This action is not allowed")
+    }
+  }
+
+  def updateSpace() = SecuredAction(authorization = WithPermission(Permission.EditSpace)){
     implicit request =>
       implicit val user = request.user
       user match {
         case Some(identity) => {
 
           spaceForm.bindFromRequest.fold(
-            errors => BadRequest(views.html.newSpace(errors)),
+            errors => BadRequest(views.html.spaces.newSpace(errors)),
+            space => {
+              Logger.debug("Saving space " + space.name)
+              val userId = request.mediciUser.fold(UUID.generate)(_.id)
+
+              // insert space
+              spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
+                created = space.created, creator = userId, homePage = space.homePage,
+                logoURL = space.logoURL, bannerURL = space.bannerURL, usersByRole= Map.empty,
+                collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
+              //TODO - Put Spaces in Elastic Search?
+              // index collection
+              // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+              //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+              // Notify admins a new space is created
+              //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+              //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
+              // redirect to space page
+              Redirect(routes.Spaces.getSpace(space.id))
+            })
+        }
+        case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create new spaces.")
+      }
+
+  }
+
+  def addNewSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)){
+    implicit request =>
+      implicit val user = request.user
+      user match {
+        case Some(identity) => {
+
+          spaceForm.bindFromRequest.fold(
+            errors => BadRequest(views.html.spaces.newSpace(errors)),
             space => {
               Logger.debug("Saving space " + space.name)
               val userId = request.mediciUser.fold(UUID.generate)(_.id)

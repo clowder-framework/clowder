@@ -1,9 +1,18 @@
 @(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset])(implicit user: Option[securesocial.core.Identity])
 
+@import helper._
+
 @main(space.name) {
     <div class="row space-head">
         <div class="col-md-12">
-            <h1>@space.name</h1>
+            <div class="row">
+                <h1>@space.name</h1>
+                @form(action = routes.Spaces.updateSpace(space.id)){
+                <div class="form-actions">
+                    <button type="submit" class = "glyphicon glyphicon-edit" aria-hidden="true">
+                </div>
+            }
+            </div>
             <p>@space.description</p>
         </div>
     </div>
