@@ -30,15 +30,16 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "logoUrl" -> optional(Utils.CustomMappings.urlType),
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
       "homePages" -> Forms.list(Utils.CustomMappings.urlType),
+      "space_id" -> optional(Utils.CustomMappings.uuidType),
       "buttonValue" -> text
     )
       (
-          (name, description, logoUrl, bannerUrl, homePages, _) => ProjectSpace(name = name, description = description,
+          (name, description, logoUrl, bannerUrl, homePages, id, _) => ProjectSpace(name = name, description = description,
             created = new Date, creator = UUID.generate(), homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl,
             usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty)
         )
       (
-          (space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage, "create"))
+          (space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage, Option(space.id), "create"))
         )
   )
 
@@ -102,19 +103,28 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                     })
                 }
                 case ("Update") => {             // TODO: update space
-                  spaceForm.bindFromRequest.fold(
-                    errors => BadRequest(views.html.spaces.newSpace(errors)),
-                    space => {
-                      Logger.debug("updating space " + space.name)
-                      spaces.get(space.id) match {
-                        case Some(existing_space) =>{
-                        val edited_space = existing_space.copy(name=space.name, description = space.description, logoURL = space.logoURL, bannerURL = space.bannerURL, homePage = space.homePage)
-                          spaces.update(edited_space)
-                      }
-                        case None => {BadRequest("The space does not exist")}
-                      }
-                   Redirect(routes.Spaces.getSpace(space.id))
-                })}
+                  request.body.asMultipartFormData.get.dataParts.get("space_id").headOption match {
+                    case Some(sp) => {
+                      val current_sp_id = sp(0)
+                      spaceForm.bindFromRequest.fold(
+                        errors => BadRequest(views.html.spaces.newSpace(errors)),
+                        space => {
+                          Logger.debug("updating space " + space.name)
+                          spaces.get(UUID(current_sp_id)) match {
+                            case Some(existing_space) => {
+                              val edited_space = existing_space.copy(name = space.name, description = space.description, logoURL = space.logoURL, bannerURL = space.bannerURL, homePage = space.homePage)
+                              spaces.update(edited_space)
+                            }
+                            case None => {
+                              BadRequest("The space does not exist")
+                            }
+                          }
+                          Redirect(routes.Spaces.getSpace(UUID(current_sp_id)))
+                        })
+                    }
+                    case None => BadRequest("")
+                  }
+                }//caseupdate
                 case (_) => BadRequest("")
               }
             }

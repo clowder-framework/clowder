@@ -1,7 +1,7 @@
 @(myForm: Form[ProjectSpace], title:String, submitButton: Html)(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 @import helper._
-@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
 
 @main("Space") {
   <div class="page-header">
@@ -24,6 +24,12 @@
         <fieldset  id="nameDescrFieldSet">
           @inputText(myForm("name"), '_label -> "Name")
           @textarea(myForm("description"), '_label -> "Description")
+          @helper.input(myForm("space_id")) {(id, name, value, args) =>
+            <input type="hidden" name= "@id" value="@value" >
+          }
+          @***
+          <input type ="hidden" name="space_id" value= myForm("space_id")>
+            ***@
           <div class = "homePages">
             @repeat(myForm("homePages"), min = 1) {homePage =>
               @inputText(homePage, '_label -> "Home Page")
