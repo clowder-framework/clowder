@@ -7,11 +7,7 @@
         <div class="col-md-12">
             <div class="row">
                 <h1>@space.name</h1>
-                @form(action = routes.Spaces.updateSpace(space.id)){
-                <div class="form-actions">
-                    <button type="submit" class = "glyphicon glyphicon-edit" aria-hidden="true">
-                </div>
-            }
+                    <a href="@routes.Spaces.updateSpace(space.id)"><span class = "glyphicon glyphicon-edit" aria-hidden="true"></span></a>
             </div>
             <p>@space.description</p>
         </div>
