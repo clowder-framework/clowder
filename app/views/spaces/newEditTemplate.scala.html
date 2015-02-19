@@ -24,9 +24,6 @@
         <fieldset  id="nameDescrFieldSet">
           @inputText(myForm("name"), '_label -> "Name")
           @textarea(myForm("description"), '_label -> "Description")
-          @helper.input(myForm("space_id"), '_label ->"") {(id, name, value, args) =>
-            <input type="hidden" value="@value" >
-          }
           <div class = "homePages">
             @repeat(myForm("homePages"), min = 1) {homePage =>
               @inputText(homePage, '_label -> "Home Page")
@@ -40,8 +37,10 @@
           </div>
           @inputText(myForm("logoUrl"), '_label-> "Logo URL")
           @inputText(myForm("bannerUrl"), '_label-> "Banner URL")
+          @helper.input(myForm("space_id"), '_label ->"") {(id, name, value, args) =>
+            <input type="hidden" name="@id" value="@value">
+          }
         </fieldset>
-        </br>
         @submitButton
       }
     </div>

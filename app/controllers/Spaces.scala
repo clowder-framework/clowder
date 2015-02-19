@@ -21,7 +21,7 @@ import util.Direction._
 class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
 
   /**
-   * New project space form.
+   * New/Edit project space form bindings.
    */
   val spaceForm = Form(
     mapping(
@@ -31,10 +31,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
       "homePages" -> Forms.list(Utils.CustomMappings.urlType),
       "space_id" -> optional(Utils.CustomMappings.uuidType),
-      "buttonValue" -> text
+      "submitValue" -> text
     )
       (
-          (name, description, logoUrl, bannerUrl, homePages, id, _) => ProjectSpace(name = name, description = description,
+          (name, description, logoUrl, bannerUrl, homePages, space_id, _) => ProjectSpace(name = name, description = description,
             created = new Date, creator = UUID.generate(), homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl,
             usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty)
         )
@@ -69,11 +69,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       }
     }
   /**
-   * Create collection.
+   * Submit action for new or edit space
    */
+  //TODO Check on specific permissions?  WithPermission(Permission.EditSpace)
   def submit() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateSpaces )) {
     implicit request =>
-      request.body.asMultipartFormData.get.dataParts.get("buttonValue").headOption match {
+      request.body.asMultipartFormData.get.dataParts.get("submitValue").headOption match {
         case Some(x) => {
           implicit val user = request.user
           user match {
@@ -84,7 +85,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                   spaceForm.bindFromRequest.fold(
                     errors => BadRequest(views.html.spaces.newSpace(errors)),
                     space => {
-                      Logger.debug("Saving space " + space.name)
+                      Logger.debug("Creating space " + space.name)
 
                       // insert space
                       spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
@@ -102,15 +103,15 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                       Redirect(routes.Spaces.getSpace(space.id))
                     })
                 }
-                case ("Update") => {             // TODO: update space
+                case ("Update") => {
                   request.body.asMultipartFormData.get.dataParts.get("space_id").headOption match {
                     case Some(sp) => {
-                      val current_sp_id = sp(0)
+                      val current_space_id = UUID(sp(0))
                       spaceForm.bindFromRequest.fold(
                         errors => BadRequest(views.html.spaces.newSpace(errors)),
                         space => {
                           Logger.debug("updating space " + space.name)
-                          spaces.get(UUID(current_sp_id)) match {
+                          spaces.get(current_space_id) match {
                             case Some(existing_space) => {
                               val edited_space = existing_space.copy(name = space.name, description = space.description, logoURL = space.logoURL, bannerURL = space.bannerURL, homePage = space.homePage)
                               spaces.update(edited_space)
@@ -119,19 +120,18 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                               BadRequest("The space does not exist")
                             }
                           }
-                          Redirect(routes.Spaces.getSpace(UUID(current_sp_id)))
+                          Redirect(routes.Spaces.getSpace(current_space_id))
                         })
                     }
-                    case None => BadRequest("")
+                    case None => BadRequest("Could not find the current space's id")
                   }
-                }//caseupdate
-                case (_) => BadRequest("")
+                }
+                case (_) => BadRequest("submit value is not Create or Update. Don't know how to deal with this.")
               }
             }
-
           }
         }
-        case None => BadRequest("This action is not allowed")
+        case None => BadRequest("Did not get any submitValue value")
 
       }
   }
