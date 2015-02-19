@@ -46,6 +46,8 @@
 	<tbody valign="top">	
 	<tr>  
 	@for((index, previewsAndFiles) <- resultsList) {
+	  @** only display results for non-empty indexes **@
+	  @if(previewsAndFiles.length > 0){
 		<td>
 		<h3>Index name</h3>
 		Extractor:@index.extractorID<br>Measure:@index.measureID<br>Indexer:@index.indexerType<p><p>
@@ -136,7 +138,8 @@
 
 		</table>
 		</td>		
-	}
+		} @** END OF if(previewsAndFiles.length > 0) **@
+	} @** end of for (...<- resultsList) **@
 	</tr>
 
 	</tbody></table>
@@ -151,20 +154,24 @@
 	@if(resultsList.size >=2 && fileId.isDefined) {
 		 @form(action = routes.Search.findSimilarWeightedIndexes, 'id->"form-weights", 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 		       
-		        <div id="validation"></div> 
+		      <div id="validation"></div> 
 		       
 			    <fieldset>
 			      <legend>Combine search results</legend>			     
 		  	      <input type="hidden" name="FileID" value="@fileId" id="file_hidden">			    	 		    
-			     	@for((index, previewsAndFiles) <- resultsList) {	
-			     		<p>Please select weight for index @index.extractorID / @index.measureID  			
-			     		<input type="text" name="Weight" id="@index.id">			
-						<input	type="hidden" name="IndexID" value="@index.id">														
-					}			     <div id="checkboxes" style="padding-left:15px">
-			    	</fieldset>
-		        	<div class="form-actions">
-		          		<input type="submit" class="btn btn-primary" value="Combine Results"/>
-		        	</div>
+			     	  @for((index, previewsAndFiles) <- resultsList) {
+			     	   @**** only offer to combine result for non-empty indexes, i.e. results size >0 ***@
+			     	   @if(previewsAndFiles.size > 0){	
+			     		    <p>Please select weight for index @index.extractorID / @index.measureID  			
+			     		    <input type="text" name="Weight" id="@index.id">			
+						      <input	type="hidden" name="IndexID" value="@index.id">		
+						   }												
+					   }			     
+					   <div id="checkboxes" style="padding-left:15px">
+			    </fieldset>
+		      <div class="form-actions">
+		       		<input type="submit" class="btn btn-primary" value="Combine Results"/>
+		      </div>
 		}
 	}<!--end of if(resultsList.size >=2) -->
 @************ end of form ************@
