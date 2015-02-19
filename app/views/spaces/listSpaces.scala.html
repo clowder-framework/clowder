@@ -114,7 +114,7 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
-                                        <button onclick="removeSpaceAndRedirect ( ' @(space.id) ',' @(routes.Spaces.list()) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                        <button onclick="removeSpaceAndRedirect ( '@(space.id) ',' @(routes.Spaces.list()) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
                                             <span class="glyphicon glyphicon-trash"></span>
                                         </button>
                                     } else {
