@@ -76,7 +76,7 @@ class Files @Inject() (
               if (!p.collection);
               if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
             ) yield {
-              if (file.checkLicenseForDownload(user)) {
+              if (file.licenseData.isDownloadAllowed(user)) {
                 (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
               }
               else {
@@ -520,7 +520,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
           //Check the license type before doing anything. 
           files.get(id) match {
               case Some(file) => {                                                                                                             
-                  if (file.checkLicenseForDownload(request.user)) {
+                  if (file.licenseData.isDownloadAllowed(request.user)) {
                       files.getBytes(id) match {
                       case Some((inputStream, filename, contentType, contentLength)) => {
                           request.headers.get(RANGE) match {
