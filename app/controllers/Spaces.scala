@@ -129,6 +129,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                 case (_) => BadRequest("submit value is not Create or Update. Don't know how to deal with this.")
               }
             }
+            case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit spaces.")
           }
         }
         case None => BadRequest("Did not get any submitValue value")
