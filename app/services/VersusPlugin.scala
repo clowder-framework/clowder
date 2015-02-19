@@ -488,6 +488,39 @@ class VersusPlugin(application: Application) extends Plugin {
   }
 
   /**
+   * Helper method to get id of file/preview as returned in search results from versus.
+   * 	url - docID of the result, could be file or preview
+   *  	id - id of the file or preview, a substring of the url (docID)
+   */
+  def getIdFromVersusURL(url: String): String = {
+    //check if this is a file or a video preview
+    //example: result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db/blob?key=r1ek3rs
+    //or
+    //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs
+
+    val isFile = url.contains("files")
+    val isPreview = url.contains("previews")
+    var id: String = ""
+    if (isPreview) {
+      //url = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs              
+      val lastSlash = url.lastIndexOf("/")
+      val questionMark = url.lastIndexOf("?")
+      id = url.substring(lastSlash + 1, questionMark)
+    }
+
+    if (isFile) {
+      //url contains 'blob' 
+      //http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db/blob?key=r1ek3rs
+      val lastSlash = url.lastIndexOf("/")
+      //Returns the index within this string of the last occurrence of the specified substring, searching backward starting at the specified index.
+      val nextToLastSlash = url.lastIndexOf("/", lastSlash - 1)
+      id = url.substring(nextToLastSlash + 1, lastSlash)
+    }
+
+    id
+  }
+  
+  /**
    * Sends a search query to an index in Versus
    * input:
    * 		inputFileURL - URL string of the file to query against an index
@@ -515,11 +548,11 @@ class VersusPlugin(application: Application) extends Plugin {
 
     val responseFuture: Future[Response] = WS.url(queryIndexUrl).post(Map("infile" -> Seq(inputFileURL)))
     //mapping Future[Response] to Future[List[PreviewFilesSearchResult]]    
-
-    responseFuture.map {
+    
+    responseFuture.map{
       response =>
         val similarityResults = Json.parse(response.body).as[Seq[models.VersusSimilarityResult.VersusSimilarityResult]]
-        var resultList = new ListBuffer[PreviewFilesSearchResult]
+        var resultList = new ListBuffer[PreviewFilesSearchResult]        
         similarityResults.map {
           result =>
             //example: result.docID = http://localhost:9000/api/files/52fd26fbe4b02ac3e30280db/blob?key=r1ek3rs
@@ -530,15 +563,10 @@ class VersusPlugin(application: Application) extends Plugin {
             val isFile = result.docID.contains("files")
             val isPreview = result.docID.contains("previews")
 
+            val resultId = UUID(getIdFromVersusURL(result.docID))
             //when searching for videos - might get previews search results, no 'blob' in preview doc id
             if (isPreview) {
-              //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs              
-              val lastSlash = result.docID.lastIndexOf("/")
-              val questionMark = result.docID.lastIndexOf("?")
-              //Returns the index within this string of the last occurrence of the specified substring, searching backward starting at the specified index.
-              val nextToLastSlash = result.docID.lastIndexOf("/", lastSlash - 1)
-              val resultId = UUID(result.docID.substring(lastSlash + 1, questionMark));
-
+              //result.docID = http://localhost:9000/api/previews/52fd1970e4b02ac3e30280a5?key=r1ek3rs         
               for (blob <- previews.getBlob(resultId)) {
                 val previewName = blob._2
                 for (previewResult <- getPrevSearchResult(resultId, previewName, result)) {
@@ -548,13 +576,7 @@ class VersusPlugin(application: Application) extends Plugin {
             } //end of if (isPreview)                        
 
             //in case of still images AND non-image file formats
-            if (isFile) {
-              //resultId now contains 'blob' as in example above. Getting file id string.
-              val lastSlash = result.docID.lastIndexOf("/")
-              //Returns the index within this string of the last occurrence of the specified substring, searching backward starting at the specified index.
-              val nextToLastSlash = result.docID.lastIndexOf("/", lastSlash - 1)
-              val resultId = UUID(result.docID.substring(nextToLastSlash + 1, lastSlash));
-
+            if (isFile) {            
               files.get(resultId) map {
                 file =>
                   //use helper method to get the results
@@ -562,7 +584,8 @@ class VersusPlugin(application: Application) extends Plugin {
                   resultList += new PreviewFilesSearchResult("file", oneFileResult, null)
               }
             } //end of if (isFile)        
-        } // End of similarity map      
+        } // End of similarity map  
+        
         resultList.toList
     }
   }
@@ -575,7 +598,6 @@ class VersusPlugin(application: Application) extends Plugin {
    */
   def queryIndexSorted(inputFileId: String, indexId: String): Future[scala.collection.immutable.HashMap[String, Double]] = {
     Logger.trace("VersusPlugin.queryIndexSorted, indexId = " + indexId)
-
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
     val client = configuration.getString("versus.client").getOrElse("")
