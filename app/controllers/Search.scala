@@ -282,9 +282,9 @@ class Search @Inject() (
               val futureFutureListResults = for {
                 indexesToSearch <- indexesToSearchFuture
               } yield {
-                val resultListOfFutures = indexesToSearch.map {
-                  index => plugin.queryIndexForNewFile(fileID, index.id).map { queryResult => (index, queryResult) }
-                }
+                val resultListOfFutures = indexesToSearch.map(
+                    index => plugin.queryIndexForNewFile(fileID, index.id).map(queryResult => (index, queryResult))
+                )
 
                 //convert list of futures into a Future[list]
                 scala.concurrent.Future.sequence(resultListOfFutures)
@@ -374,7 +374,6 @@ class Search @Inject() (
     var inputErrors = false
     var errorMessage = ""
     var weightsList = List(0.0)
-    Logger.debug("Search. validateInput  input = " + input.toString)
     if (!input.contains("FileID") || !input.contains("IndexID") || !input.contains("Weight")) {
       inputErrors = true
       return (inputErrors, "Not all fields are present", List(0.0))
@@ -385,7 +384,6 @@ class Search @Inject() (
     } catch {
       case e: Exception => return (true, "Weights must be double values between 0.0 and 1.0", List(0.0))
     }
-    Logger.debug("Search.validateInput validate weightsList = " + weightsList)
 
     var sum = 0.0
     for (w <- weightsList) {
@@ -404,16 +402,33 @@ class Search @Inject() (
    */
   def mergeMaps(maps: List[scala.collection.immutable.HashMap[String, Double]],
     weights: List[Double]): scala.collection.immutable.HashMap[String, Double] = {
-
-    //merge the first two maps
-    var mergedMap = mergeTwoMaps(maps(0), maps(1), weights(0), weights(1))
-    //merge the rest of the maps
-    for (ind <- 2 to weights.length - 1) {
-      mergedMap = mergeTwoMaps(mergedMap, maps(ind), 1.0, weights(ind))
+    //get a list of non-zero weights and a list of corresponding maps
+    var nonzeroWeightsBuf = ListBuffer.empty[Double]
+    var nonzeroMapsBuf = ListBuffer.empty[scala.collection.immutable.HashMap[String, Double]]
+    //go through all weights and only keep maps that have nonzero weights
+    for (i <- 0 to weights.length - 1) {
+      if (weights(i) != 0) {
+        nonzeroWeightsBuf += weights(i)
+        nonzeroMapsBuf += maps(i)
+      }
     }
-    mergedMap
-  }
+    val nonzeroWeights = nonzeroWeightsBuf.toList
+    val nonzeroMaps = nonzeroMapsBuf.toList
 
+    //If after removing zero-weight maps we have just one map left - nothing to merge, return the map. 
+    //Otherwise, merge maps.
+    if (nonzeroMaps.length == 1) {
+      nonzeroMaps(0)
+    } else {
+      //merge the first two maps
+      var mergedMap = mergeTwoMaps(nonzeroMaps(0), nonzeroMaps(1), nonzeroWeights(0), nonzeroWeights(1))
+      //merge the rest of the maps
+      for (ind <- 2 to nonzeroWeights.length - 1) {
+        mergedMap = mergeTwoMaps(mergedMap, nonzeroMaps(ind), 1.0, nonzeroWeights(ind))
+      }
+      mergedMap
+    }
+  }
   /**
    * For two maps and two corresponding weights, will find linear combinations of corresponding values,
    * 	using the weights provided
@@ -451,11 +466,8 @@ class Search @Inject() (
                   val filename = fileInfo._2
                   current.plugin[VersusPlugin] match {
                     case Some(plugin) => {
-                      val queryResults = for {
-                        indexId <- indexIDs
-                      } yield {
-                        plugin.queryIndexSorted(fileId.stringify, indexId.stringify)
-                      }
+                      //get file and a list of indexes from request, query this file against each of these indexes 
+                      val queryResults = indexIDs.map(indId => plugin.queryIndexSorted(fileId.stringify, indId.stringify))
                       //change a list of futures into a future list
                       val futureListResults = scala.concurrent.Future.sequence(queryResults)
 
@@ -469,14 +481,13 @@ class Search @Inject() (
                           (fileURL, prox) <- mergedMaps
                         } yield {
                           //fileURL = http://localhost:9000/api/files/54bebcb919aff1ea8c8145ac/blob?key=r1ek3rs
-                          //get if of the result
-                          val lastSlash = fileURL.lastIndexOf("/")
-                          val nextToLastSlash = fileURL.lastIndexOf("/", lastSlash - 1)
-                          val result_id = UUID(fileURL.substring(nextToLastSlash + 1, lastSlash));
+                          //get id of the result
+                          val result_id = UUID(plugin.getIdFromVersusURL(fileURL))
+
                           //find file name and thumbnail id for the result
+                          //TODO: add processing in case results are not whole files but _sections_ of files
                           val oneFileName = files.get(result_id).map(_.filename).getOrElse("")
                           val oneThumbnlId = files.get(result_id).flatMap(_.thumbnail_id).getOrElse("")
-
                           (result_id, oneFileName, oneThumbnlId, prox)
                         }
                         //sort by combined proximity values
