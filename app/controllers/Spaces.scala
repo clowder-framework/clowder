@@ -1,5 +1,6 @@
 package controllers
 
+import java.net.URL
 import javax.inject.Inject
 
 import api.{Permission, WithPermission}
@@ -18,7 +19,18 @@ import util.Direction._
  * @author Rob Kooper
  *
  */
+case class spaceFormData(
+                            name: String,
+                            description: String,
+                            homePage: List[URL],
+                            logoURL: Option[URL],
+                            bannerURL: Option[URL],
+                            spaceId:Option[UUID],
+                            submitButtonValue:String)
+
 class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
+
+  var current_space_id:UUID = UUID.generate()
 
   /**
    * New/Edit project space form bindings.
@@ -34,14 +46,14 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "submitValue" -> text
     )
       (
-          (name, description, logoUrl, bannerUrl, homePages, space_id, _) => ProjectSpace(name = name, description = description,
-            created = new Date, creator = UUID.generate(), homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl,
-            usersByRole= Map.empty, collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty)
+          (name, description, logoUrl, bannerUrl, homePages, space_id, bvalue) => spaceFormData(name = name, description = description,
+             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, bvalue)
         )
       (
-          (space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage, Option(space.id), "create"))
+          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.submitButtonValue)
         )
   )
+
 
   /**
    * Space main page.
@@ -64,76 +76,61 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
     implicit request =>
       implicit val user = request.user
       spaces.get(id) match {
-        case Some(s) => {Ok(views.html.spaces.editSpace(spaceForm.fill(s)))}
+        case Some(s) => {
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), "sts"))))}
         case None => InternalServerError("Space not found")
       }
     }
   /**
    * Submit action for new or edit space
    */
-  //TODO Check on specific permissions?  WithPermission(Permission.EditSpace)
-  def submit() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateSpaces )) {
+  def submit() = SecuredAction(parse.anyContent) {
     implicit request =>
-      request.body.asMultipartFormData.get.dataParts.get("submitValue").headOption match {
-        case Some(x) => {
-          implicit val user = request.user
-          user match {
-            case Some(identity) => {
-              val userId = request.mediciUser.fold(UUID.generate)(_.id)
-              x(0) match {
+      implicit val user = request.user
+      user match {
+        case Some(identity) => {
+          val userId = request.mediciUser.fold(UUID.generate)(_.id)
+          spaceForm.bindFromRequest.fold(
+            errors => BadRequest(views.html.spaces.newSpace(errors)),
+            formData => {
+              formData.submitButtonValue match {
                 case ("Create") => {
-                  spaceForm.bindFromRequest.fold(
-                    errors => BadRequest(views.html.spaces.newSpace(errors)),
-                    space => {
-                      Logger.debug("Creating space " + space.name)
-
-                      // insert space
-                      spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
-                        created = space.created, creator = userId, homePage = space.homePage,
-                        logoURL = space.logoURL, bannerURL = space.bannerURL, usersByRole = Map.empty,
-                        collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty))
-                      //TODO - Put Spaces in Elastic Search?
-                      // index collection
-                      // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-                      //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-                      // Notify admins a new space is created
-                      //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-                      //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
-                      // redirect to space page
-                      Redirect(routes.Spaces.getSpace(space.id))
-                    })
+                  Logger.debug("Creating space " + formData.name)
+                  val newSpace = ProjectSpace(name = formData.name, description = formData.description,
+                    created = new Date, creator = userId, homePage = formData.homePage,
+                    logoURL = formData.logoURL, bannerURL = formData.bannerURL, usersByRole = Map.empty,
+                    collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty)
+                  // insert space
+                  spaces.insert(newSpace)
+                  //TODO - Put Spaces in Elastic Search?
+                  // index collection
+                  // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                  //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+                  // Notify admins a new space is created
+                  //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+                  //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
+                  // redirect to space page
+                  Redirect(routes.Spaces.getSpace(newSpace.id))
                 }
                 case ("Update") => {
-                  request.body.asMultipartFormData.get.dataParts.get("space_id").headOption match {
-                    case Some(sp) => {
-                      val current_space_id = UUID(sp(0))
-                      spaceForm.bindFromRequest.fold(
-                        errors => BadRequest(views.html.spaces.newSpace(errors)),
-                        space => {
-                          Logger.debug("updating space " + space.name)
-                          spaces.get(current_space_id) match {
-                            case Some(existing_space) => {
-                              val edited_space = existing_space.copy(name = space.name, description = space.description, logoURL = space.logoURL, bannerURL = space.bannerURL, homePage = space.homePage)
-                              spaces.update(edited_space)
-                            }
-                            case None => {
-                              BadRequest("The space does not exist")
-                            }
-                          }
-                          Redirect(routes.Spaces.getSpace(current_space_id))
-                        })
+                  Logger.debug("updating space " + formData.name)
+                  spaces.get(formData.spaceId.get) match {
+                    case Some(existing_space) => {
+                      val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL, homePage = formData.homePage)
+                      spaces.update(updated_space)
+                      Redirect(routes.Spaces.getSpace(existing_space.id))
                     }
-                    case None => BadRequest("Could not find the current space's id")
+                    case None => {
+                      BadRequest("The space does not exist")
+                    }
                   }
-                }
-                case (_) => BadRequest("submit value is not Create or Update. Don't know how to deal with this.")
-              }
-            }
-            case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit spaces.")
-          }
-        }
-        case None => BadRequest("Did not get any submitValue value")
 
+                }
+              }
+
+            })
+        }
+        case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit spaces.")
       }
   }
 
