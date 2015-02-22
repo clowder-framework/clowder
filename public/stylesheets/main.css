@@ -281,13 +281,16 @@ button.tech_md_ {
   max-height:256px;
 }
 
-#editProfileFieldSet .control-group .controls input[type='text']{
+.editProfileInput input[type='text']{
   width:450px;
   height:30px;
 }
-#editProfileFieldSet .control-group .controls textarea{
+.editProfileInput textarea{
   width:450px;
   height:100px;
+}
+.editProfileInput .chosen-select {
+  width:450px;
 }
 
 #nameDescrFieldSet .control-group .controls textarea{

@@ -17,10 +17,10 @@ case class User(
   email: Option[String],
   avatarUrl: Option[String] = None,
   biography: Option[String] = None,
-  currentprojects: Option[String] = None,
+  currentprojects: List[String] = List.empty,
   institution: Option[String] = None,
   orcidID: Option[String] = None,
-  pastprojects: Option[String] = None,
+  pastprojects: List[String] = List.empty,
   position: Option[String] = None,
   friends: Option[List[String]] = None,
   viewed: Option[List[UUID]] = None) {
@@ -63,15 +63,33 @@ case class User(
       .mkString
       .toLowerCase
   }
+
+  /**
+   * @return string containing the current projects separated by commas
+   */
+  def getCurrentProjectsString(): String = {
+    currentprojects.reduceLeft { (proj, next) =>
+      proj + ", " + next
+    }
+  }
+
+  /**
+   * @return string containing the past projects separated by commas
+   */
+  def getPastProjectsString(): String = {
+    pastprojects.reduceLeft { (proj, next) =>
+      proj + ", " + next
+    }
+  }
 }
 
 case class Info(
   avatarUrl: Option[String],
   biography: Option[String],
-  currentprojects: Option[String],
+  currentprojects: List[String],
   institution: Option[String],
   orcidID: Option[String] = None,
-  pastprojects: Option[String],
+  pastprojects: List[String],
   position: Option[String]
 )
 
