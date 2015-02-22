@@ -39,7 +39,8 @@ class MongoDBDatasetService @Inject() (
   collections: CollectionService,
   files: FileService,
   comments: CommentService,
-  sparql: RdfSPARQLService) extends DatasetService {
+  sparql: RdfSPARQLService,
+  userService: UserService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -896,6 +897,9 @@ class MongoDBDatasetService @Inject() (
           var notTheDataset = for (currDataset <- findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
             files.removeFile(f.id)
+        }
+        for (follower <- dataset.followers) {
+          userService.unfollowDataset(follower, id)
         }
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }

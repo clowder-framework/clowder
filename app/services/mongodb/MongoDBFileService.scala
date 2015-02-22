@@ -52,7 +52,8 @@ class MongoDBFileService @Inject() (
   thumbnails: ThumbnailService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
-  storage: ByteStorageService) extends FileService {
+  storage: ByteStorageService,
+  userService: UserService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -651,6 +652,9 @@ class MongoDBFileService @Inject() (
           }
           for(texture <- threeD.findTexturesByFileId(file.id)){
             ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
+          }
+          for (follower <- file.followers) {
+            userService.unfollowFile(follower, id)
           }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))

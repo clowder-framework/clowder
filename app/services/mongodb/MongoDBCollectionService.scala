@@ -8,7 +8,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import play.api.Logger
 import scala.util.Try
-import services.{DatasetService, CollectionService}
+import services._
 import javax.inject.{Singleton, Inject}
 import scala.util.Failure
 import scala.Some
@@ -17,9 +17,6 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import MongoContext.context
 import play.api.Play.current
-import services.AdminsNotifierPlugin
-import services.ElasticsearchPlugin
-
 
 
 /**
@@ -29,7 +26,7 @@ import services.ElasticsearchPlugin
  *
  */
 @Singleton
-class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends CollectionService {
+class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -257,6 +254,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
           //remove collection from dataset
           datasets.removeCollection(dataset.id, collection.id)
           datasets.index(dataset.id)
+        }
+        for (follower <- collection.followers) {
+          userService.unfollowCollection(follower, collectionId)
         }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
 
