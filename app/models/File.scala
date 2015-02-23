@@ -25,7 +25,7 @@ case class File(
   previews: List[Preview] = List.empty,
   tags: List[Tag] = List.empty,
   thumbnail_id: Option[String] = None,
-  jsonldMetadata : List[LDMetadata] = List.empty,
+  jsonldMetadata : List[Metadata] = List.empty,
   @deprecated("use LDMetadata","since the use of jsonld") metadata: List[Map[String, Any]] = List.empty,
   @deprecated("will not be used in the future","since the use of jsonld") isIntermediate: Option[Boolean] = None,
   @deprecated("use LDMetadata","since the use of jsonld") userMetadata: Map[String, Any] = Map.empty,

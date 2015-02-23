@@ -1,7 +1,7 @@
 package unit
 
 import java.util.Date
-import models.{Tag, UUID, File,LDMetadata, UserAgent}
+import models.{Tag, UUID, File, Metadata, UserAgent}
 import securesocial.core.{AuthenticationMethod, IdentityId, SocialUser}
 import java.net.URL
 import play.api.libs.json.JsObject
@@ -24,13 +24,4 @@ trait TestData {
 
   var testTag = Tag(UUID.generate, "foo", None, None, new Date)
     
-  val testCreator = UserAgent(id= UUID.generate, typeOfAgent="cat:user", userId = Some(new URL("http://xyz.com/user")))
-  
-  val testLDMetadata = LDMetadata(
-    id=UUID.generate,
-    attachedTo = Map("file_id"->UUID.generate), 
-    createdAt = new Date,
-    creator = testCreator,
-    content = new JsObject(Seq()))
-  
-}
+  }

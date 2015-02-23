@@ -20,7 +20,7 @@ case class Dataset(
   files: List[File] = List.empty,
   streams_id: List[ObjectId] = List.empty,
   tags: List[Tag] = List.empty,
-  jsonldMetadata: List[LDMetadata] = List.empty,
+  jsonldMetadata: List[Metadata] = List.empty,
   @deprecated("use LDMetadata","since the use of jsonld") metadata: Map[String, Any] = Map.empty,
   @deprecated("use LDMetadata","since the use of jsonld") userMetadata: Map[String, Any] = Map.empty,
   collections: List[String] = List.empty,
