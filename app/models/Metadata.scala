@@ -23,14 +23,15 @@ case class Metadata (
 
 trait Agent {
   val id: UUID
-  val typeOfAgent: String
+  def typeOfAgent: String
+  def typeOfAgent_= (s: String): Unit
 }
 
 // User through the GUI
-case class UserAgent( id: UUID, typeOfAgent : String = "user", userId: Option[URL]) extends Agent
+case class UserAgent( id: UUID, var typeOfAgent : String = "user", userId: Option[URL]) extends Agent
 
 // Automatic extraction
-case class ExtractorAgent( id: UUID, typeOfAgent : String = "extractor" , extractorId: Option[URL]) extends Agent
+case class ExtractorAgent( id: UUID, var typeOfAgent : String = "extractor" , extractorId: Option[URL]) extends Agent
 
 
 
