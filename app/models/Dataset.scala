@@ -21,12 +21,12 @@ case class Dataset(
   streams_id: List[ObjectId] = List.empty,
   tags: List[Tag] = List.empty,
   jsonldMetadata: List[Metadata] = List.empty,
-  @deprecated("use LDMetadata","since the use of jsonld") metadata: Map[String, Any] = Map.empty,
-  @deprecated("use LDMetadata","since the use of jsonld") userMetadata: Map[String, Any] = Map.empty,
+  @deprecated("use Metadata","since the use of jsonld") metadata: Map[String, Any] = Map.empty,
+  @deprecated("use Metadata","since the use of jsonld") userMetadata: Map[String, Any] = Map.empty,
   collections: List[String] = List.empty,
   thumbnail_id: Option[String] = None,
-  @deprecated("use LDMetadata","since the use of jsonld") datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
-  @deprecated("use LDMetadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
+  @deprecated("use Metadata","since the use of jsonld") datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
+  @deprecated("use Metadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None)
 
