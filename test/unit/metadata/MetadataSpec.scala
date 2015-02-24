@@ -13,14 +13,11 @@ import java.net.URL
  * @author Smruti Padhy 
  */
 
-class MetadataSpec extends UnitSpec with metadataTestData {
+class MetadataSpec extends UnitSpec with metadataTestData{
   val mockMetadata = mock[Metadata]
-  
-  when(mockMetadata.attachedTo.contains("file_id")).thenReturn(true)
-  when(mockMetadata.creator).thenReturn(new UserAgent(id= UUID.generate, typeOfAgent="cat:user", userId = Some(new URL("http://xyz.com/user"))))
-  when(mockMetadata.creator.typeOfAgent).thenReturn("user")
-  when(mockMetadata.creator.asInstanceOf[UserAgent].userId).thenReturn(Some(new URL("http://xyz.com/user"))) 
-    
+  when(mockMetadata.attachedTo).thenReturn(Map("file_id"->UUID.generate))
+  when(mockMetadata.creator).thenReturn(new UserAgent(id = UUID.generate, userId = Some(new URL("http://xyz.com/user"))))
+      
   "A metadata" should "have attachedTo set" in {
     assert( mockMetadata.attachedTo.contains("file_id") == true)
   }  
@@ -29,9 +26,8 @@ class MetadataSpec extends UnitSpec with metadataTestData {
     assert(mockMetadata.creator != null)
   }
   "A metadata creator agent" should "have a type and agent specific id" in {
-    //info("creator "+ testMetadata.creator)
-    //val ua = testMetadata.creator.asInstanceOf[UserAgent]
-    //assert(testMetadata.creator.isInstanceOf[UserAgent] == true)
+    info("creator "+ mockMetadata.creator)
+    assert(mockMetadata.creator.isInstanceOf[UserAgent] == true)
     assert(mockMetadata.creator.typeOfAgent == "user")
     assert(mockMetadata.creator.asInstanceOf[UserAgent].userId == Some(new URL("http://xyz.com/user")))
   }
