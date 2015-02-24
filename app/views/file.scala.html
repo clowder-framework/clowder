@@ -174,8 +174,12 @@
                     <h4>Sections</h4>
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@sections.map { s =>
-					  		@if(s.preview.isDefined) {
-					  			<img src="@api.routes.Previews.download(s.preview.get.id)"
+					  		@if(s.preview.isDefined || s.thumbnail_id.isDefined) {
+					  			@if(s.thumbnail_id.isDefined){
+					  				<img src="@(routes.Files.thumbnail(UUID(s.thumbnail_id.toString().substring(5,s.thumbnail_id.toString().length-1))))"				  			
+					  			} else {
+					  				<img src="@api.routes.Previews.download(s.preview.get.id)"
+					  			}					  			
 					  				class="img-polaroid" height="100px"
 					  			@if(s.startTime.isDefined) {
 					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -208,8 +212,12 @@
 					  			<tr>
 						  			<td>@(if (s.order > 0) s.order else "")</td>
 						  			<td>
-								  		@if(s.preview.isDefined) {
-								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
+								  		@if(s.preview.isDefined || s.thumbnail_id.isDefined) {
+								  			@if(s.thumbnail_id.isDefined){
+								  				<img src="@(routes.Files.thumbnail(UUID(s.thumbnail_id.toString().substring(5,s.thumbnail_id.toString().length-1))))"				  			
+								  			} else {
+								  				<img src="@api.routes.Previews.download(s.preview.get.id)"
+								  			}
 								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;"
 								  			@if(s.startTime.isDefined) {
 								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
