@@ -15,7 +15,7 @@ case class Section(
   area: Option[Rectangle] = None,
   preview: Option[Preview] = None,
   tags: List[Tag] = List.empty,
-  jsonldMetadata : List[LDMetadata]= List.empty
+  jsonldMetadata : List[Metadata]= List.empty
   )
 
 case class Rectangle(

@@ -13,5 +13,5 @@ case class Collection(
   datasets: List[Dataset] = List.empty,
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty,
-  jsonldMetadata : List[LDMetadata]= List.empty
+  jsonldMetadata : List[Metadata]= List.empty
 )
