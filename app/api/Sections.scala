@@ -165,7 +165,7 @@ class Sections @Inject()(
       }
   }
   
-  def setDescription(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateFiles))  { implicit request =>
+  def setDescription(id: UUID) = SecuredAction(authorization=WithPermission(Permission.AddSections))  { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
 		    request.body.\("descript").asOpt[String] match {
