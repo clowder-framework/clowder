@@ -3,6 +3,7 @@
  */
 package services.mongodb
 
+import com.mongodb.casbah.WriteConcern
 import models.{UUID, Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
@@ -326,6 +327,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
       }
       case None => Logger.error("Collection not found: " + id.stringify)
     }
+  }
+
+  def addToSpace(collectionId: UUID, spaceId: UUID): Unit = {
+      val result = Collection.update(
+        MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+        $set("space" -> Some(new ObjectId(spaceId.stringify))),
+        false, false)
   }
 }
 

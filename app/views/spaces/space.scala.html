@@ -1,0 +1,24 @@
+@(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset])(implicit user: Option[securesocial.core.Identity])
+
+@import helper._
+
+@main(space.name) {
+    <div class="row space-head">
+        <div class="col-md-12">
+            <div class="row">
+                <h1>@space.name</h1>
+                    <a href="@routes.Spaces.updateSpace(space.id)"><span class = "glyphicon glyphicon-edit" aria-hidden="true"></span></a>
+            </div>
+            <p>@space.description</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-9 space-col-left">
+            @collectionsBySpace(collections, space)
+            @datasetsBySpace(datasets, space)
+        </div>
+        <div class="col-md-3 space-col-right">
+            @usersBySpace(space)
+        </div>
+    </div>
+}

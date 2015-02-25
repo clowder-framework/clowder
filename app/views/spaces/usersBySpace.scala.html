@@ -1,0 +1,15 @@
+@(space: ProjectSpace)
+
+<h3>Members</h3>
+
+<div>Owner: @space.creator</div>
+
+@if(space.usersByRole.keySet.size == 0) {
+    <div>No other members</div>
+}
+
+@for((role, users) <- space.usersByRole) {
+    @for(user <- users) {
+        <div>@user (@role)</div>
+    }
+}

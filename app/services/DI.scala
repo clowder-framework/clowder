@@ -28,6 +28,7 @@ class ConfigurationModule extends AbstractModule {
 
     bind(classOf[DatasetService]).to(get("service.datasets", "services.mongodb.MongoDBDatasetService"))
     bind(classOf[FileService]).to(get("service.files", "services.mongodb.MongoDBFileService"))
+    bind(classOf[SpaceService]).to(get("service.spaces", "services.mongodb.MongoDBSpaceService"))
     bind(classOf[MultimediaQueryService]).to(get("service.multimediaQuery", "services.mongodb.MongoDBMultimediaQueryService"))
     bind(classOf[CollectionService]).to(get("service.collections", "services.mongodb.MongoDBCollectionService"))
     bind(classOf[TagService]).to(get("service.tags", "services.mongodb.MongoDBTagService"))
