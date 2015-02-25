@@ -17,6 +17,7 @@ class MetadataSpec extends UnitSpec {
   val mockMetadata = mock[Metadata]
   when(mockMetadata.attachedTo).thenReturn(Map("file_id"->UUID.generate))
   when(mockMetadata.creator).thenReturn(new UserAgent(id = UUID.generate, userId = Some(new URL("http://xyz.com/user"))))
+  //when(mockMetadata.creator).thenReturn(new UserAgent(id = UUID.generate, userId = Some("http://xyz.com/user")))
       
   "A metadata" should "have attachedTo set" in {
     assert( mockMetadata.attachedTo.contains("file_id") == true)
@@ -29,7 +30,8 @@ class MetadataSpec extends UnitSpec {
     info("creator "+ mockMetadata.creator)
     assert(mockMetadata.creator.isInstanceOf[UserAgent] == true)
     assert(mockMetadata.creator.typeOfAgent == "user")
-    assert(mockMetadata.creator.asInstanceOf[UserAgent].userId == Some(new URL("http://xyz.com/user")))
+    //assert(mockMetadata.creator.asInstanceOf[UserAgent].userId == Some(new URL("http://xyz.com/user")))
+    assert(mockMetadata.creator.asInstanceOf[UserAgent].userId == Some("http://xyz.com/user"))
   }
 
 }

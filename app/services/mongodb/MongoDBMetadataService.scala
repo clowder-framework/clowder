@@ -16,27 +16,28 @@ import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import play.api.libs.json.Json
 import services.MetadataService
-
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Writes
+import play.api.libs.json.JsPath
 
 @Singleton
 class MongoDBMetadataService extends MetadataService{
   /** Add metadata to the metadata collection and attach to a section /file/dataset/collection */
   def addMetadata(metadata: Metadata) : UUID = {
     val mid = MetadataDAO.insert(metadata,WriteConcern.Safe)
-    //val mid = MetadataDAO.dao.collection.insert(Json.toJson(metadata))  
     val id= UUID(mid.get.toString())
     id
     //UUID.generate
   }
   
   def getMetadataById(id : UUID) : Option[Metadata]= {
-    MetadataDAO.findOneById(new ObjectId(id.stringify))match {
+    MetadataDAO.findOneById(new ObjectId(id.stringify)) match {
       case Some(metadata) => {
         //TODO link to context based on context id
         Some(metadata)
       }
       case None => None
-    }   
+    }  
   }
   
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
