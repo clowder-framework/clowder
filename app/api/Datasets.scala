@@ -131,45 +131,51 @@ class Datasets @Inject()(
    * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
    * added as part of dataset creation.
    * 
-   * A JSON document is the payload for this endpoint. Required elements are name and description. Optional element is existingfiles,
-   * which will be a comma separated String of existing file IDs to be added to the new dataset. 
+   * A JSON document is the payload for this endpoint. Required elements are name, description, and space. Optional element is
+   * existingfiles, which will be a comma separated String of existing file IDs to be added to the new dataset. 
    */
   @ApiOperation(value = "Create new dataset with no file",
       notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name and description. Optional list of existing file ids to add.",
       responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>    
     (request.body \ "name").asOpt[String].map { name =>
-      (request.body \ "description").asOpt[String].map { description =>        
-          val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData())
-          datasets.insert(d) match {
-            case Some(id) => {              
-              (request.body \ "existingfiles").asOpt[String].map { fileString =>
-                  var idArray = fileString.split(",").map(_.trim())
-                  for (anId <- idArray) {                      
-                      datasets.get(UUID(id)) match {
-					      case Some(dataset) => {
-					          files.get(UUID(anId)) match {
-					              case Some(file) => {
-					            	  attachExistingFileHelper(UUID(id), UUID(anId), dataset, file)
-					            	  Ok(toJson(Map("status" -> "success")))
-					              }
-					              case None => {
-					            	  Logger.error("Error getting file" + anId)
-					            	  BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
-					              }
-					          }
-				        }
-				        case None => {
-				            Logger.error("Error getting dataset" + id)
-				            BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
-				        }
-				      }                      
-                  }
-                  Ok(toJson(Map("id" -> id)))
-              }.getOrElse(Ok(toJson(Map("id" -> id))))              
-            }
-            case None => Ok(toJson(Map("status" -> "error")))
-          }            
+      (request.body \ "description").asOpt[String].map { description =>   
+          (request.body \ "space").asOpt[String].map { space =>
+              var checkedSpace = space
+              if (checkedSpace == "default") {
+                  checkedSpace = None
+              }
+              val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData(), space = checkedSpace)
+              datasets.insert(d) match {
+                case Some(id) => {              
+                  (request.body \ "existingfiles").asOpt[String].map { fileString =>
+                      var idArray = fileString.split(",").map(_.trim())
+                      for (anId <- idArray) {                      
+                          datasets.get(UUID(id)) match {
+    					      case Some(dataset) => {
+    					          files.get(UUID(anId)) match {
+    					              case Some(file) => {
+    					            	  attachExistingFileHelper(UUID(id), UUID(anId), dataset, file)
+    					            	  Ok(toJson(Map("status" -> "success")))
+    					              }
+    					              case None => {
+    					            	  Logger.error("Error getting file" + anId)
+    					            	  BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
+    					              }
+    					          }
+    				        }
+    				        case None => {
+    				            Logger.error("Error getting dataset" + id)
+    				            BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+    				        }
+    				      }                      
+                      }
+                      Ok(toJson(Map("id" -> id)))
+                  }.getOrElse(Ok(toJson(Map("id" -> id))))              
+                }
+                case None => Ok(toJson(Map("status" -> "error")))
+              }            
+          }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
