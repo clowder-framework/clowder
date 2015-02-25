@@ -87,6 +87,11 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.dao.collection.save(doc)
     id.toString
   }
+  
+  def setDescription(id: UUID, descr: String) {
+	    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("description" -> Some(descr)), false, false, WriteConcern.Safe)    
+  }
+  
 }
 
 object SectionDAO extends ModelCompanion[Section, ObjectId] {

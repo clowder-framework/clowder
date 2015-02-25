@@ -164,4 +164,26 @@ class Sections @Inject()(
         case None => BadRequest
       }
   }
+  
+  def setDescription(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateFiles))  { implicit request =>
+	  request.user match {
+	    case Some(identity) => {
+		    request.body.\("descript").asOpt[String] match {
+			    case Some(descr) => {
+			        sections.setDescription(id, descr)
+			        Ok(toJson(Map("status"->"success")))
+			    }
+			    case None => {
+			    	Logger.error("no section description specified.")
+			    	BadRequest(toJson("no section description specified."))
+			    }
+		    }
+	    }
+	    case None =>
+	      Logger.error(("No user identity found in the request, request body: " + request.body))
+	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+	  }
+    }
+  
+  
 }
