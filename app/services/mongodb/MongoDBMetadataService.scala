@@ -14,15 +14,19 @@ import scala.Some
 import play.api.libs.json.JsObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
+import play.api.libs.json.Json
+import services.MetadataService
 
 
 @Singleton
-class MongoDBMetadataService {
- /** Add metadata to the metadata collection and attach to a section /file/dataset/collection */
+class MongoDBMetadataService extends MetadataService{
+  /** Add metadata to the metadata collection and attach to a section /file/dataset/collection */
   def addMetadata(metadata: Metadata) : UUID = {
     val mid = MetadataDAO.insert(metadata,WriteConcern.Safe)
-    val id = UUID(mid.get.toString)
+    //val mid = MetadataDAO.dao.collection.insert(Json.toJson(metadata))  
+    val id= UUID(mid.get.toString())
     id
+    //UUID.generate
   }
   
   def getMetadataById(id : UUID) : Option[Metadata]= {
@@ -39,7 +43,8 @@ class MongoDBMetadataService {
   def getMetadataByAttachTo(elementType : String, elementId : UUID): List[Metadata] = {
     val eidMap = Map(elementType+"_id"-> elementId)
     val attachTo = MetadataDAO.find(MongoDBObject("attachTo" -> eidMap))
-    attachTo.asInstanceOf[List[Metadata]]
+    val x = attachTo.asInstanceOf[List[Metadata]]
+    x
   }
 
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
@@ -75,7 +80,7 @@ class MongoDBMetadataService {
 object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {
   // TODO RK handle exception for instance if we switch to other DB
   val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case None => throw new RuntimeException("No MongoSalatPlugin")
     case Some(x) => new SalatDAO[Metadata, ObjectId](collection = x.collection("metadata")) {}
   }
 }
