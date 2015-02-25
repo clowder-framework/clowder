@@ -14,12 +14,13 @@ import play.api.libs.json.JsObject
  * @author Smruti Padhy
  */
 class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
-  //val testCreator = UserAgent(id= UUID.generate, typeOfAgent="cat:user", userId = Some(new URL("http://dts.ncsa.illinois.edu/user06")))
-  val testCreator = UserAgent(id= UUID.generate, typeOfAgent="cat:user", userId = Some("http://dts.ncsa.illinois.edu/user06"))
+  val testCreator = UserAgent(id= UUID.generate, typeOfAgent="cat:user", userId = Some(new URL("http://dts.ncsa.illinois.edu/user06")))
   val fileId = UUID.generate
+  val datasetId = UUID.generate
   val testMetadata = Metadata(
     id = UUID.generate,
-    attachedTo = Map("file_id"->fileId), 
+    //attachedTo = Map("file_id"->fileId, "dataset_id"->fileId), 
+    attachedTo = Map("file_id"->fileId, "dataset_id"-> datasetId), 
     createdAt = new Date,
     creator = testCreator,
     content = new JsObject(Seq()))
@@ -33,10 +34,15 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
       info("new metadata added " + id)
       val retrievedMetadata = metadata.getMetadataById(id)
       info("retrieving metadata " + retrievedMetadata)
+      
+      val mdByattachTo = metadata.getMetadataByAttachTo("file", fileId)
+      info("Get Metadata By attachedTo field" + mdByattachTo)
+      
+      val mdByCreator = metadata.getMetadataByCreator("file", fileId, "cat:user")
+      info("Get Metadata By creator field" + mdByCreator)
+      
       metadata.removeMetadata(id)
       info("remove metadata " + id)
     }
    }
-
-
 }

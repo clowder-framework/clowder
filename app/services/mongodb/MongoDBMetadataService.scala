@@ -23,48 +23,52 @@ import play.api.libs.json.JsPath
 @Singleton
 class MongoDBMetadataService extends MetadataService{
   /** Add metadata to the metadata collection and attach to a section /file/dataset/collection */
-  def addMetadata(metadata: Metadata) : UUID = {
-    val mid = MetadataDAO.insert(metadata,WriteConcern.Safe)
-    val id= UUID(mid.get.toString())
+  def addMetadata(metadata: Metadata): UUID = {
+    Logger.debug("Inside addMetadata")
+    val mid = MetadataDAO.insert(metadata, WriteConcern.Safe)
+    val id = UUID(mid.get.toString())
     id
-    //UUID.generate
   }
-  
-  def getMetadataById(id : UUID) : Option[Metadata]= {
+
+  def getMetadataById(id: UUID): Option[Metadata] = {
     MetadataDAO.findOneById(new ObjectId(id.stringify)) match {
       case Some(metadata) => {
         //TODO link to context based on context id
         Some(metadata)
       }
       case None => None
-    }  
+    }
   }
-  
+
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
-  def getMetadataByAttachTo(elementType : String, elementId : UUID): List[Metadata] = {
-    val eidMap = Map(elementType+"_id"-> elementId)
-    val attachTo = MetadataDAO.find(MongoDBObject("attachTo" -> eidMap))
-    val x = attachTo.asInstanceOf[List[Metadata]]
-    x
+  def getMetadataByAttachTo(elementType: String, elementId: UUID): List[Metadata] = {
+    //val eidMap = Map(elementType + "_id" -> new ObjectId(elementId.stringify))
+    // val MetadataAttachedTo  = MetadataDAO.find(MongoDBObject("attachedTo" -> eidMap))
+    val MetadataAttachedTo  = MetadataDAO.find(MongoDBObject(("attachedTo."+ elementType + "_id") -> new ObjectId(elementId.stringify)))
+    var md : List[Metadata]= List.empty
+    for (e <- MetadataAttachedTo) {
+      md = e :: md
+    }
+    md
   }
 
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
-  def getMetadataByCreator(elementType : String, elementId : UUID, typeofAgent : String): List[Metadata] = {
-    val eidMap = Map(elementType+"_id"-> elementId)
-    val mdlistForElementType = MetadataDAO.find(MongoDBObject("attachTo" -> eidMap))
-    var mdlist : List[Metadata] = List.empty
-    for(md<-mdlistForElementType){
+  def getMetadataByCreator(elementType: String, elementId: UUID, typeofAgent: String): List[Metadata] = {
+    //val eidMap = Map(elementType + "_id" -> new ObjectId(elementId.stringify))
+    val mdlistForElementType = MetadataDAO.find(MongoDBObject("attachedTo"+"."+ elementType +"_id" ->new ObjectId(elementId.stringify)))
+    var mdlist: List[Metadata] = List.empty
+    for (md <- mdlistForElementType) {
       var creator = md.creator
-      if(creator.typeOfAgent == typeofAgent){
+      if (creator.typeOfAgent == typeofAgent) {
         mdlist = md :: mdlist
       }
     }
     mdlist
   }
-   /** Remove metadata */
+  /** Remove metadata */
   def removeMetadata(id: UUID) = {
     val md = getMetadataById(id).getOrElse(null)
-    MetadataDAO.remove(md, WriteConcern.Safe)  
+    MetadataDAO.remove(md, WriteConcern.Safe)
   }
   
   /** Get metadata context if available 
