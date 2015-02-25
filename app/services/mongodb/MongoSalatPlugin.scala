@@ -56,6 +56,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     
+    collection("metadata").ensureIndex(MongoDBObject("createdAt" -> -1))
+    collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
+    
     collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
 
