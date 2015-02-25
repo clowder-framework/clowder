@@ -50,7 +50,9 @@ def main():
 		t0 = time.time()
 
 		for line in lines:
-			if line and not line.startswith('#'):
+			line = line.strip()
+
+			if line and not line.startswith('#') and not line.startswith('@'):
 				parts = line.split(' ', 1)
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
