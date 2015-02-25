@@ -64,12 +64,12 @@ class MongoDBMetadataService {
   /** Get metadata context if available 
    * TODO: Implement this when context is defined 
    *  */
-  def getMetadataContext(metadataId: UUID): Option[JsValue] 
+  def getMetadataContext(metadataId: UUID): Option[JsValue] = { None}
   
   /** update Metadata 
    *  TODO
    *  */  
-  def updateMetadata(metadataId: UUID, json: JsValue)
+  def updateMetadata(metadataId: UUID, json: JsValue) = {}
 
 }
 object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {
