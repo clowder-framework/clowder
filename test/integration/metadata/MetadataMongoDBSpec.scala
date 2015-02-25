@@ -19,7 +19,6 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
   val datasetId = UUID.generate
   val testMetadata = Metadata(
     id = UUID.generate,
-    //attachedTo = Map("file_id"->fileId, "dataset_id"->fileId), 
     attachedTo = Map("file_id"->fileId, "dataset_id"-> datasetId), 
     createdAt = new Date,
     creator = testCreator,

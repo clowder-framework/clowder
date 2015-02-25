@@ -41,14 +41,6 @@ case class UserSpace (
 
 case class Role()
 
-// New way to manage metadata. Will eventually be merged with space metadata.
-/*case class SpaceMetadata (
-  created: Date,
-  creator: Agent,     // user/extractor/tool
-  content: JsObject,
-  previousVersion: Option[UUID]
-)*/
-
 // Attempt at a generic provenance object. **Not ready**
 case class ProvObj (
   typeofIf: String,
@@ -56,16 +48,3 @@ case class ProvObj (
   archived: Date,
   obj: JsObject)
 
-// Generic Agent
-/*trait Agent {
-  val id: UUID
-}
-
-// User through the GUI
-case class UserAgent(id: UUID, userId: Option[URL]) extends Agent
-
-// Automatic extraction
-case class ExtractorAgent(id: UUID, extractorId: Option[URL]) extends Agent
-
-// User submitting tool
-case class ToolAgent(id: UUID, toolId: Option[URL]) extends Agent*/

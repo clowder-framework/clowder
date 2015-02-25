@@ -19,6 +19,11 @@ import services.MetadataService
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Writes
 import play.api.libs.json.JsPath
+/**
+ * MongoDB Metadata Service Implementation
+ * @author Smruti Padhy
+ * 
+ */
 
 @Singleton
 class MongoDBMetadataService extends MetadataService{
@@ -44,8 +49,8 @@ class MongoDBMetadataService extends MetadataService{
   def getMetadataByAttachTo(elementType: String, elementId: UUID): List[Metadata] = {
     //val eidMap = Map(elementType + "_id" -> new ObjectId(elementId.stringify))
     // val MetadataAttachedTo  = MetadataDAO.find(MongoDBObject("attachedTo" -> eidMap))
-    val MetadataAttachedTo  = MetadataDAO.find(MongoDBObject(("attachedTo."+ elementType + "_id") -> new ObjectId(elementId.stringify)))
-    var md : List[Metadata]= List.empty
+    val MetadataAttachedTo = MetadataDAO.find(MongoDBObject(("attachedTo." + elementType + "_id") -> new ObjectId(elementId.stringify)))
+    var md: List[Metadata] = List.empty
     for (e <- MetadataAttachedTo) {
       md = e :: md
     }
@@ -55,7 +60,7 @@ class MongoDBMetadataService extends MetadataService{
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
   def getMetadataByCreator(elementType: String, elementId: UUID, typeofAgent: String): List[Metadata] = {
     //val eidMap = Map(elementType + "_id" -> new ObjectId(elementId.stringify))
-    val mdlistForElementType = MetadataDAO.find(MongoDBObject("attachedTo"+"."+ elementType +"_id" ->new ObjectId(elementId.stringify)))
+    val mdlistForElementType = MetadataDAO.find(MongoDBObject("attachedTo" + "." + elementType + "_id" -> new ObjectId(elementId.stringify)))
     var mdlist: List[Metadata] = List.empty
     for (md <- mdlistForElementType) {
       var creator = md.creator

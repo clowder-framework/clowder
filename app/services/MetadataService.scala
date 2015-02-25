@@ -3,6 +3,10 @@ package services
 import play.api.libs.json.JsValue
 import models.UUID
 import models.Metadata
+/**
+ * MetadataService for add and query metadata
+ * @author Smruti Padhy
+ */
 
 trait MetadataService {
   
