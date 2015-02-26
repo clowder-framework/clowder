@@ -420,8 +420,6 @@ class Datasets @Inject()(
 					              }
 					        	  files.setContentType(f.id, fileType)
 					          }
-					        } else if(nameOfFile.toLowerCase().endsWith(".mov")) {
-							  		fileType = "ambiguous/mov";
 					        }
 					        
 					        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
