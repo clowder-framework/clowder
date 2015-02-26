@@ -202,5 +202,10 @@ trait DatasetService {
 
   def setNotesHTML(id: UUID, notesHTML: String)
 
+  /**
+   * Associate a dataset with a space
+   */
+  def addToSpace(dataset: UUID, space: UUID)
+
 }
 
