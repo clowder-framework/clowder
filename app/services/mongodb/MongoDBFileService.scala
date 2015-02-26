@@ -5,6 +5,7 @@ import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import util.License
+import com.novus.salat._
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
@@ -170,17 +171,11 @@ class MongoDBFileService @Inject() (
     mongoFile.contentType = ct
     mongoFile.put("showPreviews", showPreviews)
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
+    mongoFile.put("licenseData", grater[LicenseData].asDBObject(License.fromAppConfig()))
     mongoFile.save
 
     // resave the file to make sure all metadata is saved to mongo
-    get(UUID(mongoFile.getAs[ObjectId]("_id").get.toString)) match {
-      case Some(x) => {
-        val fix = x.copy(licenseData=License.fromAppConfig())
-        FileDAO.save(fix)
-        Some(fix)
-      }
-      case None => None
-    }
+    get(UUID(mongoFile.getAs[ObjectId]("_id").get.toString))
   }
 
   /**
