@@ -34,15 +34,25 @@
 			-->
 
 			<table class="table table-bordered table-hover">
-			<tr><th>#</th><th>Input</th><th>Output</th><th></th></tr>
+			<tr><th width="5%">#</th><th width="30%">Input</th><th width="30%">Output</th><th width="30%">Comments</th><th width="5%"></th></tr>
 		
 			<?php
 			$lines = file('tests.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 			$json = array();
 			$count = 0;		//Row ID and unique prefix for output file
+			$comment = "";
 
 			foreach($lines as $line) {
-				if($line[0] != '#') {
+				if($line[0] == '#') {
+					next;
+				} else if($line[0] == '@') {
+					if ($comment == "") {
+						$comment = substr($line, 1);
+					} else {
+						$comment = $comment . "<br/>" . substr($line, 1);
+					}
+					next;
+				} else {
 					$parts = explode(" ", $line, 2);
 					$input_filename = $parts[0];
 					$outputs = explode(',', $parts[1]);
@@ -51,6 +61,7 @@
 						$count++;
 						$POSITIVE = true;
 						$output = trim($output);
+						$output_html = "";		//HTML version for display
 
 						//Check for negative tests
 						if($output[0] == '!') {
@@ -61,13 +72,15 @@
 						//Check for input files
 						if($output[0] == '"') {
 							$output = substr($output, 1, -1);
+							$output_html = $output;
 						}else{
-							$output = trim(file_get_contents($output));
+							$output_html = htmlentities(trim(file_get_contents($output)), ENT_QUOTES);
 						}
 						
 						//Add the the '!' back for negative tests
 						if(!$POSITIVE) {
 							$output = '!' . $output;
+							$output_html = "!" . $output_html;
 						}
 
 						//List test
@@ -78,11 +91,13 @@
 
 						echo "<tr id=\"" . $count . "\">";
 						echo "<td>" . $count . "</td>";
-						echo "<td><a href=\"" . $input_filename . "\">" . $input_filename . "</a></td>";
-						echo "<td><a href=\"tmp/" . $count . "_" . $output_filename . "\">" . $output . "</a></td>";
+						echo "<td><a href=\"" . $input_filename . "\">" . preg_replace("#^.*/#", "", $input_filename) . "</a></td>";
+						echo "<td><a href=\"tmp/" . $count . "_" . $output_filename . "\">" . $output_html . "</a></td>";
+						echo "<td>${comment}</a></td>";
 						echo "<td align=\"center\"><input type=\"button\" class=\"btn btn-xs btn-primary\" value=\"Run\" onclick=\"test(" . $count . ",'" . $input_filename . "','" . $output . "', false)\"></td>";
 						echo "</tr>\n";
 					}
+					$comment = "";
 				}
 			}
 			?>
@@ -124,7 +139,7 @@
 
 				var dts = document.getElementById('dts').value;
 				var url = 'test.php?dts=' + encodeURIComponent('http://' + dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
-				//console.log(url);
+				console.log(url);
 
 				$.get(url, function(success) {
 					//Check result

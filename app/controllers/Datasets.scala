@@ -277,7 +277,6 @@ class Datasets @Inject()(
           }
           val fileWithSections = f.copy(sections = sectionsWithPreviews)
 
-
           val pvf = for (p <- previewers; pv <- fileWithSections.previews;
                          if (fileWithSections.showPreviews.equals("DatasetLevel"))
                            && (p.contentType.contains(pv.contentType))) yield {

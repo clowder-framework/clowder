@@ -1,3 +1,7 @@
+# any line with a # will be ignored
+# any line starting with @ will be used as a comment for the next test
+# any line starting with ! means do not match
+@ uses ncsa.cv.face extractor
 http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg "Human Face Automatically Detected"
 http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/DSCN0524.preview.JPG !"Human Face Automatically Detected"
 http://browndog.ncsa.illinois.edu/examples/caltech101/airplane.jpg http://browndog.ncsa.illinois.edu/examples/outputs/airplane.jpg.json
@@ -6,4 +10,5 @@ http://browndog.ncsa.illinois.edu/examples/isda.jpg "Human Eyes Automatically De
 http://browndog.ncsa.illinois.edu/examples/tmp/ncsa-deutsch.txt http://browndog.ncsa.illinois.edu/examples/outputs/ncsa-deutsch.json
 http://browndog.ncsa.illinois.edu/examples/tmp/ncsa.txt http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.json
 http://browndog.ncsa.illinois.edu/examples/peter.txt http://browndog.ncsa.illinois.edu/examples/outputs/peter.json
-http://browndog.ncsa.illinois.edu/examples/ncsa.jpg http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.jpg.json
+#http://browndog.ncsa.illinois.edu/examples/ncsa.jpg http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.jpg.json
+http://browndog.ncsa.illinois.edu/examples/cache/isdatools_banner2.png "The ISDA Tools for Digital Preservation "

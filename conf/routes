@@ -42,6 +42,9 @@ GET            /bookmarklet                                                     
 GET            /bookmarklet.js                                                          @controllers.Application.bookmarklet
 
 
+#DTS Chrome extension
+GET    /extensions/dts/chrome                                                @controllers.ExtractionInfo.getExtensionPage()
+
 #This may not require; This is only for testing. It will change in subsequent version
 GET            /extraction/form                                                         @controllers.Files.extractFile
 POST           /extraction/upload                                                       @controllers.Files.uploadExtract()
