@@ -140,12 +140,14 @@ class Datasets @Inject()(
   def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>    
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>   
-          (request.body \ "space").asOpt[String].map { space =>
-              var checkedSpace = space
-              if (checkedSpace == "default") {
-                  checkedSpace = None
+          (request.body \ "space").asOpt[String].map { space =>              
+              var d : Dataset = null
+              if (space == "default") {
+                  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData())
               }
-              val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData(), space = checkedSpace)
+              else {
+              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData(), space = Some(UUID(space)))
+              }
               datasets.insert(d) match {
                 case Some(id) => {              
                   (request.body \ "existingfiles").asOpt[String].map { fileString =>

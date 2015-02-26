@@ -52,7 +52,8 @@ class Datasets @Inject()(
     implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      Ok(views.html.newDataset(filesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      val spacesList = spaces.list()
+      Ok(views.html.newDataset(filesList, spacesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
 
   /**
