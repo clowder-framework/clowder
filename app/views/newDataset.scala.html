@@ -67,6 +67,17 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
             </td>
         </tr>
         <tr>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Space:</td>
+            <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
+                <select name="space" id="spaceid" style="width: 415px;">
+                    <option value="default">Default</option>
+			        @spaces.map { space =>  
+			            <option value="@(space.id)">@(space.name)</option>
+			        }                    
+			    </select>
+            </td>
+        </tr>
+        <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Show file previews: </td>
             <td class="input-table-cell" colspan="2">
                 <input type="radio" name="radiogroup" value="DatasetLevel" id="everywhere" checked> Everywhere&nbsp;&nbsp;&nbsp;</input>
