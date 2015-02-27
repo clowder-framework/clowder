@@ -25,6 +25,7 @@ function disableFields() {
 	$('#name').addClass("hiddenholdspace");
 	$('#description').addClass("hiddenholdspace");	
 	$("input[name=radiogroup]").attr('disabled', true);
+	$("#spaceid").attr('disabled', true);
 	$('#namelabel').html(name);
 	$('#namelabel').show();
 	$('#desclabel').html(desc);

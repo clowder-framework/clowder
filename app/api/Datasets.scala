@@ -51,7 +51,8 @@ class Datasets @Inject()(
   comments: CommentService,
   previews: PreviewService,
   extractions: ExtractionService,
-  rdfsparql: RdfSPARQLService) extends ApiController {
+  rdfsparql: RdfSPARQLService,
+  spaces: SpaceService) extends ApiController {
 
   /**
    * List all datasets.
@@ -147,10 +148,16 @@ class Datasets @Inject()(
                   d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData())
               }
               else {
-              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData(), space = Some(UUID(space)))
+              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData(), space = Some(UUID(space)))              	  
               }
               datasets.insert(d) match {
-                case Some(id) => {              
+                case Some(id) => {
+                  //In this case, the dataset has been created and inserted. Now notify the space service and check
+                  //for the presence of existing files.
+                  Logger.debug("About to call addDataset on spaces service")
+                  //Below call is not what is needed? That already does what we are doing in the Dataset constructor... 
+                  //Items from space model still missing. New API will be needed to update it most likely. 
+                  spaces.addDataset(UUID(id), UUID(space))
                   (request.body \ "existingfiles").asOpt[String].map { fileString =>
                       var idArray = fileString.split(",").map(_.trim())
                       for (anId <- idArray) {                      

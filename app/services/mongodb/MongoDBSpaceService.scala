@@ -109,7 +109,7 @@ class MongoDBSpaceService @Inject() (
    * @param space space id
    */
   def addDataset(dataset: UUID, space: UUID): Unit = {
-    log.debug(s"Adding $dataset to $space")
+    log.debug(s"------------- Space Service - Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
   }
 
