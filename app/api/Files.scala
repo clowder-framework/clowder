@@ -360,9 +360,6 @@ class Files @Inject()(
 					        	  files.setContentType(f.id, fileType)
 					          }
 	            }
-	            else if(nameOfFile.toLowerCase().endsWith(".mov")){
-	            			fileType = "ambiguous/mov";
-	            }
 	            
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 
@@ -576,9 +573,7 @@ class Files @Inject()(
                     }
                   files.setContentType(f.id, fileType)
                 }
-	            } else if(nameOfFile.toLowerCase().endsWith(".mov")) {
-                fileType = "ambiguous/mov";
-              }
+	            }
 	              
               current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
               
@@ -699,9 +694,6 @@ class Files @Inject()(
                       Logger.error(fileType.substring(7))
                       InternalServerError(fileType.substring(7))
                     }
-                  }
-                  else if (f.filename.toLowerCase().endsWith(".mov")) {
-                    fileType = "ambiguous/mov";
                   }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
