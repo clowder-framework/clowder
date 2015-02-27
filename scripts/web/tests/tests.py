@@ -8,22 +8,49 @@ import smtplib
 import socket
 import time
 import urllib2
-
-host = 'http://kgm-d3.ncsa.illinois.edu:9000/'
-#host = 'http://dts1.ncsa.illinois.edu:9000/'
-key = 'r1ek3rs'
+import getopt
+import netifaces as ni
+from pymongo import MongoClient
 
 def main():
 	"""Run extraction bus tests."""
+	host = ni.ifaddresses('eth0')[2][0]['addr']
+	port = '9000'
+	key = 'r1ek3rs'
+	all_failures = False
+
+	#Arguments
+	opts, args = getopt.getopt(sys.argv[1:], 'h:p:k:a')
+
+	for o, a in opts:
+		if o == '-h':
+			host = a
+		elif o == '-p':
+			port = a
+		elif o == '-k':
+			key = a
+		elif o == '-a':
+			all_failures = True
+		else:
+			assert False, "unhandled option"
+
+	print 'Testing: ' + host + '\n'
+
+	#Remove previous outputs
+	for output_filename in os.listdir('tmp'):
+		if(output_filename[0] != '.' and output_filename != 'failures.txt'):
+			os.unlink('tmp/' + output_filename)
+
+	#Read in tests
 	with open('tests.txt', 'r') as tests_file:
-		#Read in tests
 		lines = tests_file.readlines()
 		count = 0;
 		mailserver = smtplib.SMTP('localhost')
+		failure_report = ''
 		t0 = time.time()
 
 		for line in lines:
-			if not line.startswith('#'):
+			if line and not line.startswith('#'):
 				parts = line.split(' ', 1)
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
@@ -49,13 +76,13 @@ def main():
 					
 					#Print out test
 					if POSITIVE:	
-						print(input_filename + ' -> "' + output + '"'),
+						print(input_filename + ' -> "' + output + '"\t'),
 					else:
-						print(input_filename + ' -> !"' + output + '"'),
+						print(input_filename + ' -> !"' + output + '"\t'),
 
 					#Run test
-					metadata = extract(host, key, input_filename)
-					#print metadata
+					metadata = extract(host, port, key, input_filename, 60)
+					print '\n' + metadata
 				
 					#Write derived data to a file for later reference
 					output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(os.path.basename(input_filename))[0] + '.txt'
@@ -67,50 +94,119 @@ def main():
 
 					#Check for expected output
 					if not POSITIVE and metadata.find(output) is -1:
-						print '\t\033[92m[OK]\033[0m'
+						print '\033[92m[OK]\033[0m\n'
 					elif metadata.find(output) > -1:
-						print '\t\033[92m[OK]\033[0m'
+						print '\033[92m[OK]\033[0m\n'
 					else:
-						print '\t\033[91m[Failed]\033[0m'
+						print '\033[91m[Failed]\033[0m\n'
+
+						report = 'Test-' + str(count) + ' failed.  Expected output "'
+								
+						if not POSITIVE:
+							report += '!'
+
+						report += output + '" was not extracted from:\n\n' + input_filename + '\n\n'
+						failure_report += report;
 
 						#Send email notifying watchers	
-						with open('watchers.txt', 'r') as watchers_file:
-							watchers = watchers_file.readlines()
+						if all_failures:
+							with open('failure_watchers.txt', 'r') as watchers_file:
+								watchers = watchers_file.read().splitlines()
+								
+								message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+								message += 'To: ' + ', '.join(watchers) + '\n'
+								message += 'Subject: DTS Test Failed\n\n'
+								message += report
+								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n'
+
+								for watcher in watchers:
+									mailserver.sendmail('', watcher, message)
+
+		dt = time.time() - t0
+		print 'Elapsed time: ' + timeToString(dt)
+
+    #Save to mongo
+		client = MongoClient()
+		db = client['tests']
+		collection = db['dts']
+		document = {'time': int(round(time.time()*1000)), 'elapsed_time': dt}
+		collection.insert(document)
+
+		#Send a final report of failures
+		if failure_report:
+			#Save current failure report to a file
+			with open('tmp/failures.txt', 'w') as output_file:
+				output_file.write(failure_report)
 		
-							for watcher in watchers:
-								watcher = watcher.strip()
+			#Send failure notification emails
+			with open('failure_watchers.txt', 'r') as watchers_file:
+				watchers = watchers_file.read().splitlines()
+	
+				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+				message += 'To: ' + ', '.join(watchers) + '\n'
+				message += 'Subject: DTS Test Failure Report\n\n'
+				message += failure_report			
+				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
+				message += 'Elapsed time: ' + timeToString(dt)
 
-								message = 'Subject: DTS Test Failed\n\n'
-								message += 'Test-' + str(count) + ' failed.  Expected output "'
-								
-								if not POSITIVE:
-									message += '!'
+				for watcher in watchers:
+					mailserver.sendmail('', watcher, message)
+		else:
+			if os.path.isfile('tmp/failures.txt'):
+				#Send failure rectification emails
+				with open('tmp/failures.txt', 'r') as report_file:
+					failure_report = report_file.read()
+					os.unlink('tmp/failures.txt')
+		
+					with open('failure_watchers.txt', 'r') as watchers_file:
+						watchers = watchers_file.read().splitlines()
+	
+						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+						message += 'To: ' + ', '.join(watchers) + '\n'
+						message += 'Subject: DTS Tests Now Passing\n\n'
+						message += 'Previous failures:\n\n'
+						message += failure_report			
+						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
+						message += 'Elapsed time: ' + timeToString(dt)
 
-								message += output + '" was not extracted from:\n\n' + input_filename + '\n\n'
-								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?run=false&start=true\n'
-								
-								mailserver.sendmail('', watcher, message)
+						for watcher in watchers:
+							mailserver.sendmail('', watcher, message)
+			else:
+				#Send success notification emails
+				with open('pass_watchers.txt', 'r') as watchers_file:
+					watchers = watchers_file.read().splitlines()
 
-		print 'Elapsed time: ' + timeToString(time.time() - t0)
+					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+					message += 'To: ' + ', '.join(watchers) + '\n'
+					message += 'Subject: DTS Tests Passed\n\n';
+					message += 'Elapsed time: ' + timeToString(dt)
+
+					for watcher in watchers:
+						mailserver.sendmail('', watcher, message)
+
 		mailserver.quit()
 
-def extract(host, key, file):
+def extract(host, port, key, file, wait):
 	"""Pass file to Medici extraction bus."""
 	#Upload file
 	headers = {'Content-Type': 'application/json'}
 	data = {}
 	data["fileurl"] = file
-	file_id = requests.post(host + 'api/extractions/upload_url?key=' + key, headers=headers, data=json.dumps(data)).json()['id']
+	file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, headers=headers, data=json.dumps(data)).json()['id']
 
 	#Poll until output is ready (optional)
-	while True:
-		status = requests.get(host + 'api/extractions/' + file_id + '/status').json()
+	while wait > 0:
+		status = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/status').json()
 		if status['Status'] == 'Done': break
 		time.sleep(1)
+		wait -= 1
 
-	#Display extracted content
-	metadata = requests.get(host + 'api/extractions/' + file_id + '/metadata').json()
-	return json.dumps(metadata)
+	#Display extracted content (TODO: needs to be one endpoint!!!)
+	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json()
+	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson').json()
+	metadata = json.dumps(metadata)
+
+	return metadata
 
 def timeToString(t):
 	"""Return a string represntation of the give elapsed time"""

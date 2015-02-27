@@ -44,7 +44,7 @@ class Application @Inject() (files: FileService) extends SecuredController {
     val protocol = Utils.protocol(request)
     Ok(views.html.bookmarklet(request.host, protocol)).as("application/javascript")
   }
-
+  
   /**
    *  Javascript routing.
    */
@@ -68,9 +68,12 @@ class Application @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Admin.removeAdmin,        
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
-        api.routes.javascript.Comments.editComment,
+        api.routes.javascript.Comments.editComment,        
         api.routes.javascript.Datasets.comment,
+        api.routes.javascript.Datasets.createEmptyDataset,
+        api.routes.javascript.Datasets.attachMultipleFiles,
         api.routes.javascript.Datasets.deleteDataset,
+        api.routes.javascript.Datasets.detachAndDeleteDataset,
         api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,
         api.routes.javascript.Datasets.removeTag,

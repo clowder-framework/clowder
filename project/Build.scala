@@ -4,6 +4,11 @@ import Keys._
 import play.Project._
 import com.typesafe.sbt.SbtNativePackager._
 import NativePackagerKeys._
+//import com.typesafe.sbt.SbtLicenseReport.autoImportImpl._
+//import com.typesafe.sbt.license.LicenseCategory
+//import com.typesafe.sbt.license.LicenseInfo
+//import com.typesafe.sbt.license.DepModuleInfo
+//import com.typesafe.sbt.license.Html
 
 object ApplicationBuild extends Build {
 
@@ -32,16 +37,24 @@ object ApplicationBuild extends Build {
   }
 
   def gitShortHash: String = {
-    val hash = exec("git rev-parse --short HEAD")
-    assert(hash.length == 1)
-    hash(0)
+    try {
+      val hash = exec("git rev-parse --short HEAD")
+      assert(hash.length == 1)
+      hash(0)
+    } catch {
+      case e: Exception => "N/A"
+    }
   }
 
   def gitBranchName: String = {
-    val branch = exec("git rev-parse --abbrev-ref HEAD")
-    assert(branch.length == 1)
-    if (branch(0) == "HEAD") return "detached"
-    branch(0)
+    try {
+      val branch = exec("git rev-parse --abbrev-ref HEAD")
+      assert(branch.length == 1)
+      if (branch(0) == "HEAD") return "detached"
+      branch(0)
+    } catch {
+      case e: Exception => "N/A"
+    }
   }
 
   def getBambooBuild: String = {
@@ -88,7 +101,6 @@ object ApplicationBuild extends Build {
     "com.googlecode.json-simple" % "json-simple" % "1.1.1",
     "log4j" % "log4j" % "1.2.14",
     "org.codeartisans" % "org.json" % "20131017",
-    "postgresql" % "postgresql" % "8.1-407.jdbc3",
     "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
     "org.springframework" % "spring" % "2.5.6",
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
@@ -108,7 +120,7 @@ object ApplicationBuild extends Build {
     offline := true,
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
     javaOptions in Test += "-Dconfig.file=" + Option(System.getProperty("config.file")).getOrElse("conf/application.conf"),
-    testOptions in Test := Nil, // overwrite spec2 config to use scalatest instead
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/scalatest-reports"),
     routesImport += "models._",
     routesImport += "Binders._",
     templatesImport += "org.bson.types.ObjectId",
@@ -136,6 +148,23 @@ object ApplicationBuild extends Build {
     batScriptExtraDefines += "addJava \"-Dbuild.bamboo=" + getBambooBuild + "\"",
     batScriptExtraDefines += "addJava \"-Dbuild.branch=" + gitBranchName + "\"",
     batScriptExtraDefines += "addJava \"-Dbuild.gitsha1=" + gitShortHash + "\""
+
+    // license report
+//    licenseReportTitle := "Medici Licenses",
+//    licenseConfigurations := Set("compile", "provided"),
+//    licenseSelection := Seq(LicenseCategory("NCSA"), LicenseCategory("Apache")) ++ LicenseCategory.all,
+//    licenseOverrides := licenseOverrides.value orElse {
+//      case DepModuleInfo("com.rabbitmq", "amqp-client", _) => LicenseInfo(LicenseCategory.Mozilla, "Mozilla Public License v1.1", "https://www.rabbitmq.com/mpl.html")
+//      case DepModuleInfo("com.typesafe.play", _, _) => LicenseInfo(LicenseCategory.Apache, "Apache 2", "http://www.apache.org/licenses/LICENSE-2.0")
+//      case DepModuleInfo("org.apache.lucene", _, _) => LicenseInfo(LicenseCategory.Apache, "Apache 2", "http://www.apache.org/licenses/LICENSE-2.0")
+//      // The word Aduna with capital A will crash dumpLicenseReport, no idea why.
+//      case DepModuleInfo("org.openrdf.sesame", _, _) => LicenseInfo(LicenseCategory.BSD, "aduna BSD license", "http://repo.aduna-software.org/legal/aduna-bsd.txt")
+//      case DepModuleInfo("org.reflections", _, _) => LicenseInfo(LicenseCategory.PublicDomain, "WTFPL", "http://www.wtfpl.net/txt/copying")
+//    },
+//    licenseReportMakeHeader := {
+//      case Html => Html.header1(licenseReportTitle.value) + "<p>Medici is licensed under the <a href='http://opensource.org/licenses/NCSA'>University of Illinois/NCSA Open Source License</a>.</p><p>Below are the libraries that Medici depends on and their licenses.<br></p>"
+//      case l => l.header1(licenseReportTitle.value)
+//    }
 
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
