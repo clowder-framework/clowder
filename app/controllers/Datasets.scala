@@ -290,7 +290,7 @@ class Datasets @Inject()(
                             && (p.contentType.contains(f.contentType))) yield {
               //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the
               //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-              if (f.checkLicenseForDownload(user)) {
+              if (f.licenseData.isDownloadAllowed(user)) {
                 (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id).toString, f.contentType, f.length)
               }
               else {
