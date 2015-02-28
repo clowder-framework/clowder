@@ -382,233 +382,248 @@ class Datasets @Inject()(
    * the checks are made here as well. 
    * 
    */
-	def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
-    var dsName = "No Value"
+    var dsName = request.body. asFormUrlEncoded.getOrElse("name", null)
+    var dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
     var dsLevel = request.body.asFormUrlEncoded.get("datasetLevel")
-    var dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)    		
-    
+    var dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
+
+    if (dsName == null || dsDesc == null) {
+      //Changed to return appropriate data and message to the upload interface
+      var retMap = Map("files" ->
+        Seq(
+          toJson(
+            Map(
+              "name" -> toJson("Mising Form Data"),
+              "size" -> toJson(0),
+              "error" -> toJson("Please ensure that there is a name and a description set.")
+            )
+          )
+        )
+      )
+      Ok(toJson(retMap))
+    }
+
     if (dsId == null) {
-		//Changed to return appropriate data and message to the upload interface
-	    var retMap = Map("files" -> 
-	        Seq(
-	            toJson(
-	                Map(
-	                    "name" -> toJson("Dataset was not created correctly."),
-	                    "size" -> toJson(0),
-	                    "error" -> toJson("Dataset not created correctly. Please try again.")
-	                )
-	            )
-	        )
-	     )
-	     Ok(toJson(retMap))
-	}
-    
+      //Changed to return appropriate data and message to the upload interface
+      var retMap = Map("files" ->
+        Seq(
+          toJson(
+            Map(
+              "name" -> toJson("Dataset was not created correctly."),
+              "size" -> toJson(0),
+              "error" -> toJson("Dataset not created correctly. Please try again.")
+            )
+          )
+        )
+      )
+      Ok(toJson(retMap))
+    }
+
     user match {
       case Some(identity) => {
-          var nameOfFile : String = null
-          request.body.file("files[]").map { f =>                     
-	          nameOfFile = f.filename
-          }
-          //The reference for the new dataset          
-          datasets.get(UUID(dsId(0))) match {          
-              case Some(dataset) => {                                             
-	              request.body.file("files[]").map { f =>	             
-            	    var nameOfFile = f.filename
-    	            var flags = ""
-    	            if(nameOfFile.toLowerCase().endsWith(".ptm")){
-    	              var thirdSeparatorIndex = nameOfFile.indexOf("__")
-    	              if(thirdSeparatorIndex >= 0){
-    	                var firstSeparatorIndex = nameOfFile.indexOf("_")
-    	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-    	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-    	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-    	              }
-    	            }
-    
-            	    Logger.debug("Datset submit, new file - uploading file " + nameOfFile)
-    		        
-    		        // store file
-            	    Logger.info("Adding file" + identity)
-            	    val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
-            	    val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
-    			    Logger.debug("Uploaded file id is " + file.get.id)
-    			    Logger.debug("Uploaded file type is " + f.contentType)
-    			    
-    			    val uploadedFile = f
-    			    file match {
-    			      case Some(f) => {
-    			        					        
-    			        val id = f.id	                	                
-    	                if(showPreviews.equals("FileLevel"))
-    	                	flags = flags + "+filelevelshowpreviews"
-    	                else if(showPreviews.equals("None"))
-    	                	flags = flags + "+nopreviews"
-    			        var fileType = f.contentType
-    			        if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
-    			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
-    			          if(fileType.startsWith("ERROR: ")){
-    			             Logger.error(fileType.substring(7))
-    			             InternalServerError(fileType.substring(7))
-    			          }
-    			          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped") ){
-    			            if(fileType.equals("multi/files-ptm-zipped")){
-            				    fileType = "multi/files-zipped";
-            				  }
-    			            
-    			        	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
-    			              if(thirdSeparatorIndex >= 0){
-    			                var firstSeparatorIndex = nameOfFile.indexOf("_")
-    			                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-    			            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-    			            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-    			            	files.renameFile(f.id, nameOfFile)
-    			              }
-    			        	  files.setContentType(f.id, fileType)
-    			          }
-    			        } else if(nameOfFile.toLowerCase().endsWith(".mov")) {
-    					  		fileType = "ambiguous/mov";
-    			        }
-    			        
-    			        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-    			        
-    		    		// TODO RK need to replace unknown with the server name
-    		    		val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-    
-    					val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
-        					
-    			        //directly add the file to the dataset via the service
-    					datasets.addFile(dataset.id, f)
-    			        						
-    		    		val dsId = dataset.id
-    		    		val dsName = dataset.name
-    		    		
-    			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dsId, flags))}
-    			        
-    			        val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-    			        
-    			        //for metadata files
-    					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-					  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-							  files.addXMLMetadata(f.id, xmlToJSON)
-							  datasets.addXMLMetadata(dsId, f.id, xmlToJSON)
-
-							  Logger.debug("xmlmd=" + xmlToJSON)
-							  
-							  //index the file
-							  current.plugin[ElasticsearchPlugin].foreach{
-					  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dsId.toString()),("datasetName",dsName), ("xmlmetadata", xmlToJSON)))
-
-					  		  }
-					  		  // index dataset
-					  		  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dsId, 
-					  		  List(("name",dsName), ("description", dataset.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
-    					  } else {
-    						  //index the file
-    
-    						  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dsId.toString),("datasetName",dsName)))}
-    
-    						  // index dataset
-    						  current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dsId, 
-    						  List(("name",dsName), ("description", dataset.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName","")))}
-    					  }
-    			        
-        			      // index the file using Versus for content-based retrieval
-        			      current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-    
-    			    	  // TODO RK need to replace unknown with the server name and dataset type		            
-     			    	  val dtkey = "unknown." + "dataset."+ "unknown"
-     			    	  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dsId, dsId, host, dtkey, Map.empty, "0", dsId, ""))}
-     			    	
-     			    	//add file to RDF triple store if triple store is used
-     			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-    			             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-    				             case "yes" => {
-    				               sparql.addFileToGraph(f.id)
-    				               sparql.linkFileToDataset(f.id, dsId)
-    				             }
-    				             case _ => {}
-    			             }
-    		             }
-    
-     			    	// Insert DTS Request to the database
-     			    	val clientIP=request.remoteAddress
-     			    	val serverIP= request.host
-     			    	dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-     			    	
-     			    	//Correctly set the updated URLs and data that is needed for the interface to correctly 
-     			    	//update the display after a successful upload.
-     			    	var retMap = Map("files" -> 
-    				    Seq(
-    					        toJson(
-    					            Map(
-    					                "name" -> toJson(nameOfFile),
-    					                "size" -> toJson(uploadedFile.ref.file.length()),
-    		                            "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
-    		                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(false)),
-    		                            "deleteType" -> toJson("POST")
-    					            )
-    					        )
-    					    )
-    				    )
-    				    Ok(toJson(retMap))
-    			      }
-    			      
-    			      case None => {
-    			        Logger.error("---------- ERROR Could not retrieve file that was just saved.")
-    			        //No need to update the service anymore since the dataset has already been created and added earlier. 
-    			        //Just send the notifications. MMF - 1/15
-    		            current.plugin[AdminsNotifierPlugin].foreach{
-    			        _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dataset.id.stringify, dataset.name)}
-    		            //Changed to return appropriate data and message to the upload interface
-    		            var retMap = Map("files" -> 
-    	                     Seq(
-    	                         toJson(
-    	                             Map(
-    	                                 "name" -> toJson(nameOfFile),
-    	                                 "size" -> toJson(uploadedFile.ref.file.length()),
-    	                                 "error" -> toJson("Problem in storing the uploaded file.")
-    	                             )
-    	                         )
-    	                     )
-    	                 )
-    		             Ok(toJson(retMap))
-    			      }
-    			    }   	                 	                	             	           
-    	        }.getOrElse{
-    	            var retMap = Map("files" ->
-    	                                Seq(
-    	                                    toJson(
-    	                                        Map(
-    	                                            "name" -> toJson("File not received"),
-    	                                            "size" -> toJson(0),
-    	                                            "error" -> toJson("The file was not correctly received by the server. Please try again.")
-    	                                           )
-    	                                          )
-    	                                   )
-    	                            )
-    	                            Ok(toJson(retMap))
-    	        }	        
-            }
-              case None => {
-                  var retMap = Map("files" -> 
-						        Seq(
-						            toJson(
-						                Map(
-						                    "name" -> toJson("Dataset ID Invalid."),
-						                    "size" -> toJson(0),
-						                    "error" -> toJson("Dataset with the specified ID was not found. Please try again.")
-						                )
-						            )
-						        )
-						     )
-						     Ok(toJson(retMap))
+        var nameOfFile : String = null
+        request.body.file("files[]").map { f =>
+          nameOfFile = f.filename
+        }
+        //The reference for the new dataset
+        datasets.get(UUID(dsId(0))) match {
+          case Some(dataset) => {
+            request.body.file("files[]").map { f =>
+              var nameOfFile = f.filename
+              var flags = ""
+              if(nameOfFile.toLowerCase().endsWith(".ptm")){
+                var thirdSeparatorIndex = nameOfFile.indexOf("__")
+                if(thirdSeparatorIndex >= 0){
+                  var firstSeparatorIndex = nameOfFile.indexOf("_")
+                  var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+                  flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+                  nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+                }
               }
+
+              Logger.debug("Datset submit, new file - uploading file " + nameOfFile)
+
+              // store file
+              Logger.info("Adding file" + identity)
+              val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+              Logger.debug("Uploaded file id is " + file.get.id)
+              Logger.debug("Uploaded file type is " + f.contentType)
+
+              val uploadedFile = f
+              file match {
+                case Some(f) => {
+
+                  val id = f.id
+                  if(showPreviews.equals("FileLevel"))
+                    flags = flags + "+filelevelshowpreviews"
+                  else if(showPreviews.equals("None"))
+                    flags = flags + "+nopreviews"
+                  var fileType = f.contentType
+                  if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
+                    fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")
+                    if(fileType.startsWith("ERROR: ")){
+                      Logger.error(fileType.substring(7))
+                      InternalServerError(fileType.substring(7))
+                    }
+                    if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped") ){
+                      if(fileType.equals("multi/files-ptm-zipped")){
+                        fileType = "multi/files-zipped";
+                      }
+
+                      var thirdSeparatorIndex = nameOfFile.indexOf("__")
+                      if(thirdSeparatorIndex >= 0){
+                        var firstSeparatorIndex = nameOfFile.indexOf("_")
+                        var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+                        flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+                        nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+                        files.renameFile(f.id, nameOfFile)
+                      }
+                      files.setContentType(f.id, fileType)
+                    }
+                  }
+
+                  current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
+
+                  // TODO RK need to replace unknown with the server name
+                  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
+
+                  val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
+
+                  //directly add the file to the dataset via the service
+                  datasets.addFile(dataset.id, f)
+
+                  val dsId = dataset.id
+                  val dsName = dataset.name
+
+                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dsId, flags))}
+
+                  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+
+                  //for metadata files
+                  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+                    val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+                    files.addXMLMetadata(f.id, xmlToJSON)
+                    datasets.addXMLMetadata(dsId, f.id, xmlToJSON)
+
+                    Logger.debug("xmlmd=" + xmlToJSON)
+
+                    //index the file
+                    current.plugin[ElasticsearchPlugin].foreach{
+                      _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dsId.toString()),("datasetName",dsName), ("xmlmetadata", xmlToJSON)))
+
+                    }
+                    // index dataset
+                    current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dsId,
+                      List(("name",dsName), ("description", dataset.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
+                  } else {
+                    //index the file
+
+                    current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dsId.toString),("datasetName",dsName)))}
+
+                    // index dataset
+                    current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dsId,
+                      List(("name",dsName), ("description", dataset.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName","")))}
+                  }
+
+                  // index the file using Versus for content-based retrieval
+                  current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
+
+                  // TODO RK need to replace unknown with the server name and dataset type
+                  val dtkey = "unknown." + "dataset."+ "unknown"
+                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dsId, dsId, host, dtkey, Map.empty, "0", dsId, ""))}
+
+                  //add file to RDF triple store if triple store is used
+                  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+                    play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{
+                      case "yes" => {
+                        sparql.addFileToGraph(f.id)
+                        sparql.linkFileToDataset(f.id, dsId)
+                      }
+                      case _ => {}
+                    }
+                  }
+
+                  // Insert DTS Request to the database
+                  val clientIP=request.remoteAddress
+                  val serverIP= request.host
+                  dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
+
+                  //Correctly set the updated URLs and data that is needed for the interface to correctly
+                  //update the display after a successful upload.
+                  var retMap = Map("files" ->
+                    Seq(
+                      toJson(
+                        Map(
+                          "name" -> toJson(nameOfFile),
+                          "size" -> toJson(uploadedFile.ref.file.length()),
+                          "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
+                          "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(false)),
+                          "deleteType" -> toJson("POST")
+                        )
+                      )
+                    )
+                  )
+                  Ok(toJson(retMap))
+                }
+
+                case None => {
+                  Logger.error("---------- ERROR Could not retrieve file that was just saved.")
+                  //No need to update the service anymore since the dataset has already been created and added earlier.
+                  //Just send the notifications. MMF - 1/15
+                  current.plugin[AdminsNotifierPlugin].foreach{
+                    _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dataset.id.stringify, dataset.name)}
+                  //Changed to return appropriate data and message to the upload interface
+                  var retMap = Map("files" ->
+                    Seq(
+                      toJson(
+                        Map(
+                          "name" -> toJson(nameOfFile),
+                          "size" -> toJson(uploadedFile.ref.file.length()),
+                          "error" -> toJson("Problem in storing the uploaded file.")
+                        )
+                      )
+                    )
+                  )
+                  Ok(toJson(retMap))
+                }
+              }
+            }.getOrElse{
+              var retMap = Map("files" ->
+                Seq(
+                  toJson(
+                    Map(
+                      "name" -> toJson("File not received"),
+                      "size" -> toJson(0),
+                      "error" -> toJson("The file was not correctly received by the server. Please try again.")
+                    )
+                  )
+                )
+              )
+              Ok(toJson(retMap))
+            }
+          }
+          case None => {
+            var retMap = Map("files" ->
+              Seq(
+                toJson(
+                  Map(
+                    "name" -> toJson("Dataset ID Invalid."),
+                    "size" -> toJson(0),
+                    "error" -> toJson("Dataset with the specified ID was not found. Please try again.")
+                  )
+                )
+              )
+            )
+            Ok(toJson(retMap))
           }
         }
-        case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to modify datasets.")
       }
+      case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
+    }
   }
 	
 

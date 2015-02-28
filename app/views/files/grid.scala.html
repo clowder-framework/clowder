@@ -1,4 +1,4 @@
-@(files: List[File])(implicit user: Option[securesocial.core.Identity])
+@(files: List[File], dsId: UUID)(implicit user: Option[securesocial.core.Identity])
 
 @import org.apache.commons.io._
 
@@ -35,7 +35,7 @@
                             <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span>  @file.tags.size
                             <span class="glyphicon glyphicon glyphicon-list" title="@(file.userMetadata.keys.size + file.metadata.size) metadata fields"></span>  @(file.userMetadata.keys.size + file.metadata.size)
                             @if(user.isDefined) {
-                                <a href="#" onclick="removeFile('@(file.id)',event)" class="btn btn-link" style="text-align:right" title="Delete">
+                                <a href="#" onclick="removeFileAndRedirect('@(file.id)','@(routes.Datasets.dataset(dsId))')" class="btn btn-link" style="text-align:right" title="Delete">
                                     <span class="glyphicon glyphicon-trash"></span></a>
                             }
                         </li>
