@@ -506,6 +506,29 @@ object Geostreams extends ApiController {
           counter = counter.plusMonths(6)
         }
       }
+      case "season" => {
+        var counter = startTime
+        while(counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val year = counter.getYear
+          if ((counter.getMonthOfYear < 3) || (counter.getMonthOfYear == 3 && counter.getDayOfMonth < 21)) {
+            result.put(year + " winter", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))
+          } else if ((counter.getMonthOfYear < 6) || (counter.getMonthOfYear == 6 && counter.getDayOfMonth < 21)) {
+            result.put(year + " spring", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 5, 1, 12, 0, 0))))
+          } else if ((counter.getMonthOfYear < 9) || (counter.getMonthOfYear == 9 && counter.getDayOfMonth < 21)) {
+            result.put(year + " summer", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 8, 1, 12, 0, 0))))
+          } else if((counter.getMonthOfYear < 12) || (counter.getMonthOfYear == 12 && counter.getDayOfMonth < 21)) {
+            result.put(year + " fall", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 11, 1, 12, 0, 0))))
+          } else {
+	    result.put(year + " winter", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))		
+	  }
+          counter = counter.plusMonths(3)
+        }
+      }
       case "month" => {
         var counter = startTime
         while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
