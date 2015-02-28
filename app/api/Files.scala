@@ -3,8 +3,7 @@ package api
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.OutputStream
-import java.net.URL
-import java.net.HttpURLConnection
+import java.net.{URLEncoder, URI, URL, HttpURLConnection}
 
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -168,7 +167,7 @@ class Files @Inject()(
 		              case None => {
 		                Ok.chunked(Enumerator.fromStream(inputStream))
 		                  .withHeaders(CONTENT_TYPE -> contentType)
-		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8")))
 		              }
 		            }
 		          }
