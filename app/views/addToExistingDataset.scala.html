@@ -1,4 +1,4 @@
-@(filesList: List[(String, String)])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(filesList: List[(String, String)], id: UUID, name: String, desc: String)(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 
 
@@ -26,16 +26,16 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 <noscript><link rel="stylesheet" href="@routes.Assets.at("stylesheets/file-uploader/jquery.fileupload-noscript.css")"></noscript>
 <noscript><link rel="stylesheet" href="@routes.Assets.at("stylesheets/file-uploader/jquery.fileupload-ui-noscript.css")"></noscript>
 
-@main("Medici 2.0") {
+@main("addfilestoexistingdataset") {
 
   <!-- Custom items for the create dataset workflow -->
-  <script src="@routes.Assets.at("javascripts/dataset-create-fileuploader.js")" type="text/javascript"></script>
+  <script src="@routes.Assets.at("javascripts/dataset-attach-fileuploader.js")" type="text/javascript"></script>
   <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
   <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
   
 <div class="container">
   <div class="page-header">
-    <h1>Create New Dataset</h1>
+    <h1>Add Files To Dataset</h1>
   </div>
   
     <div class="row">
@@ -49,21 +49,13 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell">
-                <label id="namelabel" class="hiddencomplete">Nothing</label>
-                <textarea cols=40 rows=4 type="text" id="name"></textarea>                                            
-            </td>
-            <td style="vertical-align:top;" class="input-table-cell">
-                <span class="error hiddencomplete" id="nameerror"> The name is a required field</span><br>
-            </td>
+                @name                                           
+            </td>            
         </tr>
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Description:</td>
-            <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
-                <label id="desclabel" class="hiddencomplete">Nothing</label>
-                <textarea cols=40 rows=4 type="text" id="description"></textarea>                                            
-            </td>
-            <td style="vertical-align:top;" class="input-table-cell">
-                <span class="error hiddencomplete" id="descerror"> This description is a required field</span><br>
+            <td style="width: 35%; vertical-align:top;" class="input-table-cell">
+                @desc                                            
             </td>
         </tr>
         <tr>
@@ -72,15 +64,6 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
                 <input type="radio" name="radiogroup" value="DatasetLevel" id="everywhere" checked> Everywhere&nbsp;&nbsp;&nbsp;</input>
                 <input type="radio" name="radiogroup" value="FileLevel"> On File Page&nbsp;&nbsp;&nbsp;</input>
                 <input type="radio" name="radiogroup" value="None"> Nowhere&nbsp;&nbsp;&nbsp;</input>
-            </td>
-        </tr>
-        <tr>
-            <td>
-            </td>
-            <td colspan="2">
-                <button style="margin-top: 10px;" class="btn btn-default" title="Start the dataset creation process over" onclick="return resetValues();">
-		          <span class="glyphicon glyphicon-refresh"></span> Reset
-		        </button>
             </td>
         </tr>
     </table>
@@ -94,10 +77,10 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
               </ul>
               <div class="tab-content">
                 <div class="tab-pane active" id="tab1">              
-                    @addNewFiles(filesList, "__noval") 
+                    @addNewFiles(filesList, id.stringify) 
                 </div> <!-- End 1st Tab content -->
                 <div class="tab-pane" id="tab2">
-                    @addExistingFiles(filesList, "__noval")                    	     							       
+                    @addExistingFiles(filesList, id.stringify)                                                               
                 </div> <!-- End 2nd Tab content -->
               </div>
             </div>

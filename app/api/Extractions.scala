@@ -55,6 +55,10 @@ import org.apache.commons.io.FileUtils
 import play.api.libs.MimeTypes
 import play.api.http.ContentTypes
 import java.io.InputStream
+import scala.collection.mutable.HashMap
+import play.api.libs.ws.WS
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 
 /**
@@ -131,8 +135,6 @@ class Extractions @Inject() (
                       }
                       files.setContentType(f.id, fileType)
                     }
-                  } else if (nameOfFile.toLowerCase().endsWith(".mov")) {
-                    fileType = "ambiguous/mov";
                   }
 
                   current.plugin[FileDumpService].foreach {
@@ -264,7 +266,72 @@ class Extractions @Inject() (
       case None => BadRequest(toJson("Not authorized."))
     }
   }
+  
   /**
+   * Multiple File Upload for a given list of files' URLs using WS API
+   * 
+   */
+    @ApiOperation(value = "Uploads files for a given list of files' URLs ",
+    notes = "Saves the uploaded files and sends it for extraction. Does not index the files. Returns id for the web resource ",
+    responseClass = "None", httpMethod = "POST")
+  def multipleUploadByURL() = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+    Async {
+      request.user match {
+        case Some(user) => {
+          val pageurl = request.body.\("webPageURL").as[String]
+          val fileurlsjs = request.body.\("fileurls").asOpt[List[String]]
+          Logger.debug("[multipleUploadByURLs] file Urls=" + fileurlsjs)
+          val listURLs = fileurlsjs.getOrElse(List())
+          var listIds = for { fileurl <- listURLs } yield {
+            var urlsplit = fileurl.split("/")
+            var filename = urlsplit(urlsplit.length - 1)
+            var contentType = MimeTypes.forFileName(filename.toLowerCase()).getOrElse(ContentTypes.BINARY)
+            val futureResponse = WS.url(fileurl).get()
+            var fid = for { response <- futureResponse } yield {
+              if (response.status == 200) {
+                var inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
+                var file = files.save(inputStream, filename, Some(contentType), user, null)
+                file match {
+                  case Some(f) => {
+                    var fileType = f.contentType
+                    val id = f.id
+                    fileType = f.contentType
+                    val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+                    val host = Utils.baseUrl(request)
+                    Logger.debug("---hostURL------" + host);
+                    current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
+                    /*--- Insert DTS Requests  ---*/
+                    val clientIP = request.remoteAddress
+                    val serverIP = request.host
+                    dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+                  }
+                  case None => {
+                    Logger.error("Could not retrieve file that was just saved.")
+                    //InternalServerError("Error uploading file")
+                  }
+                }
+                file.map { f => (f.id.toString, fileurl) }.get
+              } else {
+                ("failed-" + UUID.generate.toString, fileurl)
+              }
+            }
+            fid
+          }
+
+          for { x <- scala.concurrent.Future.sequence(listIds) } yield {
+            val uuid = UUID.generate
+            extractions.save(new WebPageResource(uuid, pageurl, x.toMap))
+            var uuidMap = Map("id" -> uuid.toString)
+            val y = uuidMap ++ x.toMap
+            Ok(toJson(y))
+          }
+        }
+        case None => Future(BadRequest(toJson("Not authorized.")))
+      }
+    }
+  }
+
+ /**
    * *
    * For DTS service use case: suppose a user posts a file to the extractions API, no extractors and its corresponding queues in the Rabbitmq are available. Now she checks the status
    * for extractors, i.e., if any new extractor has subscribed to the Rabbitmq. If yes, she may again wants to submit the file for extraction again. Since she has already uploaded
@@ -416,6 +483,61 @@ class Extractions @Inject() (
     } //Async 
   }
 
+  @ApiOperation(value = "Checks for the extraction statuses of all files",
+    notes = " Returns a list (file id, status of extractions) ",
+    responseClass = "None", httpMethod = "GET")
+  def checkExtractionsStatuses(id: models.UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+    Async {
+      request.user match {
+        case Some(user) => {
+          val configuration = play.api.Play.configuration
+          current.plugin[RabbitmqPlugin] match {
+            case Some(plugin) => {
+              Logger.debug("Inside Extraction Checkstatuses")
+              var mapIdUrl = extractions.getWebPageResource(id)
+              var listStatus = for {
+                (fid, url) <- mapIdUrl
+              } yield {
+                Logger.debug("[checkExtractionsStatuses]---fid---" + fid)
+                var statuses = files.get(UUID(fid)) match {
+                  case Some(file) => {
+                    //Get the list of extractors processing the file 
+                    val l = extractions.getExtractorList(file.id)
+                    //Get the bindings
+                    var blist = plugin.getBindings
+                    var fstatus = for {
+                      rkeyResponse <- blist
+                    } yield {
+                      val status = computeStatus(rkeyResponse, file, l)
+                      Logger.debug(" [checkExtractionsStatuses]: l.toString : " + l.toString)
+                      Map("id" -> file.id.toString, "status" -> status)
+                    } //end of yield
+                    fstatus
+                  } //end of some file
+                  case None => {
+                    Future((Map("id" -> id.toString, "status" -> "No File Id found")))
+                  }
+                } //end of match file
+                statuses
+              } //end of outer yield
+              for {
+                ls <- scala.concurrent.Future.sequence(listStatus)
+              } yield {
+                Logger.debug("[checkExtractionsStatuses]: list statuses" + ls)
+                Ok(toJson(ls))
+              }
+            } //rabbitmq plugin
+            case None => {
+              Future(Ok(toJson(Map("No Rabbitmq Service" -> ""))))
+            }
+          }
+        } //end of match user
+        case None => Future(BadRequest(toJson(Map("request" -> "Not authorized."))))
+      } //user
+    } //Async 
+  }
+  
+  
   def computeStatus(response: Response, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
 
     var isActivity = "false"
