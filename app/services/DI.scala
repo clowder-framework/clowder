@@ -28,6 +28,7 @@ class ConfigurationModule extends AbstractModule {
 
     bind(classOf[DatasetService]).to(get("service.datasets", "services.mongodb.MongoDBDatasetService"))
     bind(classOf[FileService]).to(get("service.files", "services.mongodb.MongoDBFileService"))
+    bind(classOf[SpaceService]).to(get("service.spaces", "services.mongodb.MongoDBSpaceService"))
     bind(classOf[MultimediaQueryService]).to(get("service.multimediaQuery", "services.mongodb.MongoDBMultimediaQueryService"))
     bind(classOf[CollectionService]).to(get("service.collections", "services.mongodb.MongoDBCollectionService"))
     bind(classOf[TagService]).to(get("service.tags", "services.mongodb.MongoDBTagService"))
@@ -43,7 +44,7 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[ThumbnailService]).to(get("service.thumbnails", "services.mongodb.MongoDBThumbnailService"))
     bind(classOf[TileService]).to(get("service.tiles", "services.mongodb.MongoDBTileService"))
     bind(classOf[SectionIndexInfoService]).to(get("service.sectionIndexInfo", "services.mongodb.MongoDBSectionIndexInfoService"))    
- 
+    bind(classOf[MetadataService]).to(get("service.MetadataService", "services.mongodb.MongoDBMetadataService"))
   }
 
   protected def get[T](key: String, missing: String) : Class[T] = {

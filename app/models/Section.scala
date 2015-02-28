@@ -14,7 +14,9 @@ case class Section(
   endTime: Option[Int] = None, // in seconds
   area: Option[Rectangle] = None,
   preview: Option[Preview] = None,
-  tags: List[Tag] = List.empty)
+  tags: List[Tag] = List.empty,
+  jsonldMetadata : List[Metadata]= List.empty
+  )
 
 case class Rectangle(
   x: Double,

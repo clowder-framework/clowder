@@ -478,6 +478,18 @@ textarea, input[type='text'], input[type='password']{
     border:1px solid #e6e6e6;
 }
 
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
+}
+
+.space-col-right {
+
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
+}
+
 .input-table-cell {
 	padding-top: 10px;
 	padding-bottom: 10px:

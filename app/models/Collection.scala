@@ -12,4 +12,10 @@ case class Collection(
   created: Date,
   datasets: List[Dataset] = List.empty,
   thumbnail_id: Option[String] = None,
-  previews: List[Preview] = List.empty)
+  previews: List[Preview] = List.empty,
+  space: Option[UUID] = None,
+  jsonldMetadata : List[Metadata]= List.empty
+)
+
+
+
