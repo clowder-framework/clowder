@@ -44,7 +44,7 @@ class Application @Inject() (files: FileService) extends SecuredController {
     val protocol = Utils.protocol(request)
     Ok(views.html.bookmarklet(request.host, protocol)).as("application/javascript")
   }
-
+  
   /**
    *  Javascript routing.
    */

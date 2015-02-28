@@ -137,7 +137,7 @@ class Files @Inject()(
       //Check the license type before doing anything. 
       files.get(id) match {
           case Some(file) => {    
-              if (file.checkLicenseForDownload(request.user)) {
+              if (file.licenseData.isDownloadAllowed(request.user)) {
 		        files.getBytes(id) match {            
 		          case Some((inputStream, filename, contentType, contentLength)) => {
 		
@@ -1539,7 +1539,7 @@ class Files @Inject()(
                 val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
                     //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
                     //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-                    if (f.checkLicenseForDownload(request.user)) {
+                    if (f.licenseData.isDownloadAllowed(request.user)) {
                         (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     else {

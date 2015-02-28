@@ -42,6 +42,9 @@ GET     /bookmarklet														@controllers.ExtractionInfo.getBookmarkletPage
 GET     /bookmarklet.js                                                     @controllers.Application.bookmarklet
 
 
+#DTS Chrome extension
+GET    /extensions/dts/chrome                                                @controllers.ExtractionInfo.getExtensionPage()
+
 #This may not require; This is only for testing. It will change in subsequent version
 GET     /extraction/form                  @controllers.Files.extractFile
 POST    /extraction/upload                @controllers.Files.uploadExtract()
@@ -219,13 +222,15 @@ GET       /api/extractions/extractors_names                 @api.Extractions.get
 GET       /api/extractions/supported_input_types      		@api.Extractions.getExtractorInputTypes()
 
 #API for temporary fix for BD-289
-GET       /api/extractions/extractors_details                @api.Extractions.getExtractorDetails()
+GET      /api/extractions/extractors_details                   @api.Extractions.getExtractorDetails()
 
 POST    /api/extractions/upload_url                             @api.Extractions.uploadByURL()
+POST     /api/extractions/multiple_uploadby_url                 @api.Extractions.multipleUploadByURL()
 POST    /api/extractions/upload_file                            @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
 GET     /api/extractions/:id/status                             @api.Extractions.checkExtractorsStatus(id:UUID)
 POST    /api/extractions/:id/submit                             @api.Extractions.submitExtraction(id:UUID)
 GET     /api/extractions/:id/metadata                           @api.Extractions.fetch(id:UUID)
+GET     /api/extractions/:id/statuses                           @api.Extractions.checkExtractionsStatuses(id:UUID)
 
 # End of change segment
 

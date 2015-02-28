@@ -21,6 +21,7 @@ import services.ExtractionRequestsService
 import models.ExtractionInfoSetUp
 import play.api.libs.json._
 import java.util.Calendar
+import java.net.InetAddress
 
 
 class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: ExtractionRequestsService) extends SecuredController {
@@ -111,4 +112,15 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
       Ok(views.html.dtsbookmarklet(Utils.baseUrl(request)))
   }
 
+  /**
+   * DTS Chrome Extension page
+   */
+  def getExtensionPage() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+    val configuration = play.api.Play.configuration
+    val url = Utils.baseUrl(request)
+    var hostname = if (url.indexOf('.') == -1) { url.substring(url.indexOf('/') + 2, url.lastIndexOf(':')) } else { url.substring(url.indexOf('/') + 2, url.indexOf('.')) }
+    Logger.debug(" url= " + url + "  hostname " + hostname)
+    val extensionHostUrl = configuration.getString("dts.extension.host").getOrElse("")
+    Ok(views.html.dtsExtension(Utils.baseUrl(request), hostname, extensionHostUrl))
+  }
 }
