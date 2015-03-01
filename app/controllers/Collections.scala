@@ -13,6 +13,7 @@ import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
 import javax.inject.{ Singleton, Inject }
+import scala.collection.mutable.ListBuffer
 import services.{ DatasetService, CollectionService }
 import services._
 import org.apache.commons.lang.StringEscapeUtils
@@ -39,9 +40,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    * description
    *  
    */
-  def decodeCollectionElements(collection: Collection) {      
-      collection.name = StringEscapeUtils.unescapeHtml(collection.name)
-      collection.description = StringEscapeUtils.unescapeHtml(collection.description)
+  def decodeCollectionElements(collection: Collection) : Collection = {      
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+              							  description = StringEscapeUtils.unescapeHtml(collection.description))
+              							  
+      decodedCollection
   }
   
   /**
@@ -106,8 +109,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
+      var decodedCollections = new ListBuffer[models.Collection]()
       for (aCollection <- collectionsWithThumbnails) {
-          decodeCollectionElements(aCollection)
+          val dCollection = decodeCollectionElements(aCollection)
+          decodedCollections += dCollection
       }
       
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
@@ -128,7 +133,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 		}
 
       //Pass the viewMode into the view
-      Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit, viewMode))
+      Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode))
   }
 
   def jsonCollection(collection: Collection): JsValue = {
@@ -187,7 +192,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
           
           //Decode the encoded items
-          decodeCollectionElements(collection)
+          val dCollection = decodeCollectionElements(collection)
           
           for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
           val filteredPreviewers = for (
@@ -200,7 +205,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           Logger.debug("Num previewers " + filteredPreviewers.size)
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection, filteredPreviewers.toList))
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

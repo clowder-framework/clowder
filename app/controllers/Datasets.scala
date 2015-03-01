@@ -16,6 +16,7 @@ import fileutils.FilesUtils
 import api.Permission
 import javax.inject.Inject
 import scala.Some
+import scala.collection.mutable.ListBuffer
 import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
@@ -308,12 +309,16 @@ class Datasets @Inject()(
 	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
 	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
 	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
-
+	          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
+	          var decodedCollectionsInside = new ListBuffer[models.Collection]()
+	          
 	          for (aCollection <- collectionsOutside) {
-	              decodeCollectionElements(aCollection)
+	              val dCollection = decodeCollectionElements(aCollection)
+	              decodedCollectionsOutside += dCollection
 	          }
               for (aCollection <- collectionsInside) {
-                  decodeCollectionElements(aCollection)
+                  val dCollection = decodeCollectionElements(aCollection)
+                  decodedCollectionsInside += dCollection
               }
 	          
 	          var commentsByDataset = comments.findCommentsByDatasetId(id)
@@ -328,7 +333,7 @@ class Datasets @Inject()(
 	          
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError
@@ -360,9 +365,11 @@ class Datasets @Inject()(
    * description
    *  
    */
-  def decodeCollectionElements(collection: Collection) {      
-      collection.name = StringEscapeUtils.unescapeHtml(collection.name)
-      collection.description = StringEscapeUtils.unescapeHtml(collection.description)
+  def decodeCollectionElements(collection: Collection) : Collection  = {
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+              							  description = StringEscapeUtils.unescapeHtml(collection.description))
+              							  
+      decodedCollection
   }
 
   /**
