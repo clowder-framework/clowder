@@ -20,6 +20,7 @@ import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
 import org.apache.commons.lang.StringEscapeUtils
+import scala.collection.mutable.ListBuffer
 
 
 /**
@@ -117,8 +118,9 @@ class Datasets @Inject()(
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
       val aBuilder = new StringBuilder()
+      var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
-          decodeDatasetElements(aDataset)
+          decodedDatasetList += decodeDatasetElements(aDataset)
       }
       
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
@@ -139,7 +141,7 @@ class Datasets @Inject()(
 		}
       
       //Pass the viewMode into the view
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
+      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
   }
   def userDatasets(when: String, date: String, limit: Int, mode: String, email: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
     implicit request =>
@@ -198,8 +200,9 @@ class Datasets @Inject()(
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
       val aBuilder = new StringBuilder()
+      var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
-          decodeDatasetElements(aDataset)
+          decodedDatasetList += decodeDatasetElements(aDataset)
       }
       
       //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
@@ -220,7 +223,7 @@ class Datasets @Inject()(
           }
       }                       
       
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
+      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
   }
 
 
@@ -266,8 +269,8 @@ class Datasets @Inject()(
 
           val filesInDataset = dataset.files.map(f => files.get(f.id).get)
 
-          val datasetWithFiles = dataset.copy(files = filesInDataset)
-          decodeDatasetElements(datasetWithFiles)
+          var datasetWithFiles = dataset.copy(files = filesInDataset)
+          datasetWithFiles = decodeDatasetElements(datasetWithFiles)
           val previewers = Previewers.findPreviewers
           //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
           val previewslist = for (f <- datasetWithFiles.files) yield {
@@ -347,9 +350,11 @@ class Datasets @Inject()(
    * description
    *  
    */
-  def decodeDatasetElements(dataset: Dataset) {      
-      dataset.name = StringEscapeUtils.unescapeHtml(dataset.name)
-      dataset.description = StringEscapeUtils.unescapeHtml(dataset.description)
+  def decodeDatasetElements(dataset: Dataset) : Dataset = {            
+      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
+              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
+              							  
+      decodedDataset
   }
 
   /**

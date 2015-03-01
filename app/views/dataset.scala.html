@@ -83,7 +83,7 @@
 	</script>
     
 	<div class="page-header">
-		<h1>@dataset.name
+		<h1><span id="datasettitle">@dataset.name</span>
 			@if(user.isDefined) {
 				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 				@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
@@ -231,7 +231,7 @@
 									//Reset the data to the current values
 									var text = $("#aboutdesc").text();
 									$("#editdesc").val(text);
-									text = $("#aboutname").text();
+									text = $("#datasettitle").text();
 									$("#editname").val(text);
 
 									//Close the edit form
@@ -257,8 +257,8 @@
 									///console.log("Response " + response);
 									//Sucessful update of the DB - update the interface
 
-									$("#aboutdesc").text(htmlDecode(encDescription));
-									$("#aboutname").text(htmlDecode(encName));
+									$("#aboutdesc").text(htmlDecode(encDescription));								
+									$("#datasettitle").text(htmlDecode(encName));
 
 									closeAboutEdit();
 									});
