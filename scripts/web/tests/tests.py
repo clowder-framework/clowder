@@ -127,10 +127,10 @@ def main():
 								message += report
 								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n'
 
+								mailserver = smtplib.SMTP('localhost')
 								for watcher in watchers:
-									mailserver = smtplib.SMTP('localhost')
 									mailserver.sendmail('', watcher, message)
-									mailserver.quit()
+								mailserver.quit()
 
 		dt = time.time() - t0
 		print 'Elapsed time: ' + timeToString(dt)
@@ -163,10 +163,10 @@ def main():
 				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
 				message += 'Elapsed time: ' + timeToString(dt)
 
+				mailserver = smtplib.SMTP('localhost')
 				for watcher in watchers:
-					mailserver = smtplib.SMTP('localhost')
 					mailserver.sendmail('', watcher, message)
-					mailserver.quit()
+				mailserver.quit()
 		else:
 			if os.path.isfile('tmp/failures.txt'):
 				#Send failure rectification emails
@@ -189,10 +189,10 @@ def main():
 						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
 						message += 'Elapsed time: ' + timeToString(dt)
 
+						mailserver = smtplib.SMTP('localhost')
 						for watcher in watchers:
-							mailserver = smtplib.SMTP('localhost')
 							mailserver.sendmail('', watcher, message)
-							mailserver.quit()
+						mailserver.quit()
 			else:
 				#Send success notification emails
 				with open('pass_watchers.txt', 'r') as watchers_file:
@@ -207,10 +207,10 @@ def main():
 					message += 'Subject: DTS Tests Passed\n\n';
 					message += 'Elapsed time: ' + timeToString(dt)
 
+					mailserver = smtplib.SMTP('localhost')
 					for watcher in watchers:
-						mailserver = smtplib.SMTP('localhost')
 						mailserver.sendmail('', watcher, message)
-						mailserver.quit()
+					mailserver.quit()
 
 
 def extract(host, port, key, file, wait):
