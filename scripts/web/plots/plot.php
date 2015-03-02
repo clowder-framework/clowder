@@ -1,4 +1,5 @@
 <?php
+header('Access-Control-Allow-Origin: *');
 $bins = isset($_REQUEST["bins"]) ? $_REQUEST["bins"] : "minutes";
 $time_unit = 60*1000;						//Milli-seconds in a minute
 $time_window = 24*60*60;				//Seconds in one day
@@ -7,7 +8,7 @@ if($bins == "hours"){
 	$time_unit = 60*60*1000;
 }else if($bins == "days"){
 	$time_unit = 24*60*60*1000;
-	$time_window = 7*24*60*60;
+	$time_window = 7*24*60*60;		//Seconds in one week
 }else if($bins != "minutes"){		//Make sure a bins is one of these 3 values, default to minutes
 	$bins = "minutes";
 }
@@ -24,12 +25,16 @@ $cursor = $collection->find();
 
 foreach($cursor as $document) {
 	//print_r($document);
+  $upload_date = $document["uploadDate"]->sec * 1000;
+  $delta_time = time() - round($upload_date/1000);
 
-	$timestamp = round($document["uploadDate"]->sec * 1000 / $time_unit);
-	//echo $timestamp . "<br>\n";
+  if($delta_time < $time_window) {
+		$timestamp = round($upload_date / $time_unit);
+		//echo $timestamp . "<br>\n";
 
-	//if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?
-	$tasks_per_x[$timestamp]++;
+		//if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?
+		$tasks_per_x[$timestamp]++;
+	}
 }
 
 if(time() - filemtime("tmp/$bins.png") > 60) {		//Don't update plot more than once each minute
