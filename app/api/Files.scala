@@ -3,8 +3,7 @@ package api
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.OutputStream
-import java.net.URL
-import java.net.HttpURLConnection
+import java.net.{URLEncoder, URI, URL, HttpURLConnection}
 
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -168,7 +167,7 @@ class Files @Inject()(
 		              case None => {
 		                Ok.chunked(Enumerator.fromStream(inputStream))
 		                  .withHeaders(CONTENT_TYPE -> contentType)
-		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8")))
 		              }
 		            }
 		          }
@@ -359,9 +358,6 @@ class Files @Inject()(
 					              }
 					        	  files.setContentType(f.id, fileType)
 					          }
-	            }
-	            else if(nameOfFile.toLowerCase().endsWith(".mov")){
-	            			fileType = "ambiguous/mov";
 	            }
 	            
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
@@ -576,9 +572,7 @@ class Files @Inject()(
                     }
                   files.setContentType(f.id, fileType)
                 }
-	            } else if(nameOfFile.toLowerCase().endsWith(".mov")) {
-                fileType = "ambiguous/mov";
-              }
+	            }
 	              
               current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
               
@@ -699,9 +693,6 @@ class Files @Inject()(
                       Logger.error(fileType.substring(7))
                       InternalServerError(fileType.substring(7))
                     }
-                  }
-                  else if (f.filename.toLowerCase().endsWith(".mov")) {
-                    fileType = "ambiguous/mov";
                   }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")

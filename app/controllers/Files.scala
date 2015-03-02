@@ -1,6 +1,7 @@
 package controllers
 
 import java.io._
+import java.net.URLEncoder
 import models.{UUID, FileMD, File, Thumbnail}
 import play.api.Logger
 import play.api.Play.current
@@ -386,9 +387,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 				          }
 				    }
-				    else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
 	            
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 	            
@@ -550,7 +548,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                           case None => {
                               Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)
-                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; ; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8")))
 
                           }
                           }
@@ -674,9 +672,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 				      }
 			    }
-			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
              
              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
@@ -782,9 +777,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 				      }
 			    }
-			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
             
             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
@@ -889,9 +881,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 				      }
 			    }
-			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
              
              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
@@ -1002,9 +991,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 						  }
 					  }
-					  else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
 	                
 	                current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 				  	  
