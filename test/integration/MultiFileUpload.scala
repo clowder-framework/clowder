@@ -63,6 +63,10 @@ trait FakeMultipartUpload {
     def withFileUpload(key: String, file: File, contentType: String) = {
       fr.withBody(fileUpload(key, file, contentType))
     }
+
+    def withDatasetUpload(key: String, file: File, contentType: String) = {
+      fr.withBody(fileUpload(key, file, contentType))
+    }
   }
 
   implicit def toWrappedFakeRequest[A](fr: FakeRequest[A]) = WrappedFakeRequest(fr)
