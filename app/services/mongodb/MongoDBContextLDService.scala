@@ -13,17 +13,10 @@ import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import models.Preview
 import scala.Some
-import play.api.libs.json.JsObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import play.api.libs.json.Json
 import services.MetadataService
-import play.api.libs.functional.syntax._
-import play.api.libs.json.Writes
-import play.api.libs.json.JsPath
-import com.mongodb.util.JSON
-import play.api.libs.json.JsArray
-
 /**
  * MongoDB implementation of ContextLD service
  * @author Smruti Padhy
