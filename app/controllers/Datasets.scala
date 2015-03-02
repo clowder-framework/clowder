@@ -342,8 +342,10 @@ class Datasets @Inject()(
 
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
+        val space = dataset.space.flatMap(spaces.get(_))
+        
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, 
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space))
       }
       case None => {
         Logger.error("Error getting dataset" + id);

@@ -17,6 +17,7 @@ function createCollection() {
 	//Update the input we are adding to the form programmatically      
 	var name = $('#name');
     var desc = $('#description');
+    var space = $('#spaceid').find(":selected").val();
     
     //Add errors and return false if validation fails
     var error = false;
@@ -36,6 +37,7 @@ function createCollection() {
 	var encDescription = htmlEncode(desc.val());
 	$('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
+    $('#hiddenspace').val(space);
     
 	//Submit the form
     $('#collectioncreate').submit();

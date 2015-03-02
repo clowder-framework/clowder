@@ -1,4 +1,4 @@
-@(errorString: String)(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(errorString: String, spaces: List[models.ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -43,6 +43,17 @@
             </td>
         </tr>        
         <tr>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Space:</td>
+            <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
+                <select name="space" id="spaceid" style="width: 342px;">
+                    <option value="default">Default</option>
+                    @spaces.map { space =>  
+                        <option value="@(space.id)">@(space.name)</option>
+                    }                    
+                </select>
+            </td>
+        </tr>
+        <tr>
             <td>	                            
             </td>
             <td>
@@ -61,6 +72,7 @@
                     
                     <input type="hidden" name="name" id="hiddenname" value="not set">
                     <input type="hidden" name="description" id="hiddendescription" value="not set">
+                    <input type="hidden" name="space" id="hiddenspace" value="not set">
     </form>  	 	  
     </div>
   </div>

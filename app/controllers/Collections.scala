@@ -27,7 +27,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>
       implicit val user = request.user
-      Ok(views.html.newCollection(null))
+      val spacesList = spaces.list()
+      Ok(views.html.newCollection(null, spacesList))
   }
 
   /**
@@ -148,22 +149,30 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    */
   def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateCollections)) {
     implicit request =>
-        Logger.debug("------- in Collections.submit ---------")
-        var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
-        var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+      Logger.debug("------- in Collections.submit ---------")
+      var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
+      var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+      var colSpace = request.body.asFormUrlEncoded.getOrElse("space", null)
         
       implicit val user = request.user
       user match {
 	      case Some(identity) => {	      	            
-                if (colName == null || colDesc == null) {
+                if (colName == null || colDesc == null || colSpace == null) {
+                    val spacesList = spaces.list()
                     //This case shouldn't happen as it is validated on the client. 
-                    BadRequest(views.html.newCollection("Name or Description was missing during collection creation."))
+                    BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", spacesList))
                 }
 	            
-	            var collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
+	            var collection : Collection = null
+	            if (colSpace(0) == "default") {
+	                collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
+	            }
+	            else {
+	                collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, space = Some(UUID(colSpace(0))))
+	            }
 	           	       
 	            Logger.debug("Saving collection " + collection.name)
-	            collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity)))
+	            collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), space = collection.space))
 	          
 	            //index collection
                 val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
