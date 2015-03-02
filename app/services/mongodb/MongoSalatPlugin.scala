@@ -60,6 +60,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
     collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
     
+    collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
+    
     collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
 
@@ -112,6 +114,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads.files").drop()
     collection("uploadquery.files").drop()
     collection("versus.descriptors").drop()
+    collection("metadata").drop()
+    collection("contexld").drop()
     Logger.debug("**DANGER** Data deleted **DANGER**")
   }
 }
