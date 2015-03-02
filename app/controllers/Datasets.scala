@@ -16,6 +16,7 @@ import fileutils.FilesUtils
 import api.Permission
 import javax.inject.Inject
 import scala.Some
+import scala.collection.mutable.ListBuffer
 import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
@@ -117,7 +118,6 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
-      val aBuilder = new StringBuilder()
       var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
           decodedDatasetList += decodeDatasetElements(aDataset)
@@ -199,7 +199,6 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
-      val aBuilder = new StringBuilder()
       var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
           decodedDatasetList += decodeDatasetElements(aDataset)
@@ -320,7 +319,18 @@ class Datasets @Inject()(
 	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
 	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
 	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
-
+	          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
+	          var decodedCollectionsInside = new ListBuffer[models.Collection]()
+	          
+	          for (aCollection <- collectionsOutside) {
+	              val dCollection = decodeCollectionElements(aCollection)
+	              decodedCollectionsOutside += dCollection
+	          }
+              for (aCollection <- collectionsInside) {
+                  val dCollection = decodeCollectionElements(aCollection)
+                  decodedCollectionsInside += dCollection
+              }
+	          
 	          var commentsByDataset = comments.findCommentsByDatasetId(id)
 	          filesInDataset.map {
 	            file =>
@@ -333,7 +343,7 @@ class Datasets @Inject()(
 	          
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError
@@ -355,6 +365,23 @@ class Datasets @Inject()(
               							  description = StringEscapeUtils.unescapeHtml(dataset.description))
               							  
       decodedDataset
+  }
+  
+  /**
+   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   * 
+   * Currently, the following collection elements are encoded:
+   * 
+   * name
+   * description
+   *  
+   */
+  def decodeCollectionElements(collection: Collection) : Collection  = {
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+              							  description = StringEscapeUtils.unescapeHtml(collection.description))
+              							  
+      decodedCollection
   }
 
   /**
@@ -390,7 +417,7 @@ class Datasets @Inject()(
   def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
-    var dsName = request.body. asFormUrlEncoded.getOrElse("name", null)
+    var dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
     var dsLevel = request.body.asFormUrlEncoded.get("datasetLevel")
     var dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
