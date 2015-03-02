@@ -19,6 +19,7 @@ import services.MetadataService
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Writes
 import play.api.libs.json.JsPath
+import services.ContextLDService
 /**
  * MongoDB Metadata Service Implementation
  * @author Smruti Padhy
@@ -26,7 +27,8 @@ import play.api.libs.json.JsPath
  */
 
 @Singleton
-class MongoDBMetadataService extends MetadataService{
+class MongoDBMetadataService @Inject() (
+  contextService: ContextLDService) extends MetadataService{
   /** Add metadata to the metadata collection and attach to a section /file/dataset/collection */
   def addMetadata(metadata: Metadata): UUID = {
     Logger.debug("Inside addMetadata")
@@ -76,10 +78,20 @@ class MongoDBMetadataService extends MetadataService{
     MetadataDAO.remove(md, WriteConcern.Safe)
   }
   
-  /** Get metadata context if available 
-   * TODO: Implement this when context is defined 
-   *  */
-  def getMetadataContext(metadataId: UUID): Option[JsValue] = { None}
+  /** Get metadata context if available  **/
+  def getMetadataContext(metadataId: UUID): Option[JsValue] = {
+    val md = getMetadataById(metadataId)
+    md match {
+      case Some(m) => {
+        val contextId = m.contextId
+        contextId match {
+          case Some(id) => contextService.getContextById(id)
+          case None => None
+        }
+      }
+      case None => None
+    }
+  }
   
   /** update Metadata 
    *  TODO

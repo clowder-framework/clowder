@@ -6,6 +6,7 @@ import play.api.libs.json.JsObject
 import java.net.URL
 import play.api.libs.json.Writes
 import play.api.libs.json.Json
+import play.api.libs.json.JsValue
 /**
  * A piece of metadata for a section/file/dataset/collection/space
  * 
@@ -20,7 +21,7 @@ case class Metadata (
   contextId : Option[UUID] = None,     
   createdAt : Date,
   creator : Agent,
-  content : JsObject,
+  content  : JsValue,
   version : Option[String] = None
 )
 

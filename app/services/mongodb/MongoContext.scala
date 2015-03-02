@@ -1,7 +1,6 @@
 package services.mongodb
 
 import java.net.URL
-
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
 import com.novus.salat.transformers.CustomTransformer
 import com.novus.salat.{TypeHintFrequency, StringTypeHintStrategy, Context}
@@ -9,11 +8,15 @@ import play.api.{Logger, Play}
 import play.api.Play.current
 import models.UUIDTransformer
 import org.bson.{BSON, Transformer}
+import com.mongodb.util.JSON
+import com.mongodb.DBObject
+
 
 /**
  * MongoDB context configuration.
  *
  * @author Luigi Marini
+ * @author Rob Kooper
  *
  */
 object MongoContext {
@@ -25,6 +28,7 @@ object MongoContext {
         typeHint = "_typeHint")
       registerCustomTransformer(UUIDTransformer)
       registerCustomTransformer(URLTransformer)
+      registerCustomTransformer(JsValueTransformer)
       registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
       registerClassLoader(Play.classloader)
     }
@@ -106,4 +110,19 @@ object MongoContext {
       url.toString
     }
   }
+  
+  /**
+   * JsValue-DBObject Transformer
+   */
+  object JsValueTransformer extends CustomTransformer[play.api.libs.json.JsValue, DBObject] {
+    def deserialize(value: DBObject) = {
+      play.api.libs.json.Json.parse(com.mongodb.util.JSON.serialize(value))
+      
+    }
+    def serialize(value: play.api.libs.json.JsValue) = {
+      val doc: DBObject = com.mongodb.util.JSON.parse(value.toString).asInstanceOf[DBObject]
+      doc
+    }
+  }
+
 }
