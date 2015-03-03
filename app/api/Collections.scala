@@ -29,17 +29,23 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def createCollection() = SecuredAction(authorization=WithPermission(Permission.CreateCollections)) {
     request =>
       Logger.debug("Creating new collection")
-      (request.body \ "name").asOpt[String].map {
-        name =>
-          (request.body \ "description").asOpt[String].map {
-            description =>
-              val c = Collection(name = name, description = description, created = new Date())
-              collections.insert(c) match {
-                case Some(id) => {
-                 Ok(toJson(Map("id" -> id)))
-                }
-                case None => Ok(toJson(Map("status" -> "error")))
-              }
+      (request.body \ "name").asOpt[String].map { name =>
+          (request.body \ "description").asOpt[String].map { description =>
+              (request.body \ "space").asOpt[String].map { space => 
+	              val c : Collection = null
+	              if (space == "default") {
+	                   c = Collection(name = name, description = description, created = new Date())
+	              }
+	              else {
+	                   c = Collection(name = name, description = description, created = new Date(), space = Some(UUID(space)))
+	              }
+	              collections.insert(c) match {
+	                case Some(id) => {
+	                 Ok(toJson(Map("id" -> id)))
+	                }
+	                case None => Ok(toJson(Map("status" -> "error")))
+	              }
+              }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
           }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
