@@ -112,6 +112,59 @@ class MongoDBSpaceService @Inject() (
     log.debug(s"Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
   }
+  
+  /**
+   * Check if the time to live scope for a space is enabled.
+   * 
+   * @param space The id of the space to check
+   * 
+   * @return A Boolean, true if it is enabled, false otherwise or if there was an error
+   * 
+   */
+  def isTimeToLiveEnabled(space: UUID): Boolean = {
+      get(space) match {
+          case Some(aSpace) => {
+              return aSpace.isTimeToLiveEnabled
+          }
+          case None => {
+              //Should this do something else other than log an error?
+              log.error("Problem retrieving the space by ID in isTimeToLiveENabled")
+        	  return false
+          }
+      }
+  }
+  
+  /**
+   * Retrieve the time to live value that a space is scoped by.
+   * 
+   * @param space The id of the space to check
+   * 
+   * @return An Integer that represents that lifetime of resources in whole days. 
+   */
+  def getTimeToLive(space: UUID): Integer = {
+      get(space) match {
+          case Some(aSpace) => {
+              return aSpace.resourceTimeToLive
+          }
+          case None => {
+              //Should this do something else other than log and return -1?
+              log.error("Problem retrieving the space by ID in getTimeToLive")
+        	  return -1
+          }
+      }
+  }
+  
+  
+  /**
+   * Go through the resources in the space, currently Collections and Datasets, and remove their contents if the
+   * last modified time on them is older than the time to live that is scoping the space.
+   * 
+   *  @param space The id of the space to check
+   *   
+   */
+  def purgeExpiredResources(space: UUID): Unit = {
+      //Go through resources and purge those that have a last modified time older than the time to live
+  }
 
   /**
    * Salat ProjectSpace model companion.

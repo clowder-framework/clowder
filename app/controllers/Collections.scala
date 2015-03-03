@@ -160,10 +160,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                     BadRequest(views.html.newCollection("Name or Description was missing during collection creation."))
                 }
 	            
-	            var collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
+	            var collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, lastModifiedDate = new Date)
 	           	       
 	            Logger.debug("Saving collection " + collection.name)
-	            collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity)))
+	            collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), lastModifiedDate = collection.lastModifiedDate))
 	          
 	            //index collection
                 val dateFormat = new SimpleDateFormat("dd/MM/yyyy")

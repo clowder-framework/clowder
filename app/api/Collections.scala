@@ -33,7 +33,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         name =>
           (request.body \ "description").asOpt[String].map {
             description =>
-              val c = Collection(name = name, description = description, created = new Date())
+              val c = Collection(name = name, description = description, created = new Date(), lastModifiedDate = new Date())
               collections.insert(c) match {
                 case Some(id) => {
                  Ok(toJson(Map("id" -> id)))

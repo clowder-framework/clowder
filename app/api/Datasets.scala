@@ -99,7 +99,7 @@ class Datasets @Inject()(
           files.get(UUID(file_id)) match {
             case Some(file) =>
               val d = Dataset(name=name,description=description, created=new Date(), files=List(file),
-                author=request.user.get, licenseData = License.fromAppConfig())
+                author=request.user.get, licenseData = License.fromAppConfig(), lastModifiedDate = new Date())
               datasets.insert(d) match {
                 case Some(id) => {
                   files.index(UUID(file_id))
@@ -141,7 +141,7 @@ class Datasets @Inject()(
   def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>    
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>        
-          val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
+          val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), lastModifiedDate = new Date())
           datasets.insert(d) match {
             case Some(id) => {              
               (request.body \ "existingfiles").asOpt[String].map { fileString =>

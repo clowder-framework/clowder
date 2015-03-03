@@ -25,7 +25,9 @@ case class ProjectSpace (
   collectionCount: Integer,
   datasetCount: Integer,
   userCount: Integer,
-  metadata: List[Metadata])
+  metadata: List[Metadata], 
+  resourceTimeToLive: Integer = 30, //In whole days
+  isTimeToLiveEnabled: Boolean = false)
 
 
 case class UserSpace (

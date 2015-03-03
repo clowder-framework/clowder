@@ -28,5 +28,6 @@ case class Dataset(
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None,
-  space: Option[UUID] = None)
+  space: Option[UUID] = None,
+  lastModifiedDate: Date)
 
