@@ -59,6 +59,7 @@ object Permission extends Enumeration {
 		ExtractMetadata,
 		AddFilesMetadata,
 		ShowFilesMetadata,
+		AddMetadata,
 		ShowFile,
 		SearchFiles,
 		CreateTagsFiles,
