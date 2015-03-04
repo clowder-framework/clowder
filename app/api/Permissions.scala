@@ -63,6 +63,9 @@ object Permission extends Enumeration {
 		SearchFiles,
 		CreateTagsFiles,
 		DeleteTagsFiles,
+		ShowContext,
+		CreateContext,
+		DeleteContext,
 		CreateStreams,
 		AddDataPoints,
 		SearchStreams,
@@ -147,6 +150,7 @@ case class WithPermission(permission: Permission) extends Authorization {
       case (_, ShowFile, _)             => true
       case (_, ShowFilesMetadata, _)    => true
       case (_, ShowDatasetsMetadata, _) => true
+      case (_, ShowContext, _)          => true
       case (_, ListSpaces, _)           => true
       case (_, ShowSpace, _)            => true
       case (_, SearchStreams, _)        => true
