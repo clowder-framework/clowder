@@ -13,6 +13,7 @@ import services._
 import MongoContext.context
 import util.Direction._
 import models.Collection
+import models.Dataset
 
 /**
  * Store Spaces in MongoDB.
@@ -38,6 +39,16 @@ class MongoDBSpaceService @Inject() (
    */
   def getCollectionsInSpace(spaceId: UUID): List[Collection] = {
       collections.listCollectionsBySpace(spaceId)
+  }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceServie trait.
+   * 
+   */
+  def getDatasetsInSpace(spaceId: UUID): List[Dataset] = {
+      datasets.listDatasetsBySpace(spaceId)
   }
 
   def insert(dataset: ProjectSpace): Option[String] = {
@@ -119,7 +130,7 @@ class MongoDBSpaceService @Inject() (
    * @param space space id
    */
   def addDataset(dataset: UUID, space: UUID): Unit = {
-    log.debug(s"Adding $dataset to $space")
+    log.debug(s"Space Service - Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
   }  
 }
@@ -130,7 +141,7 @@ class MongoDBSpaceService @Inject() (
   object ProjectSpaceDAO extends ModelCompanion[ProjectSpace, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => new SalatDAO[ProjectSpace, ObjectId](collection = x.collection("spaces.projects")) {}
+  case Some(x) => new SalatDAO[ProjectSpace, ObjectId](collection = x.collection("spaces.projects")) {}
     }
   }
 
@@ -140,7 +151,6 @@ class MongoDBSpaceService @Inject() (
   object UserSpaceDAO extends ModelCompanion[UserSpace, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => new SalatDAO[UserSpace, ObjectId](collection = x.collection("spaces.users")) {}
+  case Some(x) => new SalatDAO[UserSpace, ObjectId](collection = x.collection("spaces.users")) {}
     }
   }
-

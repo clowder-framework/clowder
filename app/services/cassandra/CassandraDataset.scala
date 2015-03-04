@@ -50,6 +50,15 @@ class CassandraDataset extends DatasetService {
   }
   
   /**
+   * @see app.services.DatasetService.scala
+   * 
+   * Implementation of the DatasetService trait.
+   */
+  def listDatasetsBySpace(space: UUID): List[Dataset] = {
+      List.empty[Dataset]
+  }
+  
+  /**
    * Get dataset.
    */
   def get(id: UUID): Option[Dataset] = {

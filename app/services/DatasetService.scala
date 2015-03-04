@@ -38,6 +38,17 @@ trait DatasetService {
   def listDatasetsBefore(date: String, limit: Int): List[Dataset]
   
   /**
+   * List datasets that belong to a specific space. Empty list is returned if there
+   * are none that apply.
+   * 
+   * @param spaceId The identifier for the space to be checked
+   * 
+   * @return A List of Dataset objects that are assigned to the specified Space.
+   * 
+   */
+  def listDatasetsBySpace(spaceId: UUID): List[Dataset]
+  
+  /**
    * Get dataset.
    */
   def get(id: UUID): Option[Dataset]

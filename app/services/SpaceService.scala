@@ -3,6 +3,7 @@ package services
 import models.{UUID, ProjectSpace}
 import services.core.CRUDService
 import models.Collection
+import models.Dataset
 
 /**
  * Service to manipulate spaces.
@@ -24,4 +25,13 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * @return A list that contains all of the collections attached to the space.
    */
   def getCollectionsInSpace(spaceId: UUID): List[Collection]
+
+  /*
+   * Service access to retrieve the datasets that are contained by a specific space.
+   * 
+   * @param spaceId The identifier for the space to be checked
+   * 
+   * @return A list that contains all of the datasets attached to the space.
+   */
+  def getDatasetsInSpace(spaceId: UUID): List[Dataset]    
 }
