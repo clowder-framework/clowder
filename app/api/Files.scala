@@ -289,7 +289,7 @@ class Files @Inject()(
           }
           case None => Logger.error(s"Error getting file $id"); NotFound
         }
-        Ok(toJson("Added metadata successfully123."))
+        Ok(toJson("Added metadata successfully."))
     }
 
 
