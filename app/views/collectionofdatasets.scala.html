@@ -96,7 +96,7 @@
 			</thead>
 			<tbody>
 				@datasetsInCollection.map { dataset =>
-					<tr style="display:none;" data-datasetId="@(dataset.id.toString)">
+					<tr data-datasetId="@(dataset.id.toString)">
 						<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
 						<td style="white-space:pre-line;">@dataset.description</td>
@@ -164,6 +164,6 @@
 </script>
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/spaces/modify.min.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/spaces/modify.js")" type="text/javascript"></script>
 
 }

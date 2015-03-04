@@ -44,6 +44,45 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   def listCollections(): List[Collection] = {
     (for (collection <- Collection.find(MongoDBObject())) yield collection).toList
   }
+  
+  /**
+   * @see app.services.CollectionService.scala
+   * 
+   * Implementation of the CollectionService trait.
+   */
+  def listCollectionsBySpace(spaceId: UUID): List[Collection] = {
+      ProjectSpaceDAO.findOneById(new ObjectId(spaceId.stringify)) match {
+          case Some(aSpace) => {
+              val list = for (aCollection <- listCollections(); if (isCollectionInSpace(aCollection, aSpace.id))) yield aCollection
+              list
+          }
+          case None => {
+              Logger.debug("No space found for the ID provided in listCollectionsBySpace.")
+              List.empty
+          }
+      }
+  }
+  
+  /**
+   * Helper method to check to see if a collection belongs to a specified Space.
+   */
+  def isCollectionInSpace(collection: Collection, spaceId: UUID): Boolean = {
+      collection.space match {
+          case Some(storedId) => {
+              Logger.debug("Found a stored space that matches on the collection : " + collection.name)
+              if (storedId == spaceId) {
+                  true
+              }
+              else {
+                  false
+              }
+          }
+          case None => {
+              Logger.debug("No stored space found on the collection with id : " + collection.name)
+              false
+          }
+      }
+  }
 
   /**
    * List all collections in the system in reverse chronological order.

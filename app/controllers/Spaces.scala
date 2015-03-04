@@ -46,7 +46,18 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   def getSpace(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
-      case Some(s) => Ok(views.html.spaces.space(s, List.empty[Collection], List.empty[Dataset]))
+      case Some(s) => {
+          val collectionsInSpace = spaces.getCollectionsInSpace(id)
+          for (aCollection <- collectionsInSpace) {
+              Logger.debug("A collection in the space is " + aCollection.name)
+          }
+          
+          val datasetsInSpace = spaces.getDatasetsInSpace(id)
+          for (aDataset <- datasetsInSpace) {
+              Logger.debug("A dataset in the space is " + aDataset.name)
+          }
+          Ok(views.html.spaces.space(s, collectionsInSpace, datasetsInSpace))
+      }
       case None => InternalServerError("Space not found")
     }
   }
@@ -126,6 +137,23 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       // TODO fetch page before/after so we have prev item
       val prev = ""
       val next = ""
-      Ok(views.html.spaces.listSpaces(s, order, direction, start, limit, filter, mode, canDelete, prev, next))
+          
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
+        var viewMode = mode;
+        //Always check to see if there is a session value          
+        request.cookies.get("view-mode") match {
+            case Some(cookie) => {
+                viewMode = cookie.value
+            }
+            case None => {
+                //If there is no cookie, and a mode was not passed in, default it to tile
+                if (viewMode == null || viewMode == "") {
+                    viewMode = "tile"
+                }
+            }
+        }    
+      Ok(views.html.spaces.listSpaces(s, order, direction, start, limit, filter, viewMode, canDelete, prev, next))
   }
 }

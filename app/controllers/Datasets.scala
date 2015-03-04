@@ -53,7 +53,8 @@ class Datasets @Inject()(
     implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      Ok(views.html.newDataset(filesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      val spacesList = spaces.list()
+      Ok(views.html.newDataset(filesList, spacesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
   
   def addToDataset(id: UUID, name: String, desc: String) = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
@@ -342,8 +343,10 @@ class Datasets @Inject()(
 
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
+        val space = dataset.space.flatMap(spaces.get(_))
+        
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, 
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space))
       }
       case None => {
         Logger.error("Error getting dataset" + id);

@@ -39,7 +39,8 @@ class MongoDBDatasetService @Inject() (
   collections: CollectionService,
   files: FileService,
   comments: CommentService,
-  sparql: RdfSPARQLService) extends DatasetService {
+  sparql: RdfSPARQLService,
+  spaces: SpaceService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -57,6 +58,45 @@ class MongoDBDatasetService @Inject() (
     (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList
   }
 
+  /**
+   * @see app.services.DatasetService.scala
+   * 
+   * Implementation of the DatasetService trait.
+   */
+  def listDatasetsBySpace(spaceId: UUID): List[Dataset] = {
+      ProjectSpaceDAO.findOneById(new ObjectId(spaceId.stringify)) match {
+          case Some(aSpace) => {
+              val list = for (aDataset <- listDatasets(); if (isDatasetInSpace(aDataset, aSpace.id))) yield aDataset
+              list
+          }
+          case None => {
+              Logger.debug("No space found for the ID provided in listDatasetsBySpace.")
+              List.empty
+          }
+      }
+  }
+  
+  /**
+   * Helper method to check to see if a dataset belongs to a specified Space.
+   */
+  def isDatasetInSpace(dataset: Dataset, spaceId: UUID): Boolean = {
+      dataset.space match {
+          case Some(storedId) => {
+              Logger.debug("Found a stored space that matches on the dataset : " + dataset.name)
+              if (storedId == spaceId) {
+                  true
+              }
+              else {
+                  false
+              }
+          }
+          case None => {
+              Logger.debug("No stored space found on the dataset with id : " + dataset.name)
+              false
+          }
+      }
+  }
+  
   /**
    * List all datasets in the system in reverse chronological order.
    */
@@ -104,7 +144,7 @@ class MongoDBDatasetService @Inject() (
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
         val list = for (dataset <- listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
-        list.foreach(d => Logger.debug(s"Dataset in $d"))
+        list.foreach(d => Logger.debug("A Dataset in the collection is " + d.name))
         return list
       }
       case None =>{
@@ -113,13 +153,14 @@ class MongoDBDatasetService @Inject() (
       }
     }
   }
+  
   def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
     for(collDataset <- collection.datasets){
       if(collDataset.id == dataset.id)
         return true
     }
     return false
-  }
+  }  
 
   /**
    * Get dataset.

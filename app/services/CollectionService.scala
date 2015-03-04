@@ -19,6 +19,17 @@ trait CollectionService {
    * List all collections in the system.
    */
   def listCollections(): List[Collection]
+  
+  /**
+   * List collections that belong to a specific space. Empty list is returned if there
+   * are none that apply.
+   * 
+   * @param spaceId The identifier for the space to be checked
+   * 
+   * @return A List of Collection objects that are assigned to the specified Space.
+   * 
+   */
+  def listCollectionsBySpace(spaceId: UUID): List[Collection]
 
   /**
    * List all collections in the system in reverse chronological order.

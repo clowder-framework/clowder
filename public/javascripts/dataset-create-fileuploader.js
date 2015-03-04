@@ -25,6 +25,7 @@ function disableFields() {
 	$('#name').addClass("hiddenholdspace");
 	$('#description').addClass("hiddenholdspace");	
 	$("input[name=radiogroup]").attr('disabled', true);
+	$("#spaceid").attr('disabled', true);
 	$('#namelabel').html(name);
 	$('#namelabel').show();
 	$('#desclabel').html(desc);
@@ -133,6 +134,7 @@ function createEmptyDataset(data) {
 	//Update the input we are adding to the form programmatically      
 	var name = $('#name');
     var desc = $('#description');
+    var space = $('#spaceid').find(":selected").val();
     
     //Add errors and return false if validation fails
     var error = false;
@@ -172,8 +174,10 @@ function createEmptyDataset(data) {
     $('#hiddenid').val(id);
    
     if (id == "__notset") {
-    	//Case for the primary file that is submitted. It will create the dataset and obtain the id.        	
-    	var jsonData = JSON.stringify({"name":encName, "description":encDescription});
+    	//Case for the primary file that is submitted. It will create the dataset and obtain the id.     
+    	console.log("space is " + space);
+    	var jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":space});
+    	console.log("jsondata is " + jsonData);
         var request = null;		                         	                        
         request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
             data: jsonData,

@@ -1,6 +1,27 @@
 @(collections: List[Collection], space: ProjectSpace)
 
 <h3>Collections</h3>
-@if(collections.size == 0) {
-    <div>No collections</div>
-}
+<p>
+<table id='spacesCollectionsTable' class="table table-bordered table-hover">
+    <thead>
+        <tr>                
+         <th style="width: 27%">Name</th>
+         <th style="width: 17%">Created</th>
+         <th style="width: 36%">Description</th>
+         <th style="width: 20%"></th>           
+        </tr>
+    </thead>
+    <tbody>
+        @collections.map { collection =>
+            <tr data-collectionId="@(collection.id.toString)">
+                <td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></td>
+                <td>@collection.created.format("MMM dd, yyyy")</td>
+                <td style="white-space:pre-line;">@collection.description</td>
+                <td>
+                    @if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(collection.name)" width="120">}
+                    @if(collection.thumbnail_id.isEmpty){No thumbnail available}
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

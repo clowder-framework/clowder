@@ -14,4 +14,4 @@ case class Collection(
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty,
   space: Option[UUID] = None,
-  lastModifiedDate: Date)
+  lastModifiedDate: Date = new Date())
