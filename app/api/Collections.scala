@@ -32,7 +32,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       (request.body \ "name").asOpt[String].map { name =>
           (request.body \ "description").asOpt[String].map { description =>
               (request.body \ "space").asOpt[String].map { space => 
-	              val c : Collection = null
+	              var c : Collection = null
 	              if (space == "default") {
 	                   c = Collection(name = name, description = description, created = new Date())
 	              }

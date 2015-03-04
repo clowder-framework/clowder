@@ -46,7 +46,13 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   def getSpace(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
-      case Some(s) => Ok(views.html.spaces.space(s, List.empty[Collection], List.empty[Dataset]))
+      case Some(s) => {
+          val collectionsInSpace = spaces.getCollectionsInSpace(id)
+          for (aCollection <- collectionsInSpace) {
+              Logger.debug("A collection in the space is " + aCollection.name)
+          }
+          Ok(views.html.spaces.space(s, collectionsInSpace, List.empty[Dataset]))      
+      }
       case None => InternalServerError("Space not found")
     }
   }

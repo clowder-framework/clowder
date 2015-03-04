@@ -1,11 +1,10 @@
 package services.mongodb
 
 import javax.inject.{Inject, Singleton}
-
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.util.JSON;
-import com.mongodb.DBObject;
+import com.mongodb.util.JSON
+import com.mongodb.DBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models.{UserSpace, ProjectSpace, UUID}
 import play.{Logger => log}
@@ -13,6 +12,7 @@ import play.api.Play._
 import services._
 import MongoContext.context
 import util.Direction._
+import models.Collection
 
 /**
  * Store Spaces in MongoDB.
@@ -28,6 +28,16 @@ class MongoDBSpaceService @Inject() (
 
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
+  }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceServie trait.
+   * 
+   */
+  def getCollectionsInSpace(spaceId: UUID): List[Collection] = {
+      collections.listCollectionsBySpace(spaceId)
   }
 
   def insert(dataset: ProjectSpace): Option[String] = {
@@ -111,9 +121,10 @@ class MongoDBSpaceService @Inject() (
   def addDataset(dataset: UUID, space: UUID): Unit = {
     log.debug(s"Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
-  }
+  }  
+}
 
-  /**
+/**
    * Salat ProjectSpace model companion.
    */
   object ProjectSpaceDAO extends ModelCompanion[ProjectSpace, ObjectId] {
@@ -132,5 +143,4 @@ class MongoDBSpaceService @Inject() (
       case Some(x) => new SalatDAO[UserSpace, ObjectId](collection = x.collection("spaces.users")) {}
     }
   }
-}
 

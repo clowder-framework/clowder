@@ -96,7 +96,7 @@
 			</thead>
 			<tbody>
 				@datasetsInCollection.map { dataset =>
-					<tr style="display:none;" data-datasetId="@(dataset.id.toString)">
+					<tr data-datasetId="@(dataset.id.toString)">
 						<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
 						<td style="white-space:pre-line;">@dataset.description</td>

@@ -104,7 +104,7 @@ class MongoDBDatasetService @Inject() (
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
         val list = for (dataset <- listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
-        list.foreach(d => Logger.debug(s"Dataset in $d"))
+        list.foreach(d => Logger.debug("A Dataset in the collection is " + d.name))
         return list
       }
       case None =>{
