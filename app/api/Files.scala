@@ -249,9 +249,11 @@ class Files @Inject()(
   def addMetadata(id: UUID) =
   	SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
 	  request =>
+	  	Logger.debug(s"==================> from FIle.addMetadata Adding metadata to file $id")
 	  	val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
 	  	files.get(id) match {
 	  	  case Some(x) => {
+	  		  Logger.debug(" =================>  body or req " + request.body)
 	  		  //====================================================
 	  		  // parse agent/creator info
 	  		  //====================================================
