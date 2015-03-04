@@ -258,6 +258,14 @@ GET            /api/delete-data                                                 
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
+#----------------------------------------------------------------------
+# JSON-LD CONTEXT ENDPOINT
+#----------------------------------------------------------------------
+POST            /api/contexts															@api.ContextLD.addContext()
+GET             /api/contexts/:id     													@api.ContextLD.getContextById(id: UUID)
+GET             /api/contexts/:name/context.json		                                @api.ContextLD.getContextByName(name: String)
+DELETE          /api/contexts/:id														@api.ContextLD.removeById(id: UUID)
+
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------

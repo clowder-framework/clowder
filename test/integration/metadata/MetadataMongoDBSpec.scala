@@ -33,6 +33,7 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
       info("insert metadata")
       val injector = Guice.createInjector(new services.ConfigurationModule)
       val metadata : MetadataService =  injector.getInstance(classOf[MetadataService])
+      info("testMetadata"+ testMetadata)
       val id = metadata.addMetadata(testMetadata)
       info("new metadata added " + id)
       val retrievedMetadata = metadata.getMetadataById(id)
@@ -47,8 +48,8 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
       val mdByContextId = metadata.getMetadataContext(id)
       info("Get Metadata context " + mdByContextId)
       
-      metadata.removeMetadata(id)
-      info("remove metadata " + id)
+     // metadata.removeMetadata(id)
+     //info("remove metadata " + id)
     }
    }
 }

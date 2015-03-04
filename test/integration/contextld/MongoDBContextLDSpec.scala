@@ -31,7 +31,7 @@ class MongoDBContextLDSpec extends PlaySpec with OneServerPerSuite {
   val context = Json.arr("http://medici.ncsa.illinois.edu/metadata.jsonld", contextExtractor)
   val testContextld = ContextLD(
     id = UUID.generate,
-    contextName = "ncsa.cv.caltech101",
+    contextName = JsString("ncsa.cv.caltech101"),
     context = context)
 
   "The ContextLD MongoDB Service" must {
