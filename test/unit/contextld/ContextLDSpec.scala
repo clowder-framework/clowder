@@ -21,11 +21,11 @@ class ContextLDSpec extends UnitSpec{
   
   val mockContext = mock[ContextLD]
   
-  when(mockContext.contextName).thenReturn("ncsa.cv.face")
+  when(mockContext.contextName).thenReturn(JsString("ncsa.cv.face"))
   when(mockContext.context).thenReturn(Json.toJson(Map("xyz"->"abc")))  
      
   "A context" should "have context name" in {
-    assert(mockContext.contextName=="ncsa.cv.face")
+    assert(mockContext.contextName == JsString("ncsa.cv.face"))
   }  
   
   "A context" should "have a content" in {

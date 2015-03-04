@@ -17,6 +17,7 @@ import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import play.api.libs.json.Json
 import services.MetadataService
+import play.api.libs.json.JsString
 /**
  * MongoDB implementation of ContextLD service
  * @author Smruti Padhy
@@ -27,7 +28,7 @@ import services.MetadataService
 class MongoDBContextLDService extends ContextLDService{
 
   /** Add context for metadata **/
-  def addContext(contextName: String, contextld: JsValue): UUID = {
+  def addContext(contextName: JsString, contextld: JsValue): UUID = {
     val mid = ContextLDDAO.insert(new ContextLD(UUID.generate, contextName, contextld), WriteConcern.Safe)
     val id = UUID(mid.get.toString())
     id
@@ -35,13 +36,14 @@ class MongoDBContextLDService extends ContextLDService{
 
   /** Get context  **/
   def getContextById(id: UUID): Option[JsValue] = {
+    Logger.debug("mongo context id: "+ id)
     val contextld = ContextLDDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
     contextld.map(_.context)
   }
 
   /** Get context by name **/
   def getContextByName(contextName: String) = {
-    val contextByName = ContextLDDAO.findOne(MongoDBObject(("contextName") -> contextName))
+    val contextByName = ContextLDDAO.findOne(MongoDBObject(("contextName.value") -> contextName))
     contextByName.map(_.context)
   }
 

@@ -3,6 +3,7 @@ package services
 import models.UUID
 import models.ContextLD
 import play.api.libs.json.JsValue
+import play.api.libs.json.JsString
 
 /**
  * Context service for add, query and delete Json-ld contexts
@@ -12,7 +13,7 @@ import play.api.libs.json.JsValue
 trait ContextLDService {
 
   /** Add context for metadata **/
-  def addContext(contextName: String, contextld: JsValue): UUID
+  def addContext(contextName: JsString, contextld: JsValue): UUID
 
   /** Get context  **/
   def getContextById(id: UUID): Option[JsValue]
