@@ -97,32 +97,39 @@ class Datasets @Inject()(
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>
         (request.body \ "file_id").asOpt[String].map { file_id =>
-          files.get(UUID(file_id)) match {
-            case Some(file) =>
-              val d = Dataset(name=name,description=description, created=new Date(), files=List(file),
-                author=request.user.get, licenseData = License.fromAppConfig())
-              datasets.insert(d) match {
-                case Some(id) => {
-                  files.index(UUID(file_id))
-                  if(!file.xmlMetadata.isEmpty) {
-                    val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
-                    datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
-                    current.plugin[ElasticsearchPlugin].foreach {
-                     _.index("data", "dataset", UUID(id),
-                       List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
-                    }
-                  } else {
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
-                    }
+            (request.body \ "space").asOpt[String].map { space =>
+                  files.get(UUID(file_id)) match {
+                    case Some(file) =>
+                      var d : Dataset = null
+                      if (space == "default") {
+                          d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
+                      }
+                      else {
+                          d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))                 
+                      }
+                      datasets.insert(d) match {
+                        case Some(id) => {
+                          files.index(UUID(file_id))
+                          if(!file.xmlMetadata.isEmpty) {
+                            val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
+                            datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
+                            current.plugin[ElasticsearchPlugin].foreach {
+                             _.index("data", "dataset", UUID(id),
+                               List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
+                            }
+                          } else {
+                            current.plugin[ElasticsearchPlugin].foreach {
+                              _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
+                            }
+                          }
+                          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}                  
+                          Ok(toJson(Map("id" -> id)))
+                        }
+                        case None => Ok(toJson(Map("status" -> "error")))
+                      }
+                    case None => BadRequest(toJson("Bad file_id = " + file_id))
                   }
-                  current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}                  
-                  Ok(toJson(Map("id" -> id)))
-                }
-                case None => Ok(toJson(Map("status" -> "error")))
-              }
-            case None => BadRequest(toJson("Bad file_id = " + file_id))
-          }
+          }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
         }.getOrElse(BadRequest(toJson("Missing parameter [file_id]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
@@ -137,7 +144,7 @@ class Datasets @Inject()(
    * existingfiles, which will be a comma separated String of existing file IDs to be added to the new dataset. 
    */
   @ApiOperation(value = "Create new dataset with no file",
-      notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name and description. Optional list of existing file ids to add.",
+      notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name, description, and space. Optional list of existing file ids to add.",
       responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>    
     (request.body \ "name").asOpt[String].map { name =>
@@ -145,10 +152,10 @@ class Datasets @Inject()(
           (request.body \ "space").asOpt[String].map { space =>              
               var d : Dataset = null
               if (space == "default") {
-                  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData())
+                  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
               }
               else {
-              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData(), space = Some(UUID(space)))              	  
+              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))              	  
               }
               datasets.insert(d) match {
                 case Some(id) => {
