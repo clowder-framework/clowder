@@ -1,10 +1,10 @@
-@(id: String, posturl: String)(implicit user: Option[securesocial.core.Identity])
+@(id: String, resourceType: String)(implicit user: Option[securesocial.core.Identity])
 
 @if(user.isDefined) {
 	<form class="form-inline">
 		<textarea id="commentField_@id" class="comment-input-box"></textarea>
 		<br />
-		<button class="btn btn-primary" onclick="return postComment('@id', '@posturl');" title="Post Comment"><span class="glyphicon glyphicon-comment"></span> Post</button>
+		<button class="btn btn-primary" onclick="return postComment('@id', '@resourceType');" title="Post Comment"><span class="glyphicon glyphicon-comment"></span> Post</button>
 	</form>
 	
 	<script language="javascript">
@@ -56,7 +56,7 @@
 		}				
 		
 		function replyComment(id) {
-			postComment(id, "@api.routes.Comments.comment(UUID(id))".replace("@id", id));
+			postComment(id, "comment");
 			$("#form_" + id).remove();
 			return false;
 		}
@@ -66,60 +66,87 @@
 			return false;
 		}
 
-		function postComment(id, posturl) {
+		function postComment(id, resourceType) {
 			var text = $('#commentField_' + id).val();
 			$('#commentField_' + id).val("");
 
-			console.log("Posting " + text + " to " + posturl);
+			console.log("Posting " + text);
 			if (text !== "") {
-				console.log("submitting comment " + text);
-	
-				var request = $.ajax({
-					url:  posturl,
-					data: JSON.stringify({ text: text }),
-					type: "POST",
-					contentType: "application/json",
-		     	});
-		     
-				request.done(function (response, textStatus, jqXHR) {							            			
-					var date = new Date();
-					var post="<div class=\"comment\" id=\"comment_" + response +"\">";
-					post += "<div class=\"media\">";
-					post += "<a class='pull-left' href='#'>";
-  					post += "<div class='thumbnail'>";
-    				post += "<img class='avatar' src='@(user.get.avatarUrl.getOrElse(""))'>";
-    				post += "</div></a>";
-					post += "<div class='media-body'>";
-					post += "<div class=\"comment-header\">";
-					post += "<div class=\"comment-author\"><a href='#'>@user.get.fullName</a></div>";
-					//TODO - figure out how to get hour:minute:second on the date format as well...
-					var formatted = $.datepicker.formatDate('MM dd, yy', new Date());
-					//post += "<div class=\"comment-date\">" + date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDay() + "</div>";
-					post += "<div class=\"comment-date\">" + formatted + "</div>";
-					post += "<div style=\"clear: both;\"></div>";
-					post += "</div>";
-					post += "<div class=\"comment-body\" id=\"comment-body_" + response + "\">" + text + "</div>";
-					//Note, no check for comment owner in this case because this case is only displayed immediately after the comment creator posts the comment. MMF - 09/2014
-					post += "<div class=\"comment-footer\"><a href=\"#\" class=\"btn btn-primary btn-sm\" title=\"Reply To Comment\" onclick=\"return showReplyComment('" + response + "');\"><span class=\"glyphicon glyphicon-share-alt\"></span> Reply</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-default btn-sm\" title=\"Edit Comment\" onclick=\"return showEditComment('" + response + "');\"><span class=\"glyphicon glyphicon-edit\"></span> Edit</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-danger btn-sm\" title=\"Delete Comment\" onclick=\"return deleteComment('" + response + "');\"><span class=\"glyphicon glyphicon-trash\"></span> Delete</a> </div>";
-					post += "<div class=\"comment-reply\">";
-					post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">";
-					post += "</div>";
-					post += "</div>";
-					post += "</div>";
-					post += "</div>";
-					post += "</div>";
-					$("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");			        
-				});
-	
-				request.fail(function (jqXHR, textStatus, errorThrown){         
-					console.error("The following error occured: "+textStatus, errorThrown);
-					var errMsg = "You must be logged in to post a comment.";					
-                    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                        alert("The comment was not posted due to : " + errorThrown);
-                    }
-				});
-			}
-			return false;
+            console.log ( "Submitting comment " + text ) ;
+
+                var request;
+            if (resourceType == "comment") {
+                request = jsRoutes.api.Comments.comment ( id ).ajax ( {
+                    data : JSON.stringify ( { text : text } ),
+                    type : 'POST',
+                    contentType : "application/json"
+                } ) ;
+            } else if (resourceType == "dataset") {
+                request = jsRoutes.api.Datasets.comment ( id ).ajax ( {
+                    data : JSON.stringify ( { text : text } ),
+                    type : 'POST',
+                    contentType : "application/json"
+                } ) ;
+            } else if (resourceType == "section") {
+                request = jsRoutes.api.Section.comment ( id ).ajax ( {
+                    data : JSON.stringify ( { text : text } ),
+                    type : 'POST',
+                    contentType : "application/json"
+                } ) ;
+            } else if (resourceType == "file") {
+                request = jsRoutes.api.Files.comment ( id ).ajax ( {
+                    data : JSON.stringify ( { text : text } ),
+                    type : 'POST',
+                    contentType : "application/json"
+                } ) ;
+            } else {
+                alert("Error with comment type");
+                return;
+            }
+
+            request.done ( function ( response, textStatus, jqXHR ) {
+                var date = new Date ( ) ;
+                var post = "<div class=\"comment\" id=\"comment_" + response + "\">" ;
+                post += "<div class=\"media\">" ;
+                post += "<a class='pull-left' href='#'>" ;
+                post += "<div class='thumbnail'>" ;
+                post += "<img class='avatar' src=' @(user.get.avatarUrl.getOrElse("")) '>";
+                post += "</div></a>" ;
+               post += "<div class='media-body'>" ;
+               post += "<div class=\"comment-header\">" ;
+               post += "<div class=\"comment-author\"><a href='#'> @user.get.fullName </a> </div> ";
+               //TODO - figure out how to get hour:minute:second on the date format as well...
+               var formatted = $.datepicker.formatDate ( 'MM dd, yy', new Date ( ) ) ;
+               //post += "<div class=\"comment-date\">" + date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDay() + "</div>";
+               post += "<div class=\"comment-date\">" + formatted + "</div>" ;
+               post += "<div style=\"clear: both;\"></div>" ;
+               post += "</div>" ;
+               post += "<div class=\"comment-body\" id=\"comment-body_" + response + "\">" + text + "</div>" ;
+               //Note, no check for comment owner in this case because this case is only displayed immediately after the comment creator posts the comment. MMF - 09/2014
+               post += "<div class=\"comment-footer\"><a href=\"#\" class=\"btn btn-primary btn-sm\" title=\"Reply To Comment\" onclick=\"return showReplyComment('" + response + "');\"><span class=\"glyphicon glyphicon-share-alt\"></span> Reply</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-default btn-sm\" title=\"Edit Comment\" onclick=\"return showEditComment('" + response + "');\"><span class=\"glyphicon glyphicon-edit\"></span> Edit</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-danger btn-sm\" title=\"Delete Comment\" onclick=\"return deleteComment('" + response + "');\"><span class=\"glyphicon glyphicon-trash\"></span> Delete</a> </div>" ;
+               post += "<div class=\"comment-reply\">" ;
+               post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">" ;
+               post += "</div>" ;
+               post += "</div>" ;
+               post += "</div>" ;
+               post += "</div>" ;
+               post += "</div>" ;
+               $ ( "#reply_" + id ).prepend ( "<div class=\"comment-thread\">" + post + "</div>" ) ;
+               } ) ;
+
+
+       request.fail ( function ( jqXHR, textStatus, errorThrown ) {
+           console.error ( "The following error occured: " + textStatus, errorThrown ) ;
+           var errMsg = "You must be logged in to post a comment." ;
+           if ( ! checkErrorAndRedirect ( jqXHR, errMsg ) ) {
+           alert ( "The comment was not posted due to : " + errorThrown ) ;
+           }
+       } ) ;
+
+
+       }
+    return false ;
+
 		}
 	</script>
 	

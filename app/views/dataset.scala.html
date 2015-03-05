@@ -154,7 +154,7 @@
 			  <div class="tab-content">
 			    <div class="tab-pane active" id="tab1">
 				      @if(user.isDefined) {
-				      	  @commentform(dataset.id.stringify, api.routes.Datasets.comment(dataset.id).toString)
+				      	  @commentform(dataset.id.stringify, "dataset")
 				      }
 			 		  <div class="comment-threads unstyled" id="reply_@dataset.id.toString">
 				      	 @comment(comments)

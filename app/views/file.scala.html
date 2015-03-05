@@ -361,7 +361,7 @@
                 <div class="col-md-12">
                     <h4>Comments</h4>
                     @if(user.isDefined) {
-                    @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
+                        @commentform(file.id.toString, "file")
                     }
                     <ol class="comment-threads unstyled" id="reply_@file.id.toString">
                         @comment(comments)
