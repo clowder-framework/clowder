@@ -22,6 +22,7 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * 
    * @param space The identifier for the space that is being checked
    * 
+   * @return A flag that denotes if time to live is enabled on this space. 
    */
   def isTimeToLiveEnabled(space: UUID): Boolean
   
@@ -30,8 +31,10 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * 
    * @param space The identifier for the space to be queried
    *  
+   * @return The length of time, in milliseconds, that resources are allowed to persist in this space.
+   *  
    */
-  def getTimeToLive(space: UUID): Integer
+  def getTimeToLive(space: UUID): Long
   
   /**
    * Service call to tell a space to clean up resources that are expired relative to the 

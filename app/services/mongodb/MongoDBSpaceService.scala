@@ -162,7 +162,7 @@ class MongoDBSpaceService @Inject() (
    * 
    * @return An Integer that represents that lifetime of resources in whole days. 
    */
-  def getTimeToLive(space: UUID): Integer = {
+  def getTimeToLive(space: UUID): Long = {
       get(space) match {
           case Some(aSpace) => {
               return aSpace.resourceTimeToLive
@@ -184,7 +184,34 @@ class MongoDBSpaceService @Inject() (
    *   
    */
   def purgeExpiredResources(space: UUID): Unit = {
-      //Go through resources and purge those that have a last modified time older than the time to live
+      var datasetsList = getDatasetsInSpace(space)
+      var collectionsList = getCollectionsInSpace(space)
+      val timeToLive = getTimeToLive(space)
+      val currentTime = System.currentTimeMillis()
+      
+      for (aDataset <- datasetsList) {
+    	  val datasetTime = aDataset.lastModifiedDate.getTime()
+    	  val difference = currentTime - datasetTime
+    	  if (difference > timeToLive) {
+    	       //It was last modified longer than the time to live, so remove it. Delete everything?
+    	       datasets.removeDataset(aDataset.id)
+    	  }
+      }
+      
+      for (aCollection <- collectionsList) {
+          val collectionTime = aCollection.lastModifiedDate.getTime()
+          val difference = currentTime - collectionTime
+          if (difference > timeToLive) {
+              //It was last modified longer than the time to live, so remiove it.
+              for (colDataset <- aCollection.datasets) {
+                  //Remove all the datasets in the collection
+                  datasets.removeDataset(colDataset.id)
+              }
+              
+              //Remove the collection
+              collections.delete(aCollection.id)
+          }
+      }
   }
 
 }

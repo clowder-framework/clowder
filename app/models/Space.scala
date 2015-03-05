@@ -26,7 +26,7 @@ case class ProjectSpace (
   datasetCount: Integer,
   userCount: Integer,
   metadata: List[Metadata], 
-  resourceTimeToLive: Integer = 30, //In whole days
+  resourceTimeToLive: Long = 30*24*60*60*1000L, //In milliseconds, 30 days * 24 hours * 60 minutes * 60 seconds * 1000
   isTimeToLiveEnabled: Boolean = false)
 
 
