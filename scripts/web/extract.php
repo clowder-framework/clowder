@@ -1,5 +1,5 @@
 <?php
-$host = 'http://localhost:9000/';
+$host = 'http://' . $_SERVER['SERVER_NAME'] . ':9000/';
 $key = 'r1ek3rs';
 
 if(isset($_REQUEST['form'])){		//Present form
