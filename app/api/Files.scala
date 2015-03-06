@@ -89,6 +89,7 @@ class Files @Inject()(
   previews: PreviewService,
   threeD: ThreeDService,
   sqarql: RdfSPARQLService,
+  metadataService: MetadataService,
   thumbnails: ThumbnailService) extends ApiController {
 
   @ApiOperation(value = "Retrieve physical file object metadata",
@@ -261,6 +262,59 @@ class Files @Inject()(
         Logger.debug(s"Updating previews.files $id with $doc")
         Ok(toJson("success"))
     }
+  
+  /**
+   * Add metadata in JSON-LD format.
+   */
+  @ApiOperation(value = "Add JSON-LD metadata to the database.",
+      notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
+      responseClass = "None", httpMethod = "POST")
+  def addMetadataJsonLD(id: UUID) =
+  	SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
+	  request =>
+	  	val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
+	  	files.get(id) match {
+	  	  case Some(x) => {
+	  		  //parse request for agent/creator info
+	  		  //creator can be UserAgent or ExtractorAgent
+	  		  var creator: models.Agent = null
+	  		  val typeOfAgent = (request.body \ "agent" \ "@type").toString
+
+	  		  //if user_id is part of the request, then creator is a user
+	  		  val user_id = (request.body \ "agent" \ "user_id").asOpt[String]
+	  		  user_id match {
+	  		  	case Some(uid) => {
+	  		  		creator = models.UserAgent(UUID.generate, typeOfAgent, Some(new java.net.URL(uid)))
+	  		  	}
+	  		  	case None =>
+	  		  }
+	  		  //if extractor_id is part of the request, then creator is an extractor
+	  		  val extr_id = (request.body \ "agent" \ "extractor_id").asOpt[String]
+	  		  extr_id match {
+	  		  	case Some(exid) => {
+	  		  		creator = models.ExtractorAgent(UUID.generate, typeOfAgent, Some(new java.net.URL(exid)))
+	  		  	}
+	  		  	case None =>
+	  		  }	  		  
+	  		  
+	  		  //parse the rest of the request to create a new models.Metadata object
+	  		  val attachedTo = Map(("file_id", id))
+	  		  val context = (request.body \ "@context")  
+	  		  val contextId=None
+	  		  val createdAt = (request.body \ "created_at").as[Date]
+	  		  val content =  (request.body \ "content")
+	  		  val version = None
+	  		  
+	  		  val metadata = models.Metadata(UUID.generate, attachedTo, contextId, createdAt, creator, content, version)
+	  		  
+	  		  //add metadata to mongo
+	  		  metadataService.addMetadata(metadata)
+          }
+          case None => Logger.error(s"Error getting file $id"); NotFound
+        }
+        Ok(toJson("Added metadata successfully."))
+    }
+
 
   /**
    * Add Versus metadata to file: use by Versus Extractor
