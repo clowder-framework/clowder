@@ -412,7 +412,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                 val serverIP= request.host
 	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 	           /****************************/ 
-
               // TODO replace null with None
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
 
