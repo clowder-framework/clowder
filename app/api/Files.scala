@@ -266,8 +266,8 @@ class Files @Inject()(
   /**
    * Add metadata in JSON-LD format.
    */
-  @ApiOperation(value = "Add metadata to file",
-      notes = "Metadata in attached JSON object will be added to metadata Mongo db collection.",
+  @ApiOperation(value = "Add JSON-LD metadata to the database.",
+      notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
       responseClass = "None", httpMethod = "POST")
   def addMetadataJsonLD(id: UUID) =
   	SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
