@@ -1,6 +1,6 @@
 package api
 
-import models.UUID
+import models.{User, UUID}
 import play.Logger
 import securesocial.core.Authorization
 import securesocial.core.Identity
@@ -12,7 +12,7 @@ import services.{CollectionService, DatasetService, FileService, AppConfiguratio
  /**
   * A request that adds the User for the current call
   */
-case class RequestWithUser[A](user: Option[Identity], request: Request[A]) extends WrappedRequest(request)
+case class RequestWithUser[A](user: Option[Identity], mediciUser: Option[User], request: Request[A]) extends WrappedRequest(request)
 
 /**
  * List of all permissions available in Medici

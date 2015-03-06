@@ -11,6 +11,7 @@ GET  /*path/                                                                 @co
 # Home page
 GET      /                                                                   @controllers.Application.index
 
+
 # Map static resources from the /public folder to the /assets URL path
 #GET      /documentation/api/*testFile                                        controllers.Assets.at(path="/public/docs/api", testFile)
 GET      /assets/img/glyphicons-halflings-white.png                          controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
@@ -41,6 +42,9 @@ GET     /bookmarklet														@controllers.ExtractionInfo.getBookmarkletPage
 GET     /bookmarklet.js                                                     @controllers.Application.bookmarklet
 
 
+#DTS Chrome extension
+GET    /extensions/dts/chrome                                                @controllers.ExtractionInfo.getExtensionPage()
+
 #This may not require; This is only for testing. It will change in subsequent version
 GET     /extraction/form                  @controllers.Files.extractFile
 POST    /extraction/upload                @controllers.Files.uploadExtract()
@@ -68,6 +72,7 @@ GET		/fileThumbnail/:id/blob			  @controllers.Files.thumbnail(id: UUID)
 GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
 GET     /datasets/userDatasets            @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile", email: String)
 GET     /datasets/new                     @controllers.Datasets.newDataset
+GET     /datasets/addToDataset/:id/:name/:desc     @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET     /datasets/metadataSearch          @controllers.Datasets.metadataSearch
 GET     /datasets/generalMetadataSearch   @controllers.Datasets.generalMetadataSearch
 GET		/datasets/:id					  @controllers.Datasets.dataset(id: UUID)
@@ -217,13 +222,15 @@ GET       /api/extractions/extractors_names                 @api.Extractions.get
 GET       /api/extractions/supported_input_types      		@api.Extractions.getExtractorInputTypes()
 
 #API for temporary fix for BD-289
-GET       /api/extractions/extractors_details                @api.Extractions.getExtractorDetails()
+GET      /api/extractions/extractors_details                   @api.Extractions.getExtractorDetails()
 
 POST    /api/extractions/upload_url                             @api.Extractions.uploadByURL()
+POST     /api/extractions/multiple_uploadby_url                 @api.Extractions.multipleUploadByURL()
 POST    /api/extractions/upload_file                            @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
 GET     /api/extractions/:id/status                             @api.Extractions.checkExtractorsStatus(id:UUID)
 POST    /api/extractions/:id/submit                             @api.Extractions.submitExtraction(id:UUID)
 GET     /api/extractions/:id/metadata                           @api.Extractions.fetch(id:UUID)
+GET     /api/extractions/:id/statuses                           @api.Extractions.checkExtractionsStatuses(id:UUID)
 
 # End of change segment
 
@@ -262,6 +269,8 @@ GET     /api/collections/:coll_id													@api.Collections.getCollection(col
 
 GET    	/api/datasets					  							@api.Datasets.list
 POST    /api/datasets                                           	@api.Datasets.createDataset
+POST    /api/datasets/createempty                                   @api.Datasets.createEmptyDataset
+POST    /api/datasets/attachmultiple                                @api.Datasets.attachMultipleFiles
 POST	/api/datasets/searchusermetadata							@api.Datasets.searchDatasetsUserMetadata
 POST	/api/datasets/searchmetadata								@api.Datasets.searchDatasetsGeneralMetadata
 
