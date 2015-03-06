@@ -537,7 +537,7 @@
                 	  console.error("The following error occured: " + textStatus, errorThrown);
                       var errMsg = "You must be logged in to remove a tag from a file.";                                
                       if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                          alert("The tag was not removed from the file due to : " + errorThrown);
+                          notify("The tag was not removed from the file due to : " + errorThrown, "error");
                       }    
                   });
                   
@@ -592,7 +592,7 @@
                     	  console.error("The following error occured: " + textStatus, errorThrown);
                           var errMsg = "You must be logged in to add a tag to a file.";                                
                           if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                              alert("The tag was not added to the file due to : " + errorThrown);
+                              notify("The tag was not added to the file due to : " + errorThrown, "error");
                           }    
                       });
                       return false;

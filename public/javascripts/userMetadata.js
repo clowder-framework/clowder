@@ -84,7 +84,7 @@
 					}					
 					var allowedChildrenForNode = window["allowedChildren"+topId].filter(function (a) {return a[0] == parentNodeType;});
 					if(allowedChildrenForNode.length == 0){
-						alert("The metadata model states that this property cannot have subproperties of any kind.");
+                        notify('The metadata model states that this property cannot have subproperties of any kind.', 'error');
 						return false;
 					}
 					$(this).parent().children('ul')[0].appendChild(newProperty);	
@@ -164,7 +164,7 @@
 				  else if($(this).html() == "Submit"){
 				  	var restrictionViolations = validateCardinalitiesToModel(document.getElementById(topId).children[1]);
 					if(restrictionViolations != ''){
-						alert('Institution metadata model violation(s): ' + restrictionViolations + ' Metadata not added.');
+                        notify('<p>Institution metadata model violation(s): </p><p>' + restrictionViolations + '</p><p>Metadata not added.</p>','error');
 						return false;
 					}
 					
@@ -183,7 +183,7 @@
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
 						  console.error("The following error occured: "+ textStatus, errorThrown);
-						  alert("ERROR: " + errorThrown +". Metadata not added." );
+                          notify("Encountered error " + errorThrown + ". Metadata not added.")
 					  });
 					 
 					 

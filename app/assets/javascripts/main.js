@@ -2,12 +2,17 @@
  * Created by lmarini on 1/21/15.
  */
 console.log("in main");
-function notify(text, type) {
+function notify(text, type, timeout) {
+    // default parameters
+    if (typeof(text)==='undefined') text = "Notification improperly created";
+    if (typeof(type)==='undefined') type = "alert";
+    if (typeof(timeout)==='undefined') timeout = false;
     noty({
         layout: 'topCenter',
         theme: 'relax',
         type: type,
-        text: text
+        text: text,
+        timeout: timeout
     });
 }
 

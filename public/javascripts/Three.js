@@ -9852,7 +9852,7 @@ THREE.ColladaLoader = function () {
                 };
                 n.open("GET", e, !0);
                 n.send(null)
-            } else alert("Don't know how to parse XML!")
+            } else notify("Don't know how to parse XML!", error);
         },
         setPreferredShading: function (b) {
             Fa = b

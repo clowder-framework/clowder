@@ -24,7 +24,7 @@
                $("#editField_" + id).val(commentText);               
            }
 		   else {
-			   alert("Error in showEditComment");
+			   notify("Error editing comment", "error");
 		   }
            return false;
 	   }
@@ -115,7 +115,7 @@
 					console.error("The following error occured: "+textStatus, errorThrown);
 					var errMsg = "You must be logged in to post a comment.";					
                     if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                        alert("The comment was not posted due to : " + errorThrown);
+                        notify("Error posting comment : " + errorThrown, "error");
                     }
 				});
 			}

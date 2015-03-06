@@ -26,11 +26,11 @@ function editComment(commentId, commentText, reloadPage){
     	 console.error("The following error occured: " + textStatus, errorThrown);
          var errMsg = "You must be logged in to edit a comment.";                                
          if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-         	alert("The comment was not edited due to : " + errorThrown);
+         	notify("The comment was not edited due to : " + errorThrown, "error");
          }  
          else {
         	 var responseText = jqXHR.responseText;
-        	 alert(responseText);
+        	 notify(responseText, "error");
          }
      });
     

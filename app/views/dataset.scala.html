@@ -267,7 +267,7 @@
 									console.error("The following error occured: "+textStatus, errorThrown);
 									var errMsg = "You must be logged in to update the information about a dataset.";
 									if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-									alert("The dataset information was not updated due to : " + errorThrown);
+									notify("The dataset information was not updated due to : " + errorThrown, "error");
 									}
 									});
 
@@ -372,7 +372,7 @@
                         	console.error("The following error occured: "+textStatus, errorThrown);
                             var errMsg = "You must be logged in to remove a file from a dataset.";
                             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                alert("The file was not removed from the dataset due to : " + errorThrown);
+                                notify("The file was not removed from the dataset due to : " + errorThrown, "error");
                             }       
                         });
                     }
@@ -469,7 +469,7 @@
 								console.error("The following error occured: " + textStatus, errorThrown);
                                 var errMsg = "You must be logged in to add a dataset to a collection.";                                
                                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                    alert("The dataset was not added to the collection due to the following : " + errorThrown);
+                                    notify("The dataset was not added to the collection due to the following : " + errorThrown, "error");
                                 }  
 					 		});				
 						});
@@ -499,7 +499,7 @@
 								console.error("The following error occured: " + textStatus, errorThrown);
                                 var errMsg = "You must be logged in to remove a dataset from a collection.";                                
                                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                    alert("The dataset was not removed from the collection due to : " + errorThrown);
+                                    notify("The dataset was not removed from the collection due to : " + errorThrown, "error");
                                 }  
 					 		});
 						}
@@ -569,7 +569,7 @@
                         	console.error("The following error occured: " + textStatus, errorThrown);
                             var errMsg = "You must be logged in to remove a tag from a dataset.";                                
                             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                alert("The tag was not removed from the dataset due to : " + errorThrown);
+                                notify("The tag was not removed from the dataset due to : " + errorThrown, "error");
                             }     
                         });
 
@@ -598,7 +598,6 @@
 					     $("#tagList").children("li").each(function (index, tagLi) {
 					       if($(tagLi).attr("name")===tag){
 					         isTagPresent = true;
-					         alert(true);
 					       }
 					     });
 	
@@ -623,7 +622,7 @@
 								console.error("The following error occured: "+textStatus, errorThrown);
 						        var errMsg = "You must be logged in to add a tag to a dataset.";
 						        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                    alert("The tag was not added to the dataset due to : " + errorThrown);
+                                    notify("The tag was not added to the dataset due to : " + errorThrown, "error");
                                 } 
 						     });
 							return false;
