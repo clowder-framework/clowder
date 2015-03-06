@@ -298,7 +298,7 @@ class Files @Inject()(
 	  		  }	  		  
 	  		  
 	  		  //parse the rest of the request to create a new models.Metadata object
-	  		  val attachedTo = Map(("file", id))
+	  		  val attachedTo = Map(("file_id", id))
 	  		  val context = (request.body \ "@context")  
 	  		  val contextId=None
 	  		  val createdAt = (request.body \ "created_at").as[Date]
