@@ -105,35 +105,32 @@
             }
 
             request.done ( function ( response, textStatus, jqXHR ) {
-                var date = new Date ( ) ;
+                // TODO - figure out how to get hour:minute:second on the date format as well...
+                var formatted = $.datepicker.formatDate ( 'MM dd, yy', new Date ( ) ) ;
                 var post = "<div class=\"comment\" id=\"comment_" + response + "\">" ;
                 post += "<div class=\"media\">" ;
                 post += "<a class='pull-left' href='#'>" ;
                 post += "<div class='thumbnail'>" ;
                 post += "<img class='avatar' src=' @(user.get.avatarUrl.getOrElse("")) '>";
                 post += "</div></a>" ;
-               post += "<div class='media-body'>" ;
-               post += "<div class=\"comment-header\">" ;
-               post += "<div class=\"comment-author\"><a href='#'> @user.get.fullName </a> </div> ";
-               //TODO - figure out how to get hour:minute:second on the date format as well...
-               var formatted = $.datepicker.formatDate ( 'MM dd, yy', new Date ( ) ) ;
-               //post += "<div class=\"comment-date\">" + date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDay() + "</div>";
-               post += "<div class=\"comment-date\">" + formatted + "</div>" ;
-               post += "<div style=\"clear: both;\"></div>" ;
-               post += "</div>" ;
-               post += "<div class=\"comment-body\" id=\"comment-body_" + response + "\">" + text + "</div>" ;
-               //Note, no check for comment owner in this case because this case is only displayed immediately after the comment creator posts the comment. MMF - 09/2014
-               post += "<div class=\"comment-footer\"><a href=\"#\" class=\"btn btn-primary btn-sm\" title=\"Reply To Comment\" onclick=\"return showReplyComment('" + response + "');\"><span class=\"glyphicon glyphicon-share-alt\"></span> Reply</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-default btn-sm\" title=\"Edit Comment\" onclick=\"return showEditComment('" + response + "');\"><span class=\"glyphicon glyphicon-edit\"></span> Edit</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-danger btn-sm\" title=\"Delete Comment\" onclick=\"return deleteComment('" + response + "');\"><span class=\"glyphicon glyphicon-trash\"></span> Delete</a> </div>" ;
-               post += "<div class=\"comment-reply\">" ;
-               post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">" ;
-               post += "</div>" ;
-               post += "</div>" ;
-               post += "</div>" ;
-               post += "</div>" ;
-               post += "</div>" ;
-               $ ( "#reply_" + id ).prepend ( "<div class=\"comment-thread\">" + post + "</div>" ) ;
-               } ) ;
-
+                post += "<div class='media-body'>" ;
+                post += "<div class=\"comment-header\">" ;
+                post += "<a href=\"@routes.Profile.viewProfile(user.get.email)\">@user.get.fullName</a>";
+                post += "<span>•</span>";
+                post += "<span>" + formatted + "</span>";
+                post += "</div>" ;
+                post += "<div class=\"comment-body\" id=\"comment-body_" + response + "\">" + text + "</div>" ;
+                //Note, no check for comment owner in this case because this case is only displayed immediately after the comment creator posts the comment. MMF - 09/2014
+                post += "<div class=\"comment-footer\"><a href=\"#\" class=\"btn btn-link btn-xs\" title=\"Reply To Comment\" onclick=\"return showReplyComment('" + response + "');\"><span class=\"glyphicon glyphicon-share-alt\"></span> Reply</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-link btn-xs\" title=\"Edit Comment\" onclick=\"return showEditComment('" + response + "');\"><span class=\"glyphicon glyphicon-edit\"></span> Edit</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-link btn-xs\" title=\"Delete Comment\" onclick=\"return deleteComment('" + response + "');\"><span class=\"glyphicon glyphicon-trash\"></span> Delete</a> </div>" ;
+                post += "<div class=\"comment-reply\">" ;
+                post += "<div class=\"comment-threads unstyled\" id=\"reply_" + response + "\">" ;
+                post += "</div>" ;
+                post += "</div>" ;
+                post += "</div>" ;
+                post += "</div>" ;
+                post += "</div>" ;
+                $ ( "#reply_" + id ).prepend ( "<div class=\"comment-thread\">" + post + "</div>" ) ;
+            });
 
        request.fail ( function ( jqXHR, textStatus, errorThrown ) {
            console.error ( "The following error occured: " + textStatus, errorThrown ) ;
