@@ -243,19 +243,40 @@ class Files @Inject()(
   /**
    * Add metadata to file.
    */
+  @ApiOperation(value = "Add technical metadata to file",
+      notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
+      responseClass = "None", httpMethod = "POST")
+  def addMetadata(id: UUID) =
+    SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata), resourceId = Some(id)) {
+      request =>
+        Logger.debug(s"Adding metadata to file $id")
+        val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
+        files.get(id) match {
+          case Some(x) => {
+            files.addMetadata(id, request.body)
+            index(id)
+          }
+          case None => Logger.error(s"Error getting file $id"); NotFound
+        }
+
+        Logger.debug(s"Updating previews.files $id with $doc")
+        Ok(toJson("success"))
+    }
+  
+  /**
+   * Add metadata in JSON-LD format.
+   */
   @ApiOperation(value = "Add metadata to file",
       notes = "Metadata in attached JSON object will be added to metadata Mongo db collection.",
       responseClass = "None", httpMethod = "POST")
-  def addMetadata(id: UUID) =
+  def addMetadataJsonLD(id: UUID) =
   	SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
 	  request =>
 	  	val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
 	  	files.get(id) match {
 	  	  case Some(x) => {
-	  		  //====================================================
-	  		  // parse agent/creator info
-	  		  //====================================================
-	  		  //creator will be UserAgent or ExtractorAgent
+	  		  //parse request for agent/creator info
+	  		  //creator can be UserAgent or ExtractorAgent
 	  		  var creator: models.Agent = null
 	  		  val typeOfAgent = (request.body \ "agent" \ "@type").toString
 
@@ -274,9 +295,9 @@ class Files @Inject()(
 	  		  		creator = models.ExtractorAgent(UUID.generate, typeOfAgent, Some(new java.net.URL(exid)))
 	  		  	}
 	  		  	case None =>
-	  		  }
-	  		  //==== done parsing agent/creator info  ===============
-
+	  		  }	  		  
+	  		  
+	  		  //parse the rest of the request to create a new models.Metadata object
 	  		  val attachedTo = Map(("file", id))
 	  		  val context = (request.body \ "@context")  
 	  		  val contextId=None
@@ -285,6 +306,8 @@ class Files @Inject()(
 	  		  val version = None
 	  		  
 	  		  val metadata = models.Metadata(UUID.generate, attachedTo, contextId, createdAt, creator, content, version)
+	  		  
+	  		  //add metadata to mongo
 	  		  metadataService.addMetadata(metadata)
           }
           case None => Logger.error(s"Error getting file $id"); NotFound
