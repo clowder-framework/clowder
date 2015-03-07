@@ -3,6 +3,7 @@ package models
 import java.net.URL
 import java.util.Date
 import play.api.libs.json.JsObject
+import util.SpaceConfig
 
 /**
  * A space definines a partition of the data so that authorization can be enforced on it.
@@ -26,8 +27,8 @@ case class ProjectSpace (
   datasetCount: Integer,
   userCount: Integer,
   metadata: List[Metadata], 
-  resourceTimeToLive: Long = 30*24*60*60*1000L, //In milliseconds, 30 days * 24 hours * 60 minutes * 60 seconds * 1000
-  isTimeToLiveEnabled: Boolean = false)
+  resourceTimeToLive: Long = SpaceConfig.getTimeToLive(),
+  isTimeToLiveEnabled: Boolean = SpaceConfig.getIsTimeToLiveEnabled())
 
 
 case class UserSpace (
