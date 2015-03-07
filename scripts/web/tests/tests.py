@@ -139,7 +139,12 @@ def main():
 		client = MongoClient()
 		db = client['tests']
 		collection = db['dts']
-		document = {'time': int(round(time.time()*1000)), 'elapsed_time': dt}
+
+		if failure_report:
+			document = {'time': int(round(time.time()*1000)), 'elapsed_time': dt, 'failures': True}
+		else:
+			document = {'time': int(round(time.time()*1000)), 'elapsed_time': dt, 'failures': False}
+
 		collection.insert(document)
 
 		#Send a final report of failures
