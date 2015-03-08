@@ -7,7 +7,7 @@ $cursor = $collection->find();
 
 //Save the data
 $fp = fopen("tmp/plot.txt", "w+");
-$ff = fopen("tmp/failures.txt", "w+");
+$ff = fopen("tmp/plot_failures.txt", "w+");
 
 foreach($cursor as $document) {
 	//print_r($document);
