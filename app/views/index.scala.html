@@ -1,13 +1,15 @@
 @(files: List[models.File], displayedName: String, welcomeMessage: String)(implicit user: Option[securesocial.core.Identity])
 
 @main(displayedName) {
+    <div class="jumbotron">
+      <h1>@displayedName</h1>
+      <p class="josefinFonted">Hello @(user.map{_.firstName}.getOrElse("stranger"))!
+         @welcomeMessage</p>
+    </div>
 
-<div class="jumbotron">
-  <h1>@displayedName</h1>
-  <p class="josefinFonted">Hello @(user.map{_.firstName}.getOrElse("stranger"))! 
-     @welcomeMessage</p>
-</div>
-
-@*@carousel(files: List[models.File])*@
-
+    @*******
+    *if(user.isDefined) {
+    *    @carousel(files)
+    *}
+    ********@
 }
