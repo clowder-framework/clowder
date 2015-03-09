@@ -1,4 +1,7 @@
 <?php
+$time_window = 7*24*60*60;      //Seconds in one week
+$time_window *= 2;
+
 //Connect to mongo
 $m = new MongoClient();
 $db = $m->{"tests"};
@@ -11,15 +14,19 @@ $ff = fopen("tmp/plot_failures.txt", "w+");
 
 foreach($cursor as $document) {
 	//print_r($document);
+	$time = $document["time"];
+  $delta_time = time() - round($time/1000);
 
-	//$point = date('Y-m-d@H:i', $document["time"]/1000) . " " . $document["time"] . " " . $document["elapsed_time"];
-	$point = $document["time"] . " " . $document["elapsed_time"];
-	//echo "$point<br>\n";
+  if($delta_time < $time_window) {
+		//$point = date('Y-m-d@H:i', $time/1000) . " " . $time . " " . $document["elapsed_time"];
+		$point = $time . " " . $document["elapsed_time"];
+		//echo "$point<br>\n";
 
-	fwrite($fp, "$point\n");
+		fwrite($fp, "$point\n");
 
-	if(isset($document["failures"]) && $document["failures"]) {
-		fwrite($ff, "$point\n");
+		if(isset($document["failures"]) && $document["failures"]) {
+			fwrite($ff, "$point\n");
+		}
 	}
 }
 
