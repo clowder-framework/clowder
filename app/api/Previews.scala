@@ -154,7 +154,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
         previews.get(id) match {
-          case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString)))
+          case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType)))
           case None => Logger.error("Preview metadata not found " + id); InternalServerError
         }
     }
