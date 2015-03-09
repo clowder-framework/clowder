@@ -13,33 +13,40 @@ import play.api.libs.json.Json.toJson
 import api.WithPermission
 import api.Permission
 import javax.inject.{ Singleton, Inject }
+import scala.collection.mutable.ListBuffer
 import services.{ DatasetService, CollectionService }
 import services._
+import org.apache.commons.lang.StringEscapeUtils
 
 
 object ThumbnailFound extends Exception {}
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService) extends SecuredController {
-
-  /**
-   * New dataset form.
-   */
-  val collectionForm = Form(
-    mapping(
-      "name" -> nonEmptyText,
-      "description" -> nonEmptyText
-    )
-      ((name, description) => Collection(name = name, description = description, created = new Date, author = null))
-      ((collection: Collection) => Some((collection.name, collection.description)))
-  )
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService) extends SecuredController {  
 
   def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>
       implicit val user = request.user
-      Ok(views.html.newCollection(collectionForm))
+      Ok(views.html.newCollection(null))
   }
 
+  /**
+   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   * 
+   * Currently, the following collection elements are encoded:
+   * 
+   * name
+   * description
+   *  
+   */
+  def decodeCollectionElements(collection: Collection) : Collection = {      
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+              							  description = StringEscapeUtils.unescapeHtml(collection.description))
+              							  
+      decodedCollection
+  }
+  
   /**
    * List collections.
    */	
@@ -100,6 +107,14 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
       collectionsWithThumbnails = collectionsWithThumbnails.reverse
       
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part 
+      //of the datasets names or descriptions
+      var decodedCollections = new ListBuffer[models.Collection]()
+      for (aCollection <- collectionsWithThumbnails) {
+          val dCollection = decodeCollectionElements(aCollection)
+          decodedCollections += dCollection
+      }
+      
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
 	    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
 	    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14	
@@ -118,7 +133,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 		}
 
       //Pass the viewMode into the view
-      Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit, viewMode))
+      Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode))
   }
 
   def jsonCollection(collection: Collection): JsValue = {
@@ -126,30 +141,38 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   }
   
   /**
-   * Create collection.
+   * Controller flow to create a new collection. Takes two parameters, name, a String, and description, a String. On success,
+   * the browser is redirected to the new collection's page. On error, it is redirected back to the dataset creation
+   * page with the appropriate error to be displayed.
+   *  
    */
-  def submit() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
+  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateCollections)) {
     implicit request =>
+        Logger.debug("------- in Collections.submit ---------")
+        var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
+        var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+        
       implicit val user = request.user
       user match {
-	      case Some(identity) => {
-	      
-	      collectionForm.bindFromRequest.fold(
-	        errors => BadRequest(views.html.newCollection(errors)),
-	        collection => {
-	          Logger.debug("Saving collection " + collection.name)
-	          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity)))
+	      case Some(identity) => {	      	            
+                if (colName == null || colDesc == null) {
+                    //This case shouldn't happen as it is validated on the client. 
+                    BadRequest(views.html.newCollection("Name or Description was missing during collection creation."))
+                }
+	            
+	            var collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
+	           	       
+	            Logger.debug("Saving collection " + collection.name)
+	            collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity)))
 	          
-	          // index collection
-		            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-		            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id, 
-		            List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-	                    
-	          // redirect to collection page
-	          Redirect(routes.Collections.collection(collection.id))
-	          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
-	          Redirect(routes.Collections.collection(collection.id))
-	        })
+	            //index collection
+                val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id, 
+                List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+                
+	            // redirect to collection page
+	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
+	            Redirect(routes.Collections.collection(collection.id))	        
 	      }
 	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
       }
@@ -167,6 +190,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           Logger.debug(s"Found collection $id")
           // only show previewers that have a matching preview object associated with collection
           Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
+          
+          //Decode the encoded items
+          val dCollection = decodeCollectionElements(collection)
+          
           for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
           val filteredPreviewers = for (
             previewer <- Previewers.findCollectionPreviewers;
@@ -178,7 +205,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           Logger.debug("Num previewers " + filteredPreviewers.size)
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection, filteredPreviewers.toList))
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

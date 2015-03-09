@@ -437,7 +437,7 @@
                     var fileRightsHolder = "@file.licenseData.m_rightsHolder";
                     var fileLicenseText = "@file.licenseData.m_licenseText";
                     var fileLicenseUrl = "@file.licenseData.m_licenseUrl";
-                    var fileAllowDownload = "@file.licenseData.m_allowDownload";
+                    var fileAllowDownload = "@file.licenseData.isDownloadAllowed(user)";
                     var fileImageBase = '@routes.Assets.at("images")';
                     var fileAuthorName = '@file.author.fullName';
 
@@ -507,7 +507,7 @@
                     }
                   }
               </ul>
-              <form class="form-inline requiresLogin">
+              <form class="form-inline requiresLogin requiresLoginCommunity">
                 <div class="input-group input-group-sm col-md-8"">
                   <input type="text" id="tagField" class="form-control">
                   <span class="input-group-btn">

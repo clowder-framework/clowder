@@ -15,16 +15,19 @@ from pymongo import MongoClient
 def main():
 	"""Run extraction bus tests."""
 	host = ni.ifaddresses('eth0')[2][0]['addr']
+	hostname = ''
 	port = '9000'
 	key = 'r1ek3rs'
 	all_failures = False
 
 	#Arguments
-	opts, args = getopt.getopt(sys.argv[1:], 'h:p:k:a')
+	opts, args = getopt.getopt(sys.argv[1:], 'h:p:k:n:a')
 
 	for o, a in opts:
 		if o == '-h':
 			host = a
+		elif o == '-n':
+			hostname = a
 		elif o == '-p':
 			port = a
 		elif o == '-k':
@@ -45,12 +48,13 @@ def main():
 	with open('tests.txt', 'r') as tests_file:
 		lines = tests_file.readlines()
 		count = 0;
-		mailserver = smtplib.SMTP('localhost')
 		failure_report = ''
 		t0 = time.time()
 
 		for line in lines:
-			if line and not line.startswith('#'):
+			line = line.strip()
+
+			if line and not line.startswith('#') and not line.startswith('@'):
 				parts = line.split(' ', 1)
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
@@ -112,15 +116,21 @@ def main():
 						if all_failures:
 							with open('failure_watchers.txt', 'r') as watchers_file:
 								watchers = watchers_file.read().splitlines()
-								
-								message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+							
+								if hostname:	
+									message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+								else:
+									message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+
 								message += 'To: ' + ', '.join(watchers) + '\n'
 								message += 'Subject: DTS Test Failed\n\n'
 								message += report
 								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n'
 
+								mailserver = smtplib.SMTP('localhost')
 								for watcher in watchers:
 									mailserver.sendmail('', watcher, message)
+								mailserver.quit()
 
 		dt = time.time() - t0
 		print 'Elapsed time: ' + timeToString(dt)
@@ -142,15 +152,21 @@ def main():
 			with open('failure_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 	
-				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+				if hostname:
+					message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+				else:
+					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DTS Test Failure Report\n\n'
 				message += failure_report			
 				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
 				message += 'Elapsed time: ' + timeToString(dt)
 
+				mailserver = smtplib.SMTP('localhost')
 				for watcher in watchers:
 					mailserver.sendmail('', watcher, message)
+				mailserver.quit()
 		else:
 			if os.path.isfile('tmp/failures.txt'):
 				#Send failure rectification emails
@@ -161,7 +177,11 @@ def main():
 					with open('failure_watchers.txt', 'r') as watchers_file:
 						watchers = watchers_file.read().splitlines()
 	
-						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+						if hostname:
+							message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+						else:
+							message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+
 						message += 'To: ' + ', '.join(watchers) + '\n'
 						message += 'Subject: DTS Tests Now Passing\n\n'
 						message += 'Previous failures:\n\n'
@@ -169,22 +189,29 @@ def main():
 						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
 						message += 'Elapsed time: ' + timeToString(dt)
 
+						mailserver = smtplib.SMTP('localhost')
 						for watcher in watchers:
 							mailserver.sendmail('', watcher, message)
+						mailserver.quit()
 			else:
 				#Send success notification emails
 				with open('pass_watchers.txt', 'r') as watchers_file:
 					watchers = watchers_file.read().splitlines()
 
-					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+					if hostname:
+						message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+					else:
+						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+
 					message += 'To: ' + ', '.join(watchers) + '\n'
 					message += 'Subject: DTS Tests Passed\n\n';
 					message += 'Elapsed time: ' + timeToString(dt)
 
+					mailserver = smtplib.SMTP('localhost')
 					for watcher in watchers:
 						mailserver.sendmail('', watcher, message)
+					mailserver.quit()
 
-		mailserver.quit()
 
 def extract(host, port, key, file, wait):
 	"""Pass file to Medici extraction bus."""
