@@ -151,6 +151,7 @@ class Search @Inject() (
 
   def multimediasearch() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Starting multimedia search interface")
+    implicit val user = request.user
     Ok(views.html.multimediasearch())
   }
 
@@ -229,6 +230,7 @@ class Search @Inject() (
    * */
   def searchbyURL(queryURL: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     Async {
+      implicit val user = request.user
       current.plugin[VersusPlugin] match {
         case Some(plugin) => {
           val futureFutureListResults = for {
@@ -268,6 +270,7 @@ class Search @Inject() (
    */
   def findSimilarToQueryFile(fileID: UUID, typeToSearch: String, sectionsSelected: List[String]) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     Async {
+      implicit val user = request.user
       //query file is a new/temp file, it will be stored in MultimediaQueryService
       //in controllers/Files -> uploadSelectQuery
       queries.get(fileID) match {
@@ -321,6 +324,7 @@ class Search @Inject() (
    */
   def findSimilarToExistingFile(inputFileId: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     Async {
+      implicit val user = request.user
       //file will be stored in FileService
       files.getBytes(inputFileId) match {
         case Some((inputStream, filename, contentType, length)) => {
@@ -449,8 +453,8 @@ class Search @Inject() (
     SecuredAction(parse.multipartFormData,
       authorization = WithPermission(Permission.SearchDatasets)) {
         implicit request =>
-
           Async {
+            implicit val user = request.user
             //using a helper method to validate input and get weights
             val (inputErrors, errorMessage, weights) = validateInput(request.body.dataParts)
 

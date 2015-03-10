@@ -1,4 +1,4 @@
-@(fileName:String="Query file", fileId:Option[models.UUID], queryThumbnailId:Option[String], resultsList:List[(VersusIndex,  List[PreviewFilesSearchResult])])   						
+@(fileName:String="Query file", fileId:Option[models.UUID], queryThumbnailId:Option[String], resultsList:List[(VersusIndex,  List[PreviewFilesSearchResult])])(implicit user: Option[securesocial.core.Identity])  						
 
 @**********************************************************************@
 @****   Template to display search results for each index           ***@
