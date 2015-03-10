@@ -6,20 +6,16 @@
 						["Node3","String2", "0", "*"]];*/
 					
 	//CSV file format: Node and whether intermediate node or leaf.
-	
+	var context = {};
 	window["allowedNodes"+topId] = new Array();	
 	$.ajax({
 	       url: window["modelIp"+topId] + '/user_metadata_model_allowedNodes.txt',
 	       async:false,
-	       //alert(url)
 		   success: function (data){
-		        //alert(data)
 		   		var allowedNodesLines = data.split(/\r\n|\n/);
 				for(var i = 0; i < allowedNodesLines.length; i++){
 					window["allowedNodes"+topId][i] = allowedNodesLines[i].split(',');
-                    //alert(window["allowedNodes"+topId][i][2])
 				}
-				//alert(allowedNodesLines)
 		   },
 	       dataType: "text"
 	     });
@@ -33,7 +29,7 @@
 		   		var allowedChildrenLines = data.split(/\r\n|\n/);
 				for(var i = 0; i < allowedChildrenLines.length; i++){
 					window["allowedChildren"+topId][i] = allowedChildrenLines[i].split(',');
-  				}
+				}
 		   },
 	       dataType: "text"
 	     });
@@ -44,14 +40,14 @@
 		
 		$('body').on('click','.usr_md_,.usr_md_submit',function(e){
 			var topId = $(this).closest("div").get(0).getAttribute('id');
-
+						
 			if($(this).is('button')){				
 				   if($(this).html() == "Modify"){			  
 					var textBox = document.createElement('input');
 					textBox.classList.add('usr_md_');		   
 					textBox.setAttribute('type', 'text');
 					textBox.value = $(this).parent().children("span").get(0).innerHTML; 
-
+					   
 					$(this).parent().get(0).insertBefore(textBox, $(this).parent().children("span").get(0));					
 					$(this).parent().children('span').remove();
 					   
@@ -74,6 +70,7 @@
 					  
 				  	var newProperty = document.createElement("li");
 					newProperty.classList.add('usr_md_');
+									
 					var newPropertyMenu = document.createElement("select");
 					newPropertyMenu.classList.add('usr_md_');
 									
@@ -91,37 +88,36 @@
 						return false;
 					}
 					$(this).parent().children('ul')[0].appendChild(newProperty);	
-
+									
 					for( var i = 0; i < allowedChildrenForNode.length; i++){
 						var newOption = document.createElement("option");
-						newOption.classList.add('usr_md_');
+						newOption.classList.add('usr_md_');					
 						newOption.setAttribute('value', allowedChildrenForNode[i][1]);
 						newOption.innerHTML = allowedChildrenForNode[i][1];
 						if(i == 0){
 							newOption.setAttribute('selected', 'selected');
 						}
-
+						
 						newPropertyMenu.appendChild(newOption);					
 					}
 					newProperty.appendChild(newPropertyMenu);
-					var newSelectButton = document.createElement('button');
+					
+					var newSelectButton = document.createElement('button'); 	
 					newSelectButton.classList.add('usr_md_');
 					newSelectButton.setAttribute('type','button');		
 					
 					newSelectButton.innerHTML = 'Select property';
 					newProperty.appendChild(newSelectButton);
-					newProperty.appendChild(window["allowedNodes"+topId][i][2]);
+						
 				  }
 				  else if($(this).html() == "Select property"){				  	
 				  				
 					var selectTag = $(this).parent().children('select')[0];
 					var selectedProperty = selectTag.options[selectTag.selectedIndex].value;
-					var selectedPropertyType = "Node";
-					var selectedPropertyId = "";
+					var selectedPropertyType = "Node";				
 					for(var i = 0; ; i++){
 						if(window["allowedNodes"+topId][i][0] == selectedProperty){
 							selectedPropertyType = window["allowedNodes"+topId][i][1];
-							selectedPropertyId = window["allowedNodes"+topId][i][2]
 							break;
 						}
 					}  
@@ -131,9 +127,9 @@
 					var newPropertyKey = document.createElement('b');
 
 					newPropertyKey.classList.add('usr_md_');
-					newPropertyKey.innerHTML = selectedProperty +" ("+selectedPropertyId+") "+ ":";
+					newPropertyKey.innerHTML = selectedProperty + ":";
 					$(this).parent().get(0).insertBefore(newPropertyKey, $(this).get(0));						
-					if(selectedPropertyType == "String"){
+					if(selectedPropertyType == "String"){										
 						var textBox = document.createElement('input');
 						textBox.classList.add('usr_md_');
 									   
@@ -171,10 +167,11 @@
 						alert('Institution metadata model violation(s): ' + restrictionViolations + ' Metadata not added.');
 						return false;
 					}
-					//alert(document.getElementById(topId).children[1][1])
+					
 					var data = DOMtoJSON(document.getElementById(topId).children[1]);
-					//alert(JSON.stringify(data))
-					//alert(document.getElementById(topId).children[1])
+					data["@context"] = new Array(context);
+					context = {};
+					alert(JSON.stringify(data));
 					var request = $.ajax({
 				       type: 'POST',
 				       url:  window["uploadIp"+topId],
@@ -222,10 +219,23 @@
 					if(childrenProperties[i].children[0].tagName.toLowerCase() == 'select')
 						continue;	
 					var key = childrenProperties[i].children[0].innerHTML;
-					//alert(childrenProperties[i].children[2].innerHTML)
+					alert(key);
 					key = key.substring(0, key.length - 1);
-					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){						
-						if(key in branchData){							
+					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
+										var url;
+                    					for(var i=0;;i++)
+                    					{
+                    					    if(key == window["allowedNodes"+topId][i][0])
+                    					    {
+                    					        url = window["allowedNodes"+topId][i][2];
+                    					        break;
+                    					    }
+                    					}
+                        if(!(key in context))
+                        {
+                             context[key] = new Array(url);
+                        }
+						if(key in branchData){
 							branchData[key].push(childrenProperties[i].children[1].innerHTML);
 						}
 						else{	
