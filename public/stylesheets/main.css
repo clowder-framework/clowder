@@ -486,3 +486,7 @@ textarea, input[type='text'], input[type='password']{
 .horizontal-radio {
 	margin-right: 25px;
 }
+
+.featurette {
+    margin-top: 50px;
+}
