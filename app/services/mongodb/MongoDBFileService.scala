@@ -4,6 +4,9 @@ import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
+import util.License
+import com.novus.salat._
+
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
 import java.util.{Calendar, ArrayList}
@@ -19,7 +22,7 @@ import scala.collection.JavaConversions._
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.WriteConcern
 import play.api.Logger
-import com.mongodb.casbah.gridfs.GridFS
+import com.mongodb.casbah.gridfs.{GridFSInputFile, GridFS}
 import scala.Some
 import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
@@ -49,10 +52,19 @@ class MongoDBFileService @Inject() (
   sections: SectionService,
   comments: CommentService,
   previews: PreviewService,
+  thumbnails: ThumbnailService,
   threeD: ThreeDService,
-  sparql: RdfSPARQLService) extends FileService {
+  sparql: RdfSPARQLService,
+  storage: ByteStorageService) extends FileService {
 
   object MustBreak extends Exception {}
+
+  /**
+   * Count all files
+   */
+  def count(): Long = {
+    FileDAO.count(MongoDBObject())
+  }
 
   /**
    * List all files.
@@ -98,7 +110,7 @@ class MongoDBFileService @Inject() (
   }
 
   def latest(): Option[File] = {
-    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
+    val results = FileDAO.find("isIntermediate" $ne true).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
@@ -110,7 +122,7 @@ class MongoDBFileService @Inject() (
   }
 
   def first(): Option[File] = {
-    val results = FileDAO.find(MongoDBObject()).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
+    val results = FileDAO.find("isIntermediate" $ne true).sort(MongoDBObject("uploadDate" -> 1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
@@ -118,59 +130,52 @@ class MongoDBFileService @Inject() (
   }
 
   /**
-   * Store file metadata.
-   */
-  def storeFileMD(id: UUID, filename: String, contentType: Option[String], author: Identity): Option[File] = {
-    val files = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => x.gridFS("uploads")
-    }
-
-    // required to avoid race condition on save
-    files.db.setWriteConcern(WriteConcern.Safe)
-
-    val mongoFile = files.createFile(Array[Byte]())
-    mongoFile.filename = filename
-    var ct = contentType.getOrElse(ContentTypes.BINARY)
-    if (ct == ContentTypes.BINARY) {
-      ct = MimeTypes.forFileName(filename).getOrElse(ContentTypes.BINARY)
-    }
-    mongoFile.contentType = ct
-    mongoFile.put("path", id.stringify)
-    mongoFile.put("author", SocialUserDAO.toDBObject(author))
-    mongoFile.save
-    val oid = mongoFile.getAs[ObjectId]("_id").get
-
-    Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
-  }
-
-  /**
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
+    // create the element to hold the metadata
     val files = current.plugin[MongoSalatPlugin] match {
-      case None    => throw new RuntimeException("No MongoSalatPlugin");
+      case None    => {
+        Logger.error("No MongoSalatPlugin")
+        return None
+      }
       case Some(x) =>  x.gridFS("uploads")
     }
 
     // required to avoid race condition on save
     files.db.setWriteConcern(WriteConcern.Safe)
 
-    val mongoFile = files.createFile(inputStream)
-    Logger.debug("Uploading file " + filename)
-    mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+    // use a special case if the storage is in mongo as well
+    val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+    val mongoFile = if (usemongo) {
+      // leverage of the fact that we save in mongo
+      val x = files.createFile(inputStream)
+      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
+      x.put("path", id)
+      x
+    } else {
+      // write empty array
+      val x = files.createFile(Array[Byte]())
+      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
+
+      // save the bytes, metadata goes to mongo
+      x.put("path", storage.save(inputStream, "uploads", id))
+      x
     }
+
+    var ct = contentType.getOrElse(ContentTypes.BINARY)
+    if (ct == ContentTypes.BINARY) {
+      ct = MimeTypes.forFileName(filename).getOrElse(ContentTypes.BINARY)
+    }
+    mongoFile.filename = filename
     mongoFile.contentType = ct
     mongoFile.put("showPreviews", showPreviews)
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
+    mongoFile.put("licenseData", grater[LicenseData].asDBObject(License.fromAppConfig()))
     mongoFile.save
-    val oid = mongoFile.getAs[ObjectId]("_id").get
 
-    //No LicenseData needed here, as on creation, default arg handles it. MMF - 5/2014
-    Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
+    // resave the file to make sure all metadata is saved to mongo
+    get(UUID(mongoFile.getAs[ObjectId]("_id").get.toString))
   }
 
   /**
@@ -179,10 +184,27 @@ class MongoDBFileService @Inject() (
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
     val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
     files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => Some(file.inputStream,
-        file.getAs[String]("filename").getOrElse("unknown-name"),
-        file.getAs[String]("contentType").getOrElse("unknown"),
-        file.getAs[Long]("length").getOrElse(0))
+      case Some(file) => {
+        // use a special case if the storage is in mongo as well
+        val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+        val inputStream = if (usemongo) {
+          file.inputStream
+        } else {
+          file.getAs[String]("path") match {
+            case Some(path) => {
+              storage.load(path, "uploads") match {
+                case Some(is) => is
+                case None => return None
+              }
+            }
+            case None => return None
+          }
+        }
+        Some((inputStream,
+            file.getAs[String]("filename").getOrElse("unknown-name"),
+            file.getAs[String]("contentType").getOrElse("unknown"),
+            file.getAs[Long]("length").getOrElse(0l)))
+      }
       case None => None
     }
   }
@@ -635,9 +657,17 @@ class MongoDBFileService @Inject() (
             ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
           if(!file.thumbnail_id.isEmpty)
-            Thumbnail.removeById(new ObjectId(file.thumbnail_id.get))
+            thumbnails.remove(UUID(file.thumbnail_id.get))
         }
-        FileDAO.removeById(new ObjectId(file.id.stringify))
+
+        // finally delete the actual file
+        val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
+        if (usemongo) {
+          val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
+          files.remove(new ObjectId(id.stringify))
+        } else {
+          storage.delete(file.id.stringify, "uploads")
+        }
       }
       case None => Logger.debug("File not found")
     }

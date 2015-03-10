@@ -4,9 +4,12 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models.{UUID, User}
 import org.bson.types.ObjectId
+import securesocial.core.Identity
 import services.UserService
 import play.api.Play.current
 import MongoContext.context
+import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.Imports._
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -17,6 +20,13 @@ import MongoContext.context
  * @author Rob Kooper
  */
 class MongoDBUserService extends UserService {
+  /**
+   * Count all users
+   */
+  def count(): Long = {
+    UserDAO.count(MongoDBObject())
+  }
+
   /**
    * List all users in the system.
    */
@@ -32,10 +42,40 @@ class MongoDBUserService extends UserService {
   }
 
   /**
+   * Return a specific user based on an Identity
+   */
+  override def findByIdentity(identity: Identity): Option[User] = {
+    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> identity.identityId.userId, "identityId.providerId" -> identity.identityId.providerId))
+  }
+
+  /**
+   * Return a specific user based on an Identity
+   */
+  override def findByIdentity(userId: String, providerId: String): Option[User] = {
+    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> userId, "identityId.providerId" -> providerId))
+  }
+
+  /**
    * Return a specific user based on the email provided.
    */
   override def findByEmail(email: String): Option[User] = {
     UserDAO.dao.findOne(MongoDBObject("email" -> email))
+  }
+
+  override def updateUserField(email: String, field: String, fieldText: Any) {
+    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText));
+  }
+
+  override def addUserFriend(email: String, newFriend: String) {
+    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("friends" -> newFriend));
+  }
+
+  override def addUserDatasetView(email: String, dataset: UUID) {
+    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("viewed" -> dataset));
+  }
+
+  override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
+    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));
   }
 }
 

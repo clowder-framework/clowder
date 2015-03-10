@@ -1,6 +1,7 @@
 package controllers
 
 import java.io._
+import java.net.URLEncoder
 import models.{UUID, FileMD, File, Thumbnail}
 import play.api.Logger
 import play.api.Play.current
@@ -76,7 +77,7 @@ class Files @Inject() (
               if (!p.collection);
               if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
             ) yield {
-              if (file.checkLicenseForDownload(user)) {
+              if (file.licenseData.isDownloadAllowed(user)) {
                 (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
               }
               else {
@@ -99,7 +100,6 @@ class Files @Inject() (
         	else
         		s.copy(preview = None)
         }
-        Logger.debug("Sections available: " + sectionsWithPreviews) 
 
         //Search whether file is currently being processed by extractor(s)
         var isActivity = false
@@ -135,7 +135,7 @@ class Files @Inject() (
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ListFiles)) { implicit request =>
+  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListFiles)) { implicit request =>    
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -150,6 +150,7 @@ class Files @Inject() (
     } else {
       badRequest
     }
+
     // latest object
     val latest = files.latest()
     // first object
@@ -179,8 +180,27 @@ class Files @Inject() (
       }
       file.id -> allComments.size
     }.toMap
-
-    Ok(views.html.filesList(fileList, commentMap, prev, next, limit))
+    
+    //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14	
+	var viewMode = mode;
+	//Always check to see if there is a session value          
+	request.cookies.get("view-mode") match {
+    	case Some(cookie) => {
+    		viewMode = cookie.value
+    	}
+    	case None => {
+    		//If there is no cookie, and a mode was not passed in, default it to tile
+    	    if (viewMode == null || viewMode == "") {
+    	        viewMode = "tile"
+    	    }
+    	}
+	}                      
+      
+      Logger.debug("------- file view - viewMode is " + viewMode + " ---------")
+      //Pass the viewMode into the view
+    Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
   }
 
   /**
@@ -367,9 +387,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 				          }
 				    }
-				    else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
 	            
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 	            
@@ -501,7 +518,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
           //Check the license type before doing anything. 
           files.get(id) match {
               case Some(file) => {                                                                                                             
-                  if (file.checkLicenseForDownload(request.user)) {
+                  if (file.licenseData.isDownloadAllowed(request.user)) {
                       files.getBytes(id) match {
                       case Some((inputStream, filename, contentType, contentLength)) => {
                           request.headers.get(RANGE) match {
@@ -531,7 +548,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                           case None => {
                               Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)
-                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; ; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8")))
 
                           }
                           }
@@ -655,9 +672,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 				      }
 			    }
-			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
              
              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
@@ -763,9 +777,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 				      }
 			    }
-			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
             
             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
@@ -870,9 +881,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 				      }
 			    }
-			    else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
              
              current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
             
@@ -983,9 +991,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 				              files.setContentType(f.id, fileType)
 						  }
 					  }
-					  else if(nameOfFile.toLowerCase().endsWith(".mov")){
-							  fileType = "ambiguous/mov";
-						  }
 	                
 	                current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 				  	  
