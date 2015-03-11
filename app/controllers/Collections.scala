@@ -228,12 +228,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 	      space match {
 	          case Some(s) => {
 	              decodedSpace = Utils.decodeSpaceElements(s)
+	              Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList, Some(decodedSpace)))
 	          }
 	          case None => {
 	              Logger.error("Problem in decoding the space element for this dataset: " + dCollection.name)
+	              Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList, space))
 	          }
-	      }
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList, Some(decodedSpace)))
+	      }          
 
         }
         case None => {

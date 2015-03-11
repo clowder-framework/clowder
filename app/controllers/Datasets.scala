@@ -352,14 +352,17 @@ class Datasets @Inject()(
         space match {
             case Some(s) => {
                 decodedSpace = Utils.decodeSpaceElements(s)
+                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, 
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace)))
             }
             case None => {
-                Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)
+                Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)                
+                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, 
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space))
             }
         }
         
-        Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, 
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace)))
+        
       }
       case None => {
         Logger.error("Error getting dataset" + id);
