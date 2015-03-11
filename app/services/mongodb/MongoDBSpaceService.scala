@@ -213,6 +213,18 @@ class MongoDBSpaceService @Inject() (
           }
       }
   }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceServie trait.
+   * 
+   */
+  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
+      val result = ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)), 
+          $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled), 
+          false, false, WriteConcern.Safe);
+  }
 
 }
 

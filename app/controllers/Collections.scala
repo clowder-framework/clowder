@@ -2,7 +2,7 @@ package controllers
 
 import play.api.data.Form
 import play.api.data.Forms._
-import models.{UUID, Collection}
+import models.{UUID, Collection, ProjectSpace}
 import java.util.Date
 import play.api.Logger
 import play.api.Play.current
@@ -28,7 +28,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     implicit request =>
       implicit val user = request.user
       val spacesList = spaces.list()
-      Ok(views.html.newCollection(null, spacesList))
+      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+      for (aSpace <- spacesList) {
+          decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+      }
+      Ok(views.html.newCollection(null, decodedSpaceList.toList))
   }
 
   /**
@@ -159,8 +163,12 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 	      case Some(identity) => {	      	            
                 if (colName == null || colDesc == null || colSpace == null) {
                     val spacesList = spaces.list()
+                    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+				    for (aSpace <- spacesList) {
+				        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+				    }
                     //This case shouldn't happen as it is validated on the client. 
-                    BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", spacesList))
+                    BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList))
                 }
 	            
 	            var collection : Collection = null
@@ -216,7 +224,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           val space = collection.space.flatMap(spaces.get(_))
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList, space))
+          var decodedSpace: ProjectSpace = null;
+	      space match {
+	          case Some(s) => {
+	              decodedSpace = Utils.decodeSpaceElements(s)
+	          }
+	          case None => {
+	              Logger.error("Problem in decoding the space element for this dataset: " + dCollection.name)
+	          }
+	      }
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList, Some(decodedSpace)))
 
         }
         case None => {

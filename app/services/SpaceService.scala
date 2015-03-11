@@ -63,4 +63,16 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    */
   def getDatasetsInSpace(spaceId: UUID): List[Dataset]    
   
+  /**
+   * Service call to update the information and configuration that are part of a space.
+   * 
+   * @param spaceId The identifier for the space to be updated
+   * @param name The updated name information, HTMLEncoded since it is free text
+   * @param description The updated description information, HTMLEncoded since it is free text
+   * @param timeToLIve The updated amount of time, in milliseconds, that resources should be preserved in the space
+   * @param expireEnabled The updated flag, indicating whether or not the space should allow resources to expire
+   * 
+   */
+  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean)
+  
 }

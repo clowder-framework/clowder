@@ -1,5 +1,9 @@
 @(space: ProjectSpace)(implicit user: Option[securesocial.core.Identity])
 
+<script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+<script src="@routes.Assets.at("javascripts/spaceconfiguration.js")" language="javascript"></script>
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" language="javascript"></script>
+
 <div class="row ds-section-sm border-top">
 	 <!-- Advanced space elements -->
 	 <h3>Advanced Configuration</h3>
@@ -9,8 +13,8 @@
 	         <td id="timetolive" style="padding-left:10px;">empty</td>
 	     </tr>
 	     <tr>
-	         <td><b>Resource Expiration Enabled: </b></td>
-	         <td id="expireenabled" style="padding-left:10px;">@space.isTimeToLiveEnabled</td>
+	         <td><b>Expiration Enabled: </b></td>
+	         <td id="expireenabled" style="padding-left:10px;">empty</td>
 	     </tr>
 	 </table>
 	 <p>
@@ -29,23 +33,35 @@
 	             <form class="form-inline" id="configform">
                       <table>
                           <tr>
-                              <td style="width: 30%; vertical-align:top;">Time To Live (hours): </td>
-                              <td>
-                                  <textarea cols=30 type="text" id="edittime">blank</textarea>
+                              <td style="width:40%; vertical-align:top;">Time (hours): </td>
+                              <td style="width:60%; vertical-align:top; padding-left:4px; padding-right:2px;">
+                                  <input type="number" id="edittime" size="5">
                               </td>
                           </tr>
                           <tr>
-                              <td style="width: 30%; vertical-align:top;">Purge Resources: </td>
-                              <td>
-                                  <input type="radio" name="radiogroup" value="expiretrue" id="exptrue" checked> Enabled&nbsp;&nbsp;&nbsp;</input>
-                                  <input type="radio" name="radiogroup" value="expirefalse" id="expfalse"> Disabled&nbsp;&nbsp;&nbsp;</input>
+                              <td style="width:40%; vertical-align:top;">Expiration: </td>
+                              <td style="width:60%; vertical-align:top; padding-left:4px; padding-right:2px;">
+                                  <input type="radio" name="radiogroup" value="expiretrue" id="exptrue"> On&nbsp;&nbsp;&nbsp;
+                                  <input type="radio" name="radiogroup" value="expirefalse" id="expfalse"> Off&nbsp;&nbsp;&nbsp;
+                              </td>
+                          </tr>
+                          <tr>
+                              <td style="width:40%; vertical-align:top;">Name: </td>
+                              <td style="width:60%; vertical-align:top; padding-left:4px; padding-right:2px; padding-bottom:10px;">
+                                  <textarea cols=25 rows=4 type="text" id="editspacename"></textarea>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td style="width:40%; vertical-align:top;">Description: </td>
+                              <td style="width:60%; vertical-align:top; padding-left:4px; padding-right:2px; padding-bottom:10px;">
+                                  <textarea cols=25 rows=4 type="text" id="editspacedesc"></textarea>
                               </td>
                           </tr>
                       </table>
 
-                      <button class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');"
+                      <button class="btn btn-primary btn-xs btn-margins" onclick="return updateSpaceConfig('@space.id');"
                           title="Update Information"><span class="glyphicon glyphicon-edit"></span> Submit</button>
-                      <button class="btn btn-default" onclick="return closeAboutEdit();"
+                      <button class="btn btn-default btn-xs btn-margins" onclick="return closeSpaceConfig();"
                           title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span> Close</button>
                   </form>
 	         }
@@ -54,26 +70,35 @@
 	 </div>
 	
 	 <script type="text/javascript" language="javascript">
-	 $(document).ready(function() {
-	 //Will have to modify the if check to see if there is data that specifies what should be selected
-	 //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
-	 //describing the license rights, the URL for the license, and whether or not downloading is
-	 //allowed.
-	 //var datasetLicenseType = "dataset.licenseData.m_licenseType";
-	 //var datasetRightsHolder = "dataset.licenseData.m_rightsHolder";
-	 //var datasetLicenseText = "dataset.licenseData.m_licenseText";
-	 //var datasetLicenseUrl = "dataset.licenseData.m_licenseUrl";
-	 //var datasetAllowDownload = "dataset.licenseData.isDownloadAllowed(user)";
-	 //var datasetImageBase = 'routes.Assets.at("images")';
-	 //var datasetAuthorName = 'dataset.author.fullName';
-	 var timeToLive = @space.resourceTimeToLive;
-	 timeToLive = timeToLive/3600000;
-	 $('#timetolive').html(timeToLive);
+		 $(document).ready(function() {    
+		     var timeToLive = @space.resourceTimeToLive;
+		     timeToLive = timeToLive/3600000;
+		     $('#timetolive').html(timeToLive);
+		     $('#edittime').val(timeToLive);
+		     
+		     var $radios = $('input:radio[name=radiogroup]');
+		     var isEnabled = @space.isTimeToLiveEnabled;
+		     
+		     if (isEnabled) {
+		    	 $radios.filter('[value=expiretrue]').prop('checked', true);
+		    	 //$('input:radio[name=radiogroup]')[0].checked = true;
+		         $('#expireenabled').html("On");
+		     }
+		     else {
+		    	 $radios.filter('[value=expirefalse]').prop('checked', true);
+		    	 //$('input:radio[name=radiogroup]')[1].checked = true;
+		         $('#expireenabled').html("Off");
+		     }
+		     
+		     var name = "@space.name";
+		     $('#spacenamedisplay').html(name);
+		     $('#editspacename').val(htmlDecode(name));
+		     
+		     var desc = "@space.description";
+		    $('#spacedescdisplay').html(desc);
+		    $('#editspacedesc').val(htmlDecode(desc));
 	
-	 //if (!@user.isDefined) {
-	 //updateInterface(datasetLicenseType, datasetRightsHolder, datasetLicenseText, datasetLicenseUrl, datasetAllowDownload, datasetImageBase, datasetAuthorName);
-	 //}
-	 });
+		});
 	 </script>
 <!-- End License elements -->
 </div>

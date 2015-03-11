@@ -106,7 +106,8 @@ class Application @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Collections.removeCollection,
         api.routes.javascript.Spaces.list,
         api.routes.javascript.Spaces.addCollection,
-        api.routes.javascript.Spaces.addDataset
+        api.routes.javascript.Spaces.addDataset,
+        api.routes.javascript.Spaces.updateSpace
       )
     ).as(JSON) 
   }

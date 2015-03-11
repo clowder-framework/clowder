@@ -3,16 +3,16 @@
 @main(space.name) {
     <div class="row space-head">
         <div class="col-md-12">
-            <h1>@space.name</h1>
-            <p>@space.description</p>
+            <h1 id="spacenamedisplay"></h1>
+            <p><span id="spacedescdisplay"></span></p>
         </div>
     </div>
     <div class="row">
-        <div class="col-md-9 space-col-left">
+        <div class="col-md-8 space-col-left">
             @collectionsBySpace(collections, space)
             @datasetsBySpace(datasets, space)
         </div>
-        <div class="col-md-3 space-col-right">
+        <div class="col-md-4 space-col-right">
             @usersBySpace(space)
             @spaceConfiguration(space)
         </div>

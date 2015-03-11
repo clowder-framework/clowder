@@ -29,6 +29,7 @@ object Permission extends Enumeration {
 		ListCollections,
 		ShowCollection,
 		CreateSpaces,
+		UpdateSpaces,
 		DeleteSpaces,
 		EditSpace,
 		ListSpaces,

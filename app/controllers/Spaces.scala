@@ -2,7 +2,6 @@ package controllers
 
 import java.net.URL
 import javax.inject.Inject
-
 import api.{Permission, WithPermission}
 import models.{Dataset, Collection, ProjectSpace, UUID}
 import play.api.Logger
@@ -12,6 +11,8 @@ import play.api.data.format.Formats._
 import java.util.Date
 import services.{UserService, SpaceService}
 import util.Direction._
+import org.apache.commons.lang.StringEscapeUtils
+import scala.collection.mutable.ListBuffer
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -56,7 +57,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
           for (aDataset <- datasetsInSpace) {
               Logger.debug("A dataset in the space is " + aDataset.name)
           }
-          Ok(views.html.spaces.space(s, collectionsInSpace, datasetsInSpace))
+          Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace))
       }
       case None => InternalServerError("Space not found")
     }
@@ -132,6 +133,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       }
       // TODO fetch 1 extra space so we have the next/prev item
       val s = spaces.list(order, d, start, limit, None)
+      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+      for (aSpace <- s) {
+          decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+      }
       // TODO fill in
       val canDelete = false
       // TODO fetch page before/after so we have prev item
@@ -154,6 +159,6 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                 }
             }
         }    
-      Ok(views.html.spaces.listSpaces(s, order, direction, start, limit, filter, viewMode, canDelete, prev, next))
-  }
+      Ok(views.html.spaces.listSpaces(decodedSpaceList.toList, order, direction, start, limit, filter, viewMode, canDelete, prev, next))
+  }  
 }

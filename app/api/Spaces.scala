@@ -7,8 +7,13 @@ import models.{UUID, ProjectSpace}
 import play.api.Logger
 import controllers.Utils
 import play.api.Play._
+import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import services.{AdminsNotifierPlugin, SpaceService}
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsError
+import scala.collection.mutable.ListBuffer
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -72,7 +77,7 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
   def get(id: UUID) = SecuredAction(parse.anyContent,
     authorization = WithPermission(Permission.ShowSpace), resourceId = Some(id)) { request =>
     spaces.get(id) match {
-      case Some(space) => Ok(spaceToJson(space))
+      case Some(space) => Ok(spaceToJson(Utils.decodeSpaceElements(space)))
       case None => BadRequest("Space not found")
     }
   }
@@ -81,8 +86,13 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
   def list() = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.ListSpaces)) { request =>
-    Ok(toJson(spaces.list().map(spaceToJson)))
+    authorization = WithPermission(Permission.ListSpaces)) { request => {
+        var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+	    for (aSpace <- spaces.list()) {
+	        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+	    }
+    	Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
+    }
   }
 
   def spaceToJson(space: ProjectSpace) = {
@@ -110,5 +120,100 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
     val datasetId = (request.body \ "dataset_id").as[String]
     spaces.addDataset(UUID(datasetId), space)
     Ok(toJson("success"))
+  }
+  
+  /**
+   * REST endpoint: POST call to update the configuration information associated with a specific Space
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with the space that will be updated 
+   *  
+   *  The data contained in the request body will defined by the following String key-value pairs:
+   *  
+   *  description -> The text for the updated description for the space
+   *  name -> The text for the updated name for this space
+   *  timetolive -> Text that represents an integer for the number of hours to retain resources
+   *  enabled -> Text that represents a boolean flag for whether or not the space should purge resources that have expired
+   *  
+   */
+  @ApiOperation(value = "Update the information associated with a space", notes="",
+    responseClass = "None", httpMethod = "POST")
+  def updateSpace(spaceid: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateSpaces))
+  { request =>
+      if (UUID.isValid(spaceid.stringify)) {          
+
+          //Set up the vars we are looking for
+          var description: String = null
+          var name: String = null
+          var timeAsString: String = null
+          var enabled: Boolean = false;
+          
+          var aResult: JsResult[String] = (request.body \ "description").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                description = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson("description data is missing from the updateSpace call."))
+              }                            
+          }
+          
+          aResult = (request.body \ "name").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                name = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson("name data is missing from the updateSpace call."))
+              }                            
+          }
+          
+          aResult = (request.body \ "timetolive").validate[String]
+          
+          // Pattern matching
+          aResult match {
+              case s: JsSuccess[String] => {
+                timeAsString = s.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson("timetolive data is missing from the updateSpace call."))
+              }                            
+          }
+          
+          var boolResult = (request.body \ "enabled").validate[Boolean]
+          
+          // Pattern matching
+          boolResult match {
+              case b: JsSuccess[Boolean] => {
+                enabled = b.get
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson("enabled data is missing from the updateSpace call."))
+              }                            
+          }
+          
+          Logger.debug(s"updateInformation for dataset with id  $spaceid. Args are $description, $name, $enabled, and $timeAsString")
+          
+          //Generate the expiration time and the boolean flag
+          val timeToLive =  timeAsString.toInt*60*60*1000L
+          //val expireEnabled = enabledAsString.toBoolean
+          Logger.debug("converted values are " + timeToLive + " and " + enabled)
+          
+          spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled)
+          Ok(Json.obj("status" -> "success"))
+      } 
+      else {
+        Logger.error(s"The given id $spaceid is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $spaceid is not a valid ObjectId."))
+      }
   }
 }

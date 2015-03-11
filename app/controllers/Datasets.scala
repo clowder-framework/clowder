@@ -54,7 +54,11 @@ class Datasets @Inject()(
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
       val spacesList = spaces.list()
-      Ok(views.html.newDataset(filesList, spacesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+      for (aSpace <- spacesList) {
+          decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+      }
+      Ok(views.html.newDataset(filesList, decodedSpaceList.toList)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
   
   def addToDataset(id: UUID, name: String, desc: String) = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
@@ -344,9 +348,18 @@ class Datasets @Inject()(
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
         val space = dataset.space.flatMap(spaces.get(_))
+        var decodedSpace: ProjectSpace = null;
+        space match {
+            case Some(s) => {
+                decodedSpace = Utils.decodeSpaceElements(s)
+            }
+            case None => {
+                Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)
+            }
+        }
         
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, 
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space))
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace)))
       }
       case None => {
         Logger.error("Error getting dataset" + id);

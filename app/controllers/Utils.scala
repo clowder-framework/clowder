@@ -1,11 +1,12 @@
 package controllers
 
 import java.net.URL
-
 import play.api.data.FormError
 import play.api.data.format.Formatter
 import play.api.data._
 import play.api.mvc.Request
+import models.ProjectSpace
+import org.apache.commons.lang.StringEscapeUtils
 
 object Utils {
   /**
@@ -26,6 +27,21 @@ object Utils {
   def protocol(request: Request[Any]) = {
     val httpsPort = System.getProperties().getProperty("https.port", "")
     if (httpsPort == request.host.split(':').last)  "https" else "http"
+  }
+  
+  /**
+   * Utility method to modify the elements in a space that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   * 
+   * Currently, the following space elements are encoded:
+   * name
+   * description
+   *  
+   */
+  def decodeSpaceElements(space: ProjectSpace): ProjectSpace = {      
+      val decodedName = StringEscapeUtils.unescapeHtml(space.name)
+      val decodedDesc = StringEscapeUtils.unescapeHtml(space.description)
+      space.copy(name = decodedName, description = decodedDesc)
   }
 
   //TODO UrlFormat2 definition is fine, have not been able to get it to work in Mapping. I think UrlFormat is better choice anyway
