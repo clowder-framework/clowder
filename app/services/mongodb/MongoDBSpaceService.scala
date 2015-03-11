@@ -193,8 +193,8 @@ class MongoDBSpaceService @Inject() (
     	  val datasetTime = aDataset.lastModifiedDate.getTime()
     	  val difference = currentTime - datasetTime
     	  if (difference > timeToLive) {
-    	       //It was last modified longer than the time to live, so remove it. Delete everything?
-    	       datasets.removeDataset(aDataset.id)
+    	       //It was last modified longer than the time to live, so remove it.      
+    	       datasets.removeDataset(aDataset.id)    	       
     	  }
       }
       
@@ -204,11 +204,24 @@ class MongoDBSpaceService @Inject() (
           if (difference > timeToLive) {
               //It was last modified longer than the time to live, so remiove it.
               for (colDataset <- aCollection.datasets) {
-                  //Remove all the datasets in the collection
-                  datasets.removeDataset(colDataset.id)
+                  //Remove all the datasets in the collection if they don't have their own space.
+                  colDataset.space match {
+                      case Some(anId) => {
+                          if (anId == space) {
+                              //The dataset space id is the same, so go ahead and remove it as well.
+                              datasets.removeDataset(colDataset.id)
+                          }
+                          //Nothing to be done in the else case, as it will simply detach the dataset when the collection is deleted.
+                      }
+                      
+                      case None => {
+                          //In this case, the dataset is in the default space, so do not remove it, it will detach on collection deletion.
+                          log.debug("collection being purged contained a dataset in the default space. The dataset will not be deleted.")
+                      }
+                  }                  
               }
               
-              //Remove the collection
+              //Remove the collection. Any remaining datasets are to be simply detached.
               collections.delete(aCollection.id)
           }
       }
