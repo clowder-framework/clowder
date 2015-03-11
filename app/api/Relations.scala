@@ -37,9 +37,9 @@ class Relations @Inject()(relations: RelationService) extends ApiController {
   def add() = SecuredAction(parse.json, authorization = WithPermission(Permission.RelationsWrite)) {
     implicit request =>
       Logger.debug("Body: " + request.body)
-      var sourceId= UUID((request.body \ "source" \ "id").as[String])
+      var sourceId= (request.body \ "source" \ "id").as[String]
       var sourceType= ResourceType.withName((request.body \ "source" \ "resourceType").as[String])
-      var targetId= UUID((request.body \ "target" \ "id").as[String])
+      var targetId= (request.body \ "target" \ "id").as[String]
       var targetType= ResourceType.withName((request.body \ "target" \ "resourceType").as[String])
       var res = relations.add(Relation(source = Node(sourceId, sourceType), target = Node(targetId, targetType)))
 
@@ -61,5 +61,10 @@ class Relations @Inject()(relations: RelationService) extends ApiController {
   def delete(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.RelationsWrite)) { implicit request =>
     relations.delete(id)
     Ok(Json.obj("status" -> "OK"))
+  }
+
+  def findTargets(sourceId: String, sourceType: String, targetType: String) =
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.RelationsRead)) { implicit request =>
+    Ok(toJson(relations.findTargets(sourceId, ResourceType.withName(sourceType), ResourceType.withName(targetType))))
   }
 }

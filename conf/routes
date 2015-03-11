@@ -407,6 +407,7 @@ POST           /api/users/createNewListInUser                                   
 # RELATIONS API
 # ----------------------------------------------------------------------
 GET            /api/relations                                                           @api.Relations.list()
+GET            /api/relations/search                                                    @api.Relations.findTargets(sourceId: String, sourceType: String, targetType: String)
 GET            /api/relations/:id                                                       @api.Relations.get(id: UUID)
 POST           /api/relations                                                           @api.Relations.add()
 DELETE         /api/relations/:id                                                       @api.Relations.delete(id: UUID)

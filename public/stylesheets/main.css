@@ -490,3 +490,8 @@ textarea, input[type='text'], input[type='password']{
 .featurette {
     margin-top: 50px;
 }
+
+.popup-content {
+    max-height: 200px;
+    overflow-x: hidden;
+}

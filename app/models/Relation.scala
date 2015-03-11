@@ -14,7 +14,7 @@ case class Relation (
 )
 
 case class Node (
-  id: UUID,
+  id: String,
   resourceType: ResourceType.Value
 )
 

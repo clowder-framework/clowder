@@ -40,7 +40,8 @@ class Datasets @Inject()(
   dtsrequests:ExtractionRequestsService,
   sparql: RdfSPARQLService,
   users: UserService,
-  previewService: PreviewService) extends SecuredController {
+  previewService: PreviewService,
+  relations: RelationService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -344,7 +345,15 @@ class Datasets @Inject()(
 	          
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
+          // associated sensors
+          var sensors = current.plugin[PostgresPlugin] match {
+            case Some(db) => relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
+            case None => List.empty[String]
+          }
+
+
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata,
+            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, sensors))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError
