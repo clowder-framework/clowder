@@ -29,7 +29,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
     val theme = AppConfiguration.getTheme
     Logger.debug("Theme id " + theme)
     implicit val user = request.user
-    Ok(views.html.admin(theme, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    Ok(views.html.admin(theme, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, AppConfiguration.getSensorsTitle, AppConfiguration.getSensorTitle))
   }
   
   def adminIndex = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>

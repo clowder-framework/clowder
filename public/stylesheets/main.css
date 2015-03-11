@@ -478,9 +478,17 @@ textarea, input[type='text'], input[type='password']{
     border:1px solid #e6e6e6;
 }
 
+.paddingTop7 {
+    padding-top: 7px;
+}
+
+.error {
+    color: red;
+}
+
 .input-table-cell {
 	padding-top: 10px;
-	padding-bottom: 10px:
+	padding-bottom: 10px;
 }
 
 .horizontal-radio {

@@ -86,6 +86,12 @@ POST           /collection/submit                                               
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
+# Sensors
+GET            /geostreams                                                              controllers.Geostreams.map
+GET            /geostreams/sensors                                                      controllers.Geostreams.list
+GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
+GET            /geostreams/sensors/:id                                                  controllers.Geostreams.sensor(id)
+
 # Tags
 GET            /tags/search                                                             @controllers.Tags.search(tag)
 GET            /tags/cloud                                                              @controllers.Tags.tagCloud
@@ -365,9 +371,6 @@ DELETE         /api/geostreams/streams/:id                                      
 
 DELETE         /api/geostreams/dropall                                                  api.Geostreams.deleteAll
 GET            /api/geostreams/counts                                                   api.Geostreams.counts
-
-GET            /geostreams                                                              controllers.Geostreams.browse
-
 
 POST           /api/tiles                                                               @api.ZoomIt.uploadTile
 POST           /api/geometries                                                          @api.Geometry.uploadGeometry

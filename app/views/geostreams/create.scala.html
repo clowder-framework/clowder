@@ -1,0 +1,378 @@
+@(title: String = "Create")(implicit user: Option[securesocial.core.Identity])
+
+@import helper._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+@import services._
+
+@main(title) {
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
+    <div class="container">
+        <div class="page-header">
+            <h1>@(AppConfiguration.getSensorsTitle) Information</h1>
+        </div>
+
+        <form class="form-horizontal" role="form" id="new">
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4>Location Information</h4>
+                        </div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="sensorFullName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
+                                        title="The full description of the sensor, typically provided by the Data Source. Should be concise, but descriptive.">Descriptive Name</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control input-sm" id="sensorFullName" name="sensorFullName" placeholder="White River Falls in Duvall County (required)" required>
+                                        </div>
+                                        <label for="sensor_name" class="col-sm-4 paddingTop7 control-label"
+                                        data-toggle="tooltip" data-placement="left"
+                                        title="A short, unique identifier for this location for when it is displayed along with many other sensors (like on a map).">Location ID</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control input-sm" id="sensor_name" name="sensor_name" placeholder="DC105-WRF (required)" required>
+                                        </div>
+                                        <label for="sensorRegion" class="col-sm-4 paddingTop7 control-label">Region</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control input-sm" id="sensorRegion" name="sensorRegion" placeholder="Illinois (required)" required>
+                                        </div>
+                                        <label for="sensorDataSource" class="col-sm-4 paddingTop7 control-label">Data Source</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control input-sm" id="sensorDataSource" name="sensorDataSource" placeholder="USGS (required)" required>
+                                        </div>
+                                        <label for="sensorType" class="col-sm-4 paddingTop7 control-label"><a href='https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types' target="_blank">Site Type</a> <span class="glyphicon glyphicon-new-window" style="font-size: 10px; color: #C0C0C0" aria-hidden="true"></span></label>
+                                        <div class="col-sm-8">
+                                            <select class="form-control input-sm" id="sensorType" name="sensorType">
+                                                <option value="1">1</option>
+                                                <option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>
+                                                <option value="6">6</option>
+                                                <option value="7">7</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-4"></div>
+                                        <div class="col-sm-8 paddingTop7">
+                                            <p>Site Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> sensor<span id="sensorTypeMultipleSensors"></span>.</p>
+                                        </div>
+                                        <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
+                                        <div class="col-sm-4">
+                                            <input type="number" class="form-control input-sm" id="sensorLocationLat" name="sensorLocationLat" placeholder="latitude (required)" required>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <input type="number" class="form-control input-sm" id="sensorLocationLong" name="sensorLocationLong" placeholder="longitude (required)" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="map" class="col-sm-4 paddingTop7 control-label">Location</label>
+                                        <div class="col-sm-8">
+                                            <div id="map" name="map" style="border: 1px solid black; height: 200px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel-footer">
+                            <p>Each location will contain at least one sensor, depending on it's Site Type.</p>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="additionalSensors">
+                <!-- additional sensors will be added here as the "Add Sensor" button is clicked -->
+            </div>
+
+            <div class="btn btn-default" id="addSensor" style="display: none">Add Sensor</div>
+
+            <br />
+
+            <button type="submit" class="btn btn-primary submit" id="formSubmit">Create</button>
+        </form>
+    </div>
+
+}
+
+<script src="@routes.Assets.at("javascripts/leaflet.js")"></script>
+<script src="@routes.Assets.at("javascripts/jquery.validate.js")"></script>
+<script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")"></script>
+
+<script id="newSensorTemplate" type="text/x-handlebars-template">
+    <div id="sensor-{{sensorNumber}}">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel-group" id="sensor-group-{{sensorNumber}}" role="tablist">
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="sensor-heading-{{sensorNumber}}">
+                            <h4 class="panel-title">
+                                <a data-toggle="collapse" data-parent="#sensor-group-{{sensorNumber}}" href="#sensor-contents-{{sensorNumber}}" id="sensor-link-{{sensorNumber}}" aria-expanded="true" aria-controls="collapseOne">
+                                    Sensor #{{sensorNumber}} Information
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="sensor-contents-{{sensorNumber}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="sensor-heading-{{sensorNumber}}">
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h3>Sensor Device Info</h3>
+                                        <div class="form-group">
+                                            <label for="sensorName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
+                                            title="The full description of the sensor, typically provided by the Data Source. Should be concise, but descriptive.">Sensor Name</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="sensorName" name="sensorName" placeholder="Falls Creek Northeast Temperature Monitor">
+                                            </div>
+                                            <label for="sensorID" class="col-sm-4 paddingTop7 control-label">Sensor ID</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="sensorID" name="sensorID" placeholder="FCN-01">
+                                            </div>
+                                            <label for="sensorMake" class="col-sm-4 paddingTop7 control-label">Make</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="sensorMake" name="sensorMake" placeholder="PISCES">
+                                            </div>
+                                            <label for="sensorModel" class="col-sm-4 paddingTop7 control-label">Model</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="sensorModel" name="sensorModel" placeholder="PT-5000">
+                                            </div>
+                                            <label for="sensorSourceURL" class="col-sm-4 paddingTop7 control-label">Source URL</label>
+                                            <div class="col-sm-8">
+                                                <input type="url" class="form-control input-sm" id="sensorSourceURL" name="sensorSourceURL" placeholder="http://example.com/...">
+                                            </div>
+
+                                            <div id="hasDepth" style="display: none">
+                                                <label for="sensorVerticalOffset" class="col-sm-4 paddingTop7 control-label"
+                                                data-toggle="tooltip" data-placement="left"
+                                                title="An 'offset' sensoris above or below the surface.">
+                                                    Vertical Offset
+                                                </label>
+                                                <div class="col-sm-4">
+                                                    <input type="text" class="form-control input-sm" id="sensorVerticalOffset" name="sensorVerticalOffset" placeholder="5">
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <input type="text" class="form-control input-sm" id="sensorVerticalOffsetUnits" name="sensorVerticalOffsetUnits" placeholder="meters">
+                                                </div>
+                                                <label for="sensorOffsetVerticalType" class="col-sm-4 paddingTop7 control-label">Vertical Offset Orientation</label>
+                                                <div class="col-sm-8">
+                                                    <select class="form-control input-sm" id="sensorOffsetVerticalType" name="sensorOffsetVerticalType">
+                                                        <option>No offset</option>
+                                                        <option value="above">Above</option>
+                                                        <option value="below">Below</option>
+                                                    </select>
+                                                </div>
+                                                <label for="sensorHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
+                                                data-toggle="tooltip" data-placement="left"
+                                                title="An 'horizontal offset' sensor is at the same lat/long, but positioned slightly away.">
+                                                    Horizontal Offset
+                                                </label>
+                                                <div class="col-sm-4">
+                                                    <input type="number" class="form-control input-sm" id="sensorHorizontalOffset" name="sensorHorizontalOffset" placeholder="5">
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <input type="text" class="form-control input-sm" id="sensorHorizontalOffsetUnits" name="sensorHorizontalOffsetUnits" placeholder="meters">
+                                                </div>
+                                                <label for="sensorOffsetHorizontalOrientation" class="col-sm-4 paddingTop7 control-label">Horizontal Offset Orientation (in compass degrees)</label>
+                                                <div class="col-sm-8">
+                                                    <input type="number" class="form-control input-sm" id="sensorHorizontalOffsetOrientation" name="sensorHorizontalOffsetOrientation" placeholder="180 (ie: south of the lat/long)">
+                                                </div>
+                                            </div>
+                                            <label for="sensorSamplingInterval" class="col-sm-4 paddingTop7 control-label">Sampling Interval</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="sensorSamplingInterval" name="sensorSamplingInterval" placeholder="Sampling Interval">
+                                            </div>
+                                            <label for="sensorInstallationDate" class="col-sm-4 paddingTop7 control-label">Installation Date</label>
+                                            <div class="col-sm-8">
+                                                <input type="datetime" class="form-control input-sm" id="sensorInstallationDate" name="sensorInstallationDate" placeholder="YYYY/MM/DD">
+                                            </div>
+                                            <label for="sensorInstallationPeriod" class="col-sm-4 paddingTop7 control-label">Installation Period</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="sensorInstallationPeriod" name="sensorInstallationPeriod" placeholder="2 weeks, etc.">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h3>Variables</h3>
+                                        <div class="form-group">
+                                            <label for="variableName" class="col-sm-4 paddingTop7 control-label">Variable Name</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="variableName" name="variableName" placeholder="Variable Name">
+                                            </div>
+                                        </div>
+                                        <label for="variableCategory" class="col-sm-4 paddingTop7 control-label">Variable Category</label>
+                                        <div class="col-sm-8">
+                                            <select class="form-control input-md" id="variableCategory" name="variableCategory">
+                                                <option value="streamflow">Streamflow</option>
+                                                <option value="hydromet">Hydromet</option>
+                                                <option value="sediment">Sediment</option>
+                                                <option value="water-quality">Water Quality</option>
+                                                <option value="soil-chemistry">Soil Chemistry</option>
+                                                <option value="flux-tower">Flux Tower</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="variableSpeciation" class="col-sm-4 paddingTop7 control-label">Variable Speciation</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="variableSpeciation" name="variableSpeciation" placeholder="Variable Speciation">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="variableAnalysisProc" class="col-sm-4 paddingTop7 control-label">Analysis Procedure / Method</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="variableAnalysisProc" name="variableAnalysisProc" placeholder="Analysis Procedure / Method">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="variableSampleMedium" class="col-sm-4 paddingTop7 control-label">Sample Medium</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="variableSampleMedium" name="variableSampleMedium" placeholder="Sample Medium">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="variableUnits" class="col-sm-4 paddingTop7 control-label">Variable Units</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="variableUnits" name="variableUnits" placeholder="Variable Units">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="variableDataType" class="col-sm-4 paddingTop7 control-label">Variable Data Type</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="variableDataType" name="variableDataType" placeholder="Variable Data Type">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h3>Measurements</h3>
+                                        <div class="form-group">
+                                            <label for="measurementDateTime" class="col-sm-4 paddingTop7 control-label">Date and Time</label>
+                                            <div class="col-sm-8">
+                                                <input type="datetime" class="form-control input-sm" id="measurementDateTime" name="measurementDateTime" placeholder="YYYY-MM-DD:HH:MM:SS">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="measurementDataValue" class="col-sm-4 paddingTop7 control-label">Data Value</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" class="form-control input-sm" id="measurementDataValue" name="measurementDataValue" placeholder="50.95">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="measurementAccuracy" class="col-sm-4 paddingTop7 control-label">Accuracy</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" class="form-control input-sm" id="measurementAccuracy" name="measurementAccuracy" placeholder="0.95 or 1.0">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="measurementValueCategory" class="col-sm-4 paddingTop7 control-label">Value Category</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="measurementValueCategory" name="measurementValueCategory" placeholder="Value Category">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="measurementCensoring" class="col-sm-4 paddingTop7 control-label">Censoring</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="measurementCensoring" name="measurementCensoring" placeholder="Censoring">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="measurementDataQualifyingComments" class="col-sm-4 paddingTop7 control-label">Data Qualifying Comments</label>
+                                            <div class="col-sm-8">
+                                                <textarea class="form-control input-sm" id="measurementDataQualifyingComments" name="measurementDataQualifyingComments" placeholder="description"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h3>Output</h3>
+                                        <div class="form-group">
+                                            <label for="outputFileFormat" class="col-sm-4 paddingTop7 control-label">Output Data File Format</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="outputFileFormat" name="outputFileFormat" placeholder=".csv">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="outputDownloadingMethod" class="col-sm-4 paddingTop7 control-label">Downloading Method</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control input-sm" id="outputDownloadingMethod" name="outputDownloadingMethod" placeholder="http://example.com/...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h3>Sensor Parameters</h3>
+                                        <div class="form-group">
+                                            <label for="sensorParametersAvailable" class="col-sm-4 paddingTop7 control-label"
+                                            data-toggle="tooltip" data-placement="left"
+                                            title="Select the parameters that should be visible on the Dashboard. Hold Command or Control to select multiple.">
+                                                Parameters to Display
+                                            </label>
+                                            <div class="col-sm-8">
+                                                <select multiple class="form-control" id="sensorParametersAvailable" name="sensorParametersAvailable">
+                                                    <option value="chlorophyll-a">Chlorophyll-a</option>
+                                                    <option value="nitrogen">Nitrogen</option>
+                                                    <option value="phosphorous">Phosphorous</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+
+                                        </div>
+                                        <div class="form-group">
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h3>Miscellaneous</h3>
+                                        <div class="form-group">
+                                            <label for="miscSpecialFeatures" class="col-sm-4 paddingTop7 control-label">Special Features</label>
+                                            <div class="col-sm-8">
+                                                <textarea class="form-control input-sm" id="miscSpecialFeatures" name="miscSpecialFeatures" placeholder="special features of note..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="miscInformation" class="col-sm-4 paddingTop7 control-label">Miscellaneous Information</label>
+                                            <div class="col-sm-8">
+                                                <textarea class="form-control input-sm" id="miscInformation" name="miscInformation" placeholder="additional information..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="pull-right">
+                                            <div class="btn btn-primary btn-sm removeSensor" id="sensor-delete-{{sensorNumber}}" data-id="{{sensorNumber}}">Remove Sensor #{{sensorNumber}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h3></h3>
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+<script src="@routes.Assets.at("javascripts/geostreams/sensorCreate.js")"></script>
