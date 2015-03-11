@@ -21,7 +21,7 @@
                                 <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
                             </a>
                         }
-                    <div class="caption">
+                    <div class="caption break-word">
                         <h4><a href="@(routes.Files.file(file.id))">@file.filename</a></h4>
                         <ul class="list-unstyled">
                             <li>Author: <strong>@file.author.fullName</strong></li>
