@@ -82,7 +82,7 @@
                 contentType : "application/json"
             });
         } else if (resourceType == "dataset") {
-            request = jsRoutes.api.Datasetscomment(id).ajax({
+            request = jsRoutes.api.Datasets.comment(id).ajax({
                 data : JSON.stringify({text: text}),
                 type : 'POST',
                 contentType : "application/json"
