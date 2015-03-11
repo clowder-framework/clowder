@@ -479,3 +479,7 @@ textarea, input[type='text'], input[type='password']{
 .media .media-body {
     width: 10000px;
 }
+
+.featurette {
+    margin-top: 50px;
+}
