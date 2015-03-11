@@ -72,6 +72,8 @@ object Permission extends Enumeration {
 		AddThumbnail,
 		DownloadFiles,
     GetUser,
+    RelationsWrite,
+    RelationsRead,
     UserAdmin = Value        // Permission to work with users (list/add/remove/register)
 }
 
@@ -147,6 +149,7 @@ case class WithPermission(permission: Permission) extends Authorization {
       case (_, SearchSensors, _)        => true
       case (_, ExtractMetadata, _)      => true
       case (_, ShowTags, _)             => true
+      case (_, RelationsRead, _)        => true
 
       // FIXME: required by ShowDataset if preview uses original file
       // FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
