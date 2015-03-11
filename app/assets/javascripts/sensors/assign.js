@@ -58,6 +58,11 @@ function associateDatasetWithSensor(dataset_id, sensor_id) {
 
     request.done(function (response, textStatus, jqXHR){
         console.log('Done associating dataset ' + dataset_id + ' to sensor ' + sensor_id);
+
+        // append new element to list
+        $('#sensors-list').append('<li>'+sensor_id+'</li>');
+
+        // close modal
         $('#sensors-assign').modal('hide');
     });
 
