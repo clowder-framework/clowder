@@ -43,7 +43,11 @@ class Relations @Inject()(relations: RelationService) extends ApiController {
       var targetType= ResourceType.withName((request.body \ "target" \ "resourceType").as[String])
       var res = relations.add(Relation(source = Node(sourceId, sourceType), target = Node(targetId, targetType)))
 
-      Ok(Json.obj("status" ->"OK", "message" -> ("Relation '"+res.get+"' saved.") ))
+      res match {
+        case Some(id) => Ok(Json.obj("status" ->"OK", "message" -> ("Relation '" + id + "' saved.") ))
+        case None => Ok(Json.obj("status" ->"OK", "message" -> ("Relation already exists") ))
+      }
+
 
       // TODO get it to work with implicit formats
 //      val relationResult = request.body.validate[Relation]

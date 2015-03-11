@@ -28,10 +28,22 @@ class MongoDBRelationService extends RelationService {
   }
 
   def add(relation: Relation): Option[UUID] = {
-    RelationDAO.insert(relation) match {
-      case Some(id) =>  Some(UUID(id.toString))
-      case None => None
-    }
+
+    // check that one doesn't exist already
+    val existing = RelationDAO.find(
+      MongoDBObject(
+        "source._id" -> relation.source.id,
+        "source.resourceType" -> relation.source.resourceType.toString,
+        "target._id" -> relation.target.id,
+        "target.resourceType" -> relation.target.resourceType.toString
+      )).toList
+
+    if (existing.size == 0) {
+      RelationDAO.insert(relation) match {
+        case Some(id) => Some(UUID(id.toString))
+        case None => None
+      }
+    } else None
   }
 
   def delete(id: UUID): Unit = {
