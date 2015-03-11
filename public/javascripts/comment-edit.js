@@ -12,7 +12,7 @@ function editComment(commentId, commentText, reloadPage){
     var request = jsRoutes.api.Comments.editComment(commentId).ajax({
   	    data: jsonData,
         type: 'POST',
-        contentType: "application/json",
+        contentType: "application/json"
     });
     
     request.done(function (response, textStatus, jqXHR){

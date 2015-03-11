@@ -8,7 +8,7 @@ import java.util.Date
 import play.api.Play.current
 import javax.inject.Inject
 import services.{CommentService, DatasetService, ElasticsearchPlugin}
-import models.UUID
+import models.{Comment, UUID}
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
 /**
@@ -20,13 +20,20 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
 
   def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
+      Logger.trace("Adding comment")
       comments.get(id) match {          
         case Some(parent) => {
           request.user match {
             case Some(identity) => {
               request.body.\("text").asOpt[String] match {
                 case Some(text) => {
-                  val comment = parent.copy(comment_id = Some(id), author = identity, text = text, posted = new Date())
+                  val comment = Comment(comment_id = Some(id),
+                                        author = identity,
+                                        text = text,
+                                        posted = new Date(),
+                                        dataset_id = parent.dataset_id,
+                                        file_id = parent.file_id,
+                                        section_id = parent.section_id)
                   comments.insert(comment)
                   if (parent.dataset_id.isDefined) {
                     datasets.get(parent.dataset_id.get) match {

@@ -10,27 +10,28 @@
   		</a>
 		<div class="media-body">
 			<div class="comment-header">
-				<div class="comment-author"><a href="@routes.Profile.viewProfile(c.author.email)">@c.author.fullName</a></div>
-			<div class="comment-date">@c.posted.format("MMM dd, yyyy HH:mm:ss")</div>
-			<div style="clear: both;"></div>
+                    <a href="@routes.Profile.viewProfile(c.author.email)">@c.author.fullName</a>
+                    <span>•</span>
+                    <span>@c.posted.format("MMM dd, yyyy HH:mm:ss")</span>
+
 			</div>
 			<div class="comment-body" id="comment-body_@c.id"></div>
 			@if(user.isDefined) {
 			<div class="comment-footer">
 				<a href="#" 
 				    onclick="return showReplyComment('@c.id');"
-				    class="btn btn-primary btn-sm" title="Reply To Comment">
+				    class="btn btn-link btn-xs" title="Reply To Comment">
 				    <span class="glyphicon glyphicon-share-alt"></span> Reply
 				</a>
 				&nbsp;
 				&nbsp;
 				@if(user.getOrElse(null).email == c.author.email) {
-					<a href="#" onclick="return showEditComment('@c.id');" class="btn btn-default btn-sm" title="Edit Comment">
+					<a href="#" onclick="return showEditComment('@c.id');" class="btn btn-link btn-xs" title="Edit Comment">
 	                    <span class="glyphicon glyphicon-edit"></span> Edit
 	                </a>
 					&nbsp;
 	                &nbsp;
-	                <a href="#" onclick="return deleteComment('@c.id');" class="btn btn-danger btn-sm" title="Delete Comment">
+	                <a href="#" onclick="return deleteComment('@c.id');" class="btn btn-link btn-xs" title="Delete Comment">
 	                    <span class="glyphicon glyphicon-trash"></span> Delete
 	                </a>
                 }
@@ -38,7 +39,7 @@
 			}
 			<div class="comment-reply">
 				<div class="comment-threads unstyled" id="reply_@c.id">
-				@comment(c.replies.sortBy(_.posted))
+				@comment(c.replies)
 				</div>
 			</div>
 		</div>
