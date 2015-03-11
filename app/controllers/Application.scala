@@ -4,7 +4,7 @@ import api.{Permission, WithPermission}
 import play.api.Routes
 import javax.inject.{Singleton, Inject}
 import play.api.mvc.Action
-import services.{AppConfiguration, FileService}
+import services.{DatasetService, CollectionService, AppConfiguration, FileService}
 import play.api.Logger
 
 /**
@@ -13,7 +13,7 @@ import play.api.Logger
  * @author Luigi Marini
  */
 @Singleton
-class Application @Inject() (files: FileService) extends SecuredController {
+class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    * @param path the path minus the slash
@@ -29,7 +29,11 @@ class Application @Inject() (files: FileService) extends SecuredController {
   def index = SecuredAction(authorization = WithPermission(Permission.Public)) { request =>
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
-    Ok(views.html.index(latestFiles, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    val datasetsCount = datasets.count()
+    val filesCount = files.count()
+    val collectionCount = collections.count()
+    Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount,
+      AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
   
   def options(path:String) = SecuredAction() { implicit request =>
