@@ -185,7 +185,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     val sensorsJson = ids.map(id => Json.parse(getSensor(id).getOrElse("{}")))
     List.tabulate(sensorsJson.size) { i =>
       val name = (sensorsJson(i) \ "name").as[String]
-      (name, base + "#detail/location/" + name)
+      (name, base + "#detail/location/" + name + "/")
     }
   }
   

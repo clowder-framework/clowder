@@ -61,7 +61,7 @@ function associateDatasetWithSensor(dataset_id, sensor_id, sensor_name, dashboar
         console.log('Done associating dataset ' + dataset_id + ' to sensor ' + sensor_id + " / " + sensor_name);
 
         // append new element to list
-        $('#sensors-list').append('<li><a href="' + dashboard_url + sensor_name + '">' +sensor_name+'</a></li>');
+        $('#sensors-list').append('<li><a href="' + dashboard_url + sensor_name + '/">' +sensor_name+'</a></li>');
 
         // close modal
         $('#sensors-assign').modal('hide');
