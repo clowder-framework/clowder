@@ -174,6 +174,20 @@ class PostgresPlugin(application: Application) extends Plugin {
       None
     } else Some(data)
   }
+
+  /**
+   * Retrieve links for sensor pages on da
+   * @param ids sensor ids
+   * @return a list of tuples, first element is sensor name, second is sensor url on dashboard
+   */
+  def getDashboardSensorURLs(ids: List[String]): List[(String, String)] = {
+    val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
+    val sensorsJson = ids.map(id => Json.parse(getSensor(id).getOrElse("{}")))
+    List.tabulate(sensorsJson.size) { i =>
+      val name = (sensorsJson(i) \ "name").as[String]
+      (name, base + "#detail/location/" + name)
+    }
+  }
   
   def getSensorStreams(id: String): Option[String] = {
     var data = ""

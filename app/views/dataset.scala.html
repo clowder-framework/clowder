@@ -2,7 +2,7 @@
         previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
         md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], collectionsOutside: List[models.Collection],
         collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean,
-        relatedSensors: List[String])(implicit user: Option[securesocial.core.Identity])
+        relatedSensors: List[(String,String)])(implicit user: Option[securesocial.core.Identity])
 
 
 @import helper._
