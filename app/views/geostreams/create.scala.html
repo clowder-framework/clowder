@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
     <div class="container">
         <div class="page-header">
-            <h1>@(AppConfiguration.getSensorsTitle) Information</h1>
+            <h1>@(AppConfiguration.getSensorTitle) Information</h1>
         </div>
 
         <form class="form-horizontal" role="form" id="new">
@@ -42,7 +42,7 @@
                                         <div class="col-sm-8">
                                             <input type="text" class="form-control input-sm" id="sensorDataSource" name="sensorDataSource" placeholder="USGS (required)" required>
                                         </div>
-                                        <label for="sensorType" class="col-sm-4 paddingTop7 control-label"><a href='https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types' target="_blank">Site Type</a> <span class="glyphicon glyphicon-new-window" style="font-size: 10px; color: #C0C0C0" aria-hidden="true"></span></label>
+                                        <label for="sensorType" class="col-sm-4 paddingTop7 control-label"><a href='https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types' target="_blank">Location Type</a> <span class="glyphicon glyphicon-new-window" style="font-size: 10px; color: #C0C0C0" aria-hidden="true"></span></label>
                                         <div class="col-sm-8">
                                             <select class="form-control input-sm" id="sensorType" name="sensorType">
                                                 <option value="1">1</option>
@@ -56,7 +56,7 @@
                                         </div>
                                         <div class="col-sm-4"></div>
                                         <div class="col-sm-8 paddingTop7">
-                                            <p>Site Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> sensor<span id="sensorTypeMultipleSensors"></span>.</p>
+                                            <p>Location Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> instrument<span id="sensorTypeMultipleSensors"></span>.</p>
                                         </div>
                                         <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
                                         <div class="col-sm-4">
@@ -78,22 +78,25 @@
                             </div>
                         </div>
                         <div class="panel-footer">
-                            <p>Each location will contain at least one sensor, depending on it's Site Type.</p>
+                            <p>Each location will contain at least one instrument, depending on it's Location Type.</p>
 
                         </div>
                     </div>
                 </div>
             </div>
-            <div id="additionalSensors">
-                <!-- additional sensors will be added here as the "Add Sensor" button is clicked -->
-            </div>
-
-            <div class="btn btn-default" id="addSensor" style="display: none">Add Sensor</div>
-
-            <br />
-
-            <button type="submit" class="btn btn-primary submit" id="formSubmit">Create</button>
         </form>
+
+        <div id="additionalSensors">
+                <!-- additional instruments will be added here as the "Add Instrument" button is clicked -->
+        </div>
+
+        <div class="btn btn-default" id="addSensor" style="display: none">Add Instrument</div>
+
+        <br />
+
+        <button type="submit" class="btn btn-primary submit" id="formSubmit">Create</button>
+        <button type="submit" class="btn btn-primary" id="deferredGet">Deferred GET</button>
+
     </div>
 
 }
@@ -101,9 +104,10 @@
 <script src="@routes.Assets.at("javascripts/leaflet.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.validate.js")"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")"></script>
+<script src="@routes.Assets.at("javascripts/lib/jquery.serializejson.min.js")"></script>
 
 <script id="newSensorTemplate" type="text/x-handlebars-template">
-    <div id="sensor-{{sensorNumber}}">
+    <form id="sensor-{{sensorNumber}}" class="single-stream-tmpl">
         <div class="row">
             <div class="col-md-12">
                 <div class="panel-group" id="sensor-group-{{sensorNumber}}" role="tablist">
@@ -111,7 +115,7 @@
                         <div class="panel-heading" role="tab" id="sensor-heading-{{sensorNumber}}">
                             <h4 class="panel-title">
                                 <a data-toggle="collapse" data-parent="#sensor-group-{{sensorNumber}}" href="#sensor-contents-{{sensorNumber}}" id="sensor-link-{{sensorNumber}}" aria-expanded="true" aria-controls="collapseOne">
-                                    Sensor #{{sensorNumber}} Information
+                                    Instrument #{{sensorNumber}} Information
                                 </a>
                             </h4>
                         </div>
@@ -119,14 +123,14 @@
                             <div class="panel-body">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <h3>Sensor Device Info</h3>
+                                        <h3>Instrument Device Info</h3>
                                         <div class="form-group">
                                             <label for="sensorName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
-                                            title="The full description of the sensor, typically provided by the Data Source. Should be concise, but descriptive.">Sensor Name</label>
+                                            title="The full description of the sensor, typically provided by the Data Source. Should be concise, but descriptive.">Instrument Name</label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control input-sm" id="sensorName" name="sensorName" placeholder="Falls Creek Northeast Temperature Monitor">
                                             </div>
-                                            <label for="sensorID" class="col-sm-4 paddingTop7 control-label">Sensor ID</label>
+                                            <label for="sensorID" class="col-sm-4 paddingTop7 control-label">Instrument ID</label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control input-sm" id="sensorID" name="sensorID" placeholder="FCN-01">
                                             </div>
@@ -158,7 +162,7 @@
                                                 <label for="sensorOffsetVerticalType" class="col-sm-4 paddingTop7 control-label">Vertical Offset Orientation</label>
                                                 <div class="col-sm-8">
                                                     <select class="form-control input-sm" id="sensorOffsetVerticalType" name="sensorOffsetVerticalType">
-                                                        <option>No offset</option>
+                                                        <option selected disabled hidden value=''>No offset</option>
                                                         <option value="above">Above</option>
                                                         <option value="below">Below</option>
                                                     </select>
@@ -207,6 +211,7 @@
                                         <label for="variableCategory" class="col-sm-4 paddingTop7 control-label">Variable Category</label>
                                         <div class="col-sm-8">
                                             <select class="form-control input-md" id="variableCategory" name="variableCategory">
+                                                <option selected disabled hidden value=''>Select a category</option>
                                                 <option value="streamflow">Streamflow</option>
                                                 <option value="hydromet">Hydromet</option>
                                                 <option value="sediment">Sediment</option>
@@ -310,7 +315,7 @@
 
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <h3>Sensor Parameters</h3>
+                                        <h3>Instrument Parameters</h3>
                                         <div class="form-group">
                                             <label for="sensorParametersAvailable" class="col-sm-4 paddingTop7 control-label"
                                             data-toggle="tooltip" data-placement="left"
@@ -318,7 +323,7 @@
                                                 Parameters to Display
                                             </label>
                                             <div class="col-sm-8">
-                                                <select multiple class="form-control" id="sensorParametersAvailable" name="sensorParametersAvailable">
+                                                <select multiple class="form-control" id="sensorParametersAvailable" name="sensorParametersAvailable[]">
                                                     <option value="chlorophyll-a">Chlorophyll-a</option>
                                                     <option value="nitrogen">Nitrogen</option>
                                                     <option value="phosphorous">Phosphorous</option>
@@ -355,7 +360,7 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="pull-right">
-                                            <div class="btn btn-primary btn-sm removeSensor" id="sensor-delete-{{sensorNumber}}" data-id="{{sensorNumber}}">Remove Sensor #{{sensorNumber}}</div>
+                                            <div class="btn btn-primary btn-sm removeSensor" id="sensor-delete-{{sensorNumber}}" data-id="{{sensorNumber}}">Remove Instrument #{{sensorNumber}}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -373,6 +378,6 @@
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 </script>
 <script src="@routes.Assets.at("javascripts/geostreams/sensorCreate.js")"></script>
