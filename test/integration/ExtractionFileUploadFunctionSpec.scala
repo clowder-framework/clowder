@@ -23,6 +23,12 @@ import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.entity.mime.content.StringBody
 import org.apache.http.entity.ContentType
 import play.api.http._
+
+import play.api.test._
+import org.scalatest._
+import org.scalatestplus.play._
+import play.api.{Play, Application}
+
 /*
  * Based on http://stackoverflow.com/questions/15133794/writing-a-test-case-for-file-uploads-in-play-2-1-and-scala
  *
@@ -32,12 +38,24 @@ import play.api.http._
  */
 
 
-class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpload {
-  val excludedPlugins = List(
-    "services.RabbitmqPlugin",
-    "services.VersusPlugin")
+class ExtractionFileUploadFunctionSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+  
 
-  implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins)
+  "The OneAppPerSuite trait" must {
+    "provide a FakeApplication" in {
+      app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
+    }
+    "make the FakeApplication available implicitly" in {
+      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      getConfig("ehcacheplugin") mustBe Some("disabled")
+    }
+    "start the FakeApplication" in {
+      Play.maybeApplication mustBe Some(app)
+    }
+  }
+
+
+
 
   "The OneAppPerSuite for Extraction API Controller Router test" must {
     "respond to the Upload File URL" in {
