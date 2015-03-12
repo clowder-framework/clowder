@@ -24,7 +24,7 @@ function associateWithSensor(dataset_id, dashboard_url) {
 }
 
 function showModal(sensors, dataset_id, dashboard_url) {
-    var modalTemplate = Handlebars.getTemplate('/assets/templates/sensors/assign');
+    var modalTemplate = Handlebars.getTemplate('../assets/templates/sensors/assign'); // TODO make it portable to other contexts
     var html = modalTemplate({resource_type : "Dataset", sensors: sensors});
     $('.container').append(html);
     $('#sensors-assign').modal();
