@@ -1,5 +1,51 @@
 $(document).ready(function() {
 
+  // this function performs a GET request on a specified "url"
+  // and optionally a parameters object
+  // and returns immediately with a deferred object
+  var deferredGet = function(url, parameters) {
+
+    var deferred = $.Deferred();
+
+    $.get( url, parameters, function() {
+      deferred.notify( "deferred notify GET for " + url );
+    })
+      .done(function(data) {
+        deferred.notify( "deferred notify done for " + url );
+        deferred.resolve( data );
+      })
+      .fail(function(err) {
+        deferred.notify( "deferred notify fail for " + url);
+        deferred.reject(err)
+      });
+
+    return deferred.promise();
+  };
+
+  // this function performs a POST request on a specified "url"
+  // with specified "data" and returns immediately with a deferred object
+  var deferredPost = function(url, data) {
+
+    var deferred = $.Deferred();
+
+    $.ajax( {
+      url: url,
+      type: 'POST',
+      contentType: 'application/json',
+      data: data
+    })
+      .done(function(data) {
+        deferred.notify( "deferred notify done for " + url );
+        deferred.resolve( data );
+      })
+      .fail(function(err) {
+        deferred.notify( "deferred notify fail for " + url);
+        deferred.reject(err)
+      });
+
+    return deferred.promise();
+  };
+
   // setup form validation
   var sensorForm = $('#new');
   sensorForm.validate({
@@ -50,7 +96,7 @@ $(document).ready(function() {
         sensorTypeSensorCount.text('multiple');
         sensorTypeMultipleSensors.text('s');
         sensorContents1.collapse('hide');
-        sensorLink1.text('Sensor #1 Information');
+        sensorLink1.text('Instrument #1 Information');
         addSensor.show();
         break;
       default:
@@ -58,7 +104,7 @@ $(document).ready(function() {
         sensorTypeSensorCount.text('1');
         sensorTypeMultipleSensors.text('');
         sensorContents1.collapse('show');
-        sensorLink1.text('Sensor Information');
+        sensorLink1.text('Instrument Information');
         addSensor.hide();
         break;
     }
@@ -67,10 +113,62 @@ $(document).ready(function() {
   // enable tooltips
   $('[data-toggle="tooltip"]').tooltip();
 
+  $("#deferredGet").click(function(event) {
+    event.preventDefault();
+    var dataPromise1 = deferredGet("http://localhost:9001/api/geostreams/sensors/update");
+
+//    dataPromise1.progress( function ( message ) {
+//      console.log("Deferred GET 1 is reporting progress");
+//      console.log(message);
+//    } );
+//
+//    dataPromise1.done( function ( data ) {
+//      console.log("Deferred GET is complete.");
+//      console.log(data );
+//    } );
+//
+    dataPromise1.fail( function ( err ) {
+      console.log("Deferred GET failed");
+      console.log(err);
+    } );
+
+    var dataPromise2 = deferredGet("http://localhost:9001/api/geostreams/streams");
+//
+    dataPromise2.progress(function(message) {
+      console.log("dataPromise2 reporting progress");
+      console.log(message);
+    });
+
+    dataPromise2.fail( function ( err ) {
+      console.log("Deferred GET failed");
+      console.log(err);
+    } );
+    $.when(dataPromise1, dataPromise2).done( function(data1, data2) {
+
+        console.log(data1);
+        console.log(data2);
+//      function ( data ) {
+//        console.log("Deferred GET 2 is complete");
+//        console.log(data);
+//      },
+//      function ( err ) {
+//        console.log("Deferred GET 2 failed");
+//        console.log(error);
+//      },
+//      function ( message) {
+//        console.log("Deferred GET 2 is reporting progress");
+//        console.log(message);
+//      }
+      }
+    );
+
+
+  });
 
   $("#formSubmit").click(function(event) {
     event.preventDefault();
     var mediciSensorsURL = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/api/geostreams/sensors";
+    var mediciStreamsURL = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/api/geostreams/streams";
     var data = {geometry: { type: "Point", coordinates: [0,0,0]}, properties: { type: {id: "", "title": ""}}, type: "Feature"};
     data.name = $("#sensor_name").val();
     data.properties.name = data.name;
@@ -80,30 +178,41 @@ $(document).ready(function() {
     data.properties.type.id = $("#sensorDataSource").val().toLowerCase();
     data.properties.type.title = $("#sensorDataSource").val();
     data.properties.region = $("#sensorRegion").val();
-    $.ajax({
-      url: mediciSensorsURL,
-      type: 'POST',
-      contentType: 'application/json',
-      data: JSON.stringify(data)
-    })
-      .done(function() {
-        $.ajax( {
-          url : mediciSensorsURL,
-          type : 'GET',
-          data : 'geocode=' + data.geometry.coordinates[1] + ',' + data.geometry.coordinates[0] + ',' + data.geometry.coordinates[2]
-        })
-          .done(function(data){
-            var url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/geostreams/sensors/";
-            var sensorID = (data[0] && data[0].id) ? data[0].id : null;
-            if (sensorID) {
-              window.location.href = url + sensorID;
-            }
 
+    console.log(data);
+    var sensorPOSTpromise = deferredPost(mediciSensorsURL, JSON.stringify(data));
+
+    var deferredStreams = [];
+
+    $.when(sensorPOSTpromise).done(function() {
+      var sensorGETpromise = deferredGet(mediciSensorsURL + '?geocode=' + data.geometry.coordinates[1] + ',' + data.geometry.coordinates[0] + ',0');
+      $.when(sensorGETpromise).done(function(sensorData) {
+        console.log(sensorData);
+        var sensorJSON = sensorData[0];
+        $(".single-stream-tmpl").each(function() {
+
+          var streamJSON = {};
+          var streamData = $(this).find(':input').filter(function() {return $.trim(this.value).length > 0}).serializeJSON({
+            parseNumbers: true,
+            parseBooleans: true
           });
-      })
-      .fail(function() {
-        console.log('failed to create sensor')
+
+          streamJSON['name'] = streamData['sensorName'];
+          delete streamData['sensorName'];
+          streamJSON['properties'] = streamData;
+
+          streamJSON['geometry'] = sensorJSON['geometry'];
+          streamJSON['sensor_id'] = sensorJSON['id'].toString();
+          streamJSON['type'] = sensorJSON['type'];
+          console.log(streamJSON);
+          deferredStreams.push(deferredPost(mediciStreamsURL, JSON.stringify(streamJSON)));
+        });
       });
+    });
+
+    $.when(deferredStreams.join(',')).done(function() {
+        console.log("should redirect now.");
+    });
   });
 
   if (window.L) {
