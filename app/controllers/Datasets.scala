@@ -266,7 +266,8 @@ class Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {
 
-          val filesInDataset = dataset.files.map(f => files.get(f.id).get)
+          // get files info sorted by date
+          val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset)
           datasetWithFiles = decodeDatasetElements(datasetWithFiles)
