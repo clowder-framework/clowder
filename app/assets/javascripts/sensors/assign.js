@@ -4,7 +4,7 @@
 /**
  * Created by lmarini on 2/5/15.
  */
-function associateWithSensor(dataset_id) {
+function associateWithSensor(dataset_id, dashboard_url) {
 
     var request = jsRoutes.api.Geostreams.searchSensors().ajax({
         type: 'GET',
@@ -13,7 +13,7 @@ function associateWithSensor(dataset_id) {
     });
 
     request.done(function (response, textStatus, jqXHR){
-        showModal(response, dataset_id);
+        showModal(response, dataset_id, dashboard_url);
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -23,7 +23,7 @@ function associateWithSensor(dataset_id) {
     return false;
 }
 
-function showModal(sensors, dataset_id) {
+function showModal(sensors, dataset_id, dashboard_url) {
     var modalTemplate = Handlebars.getTemplate('/assets/templates/sensors/assign');
     var html = modalTemplate({resource_type : "Dataset", sensors: sensors});
     $('.container').append(html);
@@ -38,14 +38,15 @@ function showModal(sensors, dataset_id) {
 
     $('#sensors_add').unbind().click(function() {
         var sensor_id = $('.list-group-item.active').data("sensor-id");
-        console.log('Associating dataset ' + dataset_id + ' to sensor ' + sensor_id);
-        associateDatasetWithSensor(dataset_id, sensor_id);
+        var sensor_name = $('.list-group-item.active').data("sensor-name");
+        console.log('Associating dataset ' + dataset_id + ' to sensor ' + sensor_id + " / " + sensor_name);
+        associateDatasetWithSensor(dataset_id, sensor_id, sensor_name, dashboard_url);
     });
 
     return false;
 }
 
-function associateDatasetWithSensor(dataset_id, sensor_id) {
+function associateDatasetWithSensor(dataset_id, sensor_id, sensor_name, dashboard_url) {
 
     var request = jsRoutes.api.Relations.add().ajax({
         type: 'POST',
@@ -57,10 +58,10 @@ function associateDatasetWithSensor(dataset_id, sensor_id) {
     });
 
     request.done(function (response, textStatus, jqXHR){
-        console.log('Done associating dataset ' + dataset_id + ' to sensor ' + sensor_id);
+        console.log('Done associating dataset ' + dataset_id + ' to sensor ' + sensor_id + " / " + sensor_name);
 
         // append new element to list
-        $('#sensors-list').append('<li>'+sensor_id+'</li>');
+        $('#sensors-list').append('<li><a href="' + dashboard_url + sensor_name + '">' +sensor_name+'</a></li>');
 
         // close modal
         $('#sensors-assign').modal('hide');

@@ -3,6 +3,7 @@ package controllers
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.libs.json.Json
 import play.api.mvc.Cookie
 import java.io.FileInputStream
 import play.api.Play.current
@@ -346,9 +347,13 @@ class Datasets @Inject()(
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           // associated sensors
-          var sensors = current.plugin[PostgresPlugin] match {
-            case Some(db) => relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
-            case None => List.empty[String]
+          var sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
+            case Some(db) => {
+              val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
+              val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
+              db.getDashboardSensorURLs(ids)
+            }
+            case None => List.empty[(String, String)]
           }
 
 
