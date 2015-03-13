@@ -1,0 +1,12 @@
+@(space: Option[ProjectSpace], resourceType: Int, resourceId: UUID)
+
+@if(space.isDefined) {
+    <a href="@routes.Spaces.getSpace(space.get.id)" id="space_link">
+    @space.map(_.name).getOrElse("N/A")</a>
+}
+@if(space.isEmpty) {
+    <a href="">Default</a>
+}
+<a href="javascript:changeSpace('@resourceId', @resourceType)">
+    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+</a>
