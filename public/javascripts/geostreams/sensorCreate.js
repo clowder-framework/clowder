@@ -212,6 +212,9 @@ $(document).ready(function() {
 
     $.when(deferredStreams.join(',')).done(function() {
         console.log("should redirect now.");
+        // redirect removing the "/new" from the current href
+        // necessary until we add the Geostreams to the @controllers
+        window.location.href = window.location.href.substring(0, window.location.href.length - 4);
     });
   });
 
