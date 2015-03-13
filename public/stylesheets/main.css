@@ -496,3 +496,7 @@ textarea, input[type='text'], input[type='password']{
     max-height: 200px;
     overflow-x: hidden;
 }
+
+.instrument-delete {
+    padding: 20px 16px 0 10px;
+}
