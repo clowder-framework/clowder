@@ -1,5 +1,6 @@
 #Any line with a # will be ignored
 #Any line starting with @ will be used as a displayed comment for the test that follows
+#Any line starting with a * should be followed by an integer indicating how many times to run that test
 #Any output starting with ! means should not be present
 
 @Test ncsa.cv.face extractor for true positive
