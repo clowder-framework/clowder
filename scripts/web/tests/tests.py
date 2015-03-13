@@ -10,10 +10,21 @@ import time
 import urllib2
 import getopt
 import netifaces as ni
+import thread
+import threading
 from pymongo import MongoClient
+
+failure_report = ''
+enable_threads = False
+threads = 0
+lock = threading.Lock()
 
 def main():
 	"""Run extraction bus tests."""
+	global failure_report
+	global enable_threads
+	global threads
+	global lock
 	host = ni.ifaddresses('eth0')[2][0]['addr']
 	hostname = ''
 	port = '9000'
@@ -21,7 +32,7 @@ def main():
 	all_failures = False
 
 	#Arguments
-	opts, args = getopt.getopt(sys.argv[1:], 'h:p:k:n:a')
+	opts, args = getopt.getopt(sys.argv[1:], 'h:p:k:n:at')
 
 	for o, a in opts:
 		if o == '-h':
@@ -34,6 +45,8 @@ def main():
 			key = a
 		elif o == '-a':
 			all_failures = True
+		elif o == '-t':
+			enable_threads = True
 		else:
 			assert False, "unhandled option"
 
@@ -48,13 +61,18 @@ def main():
 	with open('tests.txt', 'r') as tests_file:
 		lines = tests_file.readlines()
 		count = 0;
-		failure_report = ''
 		t0 = time.time()
+		runs = 1
 
 		for line in lines:
 			line = line.strip()
 
-			if line and not line.startswith('#') and not line.startswith('@'):
+			if line and line.startswith('@'):
+				if not enable_threads:
+					print line[1:] + ': '
+			elif line and line.startswith('*'):
+				runs = int(line[1:])
+			elif line and not line.startswith('#'):
 				parts = line.split(' ', 1)
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
@@ -77,60 +95,25 @@ def main():
 							output = urllib2.urlopen(output).read(1000).strip()
 						else:
 							output = open(output).read(1000).strip()
-					
-					#Print out test
-					if POSITIVE:	
-						print(input_filename + ' -> "' + output + '"\t'),
+		
+					#Run the test	
+					if enable_threads:
+						for i in range(0, runs):
+							with lock:
+								threads += 1
+
+							thread.start_new_thread(run_test, (host, hostname, port, key, input_filename, output, POSITIVE, count, all_failures))
 					else:
-						print(input_filename + ' -> !"' + output + '"\t'),
+						for i in range(0, runs):
+							run_test(host, hostname, port, key, input_filename, output, POSITIVE, count, all_failures)
 
-					#Run test
-					metadata = extract(host, port, key, input_filename, 60)
-					print '\n' + metadata
-				
-					#Write derived data to a file for later reference
-					output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(os.path.basename(input_filename))[0] + '.txt'
+					#Set runs back to one for next test
+					runs = 1
 
-					with open(output_filename, 'w') as output_file:
-						output_file.write(metadata)
-						
-					os.chmod(output_filename, 0776)		#Give web application permission to overwrite
-
-					#Check for expected output
-					if not POSITIVE and metadata.find(output) is -1:
-						print '\033[92m[OK]\033[0m\n'
-					elif metadata.find(output) > -1:
-						print '\033[92m[OK]\033[0m\n'
-					else:
-						print '\033[91m[Failed]\033[0m\n'
-
-						report = 'Test-' + str(count) + ' failed.  Expected output "'
-								
-						if not POSITIVE:
-							report += '!'
-
-						report += output + '" was not extracted from:\n\n' + input_filename + '\n\n'
-						failure_report += report;
-
-						#Send email notifying watchers	
-						if all_failures:
-							with open('failure_watchers.txt', 'r') as watchers_file:
-								watchers = watchers_file.read().splitlines()
-							
-								if hostname:	
-									message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-								else:
-									message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-
-								message += 'To: ' + ', '.join(watchers) + '\n'
-								message += 'Subject: DTS Test Failed\n\n'
-								message += report
-								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n'
-
-								mailserver = smtplib.SMTP('localhost')
-								for watcher in watchers:
-									mailserver.sendmail('', watcher, message)
-								mailserver.quit()
+		#Wait for threads if any
+		if enable_threads:
+			while threads:
+				time.sleep(1)
 
 		dt = time.time() - t0
 		print 'Elapsed time: ' + timeToString(dt)
@@ -217,6 +200,101 @@ def main():
 						mailserver.sendmail('', watcher, message)
 					mailserver.quit()
 
+def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count, all_failures):
+	"""Run a test."""
+	global failure_report
+	global enable_threads
+	global threads
+	global lock
+
+	#Print out test
+	if enable_threads:
+		with lock:
+			if POSITIVE:	
+				print	input_filename + ' -> "' + output + '"\t\033[94m[Running]\033[0m'
+			else:
+				print	input_filename + ' -> !"' + output + '"\t\033[94m[Running]\033[0m'
+	else:
+		if POSITIVE:	
+			print(input_filename + ' -> "' + output + '"\t'),
+		else:
+			print(input_filename + ' -> !"' + output + '"\t'),
+
+	#Run test
+	metadata = extract(host, port, key, input_filename, 60)
+	#print '\n' + metadata
+				
+	#Write derived data to a file for later reference
+	output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(os.path.basename(input_filename))[0] + '.txt'
+
+	with open(output_filename, 'w') as output_file:
+		output_file.write(metadata)
+						
+	os.chmod(output_filename, 0776)		#Give web application permission to overwrite
+		
+	#Display result
+	if enable_threads:
+		with lock:
+			if POSITIVE:	
+				print(input_filename + ' -> "' + output + '"\t'),
+			else:
+				print(input_filename + ' -> !"' + output + '"\t'),
+	
+			if not POSITIVE and metadata.find(output) is -1:
+				print '\033[92m[OK]\033[0m'
+			elif metadata.find(output) > -1:
+				print '\033[92m[OK]\033[0m'
+			else:
+				print '\033[91m[Failed]\033[0m'
+
+	#Check for expected output and add to report
+	if not POSITIVE and metadata.find(output) is -1:
+		if not enable_threads:
+			print '\033[92m[OK]\033[0m\n'
+	elif metadata.find(output) > -1:
+		if not enable_threads:
+			print '\033[92m[OK]\033[0m\n'
+	else:
+		if not enable_threads:
+			print '\033[91m[Failed]\033[0m\n'
+
+		report = 'Test-' + str(count) + ' failed.  Expected output "'
+								
+		if not POSITIVE:
+			report += '!'
+
+		report += output + '" was not extracted from:\n\n' + input_filename + '\n\n'
+
+		if enable_threads:
+			with lock:
+				failure_report += report;
+		else:
+			failure_report += report;
+
+	#Send email notifying watchers	
+	if all_failures:
+		with open('failure_watchers.txt', 'r') as watchers_file:
+			watchers = watchers_file.read().splitlines()
+							
+			if hostname:	
+				message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+			else:
+				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+
+			message += 'To: ' + ', '.join(watchers) + '\n'
+			message += 'Subject: DTS Test Failed\n\n'
+			message += report
+			message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n'
+
+			mailserver = smtplib.SMTP('localhost')
+			for watcher in watchers:
+				mailserver.sendmail('', watcher, message)
+			mailserver.quit()
+
+	#If in a thread decrement the thread counter
+	with lock:
+		if threads:
+			threads -= 1
 
 def extract(host, port, key, file, wait):
 	"""Pass file to Medici extraction bus."""

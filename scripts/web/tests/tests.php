@@ -52,6 +52,8 @@
 						$comment = $comment . "<br/>" . substr($line, 1);
 					}
 					next;
+				} else if($line[0] == '*') {
+					next;
 				} else {
 					$parts = explode(" ", $line, 2);
 					$input_filename = $parts[0];
