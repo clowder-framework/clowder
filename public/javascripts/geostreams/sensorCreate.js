@@ -167,8 +167,8 @@ $(document).ready(function() {
 
   $("#formSubmit").click(function(event) {
     event.preventDefault();
-    var mediciSensorsURL = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/api/geostreams/sensors";
-    var mediciStreamsURL = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/api/geostreams/streams";
+    var mediciSensorsURL = jsRoutes.api.Geostreams.searchSensors().url;
+    var mediciStreamsURL = jsRoutes.api.Geostreams.searchStreams().url;
     var data = {geometry: { type: "Point", coordinates: [0,0,0]}, properties: { type: {id: "", "title": ""}}, type: "Feature"};
     data.name = $("#sensor_name").val();
     data.properties.name = data.name;
