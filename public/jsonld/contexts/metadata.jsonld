@@ -5,13 +5,16 @@
       "@id": "med:extractor/id",
       "@type": "@id"
     },
+    "user_id": {
+      "@id": "med:user/id",
+      "@type": "@id"
+    },
     "created_at": {
       "@id": "http://purl.org/dc/terms/created",
       "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
     },
     "agent": {
-      "@id": "http://www.w3.org/ns/prov#Agent",
-      "@type": "@id"
+      "@id": "http://www.w3.org/ns/prov#Agent"
     },
     "user": "med:user",
     "extractor": "med:extractor",
