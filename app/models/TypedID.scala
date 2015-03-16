@@ -8,5 +8,5 @@ package models
  */
 case class TypedID(
   id: UUID,
-  object_type: String
+  objectType: String
   )
