@@ -1,7 +1,6 @@
 /**
  * Created by lmarini on 1/21/15.
  */
-console.log("in main");
 function notify(text, type, logConsole, timeout) {
     // default parameters
     if (typeof(text)==='undefined') text = "Notification improperly created";
