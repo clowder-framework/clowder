@@ -1000,6 +1000,33 @@ class Files @Inject()(
       }
   }
   
+  
+  /**
+   * Add thumbnail to query file.
+   */
+  @ApiOperation(value = "Add thumbnail to a query image", notes = "Attaches an already-existing thumbnail to a query image.", responseClass = "None", httpMethod = "POST")
+  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+    implicit request =>
+      queries.get(query_id) match {
+        case Some(file) => {
+          thumbnails.get(thumbnail_id) match {
+            case Some(thumbnail) => {
+              queries.updateThumbnail(query_id, thumbnail_id)  
+              Ok(toJson(Map("status" -> "success")))
+            }
+            case None => {
+            	Logger.error("Thumbnail not found")
+            	BadRequest(toJson("Thumbnail not found"))
+            }
+          }
+        }
+        case None => {
+          Logger.error("File not found")
+          BadRequest(toJson("Query file not found " + query_id))
+        }
+      }
+  }
+  
 
   /**
    * Find geometry file for given 3D file and geometry filename.
@@ -1624,11 +1651,15 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-          Logger.debug("Deleting file: " + file.filename)
-          files.removeFile(id)
+          
+           //this stmt has to be before files.removeFile
+          Logger.debug("Deleting file from indexes" + file.filename)
           current.plugin[VersusPlugin].foreach {        
             _.removeFromIndexes(id)        
           }
+          Logger.debug("Deleting file: " + file.filename)
+          files.removeFile(id)
+          
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "file", id.stringify)
           }

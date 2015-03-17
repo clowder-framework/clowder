@@ -3,9 +3,6 @@ var fileTypeList = [];
 var fileTypeState = false;
 var fileTypeSelected;
 
-var isCensusIndex = false;
-var isFaceIndex = false;
-
 var indexName="";
 
 var allAdapterList=[];
@@ -166,21 +163,19 @@ function setFileTypeAndAvailableAdapters(){
 	}
 	else{
 		fileTypeState    = true;
-		fileTypeSelected =  $("#fileTypeDropDown").val();
+		fileTypeSelected =  $("#fileTypeDropDown").val()
 	
-		//set global var isCensusIndex
-		//if census index then set the global variable, and then process as regular image.
+		//indexType should be a part of the extractor ID 
   		if (fileTypeSelected == "sectionCensus"){
-       		 isCensusIndex = true;  
-       		 indexType = "censusIndex"
+       		 indexType = "census"
        		 fileTypeSelected = "image"
        	} else if (fileTypeSelected == "sectionFace"){
-       		 isFaceIndex = true;
-       		 indexType = "faceIndex"
+       		 indexType = "face"
+       		 fileTypeSelected = "image"
+       	}  else if (fileTypeSelected == "sectionCinemetrics"){
+       		 indexType = "cinemetrics"
        		 fileTypeSelected = "image"
        	}   else {
-       		isCensusIndex=false;
-      		 isFaceIndex = false;   
       		indexType=""
        	}   		
 		setShortAdapterList(fileTypeSelected);
