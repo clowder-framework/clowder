@@ -390,6 +390,11 @@ POST    /api/comment/:id/editComment        @api.Comments.editComment(id: UUID)
 GET   	/api/search                       @api.Search.search(query: String ?= "")
 POST	/api/sparqlquery				  @api.Search.querySPARQL
 
+POST 	/api/projects/addproject		@api.Projects.addproject(project: String)
+
+POST 	/api/institutions/addinstitution		@api.Institutions.addinstitution(institution: String)
+
+
 # ----------------------------------------------------------------------
 # USERS API
 # ----------------------------------------------------------------------
