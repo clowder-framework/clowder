@@ -260,6 +260,7 @@ GET            /api/spaces/:id                                                  
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)
 POST           /api/spaces/:id/addCollection                                            @api.Spaces.addCollection(id: UUID)
+POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT

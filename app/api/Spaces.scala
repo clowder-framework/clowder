@@ -101,4 +101,14 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
     spaces.addCollection(UUID(collectionId), space)
     Ok(toJson("success"))
   }
+
+  @ApiOperation(value = "Associate a dataset with a space",
+    notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def addDataset(space: UUID) = SecuredAction(parse.json,
+    authorization = WithPermission(Permission.EditCollection)) { request =>
+    val datasetId = (request.body \ "dataset_id").as[String]
+    spaces.addDataset(UUID(datasetId), space)
+    Ok(toJson("success"))
+  }
 }

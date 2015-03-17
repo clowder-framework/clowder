@@ -12,4 +12,6 @@ import services.core.CRUDService
 trait SpaceService extends CRUDService[ProjectSpace] {
 
   def addCollection(collection: UUID, space: UUID)
+
+  def addDataset(dataset: UUID, space: UUID)
 }

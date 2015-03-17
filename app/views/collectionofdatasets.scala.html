@@ -33,14 +33,7 @@
 					}
                     <dt>Space:</dt>
                     <dd>
-                        @if(space.isDefined) {
-                            <a href="@routes.Spaces.getSpace(space.get.id)">
-                            @space.map(_.name).getOrElse("N/A")</a>
-                        }
-                        @if(space.isEmpty) {
-                            <a href="">Default</a>
-                        }
-                        <a href="javascript:changeSpace('@collection.id')"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a>
+                        @spaces.spaceLink(space, 1, collection.id)
                     </dd>
 					<dt>Description:</dt>
 					<dd>@collection.description</dd>																						            
