@@ -1,15 +1,29 @@
-@(space: Option[ProjectSpace], resourceType: Int, resourceId: UUID)
+@(space: Option[ProjectSpace], resourceType: Int, resourceId: UUID)(implicit user: Option[securesocial.core.Identity])
 
-@if(space.isDefined) {
-    <a href="@routes.Spaces.getSpace(space.get.id)" id="space_link">
-    @space.map(_.name).getOrElse("N/A")</a>
+@if(user.isDefined) {
+    @if(space.isDefined) {
+        <a href="@routes.Spaces.getSpace(space.get.id)" id="space_link">
+        @space.map(_.name).getOrElse("N/A")</a>
+        <a href="javascript:changeSpace('@resourceId', @resourceType)">
+            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+        </a>
+    }
+    @if(space.isEmpty) {
+        <a href="#" id="space_link">Default</a>
+        <a href="javascript:changeSpace('@resourceId', @resourceType)">
+            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+        </a>
+    }
 }
-@if(space.isEmpty) {
-    <a href="">Default</a>
+@if(user.isEmpty) {
+    @if(space.isDefined) {
+        <a href="@routes.Spaces.getSpace(space.get.id)" id="space_link">
+        @space.map(_.name).getOrElse("N/A")</a>
+    }
+    @if(space.isEmpty) {
+        <a href="#" id="space_link">Default</a>
+    }
 }
-<a href="javascript:changeSpace('@resourceId', @resourceType)">
-    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-</a>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/spaces/modify.min.js")" type="text/javascript"></script>
