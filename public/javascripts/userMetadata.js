@@ -84,7 +84,7 @@
 					}					
 					var allowedChildrenForNode = window["allowedChildren"+topId].filter(function (a) {return a[0] == parentNodeType;});
 					if(allowedChildrenForNode.length == 0){
-                        notify('The metadata model states that this property cannot have subproperties of any kind.', 'error');
+                        notify('The metadata model states that this property cannot have subproperties of any kind.', 'error', true);
 						return false;
 					}
 					$(this).parent().children('ul')[0].appendChild(newProperty);	
@@ -164,7 +164,7 @@
 				  else if($(this).html() == "Submit"){
 				  	var restrictionViolations = validateCardinalitiesToModel(document.getElementById(topId).children[1]);
 					if(restrictionViolations != ''){
-                        notify('<p>Institution metadata model violation(s): </p><p>' + restrictionViolations + '</p><p>Metadata not added.</p>','error');
+                        notify('<p>Institution metadata model violation(s): </p><p>' + restrictionViolations + '</p><p>Metadata not added.</p>','error', true);
 						return false;
 					}
 					
@@ -178,12 +178,12 @@
 				     });
 					 
 					  request.done(function (response, textStatus, jqXHR){
-						  notify('Metadata added successfully.', 'success');
+						  notify('Metadata added successfully.', 'success', false, 5000);
 					  });
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
 						  console.error("The following error occured: "+ textStatus, errorThrown);
-                          notify("Encountered error " + errorThrown + ". Metadata not added.")
+                          notify("Encountered error " + errorThrown + ". Metadata not added.", true)
 					  });
 					 
 					 
