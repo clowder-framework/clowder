@@ -345,6 +345,7 @@ GET     /api/geostreams/sensors/:id/stats    api.Geostreams.getSensorStatistics(
 GET     /api/geostreams/sensors/:id/streams  api.Geostreams.getSensorStreams(id: String)
 GET     /api/geostreams/sensors/:id/update   api.Geostreams.updateStatisticsSensor(id: String)
 GET     /api/geostreams/sensors              api.Geostreams.searchSensors(geocode: Option[String] ?= None)
+DELETE  /api/geostreams/sensors/:id          api.Geostreams.deleteSensor(id: String)
 
 POST    /api/geostreams/streams			     api.Geostreams.createStream
 GET     /api/geostreams/streams/update       api.Geostreams.updateStatisticsStreamSensor()

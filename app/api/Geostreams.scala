@@ -234,6 +234,17 @@ object Geostreams extends ApiController {
     }
   }
 
+  def deleteSensor(id: String) = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+    Logger.debug("Delete sensor " + id)
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        if (plugin.deleteSensor(id.toInt)) jsonp("""{"status":"ok"}""", request)
+        else jsonp("""{"status":"error"}""", request)
+      }
+      case None => pluginNotEnabled
+    }
+  }
+
   def deleteAll() = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
     Logger.debug("Drop all")
     current.plugin[PostgresPlugin] match {
