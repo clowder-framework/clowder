@@ -12,7 +12,11 @@ import models.File
  *
  */
 trait DatasetService {
-  
+  /**
+   * The number of datasets
+   */
+  def count(): Long
+
   /**
    * List all datasets in the system.
    */

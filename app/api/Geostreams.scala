@@ -78,14 +78,14 @@ object Geostreams extends ApiController {
       }
   }
 
-  def searchSensors(geocode: Option[String]) =
+  def searchSensors(geocode: Option[String], sensor_name: Option[String]) =
     Action { request =>
-      Logger.debug("Searching sensors " + geocode)
+      Logger.debug("Searching sensors " + geocode + sensor_name)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchSensors(geocode) match {
+          plugin.searchSensors(geocode, sensor_name) match {
             case Some(d) => jsonp(d, request)
-            case None => jsonp("""{"status":"No data found"}""", request)
+            case None => jsonp(Json.parse("""{"status":"No data found"}"""), request)
           }
         }
         case None => pluginNotEnabled
@@ -195,12 +195,12 @@ object Geostreams extends ApiController {
       }
   }
 
-  def searchStreams(geocode: Option[String]) =
+  def searchStreams(geocode: Option[String], stream_name: Option[String]) =
     Action { request =>
       Logger.debug("Searching stream " + geocode)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchStreams(geocode) match {
+          plugin.searchStreams(geocode, stream_name) match {
             case Some(d) => jsonp(d, request)
             case None => jsonp("""{"status":"No data found"}""", request)
           }
@@ -382,14 +382,14 @@ object Geostreams extends ApiController {
       val sensor = data.next
 
       // get depth code
-      val depthCode = sensor.\("DEPTH_CODE") match {
+      val depthCode = sensor.\("properties").\("DEPTH_CODE") match {
         case x: JsUndefined => "NA"
         case x => Parsers.parseString(x)
       }
       val extras = Json.obj("depth_code" -> depthCode)
 
       // get source
-      val source = sensor.\("source") match {
+      val source = sensor.\("properties").\("source") match {
         case x: JsUndefined => ""
         case x => Parsers.parseString(x)
       }
@@ -515,6 +515,29 @@ object Geostreams extends ApiController {
               "date" -> iso.print(new DateTime(year, 9, 1, 12, 0, 0))))
           }
           counter = counter.plusMonths(6)
+        }
+      }
+      case "season" => {
+        var counter = startTime
+        while(counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val year = counter.getYear
+          if ((counter.getMonthOfYear < 3) || (counter.getMonthOfYear == 3 && counter.getDayOfMonth < 21)) {
+            result.put(year + " winter", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))
+          } else if ((counter.getMonthOfYear < 6) || (counter.getMonthOfYear == 6 && counter.getDayOfMonth < 21)) {
+            result.put(year + " spring", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 5, 1, 12, 0, 0))))
+          } else if ((counter.getMonthOfYear < 9) || (counter.getMonthOfYear == 9 && counter.getDayOfMonth < 21)) {
+            result.put(year + " summer", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 8, 1, 12, 0, 0))))
+          } else if((counter.getMonthOfYear < 12) || (counter.getMonthOfYear == 12 && counter.getDayOfMonth < 21)) {
+            result.put(year + " fall", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 11, 1, 12, 0, 0))))
+          } else {
+	    result.put(year + " winter", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))		
+	  }
+          counter = counter.plusMonths(3)
         }
       }
       case "month" => {

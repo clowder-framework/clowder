@@ -1,6 +1,8 @@
 package controllers
 
 import services.UserService
+import services.mongodb.MongoDBProjectService
+import services.mongodb.MongoDBInstitutionService
 import play.api.data.Form
 import play.api.data.Forms._
 import models.Info
@@ -8,16 +10,16 @@ import play.api.Logger
 import javax.inject.Inject
 
 
-class Profile @Inject()(users: UserService) extends  SecuredController {
+class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService) extends  SecuredController {
 
   val bioForm = Form(
     mapping(
       "avatarUrl" -> optional(text),
       "biography" -> optional(text),
-      "currentprojects" -> optional(text),
+      "currentprojects" -> list(text),
       "institution" -> optional(text),
       "orcidID" -> optional(text),
-      "pastprojects" -> optional(text),
+      "pastprojects" -> list(text),
       "position" -> optional(text)
     )(Info.apply)(Info.unapply)
   )
@@ -27,10 +29,10 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
       implicit val user = request.user
     var avatarUrl: Option[String] = None
     var biography: Option[String] = None
-    var currentprojects: Option[String] = None
+    var currentprojects: List[String] = List.empty
     var institution: Option[String] = None
     var orcidID: Option[String] = None
-    var pastprojects: Option[String] = None
+    var pastprojects: List[String] = List.empty
     var position: Option[String] = None
     user match {
       case Some(x) => {
@@ -57,8 +59,8 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                   case None => biography = None
                 }
                 muser.currentprojects match {
-                  case Some(filledOut) => currentprojects = Option(filledOut)
-                  case None => currentprojects = None
+                  case x :: xs => currentprojects = x :: xs
+                  case nil => currentprojects = nil
                 }
                 muser.institution match {
                   case Some(filledOut) => institution = Option(filledOut)
@@ -69,8 +71,8 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                   case None => orcidID = None
                 }
                 muser.pastprojects match {
-                  case Some(filledOut) => pastprojects = Option(filledOut)
-                  case None => pastprojects = None
+                  case x :: xs => pastprojects = x :: xs
+                  case nil => pastprojects = nil
                 }
                 muser.position match {
                   case Some(filledOut) => position = Option(filledOut)
@@ -86,7 +88,9 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                   pastprojects,
                   position
                 ))
-                Ok(views.html.editProfile(newbioForm))
+                var allProjectOptions: List[String] = projects.getAllProjects()
+                var allInstitutionOptions: List[String] = institutions.getAllInstitutions()
+                Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions))
               }
               case None => {
                 Logger.error("no user model exists for email " + addr.toString())
@@ -119,7 +123,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.addUserFriend(addr.toString(),  addr.toString())
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profile(other, None))
+                        Redirect(routes.Profile.viewProfile(Option(other.email.getOrElse(""))))
                       }
                     }
                   }
@@ -128,7 +132,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
                     users.createNewListInUser(addr.toString(), "friends", newList)
                     otherUser match {
                       case Some(other) => {
-                        Ok(views.html.profile(other, None))
+                        Redirect(routes.Profile.viewProfile(Option(other.email.getOrElse(""))))
                       }
                     }
                   }
@@ -187,7 +191,7 @@ class Profile @Inject()(users: UserService) extends  SecuredController {
   def submitChanges = SecuredAction() {  implicit request =>
     implicit val user  = request.user
     bioForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.editProfile(errors)),
+      errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty)),
       form => {
         user match {
           case Some(x) => {

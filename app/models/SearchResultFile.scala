@@ -3,7 +3,7 @@
  * Used by multimedia search to pass information
  * between controller and viewer.
  * 
- * Specifically, used by VersusPlugin, Search, ContentBasedSearchResultsVideo3
+ * Specifically, used by VersusPlugin, Search, multimediaSearchResults
  * 
  * Searching through files that can be of various types (image, pdf, etc) 
  * 
@@ -19,7 +19,7 @@ case class SearchResultFile (
     distance: Double,
     title: String,
     datasetIdList: List[String],   
-    thumbnailIdString: String    
+    thumbnailId: String
 )
 
 

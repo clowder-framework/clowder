@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int)(implicit user: Option[securesocial.core.Identity])
+@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: String)(implicit user: Option[securesocial.core.Identity])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -6,6 +6,9 @@
 
 @util.masonry()
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>  
+
 
 <div class="page-header">
   <h1>Datasets</h1>
@@ -14,31 +17,78 @@
 <div class="row">
     <div class="col-md-12">
         <div class="btn-group btn-group-sm pull-right">
-            <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
-            <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
+            @if(mode == "list") {
+                <button type="button" class="btn btn-default" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
+                <button type="button" class="btn btn-default active" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
+            } else {
+                <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
+                <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
+            }
         </div>
-        <script>
+        <script type="text/javascript" language="javascript">
+        	var viewMode = '@mode';
+        	$.cookie.raw = true;        	
             $(function() {
                 $('#tile-view-btn').click(function() {
-                  console.log('tile view');
                   $('#tile-view').removeClass('hidden');
                   $('#list-view').addClass('hidden');
                   $('#tile-view-btn').addClass('active');
                   $('#list-view-btn').removeClass('active');
+                  viewMode = "tile";
+                  updatePage();
+                  $.cookie('view-mode', 'tile'); 
+                  console.log("setting tile " + $.cookie('view-mode'));
+                  $('#masonry').masonry().masonry({
+                      itemSelector: '.post-box',
+                      columnWidth: '.post-box',
+                      transitionDuration: 4
+                  });
                 });
                 $('#list-view-btn').click(function() {
-                  console.log('list view');
                   $('#tile-view').addClass('hidden');
                   $('#list-view').removeClass('hidden');
                   $('#list-view-btn').addClass('active');
                   $('#tile-view-btn').removeClass('active');
+                  viewMode = "list";
+                  updatePage();
+                  //It should be noted, that adding a third arg to the setting of the cookie value, which should work according to 
+                  //the docs at https://github.com/carhartl/jquery-cookie/tree/v1.4.1 seems to instead set the value of the cookie
+                  //to the options, curly braces and all. For example, {path: '/'} will actually become the value instead of the second
+                  //arg. Swapping the arg order doesn't matter. MMF - 12/14
+                  $.cookie("view-mode", "list");
+                  console.log("setting list " + $.cookie('view-mode'));
                 });
             });
+            
+            $(document).ready(function() {            	            
+            	console.log("on load, cookies are " + $.cookie('view-mode'));
+                console.log("on load, viewMode is " + viewMode); 
+                var aMode = $.cookie('view-mode');
+                console.log("on load, after cookie check, a mode is " + aMode);
+                if (typeof aMode != 'undefined') {
+                    console.log("setting the value");
+                    viewMode = aMode;
+                }      
+            	updatePage();            	
+            });
+            
+            //Function to unify the changing of the href for the next/previous links. Called on button activation for
+            //viewMode style, as well as on initial load of page.
+	        function updatePage() {
+	            var modUrl = "&mode=" + viewMode;
+	            console.log("updatePage - url is " + modUrl);
+	            $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit))" + modUrl);
+	            $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit))" + modUrl);
+	        }
         </script>
     </div>
 </div>
 
-<div class="row" id="tile-view">
+@if(mode == "list") {
+  <div class="row hidden" id="tile-view">
+} else {
+  <div class="row" id="tile-view">
+}
 	<div class="col-md-12">
 		<div id="masonry">
 		@datasets.map { dataset =>
@@ -53,8 +103,8 @@
                                 <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)">
                             </a>
                         }
-                        <div class="caption">
-                            <h4 class="break-word"><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
+                        <div class="caption break-word">
+                            <h4><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
                             <p>@ellipsize(dataset.description, 200)</p>
                         </div>
                   </div>
@@ -66,11 +116,15 @@
                       <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span>  @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
                       <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span>  @(comments.get(dataset.id))
 					  @if(user.isDefined) {
-									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
-							    		<span class="glyphicon glyphicon-trash"></span></a>
-									}													
-							}					  
+					        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
+							@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+					    		<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                      <span class="glyphicon glyphicon-trash"></span></button>
+							} else {
+							    <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                      <span class="glyphicon glyphicon-trash"></span></button>
+							}											
+						}					  
                     </li>
                   </ul>
               </div>
@@ -80,7 +134,11 @@
 	</div>
 </div>
 
-<div class="row hidden" id="list-view">
+@if(mode == "list") {
+  <div class="row" id="list-view">
+} else {
+  <div class="row hidden" id="list-view">
+}
 	<div class="col-md-12">
 		<table class="table table-bordered table-hover">
 			<thead>
@@ -112,9 +170,13 @@
 						</td>
 						<td class="requiresLogin">
 							@if(user.isDefined) {
+							        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 									@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-										<a href="#" onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Delete">
-							    		<span class="glyphicon glyphicon-trash"></span></a>
+										<button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <span class="glyphicon glyphicon-trash"></span></button>
+									} else {
+									    <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <span class="glyphicon glyphicon-trash"></span></button>
 									}													
 							}
 						</td>	
@@ -131,16 +193,16 @@
 <div class="row">
     <div class="col-md-12">
         <ul class="pager">
+            <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
             @if(prev != "") {
-            <li class="previous"><a href="@(routes.Datasets.list("b", prev, limit))">Previous</a></li>
+                <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
             }
             @if(next != "") {
-            <li class ="next"><a href="@(routes.Datasets.list("a", next, limit))">Next</a></li>
+                <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
             }
         </ul>
     </div>
 </div>
 
-<script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
 
 }

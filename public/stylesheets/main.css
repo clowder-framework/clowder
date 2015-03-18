@@ -45,11 +45,31 @@ body {
 
 /* Basic button bars */
 span.button-bar {
-	width:50%;	
+    width:50%;  
 }
 
 span.align-right { 
-	float:right;
+    float:right;
+}
+
+.error { 
+	color: red;
+	padding-left: 10px;
+	text-align:left;
+}
+
+.success {
+	color: green;
+	padding-left: 10px;
+	text-align:left;
+}
+
+.hiddencomplete {
+    display: none;
+}
+
+.hiddenholdspace {
+    visibility: hidden;
 }
 
 /* Not required for template or sticky footer method. */
@@ -80,15 +100,8 @@ code {
  * Comments
  * ----------------------------------------------------------------------
  */
-ol.comment-threads {
-}
-
-.comment-thread {
-	margin: 0px 0px 0px 0px;
-}
-
 .comment {
-	padding-top: 20px;
+	padding-top: 25px;
 }
 
 .comment-image {
@@ -101,25 +114,20 @@ ol.comment-threads {
 	float: left;
 }
 
-.comment-date {
-	padding-right: 10px;
-	float: right;
-}
-
 .comment-header {
 	padding-left: 10px;
 	padding-bottom: 10px;
+    font-size: 85%;
 }
 
 .comment-body {
-	padding-left: 40px;
-	min-height:   10px;
+	padding-left: 10px;
+	min-height:   30px;
 }
 
 .comment-footer {
 	padding-left: 10px;
 	font-size: 85%;
-	text-align: right;
 	padding-right: 10px;
 }
 
@@ -130,11 +138,6 @@ ol.comment-threads {
 .comment-input-box {
 	width: 100%;
 	margin: 10px 0px;
-} 
-
-.file-list-cell {
-	text-align: right;
-	width: 80%;
 }
 
 .rubberbandDiv {
@@ -266,13 +269,16 @@ button.tech_md_ {
   max-height:256px;
 }
 
-#editProfileFieldSet .control-group .controls input[type='text']{
+.editProfileInput input[type='text']{
   width:450px;
   height:30px;
 }
-#editProfileFieldSet .control-group .controls textarea{
+.editProfileInput textarea{
   width:450px;
   height:100px;
+}
+.editProfileInput .chosen-select {
+  width:450px;
 }
 
 #nameDescrFieldSet .control-group .controls textarea{
@@ -441,11 +447,17 @@ textarea, input[type='text'], input[type='password']{
   border-right: 1px solid #E1E1E8;
 }
 
-.border-top {
-  border-top: 1px solid #E1E1E8;
+.col-left-border {
+    border-left: 1px solid #E1E1E8;
 }
 
-.button-margins {
+.border-top {
+  border-top: 1px solid #E1E1E8;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.btn-margins {
   margin: 20px 0px;
 }
 
@@ -455,4 +467,22 @@ textarea, input[type='text'], input[type='password']{
 
 #tagCloudCanvas {
     border:1px solid #e6e6e6;
+}
+
+.input-table-cell {
+	padding-top: 10px;
+	padding-bottom: 10px:
+}
+
+.horizontal-radio {
+	margin-right: 25px;
+}
+
+/* required to get comments to span the entire width of the container */
+.media .media-body {
+    width: 10000px;
+}
+
+.featurette {
+    margin-top: 50px;
 }

@@ -169,7 +169,7 @@
 
 			<!-- sections -->
 			@if(sections.size > 0) {
-			  	<div class="row border-top" style="padding-top: 10px">
+			  	<div class="row border-top">
 			  	  <div class="col-md-12">
                     <h4>Sections</h4>
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
@@ -361,9 +361,9 @@
                 <div class="col-md-12">
                     <h4>Comments</h4>
                     @if(user.isDefined) {
-                    @commentform(file.id.toString, api.routes.Files.comment(file.id).toString)
+                        @commentform(file.id.toString, "file")
                     }
-                    <ol class="comment-threads unstyled" id="reply_@file.id.toString">
+                    <ol class="list-unstyled" id="reply_@file.id.toString">
                         @comment(comments)
                     </ol>
                 </div>
@@ -429,7 +429,7 @@
                     var fileRightsHolder = "@file.licenseData.m_rightsHolder";
                     var fileLicenseText = "@file.licenseData.m_licenseText";
                     var fileLicenseUrl = "@file.licenseData.m_licenseUrl";
-                    var fileAllowDownload = "@file.licenseData.m_allowDownload";
+                    var fileAllowDownload = "@file.licenseData.isDownloadAllowed(user)";
                     var fileImageBase = '@routes.Assets.at("images")';
                     var fileAuthorName = '@file.author.fullName';
 
@@ -499,7 +499,7 @@
                     }
                   }
               </ul>
-              <form class="form-inline requiresLogin">
+              <form class="form-inline requiresLogin requiresLoginCommunity">
                 <div class="input-group input-group-sm col-md-8"">
                   <input type="text" id="tagField" class="form-control">
                   <span class="input-group-btn">
