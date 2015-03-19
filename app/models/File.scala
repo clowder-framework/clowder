@@ -31,7 +31,7 @@ case class File(
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None,
-  followers: List[String] = List.empty ) {
+  followers: List[UUID] = List.empty ) {
     
   /**
    * Utility method to check a given file and a given identity for permissions from the license 

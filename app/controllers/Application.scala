@@ -110,8 +110,8 @@ class Application @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Collections.removeCollection,
         api.routes.javascript.Collections.follow,
         api.routes.javascript.Collections.unfollow,
-        api.routes.javascript.Users.addFollowingRelationship,
-        api.routes.javascript.Users.removeFollowingRelationship
+        api.routes.javascript.Users.follow,
+        api.routes.javascript.Users.unfollow
       )
     ).as(JSON) 
   }

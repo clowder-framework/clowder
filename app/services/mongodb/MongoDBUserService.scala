@@ -68,10 +68,6 @@ class MongoDBUserService extends UserService {
     val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText));
   }
 
-  override def addUserFriend(email: String, newFriend: String) {
-    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("friends" -> newFriend));
-  }
-
   override def addUserDatasetView(email: String, dataset: UUID) {
     val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("viewed" -> dataset));
   }
@@ -80,80 +76,62 @@ class MongoDBUserService extends UserService {
     val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));
   }
 
-  override def followFile(followerUUID: String, fileId: UUID) {
-    Logger.debug("Adding followed file " + fileId + " to user " + followerUUID)
-    val user = findById(UUID(followerUUID)).get
-    if (!user.followedFiles.contains(fileId.toString())) {
-      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)), $push("followedFiles" -> fileId.toString()), false, false, WriteConcern.Safe)
-    }
+  override def followFile(followerId: UUID, fileId: UUID) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                        $addToSet("followedFiles" -> new ObjectId(fileId.stringify)))
   }
 
-  override def unfollowFile(followerUUID: String, fileId: UUID) {
-    Logger.debug("Removing followed file " + fileId + " from user " + followerUUID)
-    val user = findById(UUID(followerUUID)).get
-    if (user.followedFiles.contains(fileId.toString())) {
-      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)), $pull("followedFiles" -> fileId.toString()), false, false, WriteConcern.Safe)
-    }
+  override def unfollowFile(followerId: UUID, fileId: UUID) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                        $pull("followedFiles" -> new ObjectId(fileId.stringify)))
   }
 
-  override def followDataset(followerUUID: String, datasetId: UUID) {
-    Logger.debug("Adding followed dataset " + datasetId + " to user " + followerUUID)
-    val user = findById(UUID(followerUUID)).get
-    if (!user.followedDatasets.contains(datasetId.toString())) {
-      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
-        $push("followedDatasets" -> datasetId.toString()), false, false, WriteConcern.Safe)
-    }
+  override def followDataset(followerId: UUID, datasetId: UUID) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                        $addToSet("followedDatasets" -> new ObjectId(datasetId.stringify)))
   }
 
-  override def unfollowDataset(followerUUID: String, datasetId: UUID) {
-    Logger.debug("Removing followed dataset " + datasetId + " from user " + followerUUID)
-    val user = findById(UUID(followerUUID)).get
-    if (user.followedDatasets.contains(datasetId.toString())) {
-      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
-        $pull("followedDatasets" -> datasetId.toString()), false, false, WriteConcern.Safe)
-    }
+  override def unfollowDataset(followerId: UUID, datasetId: UUID) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                        $pull("followedDatasets" -> new ObjectId(datasetId.stringify)))
   }
-
-    /**
-     * Adds the following relationship between two users
-     */
-    override def addFollowingRelationship(followeeUUID: String, followerUUID: String)
-    {
-      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerUUID)), $addToSet("followsUsers" -> followeeUUID));
-      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeUUID)), $addToSet("followedByUsers" -> followerUUID));
-    }
-
-    /**
-     * Removes the following relationship between two users
-     */
-    override def removeFollowingRelationship(followeeUUID: String, followerUUID: String): Unit = {
-      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerUUID)), $pull("followsUsers" -> followeeUUID));
-      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeUUID)), $pull("followedByUsers" -> followerUUID));
-    }
 
   /**
    * Follow a collection.
    */
-  def followCollection(followerUUID: String, collectionId: UUID) {
-    Logger.debug("Adding followed collection " + collectionId + " to user " + followerUUID)
-    val user = findById(UUID(followerUUID)).get
-    if (!user.followedCollections.contains(collectionId.toString())) {
-      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
-        $push("followedCollections" -> collectionId.toString()), false, false, WriteConcern.Safe)
-    }
+  override def followCollection(followerId: UUID, collectionId: UUID) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                        $addToSet("followedCollections" -> new ObjectId(collectionId.stringify)))
   }
 
   /**
    * Unfollow a collection.
    */
-  def unfollowCollection(followerUUID: String, collectionId: UUID) {
-    Logger.debug("Removing followed collection " + collectionId + " from user " + followerUUID)
-    val user = findById(UUID(followerUUID)).get
-    if (user.followedCollections.contains(collectionId.toString())) {
-      UserDAO.update(MongoDBObject("_id" -> new ObjectId(user.id.stringify)),
-        $pull("followedCollections" -> collectionId.toString()), false, false, WriteConcern.Safe)
-    }
+  override def unfollowCollection(followerId: UUID, collectionId: UUID) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                        $pull("followedCollections" -> new ObjectId(collectionId.stringify)))
   }
+
+    /**
+     * Follow a user.
+     */
+    override def followUser(followeeId: UUID, followerId: UUID)
+    {
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                          $addToSet("followedUsers" -> new ObjectId(followeeId.stringify)))
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
+                          $addToSet("followers" -> new ObjectId(followerId.stringify)))
+    }
+
+    /**
+     * Unfollow a user.
+     */
+    override def unfollowUser(followeeId: UUID, followerId: UUID) {
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                          $pull("followedUsers" -> new ObjectId(followeeId.stringify)))
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
+                          $pull("followers" -> new ObjectId(followerId.stringify)))
+    }
 }
   object UserDAO extends ModelCompanion[User, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {

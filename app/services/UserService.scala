@@ -52,12 +52,6 @@ trait UserService {
   def updateUserField(email: String, field: String, fieldText: Any)
 
   /**
-   * Adds a friend
-   * TODO: use UUID instead of email
-   */
-  def addUserFriend(email: String, newFriend: String)
-
-  /**
    * Adds a dataset view
    * TODO: use UUID instead of email
    */
@@ -72,40 +66,40 @@ trait UserService {
   /**
    * Follow a file.
    */
-  def followFile(followerUUID: String, fileId: UUID)
+  def followFile(followerId: UUID, fileId: UUID)
 
   /**
    * Unfollow a file.
    */
-  def unfollowFile(followerUUID: String, fileId: UUID)
+  def unfollowFile(followerId: UUID, fileId: UUID)
 
   /**
    * Follow a dataset.
    */
-  def followDataset(followerUUID: String, datasetId: UUID)
+  def followDataset(followerId: UUID, datasetId: UUID)
 
   /**
    * Unfollow a dataset.
    */
-  def unfollowDataset(followerUUID: String, datasetId: UUID)
+  def unfollowDataset(followerId: UUID, datasetId: UUID)
 
   /**
    * Follow a collection.
    */
-  def followCollection(followerUUID: String, collectionId: UUID)
+  def followCollection(followerId: UUID, collectionId: UUID)
 
   /**
    * Unfollow a collection.
    */
-  def unfollowCollection(followerUUID: String, collectionId: UUID)
+  def unfollowCollection(followerId: UUID, collectionId: UUID)
 
   /*
-   * Adds the following relationship between two users
+   * Follow a user.
    */
-  def addFollowingRelationship(followeeUUID: String, followerUUID: String)
+  def followUser(followeeId: UUID, followerId: UUID)
 
   /**
-   * Removes the following relationship between two users
+   * Unfollow a user.
    */
-  def removeFollowingRelationship(followeeUUID: String, followerUUID: String)
+  def unfollowUser(followeeId: UUID, followerId: UUID)
 }

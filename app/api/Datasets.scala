@@ -1298,8 +1298,8 @@ class Datasets @Inject()(
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              datasets.addFollower(id, loggedInUser.id.stringify)
-              userService.followDataset(loggedInUser.id.stringify, id)
+              datasets.addFollower(id, loggedInUser.id)
+              userService.followDataset(loggedInUser.id, id)
               Ok
             }
             case None => {
@@ -1324,8 +1324,8 @@ class Datasets @Inject()(
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              datasets.removeFollower(id, loggedInUser.id.stringify)
-              userService.unfollowDataset(loggedInUser.id.stringify, id)
+              datasets.removeFollower(id, loggedInUser.id)
+              userService.unfollowDataset(loggedInUser.id, id)
               Ok
             }
             case None => {

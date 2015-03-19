@@ -51,7 +51,7 @@
                             }
 
                             <span class="align-right" style="margin-right: 10px;">
-                                @if(!collection.followers.contains(viewerUser.get.id.stringify)) {
+                                @if(!collection.followers.contains(viewerUser.get.id)) {
                                     <a id="followButton" class="btn btn-success" href="#">Follow</a>
                                 } else {
                                     <a id="followButton" class="btn btn-danger" href="#">Unfollow</a>

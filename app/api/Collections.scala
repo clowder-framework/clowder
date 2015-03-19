@@ -190,8 +190,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              collections.addFollower(id, loggedInUser.id.stringify)
-              userService.followCollection(loggedInUser.id.stringify, id)
+              collections.addFollower(id, loggedInUser.id)
+              userService.followCollection(loggedInUser.id, id)
               Ok
             }
             case None => {
@@ -216,8 +216,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              collections.removeFollower(id, loggedInUser.id.stringify)
-              userService.unfollowCollection(loggedInUser.id.stringify, id)
+              collections.removeFollower(id, loggedInUser.id)
+              userService.unfollowCollection(loggedInUser.id, id)
               Ok
             }
             case None => {

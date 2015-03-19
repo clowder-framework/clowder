@@ -8,7 +8,7 @@
         <img src=@profile.getAvatarUrl class="profilePicture">
         <div align="center">
           <h4><a href="@routes.Datasets.userDatasets("", "", 12, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
-          <h4>Followed by @profile.followedByUsers.size people</h4>
+          <h4>Followed by @profile.followers.size people</h4>
           <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#followingModal">
             Followers and followees
           </button>
@@ -26,7 +26,7 @@
                       id="followButton"
                       type="button"
                       class="
-                        @if(profile.followedByUsers.contains(viewer.id.stringify)) {
+                        @if(profile.followers.contains(viewer.id)) {
                           btn btn-danger
                         }else {
                           btn btn-success
@@ -34,7 +34,7 @@
                       "
                       data-toggle="button"
                       aria-pressed="
-                        @if(profile.followedByUsers.contains(viewer.id.stringify)) {
+                        @if(profile.followers.contains(viewer.id)) {
                           true
                         }else {
                           false
@@ -43,7 +43,7 @@
                       autocomplete="off"
                     >
                       <!-- Is there a way to store a scala variable somewhere?... -->
-                      @if(profile.followedByUsers.contains(viewer.id.stringify)) {
+                      @if(profile.followers.contains(viewer.id)) {
                         Unfollow
                       } else {
                         Follow
@@ -57,7 +57,7 @@
                       var followButton = $("#followButton");
                       followButton.click(function() {
                         if (followButton.text( ).trim() === "Follow") {
-                          jsRoutes.api.Users.addFollowingRelationship(profileUUID).ajax({
+                          jsRoutes.api.Users.follow(profileUUID).ajax({
                             type: "POST"
                           })
                             .done(function(data) {
@@ -70,7 +70,7 @@
                               console.log("Failed to follow");
                             });
                         } else {
-                          jsRoutes.api.Users.removeFollowingRelationship(profileUUID).ajax({
+                          jsRoutes.api.Users.unfollow(profileUUID).ajax({
                             type: "POST"
                           })
                             .done(function(data) {
@@ -174,10 +174,13 @@
           </thead>
           <tbody>
             <!-- This is loaded when the page loads, might not reflect up-to-date data -->
-            @for(row <- profile.followsUsers.zipAll(profile.followedByUsers, "", "")) {
+            @for(row <- profile.followedUsers.zipAll(profile.followers, "", "")) {
               <tr>
-                <td><a href="@routes.Profile.viewProfile(Option(row._1))">@row._1</a></td>
-                <td><a href="@routes.Profile.viewProfile(Option(row._2))">@row._2</a></td>
+                @*TODO: Show name instead and fix viewProfile.*@
+                @*<td><a href="@routes.Profile.viewProfile(Option(row._1.toString))">@row._1.toString</a></td>*@
+                @*<td><a href="@routes.Profile.viewProfile(Option(row._2.toString))">@row._2.toString</a></td>*@
+                <td>@row._1.toString</td>
+                <td>@row._2.toString</td>
               </tr>
             }
           </tbody>

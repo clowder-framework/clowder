@@ -100,11 +100,11 @@ trait CollectionService {
   /**
    * Add follower to a collection.
    */
-  def addFollower(id: UUID, userUUID: String)
+  def addFollower(id: UUID, userId: UUID)
 
   /**
    * Remove follower from a collection.
    */
-  def removeFollower(id: UUID, userUUID: String)
+  def removeFollower(id: UUID, userId: UUID)
 
 }

@@ -1788,8 +1788,8 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              files.addFollower(id, loggedInUser.id.stringify)
-              userService.followFile(loggedInUser.id.stringify, id)
+              files.addFollower(id, loggedInUser.id)
+              userService.followFile(loggedInUser.id, id)
               Ok
             }
             case None => {
@@ -1814,8 +1814,8 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              files.removeFollower(id, loggedInUser.id.stringify)
-              userService.unfollowFile(loggedInUser.id.stringify, id)
+              files.removeFollower(id, loggedInUser.id)
+              userService.unfollowFile(loggedInUser.id, id)
               Ok
             }
             case None => {

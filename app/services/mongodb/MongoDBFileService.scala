@@ -881,22 +881,14 @@ class MongoDBFileService @Inject() (
 	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
   }
 
-  def addFollower(id: UUID, userUUID: String) {
-    Logger.debug("Adding follower to file " + id + " : " + userUUID)
-    val file = get(id).get
-    val existingFollowers = file.followers
-    if (!existingFollowers.contains(userUUID)) {
-      FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $push("followers" -> userUUID), false, false, WriteConcern.Safe)
-    }
+  def addFollower(id: UUID, userId: UUID) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
-  def removeFollower(id: UUID, userUUID: String) {
-    Logger.debug("Removing follower from file " + id + " : " + userUUID)
-    val file = get(id).get
-    val existingFollowers = file.followers
-    if (existingFollowers.contains(userUUID)) {
-      FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("followers" -> userUUID), false, false, WriteConcern.Safe)
-    }
+  def removeFollower(id: UUID, userId: UUID) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
 }

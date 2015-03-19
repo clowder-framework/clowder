@@ -331,25 +331,17 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   /**
    * Add follower to a collection.
    */
-  def addFollower(id: UUID, userUUID: String) {
-    Logger.debug("Adding follower to collection " + id + " : " + userUUID)
-    val collection = get(id).get
-    val existingFollowers = collection.followers
-    if (!existingFollowers.contains(userUUID)) {
-      Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $push("followers" -> userUUID), false, false, WriteConcern.Safe)
-    }
+  def addFollower(id: UUID, userId: UUID) {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                      $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
   /**
    * Remove follower from a collection.
    */
-  def removeFollower(id: UUID, userUUID: String) {
-    Logger.debug("Removing follower from collection " + id + " : " + userUUID)
-    val collection = get(id).get
-    val existingFollowers = collection.followers
-    if (existingFollowers.contains(userUUID)) {
-      Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("followers" -> userUUID), false, false, WriteConcern.Safe)
-    }
+  def removeFollower(id: UUID, userId: UUID) {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                      $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 }
 

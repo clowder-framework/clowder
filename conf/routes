@@ -25,7 +25,6 @@ POST           /users/registerThroughAdmins                                     
 GET            /profile/viewProfile                                                     @controllers.Profile.viewProfile(email: Option[String])
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
 GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
-GET            /profile/addFriend                                                       @controllers.Profile.addFriend(email: String)
 
 # Utilities
 GET            /utils/authenticationRequired                                            @controllers.RedirectUtility.authenticationRequired
@@ -398,15 +397,13 @@ GET            /api/users/:id                                                   
 
 POST           /api/users/updateUserField                                               @api.Users.updateUserField(email: String, field: String, fieldText: String)
 
-POST           /api/users/addUserFriend                                                 @api.Users.addUserFriend(email: String, newFriend: String)
-
 POST           /api/users/addUserDatasetView                                            @api.Users.addUserDatasetView(email: String, dataset: UUID)
 
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 
 POST 			/api/users/createNewListInUser 											@api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
-POST           /api/users/follow                                                        @api.Users.addFollowingRelationship(followeeUUID: String)
-POST           /api/users/unfollow                                                      @api.Users.removeFollowingRelationship(followeeUUID: String)
+POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID)
+POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID)
 
 
 # ----------------------------------------------------------------------
