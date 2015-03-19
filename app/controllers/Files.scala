@@ -100,12 +100,8 @@ class Files @Inject() (
         		s.copy(preview = None)
         }
 
-        //Search whether file is currently being processed by extractor(s)
-        var isActivity = false
-        extractions.findIfBeingProcessed(file.id) match {
-		      case false =>
-		      case true => isActivity = true
-        }
+        // Check if file is currently being processed by extractor(s)
+        val extractorsActive = extractions.findIfBeingProcessed(file.id)
         
         val userMetadata = files.getUserMetadata(file.id)
         Logger.debug("User metadata: " + userMetadata.toString)
@@ -121,7 +117,7 @@ class Files @Inject() (
         
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         
-        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, isActivity, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
+        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, extractorsActive, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."
