@@ -1,6 +1,7 @@
 package controllers
 
 import java.net.URL
+import models.UUID
 import play.api.data.FormError
 import play.api.data.format.Formatter
 import play.api.data._
@@ -87,5 +88,13 @@ object Utils {
       def unbind(key: String, value: URL) = Map(key -> value.toString)
     }
     def urlType: Mapping[URL] = Forms.of[URL]
+
+  implicit def uuidFormat: Formatter[UUID] = new Formatter[UUID] {
+    override val format = Some(("format.uuid", Nil))
+    def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.url", Nil)(key, data)
+    def unbind(key: String, value: UUID) = Map(key -> value.toString)
   }
+  def uuidType: Mapping[UUID] = Forms.of[UUID]
+}
+
 }

@@ -1,5 +1,7 @@
 package services.mongodb
 
+import java.text.SimpleDateFormat
+import java.util.Date
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -86,30 +88,92 @@ class MongoDBSpaceService @Inject() (
    */
   override def list(order: Option[String], direction: Direction, start: Option[String], limit: Integer,
                     filter: Option[String]): List[ProjectSpace] = {
-    val startAt = (order, start) match {
-      case (Some(o), Some(s)) => {
-        direction match {
-          case ASC => (o $gte s)
-          case DESC => (o $lte s)
-        }
-      }
-      case (_, _) => MongoDBObject()
+    val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+
+    // Create sort object
+    val d = if (direction == ASC) 1 else -1
+    val o = order.getOrElse("created")
+    val orderedBy = if (o == "created") {
+      MongoDBObject(o -> d)
+    } else {
+      MongoDBObject(o -> d) ++ MongoDBObject("created" -> 1)
     }
-    // what happens if we sort by user, and a user has uploaded 100 items?
-    // how do we know that we need to show page 3 of that user?
-    // TODO always sort by date ascending, start is based on user/start combo
-    val filterBy = filter.fold(MongoDBObject())(JSON.parse(_).asInstanceOf[DBObject])
-    val raw = ProjectSpaceDAO.find(startAt ++ filterBy)
-    val orderedBy = order match {
-      case Some(o) => {
-        direction match {
-          case ASC => raw.sort(MongoDBObject(o -> 1))
-          case DESC => raw.sort(MongoDBObject(o -> -1))
-        }
+
+    // set start and filter the data
+    (start, filter) match {
+      case (Some(d), Some(f)) => {
+        val since = "created" $gte sdf.parse(d)
+        val filter = JSON.parse(f).asInstanceOf[DBObject]
+        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(limit).toList
       }
-      case None => raw
+      case (Some(d), None) => {
+        val since = "created" $gte sdf.parse(d)
+        ProjectSpaceDAO.find(since).sort(orderedBy).limit(limit).toList
+      }
+      case (None, Some(f)) => {
+        val filter = JSON.parse(f).asInstanceOf[DBObject]
+        ProjectSpaceDAO.find(filter).sort(orderedBy).limit(limit).toList
+      }
+      case (None, None) => {
+        ProjectSpaceDAO.findAll().sort(orderedBy).limit(limit).toList
+      }
     }
-    orderedBy.limit(limit).toList
+  }
+
+  override def getNext(order: Option[String], direction: Direction, start: Date, limit: Integer,
+                       filter: Option[String]): Option[String] = {
+    val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+
+    // Create sort object
+    val d = if (direction == ASC) 1 else -1
+    val o = order.getOrElse("created")
+    val orderedBy = if (o == "created") {
+      MongoDBObject(o -> d)
+    } else {
+      MongoDBObject(o -> d) ++ MongoDBObject("created" -> 1)
+    }
+
+    // set start and filter the data
+    val since = "created" $gt start
+    val x = filter match {
+      case Some(f) => {
+        val filter = JSON.parse(f).asInstanceOf[DBObject]
+        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(1).toList
+      }
+      case None => {
+        ProjectSpaceDAO.find(since).sort(orderedBy).limit(1).toList
+      }
+    }
+
+    x.headOption.map(x => sdf.format(x.created))
+  }
+
+  override def getPrev(order: Option[String], direction: Direction, start: Date, limit: Integer,
+                       filter: Option[String]): Option[String] = {
+    val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+
+    // Create sort object
+    val d = if (direction == ASC) -1 else 1
+    val o = order.getOrElse("created")
+    val orderedBy = if (o == "created") {
+      MongoDBObject(o -> d)
+    } else {
+      MongoDBObject(o -> d) ++ MongoDBObject("created" -> -1)
+    }
+
+    // set start and filter the data
+    val since = "created" $lt start
+    val x = filter match {
+      case Some(f) => {
+        val filter = JSON.parse(f).asInstanceOf[DBObject]
+        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(limit).toList
+      }
+      case None => {
+        ProjectSpaceDAO.find(since).sort(orderedBy).limit(limit).toList
+      }
+    }
+
+    x.lastOption.map(x => sdf.format(x.created))
   }
 
   /**

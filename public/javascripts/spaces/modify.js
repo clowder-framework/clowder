@@ -37,13 +37,11 @@ function showModal(spaces, resource_id, resource_type) {
 
     $('#spaces_add').click(function() {
         var space_id = $('.list-group-item.active').data("space-id");
-        console.log(resource_type + " =? " + resource_type_enum.DATASET);
+        var space_name = $('.list-group-item.active').data("space-name");
         if(resource_type == resource_type_enum.DATASET) {
-            console.log('Adding dataset ' + resource_id + ' to space ' + space_id);
-            addDatasetToSpace(resource_id, space_id);
+            addDatasetToSpace(resource_id, space_id, space_name);
         } else if(resource_type == resource_type_enum.COLLECTION) {
-            console.log('Adding collection ' + resource_id + ' to space ' + space_id);
-            addCollectionToSpace(resource_id, space_id);
+            addCollectionToSpace(resource_id, space_id, space_name);
         } else {
             console.error("Resource type not recognized when adding to space");
         }
@@ -51,7 +49,7 @@ function showModal(spaces, resource_id, resource_type) {
     });
 }
 
-function addCollectionToSpace(collection_id, space_id) {
+function addCollectionToSpace(collection_id, space_id, space_name) {
 
     var request = jsRoutes.api.Spaces.addCollection(space_id).ajax({
         type: 'POST',
@@ -61,8 +59,9 @@ function addCollectionToSpace(collection_id, space_id) {
     });
 
     request.done(function (response, textStatus, jqXHR){
-        console.log('Added collection ' + collection_id + ' to space ' + space_id);
+        console.log('Collection ' + collection_id + ' added to space ' + space_id);
         $('#spaces-assign').modal('hide');
+        updateSpaceEditLink(space_id, space_name);
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -70,7 +69,7 @@ function addCollectionToSpace(collection_id, space_id) {
     });
 }
 
-function addDatasetToSpace(dataset_id, space_id) {
+function addDatasetToSpace(dataset_id, space_id, space_name) {
 
     var request = jsRoutes.api.Spaces.addDataset(space_id).ajax({
         type: 'POST',
@@ -80,13 +79,18 @@ function addDatasetToSpace(dataset_id, space_id) {
     });
 
     request.done(function (response, textStatus, jqXHR){
-        console.log('Added dataset ' + dataset_id + ' to space ' + space_id);
+        console.log('Dataset ' + dataset_id + ' added to space ' + space_id);
         $('#spaces-assign').modal('hide');
+        updateSpaceEditLink(space_id, space_name);
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
     });
+}
+
+function updateSpaceEditLink(space_id, space_name) {
+    $('#space_link').attr("href", jsRoutes.controllers.Spaces.getSpace(space_id).url).text(space_name);
 }
 
 window['changeSpace'] = changeSpace;

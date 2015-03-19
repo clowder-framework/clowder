@@ -1,0 +1,100 @@
+@(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html)(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+
+@import helper._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
+
+@main("Space") {
+  <div class="page-header">
+    <h1> @title</h1>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      @if(myForm.hasErrors) {
+        <div class="alert alert-error">
+          <p>Please fix all errors</p>
+        </div>
+      }
+      @flash.get("error").map { message =>
+        <div class="alert alert-error">
+          <p>@message</p>
+        </div>
+      }
+
+      @form(action = routes.Spaces.submit, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+        <fieldset  id="nameDescrFieldSet">
+          @inputText(myForm("name"), '_label -> "Name")
+          @textarea(myForm("description"), '_label -> "Description")
+          <div class = "homePages">
+            @repeat(myForm("homePages"), min = 1) {homePage =>
+              @inputText(homePage, '_label -> "Home Page")
+              @****** one too many delete buttons
+              @if(myForm.hasErrors && myForm("homePages").indexes.length > 1) {
+              <div class="home-page-delete"><a href="#">delete</a></div>
+              }
+              ******@
+            }
+            <div class="home-page-add"><a href="#">add</a></div>
+          </div>
+          @inputText(myForm("logoUrl"), '_label-> "Logo URL")
+          @inputText(myForm("bannerUrl"), '_label-> "Banner URL")
+          @helper.input(myForm("space_id"), '_label ->"") {(id, name, value, args) =>
+            <input type="hidden" name="@id" value="@value">
+          }
+        </fieldset>
+        @submitButton
+      }
+    </div>
+  </div>
+
+  <script language="javascript">
+  // as fields are added, they get the same default homePages[0] name For automatic binding the names need to
+  // be homePages[0], homePages[1],.. etc. This function renumbers all the fields appropriately even if a field in the
+  // middle of the list is deleted.
+  var renumberHomePageMap = function() {
+  Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
+  var label = $(next).children('label');
+  label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
+
+  var input = $(next).find('input');
+  input.attr('id', input.attr('id').replace(/_\d+_/, '_' + i + '_'));
+  input.attr('name', input.attr('name').replace(/\[\d+\]/, '[' + i + ']'));
+
+  if (input.attr('id').match(/homePages_\d+_/)) {
+  return i + 1;
+  }
+
+  return i;
+  }, 0);
+  }
+
+  $('.homePages').on('click', '.home-page-delete a', function () {
+  $(this).parent().prev().remove();
+  $(this).parent().remove();
+  renumberHomePageMap();
+  });
+
+  $('.home-page-add').click(function () {
+  var value = $(this).prev().clone();
+
+  $(this).prev().after($('<div class="home-page-delete"><a href="#">delete</a></div>'));
+  value.find('input').val('');
+  $(this).before(value);
+  renumberHomePageMap();
+  });
+
+  //remove blank lines before submitting
+  $('form').submit(function () {
+  $('.homePages .control-group').each(function () {
+  var valueInput = $(this).find('input');
+
+  if (valueInput.val() === '') {
+  $(this).next().remove();
+  $(this).remove();
+  renumberHomePageMap();
+  }
+
+  });
+  });
+
+  </script>
+}

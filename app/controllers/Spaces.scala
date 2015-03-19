@@ -7,7 +7,6 @@ import models.{Dataset, Collection, ProjectSpace, UUID}
 import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.data.Forms._
-import play.api.data.format.Formats._
 import java.util.Date
 import services.{UserService, SpaceService}
 import util.Direction._
@@ -21,10 +20,21 @@ import scala.collection.mutable.ListBuffer
  * @author Rob Kooper
  *
  */
+case class spaceFormData(
+                            name: String,
+                            description: String,
+                            homePage: List[URL],
+                            logoURL: Option[URL],
+                            bannerURL: Option[URL],
+                            spaceId:Option[UUID],
+                            submitButtonValue:String)
+
 class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
 
+  var current_space_id:UUID = UUID.generate()
+
   /**
-   * New project space form.
+   * New/Edit project space form bindings.
    */
   val spaceForm = Form(
     mapping(
@@ -32,14 +42,19 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "description" -> nonEmptyText,
       "logoUrl" -> optional(Utils.CustomMappings.urlType),
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
-      "homePages" -> Forms.list(Utils.CustomMappings.urlType)
+      "homePages" -> Forms.list(Utils.CustomMappings.urlType),
+      "space_id" -> optional(Utils.CustomMappings.uuidType),
+      "submitValue" -> text
     )
-      ((name, description, logoUrl, bannerUrl, homePages) => ProjectSpace(name = name, description = description,
-        created = new Date, creator = UUID.generate(),
-          homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, usersByRole= Map.empty, collectionCount=0,
-        datasetCount=0, userCount=0, metadata=List.empty))
-      ((space: ProjectSpace) => Some((space.name, space.description, space.logoURL, space.bannerURL, space.homePage)))
+      (
+          (name, description, logoUrl, bannerUrl, homePages, space_id, bvalue) => spaceFormData(name = name, description = description,
+             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, bvalue)
+        )
+      (
+          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.submitButtonValue)
+        )
   )
+
 
   /**
    * Space main page.
@@ -66,57 +81,86 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   def newSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
     implicit request =>
       implicit val user = request.user
-      //TODO - bug in html page. If there is an error with one of the fields, the delete button for home pages disappears
-      //inserting the following snippet inside the @repeat block in the newSpace.scala.html shows the delete button on error, one too many though
-     /* @if(myForm.hasErrors && myForm("homePages").indexes.length > 1) {
-      <div class="home-page-delete"><a href="#">delete</a></div>
-    }
-    */
-    Ok(views.html.newSpace(spaceForm))
+    Ok(views.html.spaces.newSpace(spaceForm))
   }
 
+  def updateSpace(id:UUID) = SecuredAction(authorization = WithPermission(Permission.EditSpace)) {
+    implicit request =>
+      implicit val user = request.user
+      spaces.get(id) match {
+        case Some(s) => {
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), "Update"))))}
+        case None => InternalServerError("Space not found")
+      }
+    }
   /**
-   * Create collection.
+   * Submit action for new or edit space
    */
-  def submit() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
+  def submit() = SecuredAction(parse.anyContent) {
     implicit request =>
       implicit val user = request.user
       user match {
         case Some(identity) => {
+          val userId = request.mediciUser.fold(UUID.generate)(_.id)
+          //need to get the submitValue before binding form data, in case of errors we want to trigger different forms
+          request.body.asMultipartFormData.get.dataParts.get("submitValue").headOption match {
+            case Some(x) => {
+              x(0) match {
+              case ("Create") => {
+                spaceForm.bindFromRequest.fold(
+                  errors => BadRequest(views.html.spaces.newSpace(errors)),
+                  formData => {
+                    Logger.debug("Creating space " + formData.name)
+                    val newSpace = ProjectSpace(name = formData.name, description = formData.description,
+                                                created = new Date, creator = userId, homePage = formData.homePage,
+                                                logoURL = formData.logoURL, bannerURL = formData.bannerURL, usersByRole = Map.empty,
+                                                collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty)
+                    // insert space
+                    spaces.insert(newSpace)
+                    //TODO - Put Spaces in Elastic Search?
+                    // index collection
+                    // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                    //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+                    // Notify admins a new space is created
+                    //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+                    //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
+                    // redirect to space page
+                     Redirect(routes.Spaces.getSpace(newSpace.id))
+                  })
+              }
+              case ("Update") => {
+                spaceForm.bindFromRequest.fold(
+                  errors => BadRequest(views.html.spaces.editSpace(errors)),
+                  formData => {
+                    Logger.debug("updating space " + formData.name)
+                    spaces.get(formData.spaceId.get) match {
+                      case Some(existing_space) => {
+                        val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL, homePage = formData.homePage)
+                        spaces.update(updated_space)
+                        Redirect(routes.Spaces.getSpace(existing_space.id))
+                      }
+                      case None => {
+                        BadRequest("The space does not exist")
+                      }
+                    }
+                  })
+              }
+              case _ => {BadRequest("Do not recognize the submit button value.")}
 
-          spaceForm.bindFromRequest.fold(
-            errors => BadRequest(views.html.newSpace(errors)),
-            space => {
-              Logger.debug("Saving space " + space.name)
-              val userId = request.mediciUser.fold(UUID.generate)(_.id)
-
-              //TODO - uncomment the commented out variables when serializing of URL's is done by Salat
-              spaces.insert(ProjectSpace(id = space.id, name = space.name, description = space.description,
-                created = space.created, creator = userId, homePage = List.empty/*space.homePage*/,
-                logoURL = None/*space.logoURL*/, bannerURL = None /*space.bannerURL*/, usersByRole= Map.empty,
-                collectionCount=0, datasetCount=0, userCount=0, metadata=List.empty))
-              //TODO - Put Spaces in Elastic Search?
-              // index collection
-              // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-              //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-              //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-              //TODO -Uncomment when Space list is done
-              // redirect to collection page
-              //Redirect(routes.Spaces.space(space.id))
-              //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
-              //Redirect(routes.Spaces.space(space.id))
-              Redirect(routes.Spaces.list()).flashing("error" -> "You created new space.")
-            })
-        }
-        case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create new spaces.")
+              }
+              }
+            case None => {BadRequest("Did not get any submit button value.")}
+            }
+        } //some identity
+        case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit spaces.")
       }
   }
 
-  /**
+   /**
    * Show the list page
    */
-  def list(order: Option[String]=None, direction: String="asc", start: Option[String]=None, limit: Int=20,
-           filter: Option[String]=None, mode: String="tile") =
+  def list(order: Option[String], direction: String, start: Option[String], limit: Int,
+           filter: Option[String], mode: String) =
     SecuredAction(authorization = WithPermission(Permission.ListSpaces)) {
     implicit request =>
       implicit val user = request.user
@@ -131,34 +175,39 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       } else {
         ASC
       }
-      // TODO fetch 1 extra space so we have the next/prev item
-      val s = spaces.list(order, d, start, limit, None)
+      val spaceList = spaces.list(order, d, start, limit, filter)
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-      for (aSpace <- s) {
-          decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+      for (aSpace <- spaceList) {
+        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
-      // TODO fill in
-      val canDelete = false
-      // TODO fetch page before/after so we have prev item
-      val prev = ""
-      val next = ""
-          
-        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-        var viewMode = mode;
-        //Always check to see if there is a session value          
-        request.cookies.get("view-mode") match {
-            case Some(cookie) => {
-                viewMode = cookie.value
-            }
-            case None => {
-                //If there is no cookie, and a mode was not passed in, default it to tile
-                if (viewMode == null || viewMode == "") {
-                    viewMode = "tile"
-                }
-            }
-        }    
-      Ok(views.html.spaces.listSpaces(decodedSpaceList.toList, order, direction, start, limit, filter, viewMode, canDelete, prev, next))
-  }  
+      val deletePermission = WithPermission(Permission.DeleteDatasets).isAuthorized(user)
+      val prev = if (decodedSpaceList.size > 0) {
+        spaces.getPrev(order, d, decodedSpaceList.head.created, limit, filter).getOrElse("")
+      } else {
+        ""
+      }
+      val next = if (decodedSpaceList.size > 0) {
+        spaces.getNext(order, d, decodedSpaceList.last.created, limit, filter).getOrElse("")
+      } else {
+        ""
+      }
+      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+      var viewMode = mode;
+      //Always check to see if there is a session value
+      request.cookies.get("view-mode") match {
+        case Some(cookie) => {
+          viewMode = cookie.value
+        }
+        case None => {
+          //If there is no cookie, and a mode was not passed in, default it to tile
+          if (viewMode == null || viewMode == "") {
+            viewMode = "tile"
+          }
+        }
+      }
+
+      Ok(views.html.spaces.listSpaces(decodedSpaceList.toList, order, direction, start, limit, filter, viewMode, deletePermission, prev, next))
+  }
 }
