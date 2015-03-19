@@ -1438,7 +1438,7 @@
                 // run the centreFunc if the next tag is at the front
                 try { this.centreFunc(c, cw, ch, x, y); }
                 catch(e) {
-                    alert(e);
+                    notify(alert(e), "error");
                     // don't run it again
                     this.centreFunc = Nop;
                 }

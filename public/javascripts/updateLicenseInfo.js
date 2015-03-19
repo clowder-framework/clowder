@@ -69,7 +69,7 @@ function updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, all
 			'/cc-pd.png" alt="Public Domain Dedication" title="Public Domain Dedication" /></a>';
 	}
 	else {
-		alert('Extra case!!');
+		notify('Extra case!!', "error");
 	}
 
 	//Update the display and close the editor
@@ -188,7 +188,7 @@ function updateData(id, imageBase, sourceObject, authorName) {
 		console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to edit license information.";                                
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-        	alert("The license information was not modified due to : " + errorThrown);
+        	notify("The license information was not modified due to : " + errorThrown, "error");
         }  
 	});
 

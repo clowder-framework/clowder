@@ -172,7 +172,7 @@ function clearConfigTabAnnotations(prNum){
   	 		"The following error occured: "+
   	 		textStatus, errorThrown		            
   				);
-  			alert("ERROR: " + errorThrown +". Annotation edit not submitted." );
+  			notify("ERROR: " + errorThrown +". Annotation edit not submitted.", "error");
   			});
     }
     
@@ -304,7 +304,7 @@ function clearConfigTabAnnotations(prNum){
          		"The following error occured: "+
          		textStatus, errorThrown		            
      			);
-     		alert("ERROR: " + errorThrown +". Annotation not submitted." );
+     		notify("ERROR: " + errorThrown +". Annotation not submitted.", "error");
   			});	  
     }   
     

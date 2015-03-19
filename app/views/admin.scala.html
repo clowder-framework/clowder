@@ -47,15 +47,15 @@
 				url:  "@api.routes.Admin.submitAppearance",
 				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage}),
 				type: "POST",
-				contentType: "application/json",
+				contentType: "application/json"
 	     	});
 			request.done(function (response, textStatus, jqXHR){ 
 				console.log("Response: " + response);
-				alert("Done");
+				notify("Preferences successfully updated. Please refresh page.", "success", 5000);
 			});
 			request.fail(function (jqXHR, textStatus, errorThrown){
 				console.error("The following error occured: " + textStatus, errorThrown);
-				alert("The application appearance was not updated due to : " + errorThrown);
+				notify("The application preferences was not updated due to : " + errorThrown, "error");
 			});						
 			return false;			
 		}
