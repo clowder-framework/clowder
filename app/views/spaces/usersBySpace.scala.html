@@ -1,15 +1,17 @@
-@(space: ProjectSpace)
+@(space: ProjectSpace, creator: Option[User])
 
 <h3>Members</h3>
 
-<div>Owner: @space.creator</div>
+<ul class="list-unstyled">
+    <li>Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.fullName</a></li>
 
 @if(space.usersByRole.keySet.size == 0) {
-    <div>No other members</div>
+    <li>No other members</li>
 }
 
 @for((role, users) <- space.usersByRole) {
     @for(user <- users) {
-        <div>@user (@role)</div>
+        <li>@user (@role)</li>
     }
 }
+</ul>

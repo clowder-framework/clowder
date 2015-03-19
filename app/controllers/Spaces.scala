@@ -21,17 +21,15 @@ import scala.collection.mutable.ListBuffer
  *
  */
 case class spaceFormData(
-                            name: String,
-                            description: String,
-                            homePage: List[URL],
-                            logoURL: Option[URL],
-                            bannerURL: Option[URL],
-                            spaceId:Option[UUID],
-                            submitButtonValue:String)
+  name: String,
+  description: String,
+  homePage: List[URL],
+  logoURL: Option[URL],
+  bannerURL: Option[URL],
+  spaceId:Option[UUID],
+  submitButtonValue:String)
 
 class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
-
-  var current_space_id:UUID = UUID.generate()
 
   /**
    * New/Edit project space form bindings.
@@ -63,16 +61,13 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-          val collectionsInSpace = spaces.getCollectionsInSpace(id)
-          for (aCollection <- collectionsInSpace) {
-              Logger.debug("A collection in the space is " + aCollection.name)
-          }
-          
-          val datasetsInSpace = spaces.getDatasetsInSpace(id)
-          for (aDataset <- datasetsInSpace) {
-              Logger.debug("A dataset in the space is " + aDataset.name)
-          }
-          Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace))
+        val creator = users.findById(s.creator)
+
+        val collectionsInSpace = spaces.getCollectionsInSpace(id)
+
+        val datasetsInSpace = spaces.getDatasetsInSpace(id)
+
+        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator))
       }
       case None => InternalServerError("Space not found")
     }
