@@ -7,9 +7,13 @@
         <div class="col-md-12">
             <div class="row">
                 <h1 id="spacenamedisplay">@space.name</h1>
-                    <a href="@routes.Spaces.updateSpace(space.id)"><span class = "glyphicon glyphicon-edit" aria-hidden="true"></span></a>
+                <div class="pull-right">
+                    <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs">
+                        <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                    </a>
+                </div>
+                <p><span id="spacedescdisplay">@space.description</span></p>
             </div>
-            <p><span id="spacedescdisplay">@space.description</span></p>
         </div>
     </div>
     <div class="row">
