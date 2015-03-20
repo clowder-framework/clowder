@@ -3,14 +3,20 @@ package controllers
 import services.UserService
 import services.mongodb.MongoDBProjectService
 import services.mongodb.MongoDBInstitutionService
+import services.mongodb.MongoDBEventService
 import play.api.data.Form
 import play.api.data.Forms._
 import models.Info
+import models.MiniUser
+import models.Event
 import play.api.Logger
 import javax.inject.Inject
+import java.text.SimpleDateFormat
+import java.util.Date
 
 
-class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService) extends  SecuredController {
+
+class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: MongoDBEventService) extends  SecuredController {
 
   val bioForm = Form(
     mapping(
@@ -209,7 +215,23 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
                     users.updateUserField(addr.toString(), "orcidID", form.orcidID)
                     users.updateUserField(addr.toString(), "pastprojects", form.pastprojects)
                     users.updateUserField(addr.toString(), "position", form.position)
-                    Redirect(routes.Profile.viewProfile(email))
+                    muser.avatarUrl match 
+                  {
+
+                    case Some(url) =>
+                    {
+                    var mini_user = new MiniUser(id = muser.id, fullName = muser.fullName, avatarURL = url)
+                     //var dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                    var new_event = new Event(user=mini_user, object_id = None, user_object_id = None, source_id = None, event_type = "edit_profile", created=new Date())
+                    events.addEvent(new_event)
+                    }
+                    case None => 
+                    {
+                     var mini_user = new MiniUser(id = muser.id, fullName = muser.fullName, avatarURL = "NO URL")
+                    }
+                  }
+                 
+                  Redirect(routes.Profile.viewProfile(email))
                   }
                 }
               }

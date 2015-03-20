@@ -74,7 +74,9 @@ object Permission extends Enumeration {
     GetUser,
     AddProject,
     AddInstitution,
-    UserAdmin = Value        // Permission to work with users (list/add/remove/register)
+    AddEvent,
+    UserAdmin = Value      // Permission to work with users (list/add/remove/register)
+    
 }
 
 import api.Permission._
