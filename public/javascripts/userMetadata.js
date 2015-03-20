@@ -6,7 +6,7 @@
 						["Node3","String2", "0", "*"]];*/
 					
 	//CSV file format: Node and whether intermediate node or leaf.
-	
+	var context = {};
 	window["allowedNodes"+topId] = new Array();	
 	$.ajax({
 	       url: window["modelIp"+topId] + '/user_metadata_model_allowedNodes.txt',
@@ -169,7 +169,8 @@
 					}
 					
 					var data = DOMtoJSON(document.getElementById(topId).children[1]);
-					
+					data["@context"] = context;
+                    context = {};
 					var request = $.ajax({
 				       type: 'POST',
 				       url:  window["uploadIp"+topId],
@@ -218,7 +219,24 @@
 						continue;	
 					var key = childrenProperties[i].children[0].innerHTML;
 					key = key.substring(0, key.length - 1);
-					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){						
+                        // Code for finding the respective URI for the key
+                        var url;
+                    	for(var count=0;;count++)
+                    	{
+                    	    if(key == window["allowedNodes"+topId][count][0])
+                    		    {
+                    		        url = window["allowedNodes"+topId][count][2];
+                    		        break;
+                    		    }
+                    	}
+                        if(!(key in context))
+                        {
+                             // Adding the URI to the @context tag
+                             context[key] = new Array(url);
+                        }
+
+					if(childrenProperties[i].children[1].tagName.toLowerCase() == 'span'){
+
 						if(key in branchData){							
 							branchData[key].push(childrenProperties[i].children[1].innerHTML);
 						}
@@ -233,6 +251,7 @@
 							branchData[key] = new Array(DOMtoJSON(childrenProperties[i].children[3]));
 						}				
 					}
+
 				}
 				return branchData;
 	   }
