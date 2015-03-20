@@ -74,6 +74,8 @@ object Permission extends Enumeration {
     GetUser,
     RelationsWrite,
     RelationsRead,
+    AddProject,
+    AddInstitution,
     UserAdmin = Value        // Permission to work with users (list/add/remove/register)
 }
 

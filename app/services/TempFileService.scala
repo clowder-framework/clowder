@@ -8,4 +8,9 @@ import models.{UUID, TempFile}
 trait TempFileService {
 
   def get(query_id: UUID): Option[TempFile]
+  
+  /**
+   * Update thumbnail used to represent this query file.
+   */
+  def updateThumbnail(queryId: UUID, thumbnailId: UUID)
 }

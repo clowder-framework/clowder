@@ -317,17 +317,8 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     }
   }
   
-    def getExtractorId(id: UUID):Option[String] = {     
-      var extractor_id = getMetadata(id)("extractor_id") match{
-	  	case ex_id=> {
-	  		Logger.debug("MongoDBPreviewService: metadata for preview " + id + " contains extractor id = " + ex_id)
-	  		Some(ex_id.toString)
-	    }
-	  	case none =>{
-	  		Logger.debug("MongoDBPreviewService: metadata  for preview " + id + " DOES NOT contain extractor id")
-	  		None
-	  	}	              
-      }
+    def getExtractorId(id: UUID):String = {     
+      val extractor_id = getMetadata(id)("extractor_id").toString    
       extractor_id
    }
     

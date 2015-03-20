@@ -1,18 +1,14 @@
 package controllers
 
-import api.WithPermission
-import api.Permission
+import api.{WithPermission, Permission}
 import models.{UUID, VersusIndexTypeName}
-import play.api.libs.json.{Json, JsValue}
 import services.{SectionIndexInfoService, AppConfiguration, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
-
+import play.api.libs.json.{Json, JsValue}
 import play.api.Logger
-
-import scala.concurrent._
+import scala.concurrent.Future
 import javax.inject.{Inject, Singleton}
-
 import play.api.data.Form
 import play.api.data.Forms._
 
@@ -20,8 +16,10 @@ import play.api.data.Forms._
  * Administration pages.
  *
  * @author Luigi Marini
+ * @author Inna Zharnitsky
  *
  */
+
 @Singleton
 class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
 
@@ -36,7 +34,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
     implicit val user = request.user
     Ok(views.html.adminIndex())
   }
-
+  
   def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
     Ok("Reindexing")
   }
@@ -44,129 +42,116 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
   def test = SecuredAction(parse.json, authorization = WithPermission(Permission.Public)) { request =>
     Ok("""{"message":"test"}""").as(JSON)
   }
-
+  
   def secureTest = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) { request =>
     Ok("""{"message":"secure test"}""").as(JSON)
   }
-
-  //get the available Adapters from Versus
+ 
+  /**
+   * Gets the available Adapters from Versus
+   */
   def getAdapters() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-
       Async {
         current.plugin[VersusPlugin] match {
-
           case Some(plugin) => {
-
             var adapterListResponse = plugin.getAdapters()
-
             for {
               adapterList <- adapterListResponse
             } yield {
               Ok(adapterList.json)
             }
-
-          } //case some
+          } 
 
           case None => {
             Future(Ok("No Versus Service"))
           }
-        } //match
-
-      } //Async
-
+        } 
+      } 
   }
-
-  // Get available extractors from Versus
+  
+  /**
+   * Gets all the distinct types of sections that are getting indexes (i.e. 'face', 'census')
+   */
+  def getSections() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
+    request=>
+        val types = sectionIndexInfo.getDistinctTypes
+		val json = Json.toJson(types)	    
+        Ok(json)
+  }
+ 
+  /**
+   * Gets available extractors from Versus
+   */
   def getExtractors() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-
       Async {
         current.plugin[VersusPlugin] match {
-
           case Some(plugin) => {
-
             var extractorListResponse = plugin.getExtractors()
-
             for {
               extractorList <- extractorListResponse
             } yield {
               Ok(extractorList.json)
             }
-            //Ok(adapterListResponse)
-
-          } //case some
+          } 
 
           case None => {
             Future(Ok("No Versus Service"))
           }
-        } //match
-
-      } //Async
-
+        } 
+      } 
   }
   
-  //Get available Measures from Versus 
+  /**
+   * Gets available Measures from Versus
+   */ 
   def getMeasures() = SecuredAction(authorization=WithPermission(Permission.Admin)){
-     request =>
-      
-    Async{  
-    	current.plugin[VersusPlugin] match {
-     
-        case Some(plugin)=>{
-        	 
-        	var measureListResponse= plugin.getMeasures()
-        	 
-        	for{
-        	  measureList<-measureListResponse
-        	}yield{
-        	 Ok(measureList.json)
-        	}
-        	 //Ok(adapterListResponse)
-        	         
-            }//case some
+     request =>      
+     	Async{  
+     	  current.plugin[VersusPlugin] match {     
+     		case Some(plugin)=>{        	 
+     			var measureListResponse= plugin.getMeasures()        	 
+     			for{
+     				measureList<-measureListResponse
+     			} yield {
+     				Ok(measureList.json)
+     			}        	         
+     		}
          
-		 case None=>{
-		      Future(Ok("No Versus Service"))
-		       }     
-		 } //match
-    
-   } //Async
-        
-  }
+     		case None=>{
+     			Future(Ok("No Versus Service"))
+		    }     
+     	  }    
+     	}         
+  	}
 
-  //Get available Indexers from Versus 
+  /**
+   * Gets available Indexers from Versus
+   */ 
   def getIndexers() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-
       Async {
         current.plugin[VersusPlugin] match {
-
           case Some(plugin) => {
-
             var indexerListResponse = plugin.getIndexers()
-
             for {
               indexerList <- indexerListResponse
             } yield {
               Ok(indexerList.json)
             }
-
-          } //case some
-
+          } 
+          
           case None => {
             Future(Ok("No Versus Service"))
           }
-        } //match
-
-      } //Async
-
+        } 
+      } 
   }
 
   /**
-   * Get adapter, extractor,measure and indexer value and send it to VersusPlugin to send a create index request to Versus
-   * If an index has type and/or name, store them in mongo db.
-   * 
+   * Gets adapter, extractor,measure and indexer value and sends it to VersusPlugin to create index request to Versus.
+   * If an index has type and/or name, stores type/name in mongo db.
    */ 
    def createIndex() = SecuredAction(parse.json, authorization = WithPermission(Permission.Admin)) {
      implicit request =>
@@ -181,8 +166,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
              val indexType = (request.body \ "indexType").as[String]      
              val indexName = (request.body \ "name").as[String]
              //create index and get its id
-              val indexIdFuture :Future[models.UUID] = plugin.createIndex(adapter, extractor, measure, indexer)            
-              //save index type (census sections, face sections, etc) to the mongo db
+             val indexIdFuture :Future[models.UUID] = plugin.createIndex(adapter, extractor, measure, indexer)            
+             //save index type (census sections, face sections, etc) to the mongo db
              if (indexType != null && indexType.length !=0){
              	indexIdFuture.map(sectionIndexInfo.insertType(_, indexType))          
              }             
@@ -191,14 +176,13 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
              	indexIdFuture.map(sectionIndexInfo.insertName(_, indexName))
              }           
               Future(Ok("Index created successfully"))     
-           } //end of case some plugin
+           }
 
            case None => {
              Future(Ok("No Versus Service"))
            }
-         } //match
-
-       } //Async
+         }
+       }
    }
    
   /**
@@ -233,18 +217,15 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
                 		 
                 		    // Handle a deserialized array of List[VersusIndexTypeName]
                 		    indexes => {
-                		    	Logger.debug("Admin.getIndexes indexes received = " + indexes)   								  
                 		    	val indexesWithNameType = indexes.map{
                 		    		index=>
                 		    		  	//check in mongo for name/type of each index
                 		    			val indType = sectionIndexInfo.getType(UUID(index.indexID)).getOrElse("")
                 		    			val indName = sectionIndexInfo.getName(UUID(index.indexID)).getOrElse("")
-
                 		    			//add type/name to index
                 		    			VersusIndexTypeName.addTypeAndName(index, indType, indName)
    								  }                		    
-                		    	indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index with name = " + i))
-                		    
+                		    	indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index with name = " + i))                		    
                 		    	// Serialize as JSON, requires the implicit `format` defined earlier in VersusIndexTypeName
                 		    	finalJson = Json.toJson(indexesWithNameType)    			
                 		    }
@@ -252,92 +233,82 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
                 		  Ok(finalJson)
                 	}
             }
-          } //case some
+          } 
 
           case None => {
             Future(Ok("No Versus Service"))
           }
-        } //match
-      } //Async
+        } 
+      } 
   }
- 
 
-  //build a specific index in Versus
+  /**
+   * Builds a specific index in Versus
+   */
   def buildIndex(id: String) = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
            Logger.trace("Inside Admin.buildIndex(), index = " + id)
       Async {
         current.plugin[VersusPlugin] match {
-          case Some(plugin) => {
-            var buildResponse = plugin.buildIndex(UUID(id))
+          case Some(plugin) => {			
+        	var buildResponse = plugin.buildIndex(UUID(id))
             for {
               buildRes <- buildResponse
             } yield {
               Ok(buildRes.body)
             }
-          } //case some
+          } 
 
           case None => {
             Future(Ok("No Versus Service"))
           }
-        } //match
-
+        } 
       }
-
   }
   
-  //Delete a specific index in Versus
+  /**
+   * Deletes a specific index in Versus
+   */
   def deleteIndex(id: String)=SecuredAction(authorization=WithPermission(Permission.Admin)){
     request =>
-    Async{  
-      current.plugin[VersusPlugin] match {
-     
-        case Some(plugin)=>{
-        	 
-        	var deleteIndexResponse= plugin.deleteIndex(UUID(id))
-        	 
+      Async{  
+        current.plugin[VersusPlugin] match {     
+          case Some(plugin)=>{
+        	var deleteIndexResponse= plugin.deleteIndex(UUID(id))       	 
         	for{
         	  deleteIndexRes<-deleteIndexResponse
-        	}yield{
+        	} yield {
         	 Ok(deleteIndexRes.body)
-        	}
-        	 
-        	         
-            }//case some
+        	}        	         
+          }
          
-		 case None=>{
-		      Future(Ok("No Versus Service"))
-		       }     
-		 } //match
-    
-    }
+		  case None=>{
+		    Future(Ok("No Versus Service"))
+		  }     
+		}     
+      }
   }
 
-  //Delete all indexes in Versus
-
+  /**
+   * Deletes all indexes in Versus
+   */
   def deleteAllIndexes() = SecuredAction(authorization = WithPermission(Permission.Admin)) {
     request =>
-
       Async {
-        current.plugin[VersusPlugin] match {
-        	
+        current.plugin[VersusPlugin] match {        	
           case Some(plugin) => {
-
             var deleteAllResponse = plugin.deleteAllIndexes()
-
             for {
               deleteAllRes <- deleteAllResponse
             } yield {
               Ok(deleteAllRes.body)
             }
-
-          } //case some
+          } 
 
           case None => {
             Future(Ok("No Versus Service"))
           }
-        } //match
-
+        } 
       }
   }
   
