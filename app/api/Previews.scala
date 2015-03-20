@@ -87,6 +87,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         request.body.file("File").map {
           f =>
             Logger.debug("Uploading file " + f.filename)
+            Logger.debug("########Uploading Preview----" + f.filename)
             // store file
             //change stored preview type for zoom.it previews to avoid messup with uploaded XML metadata files
             var realContentType = f.contentType
@@ -113,6 +114,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
               previews.setIIPReferences(id, iipURL, iipImage, iipKey)
             }
+            Logger.debug("Preview ID^^^^^"+id.toString);
             Ok(toJson(Map("id" -> id.stringify)))
         }.getOrElse {
           BadRequest(toJson("File not attached."))

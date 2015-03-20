@@ -31,26 +31,8 @@ case class File(
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None,
-  followers: List[UUID] = List.empty ) {
-    
-  /**
-   * Utility method to check a given file and a given identity for permissions from the license 
-   * to allow the raw bytes to be downloaded. 
-   * 
-   * @param anIdentity An Option, possibly containing the securesocial information for a user
-   * 
-   * @return A boolean, true if the license allows the bytes to be downloaded, false otherwise
-   *   
-   */
-  def checkLicenseForDownload(anIdentity: Option[Identity]): Boolean = {
-    licenseData.isDownloadAllowed || (anIdentity match {
-      case Some(x) => WithPermission(Permission.DownloadFiles).isAuthorized(x) || licenseData.isRightsOwner(x.fullName)
-      case None => false
-    })
-  }
-}
+  followers: List[UUID] = List.empty )
 
-  
 case class Versus(
   fileId: UUID,
   descriptors: Map[String,Any]= Map.empty

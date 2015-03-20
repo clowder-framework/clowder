@@ -29,6 +29,7 @@ import play.api.libs.json.JsString
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
+import util.License
 import scala.Some
 import models.File
 import play.api.Play.configuration
@@ -99,7 +100,7 @@ class Datasets @Inject()(
           files.get(UUID(file_id)) match {
             case Some(file) =>
               val d = Dataset(name=name,description=description, created=new Date(), files=List(file),
-                author=request.user.get, licenseData = new LicenseData())
+                author=request.user.get, licenseData = License.fromAppConfig())
               datasets.insert(d) match {
                 case Some(id) => {
                   files.index(UUID(file_id))
@@ -141,7 +142,7 @@ class Datasets @Inject()(
   def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>    
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>        
-          val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = new LicenseData())
+          val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
           datasets.insert(d) match {
             case Some(id) => {              
               (request.body \ "existingfiles").asOpt[String].map { fileString =>
@@ -1078,7 +1079,7 @@ class Datasets @Inject()(
               val ff = for (p <- previewers; if (p.contentType.contains(f.contentType))) yield {
                 //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
                 //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-                if (f.checkLicenseForDownload(request.user)) {
+                if (f.licenseData.isDownloadAllowed(request.user)) {
                     (f.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(f.id) + "/blob", f.contentType, f.length)
                 }
                 else {

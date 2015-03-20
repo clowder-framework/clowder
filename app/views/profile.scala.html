@@ -128,18 +128,18 @@
             case None => {}
           }
           @profile.currentprojects match{
-            case Some(info) => {
+            case x :: xs => {
               <h4>Current Projects</h4>
-              <p>@info</p>
+              <p>@profile.getCurrentProjectsString()</p>
             }
-            case None => {}
+            case nil => {}
           }
           @profile.pastprojects match{
-            case Some(info) => {
+            case x :: xs => {
               <h4>Past Projects</h4>
-              <p>@info</p>
+              <p>@profile.getPastProjectsString()</p>
             }
-            case None => {}
+            case nil => {}
           }
 
         </div>
