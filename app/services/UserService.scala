@@ -52,12 +52,6 @@ trait UserService {
   def updateUserField(email: String, field: String, fieldText: Any)
 
   /**
-   * Adds a friend
-   * TODO: use UUID instead of email
-   */
-  def addUserFriend(email: String, newFriend: String)
-
-  /**
    * Adds a dataset view
    * TODO: use UUID instead of email
    */
@@ -68,4 +62,44 @@ trait UserService {
    * TODO: use UUID instead of email
    */
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
+
+  /**
+   * Follow a file.
+   */
+  def followFile(followerId: UUID, fileId: UUID)
+
+  /**
+   * Unfollow a file.
+   */
+  def unfollowFile(followerId: UUID, fileId: UUID)
+
+  /**
+   * Follow a dataset.
+   */
+  def followDataset(followerId: UUID, datasetId: UUID)
+
+  /**
+   * Unfollow a dataset.
+   */
+  def unfollowDataset(followerId: UUID, datasetId: UUID)
+
+  /**
+   * Follow a collection.
+   */
+  def followCollection(followerId: UUID, collectionId: UUID)
+
+  /**
+   * Unfollow a collection.
+   */
+  def unfollowCollection(followerId: UUID, collectionId: UUID)
+
+  /*
+   * Follow a user.
+   */
+  def followUser(followeeId: UUID, followerId: UUID)
+
+  /**
+   * Unfollow a user.
+   */
+  def unfollowUser(followeeId: UUID, followerId: UUID)
 }

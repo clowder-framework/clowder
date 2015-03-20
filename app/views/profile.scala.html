@@ -1,4 +1,4 @@
-@(profile: User, ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
+@(profile: User, viewerUser: Option[User], ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
 @main("Profile") {
 <div class="page-header">
 
@@ -8,7 +8,11 @@
         <img src=@profile.getAvatarUrl class="profilePicture">
         <div align="center">
           <h4><a href="@routes.Datasets.userDatasets("", "", 12, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
-          @user match {
+          <h4>Followed by @profile.followers.size people</h4>
+          <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#followingModal">
+            Followers and followees
+          </button>
+          @viewerUser match {
             case Some(viewer) => {
               @ownProfile match {
                 case Some(sameProfile) =>{
@@ -18,8 +22,70 @@
                 }
                 case None => {
                   <h4>
-                    <a href="@routes.Profile.addFriend(profile.email.getOrElse(""))">Add Friend</a>
+                    <button
+                      id="followButton"
+                      type="button"
+                      class="
+                        @if(profile.followers.contains(viewer.id)) {
+                          btn btn-danger
+                        }else {
+                          btn btn-success
+                        }
+                      "
+                      data-toggle="button"
+                      aria-pressed="
+                        @if(profile.followers.contains(viewer.id)) {
+                          true
+                        }else {
+                          false
+                        }
+                      "
+                      autocomplete="off"
+                    >
+                      <!-- Is there a way to store a scala variable somewhere?... -->
+                      @if(profile.followers.contains(viewer.id)) {
+                        Unfollow
+                      } else {
+                        Follow
+                      }
+                    </button>
                   </h4>
+                  <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
+                  <script>
+                    var profileUUID = "@profile.id.stringify";
+                    $(document ).ready(function() {
+                      var followButton = $("#followButton");
+                      followButton.click(function() {
+                        if (followButton.text( ).trim() === "Follow") {
+                          jsRoutes.api.Users.follow(profileUUID).ajax({
+                            type: "POST"
+                          })
+                            .done(function(data) {
+                              followButton.text("Unfollow");
+                              followButton.removeClass('btn-success');
+                              followButton.addClass('btn-danger');
+                            })
+                            .fail(function(data) {
+                              console.log(data);
+                              console.log("Failed to follow");
+                            });
+                        } else {
+                          jsRoutes.api.Users.unfollow(profileUUID).ajax({
+                            type: "POST"
+                          })
+                            .done(function(data) {
+                              followButton.text("Follow");
+                              followButton.removeClass('btn-danger');
+                              followButton.addClass('btn-success');
+                            })
+                            .fail(function(data) {
+                              console.log(data);
+                              console.log("Failed to unfollow");
+                            });
+                        }
+                      });
+                    });
+                  </script>
                 }
               }
             }
@@ -81,5 +147,49 @@
     </tr>
   </table>
 
+</div>
+
+<!-- Modal -->
+<div
+  class="modal fade"
+  id="followingModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="followingModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="followingModalLabel">@profile.fullName</h4>
+      </div>
+      <div class="modal-body">
+        <table width="100%">
+          <thead>
+            <th>Following</th>
+            <th>Followed by</th>
+          </thead>
+          <tbody>
+            <!-- This is loaded when the page loads, might not reflect up-to-date data -->
+            @for(row <- profile.followedUsers.zipAll(profile.followers, "", "")) {
+              <tr>
+                @*TODO: Show name instead and fix viewProfile.*@
+                @*<td><a href="@routes.Profile.viewProfile(Option(row._1.toString))">@row._1.toString</a></td>*@
+                @*<td><a href="@routes.Profile.viewProfile(Option(row._2.toString))">@row._2.toString</a></td>*@
+                <td>@row._1.toString</td>
+                <td>@row._2.toString</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 }

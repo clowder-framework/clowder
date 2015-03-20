@@ -22,9 +22,12 @@ case class User(
   orcidID: Option[String] = None,
   pastprojects: List[String] = List.empty,
   position: Option[String] = None,
-  friends: Option[List[String]] = None,
-  viewed: Option[List[UUID]] = None) {
-
+  viewed: Option[List[UUID]] = None,
+  followedFiles: List[UUID] = List.empty,
+  followedDatasets: List[UUID] = List.empty,
+  followedCollections: List[UUID] = List.empty,
+  followedUsers: List[UUID] = List.empty,
+  followers: List[UUID] = List.empty) {
 
   /**
    * Get the avatar URL for this user's profile

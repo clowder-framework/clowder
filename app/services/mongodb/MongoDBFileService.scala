@@ -55,7 +55,8 @@ class MongoDBFileService @Inject() (
   thumbnails: ThumbnailService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
-  storage: ByteStorageService) extends FileService {
+  storage: ByteStorageService,
+  userService: UserService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -656,6 +657,9 @@ class MongoDBFileService @Inject() (
           for(texture <- threeD.findTexturesByFileId(file.id)){
             ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
+          for (follower <- file.followers) {
+            userService.unfollowFile(follower, id)
+          }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
         }
@@ -879,6 +883,16 @@ class MongoDBFileService @Inject() (
   
   def setNotesHTML(id: UUID, html: String) {
 	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
+  }
+
+  def addFollower(id: UUID, userId: UUID) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def removeFollower(id: UUID, userId: UUID) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
 }

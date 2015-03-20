@@ -54,13 +54,6 @@ class Users @Inject()(users: UserService) extends ApiController {
     Ok(Json.obj("status" -> "success"))
   }
 
-  @ApiOperation(value = "Add a friend.",
-    responseClass = "None", httpMethod = "POST")
-  def addUserFriend(email: String, newFriend: String)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
-    users.addUserFriend(email, newFriend)
-    Ok(Json.obj("status" -> "success"))
-  }
-
   @ApiOperation(value = "Add a dataset View.",
     responseClass = "None", httpMethod = "POST")
   def addUserDatasetView(email: String, dataset: UUID)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
@@ -75,4 +68,35 @@ class Users @Inject()(users: UserService) extends ApiController {
     Ok(Json.obj("status" -> "success"))
   }
 
+  @ApiOperation(value = "Follow a user",
+    responseClass = "None", httpMethod = "POST")
+  def follow(followeeUUID: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+    implicit val user = request.mediciUser
+    user match {
+      case Some(loggedInUser) => {
+        val followerUUID = loggedInUser.id
+        users.followUser(followeeUUID, followerUUID)
+        Ok(Json.obj("status" -> "success"))
+      }
+      case None => {
+        Ok(Json.obj("status" -> "fail"))
+      }
+    }
+  }
+
+  @ApiOperation(value = "Unfollow a user",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(followeeUUID: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+    implicit val user = request.mediciUser
+    user match {
+      case Some(loggedInUser) => {
+        val followerUUID = loggedInUser.id
+        users.unfollowUser(followeeUUID, followerUUID)
+        Ok(Json.obj("status" -> "success"))
+      }
+      case None => {
+        Ok(Json.obj("status" -> "fail"))
+      }
+    }
+  }
 }

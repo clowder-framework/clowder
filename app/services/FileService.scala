@@ -159,4 +159,14 @@ trait FileService {
 
   def setNotesHTML(id: UUID, notesHTML: String)
 
+  /**
+   * Add follower to a file.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a file.
+   */
+  def removeFollower(id: UUID, userId: UUID)
+
 }

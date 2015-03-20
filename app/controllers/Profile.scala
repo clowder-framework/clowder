@@ -112,48 +112,9 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
     } 
   }
 
-
-  def addFriend(email: String) = SecuredAction() { request =>
-    implicit val user = request.user
-    user match {
-      case Some(x) => {
-        implicit val myemail = x.email
-        myemail match {
-          case Some(addr) => {
-            implicit val modeluser = users.findByEmail(addr.toString())
-            implicit val otherUser = users.findByEmail(email)
-            modeluser match {
-              case Some(muser) => {
-                muser.friends match {
-                  case Some(viewList) =>{
-                    users.addUserFriend(addr.toString(),  addr.toString())
-                    otherUser match {
-                      case Some(other) => {
-                        Redirect(routes.Profile.viewProfile(Option(other.email.getOrElse(""))))
-                      }
-                    }
-                  }
-                  case None => {
-                    val newList: List[String] = List(email)
-                    users.createNewListInUser(addr.toString(), "friends", newList)
-                    otherUser match {
-                      case Some(other) => {
-                        Redirect(routes.Profile.viewProfile(Option(other.email.getOrElse(""))))
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-   
-
   def viewProfile(email: Option[String]) = SecuredAction() { request =>
     implicit val user = request.user
+    val viewerUser = request.mediciUser
     var ownProfile: Option[Boolean] = None
     email match {
       case Some(addr) => {
@@ -173,7 +134,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
               }
               case None => { ownProfile = None }
             }
-            Ok(views.html.profile(muser, ownProfile))
+            Ok(views.html.profile(muser, viewerUser, ownProfile))
           }
           case None => {
             Logger.error("no user model exists for " + addr.toString())

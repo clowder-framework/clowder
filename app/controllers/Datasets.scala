@@ -152,9 +152,9 @@ class Datasets @Inject()(
       var prev, next = ""
       var datasetList = List.empty[models.Dataset]
       if (direction == "b") {
-        datasetList = datasets.listDatasetsBefore(date, limit)
+        datasetList = datasets.listUserDatasetsBefore(date, limit, email)
       } else if (direction == "a") {
-        datasetList = datasets.listDatasetsAfter(date, limit)
+        datasetList = datasets.listUserDatasetsAfter(date, limit, email)
       } else {
         badRequest
       }
@@ -181,7 +181,6 @@ class Datasets @Inject()(
         }
       }
       
-      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
 
       
 
@@ -344,7 +343,7 @@ class Datasets @Inject()(
 	          
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, request.mediciUser))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError

@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
+@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean, viewerUser: Option[User])(implicit user: Option[securesocial.core.Identity])
 
 
 @import helper._
@@ -98,7 +98,7 @@
 					@*</div>*@
 
 					<div class="btn-group btn-group-xs pull-right">
-						<button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+                        <button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
 							type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete</button>
 						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
 							<span class="caret"></span>
@@ -134,7 +134,15 @@
 					</div>
 
 				}
-			}
+
+                <div class="btn-group btn-group-xs pull-right" style="right: 10px;">
+                @if(!dataset.followers.contains(viewerUser.get.id)) {
+                    <button id="followButton" class="btn btn-success" href="#">Follow</button>
+                } else {
+                    <button id="followButton" class="btn btn-danger" href="#">Unfollow</button>
+                }
+                </div>
+            }
 		</h1>
 	</div>
 	
@@ -274,6 +282,44 @@
 									return false;
 									}
 								</script>
+
+                                @if(user.isDefined) {
+                                    <script>
+                                        $("#followButton" ).on('click', function () {
+                                            if ($(this ).text() === 'Follow') {
+                                                var followRequest = jsRoutes.api.Datasets.follow('@dataset.id').ajax({
+                                                    type: 'POST'
+                                                });
+
+                                                followRequest.done(function (response, textStatus, jqXHR) {
+                                                    var $followButton = $('#followButton');
+                                                    $followButton.text('Unfollow');
+                                                    $followButton.removeClass('btn-success');
+                                                    $followButton.addClass('btn-danger');
+                                                });
+
+                                                followRequest.fail(function (jqXHR, textStatus, errorThrown){
+                                                    console.error('Failed to follow!');
+                                                });
+                                            } else if ($(this ).text() === 'Unfollow') {
+                                                var unfollowRequest = jsRoutes.api.Datasets.unfollow('@dataset.id').ajax({
+                                                    type: 'POST'
+                                                });
+
+                                                unfollowRequest.done(function (response, textStatus, jqXHR) {
+                                                    var $followButton = $('#followButton');
+                                                    $followButton.text('Follow');
+                                                    $followButton.removeClass('btn-danger');
+                                                    $followButton.addClass('btn-success');
+                                                });
+
+                                                unfollowRequest.fail(function (jqXHR, textStatus, errorThrown){
+                                                    console.error('Failed to unfollow!');
+                                                });
+                                            }
+                                        });
+                                    </script>
+                                }
 
 								<script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
 									<!-- End dataset information elements -->

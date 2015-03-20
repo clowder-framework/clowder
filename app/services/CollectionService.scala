@@ -97,4 +97,14 @@ trait CollectionService {
    */
   def createThumbnail(collectionId: UUID)
 
+  /**
+   * Add follower to a collection.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a collection.
+   */
+  def removeFollower(id: UUID, userId: UUID)
+
 }
