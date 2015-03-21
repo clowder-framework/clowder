@@ -1,9 +1,13 @@
-@()
+@()(implicit user: Option[securesocial.core.Identity])
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 @main("Medici 2.0") {
 
+<script>
+var Configuration = {};
+Configuration.hostIp = "@play.Play.application().configuration().getString("hostIp")";
+</script>
 
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/dragdrop.css")">
 
@@ -11,44 +15,185 @@
     <h1>Multimedia Search</h1>
   </div>
 <div class="row">
-	<div class="col-md-12">
-		
-	<!-- 		@form(action = routes.Search.SearchByText(""), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
-					<legend>Search by Text</legend>
-					<input type="text" placeholder="Type your keywords" name="query">
-					<div class="form-actions">
-          <input type="submit" class="btn btn-primary" value="Search"/>
-          </form>
-        </div>
-					
-			}-->
+	<div class="col-md-12">		
+	
 <br>
 <br>
- @form(action = routes.Files.uploadSelectQuery, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
-	    <fieldset>
+
+ @form(action = routes.Files.uploadSelectQuery, 'id->"formOne", 'enctype -> "multipart/form-data", 'class -> "form-horizontal"  ) {
+	    <!-- placeholder for validation -->
+		 <div id="validation"></div>
+		 
 	      <legend>Select an Image and Search</legend>
-	     <input type="file" id="query" name="File">
+	     	<input type="file" id="query" name="File">	     		
+	     	<br>
+	     	<input type="radio" name="indexType" value="images"   		onchange="toggleCheckbox()" checked >	Search within whole files
+	     	<br>
+			<input type="radio" name="indexType" value="sectionsAll" 	onchange="toggleCheckbox()" >			Search within ALL sections
+			<br>
+			<input type="radio" name="indexType" value="sectionsSome" 	onchange="toggleCheckbox()" id="someSections" >	Search within selected sections
+			<br>
+			
+			<!-- placeholder for checkboxes with sections  -->
+			<div id="checkboxes" style="padding-left:15px">	</div>
+			
+			<input type="radio" name="indexType" value="both" 			onchange="toggleCheckbox()">			Search within everything (whole files and sections)
 	    </fieldset>
         <div class="form-actions">
           <input type="submit" class="btn btn-primary" value="Search"/>
         </div>
 	  }
-	  
+			
+		<script language="javascript">
+		
+		//var to store all available sections
+		var sectionsList =[];
+		
+		//============================================================================
+		// on page load
+		//============================================================================
+		$(document).ready(function (){
+			console.log("document is ready")	
+			//this will set the sectionsList var
+			getAllSections();
+			
+			var someSectionsButton = document.getElementById('someSections');
+			if(someSectionsButton.checked)
+      		{
+      			console.log("radio button is checked. will display sections.");
+      			displayAvailableSections();
+      		} else { console.log("radio button not checked");}
+		});
+		
+		
+		//============================================================================
+		//validate input on submit
+		//============================================================================		
+			document.getElementById('formOne').onsubmit =function(){			
+			//alert("top of validation");
+			var errors = "";
+			//reset errors display
+			document.getElementById("validation").innerHTML = "";
+
+			//if someSections radio button selected - must select at least one section
+			var someSectionsRB = document.getElementById('someSections');				
+			if(someSectionsRB.checked)
+      		{				
+				var atLeastOneChecked = false;
+				var checkboxElem;
+				for (var i=0; i<sectionsList.length; i++){
+					//element ids of checkboxes are set to sectionsList
+					//so iterating returns all checkboxes
+					checkboxElem = document.getElementById(sectionsList[i]);
+					atLeastOneChecked = atLeastOneChecked || checkboxElem.checked;
+				}	
+				if (!atLeastOneChecked){
+					errors += "<li>Please select at least one section </li>";
+				}
+      		} 
+			//make sure file is attached
+			var f = document.getElementById("query").value;
+			if (f == null || f == ""){
+				errors += "<li>Please choose a file </li>";
+			} 			
+			if (errors.length > 0) {
+		        document.getElementById("validation").innerHTML = "Please correct the following errors:<ul>" + errors + "</ul>";
+		        document.getElementById("validation").style.backgroundColor = "#FFCCCC";
+		        return false;
+		    } else {
+		    	//alert("input OK");
+		    	return true;
+		    }
+		}
+		
+		//============================================================================
+		//If radio button is checked for selecting some sections, displays all available sections as checkboxes
+		// if a different radio button is checked, hides all the checkboxes
+		//============================================================================
+		function toggleCheckbox(){						
+			var someSectionsButton = document.getElementById('someSections');				
+			if(someSectionsButton.checked)
+      		{
+      			console.log("radio button is checked");
+				displayAvailableSections();
+			} else {
+				console.log("radio button is UNchecked");	
+				//remove checkboxes with sections
+				var checkboxes =document.getElementById("checkboxes");
+				while (checkboxes.firstChild) checkboxes.removeChild(checkboxes.firstChild);						
+			}			
+		}			
+		
+		//============================================================================
+		// display all available sections as checkboxes
+		//============================================================================
+		function displayAvailableSections(){
+			console.log("displayAvailableSections top + sectionsList.length = " + sectionsList.length);	
+			var checkboxes = document.getElementById('checkboxes');			
+			for (var i=0; i<sectionsList.length; i++){
+				console.log("sections list[ " + i + "] = " + sectionsList[i]);
+				var label= document.createElement("label");
+				var description = document.createTextNode(sectionsList[i]);
+				
+				var checkbox = document.createElement("input");				
+				checkbox.type = "checkbox";    // make the element a checkbox
+				checkbox.name = "sections";      // give it a name we can check on the server side
+				checkbox.value = sectionsList[i];         // set value
+				checkbox.id = sectionsList[i]; 			//set id
+				
+				label.appendChild(checkbox);   // add the box to the element
+				label.appendChild(description);// add the description to the element				
+				
+				checkboxes.appendChild(label);
+				checkboxes.appendChild(document.createElement("br"));
+			}				
+		}		
+			
+		//============================================================================
+		// ajax call to get all available sections, runs on page load
+		//============================================================================
+			function getAllSections() {
+				$.ajax({
+				          type: "GET",
+				          url : "@routes.Admin.getSections()",
+				          dataType : "json",
+				          
+				          // code to run if the request succeeds
+				          success : function(json) {   
+				        	console.log('getAllSections - Make call succeeded')				          	
+							console.log("text received: " + json + ", len = "+ json.length)
+							for(var i=0; i<json.length; i++){
+								console.log("json = " + json[i])
+								sectionsList.push(json[i])
+							}							
+				          },
+				          
+				          error : function(xhr, textStatus, errorThrown) {
+				              console.log('getAllSections - Make call failed ' +  errorThrown);
+				              console.log( 'Status: ' + status );
+				          },
+				          
+				          // code to run regardless of success or failure
+				          complete: function( xhr, status ) {
+				              console.log( "getAllSections - The request is complete!" );
+				          }
+				      });
+				}					
+							
+			</script>
+			
 	   
-	  
-	  @* @form(action = routes.Files.uploadAjax, 'class -> "form-horizontal") {
-	  
-	  <fieldset> *@
+	<p><p><br>
+	
 	      <legend> Drop an Image and Search </legend>
 	      <br>
 	      <div id="filedrag"> Drop Box</div>
 	      <output id="list"></output>
-	 @*  </fieldset> *@
+	 
 	  <div class="form-actions">
-          <input type="submit" class="btn btn-primary" id="submit-button-id" value="Search"/>
-           
+          <input type="submit" class="btn btn-primary" id="submit-button-id" value="Search"/>           
         </div>
-	 @*  } *@
+	 
 	  
    @form(action = routes.Search.searchbyURL(""), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
 	    <fieldset>
@@ -56,15 +201,7 @@
 	 	    <label><h4>Paste your query image URL</h4></label>
     	<input type="text" placeholder="Paste your URL here" name="query">
 	    <br>
-	    <br>
-	   <!--   <label><h4>Filter by</h4></label>	
-	    <select id="tag" onchange="">
-		<option value="invalid">--None--</option>
-		<option value="">People</option>
-		<option value="">Nature</option>
-		<option value=""> Technology</option>
-		<option value="">Healthcare</option>
-		</select>-->
+	    <br>	
 		</fieldset>	
 		<br>
 		<br>
@@ -72,11 +209,7 @@
        <input type="submit" class="btn btn-primary" value="Search" />
        </div>
        <br>
-       <br>
-      <!--  <div style="text-align: center;">
-       <a class="btn btn-primary" href="@routes.Search.advanced">Advanced Search</a>
-  	   </div>-->
-       
+       <br>       
 	  }
 	  	 
 	
@@ -87,4 +220,3 @@
    <script src="@routes.Assets.at("javascripts/file-browser/views/dragdrop.js")" type="text/javascript"></script>
     
   }
- 
