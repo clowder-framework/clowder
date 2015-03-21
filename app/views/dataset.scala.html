@@ -287,7 +287,7 @@
                                     <script>
                                         $("#followButton" ).on('click', function () {
                                             if ($(this ).text() === 'Follow') {
-                                                var followRequest = jsRoutes.api.Datasets.follow('@dataset.id').ajax({
+                                                var followRequest = jsRoutes.api.Datasets.follow('@dataset.id', '@dataset.name').ajax({
                                                     type: 'POST'
                                                 });
 
@@ -302,7 +302,7 @@
                                                     console.error('Failed to follow!');
                                                 });
                                             } else if ($(this ).text() === 'Unfollow') {
-                                                var unfollowRequest = jsRoutes.api.Datasets.unfollow('@dataset.id').ajax({
+                                                var unfollowRequest = jsRoutes.api.Datasets.unfollow('@dataset.id','@dataset.name').ajax({
                                                     type: 'POST'
                                                 });
 

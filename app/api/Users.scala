@@ -7,13 +7,18 @@ import models.{UUID, User}
 import play.api.libs.json._
 import play.api.mvc.Action
 import services.UserService
+import java.util.Date
+
+import services.mongodb.MongoDBEventService
+import models.MiniUser
+import models.Event
 
 /**
  * API to interact with the users.
  *
  * @author Rob Kooper
  */
-class Users @Inject()(users: UserService) extends ApiController {
+class Users @Inject()(users: UserService, events: MongoDBEventService) extends ApiController {
   /**
    * Returns a list of all users in the system.
    */
@@ -70,11 +75,14 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Follow a user",
     responseClass = "None", httpMethod = "POST")
-  def follow(followeeUUID: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+  def follow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
     implicit val user = request.mediciUser
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
+        var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+        var new_event = new Event(user = mini_user, object_id = Option(followeeUUID), object_name = Option(name), source_id = None, source_name = None, event_type = "follow_user", created=new Date())
+        events.addEvent(new_event)
         users.followUser(followeeUUID, followerUUID)
         Ok(Json.obj("status" -> "success"))
       }
@@ -86,11 +94,14 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(followeeUUID: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+  def unfollow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
     implicit val user = request.mediciUser
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
+        var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+        var new_event = new Event(user = mini_user, object_id = Option(followeeUUID), object_name = Option(name), source_id = None, source_name = None, event_type = "unfollow_user", created=new Date())
+        events.addEvent(new_event)
         users.unfollowUser(followeeUUID, followerUUID)
         Ok(Json.obj("status" -> "success"))
       }

@@ -176,21 +176,15 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
                     users.updateUserField(addr.toString(), "orcidID", form.orcidID)
                     users.updateUserField(addr.toString(), "pastprojects", form.pastprojects)
                     users.updateUserField(addr.toString(), "position", form.position)
-                    muser.avatarUrl match 
-                  {
+                    
 
-                    case Some(url) =>
-                    {
-                    var mini_user = new MiniUser(id = muser.id, fullName = muser.fullName, avatarURL = url)
+                 
+                    var mini_user = new MiniUser(id = muser.id, fullName = muser.fullName, avatarURL = muser.getAvatarUrl)
                      //var dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-                    var new_event = new Event(user=mini_user, object_id = None, user_object_id = None, source_id = None, event_type = "edit_profile", created=new Date())
+                    var new_event = new Event(user=mini_user, object_id = None, object_name = None, source_id = None, source_name = None, event_type = "edit_profile", created=new Date())
                     events.addEvent(new_event)
-                    }
-                    case None => 
-                    {
-                     var mini_user = new MiniUser(id = muser.id, fullName = muser.fullName, avatarURL = "NO URL")
-                    }
-                  }
+                    
+                  
                  
                   Redirect(routes.Profile.viewProfile(email))
                   }

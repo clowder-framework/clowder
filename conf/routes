@@ -201,8 +201,8 @@ GET     /api/files/:id/versus_metadata                          @api.Files.getVe
 GET     /api/files/:id/technicalmetadatajson           			@api.Files.getTechnicalMetadataJSON(id: UUID)
 GET     /api/files/:id/xmlmetadatajson           				@api.Files.getXMLMetadataJSON(id: UUID)
 GET     /api/files/:id/usermetadatajson           				@api.Files.getUserMetadataJSON(id: UUID)
-POST	/api/files/:id/follow									@api.Files.follow(id: UUID)
-POST	/api/files/:id/unfollow									@api.Files.unfollow(id: UUID)
+POST	/api/files/:id/follow									@api.Files.follow(id: UUID, name: String)
+POST	/api/files/:id/unfollow									@api.Files.unfollow(id: UUID, name: String)
 POST    /api/files/:id/comment									@api.Files.comment(id: UUID)
 POST    /api/files/:id/setNotesHTML								@api.Files.setNotesHTML(id: UUID)
 DELETE	/api/files/:id											@api.Files.removeFile(id: UUID)
@@ -261,8 +261,8 @@ POST           /api/changeAppearance                                            
 GET		/api/collections														    @api.Collections.listCollections
 POST    /api/collections                                        					@api.Collections.createCollection()
 GET		/api/collections/list														@api.Collections.listCollections
-POST	/api/collections/:id/follow													@api.Collections.follow(id: UUID)
-POST	/api/collections/:id/unfollow												@api.Collections.unfollow(id: UUID)
+POST	/api/collections/:id/follow													@api.Collections.follow(id: UUID, name: String)
+POST	/api/collections/:id/unfollow												@api.Collections.unfollow(id: UUID, name: String)
 POST	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
 POST	/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound				@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
 DELETE	/api/collections/:coll_id/datasets/:ds_id									@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
@@ -295,8 +295,8 @@ GET 	/api/datasets/:id/listFiles		 							@api.Datasets.datasetFilesList(id: UUI
 POST    /api/datasets/:id/comment									@api.Datasets.comment(id: UUID)
 POST    /api/datasets/:id/setNotesHTML								@api.Datasets.setNotesHTML(id: UUID)
 POST     /api/datasets/:id/reindex                                   @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
-POST	/api/datasets/:id/follow									@api.Datasets.follow(id: UUID)
-POST	/api/datasets/:id/unfollow									@api.Datasets.unfollow(id: UUID)
+POST	/api/datasets/:id/follow									@api.Datasets.follow(id: UUID, name: String)
+POST	/api/datasets/:id/unfollow									@api.Datasets.unfollow(id: UUID, name: String)
 
 POST 	/api/datasets/:id/removeTag 								@api.Datasets.removeTag(id: UUID)
 GET     /api/datasets/:id/tags                                  	@api.Datasets.getTags(id: UUID)
@@ -416,8 +416,8 @@ POST           /api/users/addUserDatasetView                                    
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 
 POST 			/api/users/createNewListInUser 											@api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
-POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID)
-POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID)
+POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
+POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)
 
 
 # ----------------------------------------------------------------------

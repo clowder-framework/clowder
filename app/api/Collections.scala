@@ -13,6 +13,10 @@ import com.wordnik.swagger.annotations.ApiOperation
 import java.util.Date
 import controllers.Utils
 
+import services.mongodb.MongoDBEventService
+import models.MiniUser
+import models.Event
+
 /**
  * Manipulate collections.
  * 
@@ -20,7 +24,7 @@ import controllers.Utils
  */
 @Api(value = "/collections", listingPath = "/api-docs.json/collections", description = "Collections are groupings of datasets")
 @Singleton
-class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService) extends ApiController {
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: MongoDBEventService) extends ApiController {
 
     
   @ApiOperation(value = "Create a collection",
@@ -182,7 +186,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Follow collection.",
     notes = "Add user to collection followers and add collection to user followed collections.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+  def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 
@@ -190,6 +194,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
+              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "follow_collection", created=new Date())
+              events.addEvent(new_event)
               collections.addFollower(id, loggedInUser.id)
               userService.followCollection(loggedInUser.id, id)
               Ok
@@ -208,7 +215,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Unfollow collection.",
     notes = "Remove user from collection followers and remove collection from user followed collections.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+  def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 
@@ -216,6 +223,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
+              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "unfollow_collection", created=new Date())
+              events.addEvent(new_event)
               collections.removeFollower(id, loggedInUser.id)
               userService.unfollowCollection(loggedInUser.id, id)
               Ok

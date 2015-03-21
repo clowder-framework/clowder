@@ -35,6 +35,10 @@ import models.File
 import play.api.Play.configuration
 import controllers.Utils
 
+import services.mongodb.MongoDBEventService
+import models.MiniUser
+import models.Event
+
 /**
  * Dataset API.
  *
@@ -52,6 +56,7 @@ class Datasets @Inject()(
   previews: PreviewService,
   extractions: ExtractionService,
   rdfsparql: RdfSPARQLService,
+  events: MongoDBEventService,
   userService: UserService) extends ApiController {
 
   /**
@@ -1291,7 +1296,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Follow dataset.",
     notes = "Add user to dataset followers and add dataset to user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+  def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 
@@ -1299,6 +1304,9 @@ class Datasets @Inject()(
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
+              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "follow_dataset", created=new Date())
+              events.addEvent(new_event)
               datasets.addFollower(id, loggedInUser.id)
               userService.followDataset(loggedInUser.id, id)
               Ok
@@ -1317,7 +1325,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Unfollow dataset.",
     notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+  def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 
@@ -1325,6 +1333,9 @@ class Datasets @Inject()(
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
+              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "unfollow_dataset", created=new Date())
+              events.addEvent(new_event)
               datasets.removeFollower(id, loggedInUser.id)
               userService.unfollowDataset(loggedInUser.id, id)
               Ok

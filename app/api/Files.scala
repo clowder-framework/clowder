@@ -68,6 +68,10 @@ import scala.concurrent.Future
 import scala.util.control._
 import controllers.Utils
 
+import services.mongodb.MongoDBEventService
+import models.MiniUser
+import models.Event
+
 
 /**
  * Json API for files.
@@ -89,6 +93,7 @@ class Files @Inject()(
   threeD: ThreeDService,
   sqarql: RdfSPARQLService,
   thumbnails: ThumbnailService,
+  events: MongoDBEventService,
   userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Retrieve physical file object metadata",
@@ -1802,7 +1807,7 @@ class Files @Inject()(
   @ApiOperation(value = "Follow file",
     notes = "Add user to file followers and add file to user followed files.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+  def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 
@@ -1810,6 +1815,9 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
+              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "follow_file", created=new Date())
+              events.addEvent(new_event)
               files.addFollower(id, loggedInUser.id)
               userService.followFile(loggedInUser.id, id)
               Ok
@@ -1828,7 +1836,7 @@ class Files @Inject()(
   @ApiOperation(value = "Unfollow file",
     notes = "Remove user from file followers and remove file from user followed files.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+  def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
       val user = request.mediciUser
 
@@ -1836,6 +1844,9 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
+              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "unfollow_file", created=new Date())
+              events.addEvent(new_event)
               files.removeFollower(id, loggedInUser.id)
               userService.unfollowFile(loggedInUser.id, id)
               Ok

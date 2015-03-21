@@ -17,12 +17,16 @@ import scala.collection.mutable.ListBuffer
 import services.{ DatasetService, CollectionService }
 import services._
 import org.apache.commons.lang.StringEscapeUtils
+import services.mongodb.MongoDBEventService
+import models.MiniUser
+import models.Event
+
 
 
 object ThumbnailFound extends Exception {}
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService) extends SecuredController {  
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, users: UserService, events: MongoDBEventService) extends SecuredController {  
 
   def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>
@@ -170,6 +174,19 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                 current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id, 
                 List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
                 
+              //Add to Events Table
+              var option_user = users.findByIdentity(identity)
+              option_user match {
+                case Some(model_user)=>{
+
+                  var mini_user = new MiniUser(id = model_user.id, fullName = model_user.fullName, avatarURL = model_user.getAvatarUrl)
+                  var new_event = new Event(user = mini_user, object_id = Option(collection.id), object_name = Option(collection.name), source_id = None, source_name = None, event_type = "create_collection", created=new Date())
+                  events.addEvent(new_event)
+
+                }
+              }
+
+
 	            // redirect to collection page
 	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
 	            Redirect(routes.Collections.collection(collection.id))	        
