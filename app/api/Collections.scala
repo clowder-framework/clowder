@@ -53,9 +53,24 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       responseClass = "None", httpMethod = "POST")
   def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
                     authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
-
+    val user = request.mediciUser
     collections.addDataset(collectionId, datasetId) match {
-      case Success(_) => Ok(toJson(Map("status" -> "success")))
+      case Success(_) => {
+
+        user match {
+        case Some(loggedInUser) => {
+          var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
+          var new_event = new Event(user = mini_user, object_id = Option(datasetId), object_name = None, source_id = Option(collectionId), source_name = None, event_type = "attach_dataset_collection", created=new Date())
+          events.addEvent(new_event)
+
+        }
+      }
+
+
+
+
+        Ok(toJson(Map("status" -> "success")))
+    }
       case Failure(t) => InternalServerError
     }
   }
