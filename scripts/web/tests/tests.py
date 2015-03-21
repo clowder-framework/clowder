@@ -7,6 +7,7 @@ import time
 import smtplib
 import socket
 import time
+import urllib
 import urllib2
 import getopt
 import netifaces as ni
@@ -49,6 +50,13 @@ def main():
 			enable_threads = True
 		else:
 			assert False, "unhandled option"
+
+	#Set hostname if not set
+	if not hostname:
+		if '@' in host:
+			hostname = host.rsplit('@', 1)[1]
+		else:
+			hostname = host
 
 	print 'Testing: ' + host + '\n'
 
@@ -144,15 +152,11 @@ def main():
 			with open('failure_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 	
-				if hostname:
-					message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-				else:
-					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-
+				message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DTS Test Failure Report\n\n'
 				message += failure_report			
-				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
+				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + urllib.quote(host) + '&run=false&start=true\n\n'
 				message += 'Elapsed time: ' + timeToString(dt)
 
 				mailserver = smtplib.SMTP('localhost')
@@ -169,16 +173,12 @@ def main():
 					with open('failure_watchers.txt', 'r') as watchers_file:
 						watchers = watchers_file.read().splitlines()
 	
-						if hostname:
-							message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-						else:
-							message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-
+						message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
 						message += 'To: ' + ', '.join(watchers) + '\n'
 						message += 'Subject: DTS Tests Now Passing\n\n'
 						message += 'Previous failures:\n\n'
 						message += failure_report			
-						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n\n'
+						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + urllib.quote(host) + '&run=false&start=true\n\n'
 						message += 'Elapsed time: ' + timeToString(dt)
 
 						mailserver = smtplib.SMTP('localhost')
@@ -190,11 +190,7 @@ def main():
 				with open('pass_watchers.txt', 'r') as watchers_file:
 					watchers = watchers_file.read().splitlines()
 
-					if hostname:
-						message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-					else:
-						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-
+					message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
 					message += 'To: ' + ', '.join(watchers) + '\n'
 					message += 'Subject: DTS Tests Passed\n\n';
 					message += 'Elapsed time: ' + timeToString(dt)
@@ -285,15 +281,11 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 		with open('failure_watchers.txt', 'r') as watchers_file:
 			watchers = watchers_file.read().splitlines()
 							
-			if hostname:	
-				message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-			else:
-				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-
+			message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
 			message += 'To: ' + ', '.join(watchers) + '\n'
 			message += 'Subject: DTS Test Failed\n\n'
 			message += report
-			message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + host + '&run=false&start=true\n'
+			message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dts/tests/tests.php?dts=' + urllib.quote(host) + '&run=false&start=true\n'
 
 			mailserver = smtplib.SMTP('localhost')
 			for watcher in watchers:
@@ -307,11 +299,25 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 
 def extract(host, port, key, file, wait):
 	"""Pass file to Medici extraction bus."""
+	username = ''
+	password = ''
+
+	#Check for authentication
+	if '@' in host:
+		parts = host.rsplit('@', 1)
+		host = parts[1]
+		parts = parts[0].split(':')
+		username = parts[0]
+		password = parts[1]
+
 	#Upload file
-	headers = {'Content-Type': 'application/json'}
 	data = {}
 	data["fileurl"] = file
-	file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, headers=headers, data=json.dumps(data)).json()['id']
+
+	if key:
+		file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, headers={'Content-Type': 'application/json'}, data=json.dumps(data)).json()['id']
+	else:
+		file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, auth=(username, password), headers={'Content-Type': 'application/json'}, data=json.dumps(data)).json()['id']
 
 	#Poll until output is ready (optional)
 	while wait > 0:

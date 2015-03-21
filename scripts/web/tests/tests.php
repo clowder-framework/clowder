@@ -140,7 +140,7 @@
 				$(row).attr('class', 'info');		//Set it again in case this is a second attempt
 
 				var dts = document.getElementById('dts').value;
-				var url = 'test.php?dts=' + encodeURIComponent('http://' + dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
+				var url = 'test.php?dts=' + encodeURIComponent(dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
 				console.log(url);
 
 				$.get(url, function(success) {
