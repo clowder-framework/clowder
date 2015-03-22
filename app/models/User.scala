@@ -84,7 +84,17 @@ case class User(
       proj + ", " + next
     }
   }
+
+  /**
+  * return MiniUser constructed from the user model
+  */
+  def getMiniUser: MiniUser = {
+    new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl)
+  }
+
 }
+
+
 
 case class Info(
   avatarUrl: Option[String],

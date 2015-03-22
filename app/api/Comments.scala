@@ -11,12 +11,16 @@ import services.{CommentService, DatasetService, ElasticsearchPlugin}
 import models.{Comment, UUID}
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
+import services.mongodb.MongoDBEventService
+import models.MiniUser
+import models.Event
+
 /**
  * Comments on datasets.
  *
  * @author Rob Kooper
  */
-class Comments @Inject()(datasets: DatasetService, comments: CommentService) extends ApiController {
+class Comments @Inject()(datasets: DatasetService, comments: CommentService, events: MongoDBEventService) extends ApiController {
 
   def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
@@ -169,6 +173,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
 	    		                 Logger.debug(s"editComment from file with id  $commentId.")
 
 	    		                 comments.editComment(commentId, commentText)
+	    		                 events.addObjectEvent(request.mediciUser, commentId, commentText, "edit_comment")
 	    		                 Ok(Json.obj("status" -> "success"))
 	    		             }
 	    		             else {

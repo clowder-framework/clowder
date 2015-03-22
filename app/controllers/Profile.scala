@@ -96,6 +96,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
                 ))
                 var allProjectOptions: List[String] = projects.getAllProjects()
                 var allInstitutionOptions: List[String] = institutions.getAllInstitutions()
+                
                 Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions))
               }
               case None => {
@@ -167,8 +168,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
             email match {
               case Some(addr) => {
                 implicit val modeluser = users.findByEmail(addr.toString())
-                modeluser match {
-                  case Some(muser) => {
+
                     users.updateUserField(addr.toString(), "avatarUrl", form.avatarUrl)
                     users.updateUserField(addr.toString(), "biography", form.biography)
                     users.updateUserField(addr.toString(), "currentprojects", form.currentprojects)
@@ -177,18 +177,13 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
                     users.updateUserField(addr.toString(), "pastprojects", form.pastprojects)
                     users.updateUserField(addr.toString(), "position", form.position)
                     
-
-                 
-                    var mini_user = new MiniUser(id = muser.id, fullName = muser.fullName, avatarURL = muser.getAvatarUrl)
-                     //var dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-                    var new_event = new Event(user=mini_user, object_id = None, object_name = None, source_id = None, source_name = None, event_type = "edit_profile", created=new Date())
-                    events.addEvent(new_event)
+                    events.addUserEvent(modeluser, "edit_profile")
                     
                   
                  
                   Redirect(routes.Profile.viewProfile(email))
-                  }
-                }
+                  
+                
               }
             }
           }

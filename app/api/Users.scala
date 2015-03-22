@@ -80,9 +80,7 @@ class Users @Inject()(users: UserService, events: MongoDBEventService) extends A
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
-        var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-        var new_event = new Event(user = mini_user, object_id = Option(followeeUUID), object_name = Option(name), source_id = None, source_name = None, event_type = "follow_user", created=new Date())
-        events.addEvent(new_event)
+        events.addObjectEvent(user, followeeUUID, name, "follow_user")
         users.followUser(followeeUUID, followerUUID)
         Ok(Json.obj("status" -> "success"))
       }
@@ -99,9 +97,7 @@ class Users @Inject()(users: UserService, events: MongoDBEventService) extends A
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
-        var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-        var new_event = new Event(user = mini_user, object_id = Option(followeeUUID), object_name = Option(name), source_id = None, source_name = None, event_type = "unfollow_user", created=new Date())
-        events.addEvent(new_event)
+        events.addObjectEvent(user, followeeUUID, name, "unfollow_user")
         users.unfollowUser(followeeUUID, followerUUID)
         Ok(Json.obj("status" -> "success"))
       }

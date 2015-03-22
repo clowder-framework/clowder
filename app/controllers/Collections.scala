@@ -176,16 +176,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                 
               //Add to Events Table
               var option_user = users.findByIdentity(identity)
-              option_user match {
-                case Some(model_user)=>{
-
-                  var mini_user = new MiniUser(id = model_user.id, fullName = model_user.fullName, avatarURL = model_user.getAvatarUrl)
-                  var new_event = new Event(user = mini_user, object_id = Option(collection.id), object_name = Option(collection.name), source_id = None, source_name = None, event_type = "create_collection", created=new Date())
-                  events.addEvent(new_event)
-
-                }
-              }
-
+              events.addObjectEvent(option_user, collection.id, collection.name, "create_collection")
 
 	            // redirect to collection page
 	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}

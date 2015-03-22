@@ -53,15 +53,17 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       responseClass = "None", httpMethod = "POST")
   def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
                     authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
-    val user = request.mediciUser
+    
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => {
 
-        user match {
-        case Some(loggedInUser) => {
-          var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-          var new_event = new Event(user = mini_user, object_id = Option(datasetId), object_name = None, source_id = Option(collectionId), source_name = None, event_type = "attach_dataset_collection", created=new Date())
-          events.addEvent(new_event)
+        collections.get(collectionId) match {
+        case Some(collection) => {
+          datasets.get(datasetId) match {
+            case Some(dataset) => {
+              events.addSourceEvent(request.mediciUser , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection") 
+            }
+          }
 
         }
       }
@@ -106,7 +108,23 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
                     authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
 
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
-      case Success(_) => Ok(toJson(Map("status" -> "success")))
+      case Success(_) => {
+
+        collections.get(collectionId) match {
+        case Some(collection) => {
+          datasets.get(datasetId) match {
+            case Some(dataset) => {
+              events.addSourceEvent(request.mediciUser , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection") 
+            }
+          }
+
+        }
+      }
+
+        Ok(toJson(Map("status" -> "success")))
+
+
+      }
       case Failure(t) => InternalServerError
     }
   }
@@ -118,6 +136,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
     collections.get(collectionId) match {
       case Some(collection) => {
+        events.addObjectEvent(request.mediciUser , collection.id, collection.name, "delete_collection") 
         collections.delete(collectionId)
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
@@ -209,9 +228,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "follow_collection", created=new Date())
-              events.addEvent(new_event)
+              events.addObjectEvent(user, id, name, "follow_collection")
               collections.addFollower(id, loggedInUser.id)
               userService.followCollection(loggedInUser.id, id)
               Ok
@@ -238,9 +255,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "unfollow_collection", created=new Date())
-              events.addEvent(new_event)
+              events.addObjectEvent(user, id, name, "unfollow_collection")
               collections.removeFollower(id, loggedInUser.id)
               userService.unfollowCollection(loggedInUser.id, id)
               Ok

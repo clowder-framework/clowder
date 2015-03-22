@@ -336,7 +336,7 @@ class Files @Inject()(
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	            	            
+            events.addObjectEvent(request.mediciUser, f.id, f.filename, "upload_file")
 	            val id = f.id
 	            if(showPreviews.equals("FileLevel"))
 	            	flags = flags + "+filelevelshowpreviews"
@@ -550,6 +550,8 @@ class Files @Inject()(
           // submit file for extraction
           file match {
             case Some(f) => {
+            events.addSourceEvent(request.mediciUser, f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
+
               val id = f.id.toString
               if (showPreviews.equals("FileLevel")) {
                 flags = flags + "+filelevelshowpreviews"
@@ -861,6 +863,11 @@ class Files @Inject()(
         Logger.debug("Adding user metadata to file " + id)
         val theJSON = Json.stringify(request.body)
         files.addUserMetadata(id, theJSON)
+        files.get(id) match {
+          case Some(file) =>{
+            events.addObjectEvent(request.mediciUser, file.id, file.filename, "addMetadata_file")
+          }
+        }
         files.index(id)
         configuration.getString("userdfSPARQLStore").getOrElse("no") match {
           case "yes" => {
@@ -1339,6 +1346,11 @@ class Files @Inject()(
   def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): SimpleResult = {
 
     val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
+    files.get(id) match {
+          case Some(file) =>{
+            events.addObjectEvent(request.mediciUser, file.id, file.filename, "add_tags_file")
+          }
+        }
 
     // Now the real work: adding the tags.
     if ("" == error_str) {
@@ -1356,6 +1368,11 @@ class Files @Inject()(
   def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): SimpleResult = {
 
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
+    files.get(id) match {
+          case Some(file) =>{
+            events.addObjectEvent(request.mediciUser, file.id, file.filename, "remove_tags_file")
+          }
+        }
 
     if ("" == error_str) {
       Ok(Json.obj("status" -> "success"))
@@ -1475,6 +1492,11 @@ class Files @Inject()(
             case Some(text) => {
               val comment = new Comment(identity, text, file_id = Some(id))
               comments.insert(comment)
+              files.get(id) match {
+          case Some(file) =>{
+            events.addSourceEvent(request.mediciUser, comment.id, comment.text, file.id, file.filename, "comment_file")
+          }
+        }
               files.index(id)
               Ok(comment.id.toString)
             }
@@ -1657,6 +1679,9 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
+
+            events.addObjectEvent(request.mediciUser, file.id, file.filename, "delete_file")
+      
           
            //this stmt has to be before files.removeFile
           Logger.debug("Deleting file from indexes" + file.filename)
@@ -1790,6 +1815,11 @@ class Files @Inject()(
 			    case Some(html) => {
 			        files.setNotesHTML(id, html)
 			        //index(id)
+              files.get(id) match {
+                case Some(file) => {
+                  events.addObjectEvent(request.mediciUser, file.id, file.filename, "set_note_file")
+                }
+              }
 			        Ok(toJson(Map("status"->"success")))
 			    }
 			    case None => {
@@ -1815,9 +1845,7 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "follow_file", created=new Date())
-              events.addEvent(new_event)
+              events.addObjectEvent(user, id, name, "follow_file")
               files.addFollower(id, loggedInUser.id)
               userService.followFile(loggedInUser.id, id)
               Ok
@@ -1844,9 +1872,7 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "unfollow_file", created=new Date())
-              events.addEvent(new_event)
+              events.addObjectEvent(user, id, name, "unfollow_file")
               files.removeFollower(id, loggedInUser.id)
               userService.unfollowFile(loggedInUser.id, id)
               Ok

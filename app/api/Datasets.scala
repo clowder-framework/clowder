@@ -98,6 +98,7 @@ class Datasets @Inject()(
       notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
       responseClass = "None", httpMethod = "POST")
   def createDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>
+    implicit val user = request.mediciUser
     Logger.debug("--- API Creating new dataset ----")
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>
@@ -106,8 +107,10 @@ class Datasets @Inject()(
             case Some(file) =>
               val d = Dataset(name=name,description=description, created=new Date(), files=List(file),
                 author=request.user.get, licenseData = License.fromAppConfig())
+              events.addObjectEvent(user, d.id, d.name, "create_dataset")
               datasets.insert(d) match {
                 case Some(id) => {
+
                   files.index(UUID(file_id))
                   if(!file.xmlMetadata.isEmpty) {
                     val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
@@ -144,10 +147,12 @@ class Datasets @Inject()(
   @ApiOperation(value = "Create new dataset with no file",
       notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name and description. Optional list of existing file ids to add.",
       responseClass = "None", httpMethod = "POST")
-  def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request =>    
+  def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request => 
+  implicit val user = request.mediciUser   
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>        
           val d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
+          events.addObjectEvent(user, d.id, d.name, "create_dataset")
           datasets.insert(d) match {
             case Some(id) => {              
               (request.body \ "existingfiles").asOpt[String].map { fileString =>
@@ -157,7 +162,7 @@ class Datasets @Inject()(
 					      case Some(dataset) => {
 					          files.get(UUID(anId)) match {
 					              case Some(file) => {
-					            	  attachExistingFileHelper(UUID(id), UUID(anId), dataset, file)
+					            	  attachExistingFileHelper(UUID(id), UUID(anId), dataset, file, user)
 					            	  Ok(toJson(Map("status" -> "success")))
 					              }
 					              case None => {
@@ -193,6 +198,7 @@ class Datasets @Inject()(
       notes = "Add multiple files, by ID, to a dataset that is already in the system. Requires file ids and dataset id.",
       responseClass = "None", httpMethod = "POST")
   def attachMultipleFiles() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) { request => 
+    implicit val user = request.mediciUser
       (request.body \ "datasetid").asOpt[String].map { dsId =>
           (request.body \ "existingfiles").asOpt[String].map { fileString =>
                   var idArray = fileString.split(",").map(_.trim())
@@ -201,7 +207,8 @@ class Datasets @Inject()(
 					      case Some(dataset) => {
 					          files.get(UUID(anId)) match {
 					              case Some(file) => {
-					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file)
+					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file, user)
+                          //events.addSourceEvent(user, file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")
 					            	  Ok(toJson(Map("status" -> "success")))
 					              }
 					              case None => {
@@ -254,9 +261,10 @@ class Datasets @Inject()(
    * @param dataset Reference to the model of the dataset that is specified
    * @param file Reference to the model of the file that is specified   
    */
-  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File) = {
+  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
       if (!files.isInDataset(file, dataset)) {
-            datasets.addFile(dsId, file)	            
+            datasets.addFile(dsId, file)	 
+           events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")        
             files.index(fileId)
             if (!file.xmlMetadata.isEmpty){
               datasets.index(dsId)
@@ -300,7 +308,7 @@ class Datasets @Inject()(
       case Some(dataset) => {
         files.get(fileId) match {
           case Some(file) => {
-        	  attachExistingFileHelper(dsId, fileId, dataset, file)
+        	  attachExistingFileHelper(dsId, fileId, dataset, file, request.mediciUser)
               Ok(toJson(Map("status" -> "success")))
             }
             case None => {
@@ -323,7 +331,7 @@ class Datasets @Inject()(
     request =>
      datasets.get(datasetId) match{
       case Some(dataset) => {
-    	  detachFileHelper(datasetId, fileId, dataset)
+    	  detachFileHelper(datasetId, fileId, dataset, request.mediciUser)
         }
         case None => {
           ignoreNotFound match {
@@ -343,12 +351,13 @@ class Datasets @Inject()(
    * @param dataset The reference to the model of the dataset being operated on
    * 
    */
-  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset) = {      
+  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset, user: Option[User]) = {      
 	  files.get(fileId) match {
 		  case Some(file) => {		       
 			  if(files.isInDataset(file, dataset)){
 				  //remove file from dataset
 				  datasets.removeFile(dataset.id, file.id)
+          events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "detach_file_dataset") 
 				  files.index(fileId)
 				  if (!file.xmlMetadata.isEmpty)
 					  datasets.index(datasetId)
@@ -420,8 +429,15 @@ class Datasets @Inject()(
       responseClass = "None", httpMethod = "POST")
   def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata), resourceId = Some(id)) {
     request =>
+    implicit val user = request.mediciUser
       Logger.debug(s"Adding user metadata to dataset $id")
       datasets.addUserMetadata(id, Json.stringify(request.body))
+      datasets.get(id) match {
+        case Some(dataset) => {
+           events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
+        }
+      }
+     
       datasets.index(id)
       configuration.getString("userdfSPARQLStore").getOrElse("no") match {
         case "yes" => datasets.setUserMetadataWasModified(id, true)
@@ -487,7 +503,8 @@ class Datasets @Inject()(
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
   def updateInformation(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
-    implicit request =>
+    implicit request => 
+    implicit val user = request.mediciUser
       if (UUID.isValid(id.stringify)) {          
 
           //Set up the vars we are looking for
@@ -522,6 +539,11 @@ class Datasets @Inject()(
           Logger.debug(s"updateInformation for dataset with id  $id. Args are $description and $name")
           
           datasets.updateInformation(id, description, name)
+          datasets.get(id) match {
+        case Some(dataset) => {
+           events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+        }
+      }
           Ok(Json.obj("status" -> "success"))
       } 
       else {
@@ -772,6 +794,11 @@ class Datasets @Inject()(
         case TagCheck_File => files.addTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => {
           datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
+          datasets.get(id) match {
+        case Some(dataset) => {
+           events.addObjectEvent(request.mediciUser, id, dataset.name, "add_tags_dataset")
+        }
+      }
           datasets.index(id)
         }
         case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
@@ -804,6 +831,11 @@ class Datasets @Inject()(
         case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => {
         	datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+          datasets.get(id) match {
+        case Some(dataset) => {
+           events.addObjectEvent(request.mediciUser, id, dataset.name, "remove_tags_dataset")
+        }
+      }
         	datasets.index(id)
 
           }
@@ -946,6 +978,11 @@ class Datasets @Inject()(
               val comment = new Comment(identity, text, dataset_id = Some(id))
               comments.insert(comment)
               datasets.index(id)
+              datasets.get(id) match {
+                case Some(dataset) => {
+              events.addSourceEvent(request.mediciUser, comment.id, comment.text , dataset.id, dataset.name, "add_comment_dataset")
+        }
+      }
               Ok(comment.id.toString())
             }
             case None => {
@@ -1119,8 +1156,11 @@ class Datasets @Inject()(
           datasets.get(id) match{              
               case Some(dataset) => {                  
                   for (f <- dataset.files) {                      
-                      detachFileHelper(dataset.id, f.id, dataset)
+                      detachFileHelper(dataset.id, f.id, dataset, request.mediciUser)
                   }
+
+           
+
             	  deleteDatasetHelper(dataset.id, request)
             	  Ok(toJson(Map("status" -> "success")))
               }
@@ -1146,6 +1186,7 @@ class Datasets @Inject()(
             case "yes" => rdfsparql.removeDatasetFromGraphs(id)
             case _ => Logger.debug("userdfSPARQLStore not enabled")
           }
+          events.addObjectEvent(request.mediciUser, dataset.id, dataset.name, "delete_dataset")
           datasets.removeDataset(id)
 
           current.plugin[ElasticsearchPlugin].foreach {
@@ -1304,9 +1345,7 @@ class Datasets @Inject()(
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "follow_dataset", created=new Date())
-              events.addEvent(new_event)
+              events.addObjectEvent(user, id, name, "follow_dataset")
               datasets.addFollower(id, loggedInUser.id)
               userService.followDataset(loggedInUser.id, id)
               Ok
@@ -1333,9 +1372,7 @@ class Datasets @Inject()(
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              var mini_user = new MiniUser(id = loggedInUser.id, fullName = loggedInUser.fullName, avatarURL = loggedInUser.getAvatarUrl)
-              var new_event = new Event(user = mini_user, object_id = Option(id), object_name = Option(name), source_id = None, source_name = None, event_type = "unfollow_dataset", created=new Date())
-              events.addEvent(new_event)
+              events.addObjectEvent(user, id, name, "unfollow_dataset")
               datasets.removeFollower(id, loggedInUser.id)
               userService.unfollowDataset(loggedInUser.id, id)
               Ok

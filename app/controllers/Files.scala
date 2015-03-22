@@ -21,6 +21,10 @@ import java.util.Date
 import scala.sys.SystemProperties
 import securesocial.core.Identity
 
+import services.mongodb.MongoDBEventService
+import models.MiniUser
+import models.Event
+
 /**
  * Manage files.
  *
@@ -37,6 +41,8 @@ class Files @Inject() (
   previews: PreviewService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
+  users: UserService,
+  events: MongoDBEventService,
   thumbnails: ThumbnailService) extends SecuredController {
 
   /**
@@ -352,7 +358,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-
+              var option_user = users.findByIdentity(identity)
+              events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
 	            if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"
 	            else if(showPreviews.equals("None"))
@@ -508,6 +515,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
           files.get(id) match {
               case Some(file) => {                                                                                                             
                   if (file.licenseData.isDownloadAllowed(request.user)) {
+                  //  events.addObjectEvent(request.mediciUser, file.id, file.filename, "download_file")
                       files.getBytes(id) match {
                       case Some((inputStream, filename, contentType, contentLength)) => {
                           request.headers.get(RANGE) match {
