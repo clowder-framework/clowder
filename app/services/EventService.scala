@@ -2,6 +2,8 @@ package services
 import models.Event
 import models.User
 import models.UUID
+
+import com.novus.salat.dao.SalatMongoCursor
 /**
  * Service definition to interact with Events database.
  *
@@ -38,9 +40,22 @@ trait EventService {
  def addSourceEvent(user: Option[User], object_id: UUID, object_name: String, source_id: UUID, source_name: String, action_type: String)
 
 
+ /**
+ * Gets all the events from users, collections, datasets, and files and compliles them into 1 list
+ */
+ def getAllEvents(usersFollowed: List[UUID], collectionsFollowed: List[UUID], datasetsFollowed: List[UUID], filesFollowed: List[UUID]): List[Event]
 
+/**
+* Gets all users for a specific list and specific type: object or source
+*/
 
+def getAllEventsOfType(following: List[UUID], id_type: String): List[Event]
 
+/**
+* Gets all events for one UUID
+*/
+
+ def getEvents(id: String, id_type: String): SalatMongoCursor[Event]
 
 }
 

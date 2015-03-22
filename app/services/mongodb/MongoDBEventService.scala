@@ -11,6 +11,7 @@ import play.api.Play.current
 import play.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
+import com.novus.salat.dao.SalatMongoCursor
 
 /**
  * @author Varun Kethineedi
@@ -52,13 +53,17 @@ class MongoDBEventService extends EventService {
   }
 
   def getAllEvents(usersFollowed: List[UUID], collectionsFollowed: List[UUID], datasetsFollowed: List[UUID], filesFollowed: List[UUID]) = {
-    var userEvents = getAllUserEvents(usersFollowed)
-    var collections_objects = getAllObjectEvents(collectionsFollowed)
-    var collections_source = getAllSourceEvents(collectionsFollowed)
-    var datasets_objects = getAllObjectEvents(datasetsFollowed)
-    var datasets_source = getAllSourceEvents(datasetsFollowed)
-    var files_objects = getAllObjectEvents(filesFollowed)
-    var files_source = getAllSourceEvents(filesFollowed)
+    
+    var userEvents = getAllEventsOfType(usersFollowed, "user._id")
+
+    var collections_objects = getAllEventsOfType(collectionsFollowed, "object_id")
+    var collections_source = getAllEventsOfType(collectionsFollowed, "source_id")
+
+    var datasets_objects = getAllEventsOfType(datasetsFollowed, "object_id")
+    var datasets_source = getAllEventsOfType(datasetsFollowed, "source_id")
+
+    var files_objects = getAllEventsOfType(filesFollowed, "object_id")
+    var files_source = getAllEventsOfType(filesFollowed, "source_id")
 
     var collectionEvents = List.concat(collections_objects, collections_source)
     var datasetEvents = List.concat(datasets_objects, datasets_source)
@@ -72,50 +77,19 @@ class MongoDBEventService extends EventService {
     eventsList
   }
 
-  def getAllUserEvents(usersFollowed: List[UUID]) = {
-    var listOfLists = getUserEvents(usersFollowed)
+
+  def getAllEventsOfType(following: List[UUID], id_type: String): List[Event] = {
+    var listOfLists = (for (id <- following) yield (for (event <- getEvents(id.stringify, id_type)) yield event)).toList
     var eventList = List[models.Event]()
     for (list <- listOfLists) for (resultLine <- list) (eventList =   resultLine :: eventList)
     eventList
   }
 
-  def getAllObjectEvents(objectFollowers: List[UUID]) = {
-    var listOfLists = getObjectEvents(objectFollowers)
-    var eventList = List[models.Event]()
-    for (list <- listOfLists) for (resultLine <- list) (eventList =   resultLine :: eventList)
-    eventList
+
+  def getEvents(id: String, id_type: String) : SalatMongoCursor[Event] = {
+    Event.find(MongoDBObject(id_type -> new ObjectId(id)))
   }
 
-  def getAllSourceEvents(sourceFollowers: List[UUID]) = {
-    var listOfLists = getSouceEvents(sourceFollowers)
-    var eventList = List[models.Event]()
-    for (list <- listOfLists) for (resultLine <- list) (eventList =   resultLine :: eventList)
-    eventList
-  }
-
-  def getUserEvents(usersFollowed: List[UUID]) = {
-    (for (id <- usersFollowed) yield (for (event <- getEventsForUser(id.stringify)) yield event)).toList
-  }
-
-  def getObjectEvents(objectFollowers: List[UUID]) = {
-    (for (id <- objectFollowers) yield (for (event <- getEventsForObject(id.stringify)) yield event)).toList
-  }
-
-  def getSouceEvents(sourceFollowers: List[UUID]) = {
-    (for (id <- sourceFollowers) yield (for (event <- getEventsForSource(id.stringify)) yield event)).toList
-  }
-
-  def getEventsForUser(id: String) = {
-    Event.find(MongoDBObject("user._id" -> new ObjectId(id)))
-  }
-
-  def getEventsForObject(id: String) = {
-    Event.find(MongoDBObject("object_id" -> new ObjectId(id)))
-  }
-
-  def getEventsForSource(id: String) = {
-    Event.find(MongoDBObject("source_id" -> new ObjectId(id)))
-  }
 }
 
 object Event extends ModelCompanion[Event, ObjectId] {
