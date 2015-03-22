@@ -8,9 +8,16 @@ import models.UUID
  * @author Varun Kethineedi
  */
 trait EventService {
-
+ 
+ /**
+ * Lists all the events
+ */
 
  def listEvents(): List[Event]
+
+ /**
+ * Adds a general event
+ */
 
  def addEvent(event: Event)
 
@@ -30,4 +37,13 @@ trait EventService {
  */
  def addSourceEvent(user: Option[User], object_id: UUID, object_name: String, source_id: UUID, source_name: String, action_type: String)
 
+
+
+
+
+
 }
+
+
+
+ 
