@@ -335,6 +335,10 @@ GET            /api/datasets/:id                                                
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 
+#new endpoint for JSON-LD format
+POST           /api/datasets/:id/metadataJsonLD                                         @api.Datasets.addMetadataJsonLD(id: UUID)
+GET            /api/datasets/:id/metadataJsonLD                                         @api.Datasets.getMetadataJsonLD(id: UUID)
+
 GET            /api/previews/:preview_id/textures/dataset/:datasetid/json               @api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET            /api/previews/:preview_id/textures/dataset/:dataset_id//:filename        @api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
 GET            /api/previews/:dzi_id_dir/:level/:filename                               @api.Previews.getTile(dzi_id_dir, level, filename)
