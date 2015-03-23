@@ -313,6 +313,9 @@ class Files @Inject()(
 	  		  
 	  		  //add metadata to mongo
 	  		  metadataService.addMetadata(metadata)
+	  		  //send file for indexing
+	  		  index(id)
+
           }
           case None => Logger.error(s"Error getting file $id"); NotFound
         }
