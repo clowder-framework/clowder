@@ -8,7 +8,8 @@ import play.api.mvc.Controller
 import api.WithPermission
 import api.Permission
 import services.PostgresPlugin
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.Logger
 
 /**
  * View/Add/Remove Geostreams
@@ -25,7 +26,18 @@ object Geostreams extends Controller with SecuredController {
   def list() = SecuredAction(authorization=WithPermission(Permission.ListSensors)) { implicit request =>
     implicit val user = request.user
     plugin match {
-      case Some(db) => Ok(views.html.geostreams.list())
+      case Some(db) => {
+        val json: JsValue = Json.parse(db.searchSensors(None, None).getOrElse("{}"))
+        val sensorResult = json.validate[List[JsValue]]
+        val list = sensorResult match {
+          case JsSuccess(list : List[JsValue], _) => list
+          case e: JsError => {
+            Logger.debug("Errors: " + JsError.toFlatJson(e).toString())
+            List()
+          }
+        }
+        Ok(views.html.geostreams.list(list))
+      }
       case None => pluginNotEnabled
     }
   }
