@@ -503,3 +503,14 @@ textarea, input[type='text'], input[type='password']{
 .instrument-delete {
     padding: 20px 16px 0 10px;
 }
+
+table#sensorsListTable > thead > tr > th {
+    min-width: 80px;
+}
+table#sensorsListTable > thead > tr > th.headerSortUp {
+    background-color: #bcbcbc
+}
+
+table#sensorsListTable > thead > tr > th.headerSortDown {
+    background-color: #bcbcbc;
+}
