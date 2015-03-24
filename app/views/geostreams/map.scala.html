@@ -1,6 +1,8 @@
-@(title: String = "Geostream Map")(implicit user: Option[securesocial.core.Identity])
+@(sensors: List[play.api.libs.json.JsValue])(implicit user: Option[securesocial.core.Identity])
 @import services._
-@main(title) {
+@import play.api.libs.json.Json
+
+@main("Sensors Map") {
 
  <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
  <!--[if lte IE 8]>
@@ -46,15 +48,9 @@
 		};
 
 	   
-	   var request = jsRoutes.api.Geostreams.searchSensors().ajax({
-	       type: 'GET',
-	       contentType: "application/json",
-	       dataType: 'json',
-	     });
-	     
-	     request.done(function (response, textStatus, jqXHR){
-	        console.log("Sensors found " + response.length);
-	        var geojsonLayer = L.geoJson(response, {
+	        console.log("Sensors found " + @sensors.length );
+            // prefacing with HTML prevents Play from escaping quotes and other JSON characters
+            var geojsonLayer = L.geoJson(@Html(Json.stringify(Json.toJson(sensors))), {
 
 		        style: function (feature) {
 			        var color = {fillColor: "#ff7800"};
@@ -87,14 +83,6 @@
 			    
 			}).addTo(map);
  			map.fitBounds(geojsonLayer.getBounds());
-	     });
-	  
-	     request.fail(function (jqXHR, textStatus, errorThrown){
-	        console.error(
-	            "The following error occured: "+
-	            textStatus, errorThrown  
-	        );
-	     });
 
 	     function createPopup(feature, layer) {
 			    var div = document.createElement('div');
@@ -105,23 +93,26 @@
 				    listStreams(feature.id);
 				};
 				var info = document.createElement('div');
-				info.innerHTML = 'Station: ' + feature.properties.popupContent + '<br>Source: ' + feature.properties.type;
+				info.innerHTML = 'Station: ' + feature.properties.popupContent +
+                    '<br>Source: ' + feature.properties.type.id.toUpperCase();
 				div.appendChild(info);
 				div.appendChild(link);
 				return div;
 	     }
 
 	     function listStreams(sensor_id) {
-	  	   var request = jsRoutes.api.Geostreams.getSensorStreams(sensor_id).ajax({
+             var searchStreams = jsRoutes.api.Geostreams.getSensorStreams(sensor_id ).url;
+	  	   var request = $.ajax({
+               url: searchStreams,
 		       type: 'GET',
 		       contentType: "application/json",
-		       dataType: 'json',
+		       dataType: 'json'
 		     });
 
 		  	 request.done(function (response, textStatus, jqXHR){
 			  	 console.log('Got streams for sensor');
-			  	 console.log(response);
-			  	$('#list_streams').empty();
+			  	 var listStreamsElement = $('#list_streams');
+			  	listStreamsElement.empty();
 			  	for (var i = 0; i < response.length; i++) {
 			  		var stream_id = response[i]['stream_id'];
 			  		var link = document.createElement('a');
@@ -130,33 +121,32 @@
 			    	link.onclick = function() {
 					   listDatapoints(stream_id);
 					};
-			  	 $('#list_streams').append(link);
-			  	 $('#list_streams').append(document.createElement('br'));
+			  	 listStreamsElement.append(link);
+			  	 listStreamsElement.append(document.createElement('br'));
 			  	}
 		  	 });
 
 	     	request.fail(function (jqXHR, textStatus, errorThrown){
-		        console.error(
-		            "The following error occured: "+
-		            textStatus, errorThrown  
-		        );
+		        console.error("The following error occured: " + textStatus, errorThrown);
 		     });
 		     
 	     }
 
 	     function listDatapoints(stream_id) {
 		     console.log("clicked on " + stream_id);
-		  	   var request = $.ajax({
-			  	   url: 'http://localhost:9000/api/geostreams/datapoints?stream_id=' + stream_id,
-			       type: 'GET',
+               var searchDatapointsURL = jsRoutes.api.Geostreams.searchDatapoints("", null, null, null, stream_id, null, null, null, "json").url;
+               var request = $.ajax({
+                   url: searchDatapointsURL,
+			  	   type: 'GET',
 			       contentType: "application/json",
 			       dataType: 'json',
 			     });
 
 		  	 request.done(function (response, textStatus, jqXHR){
 			  	console.log('Got datapoints for stream');
-			  	$('#datapoints').empty();
-			  	$('#datapoints').append(JSON.stringify(response, null, '   '));
+			    var datapointsElement = $('#datapoints');
+                datapointsElement.empty();
+			  	datapointsElement.append(JSON.stringify(response, null, '   '));
 		  	 });
 
 	     	 request.fail(function (jqXHR, textStatus, errorThrown){
