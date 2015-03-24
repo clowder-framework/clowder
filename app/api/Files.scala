@@ -278,26 +278,17 @@ class Files @Inject()(
 	  	      val json = request.body
 	  		  //parse request for agent/creator info
 	  		  //creator can be UserAgent or ExtractorAgent
-	  		  var creator: models.Agent = null
-	  		  val typeOfAgent = (json \ "agent" \ "@type").toString
-
-	  		  //if user_id is part of the request, then creator is a user
-	  		  val user_id = (json \ "agent" \ "user_id").asOpt[String]
-	  		  user_id match {
-	  		  	case Some(uid) => {
-	  		  		creator = models.UserAgent(UUID.generate, typeOfAgent, Some(new java.net.URL(uid)))
-	  		  	}
-	  		  	case None =>
-	  		  }
-	  		  //if extractor_id is part of the request, then creator is an extractor
-	  		  val extr_id = (json \ "agent" \ "extractor_id").asOpt[String]
-	  		  extr_id match {
-	  		  	case Some(exid) => {
-	  		  		creator = models.ExtractorAgent(UUID.generate, typeOfAgent, Some(new java.net.URL(exid)))
-	  		  	}
-	  		  	case None =>
-	  		  }	  		  
-	  		  
+	  	       var creator: models.Agent = null
+	  	      json.validate[Agent] match {
+	  	        case s: JsSuccess[Agent]=>{
+	  	          creator = s.get
+	  	        }
+	  	        case e: JsError => {
+	  	          Logger.error("Error getting creator")
+	  	        }
+	  	      }   
+	  	 
+	  	      
 	  		  //read context from request if exists (might not be part of json)
 	  		  val context = (json \ "@context").asOpt[JsValue]
 	  		  //add to db and get an ID
