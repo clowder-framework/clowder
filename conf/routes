@@ -202,6 +202,7 @@ POST           /api/files/:id/metadata                                          
 
 #new endpoint for JSON-LD format
 POST           /api/files/:id/metadataJsonLD                                            @api.Files.addMetadataJsonLD(id: UUID)
+GET            /api/files/:id/metadataJsonLD                                            @api.Files.getMetadataJsonLD(id: UUID)
 
 POST           /api/files/:id/versus_metadata                                           @api.Files.addVersusMetadata(id:UUID)
 GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)
