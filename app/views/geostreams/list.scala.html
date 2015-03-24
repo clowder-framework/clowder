@@ -39,7 +39,9 @@
 	</table>
     <script type="text/javascript">
         $(document).ready(function(){
-            $("#sensorsListTable").tablesorter();
+            $("#sensorsListTable").tablesorter({
+                sortList: [[1,0]]
+            });
         });
     </script>
 }
