@@ -271,53 +271,43 @@ class Files @Inject()(
       notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
       responseClass = "None", httpMethod = "POST")
   def addMetadataJsonLD(id: UUID) =
-  	SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
-	  request =>
-	  	val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
-	  	files.get(id) match {
-	  	  case Some(x) => {
-	  	      val json = request.body
-	  		  //parse request for agent/creator info
-	  		  //creator can be UserAgent or ExtractorAgent
-	  		  var creator: models.Agent = null
-	  		  val typeOfAgent = (json \ "agent" \ "@type").toString
+    SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
+      request =>
+        files.get(id) match {
+          case Some(x) => {
+            val json = request.body
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            var creator: models.Agent = null
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                creator = s.get
+                //if creator is found, continue processing
+                //read context from request if exists (might not be part of json)
+                val context = (json \ "@context").asOpt[JsValue]
+                //add to db and get an ID
+                val contextID = context.map(contextService.addContext(new JsString("context name"), _))
 
-	  		  //if user_id is part of the request, then creator is a user
-	  		  val user_id = (json \ "agent" \ "user_id").asOpt[String]
-	  		  user_id match {
-	  		  	case Some(uid) => {
-	  		  		creator = models.UserAgent(UUID.generate, typeOfAgent, Some(new java.net.URL(uid)))
-	  		  	}
-	  		  	case None =>
-	  		  }
-	  		  //if extractor_id is part of the request, then creator is an extractor
-	  		  val extr_id = (json \ "agent" \ "extractor_id").asOpt[String]
-	  		  extr_id match {
-	  		  	case Some(exid) => {
-	  		  		creator = models.ExtractorAgent(UUID.generate, typeOfAgent, Some(new java.net.URL(exid)))
-	  		  	}
-	  		  	case None =>
-	  		  }	  		  
-	  		  
-	  		  //read context from request if exists (might not be part of json)
-	  		  val context = (json \ "@context").asOpt[JsValue]
-	  		  //add to db and get an ID
-	  		  val contextID = context.map(contextService.addContext(new JsString("context name"), _))
-            
-	  		  //parse the rest of the request to create a new models.Metadata object
-	  		  val attachedTo = Map(("file_id", id))
-	  		  val createdAt = (json \ "created_at").as[Date]
-	  		  val content =  (json \ "content")
-	  		  val version = None
-	  		  
-	  		  val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)
-	  		  
-	  		  //add metadata to mongo
-	  		  metadataService.addMetadata(metadata)
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = Map(("files_id", id))
+                val createdAt = (json \ "created_at").as[Date]
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)
+
+                //add metadata to mongo
+                metadataService.addMetadata(metadata)
+                files.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator")
+                BadRequest(toJson(s"Creator data is missing or incorrect."))
+              }
+            }
           }
           case None => Logger.error(s"Error getting file $id"); NotFound
         }
-        Ok(toJson("Added metadata successfully."))
     }
 
  @ApiOperation(value = "Retrieve metadata as JSON-LD",
