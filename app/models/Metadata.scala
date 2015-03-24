@@ -1,16 +1,17 @@
 package models
-
+import play.api.Logger
+import java.net.URL
 import java.util.Date
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
-import java.net.URL
 import play.api.libs.json.Writes
 import play.api.libs.json.Reads
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
-//import play.api.libs.json._
 import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsError
 import play.api.libs.json.JsResult
+import play.api.data.validation.ValidationError
 /**
  * A piece of metadata for a section/file/dataset/collection/space
  * 
@@ -43,9 +44,39 @@ case class UserAgent( id: UUID, var typeOfAgent : String = "user", userId: Optio
 // Automatic extraction
 case class ExtractorAgent( id: UUID, var typeOfAgent : String = "extractor" , extractorId: Option[URL]) extends Agent
 
+object Agent {
+  implicit object AgentReads extends Reads[Agent] {
+    def reads(json: JsValue) = {
+      //creator(agent) may be User or Extractor depending on the json 
+      var creator: Option[models.Agent] = None
+      
+      //parse json input for type of agent
+      val typeOfAgent = (json \ "agent" \ "@type").toString
+
+      //if user_id is part of the request, then creator is a user
+      val user_id = (json \ "agent" \ "user_id").asOpt[String]
+      user_id map { uid =>
+        val userId = Some(new URL(uid))
+        creator = Some(UserAgent(UUID.generate, typeOfAgent, userId))
+      }
+
+      //if extractor_id is part of the request, then creator is an extractor
+      val extr_id = (json \ "agent" \ "extractor_id").asOpt[String]
+      extr_id map { exid =>
+        val extractorId =  Some(new URL(exid))
+        creator = Some(ExtractorAgent(UUID.generate, typeOfAgent, extractorId))
+      }
+
+      //if creator is still None - wrong user input
+      creator match {
+        case Some(c) => JsSuccess(c)
+        case None => JsError(ValidationError("could not get creator"))
+      }
+    }
+  }
+}
 
 object Metadata{
- 
   implicit object ExtractorAgentWrites extends Writes[ExtractorAgent] {
     def writes(extractor: ExtractorAgent): JsObject = {
       val extractor_id_string = extractor.extractorId.map(_.toString).getOrElse("")
@@ -60,7 +91,7 @@ object Metadata{
       val user_id_string = user.userId.map(_.toString).getOrElse("")
       Json.obj(
         "@type" -> "cat:user",
-        "extractor_id" -> user_id_string)
+        "user_id" -> user_id_string)
     }
   }
 	
