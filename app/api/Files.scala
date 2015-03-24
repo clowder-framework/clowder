@@ -287,7 +287,7 @@ class Files @Inject()(
                 val context = (json \ "@context").asOpt[JsValue]
                 //add to db and get an ID
                 val contextID = context.map(contextService.addContext(new JsString("context name"), _))
-
+                
                 //parse the rest of the request to create a new models.Metadata object
                 val attachedTo = Map(("files_id", id))
                 val createdAt = (json \ "created_at").as[Date]
