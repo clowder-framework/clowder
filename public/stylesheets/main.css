@@ -448,9 +448,26 @@ textarea, input[type='text'], input[type='password']{
     border:1px solid #e6e6e6;
 }
 
+.tag {
+    display: inline-block;
+    border: none;
+    padding: 5px;
+    margin: 5px;
+    background: #474949;
+    border-radius: .25em;
+}
+
+.tag a {
+    color: white;
+}
+
+.tag a:hover {
+    color: white;
+}
+
 .input-table-cell {
 	padding-top: 10px;
-	padding-bottom: 10px:
+	padding-bottom: 10px;
 }
 
 .horizontal-radio {
@@ -481,4 +498,8 @@ textarea, input[type='text'], input[type='password']{
 
 #license-img {
     height: 25px;
+}
+
+.tags-row {
+    padding-bottom: 10px;
 }

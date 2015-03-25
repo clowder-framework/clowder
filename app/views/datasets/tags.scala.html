@@ -1,145 +1,176 @@
 @(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
 
-<h4>Tags</h4>
-<ul id="tagList">
-    @dataset.tags.map { tag =>
-        <li name='@tag.name'>
-            <a href="@routes.Tags.search(tag.name)">@tag.name [Dataset]</a>
-            <a href="javascript:void(0);"><span id="@tag.name" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
-        </li>
-    }
-    @dataset.files.map { file =>
-        @file.tags.map { tag =>
-            <li>
-                <a href="@routes.Tags.search(tag.name)">@tag.name [File]</a>
-            </li>
-        }
-        @file.sections.map { section =>
-            @section.tags.map { tag =>
-                <li>
-                    <a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a>
-                </li>
-            }
-        }
-    }
-</ul>
-<form class="form-inline requiresLogin requiresLoginCommunity">
-    <div class="input-group input-group-sm col-md-8">
-        <input type="text" id="tagField" class="form-control">
-        <span class="input-group-btn">
-            <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-                <span class="glyphicon glyphicon-tag"></span>
-            </button>
-        </span>
+<div class="row tags-row">
+    <div class="col-md-12">
+        <h4>Tags</h4>
     </div>
-</form>
-<script language="javascript">
-window["userDefined"] = false;
-</script>
+</div>
+
+<div class="row tags-row">
+    <div id ="tagList" class="col-md-12">
+        @dataset.tags.map { tag =>
+            <div name='@tag.name' class="tag">
+                <a href="@routes.Tags.search(tag.name)">@tag.name</a>
+                <a href="javascript:void(0);"><span id="@tag.name" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row tags-row">
+    <div class="col-md-12">
+        <form class="form-inline requiresLogin requiresLoginCommunity">
+            <div class="input-group input-group-sm">
+                <input type="text" id="tagField" class="form-control">
+                <span class="input-group-btn">
+                    <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+                        <span class="glyphicon glyphicon-tag"></span> Tag
+                    </button>
+                </span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row tags-row">
+    <div class="col-md-12">
+        <a class="btn btn-link" data-toggle="collapse" href="#tagsFromFiles" aria-expanded="false" aria-controls="collapseExample">
+            <span class="glyphicon glyphicon-collapse-down"></span> Show tags on files in this dataset
+        </a>
+        <div class="collapse" id="tagsFromFiles">
+            <div class="well">
+                @dataset.files.map { file =>
+                    @file.tags.map { tag =>
+                        <div class="tag">
+                            <a href="@routes.Tags.search(tag.name)">@tag.name</a>
+                        </div>
+                    }
+                    @file.sections.map { section =>
+                        @section.tags.map { tag =>
+                            <div class="tag">
+                                <a href="@routes.Tags.search(tag.name)">@tag.name</a>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if(user.isEmpty) {
+    <script language="javascript">
+    window[ "userDefined" ] = false ;
+    </script>
+}
+
 @if(user.isDefined) {
     <script language="javascript">
-    window["userDefined"] = true;
+        window["userDefined"] = true;
     </script>
 }
+
 <script language="javascript">
-function removeTag(){
-var tagId = $(this).attr("id");
-console.log("Removing tag " + tagId);
+    function removeTag(){
+        var tagId = $(this).attr("id");
+        console.log("Removing tag " + tagId);
 
-var request = jsRoutes.api.Datasets.removeTags('@dataset.id').ajax({
-data: JSON.stringify({"tags":[tagId]}),
-type: 'POST',
-contentType: "application/json"
-});
+        var request = jsRoutes.api.Datasets.removeTags('@dataset.id').ajax({
+            data: JSON.stringify({"tags":[tagId]}),
+            type: 'POST',
+            contentType: "application/json"
+        });
 
-request.done(function (response, textStatus, jqXHR){
-console.log("Response " + textStatus);
-$("#" + tagId).parents("li").remove();
-});
+        request.done(function (response, textStatus, jqXHR) {
+            console.log("Response " + textStatus);
+            $("#" + tagId).parents("li").remove();
+        });
 
-request.fail(function (jqXHR, textStatus, errorThrown){
-console.error("The following error occured: " + textStatus, errorThrown);
-var errMsg = "You must be logged in to remove a tag from a dataset.";
-if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-notify("The tag was not removed from the dataset due to : " + errorThrown, "error");
-}
-});
+        request.fail(function (jqXHR, textStatus, errorThrown) {
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to remove a tag from a dataset.";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                notify("The tag was not removed from the dataset due to : " + errorThrown, "error");
+            }
+        });
 
-return false;
-}
+        return false;
+    }
 
-function removeIconMouseIn() {
-$(this).find(".glyphicon-remove").fadeIn(100);
-}
+    function removeIconMouseIn() {
+        $(this).find(".glyphicon-remove").fadeIn(100);
+    }
 
-function removeIconMouseOut() {
-$(this).find(".glyphicon-remove").fadeOut(100);
-}
+    function removeIconMouseOut() {
+        $(this).find(".glyphicon-remove").fadeOut(100);
+    }
 
-$(function() {
-if(window["userDefined"] == true)
-$("#tagList").children("li").each(function(){
-$(this).hover(removeIconMouseIn,removeIconMouseOut);
-});
-$("#tagList").find(".glyphicon-remove").click(removeTag);
+    $(function() {
+        if(window["userDefined"] == true)
+        $("#tagList").children("li").each(function(){
+            $(this).hover(removeIconMouseIn,removeIconMouseOut);
+        });
+        $("#tagList").find(".glyphicon-remove").click(removeTag);
 
-$('#tagB').click(function() {
-var tag = $('#tagField').val();
+        $('#tagB').click(function() {
+            var tag = $('#tagField').val();
 
-var isTagPresent = false;
-$("#tagList").children("li").each(function (index, tagLi) {
-if($(tagLi).attr("name")===tag){
-isTagPresent = true;
-}
-});
+            var isTagPresent = false;
+            $("#tagList").children("li").each(function (index, tagLi) {
+                if($(tagLi).attr("name")===tag){
+                    isTagPresent = true;
+                }
+            });
 
-if (tag !== "" && isTagPresent != true) {
-console.log("submitting tag " + tag);
-var request = jsRoutes.api.Datasets.addTags('@dataset.id').ajax({
-data: JSON.stringify({"tags":[tag]}),
-type: 'POST',
-contentType: "application/json"
-});
+            if (tag !== "" && isTagPresent != true) {
+                console.log("submitting tag " + tag);
+                var request = jsRoutes.api.Datasets.addTags('@dataset.id').ajax({
+                    data: JSON.stringify({"tags":[tag]}),
+                    type: 'POST',
+                    contentType: "application/json"
+                });
 
-request.done(function (response, textStatus, jqXHR){
-console.log("Response " + response);
-var url = "../tags/search?tag=" + tag;
-$newTag = $("<li><a href='" + url + "'>" + tag + " [Dataset]</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
-$newTag.hover(removeIconMouseIn,removeIconMouseOut);
-$newTag.find(".glyphicon-remove").click(removeTag);
-$('#tagField').val("");
-});
+                request.done(function (response, textStatus, jqXHR){
+                    console.log("Response " + response);
+                    var url = "../tags/search?tag=" + tag;
+                    $newTag = $("<div class='tag'><a href='" + url + "'>" + tag + "</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></div>").appendTo('#tagList');
+                    $newTag.hover(removeIconMouseIn,removeIconMouseOut);
+                    $newTag.find(".glyphicon-remove").click(removeTag);
+                    $('#tagField').val("");
+                });
 
-request.fail(function (jqXHR, textStatus, errorThrown){
-console.error("The following error occured: "+textStatus, errorThrown);
-var errMsg = "You must be logged in to add a tag to a dataset.";
-if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-notify("The tag was not added to the dataset due to : " + errorThrown, "error");
-}
-});
-return false;
-}
-});
+                request.fail(function (jqXHR, textStatus, errorThrown){
+                    console.error("The following error occured: "+textStatus, errorThrown);
+                    var errMsg = "You must be logged in to add a tag to a dataset.";
+                    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                        notify("The tag was not added to the dataset due to : " + errorThrown, "error");
+                    }
+                });
+                return false;
+            }
+        });
 
-$('#tagField').keypress(function (e) {
-if (e.which == 13) {
-console.log("enter");
-$('#tagB').click();
-return false;
-}
-});
+        $('#tagField').keypress(function (e) {
+            if (e.which == 13) {
+                console.log("enter");
+                $('#tagB').click();
+                return false;
+            }
+        });
 
-});
+    });
 </script>
-@if(!user.isDefined) {
+
+@if(user.isEmpty) {
     <script language="javascript">
-    $(".requiresLogin").css("display","none");
+        $(".requiresLogin").css("display","none");
     </script>
 }
+
 @if(user.isDefined) {
     @if(!user.get.identityId.userId.equals(dataset.author.identityId.userId)){
         <script language="javascript">
-        $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
+            $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
         </script>
     }
 }

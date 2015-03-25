@@ -1,38 +1,50 @@
 @(dataset: Dataset, collectionsInside: List[models.Collection], collectionsOutside: List[models.Collection])(implicit user: Option[securesocial.core.Identity])
 
-    <h4>Collections containing the dataset</h4>
-    <table id="collTable">
-        @collectionsInside.map { collection =>
-            <tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></td>
-                <td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id)','@(collection.name)',event)">Remove</a></td></tr>
-        }
-    </table>
+<div class="row border-top">
+    <div class="col-md-12">
+        <h4>Collections containing the dataset</h4>
+    </div>
+</div>
 
-    <div class="requiresLogin ui-widget requiresLoginCommunity" id="collectionsUi">
-        <div>Add to existing collection</div>
-        <div class="input-group input-group-sm col-md-8"">
-        <select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
-        @collectionsOutside.map { collection =>
-            @if(user.isDefined) {
-                @if(!collection.author.isDefined){
-                    <option value="@(collection.id)">@(collection.name)</option>
-                }
-                @if(collection.author.isDefined){
-                    @if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
-                        <option value="@(collection.id)">@(collection.name)</option>
-                    }
-                }
+<div class="row">
+    <div class="col-md-12">
+        <table id="collTable">
+            @collectionsInside.map { collection =>
+                <tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></td>
+                    <td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id)','@(collection.name)',event)">Remove</a></td></tr>
             }
-        }
-        </select>
-        <span class="input-group-btn">
-            <button class="btn btn-primary btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
-                <span class="glyphicon glyphicon-plus"></span>
-            </button>
-        </span>
-    </div><br/>
-    <span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif"  id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
+        </table>
+    </div>
+</div>
 
+<div class="row">
+    <div class="col-md-12">
+        <div class="requiresLogin ui-widget requiresLoginCommunity" id="collectionsUi">
+            <h5>Add to existing collection</h5>
+            <div class="input-group input-group-sm col-md-8"">
+                <select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
+                    @collectionsOutside.map { collection =>
+                        @if(user.isDefined) {
+                            @if(!collection.author.isDefined){
+                                <option value="@(collection.id)">@(collection.name)</option>
+                            }
+                            @if(collection.author.isDefined){
+                                @if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
+                                    <option value="@(collection.id)">@(collection.name)</option>
+                                }
+                            }
+                        }
+                    }
+                </select>
+                <span class="input-group-btn">
+                    <button class="btn btn-primary btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
+                        <span class="glyphicon glyphicon-plus"></span>
+                    </button>
+                </span>
+            </div>
+            <span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif"  id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
+        </div>
+    </div>
 </div>
 
 <script type="text/javascript">
