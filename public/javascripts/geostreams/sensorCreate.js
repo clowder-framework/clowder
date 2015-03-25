@@ -113,60 +113,35 @@ $(document).ready(function() {
   // enable tooltips
   $('[data-toggle="tooltip"]').tooltip();
 
-  $("#deferredGet").click(function(event) {
-    event.preventDefault();
-    var dataPromise1 = deferredGet("http://localhost:9001/api/geostreams/sensors/update");
-
-//    dataPromise1.progress( function ( message ) {
-//      console.log("Deferred GET 1 is reporting progress");
-//      console.log(message);
-//    } );
-//
-//    dataPromise1.done( function ( data ) {
-//      console.log("Deferred GET is complete.");
-//      console.log(data );
-//    } );
-//
-    dataPromise1.fail( function ( err ) {
-      console.log("Deferred GET failed");
-      console.log(err);
-    } );
-
-    var dataPromise2 = deferredGet("http://localhost:9001/api/geostreams/streams");
-//
-    dataPromise2.progress(function(message) {
-      console.log("dataPromise2 reporting progress");
-      console.log(message);
-    });
-
-    dataPromise2.fail( function ( err ) {
-      console.log("Deferred GET failed");
-      console.log(err);
-    } );
-    $.when(dataPromise1, dataPromise2).done( function(data1, data2) {
-
-        console.log(data1);
-        console.log(data2);
-//      function ( data ) {
-//        console.log("Deferred GET 2 is complete");
-//        console.log(data);
-//      },
-//      function ( err ) {
-//        console.log("Deferred GET 2 failed");
-//        console.log(error);
-//      },
-//      function ( message) {
-//        console.log("Deferred GET 2 is reporting progress");
-//        console.log(message);
-//      }
-      }
-    );
-
-
-  });
-
+  var sensorsValid = true;
   $("#formSubmit").click(function(event) {
     event.preventDefault();
+    if (!sensorForm.valid()) {
+      return;
+    }
+    $('.single-stream-tmpl').each(function() {
+
+      $(this).validate({
+        ignore: false,
+        messages: {
+          sensorName: "You must provide a name for this instrument",
+          sensorID: "You must provide a unique ID for this instrument"
+        }
+      });
+      console.log($(this));
+      console.log($(this).valid());
+      if (!$(this).valid()) {
+        $(this).find('.collapse').collapse('show');
+        sensorsValid = false;
+        return false;
+      }
+    });
+
+    if (!sensorsValid) {
+      return;
+    }
+
+
     var mediciSensorsURL = jsRoutes.api.Geostreams.searchSensors().url;
     var mediciStreamsURL = jsRoutes.api.Geostreams.searchStreams().url;
     var data = {geometry: { type: "Point", coordinates: [0,0,0]}, properties: { type: {id: "", "title": ""}}, type: "Feature"};
