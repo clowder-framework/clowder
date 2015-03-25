@@ -439,10 +439,6 @@ textarea, input[type='text'], input[type='password']{
   border-top: none;
 }
 
-.col-left-border {
-  border-left: 1px solid #E1E1E8;
-}
-
 .col-right-border {
   border-right: 1px solid #E1E1E8;
 }
@@ -485,4 +481,21 @@ textarea, input[type='text'], input[type='password']{
 
 .featurette {
     margin-top: 50px;
+}
+
+.box-white-space {
+    padding: 30px 0px 0px 0px;
+}
+
+#add-file-btn {
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+#ds-title {
+    margin-bottom: 10px;
+}
+
+#license-img {
+    height: 25px;
 }

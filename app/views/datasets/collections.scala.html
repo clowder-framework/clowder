@@ -1,0 +1,125 @@
+@(dataset: Dataset, collectionsInside: List[models.Collection], collectionsOutside: List[models.Collection])(implicit user: Option[securesocial.core.Identity])
+
+    <h4>Collections containing the dataset</h4>
+    <table id="collTable">
+        @collectionsInside.map { collection =>
+            <tr><td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></td>
+                <td><a href="#" class="requiresLogin" style="font-style:italic;" onclick="removeCollection('@(collection.id)','@(collection.name)',event)">Remove</a></td></tr>
+        }
+    </table>
+
+    <div class="requiresLogin ui-widget requiresLoginCommunity" id="collectionsUi">
+        <div>Add to existing collection</div>
+        <div class="input-group input-group-sm col-md-8"">
+        <select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
+        @collectionsOutside.map { collection =>
+            @if(user.isDefined) {
+                @if(!collection.author.isDefined){
+                    <option value="@(collection.id)">@(collection.name)</option>
+                }
+                @if(collection.author.isDefined){
+                    @if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
+                        <option value="@(collection.id)">@(collection.name)</option>
+                    }
+                }
+            }
+        }
+        </select>
+        <span class="input-group-btn">
+            <button class="btn btn-primary btn-large" id="addCollBtn" title="Add Dataset To Collection" style="vertical-align:center;">
+                <span class="glyphicon glyphicon-plus"></span>
+            </button>
+        </span>
+    </div><br/>
+    <span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif"  id="doesNotExistErrorCollections">Collection does not exist or already added.</span>
+
+</div>
+
+<script type="text/javascript">
+$("#collectionAddSelect").combobox();
+
+function selectClickChange() {
+var theSelectedColl = document.getElementById("collectionAddSelect");
+document.getElementById("selectCollectionInput").value = theSelectedColl.options[theSelectedColl.selectedIndex].text;
+}
+document.getElementById("collectionAddSelect").onchange = selectClickChange;
+</script>
+<script>
+$('body').on('click','#addCollBtn',function(e){
+if($("#doesNotExistErrorCollections").css('display') == 'block')
+return;
+if($("#selectingInputCollections").val() == ""){
+$("#doesNotExistErrorCollections").css('display','block');
+return;
+}
+
+var selectedId = $("#collectionAddSelect").val();
+var selectedName = $("#collectionAddSelect option:selected").text();
+var request = $.ajax({
+type: 'POST',
+url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+selectedId+"/datasets/"+"@dataset.id"
+});
+request.done(function (response, textStatus, jqXHR) {
+console.log ( "Response " + response ) ;
+$ ( "#collectionAddSelect option[value=" + selectedId + "]" ).remove ( ) ;
+$ ( "#selectingInputCollections" ).val ( "" ) ;
+var i = 1 ;
+var tableLength = $ ( "#collTable tbody tr" ).length ;
+while ( i <= tableLength && $ ( "#collTable tbody tr:nth-child(" + i + ") td:nth-child(1) a" ).text ( ) < selectedName )
+i ++ ;
+if ( i <= tableLength ) {
+$ ( "#collTable tbody tr:nth-child(" + i + ")" ).before ( "<tr><td><a href='" + window.location.protocol + "//" + window.location.hostname + ( window.location.port ? ':' + window.location.port : '' ) + "/collection/" + selectedId + "'>" + selectedName + "</a>"
++ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\"" + selectedId + "\",\"" + selectedName + "\",event)'>Remove</a></td></tr>"
+) ;
+} else if(tableLength > 0) {
+$ ( "#collTable tbody tr:nth-child(" + ( i - 1 ) + ")" ).after ( "<tr><td><a href='" + window.location.protocol + "//" + window.location.hostname + ( window.location.port ? ':' + window.location.port : '' ) + "/collection/" + selectedId + "'>" + selectedName + "</a>"
++ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\"" + selectedId + "\",\"" + selectedName + "\",event)'>Remove</a></td></tr>"
+) ;
+} else {
+if($("#collTable tbody").length == 0)
+$("#collTable").append("<tbody></tbody>");
+$("#collTable tbody").append("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
++ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
+);
+}
+});
+request.fail(function (jqXHR, textStatus, errorThrown){
+console.error("The following error occured: " + textStatus, errorThrown);
+var errMsg = "You must be logged in to add a dataset to a collection.";
+if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+notify("The dataset was not added to the collection due to the following : " + errorThrown, "error");
+}
+});
+});
+
+function removeCollection(collectionId, collectionName,event){
+var request = $.ajax({
+type: 'POST',
+url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasetsRemove/"+"@dataset.id"+"/True"
+});
+request.done(function (response, textStatus, jqXHR){
+console.log("Response " + response);
+$(event.target.parentNode.parentNode).remove();
+var i = 1;
+var selectLength = $("#collectionAddSelect option").length;
+while(i <= selectLength && $("#collectionAddSelect option:nth-child("+i+")").text() < collectionName)
+i++;
+if(i <= selectLength)
+$("#collectionAddSelect option:nth-child("+i+")").before("<option value='"+collectionId+"'>"+collectionName+"</option>");
+else if(selectLength > 0)
+$("#collectionAddSelect option:nth-child("+(i-1)+")").after("<option value='"+collectionId+"'>"+collectionName+"</option>");
+else
+$("#collectionAddSelect").append("<option value='"+collectionId+"'>"+collectionName+"</option>");
+
+$("#collectionAddSelect").combobox();
+});
+request.fail(function (jqXHR, textStatus, errorThrown){
+console.error("The following error occured: " + textStatus, errorThrown);
+var errMsg = "You must be logged in to remove a dataset from a collection.";
+if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+notify("The dataset was not removed from the collection due to : " + errorThrown, "error");
+}
+});
+}
+
+</script>
