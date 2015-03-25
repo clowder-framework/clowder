@@ -19,7 +19,7 @@
 	</form>
 	@if(user.isDefined) {
 		<script language="javascript">
-			window["previousHTML"] = '@Html(currentHTML)';
+			window["previousHTML"] = "@Html(currentHTML)";
 			
 			function postNote(id, posturl) {			
 				var html =  tinyMCE.get('noteField_@id').getContent();

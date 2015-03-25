@@ -187,26 +187,9 @@ code {
   height: 100px;
 }
 
-button.usr_md_ {
-    background:none!important;
-     border:none; 
-     padding:0!important;
-     
-     color:rgb(0, 136, 204);
-}
-
 .usr_md_{
 	margin-right:10px;
 	margin-bottom:5px;
-}
-
-button.tech_md_ {
-    background:none!important;
-     border:none; 
-     padding:0!important;
-     
-     color:rgb(0, 136, 204);
-     
 }
 
 .tech_md_{

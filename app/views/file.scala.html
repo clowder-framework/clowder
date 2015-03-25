@@ -300,16 +300,16 @@
 
             <div class="row border-top">
                 <div class="col-md-12">
-                    <h4>Community-generated metadata</h4>
+                    <h4>Community generated metadata</h4>
                     @fileusermetadata(file, usrmd, rdfExported)
                 </div>
             </div>
 
             <div class="row border-top">
                 <div class="col-md-12">
-                    <h4>System-generated metadata</h4>
+                    <h4>System generated metadata</h4>
                     <div id='technicalMetadata_@(file.id)'>
-                        <button class="tech_md_" type="button">Show file technical metadata</button>
+                        <button class="tech_md_ btn btn-link btn-sm" type="button">Show file technical metadata</button>
                         <div style="display:none;">
                         <ul>
                             @for(i <- 0 until file.metadata.length){
