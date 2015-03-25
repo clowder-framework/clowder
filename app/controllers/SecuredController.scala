@@ -24,37 +24,37 @@ trait SecuredController extends Controller {
   def SecuredAction[A](p: BodyParser[A] = parse.anyContent, authorization: Authorization = WithPermission(Permission.Public), resourceId: Option[UUID] = None)(f: RequestWithUser[A] => Result) = Action(p) {
     implicit request => {
       // Only check secure social, no other auth methods are allowed
-      SecureSocial.currentUser(request) match { // calls from browser
-        case Some(identity) => {
+      val result = for (
+        authenticator <- SecureSocial.authenticatorFromRequest;
+        identity <- UserService.find(authenticator.identityId)
+      ) yield {
+          Authenticator.save(authenticator.touch)
           val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-          if (authorization.isInstanceOf[WithPermission]){
-            if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId)) {
-              f(RequestWithUser(Some(identity), user, request))
-            } else if(SecureSocial.currentUser.isDefined) {  //User logged in but not authorized, so redirect to 'not authorized' page
-              Results.Redirect(routes.Authentication.notAuthorized)
-            } else {   //User not logged in, so redirect to login page
-              Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authorized.")
+          authorization match {
+            case auth: WithPermission => {
+              if (auth.isAuthorized(identity, resourceId)) {
+                f(RequestWithUser(Some(identity), user, request))
+              } else {
+                Results.Redirect(routes.Authentication.notAuthorized)
+              }
             }
-          } else if(SecureSocial.currentUser.isDefined) {  //User logged in but not authorized, so redirect to 'not authorized' page
-            Results.Redirect(routes.Authentication.notAuthorized)
-          } else {   //User not logged in, so redirect to login page
-            Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authenticated.")
+            case _ => Results.Redirect(routes.Authentication.notAuthorized)
           }
         }
-        case None => {
-          if (authorization.isAuthorized(null))
-            f(RequestWithUser(None, None, request))
-          else {
-            if(SecureSocial.currentUser.isDefined){  //User logged in but not authorized, so redirect to 'not authorized' page
+
+      // return Result, or check anonymous permissions
+      result.getOrElse {
+        authorization match {
+          case auth: WithPermission => {
+            if (auth.isAuthorized(None, resourceId)) {
+              f(RequestWithUser(None, None, request))
+            } else {
               Results.Redirect(routes.Authentication.notAuthorized)
             }
-            else{   //User not logged in, so redirect to login page
-              Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authenticated.")
-            }
           }
+          case _ => Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authenticated.")
         }
       }
     }
   }
 }
-
