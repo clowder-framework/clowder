@@ -9,9 +9,11 @@
 <div class="row tags-row">
     <div id ="tagList" class="col-md-12">
         @dataset.tags.map { tag =>
-            <div name='@tag.name' class="tag">
+            <div id='@tag.name' class="tag">
                 <a href="@routes.Tags.search(tag.name)">@tag.name</a>
-                <a href="javascript:void(0);"><span id="@tag.name" class="glyphicon glyphicon-remove" style="display:none;"></span></a>
+                @if(user.isDefined) {
+                    <a href="#"> <span id="@tag.name" class="glyphicon glyphicon-remove tag-delete"></span></a>
+                }
             </div>
         }
     </div>
@@ -83,7 +85,7 @@
 
         request.done(function (response, textStatus, jqXHR) {
             console.log("Response " + textStatus);
-            $("#" + tagId).parents("li").remove();
+            $("div#" + tagId + ".tag").remove();
         });
 
         request.fail(function (jqXHR, textStatus, errorThrown) {
@@ -97,26 +99,15 @@
         return false;
     }
 
-    function removeIconMouseIn() {
-        $(this).find(".glyphicon-remove").fadeIn(100);
-    }
-
-    function removeIconMouseOut() {
-        $(this).find(".glyphicon-remove").fadeOut(100);
-    }
-
     $(function() {
-        if(window["userDefined"] == true)
-        $("#tagList").children("li").each(function(){
-            $(this).hover(removeIconMouseIn,removeIconMouseOut);
-        });
+
         $("#tagList").find(".glyphicon-remove").click(removeTag);
 
         $('#tagB').click(function() {
             var tag = $('#tagField').val();
 
             var isTagPresent = false;
-            $("#tagList").children("li").each(function (index, tagLi) {
+            $("#tagList").children("div").each(function (index, tagLi) {
                 if($(tagLi).attr("name")===tag){
                     isTagPresent = true;
                 }
@@ -133,8 +124,7 @@
                 request.done(function (response, textStatus, jqXHR){
                     console.log("Response " + response);
                     var url = "../tags/search?tag=" + tag;
-                    $newTag = $("<div class='tag'><a href='" + url + "'>" + tag + "</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></div>").appendTo('#tagList');
-                    $newTag.hover(removeIconMouseIn,removeIconMouseOut);
+                    $newTag = $("<div id='"+tag+"' class='tag'><a href='" + url + "'>" + tag + "</a><a href='#'> <span id='" + tag +"' class='glyphicon glyphicon-remove tag-delete'></span></a></div>").appendTo('#tagList');
                     $newTag.find(".glyphicon-remove").click(removeTag);
                     $('#tagField').val("");
                 });

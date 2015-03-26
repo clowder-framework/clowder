@@ -451,7 +451,7 @@ textarea, input[type='text'], input[type='password']{
 .tag {
     display: inline-block;
     border: none;
-    padding: 5px;
+    padding: 1px 10px 1px 10px;
     margin: 5px;
     background: #474949;
     border-radius: .25em;
@@ -463,6 +463,10 @@ textarea, input[type='text'], input[type='password']{
 
 .tag a:hover {
     color: white;
+}
+
+.tag .tag-delete {
+    margin-right: -5px;
 }
 
 .input-table-cell {
