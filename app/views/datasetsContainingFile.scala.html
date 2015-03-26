@@ -34,34 +34,36 @@
 
             var selectedId = $("#datasetAddSelect").val();
             var selectedName = $("#datasetAddSelect option:selected").text();
-            var request = $.ajax({
-                   type: 'POST',
-                   url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+selectedId+"/files/"+"@file.id"
+            var request = jsRoutes.api.Datasets.attachExistingFile(selectedId, "@file.id").ajax({
+                   type: 'POST',                   
                  });
+            
             request.done(function (response, textStatus, jqXHR){
                 console.log("Response " + response);
                 $("#datasetAddSelect option[value=" + selectedId + "]").remove();
                 $("#selectingInputDatasets").val("");
                 var i = 1;
                 var tableLength = $("#datasTable tbody tr").length;
+                var dsUrl = jsRoutes.controllers.Datasets.dataset(selectedId).url
                 while(i <= tableLength && $("#datasTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
                     i++;
                 if(i <= tableLength)
-                    $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
+                    $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                 else if(tableLength > 0)
-                    $("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
+                    $("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                 else{
                     if($("#datasTable tbody").length == 0)
                         $("#datasTable").append("<tbody></tbody>");
-                    $("#datasTable tbody").append("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/datasets/"+selectedId+"'>"+selectedName+"</a>"
+                    $("#datasTable tbody").append("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                     }
             });
+            
             request.fail(function (jqXHR, textStatus, errorThrown){
             	console.error("The following error occured: "+textStatus, errorThrown);
                 var errMsg = "You must be logged in to add a file to a dataset.";                    
@@ -72,9 +74,8 @@
         });
 
         function removeFromDataset(datasetId, datasetName,event){
-            var request = $.ajax({
-                   type: 'POST',
-                   url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+datasetId+"/filesRemove/"+"@file.id"+"/True"
+            var request = jsRoutes.api.Datasets.detachFile(datasetId, "@file.id").ajax({
+                   type: 'DELETE'
                  });
             request.done(function (response, textStatus, jqXHR){
                 console.log("Response " + response);

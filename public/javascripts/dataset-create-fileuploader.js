@@ -298,7 +298,7 @@ function attachFiles() {
 	    	//Successful creation and file attachment. Update the staus label accordingly.
 	        id = response["id"];
 	        console.log("Successful response from createEmptyDataset existing files. ID is " + id);
-	        $('#status').html("Creation successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
+	        $('#status').html("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>");
 	        $('#status').show();
 	        $('#existingcreate').html(" Attach Files");
 	    });
@@ -333,7 +333,7 @@ function attachFiles() {
 	    request.done(function (response, textStatus, jqXHR){	    
 	    	//Successful attachment of multiple files
 	        console.log("Successful response from attachMultipleFiles.");
-	        $('#status').html("Attach files successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
+	        $('#status').html("Attach files successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>");
 	        $('#status').show();
 	    });
 	

@@ -47,8 +47,8 @@
 				 });
 			 }
 	        datasetsInCollectionCount++;
-	        $('#collectionDatasetsTable tbody').prepend("<tr id='datasetRow1' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
-					+ "/datasets/" + datasetId + "'>"+ event.target.innerHTML + "</a></td>"
+	        $('#collectionDatasetsTable tbody').prepend("<tr id='datasetRow1' style='display:none;' data-datasetId='" + datasetId + "'> " +
+	        		"<td><a href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>"+ event.target.innerHTML + "</a></td>"
 					+ "<td>" + inputDate + "</td>"
 					+ "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 					+ "<td>" + inputThumbnail + "</td>"
@@ -120,8 +120,8 @@
 	      + "<td>" + inputDate + "</td>"
 	      + "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 	      + "<td>" + inputThumbnail + "</td>"
-	      + "<td><a target='_blank' href='" +  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')			
-	      + "/datasets/" + datasetId + "'>View</a></td></tr>";
+	      + "<td><a target='_blank' href='" +  jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>View</a></td></tr>";
+	      
 	      if(datasetPos > 1)
 	    	  $("#addDatasetsTable tbody tr[id='resultRow" + (datasetPos-1) + "']").after(newDatasetHTML);
 	      else
@@ -252,6 +252,7 @@
 		       url: queryIp,
 		       dataType: "json",
 		     });
+			
 			request.done(function (respJSON){
 		        console.log("Response " + respJSON);
 		        $('#addPagerPrev').css('visibility','hidden');
@@ -274,8 +275,8 @@
 		        								+ "<td>" + createdDate + "</td>"
 		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 		        								+ "<td>" + datasetThumbnail + "</td>"
-		        								+ "<td><a target='_blank' href='" +  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')			
-		        								+ "/datasets/" + respJSON[i].id + "'>View</a></td></tr>");
+		        								+ "<td><a target='_blank' href='" +  jsRoutes.controllers.Datasets.dataset(respJSON[i].id).url + "'>View</a></td></tr>");
+		        	
 		        }
 		        $('#addDatasetsTable').show();
 		        

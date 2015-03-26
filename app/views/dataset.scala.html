@@ -344,10 +344,9 @@
 				    <span class="glyphicon glyphicon-export"></span> Add
 				</a>																				
                 <script>                    
-                    function detachFile(fileId, fileName,event){
-                        var request = $.ajax({
-							type: 'POST',
-							url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
+                    function detachFile(fileId, fileName,event){                    	
+                        var request = jsRoutes.api.Datasets.detachFile("@dataset.id", fileId).ajax({
+							type: 'DELETE'
 						});
                         request.done(function (response, textStatus, jqXHR){
                             console.log("Response " + response);
@@ -435,36 +434,41 @@
 								return;
 							}
 							
+							//BELOW is the main start of the hardcoded routes that need to be replaced. Search was for href. Look for url: also						
 							var selectedId = $("#collectionAddSelect").val();
 							var selectedName = $("#collectionAddSelect option:selected").text();
-							var request = $.ajax({
-							       type: 'POST',
-							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+selectedId+"/datasets/"+"@dataset.id"
+							var request = jsRoutes.api.Collections.attachDataset(selectedId, "@dataset.id").ajax({
+							       type: 'POST',							       
 							     });
+							
 							request.done(function (response, textStatus, jqXHR) {
 								console.log ( "Response " + response ) ;
 								$ ( "#collectionAddSelect option[value=" + selectedId + "]" ).remove ( ) ;
 								$ ( "#selectingInputCollections" ).val ( "" ) ;
 								var i = 1 ;
 								var tableLength = $ ( "#collTable tbody tr" ).length ;
+								console.log("selectedId is " + selectedId);
+								var collUrl = jsRoutes.controllers.Collections.collection(selectedId).url;
+								console.log("collUrl is " + collUrl);
 								while ( i <= tableLength && $ ( "#collTable tbody tr:nth-child(" + i + ") td:nth-child(1) a" ).text ( ) < selectedName )
 								i ++ ;
 								if ( i <= tableLength ) {
-									$ ( "#collTable tbody tr:nth-child(" + i + ")" ).before ( "<tr><td><a href='" + window.location.protocol + "//" + window.location.hostname + ( window.location.port ? ':' + window.location.port : '' ) + "/collection/" + selectedId + "'>" + selectedName + "</a>"
+									$ ( "#collTable tbody tr:nth-child(" + i + ")" ).before ( "<tr><td><a href='" + collUrl + "'>" + selectedName + "</a>"
 									+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\"" + selectedId + "\",\"" + selectedName + "\",event)'>Remove</a></td></tr>"
 									) ;
 								} else if(tableLength > 0) {
-									$ ( "#collTable tbody tr:nth-child(" + ( i - 1 ) + ")" ).after ( "<tr><td><a href='" + window.location.protocol + "//" + window.location.hostname + ( window.location.port ? ':' + window.location.port : '' ) + "/collection/" + selectedId + "'>" + selectedName + "</a>"
+									$ ( "#collTable tbody tr:nth-child(" + ( i - 1 ) + ")" ).after ( "<tr><td><a href='" + collUrl + "'>" + selectedName + "</a>"
 									+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\"" + selectedId + "\",\"" + selectedName + "\",event)'>Remove</a></td></tr>"
 									) ;
 								} else {
 									if($("#collTable tbody").length == 0)
 										$("#collTable").append("<tbody></tbody>");
-									$("#collTable tbody").append("<tr><td><a href='"+window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/collection/"+selectedId+"'>"+selectedName+"</a>"
+									$("#collTable tbody").append("<tr><td><a href='" + collUrl + "'>"+selectedName+"</a>"
 											+ "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeCollection(\""+selectedId+"\",\""+selectedName+"\",event)'>Remove</a></td></tr>"
 									);
 								}
 							});
+							
 							request.fail(function (jqXHR, textStatus, errorThrown){
 								console.error("The following error occured: " + textStatus, errorThrown);
                                 var errMsg = "You must be logged in to add a dataset to a collection.";                                
@@ -475,10 +479,10 @@
 						});
 						
 						function removeCollection(collectionId, collectionName,event){
-							var request = $.ajax({
-							       type: 'POST',
-							       url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/collections/"+collectionId+"/datasetsRemove/"+"@dataset.id"+"/True"
+							var request = jsRoutes.api.Collections.removeDataset(collectionId, '@dataset.id').ajax({
+							       type: 'DELETE'
 							     });
+							
 							request.done(function (response, textStatus, jqXHR){
 								console.log("Response " + response);	        
 								$(event.target.parentNode.parentNode).remove();
