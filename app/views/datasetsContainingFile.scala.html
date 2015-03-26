@@ -34,7 +34,6 @@
 
             var selectedId = $("#datasetAddSelect").val();
             var selectedName = $("#datasetAddSelect option:selected").text();
-            alert("http://"+Configuration.hostIp+":"+window.location.port+"/api/datasets/"+selectedId+"/files/"+"@file.id");
             var request = $.ajax({
                    type: 'POST',
                    url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+selectedId+"/files/"+"@file.id"
@@ -67,7 +66,7 @@
             	console.error("The following error occured: "+textStatus, errorThrown);
                 var errMsg = "You must be logged in to add a file to a dataset.";                    
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    alert("The file was not added to the dataset due to : " + errorThrown);
+                    notify("The file was not added to the dataset due to : " + errorThrown, "error");
                 }
             });
         });
@@ -97,7 +96,7 @@
             	console.error("The following error occured: "+textStatus, errorThrown);
                 var errMsg = "You must be logged in to remove a file from a dataset.";                    
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    alert("The file was not removed from the dataset due to : " + errorThrown);
+                    notify("The file was not removed from the dataset due to : " + errorThrown, "error");
                 }
             });
         }

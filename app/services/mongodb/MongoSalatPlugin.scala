@@ -39,9 +39,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     mongoConnection = mongoURI.connect.fold(l => throw l, r => r)
 
     // update database if needed
-    if (System.getProperty("MEDICI2UPDATE") != null) {
-      updateDatabase()
-    }
+    updateDatabase()
 
     // create indices.
     Logger.debug("Ensuring indices exist")
@@ -126,11 +124,15 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // migrate users to new model
     if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-typehint-users")) {
-      Logger.info("[MongoDBUpdate] : Fixing _typeHint for users.")
-      val q = MongoDBObject("_typeHint" -> "securesocial.core.SocialUser")
-      val o = MongoDBObject("$set" -> MongoDBObject("_typeHint" -> "models.MediciUser"))
-      collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
-      appConfig.addPropertyValue("mongodb.updates", "fixing-typehint-users")
+      if (System.getProperty("MEDICI2UPDATE") != null) {
+        Logger.info("[MongoDBUpdate] : Fixing _typeHint for users.")
+        val q = MongoDBObject("_typeHint" -> "securesocial.core.SocialUser")
+        val o = MongoDBObject("$set" -> MongoDBObject("_typeHint" -> "models.MediciUser"))
+        collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
+        appConfig.addPropertyValue("mongodb.updates", "fixing-typehint-users")
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix _typeHint for users.")
+      }
     }
   }
 }

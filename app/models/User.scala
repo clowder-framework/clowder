@@ -14,10 +14,10 @@ import securesocial.core._
 trait User extends Identity {
   def id: UUID
   def biography: Option[String]
-  def currentprojects: Option[String]
+  def currentprojects: List[String]
   def institution: Option[String]
   def orcidID: Option[String]
-  def pastprojects: Option[String]
+  def pastprojects: List[String]
   def position: Option[String]
   def friends: Option[List[String]]
   def viewed: Option[List[UUID]]
@@ -59,6 +59,24 @@ trait User extends Identity {
       .mkString
       .toLowerCase
   }
+
+  /**
+   * @return string containing the current projects separated by commas
+   */
+  def getCurrentProjectsString(): String = {
+    currentprojects.reduceLeft { (proj, next) =>
+      proj + ", " + next
+    }
+  }
+
+  /**
+   * @return string containing the past projects separated by commas
+   */
+  def getPastProjectsString(): String = {
+    pastprojects.reduceLeft { (proj, next) =>
+      proj + ", " + next
+    }
+  }
 }
 
 case class MediciUser(
@@ -70,25 +88,25 @@ case class MediciUser(
   email: Option[String],
   authMethod: AuthenticationMethod,
   avatarUrl: Option[String] = None,
-  biography: Option[String] = None,
-  currentprojects: Option[String] = None,
-  institution: Option[String] = None,
-  orcidID: Option[String] = None,
-  pastprojects: Option[String] = None,
-  position: Option[String] = None,
-  friends: Option[List[String]] = None,
-  viewed: Option[List[UUID]] = None,
   oAuth1Info: Option[OAuth1Info] = None,
   oAuth2Info: Option[OAuth2Info] = None,
-  passwordInfo: Option[PasswordInfo] = None
+  passwordInfo: Option[PasswordInfo] = None,
+  biography: Option[String] = None,
+  currentprojects: List[String] = List.empty,
+  institution: Option[String] = None,
+  orcidID: Option[String] = None,
+  pastprojects: List[String] = List.empty,
+  position: Option[String] = None,
+  friends: Option[List[String]] = None,
+  viewed: Option[List[UUID]] = None
   ) extends User
 
 case class Info(
   avatarUrl: Option[String],
   biography: Option[String],
-  currentprojects: Option[String],
+  currentprojects: List[String],
   institution: Option[String],
   orcidID: Option[String] = None,
-  pastprojects: Option[String],
+  pastprojects: List[String],
   position: Option[String]
 )

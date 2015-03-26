@@ -72,6 +72,8 @@ object Permission extends Enumeration {
 		AddThumbnail,
 		DownloadFiles,
     GetUser,
+    AddProject,
+    AddInstitution,
     UserAdmin = Value        // Permission to work with users (list/add/remove/register)
 }
 

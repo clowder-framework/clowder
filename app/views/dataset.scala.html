@@ -83,7 +83,7 @@
 	</script>
     
 	<div class="page-header">
-		<h1>@dataset.name
+		<h1><span id="datasettitle">@dataset.name</span>
 			@if(user.isDefined) {
 				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 				@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
@@ -142,7 +142,7 @@
 	
 		<!-- left column -->
 		<div class="col-md-8" id="filePrevsCol">
-            @files.grid(previews.keys.toList)
+            @files.grid(dataset.files, dataset.id)
 
     		
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
@@ -154,9 +154,9 @@
 			  <div class="tab-content">
 			    <div class="tab-pane active" id="tab1">
 				      @if(user.isDefined) {
-				      	  @commentform(dataset.id.stringify, api.routes.Datasets.comment(dataset.id).toString)
+				      	  @commentform(dataset.id.stringify, "dataset")
 				      }
-			 		  <div class="comment-threads unstyled" id="reply_@dataset.id.toString">
+			 		  <div class="list-unstyled" id="reply_@dataset.id.toString">
 				      	 @comment(comments)
 				      </div> 
 			    </div>
@@ -231,7 +231,7 @@
 									//Reset the data to the current values
 									var text = $("#aboutdesc").text();
 									$("#editdesc").val(text);
-									text = $("#aboutname").text();
+									text = $("#datasettitle").text();
 									$("#editname").val(text);
 
 									//Close the edit form
@@ -257,8 +257,8 @@
 									///console.log("Response " + response);
 									//Sucessful update of the DB - update the interface
 
-									$("#aboutdesc").text(htmlDecode(encDescription));
-									$("#aboutname").text(htmlDecode(encName));
+									$("#aboutdesc").text(htmlDecode(encDescription));								
+									$("#datasettitle").text(htmlDecode(encName));
 
 									closeAboutEdit();
 									});
@@ -267,7 +267,7 @@
 									console.error("The following error occured: "+textStatus, errorThrown);
 									var errMsg = "You must be logged in to update the information about a dataset.";
 									if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-									alert("The dataset information was not updated due to : " + errorThrown);
+									notify("The dataset information was not updated due to : " + errorThrown, "error");
 									}
 									});
 
@@ -340,92 +340,10 @@
 			@if(user.isDefined) {
 			<div class="row ds-section-sm border-top">
 				<h4>Files</h4>
-
-				<a href="#myModal" class="btn btn-default btn-xs" data-toggle="modal" id="fileUploadBtn" title="Add New File to Dataset" role="button">
-				    <span class="glyphicon glyphicon-export"></span> Upload new file
-				</a>
-
-				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-				    <div class="modal-dialog">
-				      <div class="modal-content">
-				      @form(action = routes.Files.uploaddnd(dataset.id), 'enctype -> "multipart/form-data", 'role -> "form") {
-				        <div class="modal-header">
-				          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				          <h4 class="modal-title">Upload File</h4>
-				        </div>
-				        <div class="modal-body">
-				 		  <div class="form-group">
-						    <label for="exampleInputFile">New File</label>
-						    <input type="file" id="query" name="File">
-						    <p class="help-block">The file will be uploaded and added to this dataset.</p>
-								    	Show file preview(s)
-		          						<br/>				
-		          						<input type="radio" name="datasetLevel" value="DatasetLevel" checked> Everywhere<br>
-										<input type="radio" name="datasetLevel" value="FileLevel"> On file page<br>
-										<input type="radio" name="datasetLevel" value="None"> Nowhere
-						  </div>
-				        </div>
-				        <div class="modal-footer">
-				          <button type="submit" class="btn btn-primary" title="Upload File"><span class="glyphicon glyphicon-open"> Upload</span></button>				          
-				        </div>
-				      }
-				      </div><!-- /.modal-content -->
-				    </div><!-- /.modal-dialog -->
-				</div><!-- /.modal -->
-
-                <div>Add existing file</div>
-				<div class="ui-widget form-inline requiresLogin" id="filesUi">
-                    <div class="input-group input-group-sm col-md-8">
-                        <select id="filesAddSelect" data-inputid="selectingInputFiles" data-errorid="doesNotExistErrorFiles">
-                            <option value="" selected="selected"></option>
-                            @filesOutside.map { file =>
-                                <option value="@(file.id)">@(file.filename)</option>
-                            }
-                        </select>
-                        <span class="input-group-btn">
-                            <button class="btn btn-default btn-xs" id="addFileBtn" title="Add Existing File">
-                               <span class="glyphicon glyphicon-plus"></span>
-                            </button>
-                        </span>
-                    </div>
-					<span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorFiles" >File does not exist or already added.</span>
-				</div>
-                
-                <script>
-                    $("#filesAddSelect").combobox();
-                </script>
-                <script>
-                    $('body').on('click','#addFileBtn',function(e){
-                        if($("#doesNotExistErrorFiles").css('display') == 'inline')
-                            return;
-                        if($("#selectingInputFiles").val() == ""){
-                            $("#doesNotExistErrorFiles").css('display','inline');
-                            return;
-                        }
-
-                        var selectedId = $("#filesAddSelect").val();
-                        var selectedName = $("#filesAddSelect option:selected").text();
-                        var request = $.ajax({
-                               type: 'POST',
-                               url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/files/"+selectedId
-                             });
-
-                        request.done(function (response, textStatus, jqXHR){
-                            console.log("Response " + response);
-                            $("#filesAddSelect option[value=" + selectedId + "]").remove();
-                            $("#selectingInputFiles").val("");
-                            var i = 1;
-                        });
-
-                        request.fail(function (jqXHR, textStatus, errorThrown){
-                        	console.error("The following error occured: "+textStatus, errorThrown);
-                            var errMsg = "You must be logged in to add a file to a dataset.";
-                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                alert("The file was not added to the dataset due to : " + errorThrown);
-                            }
-                        });
-                    });
-
+				<a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))" class="btn btn-primary btn-sm requiresLogin" id="fileUploadBtn" title="Add New File to Dataset" role="button">
+				    <span class="glyphicon glyphicon-export"></span> Add
+				</a>																				
+                <script>                    
                     function detachFile(fileId, fileName,event){
                         var request = $.ajax({
 							type: 'POST',
@@ -434,18 +352,7 @@
                         request.done(function (response, textStatus, jqXHR){
                             console.log("Response " + response);
                             $(event.target.parentNode.parentNode).remove();
-                            var i = 1;
-                            var selectLength = $("#filesAddSelect option").length;
-                            while(i <= selectLength && $("#filesAddSelect option:nth-child("+i+")").text() < fileName)
-                                i++;
-                            if(i <= selectLength)
-                                $("#filesAddSelect option:nth-child("+i+")").before("<option value='"+fileId+"'>"+fileName+"</option>");
-                            else if(selectLength > 0)
-                                $("#filesAddSelect option:nth-child("+(i-1)+")").after("<option value='"+fileId+"'>"+fileName+"</option>");
-                            else
-                                $("#filesAddSelect").append("<option value='"+fileId+"'>"+fileName+"</option>");
-
-                            $("#filesAddSelect").combobox();
+                            var i = 1;                            
                                 var nextHRs = $("#previewedFileName_"+fileId).nextAll("hr");
                                 if(nextHRs.length > 0){
                                     nextHRs.first().remove();
@@ -465,7 +372,7 @@
                         	console.error("The following error occured: "+textStatus, errorThrown);
                             var errMsg = "You must be logged in to remove a file from a dataset.";
                             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                alert("The file was not removed from the dataset due to : " + errorThrown);
+                                notify("The file was not removed from the dataset due to : " + errorThrown, "error");
                             }       
                         });
                     }
@@ -562,7 +469,7 @@
 								console.error("The following error occured: " + textStatus, errorThrown);
                                 var errMsg = "You must be logged in to add a dataset to a collection.";                                
                                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                    alert("The dataset was not added to the collection due to the following : " + errorThrown);
+                                    notify("The dataset was not added to the collection due to the following : " + errorThrown, "error");
                                 }  
 					 		});				
 						});
@@ -592,7 +499,7 @@
 								console.error("The following error occured: " + textStatus, errorThrown);
                                 var errMsg = "You must be logged in to remove a dataset from a collection.";                                
                                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                    alert("The dataset was not removed from the collection due to : " + errorThrown);
+                                    notify("The dataset was not removed from the collection due to : " + errorThrown, "error");
                                 }  
 					 		});
 						}
@@ -624,7 +531,7 @@
 						}
 				   }
 				</ul>
-				<form class="form-inline requiresLogin">
+				<form class="form-inline requiresLogin requiresLoginCommunity">
 					<div class="input-group input-group-sm col-md-8">
 						<input type="text" id="tagField" class="form-control">
 						<span class="input-group-btn">
@@ -662,7 +569,7 @@
                         	console.error("The following error occured: " + textStatus, errorThrown);
                             var errMsg = "You must be logged in to remove a tag from a dataset.";                                
                             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                alert("The tag was not removed from the dataset due to : " + errorThrown);
+                                notify("The tag was not removed from the dataset due to : " + errorThrown, "error");
                             }     
                         });
 
@@ -691,7 +598,6 @@
 					     $("#tagList").children("li").each(function (index, tagLi) {
 					       if($(tagLi).attr("name")===tag){
 					         isTagPresent = true;
-					         alert(true);
 					       }
 					     });
 	
@@ -716,7 +622,7 @@
 								console.error("The following error occured: "+textStatus, errorThrown);
 						        var errMsg = "You must be logged in to add a tag to a dataset.";
 						        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                                    alert("The tag was not added to the dataset due to : " + errorThrown);
+                                    notify("The tag was not added to the dataset due to : " + errorThrown, "error");
                                 } 
 						     });
 							return false;

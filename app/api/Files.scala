@@ -3,8 +3,7 @@ package api
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.OutputStream
-import java.net.URL
-import java.net.HttpURLConnection
+import java.net.{URLEncoder, URI, URL, HttpURLConnection}
 
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -170,7 +169,7 @@ class Files @Inject()(
 		              case None => {
 		                Ok.chunked(Enumerator.fromStream(inputStream))
 		                  .withHeaders(CONTENT_TYPE -> contentType)
-		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8")))
 		              }
 		            }
 		          }
@@ -361,9 +360,6 @@ class Files @Inject()(
 					              }
 					        	  files.setContentType(f.id, fileType)
 					          }
-	            }
-	            else if(nameOfFile.toLowerCase().endsWith(".mov")){
-	            			fileType = "ambiguous/mov";
 	            }
 	            
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
@@ -578,9 +574,7 @@ class Files @Inject()(
                     }
                   files.setContentType(f.id, fileType)
                 }
-	            } else if(nameOfFile.toLowerCase().endsWith(".mov")) {
-                fileType = "ambiguous/mov";
-              }
+	            }
 	              
               current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
               
@@ -701,9 +695,6 @@ class Files @Inject()(
                       Logger.error(fileType.substring(7))
                       InternalServerError(fileType.substring(7))
                     }
-                  }
-                  else if (f.filename.toLowerCase().endsWith(".mov")) {
-                    fileType = "ambiguous/mov";
                   }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
@@ -1008,6 +999,33 @@ class Files @Inject()(
           }
         }
         case None => BadRequest(toJson("File not found " + file_id))
+      }
+  }
+  
+  
+  /**
+   * Add thumbnail to query file.
+   */
+  @ApiOperation(value = "Add thumbnail to a query image", notes = "Attaches an already-existing thumbnail to a query image.", responseClass = "None", httpMethod = "POST")
+  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+    implicit request =>
+      queries.get(query_id) match {
+        case Some(file) => {
+          thumbnails.get(thumbnail_id) match {
+            case Some(thumbnail) => {
+              queries.updateThumbnail(query_id, thumbnail_id)  
+              Ok(toJson(Map("status" -> "success")))
+            }
+            case None => {
+            	Logger.error("Thumbnail not found")
+            	BadRequest(toJson("Thumbnail not found"))
+            }
+          }
+        }
+        case None => {
+          Logger.error("File not found")
+          BadRequest(toJson("Query file not found " + query_id))
+        }
       }
   }
   
@@ -1635,11 +1653,15 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-          Logger.debug("Deleting file: " + file.filename)
-          files.removeFile(id)
+          
+           //this stmt has to be before files.removeFile
+          Logger.debug("Deleting file from indexes" + file.filename)
           current.plugin[VersusPlugin].foreach {        
             _.removeFromIndexes(id)        
           }
+          Logger.debug("Deleting file: " + file.filename)
+          files.removeFile(id)
+          
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "file", id.stringify)
           }

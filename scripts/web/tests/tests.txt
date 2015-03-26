@@ -1,14 +1,34 @@
-# any line with a # will be ignored
-# any line starting with @ will be used as a comment for the next test
-# any line starting with ! means do not match
-@ uses ncsa.cv.face extractor
+#Any line with a # will be ignored
+#Any line starting with @ will be used as a displayed comment for the test that follows
+#Any line starting with a * should be followed by an integer indicating how many times to run that test
+#Any output starting with ! means should not be present
+
+@Test ncsa.cv.face extractor for true positive
 http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg "Human Face Automatically Detected"
+
+@Test ncsa.cv.face extractor for a false positive
 http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/DSCN0524.preview.JPG !"Human Face Automatically Detected"
-http://browndog.ncsa.illinois.edu/examples/caltech101/airplane.jpg http://browndog.ncsa.illinois.edu/examples/outputs/airplane.jpg.json
-http://browndog.ncsa.illinois.edu/examples/caltech101/llama.jpg http://browndog.ncsa.illinois.edu/examples/outputs/llama.jpg.json
+
+@Test ncsa.cv.eyes
 http://browndog.ncsa.illinois.edu/examples/isda.jpg "Human Eyes Automatically Detected"
+
+@Test ncsa.image.caltech101
+http://browndog.ncsa.illinois.edu/examples/caltech101/airplane.jpg http://browndog.ncsa.illinois.edu/examples/outputs/airplane.jpg.json
+
+@Test ncsa.image.caltech101
+http://browndog.ncsa.illinois.edu/examples/caltech101/llama.jpg http://browndog.ncsa.illinois.edu/examples/outputs/llama.jpg.json
+
+@Test ncsa.nlp.language
 http://browndog.ncsa.illinois.edu/examples/tmp/ncsa-deutsch.txt http://browndog.ncsa.illinois.edu/examples/outputs/ncsa-deutsch.json
+
+@Test ncsa.nlp.summary
 http://browndog.ncsa.illinois.edu/examples/tmp/ncsa.txt http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.json
+
+@Test ncsa.nlp.summary
 http://browndog.ncsa.illinois.edu/examples/peter.txt http://browndog.ncsa.illinois.edu/examples/outputs/peter.json
+
+@Test ncsa.image.ocr
+*5
 #http://browndog.ncsa.illinois.edu/examples/ncsa.jpg http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.jpg.json
-http://browndog.ncsa.illinois.edu/examples/cache/isdatools_banner2.png "The ISDA Tools for Digital Preservation "
+#http://browndog.ncsa.illinois.edu/examples/cache/isdatools_banner2.png "The ISDA Tools for Digital Preservation "
+http://browndog.ncsa.illinois.edu/examples/browndog.png "The BrownDog project"

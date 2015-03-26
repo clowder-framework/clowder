@@ -103,8 +103,8 @@
                                 <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)">
                             </a>
                         }
-                        <div class="caption">
-                            <h4 class="break-word"><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
+                        <div class="caption break-word">
+                            <h4><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
                             <p>@ellipsize(dataset.description, 200)</p>
                         </div>
                   </div>

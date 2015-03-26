@@ -15,6 +15,16 @@ import play.api.Logger
 
 class MongoDBMultimediaQueryService extends MultimediaQueryService {
 
+   /**
+   * Update thumbnail used to represent this query.
+   */
+  def updateThumbnail(queryId: UUID, thumbnailId: UUID) {
+    TempFileDAO.update(MongoDBObject("_id" -> new ObjectId(queryId.stringify)),
+    	//because of a bug in Salat have to explicitely cast to ObjectId
+    	$set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+  }
+  
+  
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[TempFile] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
@@ -25,7 +35,7 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
     files.db.setWriteConcern(WriteConcern.Safe)
     
     val mongoFile = files.createFile(inputStream)
-    Logger.debug("Uploading file " + filename)
+    Logger.debug("MongoDBMultimediaQueryService.save Uploading file " + filename)
     mongoFile.filename = filename
     var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
     if (ct == play.api.http.ContentTypes.BINARY) {
