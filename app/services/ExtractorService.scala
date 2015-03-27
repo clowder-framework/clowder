@@ -26,4 +26,6 @@ trait ExtractorService {
   
   def getExtractorDetail(): Option[JsValue]
  //--End of Temporary fix BD-289
+  
+  def dropAllExtractorStatusCollection()  
 }

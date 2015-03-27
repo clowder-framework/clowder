@@ -69,6 +69,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
    */
   def updateAndGetStatus(plugin: services.RabbitmqPlugin, exchange: String) = {
     var qDetailsFuture = getQDetailsFutures(plugin, exchange) /* Obtains queues's details as Futures of the List of responses*/
+    extractors.dropAllExtractorStatusCollection()
     var status = for {
       qDetailsFutureResponses <- qDetailsFuture
       qDetailsResponses <- qDetailsFutureResponses
@@ -135,13 +136,14 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
   def updateInfoAndGetQueuesList(plugin: services.RabbitmqPlugin, qDetailsResponses: List[Response]) = {
     var exDetails = List[ExtractorDetail]()
     var qlistResult = List[String]()
+    var ipsList = List[String]()
     for (qDetailsResponse <- qDetailsResponses) {
       var qDetailJsObject = qDetailsResponse.json.as[JsObject]
       var numConsumers = qDetailJsObject.\("consumers").as[Int]
       var qname = (qDetailJsObject \ "name").as[String]
       if (numConsumers != 0) {
         val qConsumerDetails = qDetailJsObject.\("consumer_details").as[List[JsObject]]
-        var ipsList = List[String]()
+        //var ipsList = List[String]()
         var qlist = List[String]()
         for (qcd <- qConsumerDetails) {
           var peerHost = qcd.\("channel_details").\("peer_host").as[String]
@@ -172,14 +174,14 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
 
         } // end of for loop
         Logger.debug("exDetails: " + exDetails)
-        extractors.insertServerIPs(ipsList)
-        extractors.insertExtractorDetail(exDetails)
         qlistResult = qname :: qlistResult
       } //end of if
       else {
         ""
       }
     } //end of for  
+    extractors.insertServerIPs(ipsList)
+    extractors.insertExtractorDetail(exDetails)
     qlistResult
   }
 
