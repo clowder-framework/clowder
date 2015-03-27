@@ -9,6 +9,5 @@ $(function(){
         var scrollmem = $('body').scrollTop();
         window.location.hash = this.hash;
         $('html,body').scrollTop(scrollmem);
-        console.log("scrolled to tabs");
     });
 });
