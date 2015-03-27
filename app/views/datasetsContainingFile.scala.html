@@ -11,6 +11,8 @@
 
 <div class="ui-widget requiresLogin" id="datasetsUi">
     <select id="datasetAddSelect" data-inputid="selectingInputDatasets" data-errorid="doesNotExistErrorDatasets">
+        <!-- Empty value to allow default view to be empty -->
+        <option value=""></option>
         @datasetsOutside.map { dataset =>
         <option value="@(dataset.id.toString)">@dataset.name</option>
         }

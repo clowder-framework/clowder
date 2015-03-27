@@ -394,6 +394,8 @@
 					    <div>Add to existing collection</div>
 						<div class="input-group input-group-sm col-md-8"">
 							<select id="collectionAddSelect"  data-inputid="selectingInputCollections" data-errorid="doesNotExistErrorCollections" style="vertical-align:center;">
+							<!-- Empty value to allow default view to be empty -->
+							<option value=""></option>
 							@collectionsOutside.map { collection =>
 								@if(user.isDefined) {
 									@if(!collection.author.isDefined){
