@@ -22,8 +22,6 @@ import scala.collection.JavaConversions._
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.WriteConcern
 import play.api.Logger
-import com.mongodb.casbah.gridfs.{GridFSInputFile, GridFS}
-import scala.Some
 import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
 import models.File
@@ -34,9 +32,6 @@ import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
-import play.api.http.ContentTypes
-import play.api.libs.MimeTypes
-import scala.collection.mutable.MutableList
 
 
 /**
