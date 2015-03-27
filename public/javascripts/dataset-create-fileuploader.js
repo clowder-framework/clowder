@@ -53,8 +53,7 @@ function resetDatasetItems() {
 	//Ensure both tabs are shown
 	$('#tab1anchor').show();
 	$('#tab2anchor').show();
-	hideStatus();
-	clearErrors();
+	hideStatus();	
 	$('#uploadcreate').html("Create Dataset");
 	$('#existingcreate').html("Create Dataset");
 }
@@ -120,7 +119,7 @@ $(function () {
 });        
 
 function createEmptyDataset(data) {
- 	
+ 		
 	//Remove error messages if present
 	clearErrors();
 	
@@ -132,18 +131,19 @@ function createEmptyDataset(data) {
 	
 	//Update the input we are adding to the form programmatically      
 	var name = $('#name');
-    var desc = $('#description');
+    var desc = $('#description');    
     
-    //Add errors and return false if validation fails
+    //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
+    //variables.
     var error = false;
-    if (!name.val()) {
+    if (!name.val() && isNameRequired) {
     	$('#nameerror').show();
     	error = true;
     }
-    if (!desc.val()) {                                
+    if (!desc.val() && isDescRequired) {
         $('#descerror').show();
         error = true;
-    }
+    }    	   
     if (error) {
     	if (data != null) {
 	    	//On error, re-enable things to allow the user to fix items
@@ -213,6 +213,7 @@ function createEmptyDataset(data) {
             	enableFields();
             	//Also, reset the dataset elements, since the workflow is starting over.
             	resetDatasetItems();
+            	clearErrors();
             }  
         });
         //This block is the primary file, so don't submit yet, don't re-enable the buttons either.
@@ -262,16 +263,20 @@ function attachFiles() {
 		var name = $('#name');
 	    var desc = $('#description');
 	    
-	    //Add errors and return false if validation fails
+	    console.log("isNameRequried is " + isNameRequired);
+	    console.log("isDescRequired is " + isDescRequired);
+
+	    //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
+	    //variables.
 	    var error = false;
-	    if (!name.val()) {
+	    if (!name.val() && isNameRequired) {
 	    	$('#nameerror').show();
 	    	error = true;
 	    }
-	    if (!desc.val()) {                                
+	    if (!desc.val() && isDescRequired) {
 	        $('#descerror').show();
 	        error = true;
-	    }
+	    }    	   
 	    if (error) {
 	    	enableFields();
 	    	$('#tab1anchor').show();
