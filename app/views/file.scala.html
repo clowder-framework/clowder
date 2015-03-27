@@ -186,7 +186,7 @@
 										data-title="Unknown" data-description="Unknown info"
 					  		 		}
 					  		 	}
-					  		 	></img>
+					  		 	>
 					  		}
 					  	}
 				  	</div>
@@ -500,7 +500,7 @@
                   }
               </ul>
               <form class="form-inline requiresLogin requiresLoginCommunity">
-                <div class="input-group input-group-sm col-md-8"">
+                <div class="input-group input-group-sm col-md-8">
                   <input type="text" id="tagField" class="form-control">
                   <span class="input-group-btn">
                         <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
@@ -623,7 +623,9 @@
         </div>
 
     </div> @* End of small right hand side column *@
-	
+
+	</div>
+
 	@if(!user.isDefined) {
         <script language="javascript">
             $(".requiresLogin").css("display","none");

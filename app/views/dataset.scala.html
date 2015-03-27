@@ -58,9 +58,7 @@
 
 @main("Dataset") {
 
-    <script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-
-	<div class="row">	
+	<div class="row">
 	
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
@@ -113,7 +111,7 @@
 		</div>
 
 		<!-- right column -->
-		<div class="col-md-4">
+		<div class="col-md-4 col-left-border">
             @datasets.tags(dataset)
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
 		</div>
