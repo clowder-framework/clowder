@@ -10,9 +10,25 @@ import play.Logger
 import play.api.Play._
 import services.{ByteStorageService, DI}
 
+/**
+ * Object used to read/write/delete from mongo. This object is aware of
+ * ByteStorageService. It will use mongo for the metadta of the file,
+ * and the ByteStorageService for the bytes. If either the ByteStorageService
+ * is set to MongoDBByteStorage or the useMongoProperty is set to true it
+ * will use mongo for the bytes as well (without going through
+ * ByteStorageService).
+ *
+ * This code is aware of an issue with Casbah, Joda (see JIRA:
+ * https://opensource.ncsa.illinois.edu/jira/browse/MMDB-1573).
+ */
 object MongoUtils {
   val storage: ByteStorageService = DI.injector.getInstance(classOf[ByteStorageService])
 
+  /**
+   * Write the inputstream to mongo and ByteStorageService. Any extra values
+   * to be written can be stored in extra. The values need to be able to be
+   * converted to DBObject.
+   */
   def writeBlob(inputStream: InputStream, filename: String, contentType: Option[String], extra: Map[String, AnyRef], collection: String, useMongoProperty: String): Option[UUID] = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
@@ -54,6 +70,10 @@ object MongoUtils {
     }
   }
 
+  /**
+   * Read from mongo and ByteStorageService. This will return a tuple that
+   * contains metadata of the file as well as inputstream to the bytes.
+   */
   def readBlob(id: UUID, collection: String, useMongoProperty: String): Option[(InputStream, String, String, Long)] = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
@@ -89,6 +109,10 @@ object MongoUtils {
     }
   }
 
+  /**
+   * Remove from mongo and ByteStorageService. This will return the metadata
+   * from mongo and the bytes from ByteStorageService.
+   */
   def removeBlob(id: UUID, collection: String, useMongoProperty: String): Boolean = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
