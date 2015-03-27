@@ -1,12 +1,12 @@
 @(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
 
-<div class="row tags-row">
+<div class="row bottom-padding">
     <div class="col-md-12">
         <h4>Tags</h4>
     </div>
 </div>
 
-<div class="row tags-row">
+<div class="row bottom-padding">
     <div id ="tagList" class="col-md-12">
         @dataset.tags.map { tag =>
             <div id='@tag.name' class="tag">
@@ -19,7 +19,7 @@
     </div>
 </div>
 
-<div class="row tags-row">
+<div class="row bottom-padding">
     <div class="col-md-12">
         <form class="form-inline requiresLogin requiresLoginCommunity">
             <div class="input-group input-group-sm">
@@ -34,7 +34,7 @@
     </div>
 </div>
 
-<div class="row tags-row">
+<div class="row bottom-padding">
     <div class="col-md-12">
         <a class="btn btn-link" data-toggle="collapse" href="#tagsFromFiles" aria-expanded="false" aria-controls="collapseExample">
             <span class="glyphicon glyphicon-collapse-down"></span> Show tags on files in this dataset

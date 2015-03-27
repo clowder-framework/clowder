@@ -504,6 +504,10 @@ textarea, input[type='text'], input[type='password']{
     height: 25px;
 }
 
-.tags-row {
-    padding-bottom: 10px;
+.bottom-padding {
+    padding-bottom: 15px;
+}
+
+.top-padding {
+    padding-top: 15px;
 }
