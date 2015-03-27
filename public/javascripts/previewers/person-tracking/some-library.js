@@ -26,7 +26,7 @@
         var pathFlotJS = pathJs + "jquery.flot.js";
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
-        var pathPopcornJS = pathJs + "popcorn-complete.min.js";        
+        var pathPopcornJS = pathJs + "popcorn-complete.min.js";
         var sortedFrameDataArray = new Array();
 
         //dowload JQuery library files        	        	        
@@ -41,7 +41,7 @@
             // Processing JSON data            
             var jsonFrameArray = data[0].result.frame;
             var jsonFrameArrayLength = jsonFrameArray.length;                        
-            
+            ake your change to a remote repository without losing commits. When this happens, your push is refused.
             // Pass 1: Rearrange data
             for(var i = 0; i < jsonFrameArrayLength; i++) {
                 var frameIndex = parseInt(jsonFrameArray[i]["@number"]);
@@ -157,8 +157,7 @@
             }                                    
             
             //display video on screen and visualize person tracking
-    		console.log("Updating tab " + Configuration.tab);
-    		//console.log(sortedFrameDataArray);
+    		console.log("Updating tab " + Configuration.tab);    		
             
             //add video to display
             $(Configuration.tab).append("<br/>");
