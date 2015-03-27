@@ -13,10 +13,10 @@ function addToCollection(datasetId) {
 
     request.done(function (response, textStatus, jqXHR) {
         // TODO retrieve more information about collection from API and show it in the GUI
-        $("#collectionsList").append('<div id="col_@collection.id" class="row bottom-padding">' +
+        $("#collectionsList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
         '<div class="col-md-2"></div>' +
         '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'">'+selectedName+'</a></div><div>' +
-        '<a href="#" class="btn btn-link btn-xs" onclick="removeCollection(selectedId,selectedName, datasetId, event)" title="Remove from collection">' +
+        '? datasets | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection(\''+selectedId+'\',\''+selectedName+'\', \''+datasetId+'\', event)" title="Remove from collection">' +
         ' Remove</a></div></div></div>');
     });
 
