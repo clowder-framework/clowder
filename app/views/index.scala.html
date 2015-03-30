@@ -1,13 +1,40 @@
-@(files: List[models.File], displayedName: String, welcomeMessage: String)(implicit user: Option[securesocial.core.Identity])
+@(files: List[models.File], datasetsCount: Long, filesCount: Long, collectionCount: Long,
+        displayedName: String, welcomeMessage: String)(implicit user: Option[securesocial.core.Identity])
 
 @main(displayedName) {
+    <div class="row featurette">
+        <div class="col-md-7">
+            <h2 class="featurette-heading">Welcome to @displayedName</h2>
+            <p class="lead">@welcomeMessage</p>
+        </div>
+        <div class="col-md-5">
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h3 class="panel-title">Resources</h3>
+              </div>
+              <div class="panel-body">
+                  <ul class="list-group">
+                      <li class="list-group-item">
+                          <span class="badge">@collectionCount</span>
+                          <a href="@routes.Collections.list("")">Collections</a>
+                      </li>
+                      <li class="list-group-item">
+                          <span class="badge">@datasetsCount</span>
+                          <a href="@routes.Datasets.list("")">Datasets</a>
+                      </li>
+                      <li class="list-group-item">
+                          <span class="badge">@filesCount</span>
+                          <a href="@routes.Files.list("")">Files</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+        </div>
+    </div>
 
-<div class="jumbotron">
-  <h1>@displayedName</h1>
-  <p class="josefinFonted">Hello @(user.map{_.firstName}.getOrElse("stranger"))! 
-     @welcomeMessage</p>
-</div>
-
-@*@carousel(files: List[models.File])*@
-
+    @*******
+    *if(user.isDefined) {
+    *    @carousel(files)
+    *}
+    ********@
 }

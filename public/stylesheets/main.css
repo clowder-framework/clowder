@@ -100,15 +100,8 @@ code {
  * Comments
  * ----------------------------------------------------------------------
  */
-ol.comment-threads {
-}
-
-.comment-thread {
-	margin: 0px 0px 0px 0px;
-}
-
 .comment {
-	padding-top: 20px;
+	padding-top: 25px;
 }
 
 .comment-image {
@@ -121,25 +114,20 @@ ol.comment-threads {
 	float: left;
 }
 
-.comment-date {
-	padding-right: 10px;
-	float: right;
-}
-
 .comment-header {
 	padding-left: 10px;
 	padding-bottom: 10px;
+    font-size: 85%;
 }
 
 .comment-body {
-	padding-left: 40px;
-	min-height:   10px;
+	padding-left: 10px;
+	min-height:   30px;
 }
 
 .comment-footer {
 	padding-left: 10px;
 	font-size: 85%;
-	text-align: right;
 	padding-right: 10px;
 }
 
@@ -281,13 +269,16 @@ button.tech_md_ {
   max-height:256px;
 }
 
-#editProfileFieldSet .control-group .controls input[type='text']{
+.editProfileInput input[type='text']{
   width:450px;
   height:30px;
 }
-#editProfileFieldSet .control-group .controls textarea{
+.editProfileInput textarea{
   width:450px;
   height:100px;
+}
+.editProfileInput .chosen-select {
+  width:450px;
 }
 
 #nameDescrFieldSet .control-group .controls textarea{
@@ -497,4 +488,13 @@ textarea, input[type='text'], input[type='password']{
 
 .horizontal-radio {
 	margin-right: 25px;
+}
+
+/* required to get comments to span the entire width of the container */
+.media .media-body {
+    width: 10000px;
+}
+
+.featurette {
+    margin-top: 50px;
 }

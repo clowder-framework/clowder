@@ -21,6 +21,7 @@ import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
 import org.apache.commons.lang.StringEscapeUtils
+import scala.collection.mutable.ListBuffer
 
 
 /**
@@ -124,8 +125,9 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
+      var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
-          decodeDatasetElements(aDataset)
+          decodedDatasetList += decodeDatasetElements(aDataset)
       }
       
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
@@ -146,7 +148,7 @@ class Datasets @Inject()(
 		}
       
       //Pass the viewMode into the view
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
+      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
   }
 
   def userDatasets(when: String, date: String, limit: Int, mode: String, email: String)
@@ -203,8 +205,9 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
+      var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
-          decodeDatasetElements(aDataset)
+          decodedDatasetList += decodeDatasetElements(aDataset)
       }
       
       //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
@@ -225,7 +228,7 @@ class Datasets @Inject()(
           }
       }                       
       
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
+      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
   }
 
   def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {
@@ -263,107 +266,107 @@ class Datasets @Inject()(
    * Dataset.
    */
   def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) { implicit request =>
-    implicit val user = request.user
-    Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
-    datasets.get(id) match {
-      case Some(dataset) => {
 
-        val filesInDataset = dataset.files.map(f => files.get(f.id).get)
+      implicit val user = request.user
+      Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
+      datasets.get(id) match {
+        case Some(dataset) => {
 
-        val datasetWithFiles = dataset.copy(files = filesInDataset)
-        decodeDatasetElements(datasetWithFiles)
-        val previewers = Previewers.findPreviewers
-        //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
-        val previewslist = for (f <- datasetWithFiles.files) yield {
-          // add sections to file
-          val sectionsByFile = sections.findByFileId(f.id)
-          Logger.debug("Sections: " + sectionsByFile)
-          val sectionsWithPreviews = sectionsByFile.map { s =>
-            val p = previewService.findBySectionId(s.id)
-            if (p.length > 0)
-              s.copy(preview = Some(p(0)))
-            else
-              s.copy(preview = None)
-          }
-          val fileWithSections = f.copy(sections = sectionsWithPreviews)
+          // get files info sorted by date
+          val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
 
-          val pvf = for (p <- previewers; pv <- fileWithSections.previews;
-                         if (fileWithSections.showPreviews.equals("DatasetLevel"))
-                           && (p.contentType.contains(pv.contentType))) yield {
-            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
-          }
-          if (pvf.length > 0) {
-            fileWithSections -> pvf
-          } else {
-            val ff = for (p <- previewers;
-                          if (f.showPreviews.equals("DatasetLevel"))
-                            && (p.contentType.contains(f.contentType))) yield {
-              //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the
-              //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-              if (f.licenseData.isDownloadAllowed(user)) {
-                (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id).toString, f.contentType, f.length)
-              }
-              else {
-                (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
-              }
+          var datasetWithFiles = dataset.copy(files = filesInDataset)
+          datasetWithFiles = decodeDatasetElements(datasetWithFiles)
+          val previewers = Previewers.findPreviewers
+          //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
+          val previewslist = for (f <- datasetWithFiles.files) yield {
+
+            // add sections to file
+            val sectionsByFile = sections.findByFileId(f.id)
+            Logger.debug("Sections: " + sectionsByFile)
+            val sectionsWithPreviews = sectionsByFile.map { s =>
+              val p = previewService.findBySectionId(s.id)
+              if(p.length>0)
+                s.copy(preview = Some(p(0)))
+              else
+                s.copy(preview = None)
             }
-            fileWithSections -> ff
-          }
-        }
+            val fileWithSections = f.copy(sections = sectionsWithPreviews)
 
-
-        val metadata = datasets.getMetadata(id)
-        Logger.debug("Metadata: " + metadata)
-        for (md <- metadata) {
-            Logger.debug(md.toString)
-        }
-        val userMetadata = datasets.getUserMetadata(id)
-        Logger.debug("User metadata: " + userMetadata.toString)
-
-        val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
-        val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
-        val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
-        var decodedCollectionsOutside = new ListBuffer[models.Collection]()
-        var decodedCollectionsInside = new ListBuffer[models.Collection]()
-
-        for (aCollection <- collectionsOutside) {
-            val dCollection = decodeCollectionElements(aCollection)
-                    decodedCollectionsOutside += dCollection
-        }
-        for (aCollection <- collectionsInside) {
-            val dCollection = decodeCollectionElements(aCollection)
-            decodedCollectionsInside += dCollection
-        }
-
-        var commentsByDataset = comments.findCommentsByDatasetId(id)
-        filesInDataset.map {
-            file =>
-            commentsByDataset ++= comments.findCommentsByFileId(file.id)
-            sections.findByFileId(UUID(file.id.toString)).map { section =>
-            commentsByDataset ++= comments.findCommentsBySectionId(section.id)
+            val pvf = for (p <- previewers; pv <- fileWithSections.previews;
+                           if (fileWithSections.showPreviews.equals("DatasetLevel"))
+                             && (p.contentType.contains(pv.contentType))) yield {
+              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
             }
-        }
-        commentsByDataset = commentsByDataset.sortBy(_.posted)
+            if (pvf.length > 0) {
+              fileWithSections -> pvf
+            } else {
+              val ff = for (p <- previewers;
+                            if (f.showPreviews.equals("DatasetLevel"))
+                              && (p.contentType.contains(f.contentType))) yield {
+                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the
+                //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                if (f.licenseData.isDownloadAllowed(user)) {
+                  (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id).toString, f.contentType, f.length)
+                }
+                else {
+                  (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                }
+              }
+              fileWithSections -> ff
+            }
+          }
 
-        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+          val metadata = datasets.getMetadata(id)
+          Logger.debug("Metadata: " + metadata)
+          for (md <- metadata) {
+              Logger.debug(md.toString)
+          }
+          val userMetadata = datasets.getUserMetadata(id)
+          Logger.debug("User metadata: " + userMetadata.toString)
 
-        val space = dataset.space.flatMap(spaces.get(_))
-        var decodedSpace: ProjectSpace = null;
-        space match {
+          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
+          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
+          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
+          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
+          var decodedCollectionsInside = new ListBuffer[models.Collection]()
+
+          for (aCollection <- collectionsOutside) {
+              val dCollection = decodeCollectionElements(aCollection)
+                      decodedCollectionsOutside += dCollection
+          }
+          for (aCollection <- collectionsInside) {
+              val dCollection = decodeCollectionElements(aCollection)
+              decodedCollectionsInside += dCollection
+          }
+
+          var commentsByDataset = comments.findCommentsByDatasetId(id)
+          filesInDataset.map {
+              file =>
+              commentsByDataset ++= comments.findCommentsByFileId(file.id)
+              sections.findByFileId(UUID(file.id.toString)).map { section =>
+              commentsByDataset ++= comments.findCommentsBySectionId(section.id)
+              }
+          }
+          commentsByDataset = commentsByDataset.sortBy(_.posted)
+
+          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+
+          val space = dataset.space.flatMap(spaces.get(_))
+          var decodedSpace: ProjectSpace = null;
+          space match {
             case Some(s) => {
                 decodedSpace = Utils.decodeSpaceElements(s)
-                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, 
+                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata,
                 decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace)))
             }
             case None => {
-                Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)                
-                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata, 
+                Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)
+                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata,
                 decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space))
             }
+          }
         }
-        
-        
-      }
       case None => {
         Logger.error("Error getting dataset" + id);
         InternalServerError
@@ -380,9 +383,11 @@ class Datasets @Inject()(
    * description
    *  
    */
-  def decodeDatasetElements(dataset: Dataset) {      
-      dataset.name = StringEscapeUtils.unescapeHtml(dataset.name)
-      dataset.description = StringEscapeUtils.unescapeHtml(dataset.description)
+  def decodeDatasetElements(dataset: Dataset) : Dataset = {            
+      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
+              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
+              							  
+      decodedDataset
   }
   
   /**

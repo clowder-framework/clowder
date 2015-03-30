@@ -144,7 +144,7 @@
 	@if(user.isDefined) {
 		@if(collection.author.isDefined){
 			@if(!(user.get.identityId.userId.equals(collection.author.get.identityId.userId))){
-				$(".requiresLogin").css("display","none");
+				$(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
 			}
 		}					
 	}
