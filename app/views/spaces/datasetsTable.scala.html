@@ -1,0 +1,25 @@
+@(datasets: List[Dataset])
+
+<table id='spacesDatasetsTable' class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th style="width: 27%">Name</th>
+            <th style="width: 17%">Created</th>
+            <th style="width: 36%">Description</th>
+            <th style="width: 20%"></th>
+        </tr>
+    </thead>
+    <tbody>
+    @datasets.map { dataset =>
+        <tr data-datasetId="@(dataset.id.toString)">
+            <td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
+            <td>@dataset.created.format("MMM dd, yyyy")</td>
+            <td style="white-space:pre-line;">@dataset.description</td>
+            <td>
+                @if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
+                @if(dataset.thumbnail_id.isEmpty){No thumbnail available}
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

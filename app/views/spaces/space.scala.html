@@ -18,12 +18,12 @@
     </div>
     <div class="row">
         <div class="col-md-8 space-col-left">
-            @collectionsBySpace(collections, space)
-            @datasetsBySpace(datasets, space)
+            @spaces.collectionsBySpace(collections)
+            @spaces.datasetsBySpace(datasets)
         </div>
         <div class="col-md-4 space-col-right">
-            @usersBySpace(space, creator)
-            @spaceConfiguration(space)
+            @spaces.usersBySpace(space, creator)
+            @spaces.spaceConfiguration(space)
         </div>
     </div>
 }
