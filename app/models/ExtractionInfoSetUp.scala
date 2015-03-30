@@ -44,7 +44,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
    * Input types supported by currently running extractors
    */
   def updateExtractorsInfo() = {
-    Logger.debug("updateExtractorsInfo[invoked]")
+    Logger.trace("updateExtractorsInfo[invoked]")
     val updateStatus = current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         val configuration = play.api.Play.configuration
