@@ -9,7 +9,7 @@
         <div align="center">
           <h4><a href="@routes.Datasets.userDatasets("", "", 12, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
           <h4>Followed by @profile.followers.size people</h4>
-          <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#followingModal">
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#followingModal">
             Followers and followees
           </button>
           @viewerUser match {
