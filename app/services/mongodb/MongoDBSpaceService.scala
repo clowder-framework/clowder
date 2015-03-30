@@ -36,7 +36,7 @@ class MongoDBSpaceService @Inject() (
   /**
    * @see app.services.SpaceService.scala
    * 
-   * Implementation of the SpaceServie trait.
+   * Implementation of the SpaceService trait.
    * 
    */
   def getCollectionsInSpace(spaceId: UUID): List[Collection] = {
@@ -46,7 +46,7 @@ class MongoDBSpaceService @Inject() (
   /**
    * @see app.services.SpaceService.scala
    * 
-   * Implementation of the SpaceServie trait.
+   * Implementation of the SpaceService trait.
    * 
    */
   def getDatasetsInSpace(spaceId: UUID): List[Dataset] = {
@@ -100,7 +100,7 @@ class MongoDBSpaceService @Inject() (
     }
 
     // set start and filter the data
-    (start, filter) match {
+    val spacesFromDB = (start, filter) match {
       case (Some(d), Some(f)) => {
         val since = "created" $gte sdf.parse(d)
         val filter = JSON.parse(f).asInstanceOf[DBObject]
@@ -118,6 +118,8 @@ class MongoDBSpaceService @Inject() (
         ProjectSpaceDAO.findAll().sort(orderedBy).limit(limit).toList
       }
     }
+    // update DOs with collection and dataset counts
+    spacesFromDB.map{ s => s.copy(collectionCount = getCollectionsInSpace(s.id).size, datasetCount = getDatasetsInSpace(s.id).size)}
   }
 
   override def getNext(order: Option[String], direction: Direction, start: Date, limit: Integer,

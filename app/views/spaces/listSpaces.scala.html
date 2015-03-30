@@ -110,7 +110,7 @@
                         <ul class="list-group">
                             <li class="list-group-item">
                                 <span class="glyphicon glyphicon-file" title="@space.datasetCount datasets"></span> @space.datasetCount
-                                <span class="glyphicon glyphicon-folder-closed" title="@space.collectionCount collections"></span> @space.collectionCount
+                                <span class="glyphicon glyphicon-th-large" title="@space.collectionCount collections"></span> @space.collectionCount
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
