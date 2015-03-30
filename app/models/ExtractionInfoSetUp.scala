@@ -143,7 +143,6 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       var qname = (qDetailJsObject \ "name").as[String]
       if (numConsumers != 0) {
         val qConsumerDetails = qDetailJsObject.\("consumer_details").as[List[JsObject]]
-        //var ipsList = List[String]()
         var qlist = List[String]()
         for (qcd <- qConsumerDetails) {
           var peerHost = qcd.\("channel_details").\("peer_host").as[String]
