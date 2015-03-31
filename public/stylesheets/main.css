@@ -498,3 +498,29 @@ textarea, input[type='text'], input[type='password']{
 .featurette {
     margin-top: 50px;
 }
+
+.vertical-align {
+    display: flex;
+    flex-direction: row;
+}
+
+.vertical-align {
+    display: flex;
+    align-items: center;
+}
+
+.space-banner {
+    height: 200px;
+    background-repeat:no-repeat;
+    background-size: 100% 100%;
+}
+
+.space-banner-logo {
+    max-height: 100px;
+    max-width: 200px;
+}
+
+.nopadding {
+    padding: 0 !important;
+    margin: 0 !important;
+}
