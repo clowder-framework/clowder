@@ -1,0 +1,31 @@
+@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+
+@if(user.isDefined) {
+    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+        <div class="btn-group btn-group-xs">
+            <button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+            type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete Dataset</button>
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                <span class="caret"></span>
+                <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li>
+                    <a id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+                    href="#">Delete dataset and enclosed contents</a></li>
+            </ul>
+        </div>
+    } else {
+        <div class="btn-group btn-group-xs">
+            <button disabled type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete Dataset</button>
+            <button disabled type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                <span class="caret"></span>
+                <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li><a href="#">Delete dataset and enclosed contents</a></li>
+            </ul>
+        </div>
+    }
+}
