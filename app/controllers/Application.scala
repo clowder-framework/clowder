@@ -4,7 +4,8 @@ import api.{Permission, WithPermission}
 import play.api.Routes
 import javax.inject.{Singleton, Inject}
 import play.api.mvc.Action
-import services.{DatasetService, CollectionService, AppConfiguration, FileService}
+import services._
+import models.{User, Event}
 import play.api.Logger
 
 /**
@@ -13,7 +14,7 @@ import play.api.Logger
  * @author Luigi Marini
  */
 @Singleton
-class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService) extends SecuredController {
+class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService, events: EventService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    * @param path the path minus the slash
@@ -32,8 +33,23 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val datasetsCount = datasets.count()
     val filesCount = files.count()
     val collectionCount = collections.count()
-    Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount,
-      AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    request.mediciUser match {
+      case Some(loggedInUser) => {
+        var newsfeedEvents = events.getAllEvents(
+          loggedInUser.followedUsers,
+          loggedInUser.followedCollections,
+          loggedInUser.followedDatasets,
+          loggedInUser.followedFiles
+        ).sorted(Ordering.by((_: Event).created).reverse)
+        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount,
+          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+      }
+      case None => {
+        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount,
+          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, List()))
+      }
+    }
+
   }
   
   def options(path:String) = SecuredAction() { implicit request =>

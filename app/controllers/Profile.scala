@@ -7,6 +7,7 @@ import services.mongodb.MongoDBEventService
 import play.api.data.Form
 import play.api.data.Forms._
 import models.Info
+import models.UUID
 import models.MiniUser
 import models.Event
 import play.api.Logger
@@ -111,6 +112,33 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
         Redirect(routes.RedirectUtility.authenticationRequired())
       }
     } 
+  }
+
+  def viewProfileUUID(uuid: UUID) = SecuredAction() { request =>
+    implicit val user = request.user
+    val viewerUser = request.mediciUser
+    var ownProfile: Option[Boolean] = None
+    var muser = users.findById(uuid)
+    muser match {
+      case Some(existingUser) => {
+        viewerUser match {
+          case Some(loggedInUser) => {
+            if (loggedInUser.id == existingUser.id)
+              ownProfile = Option(true)
+            else
+              ownProfile = None
+          }
+          case None => {
+            ownProfile = None
+          }
+        }
+        Ok(views.html.profile(existingUser, viewerUser, ownProfile))
+      }
+      case None => {
+        Logger.error("no user model exists for " + uuid.stringify)
+        InternalServerError
+      }
+    }
   }
 
   def viewProfile(email: Option[String]) = SecuredAction() { request =>

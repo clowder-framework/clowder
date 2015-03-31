@@ -1,0 +1,82 @@
+@(event: models.Event)(implicit user: Option[securesocial.core.Identity] = None)
+@linkForObject(obj_type: String, obj_id: Option[UUID], obj_name: Option[String]) = {
+  @obj_type match {
+    case "file" => {
+      file: <a href="@routes.Files.file(obj_id.get)">@obj_name.get</a>
+    }
+    case "dataset" => {
+      dataset: <a href="@routes.Datasets.dataset(obj_id.get)">@obj_name.get</a>
+    }
+    case "collection" => {
+      collection: <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a>
+    }
+    case "user" => {
+      user: <a href="@routes.Profile.viewProfileUUID(obj_id.get)">@obj_name.get</a>
+    }
+    case _ => {
+      @obj_type: @obj_name.get
+    }
+  }
+}
+
+@actionTextForEvent(event_type_prefix: String) = @{
+  event_type_prefix match {
+    case "follow" => "is now following "
+    case "unfollow" => "stopped following "
+    case "upload" => "uploaded "
+    case "create" => "created "
+    case "delete" => "deleted "
+    case "edit" => "edited their comment to "
+    case "download" => "downloaded "
+  }
+}
+
+@actionTextsForEvent(event_type_prefix: String) = @{
+  event_type_prefix match {
+    case "add" => List("added ", " to ")
+    case "attach" => List("attached ", " to ")
+    case "remove" => List("removed ", " from ")
+    case "detach" => List("detached ", " from ")
+  }
+}
+
+@event.event_type match {
+  case "edit_profile" => {
+    edited their <a href="@routes.Profile.viewProfileUUID(event.user.id)">profile</a>
+  }
+  case "update_dataset_information" => {
+    updated information for @linkForObject("dataset", event.object_id, event.object_name)
+  }
+  case "set_note_file" => {
+    set note for @linkForObject("file", event.object_id, event.object_name)
+  }
+  case "addMetadata_file" | "addMetadata_dataset" => {
+    added metadata to @linkForObject(
+      event.event_type.substring(event.event_type.indexOf('_')+1),
+      event.object_id,
+      event.object_name
+    )
+  }
+  case _ => {
+    @defining(event.event_type.split("_")) { event_type_split =>
+      @event_type_split.length match {
+        case 2 => {
+          @if(event_type_split(0) == "comment"){
+            commented <font color="black"><em>@event.object_name</em></font> on @linkForObject("file", event.source_id, event.source_name)
+          }else{
+            @actionTextForEvent(event_type_split(0)) @linkForObject(event_type_split(1), event.object_id, event.object_name)
+          }
+        }
+        case 3 => {
+          @defining(actionTextsForEvent(event_type_split(0))) { texts =>
+            @if(event.event_type.indexOf("tag")>=0){
+              @texts(0) @linkForObject(event_type_split(1), event.object_id, Option("")) @texts(1) @linkForObject(event_type_split(2), event.object_id, event.object_name)
+            }else {
+              @texts(0) @linkForObject(event_type_split(1), event.object_id, event.object_name) @texts(1) @linkForObject(event_type_split(2), event.source_id, event.source_name)
+            }
+          }
+        }
+      }
+    }
+  }
+}
