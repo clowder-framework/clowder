@@ -2,7 +2,8 @@
   previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
   sections: List[models.Section], beingProcessed: Boolean, fileDataset: List[models.Dataset],
   datasetsOutside: List[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any],
-  rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
+  rdfExported: Boolean,
+  extractionsStatus: List[Extraction])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
@@ -393,6 +394,19 @@
                 </script>
             }
 
+
+			<div class="row border-top">
+				<div class="col-md-12">
+					<h4>Extractions</h4>
+					<a class="btn btn-link" data-toggle="collapse" href="#extractions" aria-expanded="false"
+					aria-controls="collapseExample">
+						List extraction events
+					</a>
+					<div class="collapse" id="extractions">
+						@extractions.extractionsByFile(extractionsStatus)
+					</div>
+				</div>
+			</div>
 
             <div class="row border-top">
                 <div class="col-md-12">

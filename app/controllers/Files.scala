@@ -116,8 +116,11 @@ class Files @Inject() (
         var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
         
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+
+        val extractionsByFile = extractions.findByFileId(id)
         
-        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, extractorsActive, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
+        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
+          extractorsActive, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled, extractionsByFile))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."
