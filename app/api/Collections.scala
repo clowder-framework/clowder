@@ -2,7 +2,7 @@ package api
 
 import play.api.Logger
 import play.api.Play.current
-import models.{UUID, Collection}
+import models.{UUID, Collection, MiniUser, Event}
 import services._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
@@ -13,9 +13,6 @@ import com.wordnik.swagger.annotations.ApiOperation
 import java.util.Date
 import controllers.Utils
 
-import services.mongodb.MongoDBEventService
-import models.MiniUser
-import models.Event
 
 /**
  * Manipulate collections.
@@ -24,7 +21,7 @@ import models.Event
  */
 @Api(value = "/collections", listingPath = "/api-docs.json/collections", description = "Collections are groupings of datasets")
 @Singleton
-class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: MongoDBEventService) extends ApiController {
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: EventService) extends ApiController {
 
     
   @ApiOperation(value = "Create a collection",

@@ -2,7 +2,7 @@ package controllers
 
 import java.io._
 import java.net.URLEncoder
-import models.{UUID, FileMD, File, Thumbnail}
+import models.{UUID, FileMD, File, Thumbnail, MiniUser, Event}
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
@@ -21,9 +21,7 @@ import java.util.Date
 import scala.sys.SystemProperties
 import securesocial.core.Identity
 
-import services.mongodb.MongoDBEventService
-import models.MiniUser
-import models.Event
+
 
 /**
  * Manage files.
@@ -42,7 +40,7 @@ class Files @Inject() (
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
   users: UserService,
-  events: MongoDBEventService,
+  events: EventService,
   thumbnails: ThumbnailService) extends SecuredController {
 
   /**

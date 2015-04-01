@@ -34,10 +34,7 @@ import scala.Some
 import models.File
 import play.api.Play.configuration
 import controllers.Utils
-
-import services.mongodb.MongoDBEventService
-import models.MiniUser
-import models.Event
+import services._
 
 /**
  * Dataset API.
@@ -56,7 +53,7 @@ class Datasets @Inject()(
   previews: PreviewService,
   extractions: ExtractionService,
   rdfsparql: RdfSPARQLService,
-  events: MongoDBEventService,
+  events: EventService,
   userService: UserService) extends ApiController {
 
   /**

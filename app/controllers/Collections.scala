@@ -2,7 +2,7 @@ package controllers
 
 import play.api.data.Form
 import play.api.data.Forms._
-import models.{UUID, Collection}
+import models.{UUID, Collection, MiniUser, Event}
 import java.util.Date
 import play.api.Logger
 import play.api.Play.current
@@ -17,16 +17,14 @@ import scala.collection.mutable.ListBuffer
 import services.{ DatasetService, CollectionService }
 import services._
 import org.apache.commons.lang.StringEscapeUtils
-import services.mongodb.MongoDBEventService
-import models.MiniUser
-import models.Event
+
 
 
 
 object ThumbnailFound extends Exception {}
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, users: UserService, events: MongoDBEventService) extends SecuredController {  
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, users: UserService, events: EventService) extends SecuredController {  
 
   def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>

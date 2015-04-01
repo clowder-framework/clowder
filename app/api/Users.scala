@@ -9,16 +9,15 @@ import play.api.mvc.Action
 import services.UserService
 import java.util.Date
 
-import services.mongodb.MongoDBEventService
-import models.MiniUser
-import models.Event
+import models._
+import services._
 
 /**
  * API to interact with the users.
  *
  * @author Rob Kooper
  */
-class Users @Inject()(users: UserService, events: MongoDBEventService) extends ApiController {
+class Users @Inject()(users: UserService, events: EventService) extends ApiController {
   /**
    * Returns a list of all users in the system.
    */

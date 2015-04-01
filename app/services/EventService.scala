@@ -1,7 +1,7 @@
 package services
-import models.Event
-import models.User
-import models.UUID
+import models._
+import play.api.libs.json.JsValue
+import com.mongodb.casbah.Imports._
 
 import com.novus.salat.dao.SalatMongoCursor
 /**

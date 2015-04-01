@@ -68,9 +68,6 @@ import scala.concurrent.Future
 import scala.util.control._
 import controllers.Utils
 
-import services.mongodb.MongoDBEventService
-import models.MiniUser
-import models.Event
 
 
 /**
@@ -93,7 +90,7 @@ class Files @Inject()(
   threeD: ThreeDService,
   sqarql: RdfSPARQLService,
   thumbnails: ThumbnailService,
-  events: MongoDBEventService,
+  events: EventService,
   userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Retrieve physical file object metadata",

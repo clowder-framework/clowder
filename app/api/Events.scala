@@ -1,14 +1,20 @@
 package api
 
-import services.mongodb.MongoDBEventService
-import javax.inject.Inject
+import play.api.Logger
 import play.api.Play.current
-import play.api.Play.configuration
-import models.Event
+import models.{UUID, Collection, Event}
+import services._
+import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
+import javax.inject.{ Singleton, Inject }
+import scala.util.{Try, Success, Failure}
+import com.wordnik.swagger.annotations.Api
+import com.wordnik.swagger.annotations.ApiOperation
+import java.util.Date
+import controllers.Utils
 
 
-class Events @Inject() (events: MongoDBEventService) extends ApiController {
+class Events @Inject() (events: EventService) extends ApiController {
 
   /*
    * Add a new event to the database

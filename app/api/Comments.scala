@@ -8,19 +8,18 @@ import java.util.Date
 import play.api.Play.current
 import javax.inject.Inject
 import services.{CommentService, DatasetService, ElasticsearchPlugin}
-import models.{Comment, UUID}
+import models.{Comment, UUID, MiniUser, Event}
+import services._
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
-import services.mongodb.MongoDBEventService
-import models.MiniUser
-import models.Event
+
 
 /**
  * Comments on datasets.
  *
  * @author Rob Kooper
  */
-class Comments @Inject()(datasets: DatasetService, comments: CommentService, events: MongoDBEventService) extends ApiController {
+class Comments @Inject()(datasets: DatasetService, comments: CommentService, events: EventService) extends ApiController {
 
   def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
