@@ -1,6 +1,6 @@
 package controllers
 
-import services.UserService
+import services._
 import services.mongodb.MongoDBProjectService
 import services.mongodb.MongoDBInstitutionService
 import services.mongodb.MongoDBEventService
@@ -17,7 +17,7 @@ import java.util.Date
 
 
 
-class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: MongoDBEventService) extends  SecuredController {
+class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService) extends  SecuredController {
 
   val bioForm = Form(
     mapping(
