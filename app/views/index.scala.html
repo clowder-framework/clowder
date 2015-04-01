@@ -1,14 +1,54 @@
 @(files: List[models.File], datasetsCount: Long, filesCount: Long, collectionCount: Long,
-        displayedName: String, welcomeMessage: String)(implicit user: Option[securesocial.core.Identity])
+        displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[securesocial.core.Identity])
+@import java.util.Date
+@import scala.math
 
 @main(displayedName) {
     <div class="row featurette">
         <div class="col-md-7">
             <h2 class="featurette-heading">Welcome to @displayedName</h2>
             <p class="lead">@welcomeMessage</p>
+            @for(event <- newsfeed) {
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="media">
+                            <div class="media-left">
+                                <a href="@routes.Profile.viewProfileUUID(event.user.id)">
+                                    <img class="media-object" src="@event.user.avatarURL">
+                                </a>
+                            </div>
+                            <div class="media-body">
+                                <a href="@routes.Profile.viewProfileUUID(event.user.id)">
+                                    <h4 class="media-heading">@event.user.fullName</h4>
+                                </a>
+                                @newsfeedCard(event)
+                            </div>
+                            <div class="media-right">
+                                @{
+                                    var elapsed = (new Date().getTime() - event.created.getTime()) / 1000
+                                    if (elapsed < 1) {
+                                        "never"
+                                    } else if (elapsed < 60) {
+                                        "less than a miunte ago"
+                                    } else if (elapsed < 3600) {
+                                        Math.floor(elapsed / 60).toInt + " minutes ago"
+                                    } else if (elapsed < 86400) {
+                                        Math.floor(elapsed / 3600).toInt + " hours ago"
+                                    } else if (elapsed < 432000) {
+                                        Math.floor(elapsed / 86400).toInt + " days ago"
+                                    } else {
+                                        var df = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
+                                        df.format(event.created)
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
-        <div class="col-md-5">
-            <div class="panel panel-default">
+        <div class="col-md-5" id="resources-panel-container">
+            <div class="panel panel-default" id="resources-panel" data-clampedwidth=".col-md-5">
               <div class="panel-heading">
                 <h3 class="panel-title">Resources</h3>
               </div>
@@ -31,6 +71,42 @@
             </div>
         </div>
     </div>
+
+    <script>
+        $(document).ready(function() {
+            /*
+            * Clamped-width.
+            * Usage:
+            *  <div data-clampedwidth=".myParent">This long content will force clamped width</div>
+            *
+            * Author: LV
+            */
+            $('[data-clampedwidth]').each(function () {
+                var elem = $(this);
+                var parentPanel = elem.data('clampedwidth');
+                var resizeFn = function () {
+                    var sideBarNavWidth = $(parentPanel).width() - parseInt(elem.css('paddingLeft')) - parseInt(elem.css('paddingRight')) - parseInt(elem.css('marginLeft')) - parseInt(elem.css('marginRight')) - parseInt(elem.css('borderLeftWidth')) - parseInt(elem.css('borderRightWidth'));
+                    elem.css('width', sideBarNavWidth);
+                };
+
+                resizeFn();
+                $(window).resize(resizeFn);
+            });
+
+            var panel = $('#resources-panel');
+            panel.affix({
+                offset: {
+                    top: panel.offset() - panel.height()
+                }
+            });
+
+            var width = $('.col-md-7').width() * 0.2;
+            $('.media-object' ).each(function() {
+                $(this ).css("width", width);
+                $(this ).css("height", width);
+            });
+        });
+    </script>
 
     @*******
     *if(user.isDefined) {
