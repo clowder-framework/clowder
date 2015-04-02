@@ -70,10 +70,11 @@ object Geostreams extends Controller with SecuredController {
   }
 
   def sensor(id: String)= SecuredAction(authorization=WithPermission(Permission.ListSensors)) { implicit request =>
+    implicit val user = request.user
     plugin match {
       case Some(db) => {
         val sensor = Json.parse(db.getSensor(id).getOrElse("{}"))
-        Ok(views.html.geostreams.sensor(sensor, (sensor \ "id").as[Int].toString))
+        Ok(views.html.geostreams.edit(sensor, (sensor \ "id").as[Int].toString))
       }
       case None => pluginNotEnabled
     }

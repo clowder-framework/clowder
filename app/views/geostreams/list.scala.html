@@ -34,7 +34,7 @@
                     <td>@((item \ "geometry" \ "coordinates")(1))</td>
                     <td>@((item \ "geometry" \ "coordinates")(0))</td>
                     <td>
-                        <a class="btn btn-default" href="@(routes.Geostreams.sensor(((item \ "id").toString())))">View</a>
+                        <a class="btn btn-default disabled edit-sensor" href="@(routes.Geostreams.sensor(((item \ "id").toString())))">Edit</a>
                         <input type="button" class="btn btn-danger delete-sensor" id="@((item \ "id").toString())" value="Delete" disabled></input>
 
                     </td>
@@ -48,6 +48,7 @@
                 sortList: [[1,0]]
             });
             @if(user) {
+                $('a.edit-sensor').removeClass('disabled');
                 $('input.delete-sensor').prop('disabled', false);
             }
             $('.delete-sensor').on('click', function (event) {

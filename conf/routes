@@ -358,6 +358,7 @@ GET            /api/geostreams/cache/:id                                        
 POST           /api/geostreams/sensors                                                  api.Geostreams.createSensor
 GET            /api/geostreams/sensors/update                                           api.Geostreams.updateStatisticsStreamSensor()
 GET            /api/geostreams/sensors/:id                                              api.Geostreams.getSensor(id: String)
+PUT            /api/geostreams/sensors/:id                                              api.Geostreams.updateSensorMetadata(id: String)
 GET            /api/geostreams/sensors/:id/stats                                        api.Geostreams.getSensorStatistics(id: String)
 GET            /api/geostreams/sensors/:id/streams                                      api.Geostreams.getSensorStreams(id: String)
 GET            /api/geostreams/sensors/:id/update                                       api.Geostreams.updateStatisticsSensor(id: String)

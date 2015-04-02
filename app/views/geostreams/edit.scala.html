@@ -1,0 +1,101 @@
+@(sensor: play.api.libs.json.JsValue, id: String)(implicit user: Option[securesocial.core.Identity])
+
+@import helper._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+@import services._
+
+@main("Edit") {
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
+    <div class="container">
+        <div class="page-header">
+            <h1>@(AppConfiguration.getSensorTitle) Information</h1>
+        </div>
+
+        <form class="form-horizontal" role="form" id="sensor-edit-form">
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4>Sensor Information</h4>
+                        </div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <input type="text" hidden id="sensor-id" value="@(sensor \ "id")">
+                                        <label for="sensorFullName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
+                                        title="The full description of the sensor, typically provided by the Data Source. Should be concise, but descriptive.">Descriptive Name</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control input-sm" id="sensorFullName" name="sensorFullName" value="@((sensor \ "properties" \ "popupContent").as[String])" required>
+                                        </div>
+                                        <label for="sensor_name" class="col-sm-4 paddingTop7 control-label"
+                                        data-toggle="tooltip" data-placement="left"
+                                        title="A short, unique identifier for this location for when it is displayed along with many other sensors (like on a map).">Location ID</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control input-sm" id="sensor_name" name="sensor_name" value="@((sensor \ "name").as[String])" required>
+                                        </div>
+                                        <label for="sensorRegion" class="col-sm-4 paddingTop7 control-label">Region</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control input-sm" id="sensorRegion" name="sensorRegion" value="@((sensor \ "properties" \ "region").as[String])" required>
+                                        </div>
+                                        <label for="sensorDataSource" class="col-sm-4 paddingTop7 control-label">Data Source</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control input-sm" id="sensorDataSource" name="sensorDataSource" value="@((sensor \ "properties" \ "type" \ "id").as[String])" required>
+                                        </div>
+                                        <label for="sensorType" class="col-sm-4 paddingTop7 control-label"><a href='https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types' target="_blank">Location Type</a> <span class="glyphicon glyphicon-new-window" style="font-size: 10px; color: #C0C0C0" aria-hidden="true"></span></label>
+                                        <div class="col-sm-8">
+                                            <select class="form-control input-sm" id="sensorType" name="sensorType">
+                                                <option value="1">1</option>
+                                                <option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>
+                                                <option value="6">6</option>
+                                                <option value="7">7</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-4"></div>
+                                        <div class="col-sm-8 paddingTop7">
+                                            <p>Location Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> instrument<span id="sensorTypeMultipleSensors"></span>.</p>
+                                        </div>
+                                        <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
+                                        <div class="col-sm-4">
+                                            <input type="number" class="form-control input-sm" id="sensorLocationLat" name="sensorLocationLat" value="@((sensor \ "geometry" \ "coordinates")(1))" required>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <input type="number" class="form-control input-sm" id="sensorLocationLong" name="sensorLocationLong" value="@((sensor \ "geometry" \ "coordinates")(0))" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="map" class="col-sm-4 paddingTop7 control-label">Location</label>
+                                        <div class="col-sm-8">
+                                            <div id="map" name="map" style="border: 1px solid black; height: 200px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel-footer">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <br />
+
+        <button type="submit" class="btn btn-primary submit" id="formSubmit">Save</button>
+
+    </div>
+
+}
+
+<script src="@routes.Assets.at("javascripts/leaflet.js")"></script>
+<script src="@routes.Assets.at("javascripts/jquery.validate.js")"></script>
+<script src="@routes.Assets.at("javascripts/lib/jquery.serializejson.min.js")"></script>
+
+<script src="@routes.Assets.at("javascripts/geostreams/sensorEdit.js")"></script>

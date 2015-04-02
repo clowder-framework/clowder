@@ -9,8 +9,9 @@ import java.sql.DriverManager
 import java.util.Properties
 import java.sql.Timestamp
 import java.sql.Statement
-import play.api.libs.json.{Json, JsObject}
 import util.Parsers
+import play.api.libs.json._
+
 
 /**
  * Postgres connection and simple geoindex methods.
@@ -173,6 +174,45 @@ class PostgresPlugin(application: Application) extends Plugin {
       Logger.debug("Result is NULL")
       None
     } else Some(data)
+  }
+
+  def updateSensorMetadata(id: String, data: String): Option[String] = {
+    val query = "SELECT row_to_json(t, true) AS my_sensor FROM (" +
+      "SELECT metadata As properties FROM sensors " +
+      "WHERE gid=?) AS t"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Sensors get statement: " + st)
+    val rs = st.executeQuery()
+    var sensorData = ""
+    while (rs.next()) {
+      sensorData += rs.getString(1)
+    }
+    rs.close()
+    st.close()
+
+    val oldDataJson = Json.parse(sensorData).as[JsObject]
+    val newDataJson = Json.parse(data).as[JsObject]
+
+    val jsonTransformer = (__ \ 'properties).json.update(
+      __.read[JsObject].map{ o => o ++ newDataJson }
+    )
+    val updatedJSON = oldDataJson.transform(jsonTransformer).get
+
+    val query2 = "UPDATE sensors SET metadata = CAST(? AS json) WHERE gid = ?"
+    val st2 = conn.prepareStatement(query2)
+    st2.setString(1, Json.stringify((updatedJSON \ "properties")))
+    st2.setInt(2, id.toInt)
+    Logger.debug("Sensors put statement: " + st2)
+    val rs2 = st2.executeUpdate()
+    st2.close()
+    getSensor(id)
+  }
+
+  def allKeys(json: JsValue): collection.Set[String] = json match {
+    case o: JsObject => o.keys ++ o.values.flatMap(allKeys)
+    case JsArray(as) => as.flatMap(allKeys).toSet
+    case _ => Set()
   }
 
   /**
