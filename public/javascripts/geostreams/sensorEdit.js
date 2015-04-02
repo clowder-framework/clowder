@@ -164,7 +164,7 @@ $(document).ready(function() {
         console.log("should go back to sensors list");
         // redirect removing the "/new" from the current href
         // necessary until we add the Geostreams to the @controllers
-        history.back();
+        window.location.href = jsRoutes.controllers.Geostreams.list().url
     });
   });
 
