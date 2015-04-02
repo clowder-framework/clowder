@@ -158,7 +158,7 @@ $(function() {
 																
 						var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
 						if(allowedChildrenForNode.length == 0 && searchFor == "userMetadata"){
-							alert("The metadata model states that this property cannot have subproperties of any kind.");
+							notify("The metadata model states that this property cannot have subproperties of any kind.", "error");
 							return false;
 						}
 						
@@ -190,7 +190,7 @@ $(function() {
 					
 						var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
 						if(allowedChildrenForNode.length == 0 && searchFor == "userMetadata"){
-							alert("The metadata model states that this property cannot have subproperties of any kind.");
+							notify("The metadata model states that this property cannot have subproperties of any kind.", "error");
 							return false;
 						}
 						
@@ -539,7 +539,7 @@ $(function() {
 		            		"The following error occured: "+
 		            		textStatus, errorThrown		            
 		        			);
-		        		alert("ERROR: " + errorThrown +". Search not executed." );
+		        		notify("ERROR: " + errorThrown +". Search not executed.", "error");
 		     			});
 					 
 					 

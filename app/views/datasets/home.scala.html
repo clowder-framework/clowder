@@ -1,0 +1,27 @@
+@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+
+<div class="row">
+    <div class="col-md-12 box-white-space">
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
+                    <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 box-white-space">
+        @dataset.description
+    </div>
+    <div class="col-md-12 box-white-space">
+        @datasets.editInfo(dataset)
+        @datasets.editLicense(dataset)
+        @datasets.deleteButton(dataset)
+    </div>
+</div>
