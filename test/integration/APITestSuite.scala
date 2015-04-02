@@ -16,9 +16,9 @@ import org.scalatest._
 
 
 class APITestSuite extends Suites (
-		new ExtractionFileUploadFunctionSpec,
+		new ExtractionFileUploadFunctionSpec ,
 		new FilesAPIAppSpec ,
-		new DatasetsAPIAppSpec,
+		new DatasetsAPIAppSpec ,
 		new CollectionsAPIAppSpec
 	) with OneAppPerSuite
 {
