@@ -12,6 +12,7 @@ import java.io.FileWriter
 
 import java.io.FileReader
 import java.io.ByteArrayInputStream
+import javax.mail.internet.MimeUtility
 
 import scala.collection.mutable.MutableList
 
@@ -165,9 +166,15 @@ class Files @Inject()(
 		                }
 		              }
 		              case None => {
-		                Ok.chunked(Enumerator.fromStream(inputStream))
+                    val userAgent = request.headers("user-agent")
+                    val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
+                      URLEncoder.encode(filename, "UTF-8")
+                    } else {
+                      MimeUtility.encodeWord(filename)
+                    }
+                    Ok.chunked(Enumerator.fromStream(inputStream))
 		                  .withHeaders(CONTENT_TYPE -> contentType)
-		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8")))
+                      .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + filenameStar))
 		              }
 		            }
 		          }
