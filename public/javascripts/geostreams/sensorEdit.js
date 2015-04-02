@@ -169,13 +169,15 @@ $(document).ready(function() {
   });
 
   if (window.L) {
-    var map = L.map('map', {scrollWheelZoom: false}).setView([39, -90 ], 5);
+    var lat = +$("#sensorLocationLat").val();
+    var long = +$("#sensorLocationLong").val()
+    var map = L.map('map', {scrollWheelZoom: false}).setView([lat, long ], 5);
 
     L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    var marker = L.marker([+$("#sensorLocationLat").val(), +$("#sensorLocationLong").val()], {draggable: true});
+    var marker = L.marker([lat, long], {draggable: true});
     marker.addTo(map);
     marker.on('dragend', function(event){
       $('#sensorLocationLat').val(event.target._latlng.lat);
