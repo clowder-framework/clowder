@@ -69,7 +69,7 @@ object Geostreams extends Controller with SecuredController {
     }
   }
 
-  def sensor(id: String)= SecuredAction(authorization=WithPermission(Permission.ListSensors)) { implicit request =>
+  def edit(id: String)= SecuredAction(authorization=WithPermission(Permission.ListSensors)) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => {

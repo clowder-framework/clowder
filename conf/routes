@@ -89,7 +89,7 @@ GET            /collections/:collection_id/previews                             
 GET            /geostreams                                                              controllers.Geostreams.map
 GET            /geostreams/sensors                                                      controllers.Geostreams.list
 GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
-GET            /geostreams/sensors/:id                                                  controllers.Geostreams.sensor(id)
+GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
 
 # Tags
 GET            /tags/search                                                             @controllers.Tags.search(tag)
