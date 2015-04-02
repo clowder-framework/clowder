@@ -167,6 +167,10 @@ $(document).ready(function() {
         window.location.href = jsRoutes.controllers.Geostreams.list().url
     });
   });
+  $("#cancelSubmit").click(function(event) {
+    event.preventDefault();
+    window.location.href = jsRoutes.controllers.Geostreams.list().url
+  });
 
   if (window.L) {
     var lat = +$("#sensorLocationLat").val();
