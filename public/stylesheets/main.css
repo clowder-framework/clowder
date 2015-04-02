@@ -505,3 +505,7 @@ textarea, input[type='text'], input[type='password']{
 .top-padding {
     padding-top: 15px;
 }
+
+.dataset-preview {
+    padding: 20px 0px;
+}
