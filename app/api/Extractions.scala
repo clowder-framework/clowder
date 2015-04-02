@@ -355,7 +355,7 @@ class Extractions @Inject() (
               val fileType = file.contentType
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
               val host = Utils.baseUrl(request)
-        			val extra = Map("filename" -> f.filename)
+        			val extra = Map("filename" -> file.filename)
               current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, extra, file.length.toString, null, "")) }
               Ok("Sent for Extraction. check the status")
             }
