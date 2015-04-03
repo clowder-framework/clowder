@@ -5,7 +5,7 @@ import java.net.{URI, URL}
 import java.text.SimpleDateFormat
 import java.net.URLEncoder
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{PoisonPill, Actor, ActorRef, Props}
 import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.rabbitmq.client.{Channel, Connection, ConnectionFactory, DefaultConsumer, Envelope}
@@ -46,6 +46,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var connection: Option[Connection] = None
   var factory: Option[ConnectionFactory] = None
   var restURL: Option[String] = None
+  var event_filter: Option[ActorRef] = None
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
@@ -72,6 +73,15 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   override def onStop() {
     Logger.debug("Shutting down Rabbitmq Plugin")
     factory = None
+    close()
+  }
+
+  override lazy val enabled = {
+    !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
+  }
+
+  def close() {
+    Logger.debug("Closing connection")
     extractQueue = None
     restURL = None
     vhost = ""
@@ -79,18 +89,27 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     password = ""
     if (channel.isDefined) {
       Logger.debug("Channel closing")
-      channel.get.close()
+      try {
+        channel.get.close()
+      } catch {
+        case e: Exception => Logger.error("Error closing channel.", e)
+      }
       channel = None
     }
     if (connection.isDefined) {
       Logger.debug("Connection closing")
+      try {
       connection.get.close()
+      } catch {
+        case e: Exception => Logger.error("Error closing connection.", e)
+      }
       connection = None
     }
-  }
 
-  override lazy val enabled = {
-    !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
+    if (event_filter.isDefined) {
+      event_filter.get ! PoisonPill
+      event_filter = None
+    }
   }
 
   def connect: Boolean = {
@@ -125,17 +144,17 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       // status consumer
       Logger.info("Starting extraction status receiver")
 
-      val event_filter = Akka.system.actorOf(
+      event_filter = Some(Akka.system.actorOf(
         Props(new EventFilter(channel.get, replyQueueName)),
         name = "EventFilter"
-      )
+      ))
 
       Logger.debug("Initializing a MsgConsumer for the EventFilter")
       channel.get.basicConsume(
         replyQueueName,
         false, // do not auto ack
         "event_filter", // tagging the consumer is important if you want to stop it later
-        new MsgConsumer(channel.get, event_filter)
+        new MsgConsumer(channel.get, event_filter.get)
       )
 
       // setup akka for sending messages
@@ -147,21 +166,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     } catch {
       case t: Throwable => {
         Logger.error("Error connecting to rabbitmq broker", t)
-        extractQueue = None
-        restURL = None
-        vhost = ""
-        username = ""
-        password = ""
-        if (channel.isDefined) {
-          Logger.debug("Channel closing")
-          channel.get.close()
-          channel = None
-        }
-        if (connection.isDefined) {
-          Logger.debug("Connection closing")
-          connection.get.close()
-          connection = None
-        }
+        close()
         false
       }
     }
@@ -292,7 +297,16 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
           .correlationId(corrId)
           .replyTo(replyQueueName)
           .build()
-      channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
+      try {
+        channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
+      } catch {
+        case e: Exception => {
+          Logger.error("Error connecting to rabbitmq broker", e)
+          current.plugin[RabbitmqPlugin].foreach {
+            _.close()
+          }
+        }
+      }
     }
     case _ => {
       Logger.error("Unknown message type submitted.")
