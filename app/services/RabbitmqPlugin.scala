@@ -110,6 +110,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       event_filter.get ! PoisonPill
       event_filter = None
     }
+    if (extractQueue.isDefined) {
+      extractQueue.get ! PoisonPill
+      extractQueue = None
+    }
   }
 
   def connect: Boolean = {
