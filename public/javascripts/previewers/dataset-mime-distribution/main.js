@@ -13,7 +13,8 @@
 	});
 
 	req.done(function(data){
-		console.log("Metadata on dataset: " + JSON.stringify(data));
+		console.log("Metadata on dataset: ");
+		console.log(data);
 	});
 
 	// setting up ajax call to get file from the dataset
@@ -109,11 +110,7 @@
 				//		return d.endAngle - d.startAngle > 0.01 ? "block" : "none";
 				//	})
 				//	.text(function(d) { return d.data.mime; });
-
 			});
 		});
-
-
 	});
-
 }(jQuery, Configuration));
