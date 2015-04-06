@@ -151,15 +151,15 @@
                     <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
                 </span>
                 @if(user.isDefined) {
-                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
                     @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
                         <span class="align-right">
-				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
+				            <button id="deleteButtonFile" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
 					    </span>
 					} else {
 					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
+                            <button disabled id="deleteButtonFile" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         </span>
 					}					
