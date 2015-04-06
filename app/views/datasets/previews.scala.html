@@ -13,9 +13,12 @@
 }
 
 @* FIXME load dynamically from previewer *@
-<script type="text/javascript"
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJHzizWxzgqkH9Ipr_cGSjCWpeuY8M4ac">
-</script>
+@import play.api.Play
+@if(Play.current.configuration.getString("google.maps.key").isDefined) {
+    <script type="text/javascript"
+        src="https://maps.googleapis.com/maps/api/js?key=@Play.current.configuration.getString("google.maps.key")">
+    </script>
+}
 
 @for((p,i) <- previewers.zipWithIndex) {
     <div class="col-md-12 dataset-preview" id="previewer_@(p.id)_@i"></div>
