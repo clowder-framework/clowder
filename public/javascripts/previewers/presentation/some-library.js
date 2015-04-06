@@ -2,16 +2,16 @@
   console.log("video presentation previewer for " + Configuration.id);  
   console.log("Updating tab " + Configuration.tab);
   
-  /*File delete button exists and is disabled if (and only if):
+  /*IF
   	1)We are in the single file screen AND
   	2)The user is not the author of the file
   	In that case, we want the button for downloading the original ZIP file to be disabled when we have the merged video ready for download,
   	to avoid confusion of general users between downloading the merged video and the original ZIP file.
   */
-  if($("#deleteButtonFile").is(":disabled")){
+  if(Configuration.authenticatedFileModify){
 	  $(document).ready(function() {
 		  $("#downloadButton").css("display","none");
-	  }	  
+	  });	  
   }
   
   var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
