@@ -24,6 +24,8 @@
 					return;
 				if (data[0] == undefined)
 					return;
+				if (data[0]["WMS Layer URL"] == undefined)
+					return;
 				if (data[0]["WMS Layer URL"] == "")
 					return;
 

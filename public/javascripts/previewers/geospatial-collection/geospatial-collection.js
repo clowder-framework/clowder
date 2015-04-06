@@ -97,6 +97,10 @@
 								console.log("NO - length undefined");
 								return;
 							}
+							if (data[0]["WMS Layer URL"] == undefined) {
+								console.log("NO - wms metadata is empty");
+								return;
+							}
 							if (data[0]["WMS Layer URL"] == "") {
 								console.log("NO - no wms metadata"); 
 								return;
