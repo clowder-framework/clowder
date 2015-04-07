@@ -22,8 +22,6 @@
 					return;
 				if (data.length == 0)
 					return;
-				if (data[0] == undefined)
-					return;
 
                 // search the metadata index which contains geospatial metadata
                 var geoMetadataIndex = -1;
