@@ -29,7 +29,7 @@ import java.io.FileReader
  * 
  */
 
-class DTSFunctionalSpec extends PlaySpec with OneServerPerSuite with GivenWhenThen {
+class DTSExtractionsAPIAppSpec extends PlaySpec with ConfigedApp with GivenWhenThen {
   val excludedPlugins = List("services.VersusPlugin")
   implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins)
 
