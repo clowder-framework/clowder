@@ -39,25 +39,94 @@
         
             console.log("downloaded JS sciprts");
             
-            console.log(data);
+            //console.log(data);
             
-            //need to process JSON data
+            // Processing JSON data
             
             var jsonFrameArray = data[0].result.frame;
             var jsonFrameArrayLength = jsonFrameArray.length;                        
             
-            for(var i = 0; i < jsonFrameArrayLength; i++){
+            // Pass 1: Rearrange data
+            for(var i = 0; i < jsonFrameArrayLength; i++) {
                 
-                var frameIndex = jsonFrameArray[i]["@number"];
+                var frameIndex = parseInt(jsonFrameArray[i]["@number"]);
                 var objList = jsonFrameArray[i].objectlist;
-                var objPerson = new Object();
                 
-               console.log(objList.length);
-                
-                for(var j = 0; j < objList.length; j++){
-                    console.log(objList[j].object["@id"]);
+                if(typeof(objList) == 'object'){
+                    var id = parseInt(objList.object["@id"]);                    
+                    // if array element is not existing
+                    if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                        var objPerson = new Object();
+                        objPerson.label = "Person " + id;
+                        var personFrameData = new Array();
+                        personFrameData.push(new Array(frameIndex-1, id));
+                        objPerson.data = personFrameData;                        
+                        sortedFrameDataArray[id-1] = objPerson;                        
+                    }
+                    // if array element is already present
+                    else {                    
+                        var objPerson = sortedFrameDataArray[id-1];
+                        objPerson.data.push(new Array(frameIndex-1, id));
+                        sortedFrameDataArray[id-1] = objPerson;
+                    }
+                }
+                else if (typeof(objList) == 'array') {
+                    console.log("Array");
+                    for(var j = 0; j < objList.length; j++){
+                        console.log(objList[j].object["@id"]);
+                    }
                 }
             }
+            
+            // Pass 2: Data reduction. 
+            // e.g. if Person 1 is present in frame #1 and frame #2, delete data item for frame #2
+            // if Person 1 is present till frame #50 and then continues from frame #100, insert a null in between.
+            // This results in creating new graph horizontal bar
+            /*for(var i=0; i < sortedFrameDataArray.length; i++) {
+                var personDataArray = sortedFrameDataArray[i].data;
+                var frameIndexOld = personDataArray[0][0];
+                var isContinuous = true;
+                for(var j=1; j < personDataArray.length; j++) {
+                    if(personDataArray[j][0] == frameIndexOld + 1) {
+                        frameIndexOld++;
+                        personDataArray.splice(j,1);
+                        j--;                        
+                    }
+                    else {
+                        isContinuous = false;
+                        personDataArray.splice(j,0,"null");
+                        frameIndexOld = personDataArray[j][0];
+                        j++;
+                    }
+                         
+                }                
+            }*/
+            
+            
+             for(var i=0; i < sortedFrameDataArray.length; i++) {
+                var personDataArray = sortedFrameDataArray[i].data;
+                var frameIndexCounter = 1;
+                for(var startIndex = 0; startIndex <= personDataArray.length-3;) {
+                    if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
+                        if(personDataArray[startIndex][0] + frameIndexCounter + 1 == personDataArray[startIndex + 2][0]) {
+                            personDataArray.splice(startIndex + 1,1);
+                            frameIndexCounter++;
+                        }
+                        else {
+                            personDataArray.splice(startIndex + 1,0,"null");
+                            frameIndexCounter = 1;
+                            startIndex += 3; 
+                        }                                                
+                    }
+                    else {
+                        personDataArray.splice(startIndex,0,"null");
+                        startIndex += 2;
+                    }                         
+                }                
+            }
+            
+                        
+            console.log(sortedFrameDataArray);
             
             //display video on screen and visualize person tracking
     		console.log("Updating tab " + Configuration.tab);
