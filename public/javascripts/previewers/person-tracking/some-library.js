@@ -156,6 +156,9 @@
                 }                
             }                                    
             
+                        
+            console.log(sortedFrameDataArray);
+            
             //display video on screen and visualize person tracking
     		console.log("Updating tab " + Configuration.tab);    		
             
