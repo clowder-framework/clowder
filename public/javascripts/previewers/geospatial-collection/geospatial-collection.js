@@ -97,20 +97,33 @@
 								console.log("NO - length undefined");
 								return;
 							}
-							if (data[0]["WMS Layer URL"] == undefined) {
-								console.log("NO - wms metadata is empty");
-								return;
-							}
-							if (data[0]["WMS Layer URL"] == "") {
-								console.log("NO - no wms metadata"); 
-								return;
-							}
+
+                            // search the metadata index which contains geospatial metadata
+                            var geoMetadataIndex = -1;
+                            for (var i=0;i<data.length;i++)
+                            {
+                                if (data[i]["WMS Layer URL"] == undefined) {
+                                    console.log("NO - wms metadata is empty");
+                                    continue;
+                                }
+                                if (data[i]["WMS Layer URL"] == "") {
+                                    console.log("NO - no wms metadata");
+                                    continue;
+                                }
+                                geoMetadataIndex = i;
+                                break;
+                            }
+
+                            // if it couldn't find the index, return
+                            if (geoMetadataIndex == -1)
+                                return;
+
 							console.log("YES - it is a geospatial data");
 							
 							// retrieve wms information 
-							var wmsUrl = data[0]["WMS Service URL"];
-							var layerName = data[0]["WMS Layer Name"];
-							var wmsLayerUrl = data[0]["WMS Layer URL"];
+							var wmsUrl = data[geoMetadataIndex]["WMS Service URL"];
+							var layerName = data[geoMetadataIndex]["WMS Layer Name"];
+							var wmsLayerUrl = data[geoMetadataIndex]["WMS Layer URL"];
 							
 							// remove the 'wssi:' (workspace prefix) 
 							var name = layerName.split(":")
