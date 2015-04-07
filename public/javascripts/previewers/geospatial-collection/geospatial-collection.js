@@ -50,7 +50,33 @@
 				
 				// adding the base layer to the map
 				map.addLayer(baseLayer);
-				
+
+                // adding control box entry for the basemap (OSM)
+                var defaultOpacity = 0.5;
+                var visVar = 'osm-visible';
+                var opVar = 'osm-opacity';
+
+                // add checkbox and range input
+                var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />';
+                layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
+
+                // prepend the layer not "append" since the top item means the layer on top
+                $('#layer-control').prepend(layerControl);
+
+                // event handler for layer on/off
+                $("#" + visVar).change(function () {
+                    if ($(this).is(':checked')) {
+                        baseLayer.setVisible(true);
+                    } else {
+                        baseLayer.setVisible(false);
+                    }
+                });
+
+                // event handler for layer opacity
+                $("#" + opVar).change(function () {
+                    baseLayer.setOpacity($(this).val());
+                });
+
 				var current_coord = [];
 				// looping through the datasets
 				for (var i=0;i < data.length; i ++) {
