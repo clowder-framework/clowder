@@ -132,7 +132,7 @@
             var opVar = 'osm-opacity';
 
             // add checkbox and range input
-            var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />';
+            var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />Basemap:&nbsp;&nbsp';
             layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
 
             // prepend the layer not "append" since the top item means the layer on top
