@@ -22,6 +22,12 @@ import scala.util.control._
 import org.scalatest.GivenWhenThen
 import java.io.FileReader
 
+import play.api.test._
+import org.scalatest._
+import org.scalatestplus.play._
+import play.api.{Play, Application}
+
+
 /*
  * DTS Functional tests
  *    
@@ -29,9 +35,9 @@ import java.io.FileReader
  * 
  */
 
+//@DoNotDiscover
 class DTSExtractionsAPIAppSpec extends PlaySpec with ConfigedApp with GivenWhenThen {
-  val excludedPlugins = List("services.VersusPlugin")
-  implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins)
+ 
 
   "The OneServerPerSuite trait" must {
     "provide a FakeApplication" in {
