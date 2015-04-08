@@ -24,13 +24,11 @@ trait SecuredController extends Controller {
   def SecuredAction[A](p: BodyParser[A] = parse.anyContent, authorization: Authorization = WithPermission(Permission.Public), resourceId: Option[UUID] = None)(f: RequestWithUser[A] => Result) = Action(p) {
     implicit request => {
       // Only check secure social, no other auth methods are allowed
-      Logger.debug("--- URI is " + request.uri)
       val result = for (
         authenticator <- SecureSocial.authenticatorFromRequest;
         identity <- UserService.find(authenticator.identityId)
       ) yield {
-          //This block if an identity has been found
-          Logger.debug(" - SecuredContoller - Identity found.")          
+          //This block if an identity has been found  
           Authenticator.save(authenticator.touch)
           val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
           authorization match {
