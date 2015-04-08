@@ -26,8 +26,7 @@
         var pathFlotJS = pathJs + "jquery.flot.js";
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
-        var pathPopcornJS = pathJs + "popcorn-complete.min.js";
-        var dataJS = pathJs + "sample.js";
+        var pathPopcornJS = pathJs + "popcorn-complete.min.js";        
         var sortedFrameDataArray = new Array();
 
         //dowload JQuery library files        	        	        
@@ -35,14 +34,11 @@
             $.getScript( pathFlotJS ),
             $.getScript( pathNavigateJS ),
             $.getScript( pathCrosshairJS ),
-            $.getScript( pathPopcornJS ),
-            $.getScript( dataJS )            
+            $.getScript( pathPopcornJS )
         ).done(function(){            
-            console.log("downloaded JS sciprts");            
-            //console.log(data);
+            console.log("downloaded JS sciprts");
             
-            // Processing JSON data
-            
+            // Processing JSON data            
             var jsonFrameArray = data[0].result.frame;
             var jsonFrameArrayLength = jsonFrameArray.length;                        
             
@@ -53,6 +49,7 @@
                 
                 if(typeof(objList) == 'object' && (objList != undefined || objList != null)){
                     var id = parseInt(objList.object["@id"]);                    
+                    
                     // if array element is not existing
                     if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
                         var objPerson = new Object();
@@ -86,38 +83,54 @@
                 var personDataArray = sortedFrameDataArray[i].data;
                 var frameIndexCounter = 1;
                 
-                for(var startIndex = 0; startIndex < personDataArray.length;) {                    
+                for(var startIndex = 0; startIndex < personDataArray.length;) {
+                   
+                   // When at least three elements are present in the array
                    if(personDataArray[startIndex + 2] != undefined ) {
+                        // First two elements are in sequence
                         if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
+                            // Second and third elements are also in sequence
                             if(personDataArray[startIndex][0] + frameIndexCounter + 1 == personDataArray[startIndex + 2][0]) {
+                                // Remove the second element and upate the frame index counter
                                 personDataArray.splice(startIndex + 1,1);
                                 frameIndexCounter++;
                             }
+                            // Second and third element are not in sequence
                             else {
+                                // Insert a null between second and third element. Update frame index counter, move start index
                                 personDataArray.splice(startIndex + 2,0,null);
                                 frameIndexCounter = 1;
                                 startIndex += 3; 
                             }
                         }
+                        // First and second elements are not in sequence
                         else {
+                            // Insert a null between first and second elements. Update start index
                             personDataArray.splice(startIndex + 1,0,null);
                             startIndex += 2;
                         }
                    }
                    // When only two or less items are remaining.
                    else {
+                        // If there are two elements
                         if(personDataArray[startIndex + 1] != undefined) {
+                            // Check if the two elements are in sequence
                             if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
+                                // Insert a null at the end of the array. Not really needed. Just for logical completion of algorithm.
                                 personDataArray.splice(startIndex + 2,0,null);
                                 break;
                             }
+                            // If the two elements are not in sequence
                             else {
+                                // Insert a null between the first and second elements and after the elements
                                 personDataArray.splice(startIndex + 1,0,null);
                                 personDataArray.splice(startIndex + 2,0,null);
                                 break;
                             }
                         }
+                        // If there is only one element left
                         else {
+                            // Insert a null after the element. Not really needed. Just for logical completion of algorithm.
                             personDataArray.splice(startIndex + 1,0,null);
                             break;
                         }
@@ -277,7 +290,6 @@
             $pop.on("timeupdate", function () {
                 var currentTime = this.currentTime();
                 var frameNumber = currentTime * fps
-                console.log(frameNumber);
                 crossHairPos = frameNumber;
                 setCrossHairPosition();
             });
