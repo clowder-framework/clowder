@@ -11,4 +11,5 @@ case class Previewer(
   main: String,
   contentType: List[String],
   supportedPreviews: List[String],
-  collection: Boolean = false)
+  collection: Boolean = false,
+  dataset: Boolean = false)
