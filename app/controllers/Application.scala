@@ -52,7 +52,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   /**
    *  Javascript routing.
    */
-  def javascriptRoutes = SecuredAction() { implicit request =>
+  def javascriptRoutes = Action { implicit request =>
     Ok(
       Routes.javascriptRouter("jsRoutes")(
         routes.javascript.Admin.test,
