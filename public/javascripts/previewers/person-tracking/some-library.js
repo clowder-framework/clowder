@@ -27,6 +27,7 @@
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
         var pathPopcornJS = pathJs + "popcorn-complete.min.js";
+        var dataJS = pathJs + "sample.js";
         var sortedFrameDataArray = new Array();
 
         //dowload JQuery library files        	        	        
@@ -34,11 +35,10 @@
             $.getScript( pathFlotJS ),
             $.getScript( pathNavigateJS ),
             $.getScript( pathCrosshairJS ),
-            $.getScript( pathPopcornJS )
-        ).done(function(){
-        
-            console.log("downloaded JS sciprts");
-            
+            $.getScript( pathPopcornJS ),
+            $.getScript( dataJS )            
+        ).done(function(){            
+            console.log("downloaded JS sciprts");            
             //console.log(data);
             
             // Processing JSON data
@@ -48,11 +48,10 @@
             
             // Pass 1: Rearrange data
             for(var i = 0; i < jsonFrameArrayLength; i++) {
-                
                 var frameIndex = parseInt(jsonFrameArray[i]["@number"]);
                 var objList = jsonFrameArray[i].objectlist;
                 
-                if(typeof(objList) == 'object'){
+                if(typeof(objList) == 'object' && (objList != undefined || objList != null)){
                     var id = parseInt(objList.object["@id"]);                    
                     // if array element is not existing
                     if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
@@ -81,52 +80,50 @@
             // Pass 2: Data reduction. 
             // e.g. if Person 1 is present in frame #1 and frame #2, delete data item for frame #2
             // if Person 1 is present till frame #50 and then continues from frame #100, insert a null in between.
-            // This results in creating new graph horizontal bar
-            /*for(var i=0; i < sortedFrameDataArray.length; i++) {
-                var personDataArray = sortedFrameDataArray[i].data;
-                var frameIndexOld = personDataArray[0][0];
-                var isContinuous = true;
-                for(var j=1; j < personDataArray.length; j++) {
-                    if(personDataArray[j][0] == frameIndexOld + 1) {
-                        frameIndexOld++;
-                        personDataArray.splice(j,1);
-                        j--;                        
-                    }
-                    else {
-                        isContinuous = false;
-                        personDataArray.splice(j,0,"null");
-                        frameIndexOld = personDataArray[j][0];
-                        j++;
-                    }
-                         
-                }                
-            }*/
+            // This results in creating new horizontal bars.
             
-            
-             for(var i=0; i < sortedFrameDataArray.length; i++) {
+            for(var i=0; i < sortedFrameDataArray.length; i++) {
                 var personDataArray = sortedFrameDataArray[i].data;
                 var frameIndexCounter = 1;
-                for(var startIndex = 0; startIndex <= personDataArray.length-3;) {
-                    if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
-                        if(personDataArray[startIndex][0] + frameIndexCounter + 1 == personDataArray[startIndex + 2][0]) {
-                            personDataArray.splice(startIndex + 1,1);
-                            frameIndexCounter++;
+                
+                for(var startIndex = 0; startIndex < personDataArray.length;) {                    
+                   if(personDataArray[startIndex + 2] != undefined ) {
+                        if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
+                            if(personDataArray[startIndex][0] + frameIndexCounter + 1 == personDataArray[startIndex + 2][0]) {
+                                personDataArray.splice(startIndex + 1,1);
+                                frameIndexCounter++;
+                            }
+                            else {
+                                personDataArray.splice(startIndex + 2,0,null);
+                                frameIndexCounter = 1;
+                                startIndex += 3; 
+                            }
                         }
                         else {
-                            personDataArray.splice(startIndex + 1,0,"null");
-                            frameIndexCounter = 1;
-                            startIndex += 3; 
-                        }                                                
-                    }
-                    else {
-                        personDataArray.splice(startIndex,0,"null");
-                        startIndex += 2;
-                    }                         
+                            personDataArray.splice(startIndex + 1,0,null);
+                            startIndex += 2;
+                        }
+                   }
+                   // When only two or less items are remaining.
+                   else {
+                        if(personDataArray[startIndex + 1] != undefined) {
+                            if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
+                                personDataArray.splice(startIndex + 2,0,null);
+                                break;
+                            }
+                            else {
+                                personDataArray.splice(startIndex + 1,0,null);
+                                personDataArray.splice(startIndex + 2,0,null);
+                                break;
+                            }
+                        }
+                        else {
+                            personDataArray.splice(startIndex + 1,0,null);
+                            break;
+                        }
+                    }    
                 }                
-            }
-            
-                        
-            console.log(sortedFrameDataArray);
+            }                                    
             
             //display video on screen and visualize person tracking
     		console.log("Updating tab " + Configuration.tab);
@@ -136,12 +133,13 @@
             $(Configuration.tab).append("<video width='750px' id='video' controls><source src='" + Configuration.url + "'></source></video>");
             
             // add graph div div and legend div for jQuery flot
-    		$(Configuration.tab).append("<div id='placeholder'  style='width: 650px; height: 350px; float left;'></div>");
-	    	$(Configuration.tab).append("<div id='legend' style='margin-right: 10px; float left;'></div>");
+            $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-right: 10px;'></div>");
+    		$("#persontracking").append("<div id='placeholder' style='width: 650px; height: 400px; margin-right: 10px; float: left;'></div>");
+	    	$("#persontracking").append("<div id='legend' style='margin-right: 10px; margin-top: 10px; float: left;'></div>");
             
             var totalFrames = 2000;
             var maxFrames = 300;
-            var numPeople = 20;
+            var numPeople = sortedFrameDataArray.length + 1;
             var fps = 30;
             var offsetVal = 5;
 
@@ -204,7 +202,7 @@
                         show: true,
                         lineWidth: 10
                     },
-                    shadowSize: 1
+                    shadowSize: 2
                 },
                 xaxis: {
                     axisLabel: "Time",
@@ -248,15 +246,7 @@
                 }
             }
             var placeholder = $("#placeholder");
-            plot = $.plot(placeholder, sortedFrameDataArray, options);
-            $("#zoomout").bind("click", function (event) {
-                plot.zoomOut();
-            });
-
-            /*placeholder.bind("plotzoom", function (event, plot) {
-                var axes = plot.getAxes();
-                $(".message").html("Zooming to x: " + axes.xaxis.min.toFixed(2) + " &ndash; " + axes.xaxis.max.toFixed(2) + " and y: " + axes.yaxis.min.toFixed(2) + " &ndash; " + axes.yaxis.max.toFixed(2));
-            });*/
+            plot = $.plot(placeholder, sortedFrameDataArray, options);           
 
            panPlot = function () {
                 plot.getOptions().xaxes[0].min += offsetVal;
