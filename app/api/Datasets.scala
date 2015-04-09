@@ -28,6 +28,8 @@ import services._
 import play.api.libs.json.JsString
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsObject
 import play.api.libs.json.JsError
 import util.License
 import scala.Some
@@ -51,6 +53,8 @@ class Datasets @Inject()(
   comments: CommentService,
   previews: PreviewService,
   extractions: ExtractionService,
+  metadataService: MetadataService,
+  contextService: ContextLDService,
   rdfsparql: RdfSPARQLService) extends ApiController {
 
   /**
@@ -409,6 +413,87 @@ class Datasets @Inject()(
       Ok(toJson(Map("status" -> "success")))
   }
 
+   /**
+   * Add metadata in JSON-LD format.
+   */
+  @ApiOperation(value = "Add JSON-LD metadata to the database.",
+      notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
+      responseClass = "None", httpMethod = "POST")
+  def addMetadataJsonLD(id: UUID) =
+    SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
+      request =>
+        datasets.get(id) match {
+          case Some(x) => {
+            val json = request.body
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            var creator: models.Agent = null
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                creator = s.get
+                //if creator is found, continue processing
+                //read context from request if exists (might not be part of json)
+                val context = (json \ "@context").asOpt[JsValue]
+                //add to db and get an ID
+                val contextID = context.map(contextService.addContext(new JsString("context name"), _))
+
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = Map(("dataset_id", id))
+                val createdAt = (json \ "created_at").as[Date]
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)
+
+                //add metadata to mongo
+                metadataService.addMetadata(metadata)
+                datasets.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator"); 
+                BadRequest(toJson(s"Creator data is missing or incorrect."))              
+              }
+            }
+
+          }
+          case None => Logger.error(s"Error getting dataset $id"); NotFound
+        }
+    }
+
+ @ApiOperation(value = "Retrieve metadata as JSON-LD",
+      notes = "Get metadata of the file object as JSON-LD.",
+      responseClass = "None", httpMethod = "GET")
+  def getMetadataJsonLD(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+    implicit request =>
+      datasets.get(id) match {
+        case Some(dataset) => {    
+          //get metadata and also fetch context information
+          val listOfMetadata = metadataService.getMetadataByAttachTo("dataset", id).map(jsonMetadataWithContext(_))        
+          Ok(toJson(listOfMetadata))
+        }
+        case None => {
+          Logger.error("Error getting dataset  " + id);
+          InternalServerError
+        }
+      }
+  }
+
+  /**
+   * Converts models.Metadata object and context information to JsValue object. 
+   */
+  def jsonMetadataWithContext(metadata: Metadata): JsValue = {
+    //fetch context from mongo using its id
+    val contextLd = metadata.contextId.flatMap(contextService.getContextById(_)).getOrElse(JsNull)
+    val contextJson = JsObject(Seq("@context" -> contextLd))
+
+    //convert metadata to json using implicit writes in Metadata model
+    val metadataJson = (toJson(metadata)).asInstanceOf[JsObject]
+
+    //combine the two json objects and return 
+    contextJson ++ metadataJson
+  }
+  
   @ApiOperation(value = "Add user-generated metadata to dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
