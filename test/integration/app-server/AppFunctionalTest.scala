@@ -9,7 +9,7 @@ import org.scalatest._
  *
  * @author Luigi Marini
  */
-@DoNotDiscover
+//@DoNotDiscover
 class ApplicationFunctionalTest extends IntegrationSpec {
 
   "Application" should "load home page" in {

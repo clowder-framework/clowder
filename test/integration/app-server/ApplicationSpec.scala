@@ -12,7 +12,7 @@ import org.scalatest._
  *
  * @author Luigi Marini
  */
-@DoNotDiscover
+//@DoNotDiscover
 class ApplicationSpec extends IntegrationSpec with ServerFixture {
 
   implicit val user: Option[securesocial.core.Identity] = None

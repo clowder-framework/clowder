@@ -36,14 +36,20 @@ import play.api.{Play, Application}
  */
 
 //@DoNotDiscover
-class DTSExtractionsAPIAppSpec extends PlaySpec with ConfigedApp with GivenWhenThen {
+class DTSExtractionsAPIAppSpec extends PlaySpec with OneServerPerSuite with GivenWhenThen {
  
 
-  "The OneServerPerSuite trait" must {
+  "The DTS Extractions API Spec" must {
     "provide a FakeApplication" in {
       app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
     }
-
+    "make the FakeApplication available implicitly" in {
+      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      getConfig("ehcacheplugin") mustBe Some("disabled")
+    }
+    "start the FakeApplication" in {
+      Play.maybeApplication mustBe Some(app)
+    }
     "provide the port number" in {
       port mustBe Helpers.testServerPort
     }
