@@ -27,6 +27,7 @@
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
         var pathPopcornJS = pathJs + "popcorn-complete.min.js";        
+        var sampleJS = pathJs + "sample2.js";                
         var sortedFrameDataArray = new Array();
 
         //dowload JQuery library files        	        	        
@@ -34,8 +35,11 @@
             $.getScript( pathFlotJS ),
             $.getScript( pathNavigateJS ),
             $.getScript( pathCrosshairJS ),
-            $.getScript( pathPopcornJS )
-        ).done(function(){            
+            $.getScript( pathPopcornJS ),
+            $.getScript( sampleJS )
+        ).done(function(){
+            data = dataVal;
+            console.log(data);
             console.log("downloaded JS sciprts");
             
             // Processing JSON data            
@@ -45,33 +49,51 @@
             // Pass 1: Rearrange data
             for(var i = 0; i < jsonFrameArrayLength; i++) {
                 var frameIndex = parseInt(jsonFrameArray[i]["@number"]);
-                var objList = jsonFrameArray[i].objectlist;
-                
+                var objList = jsonFrameArray[i].objectlist;                
                 if(typeof(objList) == 'object' && (objList != undefined || objList != null)){
-                    var id = parseInt(objList.object["@id"]);                    
-                    
-                    // if array element is not existing
-                    if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
-                        var objPerson = new Object();
-                        objPerson.label = "Person " + id;
-                        var personFrameData = new Array();
-                        personFrameData.push(new Array(frameIndex-1, id));
-                        objPerson.data = personFrameData;                        
-                        sortedFrameDataArray[id-1] = objPerson;                        
+
+                    // When there is only one person in frame    
+                    if(objList.object.length == undefined && objList.object["@id"]) {
+                        var id = parseInt(objList.object["@id"]);                    
+                        // if array element is not existing
+                        if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                            var objPerson = new Object();
+                            objPerson.label = "Person " + id;
+                            var personFrameData = new Array();
+                            personFrameData.push(new Array(frameIndex-1, id));
+                            objPerson.data = personFrameData;                        
+                            sortedFrameDataArray[id-1] = objPerson;                        
+                        }
+                        // if array element is already present
+                        else {                    
+                            var objPerson = sortedFrameDataArray[id-1];
+                            objPerson.data.push(new Array(frameIndex-1, id));
+                            sortedFrameDataArray[id-1] = objPerson;
+                        }
                     }
-                    // if array element is already present
-                    else {                    
-                        var objPerson = sortedFrameDataArray[id-1];
-                        objPerson.data.push(new Array(frameIndex-1, id));
-                        sortedFrameDataArray[id-1] = objPerson;
-                    }
-                }
-                else if (typeof(objList) == 'array') {
-                    console.log("Array");
-                    for(var j = 0; j < objList.length; j++){
-                        console.log(objList[j].object["@id"]);
-                    }
-                }
+                    // When there are multiple people in a frame
+                    else if(objList.object.length > 0) {
+
+                        for(var j=0; j< objList.object.length; j++){                            
+                            var id = parseInt(objList.object[j]["@id"]);                    
+                            // if array element is not existing
+                            if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                                var objPerson = new Object();
+                                objPerson.label = "Person " + id;
+                                var personFrameData = new Array();
+                                personFrameData.push(new Array(frameIndex-1, id));
+                                objPerson.data = personFrameData;                        
+                                sortedFrameDataArray[id-1] = objPerson;                        
+                            }
+                            // if array element is already present
+                            else {                    
+                                var objPerson = sortedFrameDataArray[id-1];
+                                objPerson.data.push(new Array(frameIndex-1, id));
+                                sortedFrameDataArray[id-1] = objPerson;
+                            }
+                        }
+                    }                                    
+                }                
             }
             
             // Pass 2: Data reduction. 
@@ -140,13 +162,14 @@
             
             //display video on screen and visualize person tracking
     		console.log("Updating tab " + Configuration.tab);
+    		//console.log(sortedFrameDataArray);
             
             //add video to display
             $(Configuration.tab).append("<br/>");
             $(Configuration.tab).append("<video width='750px' id='video' controls><source src='" + Configuration.url + "'></source></video>");
             
             // add graph div div and legend div for jQuery flot
-            $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-right: 10px;'></div>");
+            $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-bottom: 20px; margin-top: 20px;'></div>");
     		$("#persontracking").append("<div id='placeholder' style='width: 650px; height: 400px; margin-right: 10px; float: left;'></div>");
 	    	$("#persontracking").append("<div id='legend' style='margin-right: 10px; margin-top: 10px; float: left;'></div>");
             
