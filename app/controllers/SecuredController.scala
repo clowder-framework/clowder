@@ -28,17 +28,23 @@ trait SecuredController extends Controller {
         authenticator <- SecureSocial.authenticatorFromRequest;
         identity <- UserService.find(authenticator.identityId)
       ) yield {
+          //This block if an identity has been found  
           Authenticator.save(authenticator.touch)
           val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
           authorization match {
             case auth: WithPermission => {
-              if (auth.isAuthorized(identity, resourceId)) {
-                f(RequestWithUser(Some(identity), user, request))
-              } else {
-                Results.Redirect(routes.Authentication.notAuthorized)
-              }
+            	if (auth.isAuthorized(identity, resourceId)) {
+            	    //User logged in and authorized
+            		f(RequestWithUser(Some(identity), user, request))
+            	} else {
+            		//User logged in but does not have permission
+            		Results.Redirect(routes.RedirectUtility.incorrectPermissions("You do not have the permissions that are required in order to view that location."))
+            	}
             }
-            case _ => Results.Redirect(routes.Authentication.notAuthorized)
+            case _ =>  {
+                //User logged in, but it's a controller that has a different authorization?
+                Results.Redirect(routes.Authentication.notAuthorized)
+            }
           }
         }
 
@@ -46,13 +52,17 @@ trait SecuredController extends Controller {
       result.getOrElse {
         authorization match {
           case auth: WithPermission => {
-            if (auth.isAuthorized(None, resourceId)) {
-              f(RequestWithUser(None, None, request))
-            } else {
-              Results.Redirect(routes.Authentication.notAuthorized)
-            }
+        	  if (auth.isAuthorized(None, resourceId)) {
+        		  f(RequestWithUser(None, None, request))
+        	  } else {        		  
+        		  //The case where not logged in and not authorized for the guest
+        		  Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("Authorization is required to access that location. Please login to proceed.", request.uri))
+        	  }
           }
-          case _ => Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authenticated.")
+          case _ => {              
+              //The case where it's a controller that has a different authorization?
+              Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("Authentication is required to access that location. Please login to proceed.", request.uri))
+          }
         }
       }
     }
