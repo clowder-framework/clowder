@@ -84,7 +84,7 @@
 					}					
 					var allowedChildrenForNode = window["allowedChildren"+topId].filter(function (a) {return a[0] == parentNodeType;});
 					if(allowedChildrenForNode.length == 0){
-						alert("The metadata model states that this property cannot have subproperties of any kind.");
+                        notify('The metadata model states that this property cannot have subproperties of any kind.', 'error', true);
 						return false;
 					}
 					$(this).parent().children('ul')[0].appendChild(newProperty);	
@@ -104,6 +104,8 @@
 					
 					var newSelectButton = document.createElement('button'); 	
 					newSelectButton.classList.add('usr_md_');
+                    newSelectButton.classList.add('btn-link');
+                    newSelectButton.classList.add('btn-sm');
 					newSelectButton.setAttribute('type','button');		
 					
 					newSelectButton.innerHTML = 'Select property';
@@ -141,6 +143,8 @@
 						
 						var newDeleteButton = document.createElement('button'); 	
 						newDeleteButton.classList.add('usr_md_');
+                        newDeleteButton.classList.add('btn-link');
+                        newDeleteButton.classList.add('btn-sm');
 						newDeleteButton.setAttribute('type','button');	
 						
 						newDeleteButton.innerHTML = 'Delete';
@@ -150,6 +154,8 @@
 						$(this).html("Add property");
 						var newDeleteButton = document.createElement('button'); 	
 						newDeleteButton.classList.add('usr_md_');
+                        newDeleteButton.classList.add('btn-link');
+                        newDeleteButton.classList.add('btn-sm');
 						newDeleteButton.setAttribute('type','button');	
 						
 						newDeleteButton.innerHTML = 'Delete';
@@ -164,7 +170,7 @@
 				  else if($(this).html() == "Submit"){
 				  	var restrictionViolations = validateCardinalitiesToModel(document.getElementById(topId).children[1]);
 					if(restrictionViolations != ''){
-						alert('Institution metadata model violation(s): ' + restrictionViolations + ' Metadata not added.');
+                        notify('<p>Institution metadata model violation(s): </p><p>' + restrictionViolations + '</p><p>Metadata not added.</p>','error', true);
 						return false;
 					}
 					
@@ -175,21 +181,17 @@
 				       type: 'POST',
 				       url:  window["uploadIp"+topId],
 				       data: JSON.stringify(data),
-				       contentType: "application/json",
+				       contentType: "application/json"
 				     });
 					 
 					  request.done(function (response, textStatus, jqXHR){
-					        console.log("Response " + response);
-							alert("Metadata added successfully.");
-		     			});
+						  notify('Metadata added successfully.', 'success', false, 5000);
+					  });
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
-		        		console.error(
-		            		"The following error occured: "+
-		            		textStatus, errorThrown		            
-		        			);
-		        		alert("ERROR: " + errorThrown +". Metadata not added." );
-		     			});
+						  console.error("The following error occured: "+ textStatus, errorThrown);
+                          notify("Encountered error " + errorThrown + ". Metadata not added.", true)
+					  });
 					 
 					 
 				  }

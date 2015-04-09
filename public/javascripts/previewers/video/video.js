@@ -11,7 +11,7 @@
   $(Configuration.tab).append(s);
   $(Configuration.tab).append("<br/>");
   $(Configuration.tab).append(			  
-     "<video width='750px' id='ourvideo' controls><source src='" + Configuration.url + "'></source></video>"
+     "<video width='100%' id='ourvideo' controls><source src='" + Configuration.url + "'></source></video>"
   );
      
 }(jQuery, Configuration));

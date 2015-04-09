@@ -1,0 +1,16 @@
+@(msg: String)(implicit user: Option[securesocial.core.Identity])
+
+@main("No Permissions") {
+    <div class="page-header">
+        <h1>Invalid Permissions</h1>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            @if(msg != null){
+                @msg
+            }else{            
+                You do not have the required permissions to view that page.
+            } 
+        </div>
+    </div>
+}

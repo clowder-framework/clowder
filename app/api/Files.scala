@@ -3,8 +3,7 @@ package api
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.OutputStream
-import java.net.URL
-import java.net.HttpURLConnection
+import java.net.{URLEncoder, URI, URL, HttpURLConnection}
 
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -13,6 +12,7 @@ import java.io.FileWriter
 
 import java.io.FileReader
 import java.io.ByteArrayInputStream
+import javax.mail.internet.MimeUtility
 
 import scala.collection.mutable.MutableList
 
@@ -168,9 +168,15 @@ class Files @Inject()(
 		                }
 		              }
 		              case None => {
-		                Ok.chunked(Enumerator.fromStream(inputStream))
+                    val userAgent = request.headers("user-agent")
+                    val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
+                      URLEncoder.encode(filename, "UTF-8")
+                    } else {
+                      MimeUtility.encodeWord(filename)
+                    }
+                    Ok.chunked(Enumerator.fromStream(inputStream))
 		                  .withHeaders(CONTENT_TYPE -> contentType)
-		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+                      .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + filenameStar))
 		              }
 		            }
 		          }
@@ -441,9 +447,6 @@ class Files @Inject()(
 					        	  files.setContentType(f.id, fileType)
 					          }
 	            }
-	            else if(nameOfFile.toLowerCase().endsWith(".mov")){
-	            			fileType = "ambiguous/mov";
-	            }
 	            
 	            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
 
@@ -458,12 +461,13 @@ class Files @Inject()(
                   dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 
                   /*---------------------------------------*/ 
+			            val extra = Map("filename" -> f.filename)
 	            
                   // index the file using Versus
                   current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 
                   // TODO replace null with None 
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
 
 	            
 	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -569,10 +573,11 @@ class Files @Inject()(
           val key = "unknown." + "file." + fileType.replace("__", ".")
 
           val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
+          val extra = Map("filename" -> theFile.filename)
 
           // TODO replace null with None
           current.plugin[RabbitmqPlugin].foreach {
-            _.extract(ExtractorMessage(id, id, host, key, Map.empty, theFile.length.toString, null, flags))
+            _.extract(ExtractorMessage(id, id, host, key, extra, theFile.length.toString, null, flags))
           }
 
           Ok(toJson(Map("id" -> id.stringify)))
@@ -657,9 +662,7 @@ class Files @Inject()(
                     }
                   files.setContentType(f.id, fileType)
                 }
-	            } else if(nameOfFile.toLowerCase().endsWith(".mov")) {
-                fileType = "ambiguous/mov";
-              }
+	            }
 	              
               current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
               
@@ -672,12 +675,13 @@ class Files @Inject()(
               val clientIP = request.remoteAddress
               val serverIP = request.host
               dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
+		          val extra = Map("filename" -> f.filename)
                       
 			        // index the file using Versus
 			        current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 	              
 	            current.plugin[RabbitmqPlugin].foreach {
-                _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, Map.empty, f.length.toString,
+                _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, extra, f.length.toString,
                   dataset_id, flags)) }
 	          
 	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -781,11 +785,9 @@ class Files @Inject()(
                       InternalServerError(fileType.substring(7))
                     }
                   }
-                  else if (f.filename.toLowerCase().endsWith(".mov")) {
-                    fileType = "ambiguous/mov";
-                  }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+				          val extra = Map("filename" -> f.filename)
 
                   val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
                   val id = f.id
@@ -793,7 +795,7 @@ class Files @Inject()(
                   current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
                   // TODO replace null with None
                   current.plugin[RabbitmqPlugin].foreach {
-                    _.extract(ExtractorMessage(UUID(originalId), id, host, key, Map.empty, f.length.toString, null, flags))
+                    _.extract(ExtractorMessage(UUID(originalId), id, host, key, extra, f.length.toString, null, flags))
                   }
                   Ok(toJson(Map("id" -> id.stringify)))
                 }
@@ -1087,6 +1089,33 @@ class Files @Inject()(
           }
         }
         case None => BadRequest(toJson("File not found " + file_id))
+      }
+  }
+  
+  
+  /**
+   * Add thumbnail to query file.
+   */
+  @ApiOperation(value = "Add thumbnail to a query image", notes = "Attaches an already-existing thumbnail to a query image.", responseClass = "None", httpMethod = "POST")
+  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+    implicit request =>
+      queries.get(query_id) match {
+        case Some(file) => {
+          thumbnails.get(thumbnail_id) match {
+            case Some(thumbnail) => {
+              queries.updateThumbnail(query_id, thumbnail_id)  
+              Ok(toJson(Map("status" -> "success")))
+            }
+            case None => {
+            	Logger.error("Thumbnail not found")
+            	BadRequest(toJson("Thumbnail not found"))
+            }
+          }
+        }
+        case None => {
+          Logger.error("File not found")
+          BadRequest(toJson("Query file not found " + query_id))
+        }
       }
   }
   
@@ -1714,11 +1743,15 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-          Logger.debug("Deleting file: " + file.filename)
-          files.removeFile(id)
+          
+           //this stmt has to be before files.removeFile
+          Logger.debug("Deleting file from indexes" + file.filename)
           current.plugin[VersusPlugin].foreach {        
             _.removeFromIndexes(id)        
           }
+          Logger.debug("Deleting file: " + file.filename)
+          files.removeFile(id)
+          
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "file", id.stringify)
           }

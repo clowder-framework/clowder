@@ -4,7 +4,7 @@ import api.{Permission, WithPermission}
 import play.api.Routes
 import javax.inject.{Singleton, Inject}
 import play.api.mvc.Action
-import services.{AppConfiguration, FileService}
+import services.{DatasetService, CollectionService, AppConfiguration, FileService}
 import play.api.Logger
 
 /**
@@ -13,7 +13,7 @@ import play.api.Logger
  * @author Luigi Marini
  */
 @Singleton
-class Application @Inject() (files: FileService) extends SecuredController {
+class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    * @param path the path minus the slash
@@ -29,7 +29,11 @@ class Application @Inject() (files: FileService) extends SecuredController {
   def index = SecuredAction(authorization = WithPermission(Permission.Public)) { request =>
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
-    Ok(views.html.index(latestFiles, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    val datasetsCount = datasets.count()
+    val filesCount = files.count()
+    val collectionCount = collections.count()
+    Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount,
+      AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
   
   def options(path:String) = SecuredAction() { implicit request =>
@@ -48,7 +52,7 @@ class Application @Inject() (files: FileService) extends SecuredController {
   /**
    *  Javascript routing.
    */
-  def javascriptRoutes = SecuredAction() { implicit request =>
+  def javascriptRoutes = Action { implicit request =>
     Ok(
       Routes.javascriptRouter("jsRoutes")(
         routes.javascript.Admin.test,
@@ -64,11 +68,13 @@ class Application @Inject() (files: FileService) extends SecuredController {
         routes.javascript.Admin.getAdapters,
         routes.javascript.Admin.getExtractors,
         routes.javascript.Admin.getMeasures,
-        routes.javascript.Admin.getIndexers,       
+        routes.javascript.Admin.getIndexers,
+        routes.javascript.Datasets.dataset,
+        routes.javascript.Collections.collection,
         api.routes.javascript.Admin.removeAdmin,        
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
-        api.routes.javascript.Comments.editComment,        
+        api.routes.javascript.Comments.editComment,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.createEmptyDataset,
         api.routes.javascript.Datasets.attachMultipleFiles,
@@ -107,7 +113,9 @@ class Application @Inject() (files: FileService) extends SecuredController {
         api.routes.javascript.Spaces.get,
         api.routes.javascript.Spaces.removeSpace,
         api.routes.javascript.Spaces.list,
-        api.routes.javascript.Spaces.addCollection
+        api.routes.javascript.Spaces.addCollection,
+        api.routes.javascript.Projects.addproject,
+        api.routes.javascript.Institutions.addinstitution
       )
     ).as(JSON) 
   }

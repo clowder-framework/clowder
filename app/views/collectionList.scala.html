@@ -105,8 +105,8 @@
                             <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(collection.name)">
                         </a>
                         }
-                        <div class="caption">
-                            <h4 class="no-overflow oneline"><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></h4>
+                        <div class="caption break-word">
+                            <h4><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></h4>
                             <p>@ellipsize(collection.description, 200)</p>
                         </div>
                     </div>                    

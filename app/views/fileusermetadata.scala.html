@@ -4,7 +4,7 @@
 @import collection.JavaConverters._
 
 <br/>
-<form class="form-inline">	
+
 	@printLevelUserMetadata(metadata: scala.collection.mutable.Map[String,Any]) = {
 		<ul class="usr_md_">
 		@for((key,value) <- metadata) {
@@ -12,17 +12,21 @@
 				@for(listValue <- value.asInstanceOf[com.mongodb.BasicDBList]) {
 						<li class="usr_md_"><b class="usr_md_">@(key):</b>
 						@if(listValue.isInstanceOf[String]) {			
-							<span class="usr_md_">@listValue</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
+							<span class="usr_md_">@listValue</span><button class="usr_md_ btn btn-link btn-sm" type="button">Modify</button>
+                            <button class="usr_md_ btn btn-link btn-sm" >Delete</button>
 						} else {
-								<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(listValue.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
+							<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+                            <button class="usr_md_ btn btn-link btn-sm" type="button">Delete</button>@printLevelUserMetadata(listValue.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
 						}</li>
 				}
 			}else{
 				<li class="usr_md_"><b class="usr_md_">@(key):</b>
 				@if(value.isInstanceOf[String]) {			
-					<span class="usr_md_">@value</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
+					<span class="usr_md_">@value</span><button class="usr_md_ btn btn-link btn-sm" type="button">Modify</button>
+                    <button class="usr_md_ btn btn-link btn-sm" >Delete</button>
 				} else {
-						<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
+					<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+                    <button class="usr_md_ btn btn-link btn-sm" type="button">Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
 				}</li>
 			}	
 		}
@@ -30,14 +34,14 @@
 	}
 	
 	<div id='generalUserMetadata_@(file.id.stringify)' class='usr_md_'>
-		<button class="usr_md_" type="button">Add property</button>
+		<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
 		@printLevelUserMetadata(userMetadata)
-		<button class="usr_md_submit btn btn-primary btn-sm">Submit</button>
+		<button class="usr_md_submit btn btn-default btn-xs">Submit</button>
 		@if(rdfExported){
 			<button class="usr_md_submit btn btn-default btn-sm rdfbtn">Get as RDF</button>
 		}
 	</div>		
-</form>
+
 <script language="javascript">
 	var topId = "generalUserMetadata_@(file.id.stringify)"; 
 	window["uploadIp"+topId] = "@api.routes.Files.addUserMetadata(file.id)";

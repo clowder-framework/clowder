@@ -16,7 +16,7 @@ function removeFile(fileId,event, reloadPage){
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to delete a file from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            alert("The file was not deleted from the system due to : " + errorThrown);
+            notify("The file was not deleted from the system due to : " + errorThrown, "error");
         }
 	});	
 }
@@ -36,7 +36,7 @@ function removeFileAndRedirect(fileId, url){
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to delete a file from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            alert("The file was not deleted from the system due to : " + errorThrown);
+            notify("The file was not deleted from the system due to : " + errorThrown, "error");
         }
 	});	
 }

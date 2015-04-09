@@ -1,4 +1,5 @@
 <?php
+header('Access-Control-Allow-Origin: *');
 $servers = $extractors = $count = $inputs = $requests = $headings = "";
 if(isset($_REQUEST['servers'])) $servers = $_REQUEST["servers"];
 if(isset($_REQUEST['extractors'])) $extractors = $_REQUEST["extractors"];

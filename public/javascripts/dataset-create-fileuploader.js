@@ -194,7 +194,7 @@ function createEmptyDataset(data) {
 	            origData.submit();
             }
             
-            $('#status').html("Creation successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
+            $('#status').html("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>");
             $('#status').show();
             $('#uploadcreate').html(" Attach Files");
         });
