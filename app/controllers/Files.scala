@@ -20,6 +20,7 @@ import javax.inject.Inject
 import java.util.Date
 import scala.sys.SystemProperties
 import securesocial.core.Identity
+import scala.collection.mutable.ListBuffer
 
 /**
  * Manage files.
@@ -112,12 +113,25 @@ class Files @Inject() (
         }
         commentsByFile = commentsByFile.sortBy(_.posted)
         
-        var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
-        var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
+        //Decode the datasets so that their free text will display correctly in the view
+        val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val datasetsNotContaining = datasets.findNotContainingFile(file.id).sortBy(_.name)              
+        var decodedDatasetsContaining = new ListBuffer[models.Dataset]()
+        var decodedDatasetsNotContaining = new ListBuffer[models.Dataset]()
+        
+        for (aDataset <- datasetsContainingFile) {
+        	val dDataset = Utils.decodeDatasetElements(aDataset)
+        	decodedDatasetsContaining += dDataset
+        }
+        
+        for (aDataset <- datasetsNotContaining) {
+        	val dDataset = Utils.decodeDatasetElements(aDataset)
+        	decodedDatasetsNotContaining += dDataset
+        }
         
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         
-        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, extractorsActive, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
+        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList, userMetadata, isRDFExportEnabled))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."
