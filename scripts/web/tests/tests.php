@@ -52,6 +52,8 @@
 						$comment = $comment . "<br/>" . substr($line, 1);
 					}
 					next;
+				} else if($line[0] == '*') {
+					next;
 				} else {
 					$parts = explode(" ", $line, 2);
 					$input_filename = $parts[0];
@@ -138,7 +140,7 @@
 				$(row).attr('class', 'info');		//Set it again in case this is a second attempt
 
 				var dts = document.getElementById('dts').value;
-				var url = 'test.php?dts=' + encodeURIComponent('http://' + dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
+				var url = 'test.php?dts=' + encodeURIComponent(dts) + '&file=' + encodeURIComponent(file) + '&output=' + encodeURIComponent(output) + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
 				console.log(url);
 
 				$.get(url, function(success) {

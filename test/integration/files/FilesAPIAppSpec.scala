@@ -29,14 +29,28 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.Codec
 import org.apache.http.entity.ContentType
 
+import play.api.test._
+import org.scalatest._
+import org.scalatestplus.play._
+import play.api.{Play, Application}
 
-class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpload {
-  val excludedPlugins = List(
-    "services.RabbitmqPlugin",
-    "services.VersusPlugin")
+
+/*
+ * Integration test for Files API - Router test
+ * @author Eugene Roeder
+ * 
+ */
 
 
-  implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins)
+class FilesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+
+  //   val excludedPlugins = List(
+  //   "services.RabbitmqPlugin",
+  //   "services.VersusPlugin")
+
+
+  // implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins)
+  
 
   def printList[T](list: List[T]) {
     list match {
@@ -58,6 +72,25 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
     (__ \ "content-type").read[String] and
     (__ \ "filename").read[String]
   )(FileName.apply _)
+
+
+
+  "The OneAppPerSuite trait" must {
+    "provide a FakeApplication" in {
+      app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
+    }
+    "make the FakeApplication available implicitly" in {
+      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      getConfig("ehcacheplugin") mustBe Some("disabled")
+    }
+    "start the FakeApplication" in {
+      Play.maybeApplication mustBe Some(app)
+    }
+  }
+
+
+
+
 
  	
  "The OneAppPerSuite for Files API Router test" must {

@@ -52,7 +52,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   /**
    *  Javascript routing.
    */
-  def javascriptRoutes = SecuredAction() { implicit request =>
+  def javascriptRoutes = Action { implicit request =>
     Ok(
       Routes.javascriptRouter("jsRoutes")(
         routes.javascript.Admin.test,
@@ -71,7 +71,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Admin.getIndexers,
         routes.javascript.Datasets.dataset,
         routes.javascript.Geostreams.list,
-        api.routes.javascript.Admin.removeAdmin,
+        routes.javascript.Collections.collection,
+        api.routes.javascript.Admin.removeAdmin,        
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,

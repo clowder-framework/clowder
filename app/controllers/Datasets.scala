@@ -273,43 +273,18 @@ class Datasets @Inject()(
 
           var datasetWithFiles = dataset.copy(files = filesInDataset)
           datasetWithFiles = decodeDatasetElements(datasetWithFiles)
-          val previewers = Previewers.findPreviewers
-          //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
-          val previewslist = for (f <- datasetWithFiles.files) yield {
 
+          // previews
+//          val filteredPreviewers = for (
+//              previewer <- Previewers.findDatasetPreviewers;
+//              preview <- previewService.findByDatasetId(id);
+//              if (previewer.dataset);
+//              if (previewer.supportedPreviews.contains(preview.preview_type.get) || previewer.supportedPreviews.isEmpty)
+//            ) yield {
+//              previewer
+//            }
 
-            // add sections to file
-            val sectionsByFile = sections.findByFileId(f.id)
-            Logger.debug("Sections: " + sectionsByFile)
-            val sectionsWithPreviews = sectionsByFile.map { s =>
-              val p = previewService.findBySectionId(s.id)
-              if(p.length>0)
-                s.copy(preview = Some(p(0)))
-              else
-                s.copy(preview = None)
-            }
-            val fileWithSections = f.copy(sections = sectionsWithPreviews)
-
-
-            val pvf = for (p <- previewers; pv <- fileWithSections.previews; if (fileWithSections.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(pv.contentType))) yield {
-              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
-            }
-            if (pvf.length > 0) {
-              fileWithSections -> pvf
-            } else {
-              val ff = for (p <- previewers; if (f.showPreviews.equals("DatasetLevel")) && (p.contentType.contains(f.contentType))) yield {
-                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
-                //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-                if (f.licenseData.isDownloadAllowed(user)) {
-                    (f.id.toString, p.id, p.path, p.main, routes.Files.download(f.id).toString, f.contentType, f.length)
-                }
-                else {
-                    (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
-                }
-              }
-              fileWithSections -> ff
-            }
-          }
+          val filteredPreviewers = Previewers.findDatasetPreviewers;
 
           val metadata = datasets.getMetadata(id)
           Logger.debug("Metadata: " + metadata)
@@ -346,19 +321,7 @@ class Datasets @Inject()(
 	          
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          // associated sensors
-          var sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
-            case Some(db) => {
-              val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
-              val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
-              db.getDashboardSensorURLs(ids)
-            }
-            case None => List.empty[(String, String)]
-          }
-
-
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, sensors))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError
