@@ -79,7 +79,7 @@ class ContextLDAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipart
 
 
 
-  "The OneAppPerSuite trait" must {
+  "The Context-LD API Spec" must {
     "provide a FakeApplication" in {
       app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
     }
@@ -92,14 +92,14 @@ class ContextLDAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipart
     }
   }
  	
- "The OneAppPerSuite for Context LD API Router test" must {
-    "respond to the createContext() function routed by POST /api/contextld" in {
+  "The Context-LD API Spec" must {
+    "respond to the createContext() function routed by POST /api/contexts" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
 
       //link up json file here before fake request.
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/collections/data-test-collection.json")
+      val file1 = new java.io.File(workingDir + "/test/data/contextld/data-test-contextld.json")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
@@ -109,551 +109,92 @@ class ContextLDAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipart
       json_data_from_file_source.close()
 
       // Place file string into a JSON object
-      val json_tags: JsValue = Json.parse(json_data_from_file_lines)
-      val readableString_tags: String = Json.prettyPrint(json_tags)
+      val json_context: JsValue = Json.parse(json_data_from_file_lines)
+      val readableString_context: String = Json.prettyPrint(json_context)
       info("Pretty JSON format")
-      info(readableString_tags)          
+      info(readableString_context)          
 
       //link up json file here before fake request.
-      val Some(result_get) = route(FakeRequest(POST, "/api/collections?key=" + secretKey).withJsonBody(json_tags))
+      val Some(result_post) = route(FakeRequest(POST, "/api/contexts?key=" + secretKey).withJsonBody(json_context))
 
-      info("Status="+status(result_get))
-      status(result_get) mustEqual OK
-      info("contentType="+contentType(result_get))
-      contentType(result_get) mustEqual Some("application/json")
+      info("Status="+status(result_post))
+      status(result_post) mustEqual OK
+      info("contentType="+contentType(result_post))
+      contentType(result_post) mustEqual Some("application/json")
       //contentAsString(result_get) must include ("File")
-      info("content"+contentAsString(result_get))
+      info("content"+contentAsString(result_post))
+    }
+
+
+ "respond to the getContextByName() function routed by GET /api/contexts/:name/context.json" in {
+      val Some(result) = route(FakeRequest(GET, "/api/contexts/Person/context.json"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      //contentType(result) mustEqual Some("application/json")
+      info("content"+contentAsString(result))
     }
 
 
 
-
-    "respond to the createDataset() function routed by POST /api/datasets for Dataset 1 Creation" in {
+  "respond to the getContextById(id: UUID) and removeContextById(id: UUID) functions routed by GET/DELETE /api/contexts/:id" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+
+      //link up json file here before fake request.
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/collections/dataset-image.zip")
+      val file1 = new java.io.File(workingDir + "/test/data/contextld/data-test-contextld-2.json")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
+      info("File Pathing " + file1.toString())
+      val json_data_from_file_source = Source.fromFile(file1.toString())
+      val json_data_from_file_lines = json_data_from_file_source.mkString
+      json_data_from_file_source.close()
 
-      val req = FakeRequest(POST, "/api/extractions/upload_file?key=" + secretKey).
-        withFileUpload("File", file1, "application/x-zip-compressed")
-      val result = route(req).get
+      // Place file string into a JSON object
+      val json_context: JsValue = Json.parse(json_data_from_file_lines)
+      val readableString_context: String = Json.prettyPrint(json_context)
+      info("Pretty JSON format")
+      info(readableString_context)          
 
+      //link up json file here before fake request.
+      val Some(result_post) = route(FakeRequest(POST, "/api/contexts?key=" + secretKey).withJsonBody(json_context))
 
-      val Some(result1) = route(FakeRequest(GET, "/api/files"))
-      info("Status="+status(result1))
-      status(result1) mustEqual OK
-      info("contentType="+contentType(result1))
-      contentType(result1) mustEqual Some("application/json")
-      contentAsString(result1) must include ("filename")
-      info("content"+contentAsString(result))
-      val json: JsValue = Json.parse(contentAsString(result1))
+      info("Status="+status(result_post))
+      status(result_post) mustEqual OK
+      info("contentType="+contentType(result_post))
+      contentType(result_post) mustEqual Some("application/json")
+      contentAsString(result_post) must include("id")
+      info("content"+contentAsString(result_post))
+
+      val json: JsValue = Json.parse(contentAsString(result_post))
       val readableString: String = Json.prettyPrint(json)
       info("Pretty JSON format")
       info(readableString)
-      val nameResult = json.validate[List[FileName]]
-      val fileInfo = nameResult match {
-        case JsSuccess(list : List[FileName], _) => (list)
-          info("Mapping file model to Json worked")
-          info("Number of files in System " + list.length.toString())
-          info(list.toString())
-          info(list.filter(_.filename contains "dataset-image.zip").toString().split(",")(2))
-          val file_id = list.filter(_.filename contains "dataset-image.zip").toString().split(",")(2)
-          info("id value " + file_id)
 
-          val name = "Dataset 1 API Test Creation"
-          val description = "Part 1 of Dataset API Test Suite"
-          //val file_id = ""
+      val id = readableString.toString().split(":")(1).split("\"")(1)
+      info("id value " + id)
 
-          val req = FakeRequest(POST, "/api/datasets?key=" + secretKey).
-              withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> file_id)))
-          val result3 = route(req).get
+      val req2 = FakeRequest(GET, "/api/contexts/" + id + "?key=" + secretKey)
+      val result2 = route(req2).get
 
-          info("Status=" + status(result3))
-          status(result3) mustEqual OK
-          info("contentType=" + contentType(result3))
-          contentType(result3) mustEqual Some("application/json")
-          contentAsString(result3) must include("id")
-          info("contentAsString" + contentAsString(result3))
-      }
+      info("Status=" + status(result2))
+      status(result2) mustEqual OK
+      info("contentType=" + contentType(result2))
+      contentType(result2) mustEqual Some("application/json")
+      info("contentAsString" + contentAsString(result2)) 
+
+
+      val req3 = FakeRequest(DELETE, "/api/contexts/" + id + "?key=" + secretKey)
+      val result3 = route(req3).get
+
+      info("Status=" + status(result3))
+      status(result3) mustEqual OK
+      info("contentType=" + contentType(result3))
+      contentType(result3) mustEqual Some("text/plain")
+      info("contentAsString" + contentAsString(result3)) 
     }
-
-    "respond to the createDataset() function routed by POST /api/datasets for Dataset 2 Creation" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val workingDir = System.getProperty("user.dir")
-      info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/collections/dataset-image-1.zip")
-      if (file1.isFile && file1.exists) {
-        Logger.debug("File1 is File:True")
-      }
-
-      val req = FakeRequest(POST, "/api/extractions/upload_file?key=" + secretKey).
-        withFileUpload("File", file1, "application/x-zip-compressed")
-      val result = route(req).get
-
-
-      val Some(result1) = route(FakeRequest(GET, "/api/files"))
-      info("Status="+status(result1))
-      status(result1) mustEqual OK
-      info("contentType="+contentType(result1))
-      contentType(result1) mustEqual Some("application/json")
-      contentAsString(result1) must include ("filename")
-      info("content"+contentAsString(result))
-      val json: JsValue = Json.parse(contentAsString(result1))
-      val readableString: String = Json.prettyPrint(json)
-      info("Pretty JSON format")
-      info(readableString)
-      val nameResult = json.validate[List[FileName]]
-      val fileInfo = nameResult match {
-        case JsSuccess(list : List[FileName], _) => (list)
-          info("Mapping file model to Json worked")
-          info("Number of files in System " + list.length.toString())
-          info(list.toString())
-          info(list.filter(_.filename contains "dataset-image.zip").toString().split(",")(2))
-          val file_id = list.filter(_.filename contains "dataset-image.zip").toString().split(",")(2)
-          info("id value " + file_id)
-
-          val name = "Dataset 2 API Test Creation"
-          val description = "Part 2 of Dataset API Test Suite"
-          //val file_id = ""
-
-          val req = FakeRequest(POST, "/api/datasets?key=" + secretKey).
-              withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> file_id)))
-          val result3 = route(req).get
-
-          info("Status=" + status(result3))
-          status(result3) mustEqual OK
-          info("contentType=" + contentType(result3))
-          contentType(result3) mustEqual Some("application/json")
-          contentAsString(result3) must include("id")
-          info("contentAsString" + contentAsString(result3))
-      }
-    }
-
-    "respond to the attachDataset(coll_id:UUID, ds_id:UUID) function routed by POST /api/collections/:coll_id/datasets/:ds_id for dataset 1" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result1) = route(FakeRequest(GET, "/api/datasets"))
-      info("Status="+status(result1))
-      status(result1) mustEqual OK
-      info("contentType="+contentType(result1))
-      contentType(result1) mustEqual Some("application/json")
-      contentAsString(result1) must include ("datasetname")
-      info("content"+contentAsString(result1))
-      val json: JsValue = Json.parse(contentAsString(result1))
-      val readableString: String = Json.prettyPrint(json)
-      info("Pretty JSON format")
-      info(readableString)
-      val nameResult = json.validate[List[DataSet]]
-      val fileInfo = nameResult match {
-        case JsSuccess(list : List[DataSet], _) => (list)
-          info("Mapping dataset model to Json worked")
-          info("Number of datasets in System " + list.length.toString())
-          info(list.toString())
-          info(list.filter(_.datasetname contains "Dataset 1").toString().split(",")(2))
-          val dataset_id = list.filter(_.datasetname contains "Dataset 1").toString().split(",")(2)
-          info("dataset id value " + dataset_id)
-
-          val Some(result2) = route(FakeRequest(GET, "/api/collections"))
-          info("Status="+status(result2))
-          status(result2) mustEqual OK
-          info("contentType="+contentType(result2))
-          contentType(result2) mustEqual Some("application/json")
-          contentAsString(result2) must include ("name")
-          info("content"+contentAsString(result2))
-          val json: JsValue = Json.parse(contentAsString(result2))
-          val readableString: String = Json.prettyPrint(json)
-          info("Pretty JSON format")
-          info(readableString)
-          val nameResult = json.validate[List[CollectionSet]]
-          val fileInfo = nameResult match {
-            case JsSuccess(list : List[CollectionSet], _) => (list)
-              info("Mapping collection model to Json worked")
-              info("Number of collection in System " + list.length.toString())
-              info(list.toString())
-              info(list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2))
-
-              val coll_id = list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2)
-              info("collection id value " + coll_id)
-
-
-              info("/api/collections/" + coll_id + "/datasets/" + dataset_id + "?key=" + secretKey)
-              val req = FakeRequest(POST, "/api/collections/" + coll_id + "/datasets/" + dataset_id + "?key=" + secretKey)
-              //.withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> file_id)))
-              val result3 = route(req).get
-
-              info("Status=" + status(result3))
-              status(result3) mustEqual OK
-              info("contentType=" + contentType(result3))
-              contentType(result3) mustEqual Some("application/json")
-              //contentAsString(result3) must include("id")
-              info("contentAsString" + contentAsString(result3))
-          }
-      }
-    }
-
-    "respond to the listInCollection(coll_id: UUID) function routed by GET /api/collections/:coll_id/getDatasets" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
-      info("Status="+status(result))
-      status(result) mustEqual OK
-      info("contentType="+contentType(result))
-      contentType(result) mustEqual Some("application/json")
-      contentAsString(result) must include ("name")
-      info("content"+contentAsString(result))
-      val json: JsValue = Json.parse(contentAsString(result))
-      val readableString: String = Json.prettyPrint(json)
-      info("Pretty JSON format")
-      info(readableString)
-      val nameResult = json.validate[List[CollectionSet]]
-      val fileInfo = nameResult match {
-        case JsSuccess(list : List[CollectionSet], _) => list
-          info("Mapping collection model to Json worked")
-          info("Number of collection in System " + list.length.toString())
-          info(list.toString())
-          info(list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2))
-          val coll_id = list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2)
-
-          // After finding specific "id" of file call RESTful API to get JSON information
-          val Some(result_get) = route(FakeRequest(GET, "/api/collections/" + coll_id + "/getDatasets?key=" + secretKey))
-          info("Status_Get="+status(result_get))
-          status(result_get) mustEqual OK
-          info("contentType_Get="+contentType(result_get))
-          contentType(result_get) mustEqual Some("application/json")
-          val json: JsValue = Json.parse(contentAsString(result_get))
-          val readableString: String = Json.prettyPrint(json)
-          info("Pretty JSON format")
-          info(readableString)
-        case e: JsError => {
-          info("Errors: " + JsError.toFlatJson(e).toString())
-        }
-      }
-    }
-
-    "respond to the listOutsideCollection(coll_id: UUID) function routed by GET /api/datasets/listOutsideCollection/:coll_id" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
-      info("Status="+status(result))
-      status(result) mustEqual OK
-      info("contentType="+contentType(result))
-      contentType(result) mustEqual Some("application/json")
-      contentAsString(result) must include ("name")
-      info("content"+contentAsString(result))
-      val json: JsValue = Json.parse(contentAsString(result))
-      val readableString: String = Json.prettyPrint(json)
-      info("Pretty JSON format")
-      info(readableString)
-      val nameResult = json.validate[List[CollectionSet]]
-      val fileInfo = nameResult match {
-        case JsSuccess(list : List[CollectionSet], _) => list
-          info("Mapping collection model to Json worked")
-          info("Number of collection in System " + list.length.toString())
-          info(list.toString())
-          info(list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2))
-          val coll_id = list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2)
-
-          // After finding specific "id" of file call RESTful API to get JSON information
-          val Some(result_get) = route(FakeRequest(GET, "/api/datasets/listOutsideCollection/" + coll_id + "?key=" + secretKey))
-          info("Status_Get="+status(result_get))
-          status(result_get) mustEqual OK
-          info("contentType_Get="+contentType(result_get))
-          contentType(result_get) mustEqual Some("application/json")
-          val json: JsValue = Json.parse(contentAsString(result_get))
-          val readableString: String = Json.prettyPrint(json)
-          info("Pretty JSON format")
-          info(readableString)
-        case e: JsError => {
-          info("Errors: " + JsError.toFlatJson(e).toString())
-        }
-      }
-    }
-
-
-    "respond to the attachDataset(coll_id:UUID, ds_id:UUID) function routed by POST /api/collections/:coll_id/datasets/:ds_id for dataset 2" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-
-      val Some(result1) = route(FakeRequest(GET, "/api/datasets"))
-      info("Status="+status(result1))
-      status(result1) mustEqual OK
-      info("contentType="+contentType(result1))
-      contentType(result1) mustEqual Some("application/json")
-      contentAsString(result1) must include ("datasetname")
-      info("content"+contentAsString(result1))
-      val json: JsValue = Json.parse(contentAsString(result1))
-      val readableString: String = Json.prettyPrint(json)
-      info("Pretty JSON format")
-      info(readableString)
-      val nameResult = json.validate[List[DataSet]]
-      val fileInfo = nameResult match {
-        case JsSuccess(list : List[DataSet], _) => (list)
-          info("Mapping dataset model to Json worked")
-          info("Number of datasets in System " + list.length.toString())
-          info(list.toString())
-          info(list.filter(_.datasetname contains "Dataset 2").toString().split(",")(2))
-          val dataset_id = list.filter(_.datasetname contains "Dataset 2").toString().split(",")(2)
-          info("dataset id value " + dataset_id)
-
-          val Some(result2) = route(FakeRequest(GET, "/api/collections"))
-          info("Status="+status(result2))
-          status(result2) mustEqual OK
-          info("contentType="+contentType(result2))
-          contentType(result2) mustEqual Some("application/json")
-          contentAsString(result2) must include ("name")
-          info("content"+contentAsString(result2))
-          val json: JsValue = Json.parse(contentAsString(result2))
-          val readableString: String = Json.prettyPrint(json)
-          info("Pretty JSON format")
-          info(readableString)
-          val nameResult = json.validate[List[CollectionSet]]
-          val fileInfo = nameResult match {
-            case JsSuccess(list : List[CollectionSet], _) => (list)
-              info("Mapping collection model to Json worked")
-              info("Number of collection in System " + list.length.toString())
-              info(list.toString())
-              info(list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2))
-
-              val coll_id = list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2)
-              info("collection id value " + coll_id)
-
-
-              info("/api/collections/" + coll_id + "/datasets/" + dataset_id + "?key=" + secretKey)
-              val req = FakeRequest(POST, "/api/collections/" + coll_id + "/datasets/" + dataset_id + "?key=" + secretKey)
-              //.withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> file_id)))
-              val result3 = route(req).get
-
-              info("Status=" + status(result3))
-              status(result3) mustEqual OK
-              info("contentType=" + contentType(result3))
-              contentType(result3) mustEqual Some("application/json")
-              //contentAsString(result3) must include("id")
-              info("contentAsString" + contentAsString(result3))
-          }
-      }
-    }
-
-    "respond to the removeDataset(coll_id:UUID, ds_id:UUID, ignoreNotFound) function routed by DELETE /api/collections/:coll_id/datasets/:ds_id for dataset 2" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result1) = route(FakeRequest(GET, "/api/datasets"))
-      info("Status="+status(result1))
-      status(result1) mustEqual OK
-      info("contentType="+contentType(result1))
-      contentType(result1) mustEqual Some("application/json")
-      contentAsString(result1) must include ("datasetname")
-      info("content"+contentAsString(result1))
-      val json: JsValue = Json.parse(contentAsString(result1))
-      val readableString: String = Json.prettyPrint(json)
-      info("Pretty JSON format")
-      info(readableString)
-      val nameResult = json.validate[List[DataSet]]
-      val fileInfo = nameResult match {
-        case JsSuccess(list : List[DataSet], _) => (list)
-          info("Mapping dataset model to Json worked")
-          info("Number of datasets in System " + list.length.toString())
-          info(list.toString())
-          info(list.filter(_.datasetname contains "Dataset 2").toString().split(",")(2))
-          val dataset_id = list.filter(_.datasetname contains "Dataset 2").toString().split(",")(2)
-          info("dataset id value " + dataset_id)
-
-          val Some(result2) = route(FakeRequest(GET, "/api/collections"))
-          info("Status="+status(result2))
-          status(result2) mustEqual OK
-          info("contentType="+contentType(result2))
-          contentType(result2) mustEqual Some("application/json")
-          contentAsString(result2) must include ("name")
-          info("content"+contentAsString(result2))
-          val json: JsValue = Json.parse(contentAsString(result2))
-          val readableString: String = Json.prettyPrint(json)
-          info("Pretty JSON format")
-          info(readableString)
-          val nameResult = json.validate[List[CollectionSet]]
-          val fileInfo = nameResult match {
-            case JsSuccess(list : List[CollectionSet], _) => (list)
-              info("Mapping collection model to Json worked")
-              info("Number of collection in System " + list.length.toString())
-              info(list.toString())
-              info(list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2))
-              val coll_id = list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2)
-              info("collection id value " + coll_id)
-
-              info("/api/collections/" + coll_id + "/datasets/" + dataset_id + "?key=" + secretKey)
-              val req = FakeRequest(DELETE, "/api/collections/" + coll_id + "/datasets/" + dataset_id + "?key=" + secretKey)
-              val result3 = route(req).get
-
-              info("Status=" + status(result3))
-              status(result3) mustEqual OK
-              info("contentType=" + contentType(result3))
-              contentType(result3) mustEqual Some("application/json")
-              //contentAsString(result3) must include("id")
-              info("contentAsString" + contentAsString(result3))
-          }
-      }
-    }
-
-    // "respond to the removeDataset(coll_id:UUID, ds_id:UUID, ignoreNoteFound) function routed by POST /api/collections/:coll_id/datasets/:ds_id/:ignoreNotFound for dataset 2" in {
-    //   val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-    //   val Some(result1) = route(FakeRequest(GET, "/api/datasets"))
-    //   info("Status="+status(result1))
-    //   status(result1) mustEqual OK
-    //   info("contentType="+contentType(result1))
-    //   contentType(result1) mustEqual Some("application/json")
-    //   contentAsString(result1) must include ("datasetname")
-    //   info("content"+contentAsString(result1))
-    //   val json: JsValue = Json.parse(contentAsString(result1))
-    //   val readableString: String = Json.prettyPrint(json)
-    //   info("Pretty JSON format")
-    //   info(readableString)
-    //   val nameResult = json.validate[List[DataSet]]
-    //   val fileInfo = nameResult match {
-    //     case JsSuccess(list : List[DataSet], _) => (list)
-    //       info("Mapping dataset model to Json worked")
-    //       info("Number of datasets in System " + list.length.toString())
-    //       info(list.toString())
-    //       info(list.filter(_.datasetname contains "Dataset 2").toString().split(",")(2))
-    //       val dataset_id = list.filter(_.datasetname contains "Dataset 2").toString().split(",")(2)
-    //       info("dataset id value " + dataset_id)
-
-    //       val Some(result2) = route(FakeRequest(GET, "/api/collections"))
-    //       info("Status="+status(result2))
-    //       status(result2) mustEqual OK
-    //       info("contentType="+contentType(result2))
-    //       contentType(result2) mustEqual Some("application/json")
-    //       contentAsString(result2) must include ("name")
-    //       info("content"+contentAsString(result2))
-    //       val json: JsValue = Json.parse(contentAsString(result2))
-    //       val readableString: String = Json.prettyPrint(json)
-    //       info("Pretty JSON format")
-    //       info(readableString)
-    //       val nameResult = json.validate[List[CollectionSet]]
-    //       val fileInfo = nameResult match {
-    //         case JsSuccess(list : List[CollectionSet], _) => (list)
-    //           info("Mapping collection model to Json worked")
-    //           info("Number of collection in System " + list.length.toString())
-    //           info(list.toString())
-    //           info(list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2))
-    //           val coll_id = list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2)
-    //           info("collection id value " + coll_id)
-
-    //           info("/api/collections/" + coll_id + "/datasets/" + dataset_id + "/true?key=" + secretKey)
-    //           val req = FakeRequest(POST, "/api/collections/" + coll_id + "/datasetsRemove/" + dataset_id + "/true?key=" + secretKey)
-    //           //.withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> file_id)))
-    //           val result3 = route(req).get
-
-    //           info("Status=" + status(result3))
-    //           status(result3) mustEqual OK
-    //           info("contentType=" + contentType(result3))
-    //           contentType(result3) mustEqual Some("application/json")
-    //           //contentAsString(result3) must include("id")
-    //           info("contentAsString" + contentAsString(result3))
-    //       }
-    //   }
-    // }
-
-
- "respond to the listCollections() function routed by GET /api/collections" in {
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
-      info("Status="+status(result))
-      status(result) mustEqual OK
-      info("contentType="+contentType(result))
-      contentType(result) mustEqual Some("application/json")
-      //contentAsString(result) must include ("File")
-      info("content"+contentAsString(result))
-    }
-
-  "respond to the listCollections() function routed by GET /api/collections/list" in {
-      val Some(result) = route(FakeRequest(GET, "/api/collections/list"))
-      info("Status="+status(result))
-      status(result) mustEqual OK
-      info("contentType="+contentType(result))
-      contentType(result) mustEqual Some("application/json")
-      //contentAsString(result) must include ("File")
-      info("content"+contentAsString(result))
-    }
-
-    "respond to the removeCollection(coll_id:UUID) function routed by POST /api/collections/:coll_id/remove  " in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
-      info("Status="+status(result))
-      status(result) mustEqual OK
-      info("contentType="+contentType(result))
-      contentType(result) mustEqual Some("application/json")
-      contentAsString(result) must include ("name")
-      info("content"+contentAsString(result))
-      val json: JsValue = Json.parse(contentAsString(result))
-      val readableString: String = Json.prettyPrint(json)
-      info("Pretty JSON format")
-      info(readableString)
-      val nameResult = json.validate[List[CollectionSet]]
-      val fileInfo = nameResult match {
-        case JsSuccess(list : List[CollectionSet], _) => list
-          info("Mapping collections model to Json worked")
-          info("Number of collections in System " + list.length.toString())
-          info(list.toString())
-
-
-          info(list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2))
-          val coll_id = list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2)
-
-          // After finding specific "id" of file call RESTful API to get JSON information
-          info("POST /api/collections/" + coll_id + "/remove")
-          val Some(result_get) = route(FakeRequest(POST, "/api/collections/" + coll_id + "/remove?key=" + secretKey))
-          //val Some(result_get) = route(FakeRequest(DELETE, "/api/collections/54ff8b41eb1f14ebbe00e5d2?key=" + secretKey))
-          info("Status_Get="+status(result_get))
-          status(result_get) mustEqual OK
-          info("contentType_Get="+contentType(result_get))
-          contentType(result_get) mustEqual Some("application/json")
-          val json: JsValue = Json.parse(contentAsString(result_get))
-          val readableString: String = Json.prettyPrint(json)
-          info("Pretty JSON format")
-          info(readableString)
-        case e: JsError => {
-          info("Errors: " + JsError.toFlatJson(e).toString())
-        }
-      }
-    }
-
-    // "respond to the removeCollection(coll_id:UUID) function routed by DELETE /api/collections/:id  " in {
-    //   val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-    //   val Some(result) = route(FakeRequest(GET, "/api/collections"))
-    //   info("Status="+status(result))
-    //   status(result) mustEqual OK
-    //   info("contentType="+contentType(result))
-    //   contentType(result) mustEqual Some("application/json")
-    //   contentAsString(result) must include ("name")
-    //   info("content"+contentAsString(result))
-    //   val json: JsValue = Json.parse(contentAsString(result))
-    //   val readableString: String = Json.prettyPrint(json)
-    //   info("Pretty JSON format")
-    //   info(readableString)
-    //   val nameResult = json.validate[List[CollectionSet]]
-    //   val fileInfo = nameResult match {
-    //     case JsSuccess(list : List[CollectionSet], _) => list
-    //       info("Mapping collections model to Json worked")
-    //       info("Number of collections in System " + list.length.toString())
-    //       info(list.toString())
-
-
-    //       info(list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2))
-    //       val coll_id = list.filter(_.name contains "Collection 1").toString().split(",")(0).split("\\(")(2)
-
-    //       // After finding specific "id" of file call RESTful API to get JSON information
-    //       info("DELETE /api/collections/" + coll_id)
-    //       val Some(result_get) = route(FakeRequest(DELETE, "/api/collections/" + coll_id + "?key=" + secretKey))
-    //       //val Some(result_get) = route(FakeRequest(DELETE, "/api/collections/54ff8b41eb1f14ebbe00e5d2?key=" + secretKey))
-    //       info("Status_Get="+status(result_get))
-    //       status(result_get) mustEqual OK
-    //       info("contentType_Get="+contentType(result_get))
-    //       contentType(result_get) mustEqual Some("application/json")
-    //       val json: JsValue = Json.parse(contentAsString(result_get))
-    //       val readableString: String = Json.prettyPrint(json)
-    //       info("Pretty JSON format")
-    //       info(readableString)
-    //     case e: JsError => {
-    //       info("Errors: " + JsError.toFlatJson(e).toString())
-    //     }
-    //   }
-    // }
-
-
+ 
  } // End Test Suite Bracket
 } // End Class Bracket
