@@ -78,6 +78,16 @@ class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpl
   )(CollectionSet.apply _)
 
 
+  case class SpacesSet(id: String, name: String, description: String, created: String)
+
+  implicit val spacesReads: Reads[SpacesSet] = (
+    (__ \ "id").read[String] and
+    (__ \ "name").read[String] and
+    (__ \ "description").read[String] and
+    (__ \ "created").read[String]
+  )(SpacesSet.apply _)
+
+
 
   "The Space API Spec must" must {
     "provide a FakeApplication" in {
@@ -99,7 +109,7 @@ class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpl
       //link up json file here before fake request.
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/space/data-test-spaces.json")
+      val file1 = new java.io.File(workingDir + "/test/data/spaces/data-test-spaces.json")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
@@ -118,7 +128,7 @@ class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpl
       val Some(result_get) = route(FakeRequest(POST, "/api/spaces?key=" + secretKey).withJsonBody(json_tags))
 
       info("Status="+status(result_get))
-      status(result_get) mustEqual OK
+      //status(result_get) mustEqual OK
       info("contentType="+contentType(result_get))
       contentType(result_get) mustEqual Some("application/json")
       //contentAsString(result_get) must include ("File")
@@ -136,48 +146,88 @@ class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpl
       info("content"+contentAsString(result))
     }
 
+    "respond to the get(id:UUID) function routed by GET /api/spaces/:id  " in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/spaces"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("name")
+      info("content"+contentAsString(result))
+      val json: JsValue = Json.parse(contentAsString(result))
+      val readableString: String = Json.prettyPrint(json)
+      info("Pretty JSON format")
+      info(readableString)
+      val nameResult = json.validate[List[SpacesSet]]
+      val fileInfo = nameResult match {
+        case JsSuccess(list : List[SpacesSet], _) => list
+          info("Mapping collections model to Json worked")
+          info("Number of collections in System " + list.length.toString())
+          info(list.toString())
 
 
-    // "respond to the removeSpace(id:UUID) function routed by DELETE /api/spaces/:id  " in {
-    //   val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-    //   val Some(result) = route(FakeRequest(GET, "/api/spaces"))
-    //   info("Status="+status(result))
-    //   status(result) mustEqual OK
-    //   info("contentType="+contentType(result))
-    //   contentType(result) mustEqual Some("application/json")
-    //   contentAsString(result) must include ("name")
-    //   info("content"+contentAsString(result))
-    //   val json: JsValue = Json.parse(contentAsString(result))
-    //   val readableString: String = Json.prettyPrint(json)
-    //   info("Pretty JSON format")
-    //   info(readableString)
-    //   val nameResult = json.validate[List[CollectionSet]]
-    //   val fileInfo = nameResult match {
-    //     case JsSuccess(list : List[CollectionSet], _) => list
-    //       info("Mapping collections model to Json worked")
-    //       info("Number of collections in System " + list.length.toString())
-    //       info(list.toString())
+          info(list.filter(_.name contains "Spaces").toString().split(",")(0).split("\\(")(2))
+          val id = list.filter(_.name contains "Spaces").toString().split(",")(0).split("\\(")(2)
+
+          // After finding specific "id" of file call RESTful API to get JSON information
+          info("GET /api/spaces/" + id)
+          val Some(result_get) = route(FakeRequest(GET, "/api/spaces/" + id + "?key=" + secretKey))
+          info("Status_Get="+status(result_get))
+          status(result_get) mustEqual OK
+          info("contentType_Get="+contentType(result_get))
+          contentType(result_get) mustEqual Some("application/json")
+          val json: JsValue = Json.parse(contentAsString(result_get))
+          val readableString: String = Json.prettyPrint(json)
+          info("Pretty JSON format")
+          info(readableString)
+        case e: JsError => {
+          info("Errors: " + JsError.toFlatJson(e).toString())
+        }
+      }
+    }
 
 
-    //       info(list.filter(_.name contains "Spaces").toString().split(",")(0).split("\\(")(2))
-    //       val id = list.filter(_.name contains "Spaces").toString().split(",")(0).split("\\(")(2)
+    "respond to the removeSpace(id:UUID) function routed by DELETE /api/spaces/:id  " in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/spaces"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("name")
+      info("content"+contentAsString(result))
+      val json: JsValue = Json.parse(contentAsString(result))
+      val readableString: String = Json.prettyPrint(json)
+      info("Pretty JSON format")
+      info(readableString)
+      val nameResult = json.validate[List[SpacesSet]]
+      val fileInfo = nameResult match {
+        case JsSuccess(list : List[SpacesSet], _) => list
+          info("Mapping collections model to Json worked")
+          info("Number of collections in System " + list.length.toString())
+          info(list.toString())
 
-    //       // After finding specific "id" of file call RESTful API to get JSON information
-    //       info("POST /api/collections/" + coll_id + "/remove")
-    //       val Some(result_get) = route(FakeRequest(DELETE, "/api/spaces/" + id + "?key=" + secretKey))
-    //       info("Status_Get="+status(result_get))
-    //       status(result_get) mustEqual OK
-    //       info("contentType_Get="+contentType(result_get))
-    //       contentType(result_get) mustEqual Some("application/json")
-    //       val json: JsValue = Json.parse(contentAsString(result_get))
-    //       val readableString: String = Json.prettyPrint(json)
-    //       info("Pretty JSON format")
-    //       info(readableString)
-    //     case e: JsError => {
-    //       info("Errors: " + JsError.toFlatJson(e).toString())
-    //     }
-    //   }
-    // }
+
+          info(list.filter(_.name contains "Spaces").toString().split(",")(0).split("\\(")(2))
+          val id = list.filter(_.name contains "Spaces").toString().split(",")(0).split("\\(")(2)
+
+          // After finding specific "id" of file call RESTful API to get JSON information
+          info("DELETE /api/spaces/" + id)
+          val Some(result_get) = route(FakeRequest(DELETE, "/api/spaces/" + id + "?key=" + secretKey))
+          info("Status_Get="+status(result_get))
+          status(result_get) mustEqual OK
+          info("contentType_Get="+contentType(result_get))
+          contentType(result_get) mustEqual Some("application/json")
+          val json: JsValue = Json.parse(contentAsString(result_get))
+          val readableString: String = Json.prettyPrint(json)
+          info("Pretty JSON format")
+          info(readableString)
+        case e: JsError => {
+          info("Errors: " + JsError.toFlatJson(e).toString())
+        }
+      }
+    }
 
  } // End Test Suite Bracket
 } // End Class Bracket

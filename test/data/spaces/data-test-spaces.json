@@ -1,4 +1,4 @@
 {
-    "Description" : "API Spaces Test Suite",
-    "Name" : "Spaces 1 Test"
+	"name" : "Spaces 1 Test",
+    "description" : "API Spaces 1 Test Suite"
 }
