@@ -26,10 +26,10 @@ trait GridFSDB {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploads")
     }
-    
+
     // required to avoid race condition on save
     files.db.setWriteConcern(WriteConcern.Safe)
-    
+
     val mongoFile = files.createFile(inputStream)
     Logger.debug("Uploading file " + filename)
     mongoFile.filename = filename
@@ -42,6 +42,7 @@ trait GridFSDB {
     mongoFile.put("author", SocialUserDAO.toDBObject(author))
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
+
     Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
   }
 
@@ -49,14 +50,6 @@ trait GridFSDB {
    * Get blob.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => Some(file.inputStream, 
-          file.getAs[String]("filename").getOrElse("unknown-name"), 
-          file.getAs[String]("contentType").getOrElse("unknown"),
-          file.getAs[Long]("length").getOrElse(0))
-      case None => None
-    }
+    MongoUtils.readBlob(id, "uploads", "nevereverset")
   }
-  
 }

@@ -1,0 +1,68 @@
+@(dataset: Dataset, collectionsInside: List[models.Collection], collectionsOutside: List[models.Collection])(implicit user: Option[securesocial.core.Identity])
+
+<div class="row border-top bottom-padding">
+    <div class="col-md-12">
+        <h4>Collections containing the dataset</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div id="collectionsList" class="col-md-12">
+        @collectionsInside.map { collection =>
+            <div id="col_@collection.id" class="row bottom-padding">
+                <div class="col-md-2">
+                    @if(!collection.thumbnail_id.isEmpty){
+                        <a href="@(routes.Collections.collection(collection.id))">
+                            <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.get)))" alt="Thumbnail of @(collection.name)">
+                        </a>
+                    }
+                </div>
+                <div class="col-md-10">
+                    <div>
+                        <a href="@(routes.Collections.collection(collection.id))">@collection.name</a>
+                    </div>
+                    <div>
+                        @if(collection.datasets.size == 1) {
+                            @collection.datasets.size dataset
+                        }
+                        @if(collection.datasets.size != 1) {
+                            @collection.datasets.size datasets
+                        }
+                        @if(user.isDefined) {
+                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                                Remove</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if(user.isDefined) {
+    <div class="row row-paddingtop-padding">
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+            <select id="collectionAddSelect" class="chosen-select">
+                <option value=""></option>
+                @collectionsOutside.map { collection =>
+                    <option value="@(collection.id)">@(collection.name)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <a href="#" class="btn btn-default btn-xs" onclick="addToCollection('@dataset.id')">Add</a>
+        </div>
+    </div>
+}
+
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+<script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
+<script language="javascript">
+  $(".chosen-select").chosen({
+    no_results_text: "Not found. Press enter to add ",
+    disable_search_threshold: 10,
+    width: "100%",
+    placeholder_text_single: "Add to existing collection"});
+</script>
+<script src="@routes.Assets.at("javascripts/datasets/collections.js")" type="text/javascript"></script>
