@@ -27,7 +27,6 @@
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
         var pathPopcornJS = pathJs + "popcorn-complete.min.js";        
-        var sampleJS = pathJs + "sample2.js";                
         var sortedFrameDataArray = new Array();
 
         //dowload JQuery library files        	        	        
