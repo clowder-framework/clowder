@@ -74,6 +74,7 @@ class MongoDBEventService extends EventService {
     eventsList = List.concat(eventsList, fileEvents)
     
     eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.distinct
     eventsList
   }
 
