@@ -40,8 +40,7 @@
             
             // Processing JSON data            
             var jsonFrameArray = data[0].result.frame;
-            var jsonFrameArrayLength = jsonFrameArray.length;                        
-            ake your change to a remote repository without losing commits. When this happens, your push is refused.
+            var jsonFrameArrayLength = jsonFrameArray.length;            
             // Pass 1: Rearrange data
             for(var i = 0; i < jsonFrameArrayLength; i++) {
                 var frameIndex = parseInt(jsonFrameArray[i]["@number"]);
