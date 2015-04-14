@@ -22,12 +22,22 @@
 					return;
 				if (data.length == 0)
 					return;
-				if (data[0] == undefined)
-					return;
-				if (data[0]["WMS Layer URL"] == undefined)
-					return;
-				if (data[0]["WMS Layer URL"] == "")
-					return;
+
+                // search the metadata index which contains geospatial metadata
+                var geoMetadataIndex = -1;
+                for (var i=0;i<data.length;i++)
+                {
+                    if (data[i]["WMS Layer URL"] == undefined)
+                        continue;
+                    if (data[i]["WMS Layer URL"] == "")
+                        continue;
+                    geoMetadataIndex = i;
+                    break;
+                }
+
+                // if it couldn't find the index, return
+                if (geoMetadataIndex == -1)
+                    return;
 
 				console.log("Updating tab " + Configuration.tab);
 
@@ -50,9 +60,9 @@
 									// drawing the map
 									console.log("ol3js loaded");
 
-									wmsUrl = data[0]["WMS Service URL"];
-									layerName = data[0]["WMS Layer Name"];
-									wmsLayerUrl = data[0]["WMS Layer URL"];
+									wmsUrl = data[geoMetadataIndex]["WMS Service URL"];
+									layerName = data[geoMetadataIndex]["WMS Layer Name"];
+									wmsLayerUrl = data[geoMetadataIndex]["WMS Layer URL"];
 
 									// extract extent from WMS layer url
 									var parser = document.createElement('a'), searchObject = {}, queries, split;

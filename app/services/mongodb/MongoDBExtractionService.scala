@@ -31,6 +31,10 @@ class MongoDBExtractionService extends ExtractionService {
     Extraction.findAll().toList
   }
 
+  def findByFileId(fileId: UUID): List[Extraction]= {
+    Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
+  }
+
   def insert(extraction: Extraction) {
     Extraction.insert(extraction)
   }
