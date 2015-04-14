@@ -26,9 +26,10 @@ class Users @Inject()(users: UserService) extends ApiController {
   /**
    * Returns the user that is making the request. Used to verify authentication, as well as for user data access.
    */
-  @ApiOperation(value = "Return the user assicuated with the request.",
+  @ApiOperation(value = "Return the user associated with the request.",
     responseClass = "User", httpMethod = "GET")
   def getUser() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+      Logger.debug("------- In getUser")
       request.user match {
           case Some(identity) => {
               Logger.debug("Have an identity.")

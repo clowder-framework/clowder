@@ -6,8 +6,45 @@
 $(function () {	                	                 
 	//Callback for any submit call, whether it is the overall one, or individual files, in the multi-file-uploader
     $('#fileupload').bind('fileuploadsubmit', function (e, data) {    	    	
-    	//First, check if the id value is set and if an asych call is started. 
-    	if (asynchStarted && id == "__notset") {	                    		
+    	//Perform authentication check
+    	var request = null;		                         	                        
+        request = jsRoutes.api.Users.getUser().ajax({
+            type: 'GET',
+            contentType: "application/json"
+        });
+    	                        	                        
+        request.done(function (response, textStatus, jqXHR){	                            
+            //Sucessful call, so authenticated. Need to simply ensure that we have a user. It always should be there in
+        	//this case, but log the odd corner case.
+            var responseText = jqXHR.responseText;
+            console.log("jqXHR.responseText for file uploader auth check is " + responseText);               
+            
+            if (responseText == "No user found") {
+	            //The weird corner case - log it and alert for now
+	            console.log("Odd corner case in file uploader. Authenticated but no user found.");
+	            //Return false
+	            return false;
+            }
+            else {
+            	//User present and authentication successful, so proceed to submit the files
+            	return true;
+            }
+                        
+        });
+
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to upload new files.";                                
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {            	
+            	console.log("Different error message on failure.");
+            	alert("ERROR: " + jqXHR.responseText);
+            }  
+            return false;
+        });
+    	
+    	/*
+        if (asynchStarted && id == "__notset") {	                    		
             //If so, wait for the ID to be set.
     		holdForId(data);
     		return false;
@@ -20,6 +57,7 @@ $(function () {
     		  origData = data;
     	}
     	
-    	return createEmptyDataset(data);    
+    	return createEmptyDataset(data);
+    	*/    
     });	    
 });        
