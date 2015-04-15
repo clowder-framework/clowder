@@ -260,7 +260,7 @@
 						  			<td class="galleriaTheThumbnail">
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
-								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;"
+								  				class="img-polaroid" style="max-width: 100%;"
 								  			@if(s.startTime.isDefined) {
 								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
 								  		 	} else {
@@ -289,11 +289,16 @@
 					  		}
 					  		</tbody>
 					  		<script>
-					  			galleriaScenesVisible = $("#scrollTableGalleria tbody tr").length;
-					  			//alert(galleriaScenesVisible);
-					  			if(galleriaScenesVisible > 5)
-					  				galleriaScenesVisible = 5;					  		
-					  			$("#scrollTableGalleria tbody").css("height", (parseInt($("#scrollTableGalleria tbody tr").css("height").replace("px",""))*galleriaScenesVisible)+"px");
+					  			function fixGalleriaTable(){
+					  				galleriaScenesVisible = $("#scrollTableGalleria tbody tr").length;
+						  			if(galleriaScenesVisible > 5)
+						  				galleriaScenesVisible = 5;					  		
+						  			$("#scrollTableGalleria tbody").css("height", (parseInt($("#scrollTableGalleria tbody tr").css("height").replace("px",""))*galleriaScenesVisible)+"px");
+					  			}
+					  			fixGalleriaTable();
+					  			$(window).resize(function(){
+					  				fixGalleriaTable();
+					  			});
 					  		</script>
 				  		</table>
 				  	</div>
