@@ -243,21 +243,21 @@
 				  </div>
 				</div>
 				<div class="row" style="padding-top: 10px">
-				    <div class="col-md-10">
-						<table class="table">
+				    <div class="col-md-12">
+						<table class="table" id="scrollTableGalleria">
 							<thead>
 								<tr>
-									<th>#</th>
-									<th>Thumbnail</th>
-									<th>Information</th>
-									<th>Find</th>
+									<th class="galleriaOrder">#</th>
+									<th class="galleriaTheThumbnail">Thumbnail</th>
+									<th class="galleriaInfo">Information</th>
+									<th class="galleriaFindSimilar">Find</th>
 								</tr>
 							</thead>
 							<tbody>
 					  		@sections.map { s =>
 					  			<tr>
-						  			<td>@(if (s.order > 0) s.order else "")</td>
-						  			<td>
+						  			<td class="galleriaOrder">@(if (s.order > 0) s.order else "")</td>
+						  			<td class="galleriaTheThumbnail">
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
 								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;"
@@ -273,7 +273,7 @@
 								  		 	></img>
 								  		}
 					  				</td>
-						  			 <td>
+						  			 <td class="galleriaInfo">
 						  			 @if(s.startTime.isDefined) {
 						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
 						  		 	 } else {
@@ -284,9 +284,17 @@
 						  		 		}
 						  		 	}
 						  			 </td>
-						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
+						  			 <td class="galleriaFindSimilar"><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
 					  			 </tr>
 					  		}
+					  		</tbody>
+					  		<script>
+					  			galleriaScenesVisible = $("#scrollTableGalleria tbody tr").length;
+					  			//alert(galleriaScenesVisible);
+					  			if(galleriaScenesVisible > 5)
+					  				galleriaScenesVisible = 5;					  		
+					  			$("#scrollTableGalleria tbody").css("height", (parseInt($("#scrollTableGalleria tbody tr").css("height").replace("px",""))*galleriaScenesVisible)+"px");
+					  		</script>
 				  		</table>
 				  	</div>
 			  	</div>
