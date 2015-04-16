@@ -29,17 +29,21 @@ class Users @Inject()(users: UserService) extends ApiController {
   @ApiOperation(value = "Return the user associated with the request.",
     responseClass = "User", httpMethod = "GET")
   def getUser() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
-      Logger.debug("------- In getUser")
       request.user match {
           case Some(identity) => {
-              Logger.debug("Have an identity.")
-              users.findById(new UUID(identity.identityId.userId)) match {
-                  case Some(user) => Ok(Json.toJson(user))
-                  //The None case should never happen, as this is a secured action, and requires a user?
-                  case None => {
-                      Logger.debug("--------- In the NONE case for findById in getUser")
-                      Ok(Json.toJson("No user found"))
+              Logger.debug("Have an identity. It is " + identity)
+              identity.email match {
+                  case Some(emailAddress) => {
+		              users.findByEmail(emailAddress) match {
+		                  case Some(user) => Ok(Json.toJson(user))
+		                  //The None case should never happen, as this is a secured action, and requires a user?
+		                  case None => {
+		                      Logger.debug("--------- In the NONE case for findById in getUser")
+		                      Ok(Json.toJson("No user found"))
+		                  }
+		              }
                   }
+                  case None => Unauthorized("Not authenticated")
               }
           }
           case None => {
