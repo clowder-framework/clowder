@@ -164,7 +164,7 @@
                         </span>
 					}
 
-                    @if(!viewerUser.get.followedFiles.contains(file.id)) {
+                    @if(!file.followers.contains(viewerUser.get.id)) {
                         <button id="followButton" class="btn btn-success" href="#">Follow</button>
                     } else {
                         <button id="followButton" class="btn btn-danger" href="#">Unfollow</button>

@@ -3,7 +3,6 @@
  */
 package services.mongodb
 
-import com.mongodb.casbah.WriteConcern
 import models.{UUID, Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
@@ -257,7 +256,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           datasets.index(dataset.id)
         }
         for (follower <- collection.followers) {
-          userService.unfollowCollection(follower.id, collectionId)
+          userService.unfollowCollection(follower, collectionId)
         }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
 
@@ -333,22 +332,16 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    * Add follower to a collection.
    */
   def addFollower(id: UUID, userId: UUID) {
-    userService.getMiniUserById(userId) match {
-      case Some(miniUser) =>
-        Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-                          $addToSet("followers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
-    }
+    Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                      $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
   /**
    * Remove follower from a collection.
    */
   def removeFollower(id: UUID, userId: UUID) {
-    userService.getMiniUserById(userId) match {
-      case Some(miniUser) =>
-        Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-                          $pull("followers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
-    }
+    Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                      $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 }
 

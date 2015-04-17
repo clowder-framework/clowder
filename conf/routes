@@ -23,7 +23,6 @@ POST           /users/registerThroughAdmins                                     
 
 # Profile
 GET            /profile/viewProfile                                                     @controllers.Profile.viewProfile(email: Option[String])
-GET            /profile/viewProfile/:uuid                                               @controllers.Profile.viewProfileUUID(uuid: UUID)
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
 GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
 

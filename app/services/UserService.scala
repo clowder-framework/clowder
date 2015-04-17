@@ -1,6 +1,6 @@
 package services
 
-import models.{MiniUser, UUID, User}
+import models.{UUID, User}
 import securesocial.core.Identity
 
 /**
@@ -44,11 +44,6 @@ trait UserService {
    * @deprecated please find
    */
   def findByEmail(email: String): Option[User]
-
-  /**
-   * Return a specific MiniUser based on the id provided.
-   */
-  def getMiniUserById(id: UUID): Option[MiniUser]
 
   /**
    * Updates a value in the User Model

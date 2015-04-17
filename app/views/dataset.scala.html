@@ -136,7 +136,7 @@
 				}
 
                 <div class="btn-group btn-group-xs pull-right" style="right: 10px;">
-                @if(!viewerUser.get.followedDatasets.contains(dataset.id)) {
+                @if(!dataset.followers.contains(viewerUser.get.id)) {
                     <button id="followButton" class="btn btn-success" href="#">Follow</button>
                 } else {
                     <button id="followButton" class="btn btn-danger" href="#">Unfollow</button>

@@ -3,7 +3,7 @@ package services.mongodb
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import models.{MiniUser, UUID, User}
+import models.{UUID, User}
 import org.bson.types.ObjectId
 import play.api.Logger
 import securesocial.core.Identity
@@ -64,20 +64,6 @@ class MongoDBUserService extends UserService {
     UserDAO.dao.findOne(MongoDBObject("email" -> email))
   }
 
-  /**
-   * Return a specific MiniUser based on the id provided.
-   */
-  def getMiniUserById(id: UUID): Option[MiniUser] = {
-    findById(id) match {
-      case None => None
-      case Some(user) => Option(new MiniUser(
-        id = user.id,
-        fullName = user.fullName,
-        avatarURL = user.avatarUrl
-      ))
-    }
-  }
-
   override def updateUserField(email: String, field: String, fieldText: Any) {
     val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText));
   }
@@ -131,34 +117,20 @@ class MongoDBUserService extends UserService {
      */
     override def followUser(followeeId: UUID, followerId: UUID)
     {
-      getMiniUserById(followeeId) match {
-        case Some(miniUser) =>
-          UserDAO.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                          $addToSet("followedUsers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
-      }
-
-      getMiniUserById(followerId) match {
-        case Some(miniUser) =>
-          UserDAO.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
-                          $addToSet("followers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
-      }
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                          $addToSet("followedUsers" -> new ObjectId(followeeId.stringify)))
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
+                          $addToSet("followers" -> new ObjectId(followerId.stringify)))
     }
 
     /**
      * Unfollow a user.
      */
     override def unfollowUser(followeeId: UUID, followerId: UUID) {
-      getMiniUserById(followeeId) match {
-        case Some(miniUser) =>
-          UserDAO.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                          $pull("followedUsers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
-      }
-
-      getMiniUserById(followerId) match {
-        case Some(miniUser) =>
-          UserDAO.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
-                          $pull("followers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
-      }
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+                          $pull("followedUsers" -> new ObjectId(followeeId.stringify)))
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
+                          $pull("followers" -> new ObjectId(followerId.stringify)))
     }
 }
   object UserDAO extends ModelCompanion[User, ObjectId] {
@@ -167,11 +139,4 @@ class MongoDBUserService extends UserService {
       case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
     }
 
-}
-
-object MiniUserDAO extends ModelCompanion[MiniUser, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[MiniUser, ObjectId](collection = x.collection("social.miniusers")) {}
-  }
 }

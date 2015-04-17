@@ -28,5 +28,5 @@ case class Dataset(
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None,
-  followers: List[MiniUser] = List.empty)
+  followers: List[UUID] = List.empty)
 
