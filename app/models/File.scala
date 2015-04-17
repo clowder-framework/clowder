@@ -31,7 +31,7 @@ case class File(
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None,
-  followers: List[UUID] = List.empty )
+  followers: List[MiniUser] = List.empty )
 
 case class Versus(
   fileId: UUID,

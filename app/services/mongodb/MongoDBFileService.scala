@@ -658,7 +658,7 @@ class MongoDBFileService @Inject() (
             ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
           for (follower <- file.followers) {
-            userService.unfollowFile(follower, id)
+            userService.unfollowFile(follower.id, id)
           }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
@@ -886,13 +886,19 @@ class MongoDBFileService @Inject() (
   }
 
   def addFollower(id: UUID, userId: UUID) {
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-                    $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+    userService.getMiniUserById(userId) match {
+      case Some(miniUser) =>
+        FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                        $addToSet("followers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
+    }
   }
 
   def removeFollower(id: UUID, userId: UUID) {
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-                    $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+    userService.getMiniUserById(userId) match {
+      case Some(miniUser) =>
+        FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                        $pull("followers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
+    }
   }
 
 }

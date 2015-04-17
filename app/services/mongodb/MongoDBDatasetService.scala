@@ -899,7 +899,7 @@ class MongoDBDatasetService @Inject() (
             files.removeFile(f.id)
         }
         for (follower <- dataset.followers) {
-          userService.unfollowDataset(follower, id)
+          userService.unfollowDataset(follower.id, id)
         }
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
@@ -967,13 +967,19 @@ class MongoDBDatasetService @Inject() (
   }
 
   def addFollower(id: UUID, userId: UUID) {
-    Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-                    $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+    userService.getMiniUserById(userId) match {
+      case Some(miniUser) =>
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                        $addToSet("followers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
+    }
   }
 
   def removeFollower(id: UUID, userId: UUID) {
-    Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-                    $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+    userService.getMiniUserById(userId) match {
+      case Some(miniUser) =>
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                        $pull("followers" -> MiniUserDAO.toDBObject(miniUser)), false, false, WriteConcern.Safe)
+    }
   }
 }
 

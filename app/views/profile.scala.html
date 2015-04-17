@@ -1,4 +1,4 @@
-@(profile: User, viewerUser: Option[User], ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
+@(profile: User, viewerUser: Option[User], ownProfile: Option[Boolean], isFollowing: Boolean)(implicit user: Option[securesocial.core.Identity] = None)
 @main("Profile") {
 <div class="page-header">
 
@@ -30,7 +30,7 @@
                       id="followButton"
                       type="button"
                       class="
-                        @if(profile.followers.contains(viewer.id)) {
+                        @if(isFollowing) {
                           btn btn-danger
                         }else {
                           btn btn-success
@@ -38,7 +38,7 @@
                       "
                       data-toggle="button"
                       aria-pressed="
-                        @if(profile.followers.contains(viewer.id)) {
+                        @if(isFollowing) {
                           true
                         }else {
                           false
@@ -46,8 +46,7 @@
                       "
                       autocomplete="off"
                     >
-                      <!-- Is there a way to store a scala variable somewhere?... -->
-                      @if(profile.followers.contains(viewer.id)) {
+                      @if(isFollowing) {
                         Unfollow
                       } else {
                         Follow
@@ -202,9 +201,7 @@
             <!-- This is loaded when the page loads, might not reflect up-to-date data -->
             @for(row <- profile.followedUsers) {
               <tr>
-                @*TODO: Show name instead and fix viewProfile.*@
-                @*<td><a href="@routes.Profile.viewProfile(Option(row.toString))">@row.toString</a></td>*@
-                <td>@row.toString</td>
+                <td><a href="@routes.Profile.viewProfileUUID(row.id)">@row.fullName</a></td>
               </tr>
             }
           </tbody>
@@ -219,9 +216,7 @@
             <!-- This is loaded when the page loads, might not reflect up-to-date data -->
             @for(row <- profile.followers) {
               <tr>
-                @*TODO: Show name instead and fix viewProfile.*@
-                @*<td><a href="@routes.Profile.viewProfile(Option(row.toString))">@row.toString</a></td>*@
-                <td>@row.toString</td>
+                <td><a href="@routes.Profile.viewProfileUUID(row.id)">@row.fullName</a></td>
               </tr>
             }
           </tbody>

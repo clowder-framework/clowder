@@ -26,8 +26,8 @@ case class User(
   followedFiles: List[UUID] = List.empty,
   followedDatasets: List[UUID] = List.empty,
   followedCollections: List[UUID] = List.empty,
-  followedUsers: List[UUID] = List.empty,
-  followers: List[UUID] = List.empty) {
+  followedUsers: List[MiniUser] = List.empty,
+  followers: List[MiniUser] = List.empty) {
 
   /**
    * Get the avatar URL for this user's profile

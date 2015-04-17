@@ -13,4 +13,4 @@ case class Collection(
   datasets: List[Dataset] = List.empty,
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty,
-  followers: List[UUID] = List.empty)
+  followers: List[MiniUser] = List.empty)

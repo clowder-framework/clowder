@@ -5,7 +5,7 @@ import services.mongodb.MongoDBProjectService
 import services.mongodb.MongoDBInstitutionService
 import play.api.data.Form
 import play.api.data.Forms._
-import models.Info
+import models.{UUID, Info}
 import play.api.Logger
 import javax.inject.Inject
 
@@ -128,7 +128,9 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
               }
               case None => { ownProfile = None }
             }
-            Ok(views.html.profile(muser, viewerUser, ownProfile))
+
+            val isFollowing = viewerUser.isDefined && muser.followers.map(_.id).contains(viewerUser.get.id)
+            Ok(views.html.profile(muser, viewerUser, ownProfile, isFollowing))
           }
           case None => {
             Logger.error("no user model exists for " + addr.toString())
@@ -145,6 +147,37 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
             Redirect(routes.RedirectUtility.authenticationRequired())
           }
         }
+      }
+    }
+  }
+
+  def viewProfileUUID(uuid: UUID) = SecuredAction() { request =>
+    implicit val user = request.user
+    val viewerUser = request.mediciUser
+    var ownProfile: Option[Boolean] = None
+    val muser = users.findById(uuid)
+    var isFollowing = false
+    muser match {
+      case Some(existingUser) => {
+        viewerUser match {
+          case Some(loggedInUser) => {
+            if (loggedInUser.id == existingUser.id) {
+              isFollowing = existingUser.followers.map(_.id).contains(loggedInUser.id)
+              ownProfile = Option(true)
+            }
+            else
+              ownProfile = None
+          }
+          case None => {
+            ownProfile = None
+          }
+        }
+
+        Ok(views.html.profile(existingUser, viewerUser, ownProfile, isFollowing))
+      }
+      case None => {
+        Logger.error("no user model exists for " + uuid.stringify)
+        InternalServerError
       }
     }
   }
