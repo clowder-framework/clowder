@@ -210,23 +210,7 @@
 			  	<div class="row border-top">
 			  	  <div class="col-md-12">
                     <h4>Sections</h4>
-				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
-					  	@sections.map { s =>
-					  		@if(s.preview.isDefined) {
-					  			<img src="@api.routes.Previews.download(s.preview.get.id)"
-					  				class="img-polaroid" height="100px"
-					  			@if(s.startTime.isDefined) {
-					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
-					  		 	} else {
-					  		 		if (s.area.isDefined) {
-					  		 			data-title="Area" data-description="@s.area.toString"
-					  		 		} else {
-										data-title="Unknown" data-description="Unknown info"
-					  		 		}
-					  		 	}
-					  		 	>
-					  		}
-					  	}
+				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">					  	
 				  	</div>
 				  </div>
 				</div>
@@ -307,9 +291,30 @@
 			    	$(function() {
 					    // Load the classic theme
 					    Galleria.loadTheme('@routes.Assets.at("javascripts/galleria-classic/galleria.classic.min.js")');
+					    
+					    galleriaData = [];
+					    @sections.map { s =>
+							@if(s.preview.isDefined) {
+								galleriaItem = {};
+								galleriaItem["image"] = "@api.routes.Previews.download(s.preview.get.id)"; 					  			
+								@if(s.startTime.isDefined) {
+									galleriaItem["title"] = "Shot";
+									galleriaItem["description"] = "Starts at @s.startTime seconds.";
+							 	} else {
+							 		if (s.area.isDefined) {
+							 			galleriaItem["title"] = "Area";
+							 			galleriaItem["description"] = "@s.area.toString";
+							 		} else {
+							 			galleriaItem["title"] = "Unknown";
+							 			galleriaItem["description"] = "Unknown info";
+							 		}
+							 	}
+								galleriaData.push(galleriaItem);
+							}							
+						}
 
 					    // Initialize Galleria
-					    Galleria.run('#galleria');
+					    Galleria.run('#galleria',{dataSource: galleriaData});
 
 					    var gallery = $('#galleria').data('galleria');
 
