@@ -275,9 +275,7 @@
 						  		 	}
 						  			 </td>
 						  			 <td>
-						  			 	<span id="sectiondescr_@(s.id)"  style="display:block;">
-						  			 		@s.description.getOrElse("")
-						  			 	</span>
+						  			 	<span id="sectiondescr_@(s.id)"  style="display:block;white-space: pre-line;">@s.description.getOrElse("")</span>
 						  			 	@if(user.isDefined) {
 						  			 		@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
 						  			 			<div id="sectiondescrEditArea_@(s.id)" style="display:none;">
