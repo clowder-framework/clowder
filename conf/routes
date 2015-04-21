@@ -30,6 +30,7 @@ GET 	/profile/addFriend														@controllers.Profile.addFriend(email: Strin
 # Utilities
 GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
 GET     /utils/authenticationRequiredMessage/:msg/:url       @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
+GET     /utils/noPermissions                                 @controllers.RedirectUtility.incorrectPermissions(msg ?= null)
 
 # DTS Information
 GET      /extractions/requests          								    @controllers.ExtractionInfo.getDTSRequests()
@@ -57,12 +58,11 @@ GET     /files/metadataSearch          	  @controllers.Files.metadataSearch
 GET     /files/generalMetadataSearch      @controllers.Files.generalMetadataSearch
 GET		/files/:id					      @controllers.Files.file(id: UUID)
 GET		/files/:id/blob			          @controllers.Files.download(id: UUID)
-#GET     /queries/:id/blob				  @controllers.Files.downloadquery(id: UUID)
-#GET     /files/:id/similar               @controllers.Files.findSimilar(id: UUID)
+#GET    /queries/:id/blob				  @controllers.Files.downloadquery(id: UUID)
+#GET    /files/:id/similar                @controllers.Files.findSimilar(id: UUID)
 POST    /upload					          @controllers.Files.upload
-POST   /uploadSelect                      @controllers.Files.uploadSelect
-POST   /uploadSelectQuery                 @controllers.Files.uploadSelectQuery
-#POST   	/uploadAjax					  @controllers.Files.uploadAjax
+POST    /uploadSelectQuery                @controllers.Files.uploadSelectQuery
+#POST   /uploadAjax					      @controllers.Files.uploadAjax
 POST   	/uploaddnd/:id					  @controllers.Files.uploaddnd(id: UUID)
 #POST  	/reactiveUpload					  @controllers.Files.reactiveUpload
 POST    /uploadDragDrop					  @controllers.Files.uploadDragDrop
@@ -72,6 +72,7 @@ GET		/fileThumbnail/:id/blob			  @controllers.Files.thumbnail(id: UUID)
 GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
 GET     /datasets/userDatasets            @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile", email: String)
 GET     /datasets/new                     @controllers.Datasets.newDataset
+GET     /datasets/addToDataset/:id/:name/:desc     @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET     /datasets/metadataSearch          @controllers.Datasets.metadataSearch
 GET     /datasets/generalMetadataSearch   @controllers.Datasets.generalMetadataSearch
 GET		/datasets/:id					  @controllers.Datasets.dataset(id: UUID)
@@ -105,9 +106,10 @@ GET      /SearchByText                                                       @co
 POST     /uploadquery                                                        @controllers.Search.uploadquery
 GET      /searchbyURL                                                        @controllers.Search.searchbyURL(query:String?="")
 GET      /searchbyfeature/:section_id                                        @controllers.Search.searchMultimediaIndex(section_id: UUID)
-GET      /files/:id/similar                                                  @controllers.Search.findSimilarFile(id: UUID)
-GET      /queries/:id/similar                                                @controllers.Search.findSimilar(id: UUID)
-POST 	/queries/similarWeightedIndexes						@controllers.Search.findSimilarWeightedIndexes()
+GET      /files/:id/similar                                                  @controllers.Search.findSimilarToExistingFile(id: UUID)
+GET      /queries/:id/similar                                                @controllers.Search.findSimilarToQueryFile(id: UUID, typeToSearch:String, sectionsSelected:List[String] ?= List.empty )
+POST     /queries/similarWeightedIndexes                                     @controllers.Search.findSimilarWeightedIndexes()
+
 
 # Previewers
 GET      /previewers/list                                                    controllers.Previewers.list
@@ -137,7 +139,7 @@ GET      /not-authorized                                                     sec
 
 # Administration pages
 GET     /admin                                                               @controllers.Admin.main
-GET		/admin/indexAdmin										@controllers.Admin.adminIndex
+GET		/admin/indexAdmin										             @controllers.Admin.adminIndex
 GET     /admin/test                                                          @controllers.Admin.test
 GET     /admin/secureTest                                                    @controllers.Admin.secureTest
 GET     /admin/reindexFiles                                                  @controllers.Admin.reindexFiles
@@ -145,15 +147,16 @@ GET     /admin/adapters                                                      @co
 GET		/admin/extractors			                                         @controllers.Admin.getExtractors
 GET		/admin/measures				                                         @controllers.Admin.getMeasures
 GET		/admin/indexers				                                         @controllers.Admin.getIndexers
-GET 	/admin/index				                                         @controllers.Admin.getIndexes
+GET 	/admin/indexes				                                         @controllers.Admin.getIndexes
+GET     /admin/sections                                                      @controllers.Admin.getSections
+
 GET		/admin/addAdmin														 @controllers.Admin.newAdmin
 GET		/admin/listAdmins													 @controllers.Admin.listAdmins
 POST    /admin/submitNew 													 @controllers.Admin.submitNew
 POST    /admin/createIndex  		                                         @controllers.Admin.createIndex
 POST  	/admin/index/:id/build                                               @controllers.Admin.buildIndex(id:String)
-DELETE  /admin/index/:id/delete                                              @controllers.Admin.deleteIndex(id:String)
 DELETE  /admin/index/:id                                              		 @controllers.Admin.deleteIndex(id:String)
-DELETE 	/admin/index		                                         @controllers.Admin.deleteAllIndexes
+DELETE 	/admin/index		                                                 @controllers.Admin.deleteAllIndexes
 
 GET     /admin/extractions                                                   @controllers.Extractors.listAllExtractions
 POST    /admin/theme                                                         @controllers.Admin.setTheme
@@ -172,6 +175,8 @@ GET     /api-docs.json/extractions        controllers.ApiHelpController.getResou
 POST	/api/files/:three_d_file_id/geometries/:geometry_id		@api.Files.attachGeometry(three_d_file_id: UUID,geometry_id: UUID)
 POST	/api/files/:three_d_file_id/3dTextures/:texture_id		@api.Files.attachTexture(three_d_file_id: UUID,texture_id: UUID)
 POST	/api/files/:file_id/thumbnails/:thumbnail_id			@api.Files.attachThumbnail(file_id: UUID,thumbnail_id: UUID)
+# attach query thumbnail
+POST    /api/queries/:file_id/thumbnails/:thumbnail_id          @api.Files.attachQueryThumbnail(file_id: UUID,thumbnail_id: UUID)
 GET     /api/files                        						@api.Files.list
 POST    /api/files                        						@api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
 POST    /api/files/withFlags/:flags                        		@api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
@@ -355,6 +360,7 @@ GET     /api/geostreams/sensors/:id/stats    api.Geostreams.getSensorStatistics(
 GET     /api/geostreams/sensors/:id/streams  api.Geostreams.getSensorStreams(id: String)
 GET     /api/geostreams/sensors/:id/update   api.Geostreams.updateStatisticsSensor(id: String)
 GET     /api/geostreams/sensors              api.Geostreams.searchSensors(geocode: Option[String] ?= None, sensor_name: Option[String] ?= None)
+DELETE  /api/geostreams/sensors/:id          api.Geostreams.deleteSensor(id: String)
 
 POST    /api/geostreams/streams			     api.Geostreams.createStream
 GET     /api/geostreams/streams/update       api.Geostreams.updateStatisticsStreamSensor()
@@ -386,6 +392,11 @@ POST    /api/comment/:id/editComment        @api.Comments.editComment(id: UUID)
 
 GET   	/api/search                       @api.Search.search(query: String ?= "")
 POST	/api/sparqlquery				  @api.Search.querySPARQL
+
+POST 	/api/projects/addproject		@api.Projects.addproject(project: String)
+
+POST 	/api/institutions/addinstitution		@api.Institutions.addinstitution(institution: String)
+
 
 # ----------------------------------------------------------------------
 # USERS API

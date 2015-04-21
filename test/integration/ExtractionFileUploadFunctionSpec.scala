@@ -23,6 +23,12 @@ import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.entity.mime.content.StringBody
 import org.apache.http.entity.ContentType
 import play.api.http._
+
+import play.api.test._
+import org.scalatest._
+import org.scalatestplus.play._
+import play.api.{Play, Application}
+
 /*
  * Based on http://stackoverflow.com/questions/15133794/writing-a-test-case-for-file-uploads-in-play-2-1-and-scala
  *
@@ -31,47 +37,25 @@ import play.api.http._
  * @author Smruti Padhy
  */
 
-trait FakeMultipartUpload {
-  implicit def writeableOf_multiPartFormData(implicit codec: Codec): Writeable[MultipartFormData[TemporaryFile]] = {
-    val builder = MultipartEntityBuilder.create().setBoundary("--boundary---")
 
-    def transform(multipart: MultipartFormData[TemporaryFile]): Array[Byte] = {
-      multipart.files.foreach { file =>
-        val part = new FileBody(file.ref.file, ContentType.create(file.contentType.getOrElse("application/octet-stream")), file.filename)
-        builder.addPart(file.key, part)
-      }
+class ExtractionFileUploadFunctionSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+  
 
-      val outputStream = new ByteArrayOutputStream
-      builder.build.writeTo(outputStream)
-      outputStream.toByteArray
+  "The OneAppPerSuite trait" must {
+    "provide a FakeApplication" in {
+      app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
     }
-
-    new Writeable[MultipartFormData[TemporaryFile]](transform, Some(builder.build.getContentType.getValue))
-  }
-
-  def fileUpload(key: String, file: File, contentType: String): MultipartFormData[TemporaryFile] = {
-    MultipartFormData(
-      dataParts = Map(),
-      files = Seq(FilePart[TemporaryFile](key, file.getName, Some(contentType), TemporaryFile(file))),
-      badParts = Seq(),
-      missingFileParts = Seq())
-  }
-
-  case class WrappedFakeRequest[A](fr: FakeRequest[A]) {
-    def withFileUpload(key: String, file: File, contentType: String) = {
-      fr.withBody(fileUpload(key, file, contentType))
+    "make the FakeApplication available implicitly" in {
+      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      getConfig("ehcacheplugin") mustBe Some("disabled")
+    }
+    "start the FakeApplication" in {
+      Play.maybeApplication mustBe Some(app)
     }
   }
 
-  implicit def toWrappedFakeRequest[A](fr: FakeRequest[A]) = WrappedFakeRequest(fr)
-}
 
-class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpload {
-  val excludedPlugins = List(
-    "services.RabbitmqPlugin",
-    "services.VersusPlugin")
 
-  implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins)
 
   "The OneAppPerSuite for Extraction API Controller Router test" must {
     "respond to the Upload File URL" in {
@@ -87,6 +71,7 @@ class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with
       info("contentAsString" + contentAsString(result))
 
     }
+    
     "respond to the Upload File" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val workingDir = System.getProperty("user.dir")
@@ -96,6 +81,26 @@ class ExtractionFileUploadFunctionSpec extends PlaySpec with OneAppPerSuite with
         Logger.debug("File1 is File:True")
       }
       val req = FakeRequest(POST, "/api/extractions/upload_file?key=" + secretKey).
+        withFileUpload("File", file1, "image/jpg")
+      val result = route(req).get
+
+      info("Status=" + status(result))
+      status(result) mustEqual OK
+      info("contentType=" + contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include("id")
+      info("contentAsString" + contentAsString(result))
+    }
+
+     "respond to the Thumbnail File Upload " in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val workingDir = System.getProperty("user.dir")
+      info("Working Directory: " + workingDir)
+      val file1 = new java.io.File(workingDir + "/test/data/morrowplots-thumb.jpg")
+      if (file1.isFile && file1.exists) {
+        Logger.debug("File1 is File:True")
+      }
+      val req = FakeRequest(POST, "/api/fileThumbnail?key=" + secretKey).
         withFileUpload("File", file1, "image/jpg")
       val result = route(req).get
 

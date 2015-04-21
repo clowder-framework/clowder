@@ -234,6 +234,17 @@ object Geostreams extends ApiController {
     }
   }
 
+  def deleteSensor(id: String) = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+    Logger.debug("Delete sensor " + id)
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        if (plugin.deleteSensor(id.toInt)) jsonp("""{"status":"ok"}""", request)
+        else jsonp("""{"status":"error"}""", request)
+      }
+      case None => pluginNotEnabled
+    }
+  }
+
   def deleteAll() = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
     Logger.debug("Drop all")
     current.plugin[PostgresPlugin] match {
@@ -371,14 +382,14 @@ object Geostreams extends ApiController {
       val sensor = data.next
 
       // get depth code
-      val depthCode = sensor.\("DEPTH_CODE") match {
+      val depthCode = sensor.\("properties").\("DEPTH_CODE") match {
         case x: JsUndefined => "NA"
         case x => Parsers.parseString(x)
       }
       val extras = Json.obj("depth_code" -> depthCode)
 
       // get source
-      val source = sensor.\("source") match {
+      val source = sensor.\("properties").\("source") match {
         case x: JsUndefined => ""
         case x => Parsers.parseString(x)
       }
@@ -504,6 +515,29 @@ object Geostreams extends ApiController {
               "date" -> iso.print(new DateTime(year, 9, 1, 12, 0, 0))))
           }
           counter = counter.plusMonths(6)
+        }
+      }
+      case "season" => {
+        var counter = startTime
+        while(counter.isBefore(endTime) || counter.isEqual(endTime)) {
+          val year = counter.getYear
+          if ((counter.getMonthOfYear < 3) || (counter.getMonthOfYear == 3 && counter.getDayOfMonth < 21)) {
+            result.put(year + " winter", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))
+          } else if ((counter.getMonthOfYear < 6) || (counter.getMonthOfYear == 6 && counter.getDayOfMonth < 21)) {
+            result.put(year + " spring", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 5, 1, 12, 0, 0))))
+          } else if ((counter.getMonthOfYear < 9) || (counter.getMonthOfYear == 9 && counter.getDayOfMonth < 21)) {
+            result.put(year + " summer", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 8, 1, 12, 0, 0))))
+          } else if((counter.getMonthOfYear < 12) || (counter.getMonthOfYear == 12 && counter.getDayOfMonth < 21)) {
+            result.put(year + " fall", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 11, 1, 12, 0, 0))))
+          } else {
+	    result.put(year + " winter", Json.obj("year" -> year,
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))		
+	  }
+          counter = counter.plusMonths(3)
         }
       }
       case "month" => {

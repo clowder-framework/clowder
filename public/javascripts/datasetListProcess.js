@@ -20,7 +20,7 @@ function removeDataset(datasetId,event, reloadPage){
 		console.error("The following error occured: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            alert("The dataset was not removed due to : " + errorThrown);
+            notify("The dataset was not removed due to : " + errorThrown, "error");
         }   
 		
 	});	
@@ -42,7 +42,7 @@ function removeDatasetAndRedirect(datasetId, url){
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to delete a dataset from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            alert("The dataset was not deleted from the system due to : " + errorThrown);
+            notify("The dataset was not deleted from the system due to : " + errorThrown, "error");
         }
 	});	
 }
@@ -64,7 +64,7 @@ function detachAndRemoveDatasetAndRedirect(datasetId, url){
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to detach files and then delete a dataset from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            alert("The dataset was not deleted from the system due to : " + errorThrown);
+            notify("The dataset was not deleted from the system due to : " + errorThrown, "error");
         }
 	});	
 }

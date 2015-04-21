@@ -18,8 +18,25 @@ if($prefix) {
 
 //Run file through Medici's extractors
 if($run) {
-	$api_call = $dts . "/dts/extract.php?url=" . urlencode($file);
-	$command = "wget -O " . $output_file . " " . $api_call;
+	$username = "";
+	$password = "";
+
+	//Add authentication if required
+	if(strpos($dts,'@') !== false) {
+		$parts = explode('@', $dts);
+		$dts = $parts[2];
+		$parts = explode(':', $parts[0] . '@' . $parts[1]);
+		$username = $parts[0];
+		$password = $parts[1];
+	}
+
+	$api_call = "http://" . $dts . "/dts/extract.php?url=" . urlencode($file);
+
+	if($username && $password) {
+		$command = "wget --user=" . $username . " --password=" . $password . " -O " . $output_file . " " . $api_call;
+	} else {
+		$command = "wget -O " . $output_file . " " . $api_call;
+	}
 
 	exec($command);
 }

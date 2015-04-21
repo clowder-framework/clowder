@@ -135,8 +135,6 @@ class Extractions @Inject() (
                       }
                       files.setContentType(f.id, fileType)
                     }
-                  } else if (nameOfFile.toLowerCase().endsWith(".mov")) {
-                    fileType = "ambiguous/mov";
                   }
 
                   current.plugin[FileDumpService].foreach {
@@ -154,12 +152,13 @@ class Extractions @Inject() (
 
                   val serverIP = request.host
                   dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+              		val extra = Map("filename" -> f.filename)
 
                   /*------------------*/
 
                   current.plugin[RabbitmqPlugin].foreach {
                     // TODO replace null with None
-                    _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
+                    _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
                   }
 
                   //for metadata files
@@ -238,8 +237,9 @@ class Extractions @Inject() (
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
                   val host = Utils.baseUrl(request)
+              		val extra = Map("filename" -> f.filename)
 
-                  current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
+                  current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, "")) }
                   /*--- Insert DTS Requests  ---*/
                   val clientIP = request.remoteAddress
                   val serverIP = request.host
@@ -287,12 +287,11 @@ class Extractions @Inject() (
           var listIds = for { fileurl <- listURLs } yield {
             var urlsplit = fileurl.split("/")
             var filename = urlsplit(urlsplit.length - 1)
-            var contentType = MimeTypes.forFileName(filename.toLowerCase()).getOrElse(ContentTypes.BINARY)
             val futureResponse = WS.url(fileurl).get()
             var fid = for { response <- futureResponse } yield {
               if (response.status == 200) {
                 var inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
-                var file = files.save(inputStream, filename, Some(contentType), user, null)
+                var file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
                 file match {
                   case Some(f) => {
                     var fileType = f.contentType
@@ -300,8 +299,9 @@ class Extractions @Inject() (
                     fileType = f.contentType
                     val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
                     val host = Utils.baseUrl(request)
+              			val extra = Map("filename" -> f.filename)
                     Logger.debug("---hostURL------" + host);
-                    current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, "")) }
+                    current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, "")) }
                     /*--- Insert DTS Requests  ---*/
                     val clientIP = request.remoteAddress
                     val serverIP = request.host
@@ -354,7 +354,8 @@ class Extractions @Inject() (
               val fileType = file.contentType
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
               val host = Utils.baseUrl(request)
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, Map.empty, file.length.toString, null, "")) }
+        			val extra = Map("filename" -> file.filename)
+              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, extra, file.length.toString, null, "")) }
               Ok("Sent for Extraction. check the status")
             }
             case None =>
