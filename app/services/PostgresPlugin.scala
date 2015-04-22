@@ -341,6 +341,22 @@ class PostgresPlugin(application: Application) extends Plugin {
     st2.close()
     true
   }
+
+  def deleteSensor(id: Integer): Boolean = {
+    // get the stream id's for this sensor
+    var streams = Array[Int]()
+    val query = "DELETE FROM datapoints USING streams WHERE stream_id IN (SELECT gid FROM streams WHERE sensor_id = ?);" +
+      "DELETE FROM streams WHERE gid IN (SELECT gid FROM streams WHERE sensor_id = ?);" +
+      "DELETE FROM sensors where gid = ?;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    st.setInt(2, id.toInt)
+    st.setInt(3, id.toInt)
+    Logger.debug("Deleting datapoints, streams and sensor statement: " + st)
+    st.executeUpdate()
+    st.close()
+    true
+  }
   
   
   def dropAll(): Boolean = {

@@ -4,30 +4,16 @@ html,body {
 }
       
 body {
-  min-height: 1000px;
-  padding-top: 0px;
+  padding-top: 80px;
 }
 
 /* Wrapper for page content to push down footer */
 #wrap {
-  min-height: 100%;
-  height: auto !important;
-  height: 100%;
-  /* Negative indent footer by it's height */
-  margin: 0 auto -60px;
+  min-height: calc( 100% - 30px );
 }
 
 .break-word {
     word-wrap: break-word;
-}
-
-.fit-in-space {
-    max-width: 100%;
-    max-height: 100%;
-}
-/* Set the fixed height of the footer here */
-#push, #footer {
-  height: 60px;
 }
 
 /* Lastly, apply responsive CSS fixes as necessary */
@@ -38,6 +24,12 @@ body {
     padding-left: 20px;
     padding-right: 20px;
   }
+}
+
+/* Previews */
+.fit-in-space {
+    max-width: 100%;
+    max-height: 100%;
 }
 
 /* Custom page CSS
@@ -74,11 +66,11 @@ span.align-right {
 
 /* Not required for template or sticky footer method. */
 #wrap > .container {
-  padding-top: 60px;
+  /*padding-top: 60px;*/
 }
 
 .container .credit {
-  margin: 20px 0;
+  margin: 0px;
 }
 
 code {
@@ -100,15 +92,8 @@ code {
  * Comments
  * ----------------------------------------------------------------------
  */
-ol.comment-threads {
-}
-
-.comment-thread {
-	margin: 0px 0px 0px 0px;
-}
-
 .comment {
-	padding-top: 20px;
+	padding-top: 25px;
 }
 
 .comment-image {
@@ -121,25 +106,20 @@ ol.comment-threads {
 	float: left;
 }
 
-.comment-date {
-	padding-right: 10px;
-	float: right;
-}
-
 .comment-header {
 	padding-left: 10px;
 	padding-bottom: 10px;
+    font-size: 85%;
 }
 
 .comment-body {
-	padding-left: 40px;
-	min-height:   10px;
+	padding-left: 10px;
+	min-height:   30px;
 }
 
 .comment-footer {
 	padding-left: 10px;
 	font-size: 85%;
-	text-align: right;
 	padding-right: 10px;
 }
 
@@ -199,26 +179,9 @@ ol.comment-threads {
   height: 100px;
 }
 
-button.usr_md_ {
-    background:none!important;
-     border:none; 
-     padding:0!important;
-     
-     color:rgb(0, 136, 204);
-}
-
 .usr_md_{
 	margin-right:10px;
 	margin-bottom:5px;
-}
-
-button.tech_md_ {
-    background:none!important;
-     border:none; 
-     padding:0!important;
-     
-     color:rgb(0, 136, 204);
-     
 }
 
 .tech_md_{
@@ -281,13 +244,16 @@ button.tech_md_ {
   max-height:256px;
 }
 
-#editProfileFieldSet .control-group .controls input[type='text']{
+.editProfileInput input[type='text']{
   width:450px;
   height:30px;
 }
-#editProfileFieldSet .control-group .controls textarea{
+.editProfileInput textarea{
   width:450px;
   height:100px;
+}
+.editProfileInput .chosen-select {
+  width:450px;
 }
 
 #nameDescrFieldSet .control-group .controls textarea{
@@ -448,16 +414,14 @@ textarea, input[type='text'], input[type='password']{
   border-top: none;
 }
 
-.col-left-border {
-  border-left: 1px solid #E1E1E8;
-}
-
 .col-right-border {
   border-right: 1px solid #E1E1E8;
+    margin:0px;
 }
 
 .col-left-border {
     border-left: 1px solid #E1E1E8;
+    margin: -1px;
 }
 
 .border-top {
@@ -478,11 +442,70 @@ textarea, input[type='text'], input[type='password']{
     border:1px solid #e6e6e6;
 }
 
+.tag {
+    display: inline-block;
+    border: none;
+    padding: 1px 10px 1px 10px;
+    margin: 5px;
+    background: #474949;
+    border-radius: .25em;
+}
+
+.tag a {
+    color: white;
+}
+
+.tag a:hover {
+    color: white;
+}
+
+.tag .tag-delete {
+    margin-right: -5px;
+}
+
 .input-table-cell {
 	padding-top: 10px;
-	padding-bottom: 10px:
+	padding-bottom: 10px;
 }
 
 .horizontal-radio {
 	margin-right: 25px;
+}
+
+/* required to get comments to span the entire width of the container */
+.media .media-body {
+    width: 10000px;
+}
+
+.featurette {
+    margin-top: 50px;
+}
+
+.box-white-space {
+    padding: 30px 0px 0px 0px;
+}
+
+#add-file-btn {
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+#ds-title {
+    margin-bottom: 10px;
+}
+
+#license-img {
+    height: 25px;
+}
+
+.bottom-padding {
+    padding-bottom: 15px;
+}
+
+.top-padding {
+    padding-top: 15px;
+}
+
+.dataset-preview {
+    padding: 20px 0px;
 }

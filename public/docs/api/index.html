@@ -25,7 +25,7 @@
 
     $(function () {
       window.swaggerUi = new SwaggerUi({
-      url: "/api-docs.json",
+      url: window.location.href.toString().replace(/\/assets\/docs\/api\/index.html.*$/, "/api-docs.json"),
       dom_id: "swagger-ui-container",
       supportedSubmitMethods: ['get', 'post', 'put', 'delete'],
       onComplete: function(swaggerApi, swaggerUi){

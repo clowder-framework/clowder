@@ -77,7 +77,7 @@ object AppConfiguration {
   def setDisplayName(displayName: String) = appConfig.setProperty("display.name", displayName)
 
   /** Get the display name (subtitle) */
-  def getDisplayName: String = appConfig.getProperty("display.name", "Medici 2.0")
+  def getDisplayName: String = appConfig.getProperty("display.name", "Clowder")
 
   // ----------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ object AppConfiguration {
   def setWelcomeMessage(welcomeMessage: String) = appConfig.setProperty("welcome.message", welcomeMessage)
 
   /** Get the welcome message */
-  def getWelcomeMessage: String = appConfig.getProperty("welcome.message", "Welcome to Medici 2.0, " +
+  def getWelcomeMessage: String = appConfig.getProperty("welcome.message", "Welcome to Clowder, " +
     "a scalable data repository where you can share, organize and analyze data.")
 
   // ----------------------------------------------------------------------

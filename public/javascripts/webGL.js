@@ -5579,7 +5579,7 @@ Magi.Node = Klass({
 		  },
 
 		  onerror : function(xhr) {
-		    alert("Error: "+xhr.status);
+		    notify("Error: "+xhr.status, "error");
 		  },
 
 		  makeVBO : function(gl) {

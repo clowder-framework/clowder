@@ -68,7 +68,5 @@
 	   });
   }
   
-  
-    
      
 }(jQuery, Configuration));
