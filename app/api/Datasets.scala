@@ -205,7 +205,6 @@ class Datasets @Inject()(
 					          files.get(UUID(anId)) match {
 					              case Some(file) => {
 					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file, user)
-                          //events.addSourceEvent(user, file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")
 					            	  Ok(toJson(Map("status" -> "success")))
 					              }
 					              case None => {
@@ -977,9 +976,9 @@ class Datasets @Inject()(
               datasets.index(id)
               datasets.get(id) match {
                 case Some(dataset) => {
-              events.addSourceEvent(request.mediciUser, comment.id, comment.text , dataset.id, dataset.name, "add_comment_dataset")
-        }
-      }
+                  events.addSourceEvent(request.mediciUser, comment.id, comment.text , dataset.id, dataset.name, "add_comment_dataset")
+                }
+              }
               Ok(comment.id.toString())
             }
             case None => {
@@ -1153,11 +1152,8 @@ class Datasets @Inject()(
           datasets.get(id) match{              
               case Some(dataset) => {                  
                   for (f <- dataset.files) {                      
-                      detachFileHelper(dataset.id, f.id, dataset, request.mediciUser)
+                    detachFileHelper(dataset.id, f.id, dataset, request.mediciUser)
                   }
-
-           
-
             	  deleteDatasetHelper(dataset.id, request)
             	  Ok(toJson(Map("status" -> "success")))
               }

@@ -513,7 +513,6 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
           files.get(id) match {
               case Some(file) => {                                                                                                             
                   if (file.licenseData.isDownloadAllowed(request.user)) {
-                  //  events.addObjectEvent(request.mediciUser, file.id, file.filename, "download_file")
                       files.getBytes(id) match {
                       case Some((inputStream, filename, contentType, contentLength)) => {
                           request.headers.get(RANGE) match {

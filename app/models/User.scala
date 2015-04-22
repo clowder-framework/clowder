@@ -89,7 +89,7 @@ case class User(
   * return MiniUser constructed from the user model
   */
   def getMiniUser: MiniUser = {
-    new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl)
+    new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl, email = email)
   }
 
 }

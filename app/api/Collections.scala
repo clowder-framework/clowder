@@ -64,11 +64,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
         }
       }
-
-
-
-
-        Ok(toJson(Map("status" -> "success")))
+      Ok(toJson(Map("status" -> "success")))
     }
       case Failure(t) => InternalServerError
     }
@@ -114,15 +110,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               events.addSourceEvent(request.mediciUser , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection") 
             }
           }
-
         }
       }
-
-        Ok(toJson(Map("status" -> "success")))
-
-
-      }
-      case Failure(t) => InternalServerError
+      Ok(toJson(Map("status" -> "success")))
+    }
+    case Failure(t) => InternalServerError
     }
   }
   

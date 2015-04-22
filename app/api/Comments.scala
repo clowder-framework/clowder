@@ -7,7 +7,6 @@ import play.Logger
 import java.util.Date
 import play.api.Play.current
 import javax.inject.Inject
-import services.{CommentService, DatasetService, ElasticsearchPlugin}
 import models.{Comment, UUID, MiniUser, Event}
 import services._
 import com.wordnik.swagger.annotations.{ApiOperation, Api}

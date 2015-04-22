@@ -333,7 +333,7 @@ class Files @Inject()(
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-            events.addObjectEvent(request.mediciUser, f.id, f.filename, "upload_file")
+              events.addObjectEvent(request.mediciUser, f.id, f.filename, "upload_file")
 	            val id = f.id
 	            if(showPreviews.equals("FileLevel"))
 	            	flags = flags + "+filelevelshowpreviews"
@@ -547,8 +547,7 @@ class Files @Inject()(
           // submit file for extraction
           file match {
             case Some(f) => {
-            events.addSourceEvent(request.mediciUser, f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
-
+              events.addSourceEvent(request.mediciUser, f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
               val id = f.id.toString
               if (showPreviews.equals("FileLevel")) {
                 flags = flags + "+filelevelshowpreviews"
@@ -1344,11 +1343,10 @@ class Files @Inject()(
 
     val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
     files.get(id) match {
-          case Some(file) =>{
-            events.addObjectEvent(request.mediciUser, file.id, file.filename, "add_tags_file")
-          }
-        }
-
+    case Some(file) =>{
+      events.addObjectEvent(request.mediciUser, file.id, file.filename, "add_tags_file")
+      }
+    }
     // Now the real work: adding the tags.
     if ("" == error_str) {
       Ok(Json.obj("status" -> "success"))
@@ -1490,10 +1488,10 @@ class Files @Inject()(
               val comment = new Comment(identity, text, file_id = Some(id))
               comments.insert(comment)
               files.get(id) match {
-          case Some(file) =>{
-            events.addSourceEvent(request.mediciUser, comment.id, comment.text, file.id, file.filename, "comment_file")
-          }
-        }
+              case Some(file) =>{
+                events.addSourceEvent(request.mediciUser, comment.id, comment.text, file.id, file.filename, "comment_file")
+                }
+              }
               files.index(id)
               Ok(comment.id.toString)
             }
@@ -1813,8 +1811,8 @@ class Files @Inject()(
 			        files.setNotesHTML(id, html)
 			        //index(id)
               files.get(id) match {
-                case Some(file) => {
-                  events.addObjectEvent(request.mediciUser, file.id, file.filename, "set_note_file")
+              case Some(file) => {
+                events.addObjectEvent(request.mediciUser, file.id, file.filename, "set_note_file")
                 }
               }
 			        Ok(toJson(Map("status"->"success")))

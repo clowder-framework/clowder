@@ -9,4 +9,5 @@ package models
  case class MiniUser(
   id: UUID,
   fullName: String,
-  avatarURL: String)
+  avatarURL: String
+  email: Option[String])
