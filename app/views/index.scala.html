@@ -1,7 +1,6 @@
 @(files: List[models.File], datasetsCount: Long, filesCount: Long, collectionCount: Long,
         displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[securesocial.core.Identity])
-@import java.util.Date
-@import scala.math
+@import _root_.util.Formatters
 
 @main(displayedName) {
     <div class="row featurette">
@@ -24,23 +23,7 @@
                                 @newsfeedCard(event)
                             </div>
                             <div class="media-right">
-                                @{
-                                    var elapsed = (new Date().getTime() - event.created.getTime()) / 1000
-                                    if (elapsed < 1) {
-                                        "never"
-                                    } else if (elapsed < 60) {
-                                        "less than a miunte ago"
-                                    } else if (elapsed < 3600) {
-                                        Math.floor(elapsed / 60).toInt + " minutes ago"
-                                    } else if (elapsed < 86400) {
-                                        Math.floor(elapsed / 3600).toInt + " hours ago"
-                                    } else if (elapsed < 432000) {
-                                        Math.floor(elapsed / 86400).toInt + " days ago"
-                                    } else {
-                                        var df = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
-                                        df.format(event.created)
-                                    }
-                                }
+                                @Formatters.humanReadableTimeSince(event.created)
                             </div>
                         </div>
                     </div>
@@ -100,7 +83,7 @@
                 }
             });
 
-            var width = $('.col-md-7').width() * 0.2;
+            var width = $('.col-md-7').width() * 0.05;
             $('.media-object' ).each(function() {
                 $(this ).css("width", width);
                 $(this ).css("height", width);
