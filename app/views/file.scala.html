@@ -2,14 +2,15 @@
   previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
   sections: List[models.Section], beingProcessed: Boolean, fileDataset: List[models.Dataset],
   datasetsOutside: List[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any],
-  rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
+  rdfExported: Boolean,
+  extractionsStatus: List[Extraction])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
 @import play.api.Play.current
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
+	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
 		@for((key,value) <- metadata) {
 			<li><b>@(key):</b>
 			@if(value.isInstanceOf[String]) {
@@ -19,18 +20,55 @@
 					@value
 				}
 			} else {
-				@if(value.isInstanceOf[java.lang.Integer]) {
+				@if(value.isInstanceOf[java.lang.Integer] || value.isInstanceOf[java.lang.Double] || value.isInstanceOf[java.lang.Float] ) {
 					@value.toString
-			    } else {
-			    	@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
-			    		@value.toString.replace("[","").replace("]","")
-			    	} else {
-			    		<ul>
-			    		@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-			    		</ul>
-			    	}
-			    }
+				} else {
+					@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
+						<ul>
+							@printList(value.asInstanceOf[com.mongodb.BasicDBList].toList)
+						</ul>
+					} else {
+						@if(value.isInstanceOf[com.mongodb.BasicDBObject]) {
+							<ul>
+							  @printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+							</ul>
+						} else {
+							@value.toString
+						}
+					}
+				}
 			}</li>
+		}
+	}
+
+	@printList(metadata: List[AnyRef])	= {
+		@metadata.indices.map { i =>
+			<li><b>@i:</b>
+				@if(metadata(i).isInstanceOf[String]) {
+					@if(metadata(i).asInstanceOf[String].startsWith("http://") || metadata(i).asInstanceOf[String].startsWith("https://")) {
+						<a href="@metadata(i)">@metadata(i)</a>
+					} else {
+						@metadata(i)
+					}
+				} else {
+					@if(metadata(i).isInstanceOf[java.lang.Integer] || metadata(i).isInstanceOf[java.lang.Double] || metadata(i).isInstanceOf[java.lang.Float] ) {
+						@metadata(i).toString
+					} else {
+						@if(metadata(i).isInstanceOf[com.mongodb.BasicDBList]) {
+							<ul>
+							@printList(metadata(i).asInstanceOf[com.mongodb.BasicDBList].toList)
+							</ul>
+						} else {
+							@if(metadata(i).isInstanceOf[com.mongodb.BasicDBObject]) {
+								<ul>
+								@printLevel(metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+								</ul>
+							} else {
+								@metadata(i)
+							}
+						}
+					}
+				}</li>
 		}
 	}
 
@@ -186,7 +224,7 @@
 										data-title="Unknown" data-description="Unknown info"
 					  		 		}
 					  		 	}
-					  		 	></img>
+					  		 	>
 					  		}
 					  	}
 				  	</div>
@@ -300,16 +338,16 @@
 
             <div class="row border-top">
                 <div class="col-md-12">
-                    <h4>Community-generated metadata</h4>
+                    <h4>Community generated metadata</h4>
                     @fileusermetadata(file, usrmd, rdfExported)
                 </div>
             </div>
 
             <div class="row border-top">
                 <div class="col-md-12">
-                    <h4>System-generated metadata</h4>
+                    <h4>System generated metadata</h4>
                     <div id='technicalMetadata_@(file.id)'>
-                        <button class="tech_md_" type="button">Show file technical metadata</button>
+                        <button class="tech_md_ btn btn-link btn-sm" type="button">Show file technical metadata</button>
                         <div style="display:none;">
                         <ul>
                             @for(i <- 0 until file.metadata.length){
@@ -356,6 +394,19 @@
                 </script>
             }
 
+
+			<div class="row border-top">
+				<div class="col-md-12">
+					<h4>Extractions</h4>
+					<a class="btn btn-link" data-toggle="collapse" href="#extractions" aria-expanded="false"
+					aria-controls="collapseExample">
+						List extraction events
+					</a>
+					<div class="collapse" id="extractions">
+						@extractions.extractionsByFile(extractionsStatus)
+					</div>
+				</div>
+			</div>
 
             <div class="row border-top">
                 <div class="col-md-12">
@@ -500,7 +551,7 @@
                   }
               </ul>
               <form class="form-inline requiresLogin requiresLoginCommunity">
-                <div class="input-group input-group-sm col-md-8"">
+                <div class="input-group input-group-sm col-md-8">
                   <input type="text" id="tagField" class="form-control">
                   <span class="input-group-btn">
                         <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
@@ -623,7 +674,9 @@
         </div>
 
     </div> @* End of small right hand side column *@
-	
+
+	</div>
+
 	@if(!user.isDefined) {
         <script language="javascript">
             $(".requiresLogin").css("display","none");

@@ -31,21 +31,21 @@ import org.apache.http.entity.ContentType
 import org.scalatest._
 
 
+import play.api.test._
+import org.scalatest._
+import org.scalatestplus.play._
+import play.api.{Play, Application}
+
 /*
- * Integration test for File API - Router test
+ * Integration test for Datasets API - Router test
  * @author Eugene Roeder
  * 
  */
 
 
 //@DoNotDiscover
-class DatasetsAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpload {
-  val excludedPlugins = List(
-    "services.RabbitmqPlugin",
-    "services.VersusPlugin")
+class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
 
-
-  implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins)
 
   def printList[T](list: List[T]) {
     list match {
@@ -80,8 +80,23 @@ class DatasetsAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipart
     (__ \ "created").read[String]
   )(DataSet.apply _)
 
+
+  "The Datasets API Spec" must {
+    "provide a FakeApplication" in {
+      app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
+    }
+    "make the FakeApplication available implicitly" in {
+      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      getConfig("ehcacheplugin") mustBe Some("disabled")
+    }
+    "start the FakeApplication" in {
+      Play.maybeApplication mustBe Some(app)
+    }
+  }
   
- "The OneAppPerSuite for Datasets API Router test" must {
+
+  
+ "The Datasets API Spec" must {
     "respond to the createDataset() function routed by POST /api/datasets" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val workingDir = System.getProperty("user.dir")

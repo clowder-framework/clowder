@@ -15,7 +15,7 @@ import com.mongodb.casbah.Imports._
 class MongoDBInstitutionService extends InstitutionService {
 
   override def getAllInstitutions(): List[String] = {
-    var allinstitutions = Institution.dao.find(MongoDBObject()).map(_.name).toList
+    var allinstitutions = Institution.dao.find(MongoDBObject()).sort(orderBy = MongoDBObject("name" -> 1)).map(_.name).toList
     allinstitutions match {
       case x :: xs => allinstitutions
       case nil => List("")

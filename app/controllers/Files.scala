@@ -2,6 +2,7 @@ package controllers
 
 import java.io._
 import java.net.URLEncoder
+import javax.mail.internet.MimeUtility
 import models.{UUID, FileMD, File, Thumbnail}
 import play.api.Logger
 import play.api.Play.current
@@ -116,8 +117,11 @@ class Files @Inject() (
         var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
         
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+
+        val extractionsByFile = extractions.findByFileId(id)
         
-        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, extractorsActive, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled))
+        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
+          extractorsActive, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled, extractionsByFile))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."
@@ -267,7 +271,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
               val host = Utils.baseUrl(request)
               val id = f.id
-	          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+              val extra = Map("filename" -> f.filename)
+	          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
               /***** Inserting DTS Requests   **/  
               val clientIP=request.remoteAddress
               val domain=request.domain
@@ -403,10 +408,11 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                 
                 Logger.debug("----")
                 val serverIP= request.host
+              val extra = Map("filename" -> f.filename)
 	            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 	           /****************************/ 
               // TODO replace null with None
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
 
 	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
 
@@ -535,9 +541,15 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                           }
                           }
                           case None => {
-                              Ok.chunked(Enumerator.fromStream(inputStream))
+                            val userAgent = request.headers("user-agent")
+                            val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
+                              URLEncoder.encode(filename, "UTF-8")
+                            } else {
+                              MimeUtility.encodeWord(filename)
+                            }
+                            Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)
-                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; ; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8")))
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + filenameStar))
 
                           }
                           }
@@ -782,9 +794,10 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
             val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             val id = f.id
+            val extra = Map("filename" -> f.filename)
 
             // TODO replace null with None
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
             
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             
@@ -903,7 +916,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 						      
 						      /****************************/
 
-							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dataset_id, flags))}
+		            val extra = Map("filename" -> f.filename)
+							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dataset_id, flags))}
 					  
 					  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 

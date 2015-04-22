@@ -13,12 +13,14 @@ import getopt
 import netifaces as ni
 import thread
 import threading
+import datetime
 from pymongo import MongoClient
 
 failure_report = ''
 enable_threads = False
 threads = 0
 lock = threading.Lock()
+total_success = 0
 
 def main():
 	"""Run extraction bus tests."""
@@ -26,11 +28,13 @@ def main():
 	global enable_threads
 	global threads
 	global lock
+	global total_success
 	host = ni.ifaddresses('eth0')[2][0]['addr']
 	hostname = ''
 	port = '9000'
 	key = 'r1ek3rs'
 	all_failures = False
+	total_tests = 0
 
 	#Arguments
 	opts, args = getopt.getopt(sys.argv[1:], 'h:p:k:n:at')
@@ -107,7 +111,8 @@ def main():
 						else:
 							output = open(output).read(1000).strip()
 		
-					#Run the test	
+					#Run the test
+					total_tests += runs	
 					if enable_threads:
 						for i in range(0, runs):
 							with lock:
@@ -130,7 +135,7 @@ def main():
 		dt = time.time() - t0
 		print 'Elapsed time: ' + timeToString(dt)
 
-    #Save to mongo
+		#Save to mongo
 		client = MongoClient()
 		db = client['tests']
 		collection = db['dts']
@@ -141,6 +146,8 @@ def main():
 			document = {'time': int(round(time.time()*1000)), 'elapsed_time': dt, 'failures': False}
 
 		collection.insert(document)
+
+		report(host, hostname, 'DTS', total_tests, total_success, failure_report, dt)
 
 		#Send a final report of failures
 		if failure_report:
@@ -206,6 +213,7 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 	global enable_threads
 	global threads
 	global lock
+	global total_success
 
 	#Print out test
 	if enable_threads:
@@ -241,8 +249,10 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 				print(input_filename + ' -> !"' + output + '"\t'),
 	
 			if not POSITIVE and metadata.find(output) is -1:
+				total_success += 1
 				print '\033[92m[OK]\033[0m'
 			elif metadata.find(output) > -1:
+				total_success += 1
 				print '\033[92m[OK]\033[0m'
 			else:
 				print '\033[91m[Failed]\033[0m'
@@ -250,9 +260,11 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 	#Check for expected output and add to report
 	if not POSITIVE and metadata.find(output) is -1:
 		if not enable_threads:
+			total_success += 1
 			print '\033[92m[OK]\033[0m\n'
 	elif metadata.find(output) > -1:
 		if not enable_threads:
+			total_success += 1
 			print '\033[92m[OK]\033[0m\n'
 	else:
 		if not enable_threads:
@@ -345,6 +357,18 @@ def timeToString(t):
 		return str(round(m + s / 60.0, 2)) + ' minutes';
 	else:
 		return str(s) + ' seconds';
+
+def report(host, hostname, type, total, success, message, elapsed_time):
+	"""Write the test results to mongo database"""
+	# create the message
+	document = { "host": host, "hostname": hostname, "type": type,
+				 "total": total, "success": success, "failures": (total - success),
+				 "message": message,
+				 "elapsed_time": elapsed_time, "date": datetime.datetime.utcnow() }
+	mc = MongoClient("mongo.ncsa.illinois.edu")
+	db = mc['browndog']
+	tests = db['tests']
+	tests.insert(document)
 
 if __name__ == '__main__':
 	main()

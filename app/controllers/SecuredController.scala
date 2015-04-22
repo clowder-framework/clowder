@@ -6,8 +6,7 @@ package controllers
 import api.{Permission, RequestWithUser, WithPermission}
 import models.{User, UUID}
 import play.api.mvc.{Action, BodyParser, Controller, Result, Results}
-import securesocial.core.{Authenticator, Authorization, IdentityProvider, UserService, SecureSocial}
-import securesocial.core.providers.utils.RoutesHelper
+import securesocial.core.{Authenticator, Authorization, UserService, SecureSocial}
 
 /**
  * Enforce authentication and authorization.
@@ -27,16 +26,21 @@ trait SecuredController extends Controller {
           case _ => None
         }
       ) yield {
+          //This block if an identity has been found  
           Authenticator.save(authenticator.touch)
           authorization match {
             case auth: WithPermission => {
               if (auth.isAuthorized(identity, resourceId)) {
                 f(RequestWithUser(Some(identity), request))
               } else {
-                Results.Redirect(routes.Authentication.notAuthorized)
-              }
+            		//User logged in but does not have permission
+            		Results.Redirect(routes.RedirectUtility.incorrectPermissions("You do not have the permissions that are required in order to view that location."))
+            	}
             }
-            case _ => Results.Redirect(routes.Authentication.notAuthorized)
+            case _ =>  {
+              //User logged in, but it's a controller that has a different authorization?
+              Results.Redirect(routes.Authentication.notAuthorized)
+            }
           }
         }
 
@@ -47,10 +51,13 @@ trait SecuredController extends Controller {
             if (auth.isAuthorized(None, resourceId)) {
               f(RequestWithUser(None, request))
             } else {
-              Results.Redirect(routes.Authentication.notAuthorized)
+              Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("Authorization is required to access that location. Please login to proceed.", request.uri))
             }
           }
-          case _ => Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authenticated.")
+          case _ => {              
+              //The case where it's a controller that has a different authorization?
+              Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("Authentication is required to access that location. Please login to proceed.", request.uri))
+          }
         }
       }
     }

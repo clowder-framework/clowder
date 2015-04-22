@@ -104,6 +104,8 @@
 					
 					var newSelectButton = document.createElement('button'); 	
 					newSelectButton.classList.add('usr_md_');
+                    newSelectButton.classList.add('btn-link');
+                    newSelectButton.classList.add('btn-sm');
 					newSelectButton.setAttribute('type','button');		
 					
 					newSelectButton.innerHTML = 'Select property';
@@ -141,6 +143,8 @@
 						
 						var newDeleteButton = document.createElement('button'); 	
 						newDeleteButton.classList.add('usr_md_');
+                        newDeleteButton.classList.add('btn-link');
+                        newDeleteButton.classList.add('btn-sm');
 						newDeleteButton.setAttribute('type','button');	
 						
 						newDeleteButton.innerHTML = 'Delete';
@@ -150,6 +154,8 @@
 						$(this).html("Add property");
 						var newDeleteButton = document.createElement('button'); 	
 						newDeleteButton.classList.add('usr_md_');
+                        newDeleteButton.classList.add('btn-link');
+                        newDeleteButton.classList.add('btn-sm');
 						newDeleteButton.setAttribute('type','button');	
 						
 						newDeleteButton.innerHTML = 'Delete';

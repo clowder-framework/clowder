@@ -3,23 +3,67 @@
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
 
-<form class="form-inline">	
-	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
-		<ul>
-		@for((key,value) <- metadata) {
-			<li><b>@(key):</b>
-			@if(value.isInstanceOf[String]) {
-				@if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
-					<a href="@value">@value</a>
-				} else {
-					@value
-				}
+@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
+	@for((key,value) <- metadata) {
+		<li><b>@(key):</b>
+		@if(value.isInstanceOf[String]) {
+			@if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
+				<a href="@value">@value</a>
 			} else {
-			    @printLevel(value.asInstanceOf[DBObject].toMap.asScala.toMap.asInstanceOf[scala.collection.immutable.Map[String, Any]])
-			}</li>
-		}
-		</ul>
-	} 
+				@value
+			}
+		} else {
+			@if(value.isInstanceOf[java.lang.Integer] || value.isInstanceOf[java.lang.Double] || value.isInstanceOf[java.lang.Float] ) {
+				@value.toString
+			} else {
+				@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
+					<ul>
+						@printList(value.asInstanceOf[com.mongodb.BasicDBList].toList)
+					</ul>
+				} else {
+					@if(value.isInstanceOf[com.mongodb.BasicDBObject]) {
+						<ul>
+							@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+						</ul>
+					} else {
+						@value.toString
+					}
+				}
+			}
+		}</li>
+	}
+}
+
+@printList(metadata: List[AnyRef])	= {
+	@metadata.indices.map { i =>
+		<li><b>@i:</b>
+		@if(metadata(i).isInstanceOf[String]) {
+			@if(metadata(i).asInstanceOf[String].startsWith("http://") || metadata(i).asInstanceOf[String].startsWith("https://")) {
+				<a href="@metadata(i)">@metadata(i)</a>
+			} else {
+				@metadata(i)
+			}
+		} else {
+			@if(metadata(i).isInstanceOf[java.lang.Integer] || metadata(i).isInstanceOf[java.lang.Double] || metadata(i).isInstanceOf[java.lang.Float] ) {
+				@metadata(i).toString
+			} else {
+				@if(metadata(i).isInstanceOf[com.mongodb.BasicDBList]) {
+					<ul>
+					@printList(metadata(i).asInstanceOf[com.mongodb.BasicDBList].toList)
+					</ul>
+				} else {
+					@if(metadata(i).isInstanceOf[com.mongodb.BasicDBObject]) {
+						<ul>
+						@printLevel(metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+						</ul>
+					} else {
+						@metadata(i)
+					}
+				}
+			}
+		}</li>
+	}
+}
 	@printLevelUserMetadata(metadata: scala.collection.mutable.Map[String,Any]) = {
 		<ul class="usr_md_">
 		@for((key,value) <- metadata) {
@@ -27,45 +71,53 @@
 				@for(listValue <- value.asInstanceOf[com.mongodb.BasicDBList]) {
 						<li class="usr_md_"><b class="usr_md_">@(key):</b>
 						@if(listValue.isInstanceOf[String]) {			
-							<span class="usr_md_">@listValue</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
+							<span class="usr_md_">@listValue</span><button class="usr_md_ btn btn-link btn-sm" type="button">Modify</button>
+                            <button class="usr_md_ btn btn-link btn-sm" >Delete</button>
 						} else {
-								<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(listValue.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
+							<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+                            <button class="usr_md_ btn btn-link btn-sm" type="button">
+                                Delete</button>@printLevelUserMetadata(listValue.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
 						}</li>
 				}
 			}else{
 				<li class="usr_md_"><b class="usr_md_">@(key):</b>
 				@if(value.isInstanceOf[String]) {			
-					<span class="usr_md_">@value</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
+					<span class="usr_md_">@value</span><button class="usr_md_ btn btn-link btn-sm" type="button">Modify</button>
+                    <button class="usr_md_ btn btn-link btn-sm" >Delete</button>
 				} else {
-						<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
+					<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+                    <button class="usr_md_ btn btn-link btn-sm" type="button">
+                        Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
 				}</li>
 			}	
 		}
 		</ul>
 	}
-	@*
-		<h5>Auto-generated metadata:</h5>
-		
-		@if(metadata.isEmpty) {
-			<div>No auto-generated metadata.</div>
-		} else {
-			<div>@printLevel(metadata)</div>
-		}	
-		<br />
-	*@
-	<h5>Community-generated metadata:</h5>
-	
-	<div id='generalUserMetadata_@(dataset.id.stringify)' class='usr_md_'>
-		<button class="usr_md_" type="button">Add property</button>
-		@printLevelUserMetadata(userMetadata)
-		<button class="usr_md_submit btn" type="button">Submit</button>
-		@if(rdfExported){
-			<button class="usr_md_submit btn rdfbtn" type="button">Get as RDF</button>
-		}
-	</div>
 
-			
-</form>
+    <div class="row">
+        <div class="col-md-12 box-white-space">
+            <h4>Community generated metadata</h4>
+            <div id='generalUserMetadata_@(dataset.id.stringify)' class='usr_md_'>
+                <button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+                @printLevelUserMetadata(userMetadata)
+                <button class="usr_md_submit btn btn-default btn-xs" type="button">Submit</button>
+                @if(rdfExported){
+                    <button class="usr_md_submit btn btn-primary rdfbtn" type="button">Get as RDF</button>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12 box-white-space">
+            <h4>System generated metadata</h4>
+            @if(metadata.isEmpty) {
+                <div>No system generated metadata available yet</div>
+            } else {
+                <div>@printLevel(metadata)</div>
+            }
+        </div>
+    </div>
+
 <script language="javascript">
 	var topId = "generalUserMetadata_@(dataset.id.stringify)"; 
 	window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(dataset.id)";

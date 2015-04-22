@@ -15,11 +15,13 @@ trait ExtractionService {
 
   def findAll(): List[Extraction]
 
+  def findByFileId(fileId: UUID): List[Extraction]
+
   def insert(extraction: Extraction)
   
-  def getExtractorList(fileId:UUID):collection.mutable.Map[String,String] 
+  def getExtractorList(fileId:UUID): collection.mutable.Map[String,String]
   
-  def getExtractionTime(fileId:UUID):List[Date]
+  def getExtractionTime(fileId:UUID): List[Date]
   
   def save(webpr: WebPageResource): UUID
   
