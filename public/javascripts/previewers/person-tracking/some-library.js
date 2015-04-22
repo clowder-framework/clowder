@@ -4,7 +4,8 @@
     var pathJs = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + Configuration.jsPath + "/";
 	
 	// retrieve the metadata
-	var metadataApiUrl = "/api/files/" + Configuration.fileid + "/technicalmetadatajson";
+    var jsRoutesObject = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.fileid);
+    var metadataApiUrl = jsRoutesObject.url;
 	var request = $.ajax({
 		type : "GET",
 		url : metadataApiUrl,
@@ -26,7 +27,7 @@
         var pathFlotJS = pathJs + "jquery.flot.js";
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
-        var pathPopcornJS = pathJs + "popcorn-complete.min.js";        
+        var pathPopcornJS = pathJs + "popcorn-complete.min.js";
         var sortedFrameDataArray = new Array();
 
         //dowload JQuery library files        	        	        
@@ -153,10 +154,7 @@
                         }
                     }    
                 }                
-            }                                    
-            
-                        
-            console.log(sortedFrameDataArray);
+            }                                        
             
             //display video on screen and visualize person tracking
     		console.log("Updating tab " + Configuration.tab);    		
