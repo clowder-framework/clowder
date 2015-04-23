@@ -29,16 +29,36 @@
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
         var pathPopcornJS = pathJs + "popcorn-complete.min.js";
         var sortedFrameDataArray = new Array();
+        
+        var deferredGetScript = function(url) {
+            var deferred = $.Deferred();
 
-        //dowload JQuery library files        	        	        
+            $.getScript( url, function() {
+                deferred.notify( "deferred notify GET for " + url );
+            })
+            .done(function(data) {
+                deferred.notify( "deferred notify done for " + url );
+                deferred.resolve( data );
+            })
+            .fail(function(err) {
+                deferred.notify( "deferred notify fail for " + url);                
+                deferred.reject(err)
+            });
+
+            return deferred.promise();
+        };
+
         $.when(
-            $.getScript( pathFlotJS ),
-            $.getScript( pathNavigateJS ),
-            $.getScript( pathCrosshairJS ),
-            $.getScript( pathPopcornJS )
+            deferredGetScript( pathFlotJS ),
+            deferredGetScript( pathNavigateJS ),
+            deferredGetScript( pathCrosshairJS ),
+            deferredGetScript( pathPopcornJS )/*,
+            $.Deferred(function( deferred ){
+                $( deferred.resolve );
+            })*/
         ).done(function(){
             console.log("downloaded JS sciprts");
-            
+
             // Processing JSON data            
             var jsonFrameArray = data[0].result.frame;
             var jsonFrameArrayLength = jsonFrameArray.length;            
@@ -323,12 +343,11 @@
                     x: crossHairPos
                 })
                 plot.lockCrosshair();
-            });                                    
-        
-        })
-        .fail(function(){
-            console.log("Failed to load JS scripts.");
+            });
         });
+        /*.fail(function(jqxhr, settings, exception){
+            console.log("Failed to load JS scripts.");
+        });*/
 	    
 	});	
 	
