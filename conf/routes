@@ -27,8 +27,9 @@ GET            /profile/editProfile                                             
 GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
 
 # Utilities
-GET            /utils/authenticationRequired                                            @controllers.RedirectUtility.authenticationRequired
-GET            /utils/authenticationRequiredMessage/:msg/:url                           @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
+GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
+GET     /utils/authenticationRequiredMessage/:msg/:url       @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
+GET     /utils/noPermissions                                 @controllers.RedirectUtility.incorrectPermissions(msg ?= null)
 
 # DTS Information
 GET            /extractions/requests                                                    @controllers.ExtractionInfo.getDTSRequests()

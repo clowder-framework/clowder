@@ -15,7 +15,7 @@ import com.mongodb.casbah.Imports._
 class MongoDBProjectService extends ProjectService {
 
   override def getAllProjects(): List[String] = {
-    Project.dao.find(MongoDBObject()).map(_.name).toList
+    Project.dao.find(MongoDBObject()).sort(orderBy = MongoDBObject("name" -> 1)).map(_.name).toList
   }
 
   override def addNewProject(project: String) = {

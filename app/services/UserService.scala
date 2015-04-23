@@ -2,6 +2,7 @@ package services
 
 import models.{UUID, User}
 import securesocial.core.Identity
+import util.Direction._
 
 /**
  * Service definition to interact with the users.
@@ -13,16 +14,43 @@ import securesocial.core.Identity
  *
  * @author Rob Kooper
  */
-trait UserService {
+trait UserService  {
+  def get(id: UUID): Option[User]
+
+  def insert(model: User): Option[String]
+
+  def update(model: User)
+
+  def delete(id: UUID)
+
+  /**
+   * The number of objects that are available based on the filter
+   */
+  def count(filter: Option[String] = None): Long
+
+  /**
+   * Return a list objects that are available based on the filter as well as the other options.
+   *
+   * @param order the key to use to order the data, default is natural ordering of underlying implementation
+   * @param direction the direction to order the data in
+   * @param start the first element that should be returned based on the order key
+   * @param limit the maximum number of elements to return
+   * @param filter is a json representation of the filter to be applied
+   *
+   */
+  def list(order: Option[String] = None, direction: Direction=DESC,
+           start: Option[String] = None, limit: Integer = 20,
+           filter: Option[String] = None): List[User]
+
   /**
    * The number of users
    */
-  def count(): Long
+  def count(): Long = count(None)
 
   /**
    * List all users in the system.
    */
-  def list: List[User]
+  def list: List[User] = list(limit=Integer.MAX_VALUE)
 
   /**
    * Return a specific user based on the id provided.

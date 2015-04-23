@@ -184,7 +184,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "POST")
   def follow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
-      val user = request.mediciUser
+      val user = request.user
 
       user match {
         case Some(loggedInUser) => {
@@ -210,7 +210,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "POST")
   def unfollow(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
-      val user = request.mediciUser
+      val user = request.user
 
       user match {
         case Some(loggedInUser) => {

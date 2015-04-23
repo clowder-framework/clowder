@@ -1,4 +1,4 @@
-Medici 2.0
+Clowder
 ==================================
 
 Medici is a web-based content management system that allows users to share, annotate, organize and analyze large

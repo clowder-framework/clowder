@@ -1,4 +1,4 @@
-@(profile: User, viewerUser: Option[User], ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
+@(profile: User, ownProfile: Option[Boolean])(implicit user: Option[models.User] = None)
 @main("Profile") {
 <div class="page-header">
 
@@ -16,7 +16,7 @@
           <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#followingModal">
             Followers and followees
           </button>
-          @viewerUser match {
+          @user match {
             case Some(viewer) => {
               @ownProfile match {
                 case Some(sameProfile) =>{

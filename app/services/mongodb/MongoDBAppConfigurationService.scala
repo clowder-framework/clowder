@@ -11,7 +11,7 @@ import play.api.Play.current
  */
 class MongoDBAppConfigurationService extends AppConfigurationService {
   def addPropertyValue(key: String, value: AnyRef) {
-    getCollection.update(MongoDBObject("key" -> key), $addToSet("value" -> value), concern=WriteConcern.Safe)
+    getCollection.update(MongoDBObject("key" -> key), $addToSet("value" -> value), upsert=true, concern=WriteConcern.Safe)
   }
 
   def removePropertyValue(key: String, value: AnyRef) {

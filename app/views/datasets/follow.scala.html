@@ -1,0 +1,46 @@
+@(dataset: Dataset)(implicit user: Option[models.User])
+
+@if(user.isDefined) {
+  @if(!dataset.followers.contains(user.get.id)) {
+    <button id="followButton" class="btn-xs btn-success">Follow</button>
+  } else {
+    <button id="followButton" class="btn-xs btn-danger">Unfollow</button>
+  }
+
+  <script>
+    $("#followButton" ).on('click', function () {
+        if ($(this ).text() === 'Follow') {
+            var followRequest = jsRoutes.api.Datasets.follow('@dataset.id').ajax({
+                type: 'POST'
+            });
+
+            followRequest.done(function (response, textStatus, jqXHR) {
+                var $followButton = $('#followButton');
+                $followButton.text('Unfollow');
+                $followButton.removeClass('btn-success');
+                $followButton.addClass('btn-danger');
+            });
+
+            followRequest.fail(function (jqXHR, textStatus, errorThrown){
+                console.error('Failed to follow!');
+            });
+        } else if ($(this ).text() === 'Unfollow') {
+            var unfollowRequest = jsRoutes.api.Datasets.unfollow('@dataset.id').ajax({
+                type: 'POST'
+            });
+
+            unfollowRequest.done(function (response, textStatus, jqXHR) {
+                var $followButton = $('#followButton');
+                $followButton.text('Follow');
+                $followButton.removeClass('btn-danger');
+                $followButton.addClass('btn-success');
+            });
+
+            unfollowRequest.fail(function (jqXHR, textStatus, errorThrown){
+                console.error('Failed to unfollow!');
+            });
+        }
+    });
+  </script>
+}
+
