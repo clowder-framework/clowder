@@ -78,22 +78,22 @@ class MongoDBUserService extends UserService {
 
   override def followFile(followerId: UUID, fileId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $addToSet("followedFiles" -> new ObjectId(fileId.stringify)))
+                        $addToSet("followedEntities.followedFiles" -> new ObjectId(fileId.stringify)))
   }
 
   override def unfollowFile(followerId: UUID, fileId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $pull("followedFiles" -> new ObjectId(fileId.stringify)))
+                        $pull("followedEntities.followedFiles" -> new ObjectId(fileId.stringify)))
   }
 
   override def followDataset(followerId: UUID, datasetId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $addToSet("followedDatasets" -> new ObjectId(datasetId.stringify)))
+                        $addToSet("followedEntities.followedDatasets" -> new ObjectId(datasetId.stringify)))
   }
 
   override def unfollowDataset(followerId: UUID, datasetId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $pull("followedDatasets" -> new ObjectId(datasetId.stringify)))
+                        $pull("followedEntities.followedDatasets" -> new ObjectId(datasetId.stringify)))
   }
 
   /**
@@ -101,7 +101,7 @@ class MongoDBUserService extends UserService {
    */
   override def followCollection(followerId: UUID, collectionId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $addToSet("followedCollections" -> new ObjectId(collectionId.stringify)))
+                        $addToSet("followedEntities.followedCollections" -> new ObjectId(collectionId.stringify)))
   }
 
   /**
@@ -109,7 +109,7 @@ class MongoDBUserService extends UserService {
    */
   override def unfollowCollection(followerId: UUID, collectionId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $pull("followedCollections" -> new ObjectId(collectionId.stringify)))
+                        $pull("followedEntities.followedCollections" -> new ObjectId(collectionId.stringify)))
   }
 
     /**
@@ -118,7 +118,7 @@ class MongoDBUserService extends UserService {
     override def followUser(followeeId: UUID, followerId: UUID)
     {
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                          $addToSet("followedUsers" -> new ObjectId(followeeId.stringify)))
+                          $addToSet("followedEntities.followedUsers" -> new ObjectId(followeeId.stringify)))
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
                           $addToSet("followers" -> new ObjectId(followerId.stringify)))
     }
@@ -128,7 +128,7 @@ class MongoDBUserService extends UserService {
      */
     override def unfollowUser(followeeId: UUID, followerId: UUID) {
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                          $pull("followedUsers" -> new ObjectId(followeeId.stringify)))
+                          $pull("followedEntities.followedUsers" -> new ObjectId(followeeId.stringify)))
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
                           $pull("followers" -> new ObjectId(followerId.stringify)))
     }

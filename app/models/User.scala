@@ -23,10 +23,7 @@ case class User(
   pastprojects: List[String] = List.empty,
   position: Option[String] = None,
   viewed: Option[List[UUID]] = None,
-  followedFiles: List[UUID] = List.empty,
-  followedDatasets: List[UUID] = List.empty,
-  followedCollections: List[UUID] = List.empty,
-  followedUsers: List[UUID] = List.empty,
+  followedEntities: FollowedEntities = new FollowedEntities(),
   followers: List[UUID] = List.empty) {
 
   /**
@@ -95,6 +92,17 @@ case class Info(
   pastprojects: List[String],
   position: Option[String]
 )
+
+case class FollowedEntities(
+  followedFiles: List[UUID] = List.empty,
+  followedDatasets: List[UUID] = List.empty,
+  followedCollections: List[UUID] = List.empty,
+  followedUsers: List[UUID] = List.empty)
+
+object FollowedEntities {
+  // takes care of automatic conversion to/from JSON
+  implicit val followedEntitiesFormat = Json.format[FollowedEntities]
+}
 
 object User {
   // takes care of automatic conversion to/from JSON
