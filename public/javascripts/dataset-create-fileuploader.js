@@ -38,7 +38,8 @@ function enableFields() {
 	$('#desclabel').hide();
 	$('#name').removeClass("hiddenholdspace");
     $('#description').removeClass("hiddenholdspace");
-    $("input[name=radiogroup]").attr('disabled', false);                    	
+    $("input[name=radiogroup]").attr('disabled', false);
+    $("#spaceid").attr('disabled', false);
 }
 
 //Remove the error messages that are provided to the user
