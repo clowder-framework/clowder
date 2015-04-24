@@ -266,6 +266,7 @@ function attachFiles() {
 		//Update the input we are adding to the form programmatically      
 		var name = $('#name');
 	    var desc = $('#description');
+	    var space = $('#spaceid').find(":selected").val();
 	    
 	    //Add errors and return false if validation fails
 	    var error = false;
@@ -287,10 +288,10 @@ function attachFiles() {
 		var encDescription = htmlEncode(desc.val());
 	    
 		if (ids.length == 0) {
-			jsonData = JSON.stringify({"name":encName, "description":encDescription});
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":space});
 		}
 		else {
-			jsonData = JSON.stringify({"name":encName, "description":encDescription, "existingfiles":ids});
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":space, "existingfiles":ids});
 		}	
 	    	                         	                        
 	    request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
