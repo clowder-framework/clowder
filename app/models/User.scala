@@ -20,7 +20,7 @@ trait User extends Identity {
   def pastprojects: List[String]
   def position: Option[String]
   def friends: Option[List[String]]
-  def followedEntities: FollowedEntities
+  def followedEntities: List[TypedID]
   def followers: List[UUID]
   def viewed: Option[List[UUID]]
 
@@ -100,7 +100,7 @@ case class MediciUser(
   pastprojects: List[String] = List.empty,
   position: Option[String] = None,
   friends: Option[List[String]] = None,
-  followedEntities: FollowedEntities = new FollowedEntities(),
+  followedEntities: List[TypedID] = List.empty,
   followers: List[UUID] = List.empty,
   viewed: Option[List[UUID]] = None
   ) extends User
@@ -114,14 +114,3 @@ case class Info(
   pastprojects: List[String],
   position: Option[String]
 )
-
-case class FollowedEntities(
-  followedFiles: List[UUID] = List.empty,
-  followedDatasets: List[UUID] = List.empty,
-  followedCollections: List[UUID] = List.empty,
-  followedUsers: List[UUID] = List.empty)
-
-object FollowedEntities {
-  // takes care of automatic conversion to/from JSON
-  implicit val followedEntitiesFormat = Json.format[FollowedEntities]
-}

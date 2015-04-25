@@ -200,12 +200,14 @@
           </thead>
           <tbody>
             <!-- This is loaded when the page loads, might not reflect up-to-date data -->
-            @for(row <- profile.followedEntities.followedUsers) {
-              <tr>
-                @*TODO: Show name instead and fix viewProfile.*@
-                @*<td><a href="@routes.Profile.viewProfile(Option(row.toString))">@row.toString</a></td>*@
-                <td>@row.toString</td>
-              </tr>
+            @for(row <- profile.followedEntities) {
+              @if(row.objectType == "user") {
+                <tr>
+                  @*TODO: Show name instead and fix viewProfile.*@
+                  @*<td><a href="@routes.Profile.viewProfile(Option(row.toString))">@row.toString</a></td>*@
+                  <td>@row.id.toString</td>
+                </tr>
+              }
             }
           </tbody>
         </table>

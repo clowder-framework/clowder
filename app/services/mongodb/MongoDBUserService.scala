@@ -8,7 +8,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import models.{MediciUser, UUID, User}
+import models.{TypedID, MediciUser, UUID, User}
 import org.bson.types.ObjectId
 import play.api.Logger
 import securesocial.core.Identity
@@ -20,6 +20,7 @@ import securesocial.core._
 import services.{DI, UserService}
 import services.mongodb.MongoContext.context
 import util.Direction._
+import services.mongodb.TypedIDDAO
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -152,22 +153,22 @@ class MongoDBUserService extends services.UserService {
 
   override def followFile(followerId: UUID, fileId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $addToSet("followedEntities.followedFiles" -> new ObjectId(fileId.stringify)))
+                        $addToSet("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(fileId, "file"))))
   }
 
   override def unfollowFile(followerId: UUID, fileId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $pull("followedEntities.followedFiles" -> new ObjectId(fileId.stringify)))
+                        $pull("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(fileId, "file"))))
   }
 
   override def followDataset(followerId: UUID, datasetId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $addToSet("followedEntities.followedDatasets" -> new ObjectId(datasetId.stringify)))
+                        $addToSet("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(datasetId, "dataset"))))
   }
 
   override def unfollowDataset(followerId: UUID, datasetId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $pull("followedEntities.followedDatasets" -> new ObjectId(datasetId.stringify)))
+                        $pull("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(datasetId, "dataset"))))
   }
 
   /**
@@ -175,7 +176,7 @@ class MongoDBUserService extends services.UserService {
    */
   override def followCollection(followerId: UUID, collectionId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $addToSet("followedEntities.followedCollections" -> new ObjectId(collectionId.stringify)))
+                        $addToSet("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(collectionId, "collection"))))
   }
 
   /**
@@ -183,7 +184,7 @@ class MongoDBUserService extends services.UserService {
    */
   override def unfollowCollection(followerId: UUID, collectionId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $pull("followedEntities.followedCollections" -> new ObjectId(collectionId.stringify)))
+                        $pull("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(collectionId, "collection"))))
   }
 
   /**
@@ -192,7 +193,7 @@ class MongoDBUserService extends services.UserService {
   override def followUser(followeeId: UUID, followerId: UUID)
   {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $addToSet("followedEntities.followedUsers" -> new ObjectId(followeeId.stringify)))
+                        $addToSet("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(followeeId, "user"))))
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
                         $addToSet("followers" -> new ObjectId(followerId.stringify)))
   }
@@ -202,7 +203,7 @@ class MongoDBUserService extends services.UserService {
    */
   override def unfollowUser(followeeId: UUID, followerId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
-                        $pull("followedEntities.followedUsers" -> new ObjectId(followeeId.stringify)))
+                        $pull("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(followeeId, "user"))))
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
                         $pull("followers" -> new ObjectId(followerId.stringify)))
   }
