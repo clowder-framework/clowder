@@ -1,4 +1,4 @@
-@(profile: User, viewerUser: Option[User], ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
+@(profile: User, ownProfile: Option[Boolean])(implicit user: Option[models.User] = None)
 @main("Profile") {
 <div class="page-header">
 
@@ -8,11 +8,15 @@
         <img src=@profile.getAvatarUrl class="profilePicture">
         <div align="center">
           <h4><a href="@routes.Datasets.userDatasets("", "", 12, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
-          <h4>Followed by @profile.followers.size people</h4>
-          <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#followingModal">
+          <h4>
+            Followed by
+            <span id="followerSize">@profile.followers.size</span>
+            people
+          </h4>
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#followingModal">
             Followers and followees
           </button>
-          @viewerUser match {
+          @user match {
             case Some(viewer) => {
               @ownProfile match {
                 case Some(sameProfile) =>{
@@ -52,6 +56,25 @@
                   </h4>
                   <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
                   <script>
+                    function followCallback() {
+                        var $followerSize = $('#followerSize');
+                        var followerSize = parseInt($followerSize.text());
+                        $followerSize.text(followerSize + 1);
+
+                        var newRowHtml = '<tr><td>@viewer.id</td></tr>';
+                        $('#followersTable tr:last').after(newRowHtml);
+                    }
+
+                    function unfollowCallback() {
+                        var $followerSize = $('#followerSize');
+                        var followerSize = parseInt($followerSize.text());
+                        $followerSize.text(followerSize - 1);
+
+                        $('#followersTable').find('td').filter(function () {
+                            return $(this).text().trim() == '@viewer.id';
+                        }).first().remove();
+                    }
+
                     var profileUUID = "@profile.id.stringify";
                     var profileName = "@profile.fullName";
                     $(document ).ready(function() {
@@ -65,6 +88,7 @@
                               followButton.text("Unfollow");
                               followButton.removeClass('btn-success');
                               followButton.addClass('btn-danger');
+                              followCallback();
                             })
                             .fail(function(data) {
                               console.log(data);
@@ -78,6 +102,7 @@
                               followButton.text("Follow");
                               followButton.removeClass('btn-danger');
                               followButton.addClass('btn-success');
+                              unfollowCallback();
                             })
                             .fail(function(data) {
                               console.log(data);
@@ -168,20 +193,38 @@
         <h4 class="modal-title" id="followingModalLabel">@profile.fullName</h4>
       </div>
       <div class="modal-body">
-        <table width="100%">
+        <table width="50%" style="float: left;">
           <thead>
-            <th>Following</th>
-            <th>Followed by</th>
+            <tr>
+              <th>Following</th>
+            </tr>
           </thead>
           <tbody>
             <!-- This is loaded when the page loads, might not reflect up-to-date data -->
-            @for(row <- profile.followedUsers.zipAll(profile.followers, "", "")) {
+            @for(row <- profile.followedEntities) {
+              @if(row.objectType == "user") {
+                <tr>
+                  @*TODO: Show name instead and fix viewProfile.*@
+                  @*<td><a href="@routes.Profile.viewProfile(Option(row.toString))">@row.toString</a></td>*@
+                  <td>@row.id.toString</td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+        <table id="followersTable" width="50%">
+          <thead>
+            <tr>
+              <th>Followed By</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- This is loaded when the page loads, might not reflect up-to-date data -->
+            @for(row <- profile.followers) {
               <tr>
                 @*TODO: Show name instead and fix viewProfile.*@
-                @*<td><a href="@routes.Profile.viewProfile(Option(row._1.toString))">@row._1.toString</a></td>*@
-                @*<td><a href="@routes.Profile.viewProfile(Option(row._2.toString))">@row._2.toString</a></td>*@
-                <td>@row._1.toString</td>
-                <td>@row._2.toString</td>
+                @*<td><a href="@routes.Profile.viewProfile(Option(row.toString))">@row.toString</a></td>*@
+                <td>@row.toString</td>
               </tr>
             }
           </tbody>

@@ -42,7 +42,7 @@ trait EventService {
 	 /**
 	 * Gets all the events from users, collections, datasets, and files and compliles them into 1 list
 	 */
-	 def getAllEvents(usersFollowed: List[UUID], collectionsFollowed: List[UUID], datasetsFollowed: List[UUID], filesFollowed: List[UUID]): List[Event]
+	 def getAllEvents(followedEntities:List[TypedID]): List[Event]
 
 	/**
 	* Gets all users for a specific list and specific type: object or source

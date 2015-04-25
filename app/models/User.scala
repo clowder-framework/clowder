@@ -4,37 +4,32 @@ import play.api.libs.json._
 import play.api.Play.current
 import java.security.MessageDigest
 
+import securesocial.core._
+
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
  *
  * @author Rob Kooper
  */
-case class User(
-  id: UUID = UUID.generate(),
-  firstName: String,
-  lastName: String,
-  fullName: String,
-  email: Option[String],
-  avatarUrl: Option[String] = None,
-  biography: Option[String] = None,
-  currentprojects: List[String] = List.empty,
-  institution: Option[String] = None,
-  orcidID: Option[String] = None,
-  pastprojects: List[String] = List.empty,
-  position: Option[String] = None,
-  viewed: Option[List[UUID]] = None,
-  followedFiles: List[UUID] = List.empty,
-  followedDatasets: List[UUID] = List.empty,
-  followedCollections: List[UUID] = List.empty,
-  followedUsers: List[UUID] = List.empty,
-  followers: List[UUID] = List.empty) {
+trait User extends Identity {
+  def id: UUID
+  def biography: Option[String]
+  def currentprojects: List[String]
+  def institution: Option[String]
+  def orcidID: Option[String]
+  def pastprojects: List[String]
+  def position: Option[String]
+  def friends: Option[List[String]]
+  def followedEntities: List[TypedID]
+  def followers: List[UUID]
+  def viewed: Option[List[UUID]]
 
   /**
    * Get the avatar URL for this user's profile
    * If user has no avatar URL, this will return a unique URL based on
    * the hash of this user's email address. Gravatar provide an image
    * as specified in application.conf
-   * 
+   *
    * @return Full gravatar URL for the user's profile picture
    */
   def getAvatarUrl: String = {
@@ -95,6 +90,29 @@ case class User(
 }
 
 
+case class MediciUser(
+  id: UUID = UUID.generate(),
+  identityId: IdentityId,
+  firstName: String,
+  lastName: String,
+  fullName: String,
+  email: Option[String],
+  authMethod: AuthenticationMethod,
+  avatarUrl: Option[String] = None,
+  oAuth1Info: Option[OAuth1Info] = None,
+  oAuth2Info: Option[OAuth2Info] = None,
+  passwordInfo: Option[PasswordInfo] = None,
+  biography: Option[String] = None,
+  currentprojects: List[String] = List.empty,
+  institution: Option[String] = None,
+  orcidID: Option[String] = None,
+  pastprojects: List[String] = List.empty,
+  position: Option[String] = None,
+  friends: Option[List[String]] = None,
+  followedEntities: List[TypedID] = List.empty,
+  followers: List[UUID] = List.empty,
+  viewed: Option[List[UUID]] = None
+  ) extends User
 
 case class Info(
   avatarUrl: Option[String],
@@ -105,8 +123,3 @@ case class Info(
   pastprojects: List[String],
   position: Option[String]
 )
-
-object User {
-  // takes care of automatic conversion to/from JSON
-  implicit val userFormat = Json.format[User]
-}

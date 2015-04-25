@@ -1,4 +1,11 @@
-@(dataset: models.Dataset, comments: List[Comment], previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]], md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any], collectionsOutside: List[models.Collection], collectionsInside: List[models.Collection], filesOutside: List[models.File], rdfExported: Boolean, viewerUser: Option[User])(implicit user: Option[securesocial.core.Identity])
+@(dataset: models.Dataset,
+        comments: List[Comment],
+        previewers: List[Previewer],
+        md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any],
+        collectionsOutside: List[models.Collection],
+        collectionsInside: List[models.Collection],
+        filesOutside: List[models.File],
+        rdfExported: Boolean)(implicit user: Option[models.User])
 
 
 @import helper._
@@ -56,127 +63,56 @@
 		</ul>
 	}
 
-@main("Dataset") {    
-
-    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
-    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
-	<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
-	<script>
-		tinymce.init({selector:'.notesArea',
-	    	theme: "modern",
-	    	plugins: [
-	    	          "advlist autolink lists link image charmap print preview hr anchor pagebreak",
-	    	          "searchreplace wordcount visualblocks visualchars code fullscreen",
-	    	          "insertdatetime media nonbreaking save table contextmenu directionality",
-	    	          "template paste textcolor"
-	    	      ],
-	    	      toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
-	    	      toolbar2: "print preview media | forecolor backcolor emoticons",
-	    	      image_advtab: true,
-	    	      templates: [
-	    	          {title: 'Test template 1', content: 'Test 1'},
-	    	          {title: 'Test template 2', content: 'Test 2'}
-	    	      ]
-	    });
-	</script>
-    
-	<div class="page-header">
-		<h1><span id="datasettitle">@dataset.name</span>
-			@if(user.isDefined) {
-				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-				@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-
-					@*<div class="btn-group btn-group-xs pull-right">*@
-						@*<button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"*@
-							@*class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">*@
-							@*<span class="glyphicon glyphicon-trash"></span> Delete</button>*@
-						@*<button id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"*@
-							@*class="btn btn-primary" title="Delete Dataset and Enclosed Contents">*@
-							@*<span class="glyphicon glyphicon-trash"></span> Delete All</button>*@
-					@*</div>*@
-
-					<div class="btn-group btn-group-xs pull-right">
-                        <button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-							type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete</button>
-						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-							<span class="caret"></span>
-							<span class="sr-only">Toggle Dropdown</span>
-						</button>
-						<ul class="dropdown-menu" role="menu">
-							<li>
-								<a id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-									href="#">Delete dataset and enclosed contents</a></li>
-						</ul>
-					</div>
-
-
-				} else {
-					@*<div class="btn-group btn-group-xs pull-right">*@
-						@*<button disabled id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"*@
-							@*class="btn btn-primary" title="Delete the Dataset but do not Delete Contents">*@
-							@*<span class="glyphicon glyphicon-trash"></span> Delete</button>*@
-						@*<button disabled id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"*@
-							@*class="btn btn-primary" title="Delete Dataset and Enclosed Contents">*@
-							@*<span class="glyphicon glyphicon-trash"></span> Delete All</button>*@
-					@*</div>*@
-
-					<div class="btn-group btn-group-xs pull-right">
-						<button disabled type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete</button>
-						<button disabled type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-							<span class="caret"></span>
-							<span class="sr-only">Toggle Dropdown</span>
-						</button>
-						<ul class="dropdown-menu" role="menu">
-							<li><a href="#">Delete dataset and enclosed contents</a></li>
-						</ul>
-					</div>
-
-				}
-
-                <div class="btn-group btn-group-xs pull-right" style="right: 10px;">
-                @if(!dataset.followers.contains(viewerUser.get.id)) {
-                    <button id="followButton" class="btn btn-success" href="#">Follow</button>
-                } else {
-                    <button id="followButton" class="btn btn-danger" href="#">Unfollow</button>
-                }
-                </div>
-            }
-		</h1>
-	</div>
-	
-	<div class="row">	
-	
+@main("Dataset") {
+	<div class="row">
 		<!-- left column -->
-		<div class="col-md-8" id="filePrevsCol">
-            @files.grid(dataset.files, dataset.id)
+		<div class="col-md-8 col-right-border">
 
-    		
+            <div class="row">
+                <div class="col-md-12" id="ds-title">
+                    <h1>@dataset.name</h1>
+                </div>
+            </div>
+
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
-			  <ul class="nav nav-tabs">
-			    <li class="active"><a href="#tab1" data-toggle="tab">Comments</a></li>
-			    <li><a href="#tab2" data-toggle="tab">Metadata</a></li>
-			    <li><a href="#tab3" data-toggle="tab">Notes</a></li>
-			  </ul>
-			  <div class="tab-content">
-			    <div class="tab-pane active" id="tab1">
-				      @if(user.isDefined) {
-				      	  @commentform(dataset.id.stringify, "dataset")
-				      }
-			 		  <div class="list-unstyled" id="reply_@dataset.id.toString">
-				      	 @comment(comments)
-				      </div> 
-			    </div>
-			    <div class="tab-pane" id="tab2">
-			      @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
-			    </div>
-			    <div class="tab-pane" id="tab3">
-			      @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
-			    </div>
-			  </div>
-			</div>	
-			    		
+                <ul class="nav nav-tabs">
+                    <li role="presentation" class="active"><a href="#tab-home" role="tab" data-toggle="tab">Home</a></li>
+                    <li role="presentation"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@(usrmd.size + md.size))</a></li>
+                    <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
+                    <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
+                        @datasets.home(dataset, previewers)
+                    </div>
+                  <div role="tabpanel" class="tab-pane" id="tab-files">
+                      @if(user.isDefined) {
+                          <div id="add-file-btn">
+                              <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
+                              class="btn btn-primary btn-sm requiresLogin" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                                  <span class="glyphicon glyphicon-export"></span> Add File
+                              </a>
+                          </div>
+                      }
+                      @files.grid(dataset.files, dataset.id)
+                  </div>
+                  <div role="tabpanel" class="tab-pane fade" id="tab-comments">
+                      @if(user.isDefined) {
+                          @commentform(dataset.id.stringify, "dataset")
+                      }
+                      <div class="list-unstyled" id="reply_@dataset.id.toString">
+                         @comment(comments)
+                      </div>
+                  </div>
+                  <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
+                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
+                  </div>
+                  <div role="tabpanel" class="tab-pane fade" id="tab-notes">
+                    @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
+                  </div>
+                </div>
+			</div>
 		</div>
 
 		<!-- right column -->
@@ -700,5 +636,30 @@
 			</div>
 		</div>
 	</div>
+
+    @* FIXME Commented out since it creates some issues with dataset previewers *@
+    @*<script src="@routes.Assets.at("javascripts/tabsInURL.js")" type="text/javascript"></script>*@
+
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
+    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+    <script>
+        tinymce.init ( { selector : '.notesArea',
+            theme : "modern",
+            plugins :[
+                "advlist autolink lists link image charmap print preview hr anchor pagebreak",
+                "searchreplace wordcount visualblocks visualchars code fullscreen",
+                "insertdatetime media nonbreaking save table contextmenu directionality",
+                "template paste textcolor"
+            ],
+            toolbar1 : "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | " +
+                        "bullist numlist outdent indent | link image",
+            toolbar2 : "print preview media | forecolor backcolor emoticons",
+            image_advtab : true,
+            templates :[ { title : 'Test template 1', content : 'Test 1' }, { title : 'Test template 2', content : 'Test 2' }
+            ]
+            } ) ;
+    </script>
 }
 

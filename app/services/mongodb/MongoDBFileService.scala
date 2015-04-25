@@ -22,8 +22,6 @@ import scala.collection.JavaConversions._
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.WriteConcern
 import play.api.Logger
-import com.mongodb.casbah.gridfs.{GridFSInputFile, GridFS}
-import scala.Some
 import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
 import models.File
@@ -34,9 +32,6 @@ import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
-import play.api.http.ContentTypes
-import play.api.libs.MimeTypes
-import scala.collection.mutable.MutableList
 
 
 /**
@@ -134,80 +129,17 @@ class MongoDBFileService @Inject() (
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
-    // create the element to hold the metadata
-    val files = current.plugin[MongoSalatPlugin] match {
-      case None    => {
-        Logger.error("No MongoSalatPlugin")
-        return None
-      }
-      case Some(x) =>  x.gridFS("uploads")
-    }
-
-    // required to avoid race condition on save
-    files.db.setWriteConcern(WriteConcern.Safe)
-
-    // use a special case if the storage is in mongo as well
-    val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
-    val mongoFile = if (usemongo) {
-      // leverage of the fact that we save in mongo
-      val x = files.createFile(inputStream)
-      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
-      x.put("path", id)
-      x
-    } else {
-      // write empty array
-      val x = files.createFile(Array[Byte]())
-      val id = UUID(x.getAs[ObjectId]("_id").get.toString)
-
-      // save the bytes, metadata goes to mongo
-      x.put("path", storage.save(inputStream, "uploads", id))
-      x
-    }
-
-    var ct = contentType.getOrElse(ContentTypes.BINARY)
-    if (ct == ContentTypes.BINARY) {
-      ct = MimeTypes.forFileName(filename).getOrElse(ContentTypes.BINARY)
-    }
-    mongoFile.filename = filename
-    mongoFile.contentType = ct
-    mongoFile.put("showPreviews", showPreviews)
-    mongoFile.put("author", SocialUserDAO.toDBObject(author))
-    mongoFile.put("licenseData", grater[LicenseData].asDBObject(License.fromAppConfig()))
-    mongoFile.save
-
-    // resave the file to make sure all metadata is saved to mongo
-    get(UUID(mongoFile.getAs[ObjectId]("_id").get.toString))
+    val extra = Map("showPreviews" -> showPreviews,
+                    "author" -> SocialUserDAO.toDBObject(author),
+                    "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
+    MongoUtils.writeBlob(inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(id => get(id))
   }
 
   /**
    * Get blob.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => {
-        // use a special case if the storage is in mongo as well
-        val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
-        val inputStream = if (usemongo) {
-          file.inputStream
-        } else {
-          file.getAs[String]("path") match {
-            case Some(path) => {
-              storage.load(path, "uploads") match {
-                case Some(is) => is
-                case None => return None
-              }
-            }
-            case None => return None
-          }
-        }
-        Some((inputStream,
-            file.getAs[String]("filename").getOrElse("unknown-name"),
-            file.getAs[String]("contentType").getOrElse("unknown"),
-            file.getAs[Long]("length").getOrElse(0l)))
-      }
-      case None => None
-    }
+    MongoUtils.readBlob(id, "uploads", "medici2.mongodb.storeFiles")
   }
 
   def index(id: UUID) {
@@ -665,13 +597,7 @@ class MongoDBFileService @Inject() (
         }
 
         // finally delete the actual file
-        val usemongo = current.configuration.getBoolean("medici2.mongodb.storeFiles").getOrElse(storage.isInstanceOf[MongoDBByteStorage])
-        if (usemongo) {
-          val files = GridFS(SocialUserDAO.dao.collection.db, "uploads")
-          files.remove(new ObjectId(id.stringify))
-        } else {
-          storage.delete(file.id.stringify, "uploads")
-        }
+        MongoUtils.removeBlob(id, "uploads", "medici2.mongodb.storeFiles")
       }
       case None => Logger.debug("File not found")
     }

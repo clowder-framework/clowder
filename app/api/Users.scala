@@ -24,7 +24,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   @ApiOperation(value = "List all users in the system",
     responseClass = "User", httpMethod = "GET")
   def list() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.UserAdmin)) { request =>
-    Ok(Json.toJson(users.list))
+    Ok(Json.toJson(users.list.map(userToJSON)))
   }
 
   /**
@@ -34,7 +34,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     responseClass = "User", httpMethod = "GET")
   def findById(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
     users.findById(id) match {
-      case Some(x) => Ok(Json.toJson(x))
+      case Some(x) => Ok(userToJSON(x))
       case None => BadRequest("no user found with that id.")
     }
   }
@@ -46,7 +46,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     responseClass = "User", httpMethod = "GET")
   def findByEmail(email: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
     users.findByEmail(email) match {
-      case Some(x) => Ok(Json.toJson(x))
+      case Some(x) => Ok(userToJSON(x))
       case None => BadRequest("no user found with that email.")
     }
   }
@@ -75,7 +75,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   @ApiOperation(value = "Follow a user",
     responseClass = "None", httpMethod = "POST")
   def follow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
-    implicit val user = request.mediciUser
+    implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
@@ -92,7 +92,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
   def unfollow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
-    implicit val user = request.mediciUser
+    implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
@@ -104,5 +104,14 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
         Ok(Json.obj("status" -> "fail"))
       }
     }
+  }
+
+  def userToJSON(user: User): JsValue = {
+    Json.obj("id" -> user.id.stringify,
+      "firstName" -> user.firstName,
+      "lastName" -> user.lastName,
+      "fullName" -> user.fullName,
+      "email" -> user.email,
+      "avatar" -> user.avatarUrl)
   }
 }

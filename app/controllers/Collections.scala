@@ -17,6 +17,7 @@ import scala.collection.mutable.ListBuffer
 import services.{ DatasetService, CollectionService }
 import services._
 import org.apache.commons.lang.StringEscapeUtils
+import models.User
 
 object ThumbnailFound extends Exception {}
 
@@ -187,7 +188,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   def collection(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowCollection)) {
     implicit request =>
       Logger.debug(s"Showing collection $id")
-      implicit val user = request.user
+      implicit val user = request.user match {
+        case Some(x: User) => Some(x)
+        case _ => None
+      }
+
       collections.get(id) match {
         case Some(collection) => { 
           Logger.debug(s"Found collection $id")
@@ -208,7 +213,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           Logger.debug("Num previewers " + filteredPreviewers.size)
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList, request.mediciUser))
+          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

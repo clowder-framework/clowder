@@ -51,15 +51,10 @@ class MongoDBExtractorService extends ExtractorService {
 
    
   def insertServerIPs(iplist: List[String]) = {
-
-    val coll = ExtractorServer.dao.collection
-    coll.drop()
-    Logger.debug("[mongodbextractorservice]--extractor.servers: collection dropped")
     for (sip <- iplist) {
-     ExtractorServer.insert(new ExtractorServer(sip), WriteConcern.Safe)
-     Logger.debug("[mongodbextractorservice]--extractor.servers: document inserted : " + sip)
+      ExtractorServer.insert(new ExtractorServer(sip), WriteConcern.Safe)
+      Logger.debug("[mongodbextractorservice]--extractor.servers: document inserted : " + sip)
     }
-    
   }
 
   def getExtractorNames() = {
@@ -82,16 +77,24 @@ class MongoDBExtractorService extends ExtractorService {
   }
 
  
-   def insertExtractorNames(exlist: List[String]) = {
-    val qcoll = ExtractorNames.dao.collection
-    qcoll.drop()
-    Logger.debug("[mongodbextractorservice]--extractor.names: collection dropped")
+  def insertExtractorNames(exlist: List[String]) = {
     for (qn <- exlist) {
       Logger.debug("[mongodbextractorservice]--extractor.names: document inserted: " + qn)
       ExtractorNames.insert(new ExtractorNames(qn),WriteConcern.Safe)
-     
     }
   }
+   
+  def dropAllExtractorStatusCollection()={
+    val exNames = ExtractorNames.dao.collection
+    val exDetails = ExtractorDetailDAO.dao.collection
+    val exServers = ExtractorServer.dao.collection
+    val exInputTypes = ExtractorInputType.dao.collection
+    exNames.drop()
+    exDetails.drop()
+    exServers.drop()
+    exInputTypes.drop()
+    Logger.debug("Collections Dropped: extractors.names,extractors.details,extractor.servers,exractor.inputtypes")
+  } 
 //------------------------Temporary fix--------------------------------
  /**
  * 
@@ -100,14 +103,10 @@ class MongoDBExtractorService extends ExtractorService {
  * 
  * * 
  */
- def insertExtractorDetail(exDetails: List[ExtractorDetail]) = {
-    val qcoll = ExtractorDetailDAO.dao.collection
-    qcoll.drop()
-    Logger.debug("[mongodbextractorservice]--extractor.details: collection dropped")
+  def insertExtractorDetail(exDetails: List[ExtractorDetail]) = {
     for (qn <- exDetails) {
       Logger.debug("[mongodbextractorservice]--extractor.details: document inserted: " + qn)
       ExtractorDetailDAO.insert(qn,WriteConcern.Safe)
-     
     }
   }
  
@@ -142,10 +141,7 @@ class MongoDBExtractorService extends ExtractorService {
     list_inputs
   }
 
- def insertInputTypes(inputTypes: List[String]) = {
-    val inputcoll = ExtractorInputType.dao.collection
-    inputcoll.drop()
-    Logger.debug("[mongodbextractorservice]--extractor.inputtypes: collection dropped")
+  def insertInputTypes(inputTypes: List[String]) = {
     for (ipt <- inputTypes) {
       ExtractorInputType.insert(new ExtractorInputType(ipt),WriteConcern.Safe)
       Logger.debug("[mongodbextractorservice]--extractor.inputtypes: document inserted: " + ipt)

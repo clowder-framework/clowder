@@ -1,8 +1,6 @@
 package services.mongodb
 
-import models.Event
-import models.UUID
-import models.User
+import models._
 import java.util.Date
 import services.EventService
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -52,8 +50,8 @@ class MongoDBEventService extends EventService {
     }
   }
 
-  def getAllEvents(usersFollowed: List[UUID], collectionsFollowed: List[UUID], datasetsFollowed: List[UUID], filesFollowed: List[UUID]) = {
-    
+  def getAllEvents(followedEntities:List[TypedID]) = {
+    /**
     var userEvents = getAllEventsOfType(usersFollowed, "user._id")
 
     var collections_objects = getAllEventsOfType(collectionsFollowed, "object_id")
@@ -72,7 +70,16 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, collectionEvents)
     eventsList = List.concat(eventsList, datasetEvents)
     eventsList = List.concat(eventsList, fileEvents)
-    
+    */
+    var followedIDs = (for (typedid <- followedEntities) yield typedid.id).toList
+
+    var userEvents = getAllEventsOfType(followedIDs, "user._id")
+    var objectsEvents = getAllEventsOfType(followedIDs, "object_id")
+    var sourceEvents = getAllEventsOfType(followedIDs, "source_id")
+
+    var eventsList = List.concat(userEvents, objectsEvents)
+    eventsList = List.concat(eventsList, sourceEvents)
+
     eventsList = eventsList.sortBy(_.created)
     eventsList = eventsList.distinct
     eventsList

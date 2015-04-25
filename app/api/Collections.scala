@@ -58,7 +58,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(collection) => {
           datasets.get(datasetId) match {
             case Some(dataset) => {
-              events.addSourceEvent(request.mediciUser , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection") 
+              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection") 
             }
           }
 
@@ -107,7 +107,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(collection) => {
           datasets.get(datasetId) match {
             case Some(dataset) => {
-              events.addSourceEvent(request.mediciUser , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection") 
+              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection") 
             }
           }
         }
@@ -125,7 +125,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        events.addObjectEvent(request.mediciUser , collection.id, collection.name, "delete_collection") 
+        events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection") 
         collections.delete(collectionId)
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
@@ -211,7 +211,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "POST")
   def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
-      val user = request.mediciUser
+      val user = request.user
 
       user match {
         case Some(loggedInUser) => {
@@ -238,7 +238,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "POST")
   def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
     request =>
-      val user = request.mediciUser
+      val user = request.user
 
       user match {
         case Some(loggedInUser) => {
