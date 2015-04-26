@@ -420,7 +420,6 @@ POST           /api/users/createNewListInUser                                   
 POST 			/api/users/createNewListInUser 											@api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID)
-POST           /api/users/getTopRecommendations	@api.Users.getTopRecommendations(sourceID: UUID, sourceType: String, num: Int)
 
 
 # ----------------------------------------------------------------------

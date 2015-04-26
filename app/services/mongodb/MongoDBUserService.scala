@@ -213,30 +213,27 @@ class MongoDBUserService extends services.UserService {
    * return List of tuples {id, objectType, score}
    *   representing the top N recommendations for an object with followerIDs
    */
-  override def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int) {
+  override def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int): List[TypedID] = {
     val followerIDObjects = followerIDs.map(id => new ObjectId(id.stringify))
     val excludeIDObjects = excludeIDs.map(id => new ObjectId(id.stringify))
-    // TODO - may need MongoDBList.newBuilder.insertAll
 
-    val aggregate = MongoDBObject(
-      "aggregate" -> "MyCollection", // "social.users"
-      "pipeline" -> MongoDBList(
-        MongoDBObject("$match" -> MongoDBObject("$in" -> followerIDs)),
-        MongoDBObject("$unwind" -> "$followedEntities"), // might need to add arrow
+    val recs = UserDAO.dao.collection.aggregate(
+        MongoDBObject("$match" -> MongoDBObject("_id" -> MongoDBObject("$in" -> followerIDObjects))),
+        MongoDBObject("$unwind" -> "$followedEntities"),
         MongoDBObject("$group" -> MongoDBObject(
           "_id" -> "$followedEntities._id",
-          "type" -> MongoDBObject("$first" -> "$followedEntities.objectType"),
+          "objectType" -> MongoDBObject("$first" -> "$followedEntities.objectType"),
           "score" -> MongoDBObject("$sum" -> 1)
         )),
-        MongoDBObject("$match" -> MongoDBObject("$nin" -> excludeIDs)), // TODO - do this on entities list, not users list
+        // TODO - remove things I already follow with excludeIDObjects list
         MongoDBObject("$sort" -> MongoDBObject("score" -> -1)),
         MongoDBObject("$limit" -> num)
-      )
     )
 
-    UserDAO.dao.collection.db.command(aggregate).result
-    //dao.collection.aggregate(
-    //MongoDBObject(
+    recs.results.map(entity => new TypedID(
+      UUID(entity.as[ObjectId]("_id").toString),
+      entity.as[String]("objectType"))
+    ).toList
   }
 }
 

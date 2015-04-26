@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, User}
+import models.{UUID, User, TypedID}
 import securesocial.core.Identity
 import util.Direction._
 
@@ -134,5 +134,5 @@ trait UserService  {
   /**
    * return List[TypedID] - the top N recommendations rooted from sourceID
    */
-  def getTopRecommendations(followerIDs: List[UUID], num: Int)
+  def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int): List[TypedID]
 }

@@ -562,13 +562,13 @@
 
 								var $recommendDiv = $('#recommendDiv');
 								if (!$recommendDiv.is(':visible')) {
-									var recommendList = response['recommendList'];
+									var recommendList = response['recommendations'];
 									if (recommendList !== undefined && recommendList.length != 0) {
 										var $recommendList = $('#recommendList');
 										for (var i = 0; i < recommendList.length; i++) {
 											var recommendation = recommendList[i];
 											var id = recommendation['id'];
-											var name = recommendation['name'];
+											var name = id;
 											var objectType = recommendation['objectType'];
 
 											var route = '';
