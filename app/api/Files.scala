@@ -1825,7 +1825,9 @@ class Files @Inject()(
             case Some(file) => {
               files.addFollower(id, loggedInUser.id)
               userService.followFile(loggedInUser.id, id)
-              Ok
+
+              val recommendList = List(new MiniEntity(UUID.generate(), "test", "file"))  // call get recommendations
+              Ok(toJson(Map("recommendList" -> recommendList)))
             }
             case None => {
               NotFound

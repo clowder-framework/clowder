@@ -2,7 +2,7 @@ package api
 
 import play.api.Logger
 import play.api.Play.current
-import models.{UUID, Collection}
+import models._
 import services._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
@@ -192,7 +192,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(collection) => {
               collections.addFollower(id, loggedInUser.id)
               userService.followCollection(loggedInUser.id, id)
-              Ok
+
+              val recommendList = List(new MiniEntity(UUID.generate(), "test", "collection"))  // call get recommendations
+              Ok(toJson(Map("recommendList" -> recommendList)))
             }
             case None => {
               NotFound

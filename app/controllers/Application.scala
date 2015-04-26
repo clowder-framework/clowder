@@ -119,7 +119,11 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
         api.routes.javascript.Projects.addproject,
-        api.routes.javascript.Institutions.addinstitution
+        api.routes.javascript.Institutions.addinstitution,
+        controllers.routes.javascript.Profile.viewProfileUUID,
+        controllers.routes.javascript.Files.file,
+        controllers.routes.javascript.Datasets.dataset,
+        controllers.routes.javascript.Collections.collection
       )
     ).as(JSON) 
   }

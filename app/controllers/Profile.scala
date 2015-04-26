@@ -5,7 +5,7 @@ import services.mongodb.MongoDBProjectService
 import services.mongodb.MongoDBInstitutionService
 import play.api.data.Form
 import play.api.data.Forms._
-import models.{User, Info}
+import models.{User, Info, UUID}
 import play.api.Logger
 import javax.inject.Inject
 
@@ -133,6 +133,33 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
             Redirect(routes.RedirectUtility.authenticationRequired())
           }
         }
+      }
+    }
+  }
+
+  def viewProfileUUID(uuid: UUID) = SecuredAction() { request =>
+    implicit val user = request.user
+    val viewerUser = request.user
+    var ownProfile: Option[Boolean] = None
+    val muser = users.findById(uuid)
+    muser match {
+      case Some(existingUser) => {
+        viewerUser match {
+          case Some(loggedInUser) => {
+            if (loggedInUser.id == existingUser.id)
+              ownProfile = Option(true)
+            else
+              ownProfile = None
+          }
+          case None => {
+            ownProfile = None
+          }
+        }
+        Ok(views.html.profile(existingUser, ownProfile))
+      }
+      case None => {
+        Logger.error("no user model exists for " + uuid.stringify)
+        InternalServerError
       }
     }
   }

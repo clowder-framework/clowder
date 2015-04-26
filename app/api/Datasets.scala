@@ -1301,7 +1301,9 @@ class Datasets @Inject()(
             case Some(dataset) => {
               datasets.addFollower(id, loggedInUser.id)
               userService.followDataset(loggedInUser.id, id)
-              Ok
+
+              val recommendList = List(new MiniEntity(UUID.generate(), "test", "dataset"))  // call get recommendations
+              Ok(toJson(Map("recommendList" -> recommendList)))
             }
             case None => {
               NotFound
