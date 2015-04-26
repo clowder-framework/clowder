@@ -118,6 +118,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.unfollow,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
+        api.routes.javascript.Users.getTopRecommendations,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution
       )

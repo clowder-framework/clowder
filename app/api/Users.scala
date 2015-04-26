@@ -3,17 +3,22 @@ package api
 import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
-import models.{UUID, User}
+import models.{UUID, User, File, Dataset, Collection}
 import play.api.libs.json._
 import play.api.mvc.Action
-import services.UserService
+import services.{UserService, FileService, DatasetService, CollectionService}
 
 /**
  * API to interact with the users.
  *
  * @author Rob Kooper
  */
-class Users @Inject()(users: UserService) extends ApiController {
+class Users @Inject()(
+  users: UserService,
+  files: FileService,
+  datasets: DatasetService,
+  collections: CollectionService) extends ApiController {
+
   /**
    * Returns a list of all users in the system.
    */
@@ -97,6 +102,65 @@ class Users @Inject()(users: UserService) extends ApiController {
       case None => {
         Ok(Json.obj("status" -> "fail"))
       }
+    }
+  }
+
+  @ApiOperation(value = "Fetch the top N recommendations",
+    responseClass = "None", httpMethod = "GET")
+  def getTopRecommendations(sourceID: UUID, sourceType: String, num: Int) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+    val sourceFollowerIDs = loadFollowersFromTypedID(sourceID, sourceType)
+    sourceFollowerIDs match {
+      case Some(sourceFollowerIDs) => {
+        implicit val user = request.user
+          user match {
+            case Some(loggedInUser) => {
+              val excludeIDs = loggedInUser.followedEntities.map(typedId => typedId.id))
+              users.followUser(followeeUUID, followerUUID)
+        Ok(Json.obj("status" -> "success"))
+      }
+      case None => {
+        Ok(Json.obj("status" -> "fail"))
+      }
+    }
+        val results = users.getTopRecommendations(sourceFollowerIDs, num)
+        Ok(Json.obj("status" -> "put ids in a json"))
+        // TODO - wrap up recommended ids in a JSON
+      }
+      case None => {
+        Ok(Json.obj("status" -> "put empty id list here"))
+        // return empty JSON
+      }
+    }
+  }
+
+  // helper function for the above recommendations algo
+  def loadFollowersFromTypedID(id: UUID, sourceType: String): Option[List[UUID]] = {
+    sourceType match {
+      case "user" => {
+        users.findById(id) match {
+          case Some(model) => Option(model.followers)
+          case None => None
+        }
+      }
+      case "file" => {
+        files.get(id) match {
+          case Some(model) => Option(model.followers)
+          case None => None
+        }
+      }
+      case "dataset" => {
+        datasets.get(id) match {
+          case Some(model) => Option(model.followers)
+          case None => None
+        }
+      }
+      case "collection" => {
+        collections.get(id) match {
+          case Some(model) => Option(model.followers)
+          case None => None
+        }
+      }
+      case _ => None
     }
   }
 

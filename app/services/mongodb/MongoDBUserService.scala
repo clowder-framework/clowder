@@ -6,6 +6,7 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.MongoDBList
 import com.mongodb.util.JSON
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import models.{TypedID, MediciUser, UUID, User}
@@ -206,6 +207,36 @@ class MongoDBUserService extends services.UserService {
                         $pull("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(followeeId, "user"))))
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
                         $pull("followers" -> new ObjectId(followerId.stringify)))
+  }
+
+  /**
+   * return List of tuples {id, objectType, score}
+   *   representing the top N recommendations for an object with followerIDs
+   */
+  override def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int) {
+    val followerIDObjects = followerIDs.map(id => new ObjectId(id.stringify))
+    val excludeIDObjects = excludeIDs.map(id => new ObjectId(id.stringify))
+    // TODO - may need MongoDBList.newBuilder.insertAll
+
+    val aggregate = MongoDBObject(
+      "aggregate" -> "MyCollection", // "social.users"
+      "pipeline" -> MongoDBList(
+        MongoDBObject("$match" -> MongoDBObject("$in" -> followerIDs)),
+        MongoDBObject("$unwind" -> "$followedEntities"), // might need to add arrow
+        MongoDBObject("$group" -> MongoDBObject(
+          "_id" -> "$followedEntities._id",
+          "type" -> MongoDBObject("$first" -> "$followedEntities.objectType"),
+          "score" -> MongoDBObject("$sum" -> 1)
+        )),
+        MongoDBObject("$match" -> MongoDBObject("$nin" -> excludeIDs)), // TODO - do this on entities list, not users list
+        MongoDBObject("$sort" -> MongoDBObject("score" -> -1)),
+        MongoDBObject("$limit" -> num)
+      )
+    )
+
+    UserDAO.dao.collection.db.command(aggregate).result
+    //dao.collection.aggregate(
+    //MongoDBObject(
   }
 }
 

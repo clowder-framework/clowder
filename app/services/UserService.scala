@@ -130,4 +130,9 @@ trait UserService  {
    * Unfollow a user.
    */
   def unfollowUser(followeeId: UUID, followerId: UUID)
+
+  /**
+   * return List[TypedID] - the top N recommendations rooted from sourceID
+   */
+  def getTopRecommendations(followerIDs: List[UUID], num: Int)
 }
