@@ -41,6 +41,7 @@
                     var recommendList = response['recommendList'];
                     if (recommendList !== undefined && recommendList.length != 0) {
                         var $recommendList = $('#recommendList');
+                        $recommendList.empty();
                         for (var i = 0; i < recommendList.length; i++) {
                             var recommendation = recommendList[i];
                             var id = recommendation['id'];
