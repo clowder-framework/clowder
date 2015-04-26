@@ -54,6 +54,21 @@
                       }
                     </button>
                   </h4>
+                  <div id="recommendDiv" class="row"
+                      style="display: none;
+                              border: 1px solid #e3e3e3;
+                              border-radius: 4px;">
+                    <div>
+                      <div style="float: left;">You might want to follow</div>
+                      <div style="float: right;">
+                        <a href="javascript:$('#recommendDiv').slideToggle('slow');">Close</a>
+                      </div>
+                    </div>
+                    <div style="clear: both;">
+                      <ul id="recommendList" style="text-align: left;"></ul>
+                    </div>
+                  </div>
+
                   <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
                   <script>
                     function followCallback() {
@@ -88,6 +103,42 @@
                               followButton.removeClass('btn-success');
                               followButton.addClass('btn-danger');
                               followCallback();
+
+                              var $recommendDiv = $('#recommendDiv');
+                              if (!$recommendDiv.is(':visible')) {
+                                  var recommendList = data['recommendList'];
+                                  if (recommendList !== undefined && recommendList.length != 0) {
+                                      var $recommendList = $('#recommendList');
+                                      $recommendList.empty();
+                                      for (var i = 0; i < recommendList.length; i++) {
+                                          var recommendation = recommendList[i];
+                                          var id = recommendation['id'];
+                                          var name = recommendation['name'];
+                                          var objectType = recommendation['objectType'];
+
+                                          var route = '';
+                                          switch (objectType) {
+                                              case 'user':
+                                                  route = jsRoutes.controllers.Profile.viewProfileUUID(id);
+                                                  break;
+                                              case 'file':
+                                                  route = jsRoutes.controllers.Files.file(id);
+                                                  break;
+                                              case 'dataset':
+                                                  route = jsRoutes.controllers.Datasets.dataset(id);
+                                                  break;
+                                              case 'collection':
+                                                  route = jsRoutes.controllers.Collections.collection(id);
+                                                  break;
+                                          }
+                                          $recommendList.append('<li><a href="' + route.url + '">' +
+                                              name + '</a></li>'
+                                          );
+                                      }
+
+                                      $recommendDiv.slideToggle('slow');
+                                  }
+                              }
                             })
                             .fail(function(data) {
                               console.log(data);
