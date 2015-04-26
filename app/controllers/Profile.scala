@@ -17,7 +17,7 @@ import java.util.Date
 
 
 
-class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService) extends  SecuredController {
+class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService, scheduler: SchedulerService) extends  SecuredController {
 
   val bioForm = Form(
     mapping(
@@ -27,7 +27,8 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
       "institution" -> optional(text),
       "orcidID" -> optional(text),
       "pastprojects" -> list(text),
-      "position" -> optional(text)
+      "position" -> optional(text),
+      "emailsettings" -> optional(text)
     )(Info.apply)(Info.unapply)
   )
 
@@ -41,6 +42,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
     var orcidID: Option[String] = None
     var pastprojects: List[String] = List.empty
     var position: Option[String] = None
+    var emailsettings: Option[String] = None
     user match {
       case Some(muser) => {
         muser.avatarUrl match {
@@ -79,6 +81,8 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
           case None => position = None
         }
 
+        emailsettings = None
+
         val newbioForm = bioForm.fill(Info(
           avatarUrl,
           biography,
@@ -86,11 +90,13 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
           institution,
           orcidID,
           pastprojects,
-          position
+          position,
+          emailsettings
         ))
         var allProjectOptions: List[String] = projects.getAllProjects()
         var allInstitutionOptions: List[String] = institutions.getAllInstitutions()
-        Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions))
+        var emailtimes: List[String] = List("daily", "hourly", "weekly", "none")
+        Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions, emailtimes))
       }
       case None => {
         Redirect(routes.RedirectUtility.authenticationRequired())
@@ -170,7 +176,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
   def submitChanges = SecuredAction() {  implicit request =>
     implicit val user  = request.user
     bioForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty)),
+      errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty, List.empty)),
       form => {
         user match {
           case Some(x) => {
@@ -189,6 +195,19 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
                     users.updateUserField(addr.toString(), "position", form.position)
                     
                     events.addUserEvent(modeluser, "edit_profile")
+
+                    var emailsetting = form.emailsettings
+                    modeluser match {
+                      case Some(x) => {
+                        emailsetting match {
+                          case Some (setting) => {
+                            scheduler.updateEmailJob(x.id, "Digest[" + x.id + "]", setting)
+                            }
+                          }
+                        }
+                      }
+                    
+                    
                     
                   
                  

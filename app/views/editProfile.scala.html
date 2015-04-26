@@ -1,4 +1,4 @@
-@(myForm: Form[Info], allInstitutionOptions: List[String], allProjectOptions: List[String])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(myForm: Form[Info], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: List[String])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -34,6 +34,9 @@
           @select(myForm("currentprojects"), options(allProjectOptions), '_label -> "Current Projects", 'multiple -> "true", 'class -> "chosen-select", 'placeholder -> "Add your projects")
 
           @select(myForm("pastprojects"), options(allProjectOptions), '_label -> "Past Projects", 'multiple -> "true", 'class -> "chosen-select", 'placeholder -> "Add your projects")
+
+          @select(myForm("emailsettings"), options(emailtimes), '_label -> "Email Settings")
+
         </fieldset>
         <div class="form-actions" style="margin-top: 16px;">
           <input type="submit" class="btn btn-default" value="Submit Changes"/>

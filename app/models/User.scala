@@ -121,5 +121,6 @@ case class Info(
   institution: Option[String],
   orcidID: Option[String] = None,
   pastprojects: List[String],
-  position: Option[String]
+  position: Option[String],
+  emailsettings: Option[String] = None
 )

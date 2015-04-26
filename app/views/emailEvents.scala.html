@@ -1,0 +1,26 @@
+@(events: List[models.Event])(implicit user: Option[securesocial.core.Identity] = None) 
+@import _root_.util.Formatters
+<h1> Clowder Email Digest </h1>
+      @for(event <- events) {
+          <div class="panel panel-default">
+              <div class="panel-body">
+                  <div class="media">
+                      <div class="media-left">
+
+                      </div>
+                      <p>
+                      <div class="media-body">
+                     
+                              @event.user.fullName
+                          @newsFeedCardEmail(event)
+                          
+                          
+                      </div>
+                      <div class="media-right">
+                          @Formatters.humanReadableTimeSince(event.created)
+                      </div>
+                      </p>
+                  </div>
+              </div>
+          </div>
+      }
