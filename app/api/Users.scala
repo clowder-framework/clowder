@@ -3,7 +3,7 @@ package api
 import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
-import models.{UUID, User}
+import models.{MiniEntity, UUID, User}
 import play.api.libs.json._
 import play.api.mvc.Action
 import services.UserService
@@ -76,7 +76,9 @@ class Users @Inject()(users: UserService) extends ApiController {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
         users.followUser(followeeUUID, followerUUID)
-        Ok(Json.obj("status" -> "success"))
+        val recommendList = List(new MiniEntity(UUID.generate(), "test", "user"))  // TODO: call get recommendations
+
+        Ok(Json.obj("status" -> "success", "recommendList" -> recommendList))
       }
       case None => {
         Ok(Json.obj("status" -> "fail"))
