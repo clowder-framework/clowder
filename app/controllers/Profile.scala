@@ -179,27 +179,20 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
             email match {
               case Some(addr) => {
                 implicit val modeluser = users.findByEmail(addr.toString())
-
-                    users.updateUserField(addr.toString(), "avatarUrl", form.avatarUrl)
-                    users.updateUserField(addr.toString(), "biography", form.biography)
-                    users.updateUserField(addr.toString(), "currentprojects", form.currentprojects)
-                    users.updateUserField(addr.toString(), "institution", form.institution)
-                    users.updateUserField(addr.toString(), "orcidID", form.orcidID)
-                    users.updateUserField(addr.toString(), "pastprojects", form.pastprojects)
-                    users.updateUserField(addr.toString(), "position", form.position)
-                    
-                    events.addUserEvent(modeluser, "edit_profile")
-                    
-                  
-                 
-                  Redirect(routes.Profile.viewProfile(email))
-                  
-                
+                users.updateUserField(addr.toString(), "avatarUrl", form.avatarUrl)
+                users.updateUserField(addr.toString(), "biography", form.biography)
+                users.updateUserField(addr.toString(), "currentprojects", form.currentprojects)
+                users.updateUserField(addr.toString(), "institution", form.institution)
+                users.updateUserField(addr.toString(), "orcidID", form.orcidID)
+                users.updateUserField(addr.toString(), "pastprojects", form.pastprojects)
+                users.updateUserField(addr.toString(), "position", form.position)    
+                events.addUserEvent(modeluser, "edit_profile")
+                Redirect(routes.Profile.viewProfile(email))
               }
             }
-          }
+          } 
           case None => {
-            Redirect(routes.RedirectUtility.authenticationRequired())
+          Redirect(routes.RedirectUtility.authenticationRequired())
           }
         }
       }

@@ -1687,10 +1687,7 @@ class Files @Inject()(
     request =>
       files.get(id) match {
         case Some(file) => {
-
-            events.addObjectEvent(request.user, file.id, file.filename, "delete_file")
-      
-          
+          events.addObjectEvent(request.user, file.id, file.filename, "delete_file")
            //this stmt has to be before files.removeFile
           Logger.debug("Deleting file from indexes" + file.filename)
           current.plugin[VersusPlugin].foreach {        

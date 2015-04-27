@@ -7,7 +7,6 @@ import java.util.Date
  * @author Varun Kethineedi
  */
 
-
  case class Event(
  	user: MiniUser,
  	object_id: Option[UUID] = None,
