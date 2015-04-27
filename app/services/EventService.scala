@@ -58,6 +58,9 @@ trait EventService {
 
 	def getEvents(id: String, id_type: String): SalatMongoCursor[Event]
 
+	/**
+	* Get all the events which come after a specificied time
+	*/
 
 	def getAllEventsByTime(followedEntities:List[TypedID], time: Date): List[Event]
 

@@ -34,7 +34,6 @@ class MongoDBSchedulerService extends SchedulerService {
     for (job <- jobList){
       checkJob = true 
     }
-
     return checkJob
   }
 
@@ -76,7 +75,6 @@ class MongoDBSchedulerService extends SchedulerService {
     if (jobExists(name) == false) {
       Jobs.insert(new TimerJob(name, None, None, None, None, Option("EmailDigest"), Option(id), None, Option(new Date())))
     }
-
     if (setting == "none"){
       deleteJob(name)
     }

@@ -202,18 +202,11 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
                         emailsetting match {
                           case Some (setting) => {
                             scheduler.updateEmailJob(x.id, "Digest[" + x.id + "]", setting)
-                            }
                           }
                         }
                       }
-                    
-                    
-                    
-                  
-                 
+                    }
                   Redirect(routes.Profile.viewProfile(email))
-                  
-                
               }
             }
           }

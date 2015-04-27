@@ -48,22 +48,14 @@ import play.api.libs.concurrent.Akka
     val users: UserService =  DI.injector.getInstance(classOf[UserService])
     val events: EventService =  DI.injector.getInstance(classOf[EventService])
     
-
     def runScheduledJobs() = {
-    	val curr_time = Calendar.getInstance().getTime()
-
-  	val minute = new SimpleDateFormat("m").format(curr_time)
-  	val hour = new SimpleDateFormat("H").format(curr_time)
-  	val day_of_week = new SimpleDateFormat("u").format(curr_time)
-  	val day_of_month = new SimpleDateFormat("d").format(curr_time)
-
-
-  	var emailJobs = getEmailJobs(minute.toInt, hour.toInt, day_of_week.toInt)
-
-  	sendEmailUser(emailJobs)
-
-
-
+      val curr_time = Calendar.getInstance().getTime()
+      val minute = new SimpleDateFormat("m").format(curr_time)
+      val hour = new SimpleDateFormat("H").format(curr_time)
+      val day_of_week = new SimpleDateFormat("u").format(curr_time)
+      val day_of_month = new SimpleDateFormat("d").format(curr_time)
+      var emailJobs = getEmailJobs(minute.toInt, hour.toInt, day_of_week.toInt)
+      sendEmailUser(emailJobs)
   }
 
   /**
@@ -87,14 +79,11 @@ import play.api.libs.concurrent.Akka
   							}
   						}
   					}
-
   				}
   				scheduler.updateLastRun("Digest[" + id + "]")
   			}
   		}
   	}
-
-  
 
     /**
     * Sends and creates a Digest Email
@@ -102,21 +91,15 @@ import play.api.libs.concurrent.Akka
 
   def sendDigestEmail(email: String, events: List[Event]) = {
     var eventsList = events.sorted(Ordering.by((_: Event).created).reverse)
-        
-      
     val body = views.html.emailEvents(eventsList)
-
-
     val mail = use[MailerPlugin].email
+
     mail.setSubject("Clowder Email Digest")
     mail.setRecipient(email)
     mail.setFrom(Mailer.fromAddress)
     mail.send("", body.body)
    
-     Logger.info("Email Sent")
- // }
-    
-
+    Logger.info("Email Sent")
   }
 
   /**
