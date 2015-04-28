@@ -62,7 +62,7 @@
       @event_type_split.length match {
         case 2 => {
           @if(event_type_split(0) == "comment"){
-            commented <font color="black"><em>@event.object_name</em></font> on @linkForObject("file", event.source_id, event.source_name)
+            commented @event.object_name on @linkForObject("file", event.source_id, event.source_name)
           }else{
             @actionTextForEvent(event_type_split(0)) @linkForObject(event_type_split(1), event.object_id, event.object_name)
           }

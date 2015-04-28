@@ -28,9 +28,9 @@ GET            /profile/editProfile                                             
 GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
 
 # Utilities
-GET     /utils/authenticationRequired                        @controllers.RedirectUtility.authenticationRequired
-GET     /utils/authenticationRequiredMessage/:msg/:url       @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
-GET     /utils/noPermissions                                 @controllers.RedirectUtility.incorrectPermissions(msg ?= null)
+GET            /utils/authenticationRequired                                            @controllers.RedirectUtility.authenticationRequired
+GET            /utils/authenticationRequiredMessage/:msg/:url                           @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
+GET            /utils/noPermissions                                                     @controllers.RedirectUtility.incorrectPermissions(msg ?= null)
 
 # DTS Information
 GET            /extractions/requests                                                    @controllers.ExtractionInfo.getDTSRequests()
@@ -427,3 +427,9 @@ POST           /api/users/unfollow                                              
 # ----------------------------------------------------------------------
 GET            /api/version                                                             @api.Status.version
 GET            /api/status                                                              @api.Status.status
+
+# ----------------------------------------------------------------------
+# RSS
+# ----------------------------------------------------------------------
+GET            /rss                                                                     @controllers.RSS.siteRSS(limit: Option[Int])
+GET            /rss/:etype                                                              @controllers.RSS.siteRSSOfType(limit: Option[Int], etype: String)

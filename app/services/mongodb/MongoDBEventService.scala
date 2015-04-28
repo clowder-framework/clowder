@@ -98,6 +98,22 @@ class MongoDBEventService extends EventService {
     Event.find(MongoDBObject(id_type -> new ObjectId(id)))
   }
 
+  def getLatestNEventsOfType(n: Int, event_type: Option[String]): List[Event] = {
+    event_type match {
+      case Some(type_to_search) => {
+        Event.find(
+          MongoDBObject(
+            "event_type" -> (".*" + type_to_search + ".*").r
+          )
+        ).sort(MongoDBObject("created" -> -1)).limit(n).toList
+      }
+      case None => {
+        Event.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(n).toList
+      }
+    }
+
+  }
+
 }
 
 object Event extends ModelCompanion[Event, ObjectId] {

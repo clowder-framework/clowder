@@ -64,6 +64,11 @@ trait EventService {
 
 	def getAllEventsByTime(followedEntities:List[TypedID], time: Date): List[Event]
 
+	/**
+	 * Get the latest N events
+	 */
+	def getLatestNEventsOfType(n: Int, event_type: Option[String]): List[Event]
+
 }
 
 
