@@ -19,20 +19,19 @@
 	</form>
 	@if(user.isDefined) {
 		<script language="javascript">
-			window["previousHTML"] = '@Html(currentHTML)';
+			window["previousHTML"] = "@(Html(currentHTML.replace("\n","").replace("\"","\\\"")))";
 			
 			function postNote(id, posturl) {			
 				var html =  tinyMCE.get('noteField_@id').getContent();
-							
-				console.log("Posting " + html + " to " + posturl);
+
 				var request = $.ajax({
 					url:  posturl,
 					data: JSON.stringify({ notesHTML: html }),
 					type: "POST",
 					contentType: "application/json",
 		     	});
-				request.done(function (response, textStatus, jqXHR) { 
-					console.log("Response " + response);
+
+				request.done(function (response, textStatus, jqXHR) {
 					window["previousHTML"] =  tinyMCE.get('noteField_@id').getContent();
 					$('#noteContainer_@id').html(window["previousHTML"]);
 									
@@ -43,6 +42,7 @@
 					$('#noteEdit_@id').css("display","inline");
 					
 				});
+
 				request.fail(function (jqXHR, textStatus, errorThrown){
 					console.error("The following error occured: "+textStatus, errorThrown);
                     var errMsg = "You must be logged in to submit a note.";                    
