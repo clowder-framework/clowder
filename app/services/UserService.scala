@@ -68,4 +68,13 @@ trait UserService {
    * TODO: use UUID instead of email
    */
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
+  
+  /**
+   * Add a user to a specific space.
+   * 
+   * @param userId The identifier of the user that is being modified by this service
+   * @param spaceId The identifier of the space that is being associated with the user
+   * 
+   */
+  def addUserToSpace(userId: UUID, spaceId: UUID)
 }

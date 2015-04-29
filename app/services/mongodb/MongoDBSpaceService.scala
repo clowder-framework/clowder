@@ -16,6 +16,7 @@ import MongoContext.context
 import util.Direction._
 import models.Collection
 import models.Dataset
+import models.Role
 
 /**
  * Store Spaces in MongoDB.
@@ -27,7 +28,8 @@ import models.Dataset
 class MongoDBSpaceService @Inject() (
   collections: CollectionService,
   files: FileService,
-  datasets: DatasetService) extends SpaceService {
+  datasets: DatasetService,
+  users: UserService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
@@ -296,13 +298,24 @@ class MongoDBSpaceService @Inject() (
   /**
    * @see app.services.SpaceService.scala
    * 
-   * Implementation of the SpaceServie trait.
+   * Implementation of the SpaceService trait.
    * 
    */
   def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
       val result = ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)), 
           $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled), 
           false, false, WriteConcern.Safe);
+  }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def addUser(user: UUID, role: Role, space: UUID): Unit = {
+      log.debug(s"Space Service - Adding user $user to space $space")
+      users.addUserToSpace(user, space)
   }
 
 }

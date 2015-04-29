@@ -4,6 +4,8 @@ import models.{UUID, ProjectSpace}
 import services.core.CRUDService
 import models.Collection
 import models.Dataset
+import models.User
+import models.Role
 
 /**
  * Service to manipulate spaces.
@@ -75,4 +77,42 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    */
   def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean)
   
+  /**
+   * Add a user to the space, along with an associated role.
+   * 
+   * @param user The identifier for the user that is to be added to the space
+   * @param role The role that is to be assigned to the user in the context of this space
+   * @param space The identifier for the space that the user is being added to
+   * 
+   */
+  def addUser(user: UUID, role: Role, space: UUID)
+  
+  /**
+   * Remove a user from the space.
+   * 
+   * @param user The identifier of the user to be removed from the space
+   * @param space The identifier for the space that the user is being removed from
+   */
+  def removeUser(userId: UUID, space: UUID)
+  
+  /**
+   * Retrieve the users that are associated with a specific space.
+   * 
+   * @param spaceId The identifier of the space to retrieve user data from
+   * 
+   * @return A list that contains all of the users that are associated with a specific space
+   *  
+   */
+  def getUsersInSpace(spaceId: UUID): List[User]
+  
+  /**
+   * Retrieve the role associated to a user for a given space.
+   * 
+   * @param spaceId The identifier of the space to get data for
+   * @param userId The identifier of the user to retrieve data for within the space
+   * 
+   * @return The role that a specific user has within the specified space
+   * 
+   */
+  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Role
 }
