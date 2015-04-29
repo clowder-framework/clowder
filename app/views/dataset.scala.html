@@ -121,14 +121,14 @@
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
 
+            @datasets.tags(dataset)
+            @datasets.collections(dataset, collectionsInside, collectionsOutside)
 
             @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, dataset.id.stringify)
             }
 
-            @datasets.tags(dataset)
-            @datasets.collections(dataset, collectionsInside, collectionsOutside)
-		</div>
+        </div>
 	</div>
 
     @* FIXME Commented out since it creates some issues with dataset previewers *@
