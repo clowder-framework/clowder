@@ -7,7 +7,8 @@
   collectionsInside: List[models.Collection],
   filesOutside: List[models.File],
   rdfExported: Boolean,
-  space: Option[ProjectSpace])(implicit user: Option[securesocial.core.Identity])
+  space: Option[ProjectSpace],
+        filesTags: Set[String])(implicit user: Option[securesocial.core.Identity])
 
 
 @import helper._
@@ -121,7 +122,7 @@
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @datasets.tags(dataset)
+            @datasets.tags(dataset, filesTags)
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
 		</div>
 	</div>
