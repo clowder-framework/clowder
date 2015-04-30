@@ -168,13 +168,14 @@ $(document).ready(function() {
     });
   });
   $("#cancelSubmit").click(function(event) {
+    console.log('cancelSubmit');
     event.preventDefault();
     window.location.href = jsRoutes.controllers.Geostreams.list().url
   });
 
   if (window.L) {
     var lat = +$("#sensorLocationLat").val();
-    var long = +$("#sensorLocationLong").val()
+    var long = +$("#sensorLocationLong").val();
     var map = L.map('map', {scrollWheelZoom: false}).setView([lat, long ], 5);
 
     L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {

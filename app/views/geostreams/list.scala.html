@@ -30,7 +30,7 @@
                 <tr>
                     <td>@(item \ "id")</td>
                     <td>@((item \ "name").as[String])</td>
-                    <td>@((item \ "properties" \ "type" \ "id").as[String].toUpperCase())</td>
+                    <td>@((item \ "properties" \ "type" \ "id").asOpt[String].getOrElse("").toUpperCase())</td>
                     <td>@((item \ "geometry" \ "coordinates")(1))</td>
                     <td>@((item \ "geometry" \ "coordinates")(0))</td>
                     <td>

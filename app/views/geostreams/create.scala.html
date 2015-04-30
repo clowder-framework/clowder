@@ -11,7 +11,7 @@
             <h1>@(AppConfiguration.getSensorTitle) Information</h1>
         </div>
 
-        <form class="form-horizontal" role="form" id="new">
+        <form class="form-horizontal" role="form" id="sensor-create">
 
             <div class="row">
                 <div class="col-md-12">
@@ -56,7 +56,7 @@
                                         </div>
                                         <div class="col-sm-4"></div>
                                         <div class="col-sm-8 paddingTop7">
-                                            <p>Location Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> instrument<span id="sensorTypeMultipleSensors"></span>.</p>
+                                            <p>Location Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> instrument<span id="sensorTypeMultipleInstruments"></span>.</p>
                                         </div>
                                         <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
                                         <div class="col-sm-4">
@@ -86,11 +86,11 @@
             </div>
         </form>
 
-        <div id="additionalSensors">
+        <div id="instruments">
                 <!-- additional instruments will be added here as the "Add Instrument" button is clicked -->
         </div>
 
-        <div class="btn btn-default" id="addSensor" style="display: none">Add Instrument</div>
+        <div class="btn btn-default" id="addInstrument" style="display: none">Add Instrument</div>
 
         <br />
 
@@ -105,94 +105,94 @@
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")"></script>
 <script src="@routes.Assets.at("javascripts/lib/jquery.serializejson.min.js")"></script>
 
-<script id="newSensorTemplate" type="text/x-handlebars-template">
-    <form id="sensor-{{sensorNumber}}" class="single-stream-tmpl">
+<script id="newInstrumentTemplate" type="text/x-handlebars-template">
+    <form id="instrument-{{instrumentNumber}}" class="single-stream-tmpl">
         <div class="row">
             <div class="col-md-12">
-                <div class="panel-group" id="sensor-group-{{sensorNumber}}" role="tablist">
+                <div class="panel-group" id="instrument-group-{{instrumentNumber}}" role="tablist">
                     <div class="panel panel-default">
-                        <div class="panel-heading" role="tab" id="sensor-heading-{{sensorNumber}}">
+                        <div class="panel-heading" role="tab" id="instrument-heading-{{instrumentNumber}}">
                             <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#sensor-group-{{sensorNumber}}" href="#sensor-contents-{{sensorNumber}}" id="sensor-link-{{sensorNumber}}" aria-expanded="true" aria-controls="collapseOne">
-                                    Instrument #{{sensorNumber}} Information
+                                <a data-toggle="collapse" data-parent="#instrument-group-{{instrumentNumber}}" href="#instrument-contents-{{instrumentNumber}}" id="instrument-link-{{instrumentNumber}}" aria-expanded="true" aria-controls="collapseOne">
+                                    Instrument #{{instrumentNumber}} Information
                                 </a>
                             </h4>
                         </div>
-                        <div id="sensor-contents-{{sensorNumber}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="sensor-heading-{{sensorNumber}}">
+                        <div id="instrument-contents-{{instrumentNumber}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="instrument-heading-{{instrumentNumber}}">
                             <div class="panel-body">
                                 <div class="row">
                                     <div class="col-md-12">
                                         <h3>Instrument Device Info</h3>
                                         <div class="form-group">
-                                            <label for="sensorName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
-                                            title="The full description of the sensor, typically provided by the Data Source. Should be concise, but descriptive.">Instrument Name</label>
+                                            <label for="instrumentName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
+                                            title="The full description of the instrument, typically provided by the Data Source. Should be concise, but descriptive.">Instrument Name</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control input-sm" id="sensorName" name="sensorName" placeholder="Falls Creek Northeast Temperature Monitor" required>
+                                                <input type="text" class="form-control input-sm" id="instrumentName" name="instrumentName" placeholder="Falls Creek Northeast Temperature Monitor" required>
                                             </div>
-                                            <label for="sensorID" class="col-sm-4 paddingTop7 control-label">Instrument ID</label>
+                                            <label for="instrumentID" class="col-sm-4 paddingTop7 control-label">Instrument ID</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control input-sm" id="sensorID" name="sensorID" placeholder="FCN-01" required>
+                                                <input type="text" class="form-control input-sm" id="instrumentID" name="instrumentID" placeholder="FCN-01" required>
                                             </div>
-                                            <label for="sensorMake" class="col-sm-4 paddingTop7 control-label">Make</label>
+                                            <label for="instrumentMake" class="col-sm-4 paddingTop7 control-label">Make</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control input-sm" id="sensorMake" name="sensorMake" placeholder="PISCES">
+                                                <input type="text" class="form-control input-sm" id="instrumentMake" name="instrumentMake" placeholder="PISCES">
                                             </div>
-                                            <label for="sensorModel" class="col-sm-4 paddingTop7 control-label">Model</label>
+                                            <label for="instrumentModel" class="col-sm-4 paddingTop7 control-label">Model</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control input-sm" id="sensorModel" name="sensorModel" placeholder="PT-5000">
+                                                <input type="text" class="form-control input-sm" id="instrumentModel" name="instrumentModel" placeholder="PT-5000">
                                             </div>
-                                            <label for="sensorSourceURL" class="col-sm-4 paddingTop7 control-label">Source URL</label>
+                                            <label for="source" class="col-sm-4 paddingTop7 control-label">Source URL</label>
                                             <div class="col-sm-8">
-                                                <input type="url" class="form-control input-sm" id="sensorSourceURL" name="sensorSourceURL" placeholder="http://example.com/...">
+                                                <input type="url" class="form-control input-sm" id="source" name="source" placeholder="http://example.com/...">
                                             </div>
 
                                             <div id="hasDepth" style="display: none">
-                                                <label for="sensorVerticalOffset" class="col-sm-4 paddingTop7 control-label"
+                                                <label for="instrumentVerticalOffset" class="col-sm-4 paddingTop7 control-label"
                                                 data-toggle="tooltip" data-placement="left"
-                                                title="An 'offset' sensoris above or below the surface.">
+                                                title="An 'offset' instrumentis above or below the surface.">
                                                     Vertical Offset
                                                 </label>
                                                 <div class="col-sm-4">
-                                                    <input type="text" class="form-control input-sm" id="sensorVerticalOffset" name="sensorVerticalOffset" placeholder="5">
+                                                    <input type="text" class="form-control input-sm" id="instrumentVerticalOffset" name="instrumentVerticalOffset" placeholder="5">
                                                 </div>
                                                 <div class="col-sm-4">
-                                                    <input type="text" class="form-control input-sm" id="sensorVerticalOffsetUnits" name="sensorVerticalOffsetUnits" placeholder="meters">
+                                                    <input type="text" class="form-control input-sm" id="instrumentVerticalOffsetUnits" name="instrumentVerticalOffsetUnits" placeholder="meters">
                                                 </div>
-                                                <label for="sensorOffsetVerticalType" class="col-sm-4 paddingTop7 control-label">Vertical Offset Orientation</label>
+                                                <label for="instrumentOffsetVerticalType" class="col-sm-4 paddingTop7 control-label">Vertical Offset Orientation</label>
                                                 <div class="col-sm-8">
-                                                    <select class="form-control input-sm" id="sensorOffsetVerticalType" name="sensorOffsetVerticalType">
+                                                    <select class="form-control input-sm" id="instrumentOffsetVerticalType" name="instrumentOffsetVerticalType">
                                                         <option selected disabled hidden value=''>No offset</option>
                                                         <option value="above">Above</option>
                                                         <option value="below">Below</option>
                                                     </select>
                                                 </div>
-                                                <label for="sensorHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
+                                                <label for="instrumentHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
                                                 data-toggle="tooltip" data-placement="left"
-                                                title="An 'horizontal offset' sensor is at the same lat/long, but positioned slightly away.">
+                                                title="An 'horizontal offset' instrument is at the same lat/long, but positioned slightly away.">
                                                     Horizontal Offset
                                                 </label>
                                                 <div class="col-sm-4">
-                                                    <input type="number" class="form-control input-sm" id="sensorHorizontalOffset" name="sensorHorizontalOffset" placeholder="5">
+                                                    <input type="number" class="form-control input-sm" id="instrumentHorizontalOffset" name="instrumentHorizontalOffset" placeholder="5">
                                                 </div>
                                                 <div class="col-sm-4">
-                                                    <input type="text" class="form-control input-sm" id="sensorHorizontalOffsetUnits" name="sensorHorizontalOffsetUnits" placeholder="meters">
+                                                    <input type="text" class="form-control input-sm" id="instrumentHorizontalOffsetUnits" name="instrumentHorizontalOffsetUnits" placeholder="meters">
                                                 </div>
-                                                <label for="sensorOffsetHorizontalOrientation" class="col-sm-4 paddingTop7 control-label">Horizontal Offset Orientation (in compass degrees)</label>
+                                                <label for="instrumentOffsetHorizontalOrientation" class="col-sm-4 paddingTop7 control-label">Horizontal Offset Orientation (in compass degrees)</label>
                                                 <div class="col-sm-8">
-                                                    <input type="number" class="form-control input-sm" id="sensorHorizontalOffsetOrientation" name="sensorHorizontalOffsetOrientation" placeholder="180 (ie: south of the lat/long)">
+                                                    <input type="number" class="form-control input-sm" id="instrumentHorizontalOffsetOrientation" name="instrumentHorizontalOffsetOrientation" placeholder="180 (ie: south of the lat/long)">
                                                 </div>
                                             </div>
-                                            <label for="sensorSamplingInterval" class="col-sm-4 paddingTop7 control-label">Sampling Interval</label>
+                                            <label for="instrumentSamplingInterval" class="col-sm-4 paddingTop7 control-label">Sampling Interval</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control input-sm" id="sensorSamplingInterval" name="sensorSamplingInterval" placeholder="Sampling Interval">
+                                                <input type="text" class="form-control input-sm" id="instrumentSamplingInterval" name="instrumentSamplingInterval" placeholder="Sampling Interval">
                                             </div>
-                                            <label for="sensorInstallationDate" class="col-sm-4 paddingTop7 control-label">Installation Date</label>
+                                            <label for="instrumentInstallationDate" class="col-sm-4 paddingTop7 control-label">Installation Date</label>
                                             <div class="col-sm-8">
-                                                <input type="datetime" class="form-control input-sm" id="sensorInstallationDate" name="sensorInstallationDate" placeholder="YYYY/MM/DD">
+                                                <input type="datetime" class="form-control input-sm" id="instrumentInstallationDate" name="instrumentInstallationDate" placeholder="YYYY/MM/DD">
                                             </div>
-                                            <label for="sensorInstallationPeriod" class="col-sm-4 paddingTop7 control-label">Installation Period</label>
+                                            <label for="instrumentInstallationPeriod" class="col-sm-4 paddingTop7 control-label">Installation Period</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control input-sm" id="sensorInstallationPeriod" name="sensorInstallationPeriod" placeholder="2 weeks, etc.">
+                                                <input type="text" class="form-control input-sm" id="instrumentInstallationPeriod" name="instrumentInstallationPeriod" placeholder="2 weeks, etc.">
                                             </div>
                                         </div>
                                     </div>
@@ -365,7 +365,7 @@
 
                                     <div class="col-md-12">
                                         <div class="pull-right instrument-delete">
-                                            <div class="btn btn-primary btn-sm removeSensor" id="sensor-delete-{{sensorNumber}}" data-id="{{sensorNumber}}">Remove Instrument #{{sensorNumber}}</div>
+                                            <div class="btn btn-primary btn-sm removeInstrument" id="instrument-delete-{{instrumentNumber}}" data-id="{{instrumentNumber}}">Remove Instrument #{{instrumentNumber}}</div>
                                         </div>
                                     </div>
                                 </div>

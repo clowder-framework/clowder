@@ -98,6 +98,26 @@ object Geostreams extends ApiController {
     }
   }
 
+  def patchStreamMetadata(id: String) = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
+    Logger.debug("Updating stream")
+    request.body.validate[(JsValue)].map {
+      case (data) => {
+        current.plugin[PostgresPlugin] match {
+          case Some(plugin) => {
+            plugin.patchStreamMetadata(id, Json.stringify(data)) match {
+              case Some(d) => jsonp(d, request)
+              case None => jsonp(Json.parse("""{"status":"Failed to update stream"}"""), request)
+            }
+
+          }
+          case None => pluginNotEnabled
+        }
+      }
+    }.recoverTotal {
+      e => BadRequest("Detected error:" + JsError.toFlatJson(e))
+    }
+  }
+
   def searchSensors(geocode: Option[String], sensor_name: Option[String]) =
     Action { request =>
       Logger.debug("Searching sensors " + geocode + sensor_name)

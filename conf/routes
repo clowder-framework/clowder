@@ -369,6 +369,7 @@ DELETE         /api/geostreams/sensors/:id                                      
 POST           /api/geostreams/streams                                                  api.Geostreams.createStream
 GET            /api/geostreams/streams/update                                           api.Geostreams.updateStatisticsStreamSensor()
 GET            /api/geostreams/streams/:id                                              api.Geostreams.getStream(id: String)
+PUT            /api/geostreams/streams/:id                                              api.Geostreams.patchStreamMetadata(id: String)
 GET            /api/geostreams/streams/:id/update                                       api.Geostreams.updateStatisticsStream(id: String)
 GET            /api/geostreams/streams                                                  api.Geostreams.searchStreams(geocode: Option[String] ?= None, stream_name: Option[String] ?= None)
 DELETE         /api/geostreams/streams/:id                                              api.Geostreams.deleteStream(id: String)
