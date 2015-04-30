@@ -5,8 +5,8 @@
         collectionsOutside: List[models.Collection],
         collectionsInside: List[models.Collection],
         filesOutside: List[models.File],
-        rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
-
+        rdfExported: Boolean,
+        relatedSensors: List[(String,String)])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
@@ -121,7 +121,12 @@
 		<div class="col-md-4 col-left-border">
             @datasets.tags(dataset)
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
-		</div>
+
+            @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
+                @sensors.relatedSensors(relatedSensors, dataset.id.stringify)
+            }
+
+        </div>
 	</div>
 
     @* FIXME Commented out since it creates some issues with dataset previewers *@

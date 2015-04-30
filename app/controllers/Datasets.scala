@@ -321,7 +321,19 @@ class Datasets @Inject()(
 	          
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
+          // associated sensors
+          var sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
+            case Some(db) => {
+              val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
+              val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
+              db.getDashboardSensorURLs(ids)
+            }
+            case None => List.empty[(String, String)]
+          }
+
+
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
+            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, sensors))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError
