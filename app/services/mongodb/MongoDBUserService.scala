@@ -11,6 +11,8 @@ import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import models.Role
+import models.UserSpaceAndRole
+import models.UserSpaceAndRole
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -86,9 +88,8 @@ class MongoDBUserService extends UserService {
    * 
    */
   def addSpaceToUser(userId: UUID, role: Role, spaceId: UUID): Unit = {
-      //val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $set(field -> fieldText));
-      //Create a model object that associates a space and a role, call it spaceandrole or something similar. It will have field
-      //for spaceId and Role. Update it here using toDbObject.
+      val spaceData = UserSpaceAndRole(Some(spaceId), Some(role))
+      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $addToSet("spaceroledata" -> UserSpaceAndRoleData.toDBObject(spaceData)));  
   }
  
   /**
@@ -129,3 +130,16 @@ object UserDAO extends ModelCompanion[User, ObjectId] {
     case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
   }
 }
+
+/**
+ * ModelCompanion object for the models.LicenseData class. Specific to MongoDB implementation, so should either
+ * be in it's own utility class within services, or, as it is currently implemented, within one of the common
+ * services classes that utilize it.
+ */
+object UserSpaceAndRoleData extends ModelCompanion[UserSpaceAndRole, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[UserSpaceAndRole, ObjectId](collection = x.collection("spaceroledata")) {}
+  }
+}
+
