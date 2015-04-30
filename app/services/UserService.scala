@@ -2,6 +2,7 @@ package services
 
 import models.{UUID, User}
 import securesocial.core.Identity
+import models.Role
 
 /**
  * Service definition to interact with the users.
@@ -70,11 +71,40 @@ trait UserService {
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
   
   /**
-   * Add a user to a specific space.
+   * Add a space to a specific user.
    * 
    * @param userId The identifier of the user that is being modified by this service
    * @param spaceId The identifier of the space that is being associated with the user
    * 
    */
-  def addUserToSpace(userId: UUID, spaceId: UUID)
+  def addSpaceToUser(userId: UUID, role: Role, spaceId: UUID)
+  
+  /**
+   * Remove a space from a specific user.
+   * 
+   * @param userId The identifier of the user that is being modified by this service
+   * @param spaceId The space to be disassociated from the user
+   * 
+   */
+  def removeSpaceFromUser(userId: UUID, spaceId: UUID)
+  
+  /**
+   * Update the role that a user has for a specific space
+   * 
+   * @param userId The identifier of the user to be modified
+   * @param role The new role to be associated with the user
+   * @param spaceId The identifier of the space 
+   * 
+   */
+  def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID)
+  
+  /**
+   * List the users that are associated with a specific space.
+   * 
+   * @param spaceId The identifier of the space to build a list of users for.
+   * 
+   * @return A list of users that are associated with a space.
+   */
+  def listUsersInSpace(spaceId: UUID): List[User]
+  
 }

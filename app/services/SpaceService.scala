@@ -96,6 +96,16 @@ trait SpaceService extends CRUDService[ProjectSpace] {
   def removeUser(userId: UUID, space: UUID)
   
   /**
+   * Update a user's role within a space.
+   * 
+   * @param userId The identifier of the user to be updated
+   * @param role The new role to be assigned to the user in the space
+   * @param space The identifier of the space to be updated
+   * 
+   */
+  def changeUserRole(userId: UUID, role: Role, space: UUID)
+  
+  /**
    * Retrieve the users that are associated with a specific space.
    * 
    * @param spaceId The identifier of the space to retrieve user data from

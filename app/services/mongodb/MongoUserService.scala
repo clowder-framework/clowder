@@ -13,6 +13,7 @@ import play.api.Play._
 import securesocial.core.IdentityId
 import scala.Some
 import MongoContext.context
+import models.UUID
 
 /**
  * SecureSocial implementation using MongoDB.
@@ -141,5 +142,5 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
   def deleteExpiredTokens() {
     Logger.debug("----Deleting expired tokens")
     for (token <- TokenDAO.findAll) if (token.isExpired) TokenDAO.remove(token)
-  }
+  }  
 }

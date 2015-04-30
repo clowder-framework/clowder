@@ -10,6 +10,7 @@ import play.api.Play.current
 import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
+import models.Role
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -76,6 +77,49 @@ class MongoDBUserService extends UserService {
 
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
     val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def addSpaceToUser(userId: UUID, role: Role, spaceId: UUID): Unit = {
+      //val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $set(field -> fieldText));
+      //Create a model object that associates a space and a role, call it spaceandrole or something similar. It will have field
+      //for spaceId and Role. Update it here using toDbObject.
+  }
+ 
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def removeSpaceFromUser(userId: UUID, spaceId: UUID): Unit = {
+      
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
+      
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def listUsersInSpace(spaceId: UUID): List[User] = {
+      val retList = List.empty
+      retList
   }
 }
 

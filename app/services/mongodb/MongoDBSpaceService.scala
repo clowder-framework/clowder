@@ -17,6 +17,7 @@ import util.Direction._
 import models.Collection
 import models.Dataset
 import models.Role
+import models.User
 
 /**
  * Store Spaces in MongoDB.
@@ -316,6 +317,19 @@ class MongoDBSpaceService @Inject() (
   def addUser(user: UUID, role: Role, space: UUID): Unit = {
       log.debug(s"Space Service - Adding user $user to space $space")
       users.addUserToSpace(user, space)
+  }
+  
+  def removeUser(userId: UUID, space: UUID): Unit = {
+      
+  }
+  
+  def getUsersInSpace(spaceId: UUID): List[User] = {
+      List.empty
+  }
+  
+  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Role = {
+      val role = new Role()
+      role
   }
 
 }
