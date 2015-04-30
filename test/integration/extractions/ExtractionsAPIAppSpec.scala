@@ -37,11 +37,11 @@ import play.api.{Play, Application}
  * @author Smruti Padhy
  */
 
+//@DoNotDiscover
+class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
 
-class ExtractionFileUploadFunctionSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
   
-
-  "The OneAppPerSuite trait" must {
+  "The Extractions API Spec" must {
     "provide a FakeApplication" in {
       app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
     }
@@ -54,10 +54,7 @@ class ExtractionFileUploadFunctionSpec extends PlaySpec with ConfiguredApp with 
     }
   }
 
-
-
-
-  "The OneAppPerSuite for Extraction API Controller Router test" must {
+  "The Extractions API Spec" must {
     "respond to the Upload File URL" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val fileurl = "http://www.ncsa.illinois.edu/assets/img/logos_ncsa.png"
@@ -76,7 +73,7 @@ class ExtractionFileUploadFunctionSpec extends PlaySpec with ConfiguredApp with 
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/morrowplots.jpg")
+      val file1 = new java.io.File(workingDir + "/test/data/extractions/morrowplots.jpg")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
@@ -96,7 +93,7 @@ class ExtractionFileUploadFunctionSpec extends PlaySpec with ConfiguredApp with 
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/morrowplots-thumb.jpg")
+      val file1 = new java.io.File(workingDir + "/test/data/extractions/morrowplots-thumb.jpg")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
@@ -110,6 +107,41 @@ class ExtractionFileUploadFunctionSpec extends PlaySpec with ConfiguredApp with 
       contentType(result) mustEqual Some("application/json")
       contentAsString(result) must include("id")
       info("contentAsString" + contentAsString(result))
+    }
+
+     "respond to the getExtractorNamesAction" in {
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/extractors_names"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("Extractors")
+      info("content"+contentAsString(result))
+    }
+ "respond to the getExtractorServerIPsAction" in {
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/servers_ips"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("Servers")
+      info("content"+contentAsString(result))
+    }
+ "respond to the getExtractorSupportedInputTypesAction" in {
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/supported_input_types"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("InputTypes")
+      info("content"+contentAsString(result))
+    }
+ "respond to the getDTSRequests" in {
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/requests"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
     }
 
   }

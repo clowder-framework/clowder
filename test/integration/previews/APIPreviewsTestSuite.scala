@@ -18,8 +18,8 @@ import org.scalatest._
  */
 
 
-class APICollectionsTestSuite extends Suites (
-		new CollectionsAPIAppSpec
+class APIPreviewsTestSuite extends Suites (
+		new PreviewsAPIAppSpec
 	) with OneAppPerSuite
 {
    implicit override lazy val app: FakeApplication =
