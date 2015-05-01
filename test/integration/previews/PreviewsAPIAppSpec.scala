@@ -219,7 +219,7 @@ class PreviewsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
           val workingDir = System.getProperty("user.dir")
           info("Working Directory: " + workingDir)
-          val file1 = new java.io.File(workingDir + "/test/data/previews/morrowplots-preview.jpg")
+          val file1 = new java.io.File(workingDir + "/test/data/previews/morrowplots-preview-1.jpg")
           if (file1.isFile && file1.exists) {
             Logger.debug("File1 is File:True")
           }
