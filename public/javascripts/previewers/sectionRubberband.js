@@ -122,7 +122,6 @@ function rubberbandFormCancel(prNum) {
 // RUBBER BAND CODE
 // ----------------------------------------------------------------------
 function rubberbandStart(x, y, prNum) {
-    console.log("start");
     window["mousedown" + prNum].x = x;
     window["mousedown" + prNum].y = y;
 
@@ -197,7 +196,6 @@ function rubberbandResetDiv(prNum) {
     var rubberbandDiv = $("#rubberbandDiv" + prNum)[0];
 
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-    console.log(window["renderCanvas" + prNum]);
     window["renderCanvas" + prNum](prNum);
     rubberbandDiv.style.width = 0;
     rubberbandDiv.style.height = 0;
