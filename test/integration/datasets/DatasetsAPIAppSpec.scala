@@ -109,6 +109,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
       val req = FakeRequest(POST, "/api/extractions/upload_file?key=" + secretKey).
         withFileUpload("File", file1, "application/x-zip-compressed")
       val result = route(req).get
+      contentAsString(result) must include ("id")
 
 
       val Some(result1) = route(FakeRequest(GET, "/api/files"))
@@ -117,7 +118,8 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
       info("contentType="+contentType(result1))
       contentType(result1) mustEqual Some("application/json")
       contentAsString(result1) must include ("filename")
-      info("content"+contentAsString(result))
+      info("content "+contentAsString(result))
+      info("content1 "+contentAsString(result1))
       val json: JsValue = Json.parse(contentAsString(result1))
       val readableString: String = Json.prettyPrint(json)
       info("Pretty JSON format")

@@ -8,7 +8,7 @@ import play.api.test._
  *
  *  @author Luigi Marini
  */
-@DoNotDiscover
+//@DoNotDiscover
 trait AppFixture extends SuiteMixin { this: Suite =>
 
   val excludedPlugins = List(
