@@ -71,11 +71,12 @@
                     }
 
                     var profileUUID = "@profile.id.stringify";
+                    var profileName = "@profile.fullName";
                     $(document ).ready(function() {
                       var followButton = $("#userFollowButton");
                       followButton.click(function() {
                         if (followButton.text( ).trim() === "Follow") {
-                          jsRoutes.api.Users.follow(profileUUID).ajax({
+                          jsRoutes.api.Users.follow(profileUUID, profileName).ajax({
                             type: "POST"
                           })
                             .done(function(data) {
@@ -89,7 +90,7 @@
                               console.log("Failed to follow");
                             });
                         } else {
-                          jsRoutes.api.Users.unfollow(profileUUID).ajax({
+                          jsRoutes.api.Users.unfollow(profileUUID,profileName).ajax({
                             type: "POST"
                           })
                             .done(function(data) {

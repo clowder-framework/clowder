@@ -61,7 +61,7 @@
                             <script>
                                 $("#followButton").on('click', function () {
                                     if ($(this).text() === 'Follow') {
-                                        var followRequest = jsRoutes.api.Collections.follow('@collection.id').ajax({
+                                        var followRequest = jsRoutes.api.Collections.follow('@collection.id','@collection.name').ajax({
                                             type: 'POST'
                                         });
 
@@ -76,7 +76,7 @@
                                             console.error('Failed to follow!');
                                         });
                                     } else if ($(this).text() === 'Unfollow') {
-                                        var unfollowRequest = jsRoutes.api.Collections.unfollow('@collection.id').ajax({
+                                        var unfollowRequest = jsRoutes.api.Collections.unfollow('@collection.id','@collection.name').ajax({
                                             type: 'POST'
                                         });
 

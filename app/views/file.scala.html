@@ -534,7 +534,7 @@
 
 					$("#followButton" ).on('click', function () {
 						if ($(this ).text() === 'Follow') {
-							var followRequest = jsRoutes.api.Files.follow('@file.id').ajax({
+							var followRequest = jsRoutes.api.Files.follow('@file.id', '@file.filename').ajax({
 								type: 'POST'
 							});
 
@@ -549,7 +549,7 @@
 								console.error('Failed to follow!');
 							});
 						} else if ($(this ).text() === 'Unfollow') {
-							var unfollowRequest = jsRoutes.api.Files.unfollow('@file.id').ajax({
+							var unfollowRequest = jsRoutes.api.Files.unfollow('@file.id', '@file.filename').ajax({
 								type: 'POST'
 							});
 

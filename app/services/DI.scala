@@ -42,7 +42,8 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[RdfSPARQLService]).to(get("service.RdfSPARQL", "services.fourstore.FourStoreRdfSPARQLService"))
     bind(classOf[ThumbnailService]).to(get("service.thumbnails", "services.mongodb.MongoDBThumbnailService"))
     bind(classOf[TileService]).to(get("service.tiles", "services.mongodb.MongoDBTileService"))
-    bind(classOf[SectionIndexInfoService]).to(get("service.sectionIndexInfo", "services.mongodb.MongoDBSectionIndexInfoService"))    
+    bind(classOf[SectionIndexInfoService]).to(get("service.sectionIndexInfo", "services.mongodb.MongoDBSectionIndexInfoService"))
+    bind(classOf[EventService]).to(get("service.events", "services.mongodb.MongoDBEventService"))
  
   }
 

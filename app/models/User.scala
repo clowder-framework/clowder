@@ -83,7 +83,15 @@ trait User extends Identity {
   def getFollowedObjectList(objectType : String) : List[TypedID] = {
     followedEntities.filter { x => x.objectType == objectType }  
   }
+
+  /**
+  * return MiniUser constructed from the user model
+  */
+  def getMiniUser: MiniUser = {
+    new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl, email = email)
+  }
 }
+
 
 case class MediciUser(
   id: UUID = UUID.generate(),
