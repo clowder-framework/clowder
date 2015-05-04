@@ -79,6 +79,10 @@ trait User extends Identity {
       proj + ", " + next
     }
   }
+  
+  def getFollowedObjectList(objectType : String) : List[TypedID] = {
+    followedEntities.filter { x => x.objectType == objectType }  
+  }
 }
 
 case class MediciUser(

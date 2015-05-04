@@ -104,6 +104,44 @@ class MongoDBFileService @Inject() (
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
+  
+  /**
+   * List files specific to a user after a specified date.
+   */
+  def listUserFilesAfter(date: String, limit: Int, email: String): List[File] = {
+    val order = MongoDBObject("created"-> -1)
+    if (date == "") {
+      var filesList = FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
+      filesList= filesList.filter(x=> x.author.email.toString == "Some(" +email +")")
+      filesList
+    } else {
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      Logger.info("After " + sinceDate)
+      var filesList = FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $lt sinceDate)).sort(order).limit(limit).toList
+      filesList= filesList.filter(x=> x.author.email.toString == "Some(" +email +")")
+      filesList
+    }
+  }
+
+  /**
+   * List files specific to a user before a specified date.
+   */
+  def listUserFilesBefore(date: String, limit: Int, email: String): List[File] = {
+    var order = MongoDBObject("created"-> -1)
+    if (date == "") {
+      var filesList = FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
+      filesList= filesList.filter(x=> x.author.email.toString == "Some(" +email +")")
+      filesList
+    } else {
+      order = MongoDBObject("created"-> 1)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      Logger.info("Before " + sinceDate)
+      var filesList = FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit + 1).toList.reverse
+      filesList = filesList.filter(_ != filesList.last)
+      filesList= filesList.filter(x=> x.author.email.toString == "Some(" +email +")")
+      filesList
+    }
+  }
 
   def latest(): Option[File] = {
     val results = FileDAO.find("isIntermediate" $ne true).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
