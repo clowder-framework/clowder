@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, User}
+import models.{Role, UUID, User}
 import securesocial.core.Identity
 
 /**
@@ -68,4 +68,25 @@ trait UserService {
    * TODO: use UUID instead of email
    */
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
+
+  /**
+   * List user roles.
+   */
+  def listRoles(): List[Role]
+
+  /**
+   * Add new role.
+   */
+  def addRole(role: Role)
+
+  /**
+   * Find existing role.
+   */
+  def findRole(id: String): Option[Role]
+
+  /**
+   * Delete role.
+   */
+  def deleteRole(role: Role)
+
 }

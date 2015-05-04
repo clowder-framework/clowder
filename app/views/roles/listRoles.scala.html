@@ -1,0 +1,26 @@
+@(roles: List[Role])
+
+@main("Manage Roles") {
+    <div class="page-header">
+        <h1>Roles</h1>
+    </div>
+    <div class="row">
+        <div class="col-md-12"><p>The list below shows all the roles available on the system.
+            Roles are used to moderate access to spaces.
+            Use the create new role button to create a new one.</p></div>
+        <div class="col-md-12">
+            @if(roles.isEmpty) {
+                <div>No roles defined</div>
+            }
+            <div><a href="@routes.Admin.createRole()" class="btn btn-default">Create new role</a></div>
+            @if(!roles.isEmpty) {
+                <table class="table">
+                    <thead><tr><th>Name</th><th>Description</th></tr></thead>
+                    @for(role <- roles) {
+                        <tr><td>@role.name</td><td>@role.description</td></tr>
+                    }
+                </table>
+            }
+        </div>
+    </div>
+}

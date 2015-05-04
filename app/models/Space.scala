@@ -42,8 +42,6 @@ case class UserSpace (
    datasetCount: Integer,
    userCount: Integer)
 
-case class Role()
-
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
   created: Date,

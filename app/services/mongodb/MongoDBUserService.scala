@@ -1,8 +1,9 @@
 package services.mongodb
 
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.TypeImports._
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import models.{UUID, User}
+import models.{Role, UUID, User}
 import org.bson.types.ObjectId
 import securesocial.core.Identity
 import services.UserService
@@ -77,11 +78,55 @@ class MongoDBUserService extends UserService {
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
     val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));
   }
+
+  /**
+   * List user roles.
+   */
+  def listRoles(): List[Role] = {
+    RoleDAO.findAll().toList
+  }
+
+  /**
+   * Add new role.
+   */
+  def addRole(role: Role): Unit = {
+    RoleDAO.insert(role)
+  }
+
+  /**
+   * Find existing role.
+   */
+  def findRole(id: String): Option[Role] = {
+    RoleDAO.findById(id)
+  }
+
+  /**
+   * Delete role.
+   */
+  def deleteRole(role: Role): Unit = {
+    RoleDAO.removeById(role.id.stringify)
+  }
 }
 
 object UserDAO extends ModelCompanion[User, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
+  }
+}
+
+object RoleDAO extends ModelCompanion[Role, ObjectId] {
+
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Role, ObjectId](collection = x.collection("roles")) {}
+  }
+
+  def findById(id: String): Option[Role] = {
+    dao.findOne(MongoDBObject("id" -> id))
+  }
+
+  def removeById(id: String) {
+    dao.remove(MongoDBObject("id" -> id), WriteConcern.Normal)
   }
 }

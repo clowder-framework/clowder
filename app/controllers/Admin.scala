@@ -1,8 +1,8 @@
 package controllers
 
 import api.{WithPermission, Permission}
-import models.{UUID, VersusIndexTypeName}
-import services.{SectionIndexInfoService, AppConfiguration, VersusPlugin}
+import models.{Role, UUID, VersusIndexTypeName}
+import services.{UserService, SectionIndexInfoService, AppConfiguration, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{Json, JsValue}
@@ -19,9 +19,8 @@ import play.api.data.Forms._
  * @author Inna Zharnitsky
  *
  */
-
 @Singleton
-class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
+class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService) extends SecuredController {
 
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val theme = AppConfiguration.getTheme
@@ -371,4 +370,47 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
     }
   }
 
+  def listRoles() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        Ok(views.html.roles.listRoles(userService.listRoles()))
+      }
+    }
+  }
+
+  val roleForm = Form(
+    mapping(
+      "name" -> nonEmptyText,
+      "description" -> nonEmptyText
+    )(roleFormData.apply)(roleFormData.unapply)
+  )
+
+  def createRole() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        Ok(views.html.roles.createRole(roleForm))
+      }
+    }
+  }
+
+  def submitCreateRole() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        roleForm.bindFromRequest.fold(
+          errors => BadRequest(views.html.roles.createRole(errors)),
+          formData => {
+            Logger.debug("Creating role " + formData.name)
+            val role = Role(name = formData.name, description = formData.description)
+            userService.addRole(role)
+            Redirect(routes.Admin.listRoles()).flashing("success" -> "Role created")
+          }
+        )
+      }
+    }
+  }
 }
+
+case class roleFormData(name: String, description: String)
