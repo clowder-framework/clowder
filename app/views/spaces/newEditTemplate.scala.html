@@ -24,9 +24,9 @@
         <fieldset  id="nameDescrFieldSet">
           @inputText(myForm("name"), '_label -> "Name")
           @textarea(myForm("description"), '_label -> "Description")
-          <div class ="control-group"><label class="control-label" for="externalLinks">External Links</label></div>
-          <div class = "externalLinks">
-            @repeat(myForm("externalLinks"), min = 1) {externalLink =>
+          <div class ="control-group"><label class="control-label" for="homePages">External Links</label></div>
+          <div class = "homePages">
+            @repeat(myForm("homePages"), min = 1) {externalLink =>
               @inputText(externalLink, '_label -> "")
               @****** one too many delete buttons
               @if(myForm.hasErrors && myForm("homePages").indexes.length > 1) {
@@ -52,7 +52,7 @@
   // be externalLinks[0], externalLinks[1],.. etc. This function renumbers all the fields appropriately even if a field in the
   // middle of the list is deleted.
   var renumberExternalLinkMap = function() {
-  Array.prototype.reduce.call($('.externalLinks .control-group'), function (i, next) {
+  Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
   var label = $(next).children('label');
   label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
 
@@ -60,7 +60,7 @@
   input.attr('id', input.attr('id').replace(/_\d+_/, '_' + i + '_'));
   input.attr('name', input.attr('name').replace(/\[\d+\]/, '[' + i + ']'));
 
-  if (input.attr('id').match(/externalLinks_\d+_/)) {
+  if (input.attr('id').match(/homePages_\d+_/)) {
   return i + 1;
   }
 

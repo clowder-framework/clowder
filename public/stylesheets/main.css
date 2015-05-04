@@ -244,18 +244,18 @@ code {
 	left:20px;
 }
 
-#nameDescrFieldSet .externalLinks .external-link-delete
+#nameDescrFieldSet .homePages .external-link-delete
 {
     display: inline-block;
     margin-left:10px;
 }
 
-#nameDescrFieldSet .external-link-add {
+#nameDescrFieldSet .homePages .external-link-add {
     display:inline-block;
     margin-left: 10px;
 }
 
-#nameDescrFieldSet .externalLinks .control-group
+#nameDescrFieldSet .homePages .control-group
 {
     display:inline-block;
     width: 85%;
