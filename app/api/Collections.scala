@@ -191,10 +191,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
+              val recommendations = getTopRecommendations(id, loggedInUser)
               collections.addFollower(id, loggedInUser.id)
               userService.followCollection(loggedInUser.id, id)
 
-              val recommendations = getTopRecommendations(id, loggedInUser)
               recommendations match {
                 case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
                 case Nil => Ok(Json.obj("status" -> "fail"))
@@ -237,12 +237,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       }
   }
 
-  def getTopRecommendations(followeeUUID: UUID, follower: User): List[TypedID] = {
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
     val followeeModel = collections.get(followeeUUID)
     followeeModel match {
       case Some(followeeModel) => {
         val sourceFollowerIDs = followeeModel.followers
-        val excludeIDs = follower.followedEntities.map(typedId => typedId.id)
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
         val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
         userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
       }

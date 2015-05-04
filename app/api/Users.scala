@@ -3,12 +3,11 @@ package api
 import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
-import models.{UUID, User, TypedID}
+import models.{UUID, User, TypedID, MiniEntity}
 import play.api.libs.json._
 import play.api.mvc.Action
 import services.UserService
 import play.api.Play.current
-import play.api.Logger
 
 /**
  * API to interact with the users.
@@ -78,10 +77,9 @@ class Users @Inject()(users: UserService) extends ApiController {
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
+        val recommendations = getTopRecommendations(followeeUUID, loggedInUser)
         users.followUser(followeeUUID, followerUUID)
 
-        val recommendations = getTopRecommendations(followeeUUID, loggedInUser)
-        Logger.info(recommendations.toString)
         recommendations match {
           case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
           case Nil => Ok(Json.obj("status" -> "fail"))
@@ -109,12 +107,12 @@ class Users @Inject()(users: UserService) extends ApiController {
     }
   }
 
-  def getTopRecommendations(followeeUUID: UUID, follower: User): List[TypedID] = {
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
     val followeeModel = users.findById(followeeUUID)
     followeeModel match {
       case Some(followeeModel) => {
         val sourceFollowerIDs = followeeModel.followers
-        val excludeIDs = follower.followedEntities.map(typedId => typedId.id)
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
         val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
         users.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
       }
