@@ -185,7 +185,6 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
             email match {
               case Some(addr) => {
                 implicit val modeluser = users.findByEmail(addr.toString())
-
                     users.updateUserField(addr.toString(), "avatarUrl", form.avatarUrl)
                     users.updateUserField(addr.toString(), "biography", form.biography)
                     users.updateUserField(addr.toString(), "currentprojects", form.currentprojects)
@@ -209,9 +208,9 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
                   Redirect(routes.Profile.viewProfile(email))
               }
             }
-          }
+          } 
           case None => {
-            Redirect(routes.RedirectUtility.authenticationRequired())
+          Redirect(routes.RedirectUtility.authenticationRequired())
           }
         }
       }
