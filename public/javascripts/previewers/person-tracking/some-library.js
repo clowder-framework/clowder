@@ -26,9 +26,9 @@
 
         // Search metadata for person tracking
         for (var i=0; i<data.length; i++) {
-            if (data[i]["result"] == undefined)
+            if (data[i]["person-tracking-result"] == undefined)
                 continue;
-            if (data[i]["result"] == "")
+            if (data[i]["person-tracking-result"] == "")
                 continue;
             trackingMetadataIndex = i;
             break;
@@ -70,17 +70,18 @@
             deferredGetScript( pathFlotJS ),
             deferredGetScript( pathNavigateJS ),
             deferredGetScript( pathCrosshairJS ),
-            deferredGetScript( pathPopcornJS )/*,
+            deferredGetScript( pathPopcornJS )
+            /*,
             $.Deferred(function( deferred ){
                 $( deferred.resolve );
             })*/
         ).done(function(){
             console.log("downloaded JS sciprts");
 
-            if(data[trackingMetadataIndex].result.frame != undefined){
+            if(data[trackingMetadataIndex]["person-tracking-result"].frame != undefined){
 
                 // Processing JSON data            
-                var jsonFrameArray = data[trackingMetadataIndex].result.frame;
+                var jsonFrameArray = data[trackingMetadataIndex]["person-tracking-result"].frame;
                 var jsonFrameArrayLength = jsonFrameArray.length;            
                 // Pass 1: Rearrange data
                 for(var i = 0; i < jsonFrameArrayLength; i++) {
@@ -195,7 +196,7 @@
                         }    
                     }                
                 }                                        
-                
+                console.log(sortedFrameDataArray);
                 //display video on screen and visualize person tracking
         		console.log("Updating tab " + Configuration.tab);    		
                 
