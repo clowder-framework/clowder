@@ -260,7 +260,7 @@ class Datasets @Inject()(
   def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
       if (!files.isInDataset(file, dataset)) {
             datasets.addFile(dsId, file)	 
-           events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")        
+            events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")        
             files.index(fileId)
             if (!file.xmlMetadata.isEmpty){
               datasets.index(dsId)
@@ -424,22 +424,21 @@ class Datasets @Inject()(
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddDatasetsMetadata), resourceId = Some(id)) {
-    request =>
-    implicit val user = request.user
-      Logger.debug(s"Adding user metadata to dataset $id")
-      datasets.addUserMetadata(id, Json.stringify(request.body))
-      datasets.get(id) match {
-        case Some(dataset) => {
-           events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
-        }
+    request => implicit val user = request.user
+    Logger.debug(s"Adding user metadata to dataset $id")
+    datasets.addUserMetadata(id, Json.stringify(request.body))
+    datasets.get(id) match {
+      case Some(dataset) => {
+          events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
       }
+    }
      
-      datasets.index(id)
-      configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-        case "yes" => datasets.setUserMetadataWasModified(id, true)
-        case _ => Logger.debug("userdfSPARQLStore not enabled")
-      }
-      Ok(toJson(Map("status" -> "success")))
+    datasets.index(id)
+    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+      case "yes" => datasets.setUserMetadataWasModified(id, true)
+      case _ => Logger.debug("userdfSPARQLStore not enabled")
+    }
+    Ok(toJson(Map("status" -> "success")))
   }
   
   
@@ -499,9 +498,8 @@ class Datasets @Inject()(
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
   def updateInformation(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateDatasetInformation)) {    
-    implicit request => 
-    implicit val user = request.user
-      if (UUID.isValid(id.stringify)) {          
+    implicit request =>  implicit val user = request.user
+    if (UUID.isValid(id.stringify)) {          
 
           //Set up the vars we are looking for
           var description: String = null;
@@ -536,10 +534,10 @@ class Datasets @Inject()(
           
           datasets.updateInformation(id, description, name)
           datasets.get(id) match {
-        case Some(dataset) => {
-           events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
-        }
-      }
+            case Some(dataset) => {
+              events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+            }
+          }
           Ok(Json.obj("status" -> "success"))
       } 
       else {
@@ -791,10 +789,10 @@ class Datasets @Inject()(
         case TagCheck_Dataset => {
           datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
           datasets.get(id) match {
-        case Some(dataset) => {
-           events.addObjectEvent(request.user, id, dataset.name, "add_tags_dataset")
-        }
-      }
+            case Some(dataset) => {
+              events.addObjectEvent(request.user, id, dataset.name, "add_tags_dataset")
+            }
+          }
           datasets.index(id)
         }
         case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
@@ -828,13 +826,13 @@ class Datasets @Inject()(
         case TagCheck_Dataset => {
         	datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
           datasets.get(id) match {
-        case Some(dataset) => {
-           events.addObjectEvent(request.user, id, dataset.name, "remove_tags_dataset")
-        }
-      }
+            case Some(dataset) => {
+              events.addObjectEvent(request.user, id, dataset.name, "remove_tags_dataset")
+            }
+          }
         	datasets.index(id)
 
-          }
+        }
 
         case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }

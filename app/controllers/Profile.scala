@@ -209,9 +209,9 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
                   Redirect(routes.Profile.viewProfile(email))
               }
             }
-          }
+          } 
           case None => {
-            Redirect(routes.RedirectUtility.authenticationRequired())
+          Redirect(routes.RedirectUtility.authenticationRequired())
           }
         }
       }
