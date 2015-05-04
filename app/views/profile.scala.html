@@ -271,39 +271,45 @@
 									  			<div>
 									  			@user match {
 													case Some(viewer) => {
-														@if(userInfo._1 != viewer.id) {
-														<h4>
-													        <button
-													          id="followButton"
-													          type="button"
-													          class="
-													            @if(viewer.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
-													              btn btn-danger
-													            }else {
-													              btn btn-success
-													            }
-													          "
-													          data-toggle="button"
-													          aria-pressed="
-													            @if(viewer.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
-													              true
-													            }else {
-													              false
-													            }
-													          "
-													          autocomplete="off"
-													          objectId = "@userInfo._1.stringify"
-															  objectType = "user"
-													        >
-													        @if(viewer.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
-												            	Unfollow
-												          	} else {
-												            	Follow
-												          	}
-													        </button>
-													      </h4>
-											  			<script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>												
-														}
+                                                      @ownProfile match {
+                                                        case Some(sameProfile) =>{
+                                                          @if(userInfo._1 != viewer.id) {
+                            <h4>
+                                  <button
+                                    id="followButton"
+                                    type="button"
+                                    class="
+                                      @if(viewer.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
+                                        btn btn-danger
+                                      }else {
+                                        btn btn-success
+                                      }
+                                    "
+                                    data-toggle="button"
+                                    aria-pressed="
+                                      @if(viewer.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
+                                        true
+                                      }else {
+                                        false
+                                      }
+                                    "
+                                    autocomplete="off"
+                                    objectId = "@userInfo._1.stringify"
+                                objectType = "user"
+                                  >
+                                  @if(viewer.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
+                                      Unfollow
+                                    } else {
+                                      Follow
+                                    }
+                                  </button>
+                                </h4>
+                              <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>                        
+                            }
+                                                        }
+                                                        case None => {
+                                                        }
+                                                      }
 													}
 												}
 									  			</div>
@@ -336,37 +342,43 @@
 										  <div class="panel-footer">
 										  	@user match {
 												case Some(viewer) => {
-													<h4>
-												        <button
-												          id="followButton"
-												          type="button"
-												          class="
-												            @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
-												              btn btn-danger
-												            }else {
-												              btn btn-success
-												            }
-												          "
-												          data-toggle="button"
-												          aria-pressed="
-												            @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
-												              true
-												            }else {
-												              false
-												            }
-												          "
-												          autocomplete="off"
-												          objectId = "@fileInfo._1.stringify"
-														  objectType = "file"
-												        >
-												        @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
-											            	Unfollow
-											          	} else {
-											            	Follow
-											          	}
-												        </button>
-												      </h4>
-										  			<script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>												
+													@ownProfile match {
+                                                      case Some(sameProfile) => {
+                                                        <h4>
+                                <button
+                                  id="followButton"
+                                  type="button"
+                                  class="
+                                    @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
+                                      btn btn-danger
+                                    }else {
+                                      btn btn-success
+                                    }
+                                  "
+                                  data-toggle="button"
+                                  aria-pressed="
+                                    @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
+                                      true
+                                    }else {
+                                      false
+                                    }
+                                  "
+                                  autocomplete="off"
+                                  objectId = "@fileInfo._1.stringify"
+                              objectType = "file"
+                                >
+                                @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
+                                    Unfollow
+                                  } else {
+                                    Follow
+                                  }
+                                </button>
+                              </h4>
+                            <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+                                                      }
+                                                      case None => {
+                                                      }
+                                                    }												
 												}
 											}
 										</div>
@@ -396,37 +408,43 @@
 									  <div class="panel-footer">
 									  	@user match {
 											case Some(viewer) => {
-												<h4>
-											        <button
-											          id="followButton"
-											          type="button"
-											          class="
-											            @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
-											              btn btn-danger
-											            }else {
-											              btn btn-success
-											            }
-											          "
-											          data-toggle="button"
-											          aria-pressed="
-											            @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
-											              true
-											            }else {
-											              false
-											            }
-											          "
-											          autocomplete="off"
-											          objectType="dataset"
-											          objectId="@datasetInfo._1.stringify"
-											        >
-											        @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
-										            	Unfollow
-										          	} else {
-										            	Follow
-										          	}
-											        </button>
-											      </h4>
-									  			<script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>												
+												@ownProfile match {
+                                                  case Some(sameProfile) => {
+                                                    <h4>
+                              <button
+                                id="followButton"
+                                type="button"
+                                class="
+                                  @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
+                                    btn btn-danger
+                                  }else {
+                                    btn btn-success
+                                  }
+                                "
+                                data-toggle="button"
+                                aria-pressed="
+                                  @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
+                                    true
+                                  }else {
+                                    false
+                                  }
+                                "
+                                autocomplete="off"
+                                objectType="dataset"
+                                objectId="@datasetInfo._1.stringify"
+                              >
+                              @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
+                                  Unfollow
+                                } else {
+                                  Follow
+                                }
+                              </button>
+                            </h4>
+                          <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+                                                  }
+                                                  case None => {
+                                                  }
+                                                }												
 											}
 										}
 									  </div>
@@ -456,37 +474,43 @@
 									  <div class="panel-footer">
 									  	@user match {
 											case Some(viewer) => {
-												<h4>
-											        <button
-											          id="followButton"
-											          type="button"
-											          class="
-											            @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
-											              btn btn-danger
-											            }else {
-											              btn btn-success
-											            }
-											          "
-											          data-toggle="button"
-											          aria-pressed="
-											            @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
-											              true
-											            }else {
-											              false
-											            }
-											          "
-											          autocomplete="off"
-											          objectType="collection"
-											          objectId="@collectionInfo._1.stringify"
-											        >
-											        @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
-										            	Unfollow
-										          	} else {
-										            	Follow
-										          	}
-											        </button>
-											      </h4>													
-									  			<script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>												
+												@ownProfile match {
+                                                  case Some(sameProfile) => {
+                                                    <h4>
+                              <button
+                                id="followButton"
+                                type="button"
+                                class="
+                                  @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
+                                    btn btn-danger
+                                  }else {
+                                    btn btn-success
+                                  }
+                                "
+                                data-toggle="button"
+                                aria-pressed="
+                                  @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
+                                    true
+                                  }else {
+                                    false
+                                  }
+                                "
+                                autocomplete="off"
+                                objectType="collection"
+                                objectId="@collectionInfo._1.stringify"
+                              >
+                              @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
+                                  Unfollow
+                                } else {
+                                  Follow
+                                }
+                              </button>
+                            </h4>                         
+                          <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+                                                  }
+                                                  case None => {
+                                                  }
+                          						}						
 											}
 										}
 									</div>
