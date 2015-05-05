@@ -124,5 +124,5 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * @return The role that a specific user has within the specified space
    * 
    */
-  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Role
+  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Option[Role]
 }

@@ -13,6 +13,7 @@ import com.mongodb.casbah.Imports._
 import models.Role
 import models.UserSpaceAndRole
 import models.UserSpaceAndRole
+import scala.collection.mutable.ListBuffer
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -98,8 +99,9 @@ class MongoDBUserService extends UserService {
    * Implementation of the UserService trait.
    * 
    */
-  def removeSpaceFromUser(userId: UUID, spaceId: UUID): Unit = {
-      
+  def removeSpaceFromUser(userId: UUID, spaceId: UUID): Unit = {     
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
+    		  $pull("spaceroledata" ->  MongoDBObject( "m_spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
   }
   
   /**
@@ -109,7 +111,38 @@ class MongoDBUserService extends UserService {
    * 
    */
   def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
+      val spaceData = UserSpaceAndRole(Some(spaceId), Some(role))
+      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $set("spaceroledata" -> UserSpaceAndRoleData.toDBObject(spaceData)));
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def getUserRoleInSpace(userId: UUID, spaceId: UUID): Option[Role] = {
+      var retRole: Option[Role] = None
+      var found = false
       
+      findById(userId) match {
+          case Some(aUser) => {
+              for (aSpaceAndRole <- aUser.spaceandrole) {
+                  if (!found) {
+	                  aSpaceAndRole.m_spaceId match {
+	                      case Some(anId) => {
+	                          if (anId == spaceId) {
+	                              retRole = aSpaceAndRole.m_role
+	                              found = true
+	                          }
+	                      }
+	                  }
+                  }
+              }
+          }
+      }
+      
+      retRole
   }
   
   /**
@@ -119,8 +152,19 @@ class MongoDBUserService extends UserService {
    * 
    */
   def listUsersInSpace(spaceId: UUID): List[User] = {
-      val retList = List.empty
-      retList
+      val retList: ListBuffer[User] = ListBuffer.empty
+      for (aUser <- UserDAO.dao.find(MongoDBObject())) {
+         for (aSpaceAndRole <- aUser.spaceandrole) {
+             aSpaceAndRole.m_spaceId match {
+                 case Some(anId) => {
+                     if (anId == spaceId) {
+                         retList += aUser
+                     }
+                 }
+             }
+         }
+      }      
+      retList.toList
   }
 }
 

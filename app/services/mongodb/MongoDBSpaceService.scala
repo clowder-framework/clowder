@@ -316,22 +316,56 @@ class MongoDBSpaceService @Inject() (
    */
   def addUser(user: UUID, role: Role, space: UUID): Unit = {
       log.debug(s"Space Service - Adding user $user to space $space")
-      users.addUserToSpace(user, space)
-  }
-  
-  def removeUser(userId: UUID, space: UUID): Unit = {
-      
-  }
-  
-  def getUsersInSpace(spaceId: UUID): List[User] = {
-      List.empty
-  }
-  
-  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Role = {
-      val role = new Role()
-      role
+      users.addSpaceToUser(user, role, space)
   }
 
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def removeUser(userId: UUID, space: UUID): Unit = {
+      log.debug("Removing user " + userId + " from space " + space)
+      users.removeSpaceFromUser(userId, space)
+  }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def getUsersInSpace(spaceId: UUID): List[User] = {
+      log.debug("Getting list of users in space " + spaceId)
+      var retList = users.listUsersInSpace(spaceId)
+      log.debug("retList is " + retList)
+      retList
+  }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Option[Role] = {
+      log.debug("Getting role of user " + userId + " in space " + spaceId)
+      var retRole = users.getUserRoleInSpace(userId, spaceId)
+      log.debug("retRole is " + retRole)
+      retRole
+  }
+
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def changeUserRole(userId: UUID, role: Role, space: UUID): Unit = {
+      log.debug("Changing role of user " + userId + " in space " + space + " to role " + role)
+      users.changeUserRoleInSpace(userId, role, space)
+  }
 }
 
 

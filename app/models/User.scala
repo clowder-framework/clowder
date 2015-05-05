@@ -23,7 +23,8 @@ case class User(
   pastprojects: List[String] = List.empty,
   position: Option[String] = None,
   friends: Option[List[String]] = None,
-  viewed: Option[List[UUID]] = None) {
+  viewed: Option[List[UUID]] = None,
+  spaceandrole: List[UserSpaceAndRole] = List.empty) {
 
 
   /**
@@ -94,6 +95,8 @@ case class Info(
 )
 
 object User {
-  // takes care of automatic conversion to/from JSON
-  implicit val userFormat = Json.format[User]
+    // takes care of automatic conversion to/from JSON
+    implicit val roleFormat = Json.format[Role]
+    implicit val userSpaceAndRoleFormat = Json.format[UserSpaceAndRole]
+    implicit val userFormat = Json.format[User]
 }

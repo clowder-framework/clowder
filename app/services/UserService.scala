@@ -89,7 +89,7 @@ trait UserService {
   def removeSpaceFromUser(userId: UUID, spaceId: UUID)
   
   /**
-   * Update the role that a user has for a specific space
+   * Update the role that a user has for a specific space.
    * 
    * @param userId The identifier of the user to be modified
    * @param role The new role to be associated with the user
@@ -99,11 +99,22 @@ trait UserService {
   def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID)
   
   /**
+   * Retrieve the role that a user has for a specific space.
+   * 
+   * @param userId The identifier of the user to retrieve
+   * @param spaceId The identifier of the space to get the role for
+   * 
+   * @return The role that the user has associated with the space specified
+   * 
+   */
+  def getUserRoleInSpace(userId: UUID, spaceId: UUID): Option[Role]
+  
+  /**
    * List the users that are associated with a specific space.
    * 
-   * @param spaceId The identifier of the space to build a list of users for.
+   * @param spaceId The identifier of the space to build a list of users for
    * 
-   * @return A list of users that are associated with a space.
+   * @return A list of users that are associated with a space
    */
   def listUsersInSpace(spaceId: UUID): List[User]
   

@@ -22,7 +22,6 @@ case class ProjectSpace (
   homePage: List[URL],
   logoURL: Option[URL],
   bannerURL: Option[URL],
-  usersByRole: Map[UUID, List[UUID]], // roleId -> userId
   collectionCount: Integer,
   datasetCount: Integer,
   userCount: Integer,
@@ -42,7 +41,9 @@ case class UserSpace (
    datasetCount: Integer,
    userCount: Integer)
 
-case class Role()
+case class Role(
+   id: UUID = UUID.generate,
+   title: String = "Default")
 
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (

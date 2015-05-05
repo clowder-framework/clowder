@@ -12,6 +12,7 @@ import services.{UserService, SpaceService}
 import util.Direction._
 import org.apache.commons.lang.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -66,8 +67,17 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
         val collectionsInSpace = spaces.getCollectionsInSpace(id)
 
         val datasetsInSpace = spaces.getDatasetsInSpace(id)
+        
+        val usersInSpace = spaces.getUsersInSpace(id)
+        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]                
+        
+        var externalUsers = users.list.to[ArrayBuffer] 
+        
+        inSpaceBuffer += externalUsers(0)
+        externalUsers --= inSpaceBuffer
 
-        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator))
+        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
+        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, inSpaceBuffer.toList, externalUsers.toList))
       }
       case None => InternalServerError("Space not found")
     }
@@ -108,7 +118,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                     Logger.debug("Creating space " + formData.name)
                     val newSpace = ProjectSpace(name = formData.name, description = formData.description,
                                                 created = new Date, creator = userId, homePage = formData.homePage,
-                                                logoURL = formData.logoURL, bannerURL = formData.bannerURL, usersByRole = Map.empty,
+                                                logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                                                 collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty)
                     // insert space
                     spaces.insert(newSpace)
