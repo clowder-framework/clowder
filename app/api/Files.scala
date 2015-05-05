@@ -1829,7 +1829,7 @@ class Files @Inject()(
               
               recommendations match {
                 case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
-                case Nil => Ok(Json.obj("status" -> "fail"))
+                case Nil => Ok(Json.obj("status" -> "success"))
               }
             }
             case None => {
