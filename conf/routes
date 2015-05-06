@@ -88,7 +88,6 @@ GET            /collections/:collection_id/previews                             
 
 # Tags
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "tile")
-GET            /tags/search                                                             @controllers.Tags.search(tag)
 GET            /tags/cloud                                                              @controllers.Tags.tagCloud
 GET            /tags/list                                                               @controllers.Tags.tagList
 

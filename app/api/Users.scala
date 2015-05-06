@@ -38,7 +38,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
               identity.email match {
                   case Some(emailAddress) => {
 		              users.findByEmail(emailAddress) match {
-		                  case Some(user) => Ok(Json.toJson(user))
+		                  case Some(user) => Ok(userToJSON(user))
 		                  //The None case should never happen, as this is a secured action, and requires a user?
 		                  case None => {
 		                      Logger.debug("--------- In the NONE case for findById in getUser")
