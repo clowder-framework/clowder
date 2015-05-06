@@ -27,6 +27,8 @@ case class spaceFormData(
   logoURL: Option[URL],
   bannerURL: Option[URL],
   spaceId:Option[UUID],
+  resourceTimeToLive: Long,
+  isTimeToLiveEnabled: Boolean,
   submitButtonValue:String)
 
 class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
@@ -42,14 +44,16 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
       "homePages" -> Forms.list(Utils.CustomMappings.urlType),
       "space_id" -> optional(Utils.CustomMappings.uuidType),
+      "editTime" -> longNumber,
+      "isTimeToLiveEnabled" -> boolean,
       "submitValue" -> text
     )
       (
-          (name, description, logoUrl, bannerUrl, homePages, space_id, bvalue) => spaceFormData(name = name, description = description,
-             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, bvalue)
+          (name, description, logoUrl, bannerUrl, homePages, space_id, editTime, isTimeToLiveEnabled, bvalue) => spaceFormData(name = name, description = description,
+             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, resourceTimeToLive = editTime, isTimeToLiveEnabled = isTimeToLiveEnabled, bvalue)
         )
       (
-          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.submitButtonValue)
+          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.resourceTimeToLive, d.isTimeToLiveEnabled, d.submitButtonValue)
         )
   )
 
@@ -84,7 +88,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), "Update"))))}
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update"))))}
         case None => InternalServerError("Space not found")
       }
     }
@@ -109,7 +113,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                     val newSpace = ProjectSpace(name = formData.name, description = formData.description,
                                                 created = new Date, creator = userId, homePage = formData.homePage,
                                                 logoURL = formData.logoURL, bannerURL = formData.bannerURL, usersByRole = Map.empty,
-                                                collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty)
+                                                collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
+                                                resourceTimeToLive = formData.resourceTimeToLive, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
                     // insert space
                     spaces.insert(newSpace)
                     //TODO - Put Spaces in Elastic Search?
@@ -130,7 +135,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                     Logger.debug("updating space " + formData.name)
                     spaces.get(formData.spaceId.get) match {
                       case Some(existing_space) => {
-                        val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL, homePage = formData.homePage)
+                        val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                          homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
                         spaces.update(updated_space)
                         Redirect(routes.Spaces.getSpace(existing_space.id))
                       }

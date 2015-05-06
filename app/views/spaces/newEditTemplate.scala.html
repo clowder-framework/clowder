@@ -37,6 +37,12 @@
           </div>
           @inputText(myForm("logoUrl"), '_label-> "Logo URL")
           @inputText(myForm("bannerUrl"), '_label-> "Banner URL")
+
+          @helper.inputText(myForm("editTime"), '_label -> "Time to live (hours):")
+          @helper.inputRadioGroup(myForm("expiration"), options("expiretrue"->"On", "expirefalse"->"Off"), '_label -> "Expiration")
+          @defining(myForm("isTimeToLiveEnabled")) { isTimeToLiveEnabled =>
+            <input type="hidden" name="isTimeToLiveEnabled" id="isTimeToLiveEnabled", value = @isTimeToLiveEnabled.value>
+          }
           @helper.input(myForm("space_id"), '_label ->"") {(id, name, value, args) =>
             <input type="hidden" name="@id" value="@value">
           }
@@ -66,7 +72,23 @@
   return i;
   }, 0);
   }
+  var timeToLive = $('#editTime').val();
+  timeToLive = timeToLive/3600000;
+  $('#editTime').val(timeToLive);
 
+  var $radios = $('input:radio[name=expiration]');
+  var isEnabled =  $('#isTimeToLiveEnabled').val();
+
+  if (isEnabled === "true") {
+       $radios.filter('[value=expiretrue]').prop('checked', true);
+       //$('input:radio[name=radiogroup]')[0].checked = true;
+       $('#expireenabled').html("On");
+  }
+  else {
+      $radios.filter('[value=expirefalse]').prop('checked', true);
+       //$('input:radio[name=radiogroup]')[1].checked = true;
+      $('#expireenabled').html("Off");
+  }
   $('.homePages').on('click', '.home-page-delete a', function () {
   $(this).parent().prev().remove();
   $(this).parent().remove();
@@ -84,6 +106,8 @@
 
   //remove blank lines before submitting
   $('form').submit(function () {
+  var expireEnabled = $('#expiration_expiretrue').prop('checked');
+  $('#isTimeToLiveEnabled').val(expireEnabled);
   $('.homePages .control-group').each(function () {
   var valueInput = $(this).find('input');
 

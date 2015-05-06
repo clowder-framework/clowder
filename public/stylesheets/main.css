@@ -238,6 +238,11 @@ code {
 	left:20px;
 }
 
+#nameDescrFieldSet .control-group .controls .buttonset label
+{
+    margin-right: 10%;
+}
+
 .profilePicture {
   margin-bottom:12px;
   max-width:256px;
