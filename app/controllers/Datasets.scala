@@ -20,7 +20,6 @@ import scala.collection.mutable.ListBuffer
 import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
-import org.apache.commons.lang.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
 import util.RequiredFieldsConfig
 
@@ -121,7 +120,7 @@ class Datasets @Inject()(
       //of the datasets names or descriptions
       var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
-          decodedDatasetList += decodeDatasetElements(aDataset)
+          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
       
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
@@ -202,7 +201,7 @@ class Datasets @Inject()(
       //of the datasets names or descriptions
       var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
-          decodedDatasetList += decodeDatasetElements(aDataset)
+          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
       
       //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
@@ -271,7 +270,7 @@ class Datasets @Inject()(
           val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset)
-          datasetWithFiles = decodeDatasetElements(datasetWithFiles)
+          datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
           // previews
 //          val filteredPreviewers = for (
@@ -300,11 +299,11 @@ class Datasets @Inject()(
 	          var decodedCollectionsInside = new ListBuffer[models.Collection]()
 	          
 	          for (aCollection <- collectionsOutside) {
-	              val dCollection = decodeCollectionElements(aCollection)
+	              val dCollection = Utils.decodeCollectionElements(aCollection)
 	              decodedCollectionsOutside += dCollection
 	          }
               for (aCollection <- collectionsInside) {
-                  val dCollection = decodeCollectionElements(aCollection)
+                  val dCollection = Utils.decodeCollectionElements(aCollection)
                   decodedCollectionsInside += dCollection
               }
 	          
@@ -326,39 +325,6 @@ class Datasets @Inject()(
           Logger.error("Error getting dataset" + id); InternalServerError
         }
       }
-  }
-  
-  /**
-   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   * 
-   * Currently, the following dataset elements are encoded:
-   * name
-   * description
-   *  
-   */
-  def decodeDatasetElements(dataset: Dataset) : Dataset = {            
-      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
-              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
-              							  
-      decodedDataset
-  }
-  
-  /**
-   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   * 
-   * Currently, the following collection elements are encoded:
-   * 
-   * name
-   * description
-   *  
-   */
-  def decodeCollectionElements(collection: Collection) : Collection  = {
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
-              							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
-      decodedCollection
   }
 
   /**

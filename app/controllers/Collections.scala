@@ -30,23 +30,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       implicit val user = request.user
       Ok(views.html.newCollection(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
   }
-
-  /**
-   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   * 
-   * Currently, the following collection elements are encoded:
-   * 
-   * name
-   * description
-   *  
-   */
-  def decodeCollectionElements(collection: Collection) : Collection = {      
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
-              							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
-      decodedCollection
-  }
   
   /**
    * List collections.
@@ -109,10 +92,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collectionsWithThumbnails = collectionsWithThumbnails.reverse
       
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
-      //of the datasets names or descriptions
+      //of the collection's names or descriptions
       var decodedCollections = new ListBuffer[models.Collection]()
       for (aCollection <- collectionsWithThumbnails) {
-          val dCollection = decodeCollectionElements(aCollection)
+          val dCollection = Utils.decodeCollectionElements(aCollection)
           decodedCollections += dCollection
       }
       
@@ -193,7 +176,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
           
           //Decode the encoded items
-          val dCollection = decodeCollectionElements(collection)
+          val dCollection = Utils.decodeCollectionElements(collection)
           
           for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
           val filteredPreviewers = for (
@@ -206,7 +189,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           Logger.debug("Num previewers " + filteredPreviewers.size)
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList))
+          
+          //Decode the datasets so that their free text will display correctly in the view
+          val datasetsInside = datasets.listInsideCollection(id)
+          var decodedDatasetsInside = new ListBuffer[models.Dataset]()
+          for (aDataset <- datasetsInside) {
+              val dDataset = Utils.decodeDatasetElements(aDataset)
+              decodedDatasetsInside += dDataset
+          }
+          
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
