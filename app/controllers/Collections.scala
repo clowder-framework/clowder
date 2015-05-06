@@ -3,6 +3,7 @@ package controllers
 import play.api.data.Form
 import play.api.data.Forms._
 import models.{UUID, Collection}
+import util.RequiredFieldsConfig
 import java.util.Date
 import play.api.Logger
 import play.api.Play.current
@@ -27,7 +28,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>
       implicit val user = request.user
-      Ok(views.html.newCollection(null))
+      Ok(views.html.newCollection(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
   }
 
   /**
@@ -157,7 +158,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 	      case Some(identity) => {	      	            
                 if (colName == null || colDesc == null) {
                     //This case shouldn't happen as it is validated on the client. 
-                    BadRequest(views.html.newCollection("Name or Description was missing during collection creation."))
+                    BadRequest(views.html.newCollection("Name or Description was missing during collection creation.", RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
                 }
 	            
 	            var collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)

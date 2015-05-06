@@ -22,6 +22,7 @@ import services.ExtractorMessage
 import api.WithPermission
 import org.apache.commons.lang.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
+import util.RequiredFieldsConfig
 
 
 /**
@@ -52,7 +53,7 @@ class Datasets @Inject()(
     implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      Ok(views.html.newDataset(filesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      Ok(views.html.newDataset(filesList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
   
   def addToDataset(id: UUID, name: String, desc: String) = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
