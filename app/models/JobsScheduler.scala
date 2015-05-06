@@ -43,11 +43,8 @@ import play.api.libs.concurrent.Akka
  */
 
   object JobsScheduler {
-
     val scheduler: SchedulerService =  DI.injector.getInstance(classOf[SchedulerService])
-    val users: UserService =  DI.injector.getInstance(classOf[UserService])
-    val events: EventService =  DI.injector.getInstance(classOf[EventService])
-    
+
     def runScheduledJobs() = {
       val curr_time = Calendar.getInstance().getTime()
       val minute = new SimpleDateFormat("m").format(curr_time)
@@ -55,57 +52,15 @@ import play.api.libs.concurrent.Akka
       val day_of_week = new SimpleDateFormat("u").format(curr_time)
       val day_of_month = new SimpleDateFormat("d").format(curr_time)
       var emailJobs = getEmailJobs(minute.toInt, hour.toInt, day_of_week.toInt)
-      sendEmailUser(emailJobs)
-  }
-
-  /**
-  * Gets the events for each viewer and sends out emails
-   * TODO : move to event class most likely MMDB-1842
-  */
-  def sendEmailUser(userList: List[TimerJob]) = {
-  	for (job <- userList){
-  		job.parameters match {
-  			case Some(id) => {
-  				users.findById(id) match {
-  					case Some(user) => {
-  						user.email match {
-  							case Some(email) => {	
-  								job.lastJobTime match {
-  									case Some(date) => {
-                      sendDigestEmail(email,events.getAllEventsByTime(user.followedEntities, date))
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-        scheduler.updateLastRun("Digest[" + id + "]")
-      }
+      Events.sendEmailUser(emailJobs)
     }
-  }
-
-    /**
-    * Sends and creates a Digest Email
-    */
-  def sendDigestEmail(email: String, events: List[Event]) = {
-    var eventsList = events.sorted(Ordering.by((_: Event).created).reverse)
-    val body = views.html.emailEvents(eventsList)
-    val mail = use[MailerPlugin].email
-
-    mail.setSubject("Clowder Email Digest")
-    mail.setRecipient(email)
-    mail.setFrom(Mailer.fromAddress)
-    mail.send("", body.body)
-   
-    Logger.info("Email Sent")
-  }
 
   /**
   * Gets the Jobs for this current time
   */
-  def getEmailJobs (minute: Integer, hour: Integer, day_of_week: Integer) = {
-	 var emailJobs = scheduler.getJobByTime(minute, hour, day_of_week)
-	 emailJobs
-  }
+    def getEmailJobs (minute: Integer, hour: Integer, day_of_week: Integer) = {
+      var emailJobs = scheduler.getJobByTime(minute, hour, day_of_week)
+      emailJobs
+    }
+
 }
