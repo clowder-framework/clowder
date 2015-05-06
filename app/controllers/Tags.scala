@@ -5,6 +5,7 @@ import models.Tag
 
 import api.WithPermission
 import api.Permission
+import util.Parsers
 import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import scala.collection.mutable.Map
@@ -23,14 +24,74 @@ import play.api.Play.current
  */
 class Tags @Inject()(collections: CollectionService, datasets: DatasetService, files: FileService, sections: SectionService) extends SecuredController {
 
-  def search(tag: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  /**
+   * Search for a tag and display the page to the user. This will allow for pagination allowing the user
+   * to go forwards and backwards through all tags. The user can specify the number of datasets and files
+   * to display.
+   *
+   * The code will query the datasets, files and sections and combine the lists into a single sorted list
+   * and display it to the user.
+   */
+  def search(tag: String, start: String, size: Integer, mode: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+    implicit val user = request.user
+
+    var nextItems = collection.mutable.ListBuffer.empty[AnyRef]
+    var prevItems = collection.mutable.ListBuffer.empty[AnyRef]
+
     // Clean up leading, trailing and multiple contiguous white spaces.
     val tagCleaned = tag.trim().replaceAll("\\s+", " ")
-    val taggedDatasets = datasets.findByTag(tagCleaned)
-    val taggedFiles    = files.findByTag(tagCleaned)
-    val sectionsByTag = sections.findByTag(tagCleaned)
-    val sectionsWithFiles = for (s <- sectionsByTag; f <- files.get(s.file_id)) yield (s, f)
-    Ok(views.html.searchByTag(tag, taggedDatasets, taggedFiles, sectionsWithFiles))
+
+    // get all datasets tagged
+    nextItems ++= datasets.findByTag(tagCleaned, start, size + 1, false)
+    if (start != "") prevItems ++= datasets.findByTag(tagCleaned, start, size + 1, true)
+
+    // get all files tagged
+    nextItems ++= files.findByTag(tagCleaned, start, size + 1, false)
+    if (start != "") prevItems ++= files.findByTag(tagCleaned, start, size + 1, true)
+
+    // get all sections tagged
+    // TODO this logic should be moved to findByTag in sections.
+    val sectionFiles = sections.findByTag(tagCleaned).map{ s => files.get(s.file_id) match {
+      case Some(f) => f
+    } }
+    if (start == "" ) {
+      nextItems ++= sectionFiles
+      prevItems ++= sectionFiles
+    } else {
+      val startDate = Parsers.fromISO8601(start)
+      nextItems ++= sectionFiles.filter(f => f.uploadDate.compareTo(startDate) <= 0)
+      prevItems ++= sectionFiles.filter(f => f.uploadDate.compareTo(startDate) >= 0)
+    }
+
+    // order final list
+    nextItems = nextItems.sortBy(_ match {
+      case d: models.Dataset => d.created
+      case f: models.File => f.uploadDate
+    }).reverse
+    prevItems = prevItems.sortBy(_ match {
+      case d: models.Dataset => d.created
+      case f: models.File => f.uploadDate
+    })
+
+    // check if there are next items
+    val next = if (nextItems.size > size) {
+      nextItems(size) match {
+        case d: models.Dataset => Parsers.toISO8601(d.created)
+        case f: models.File => Parsers.toISO8601(f.uploadDate)
+      }
+    } else ""
+
+    // check if there are prev items
+    val prev = if (prevItems.size > 1) {
+      prevItems(Math.min(prevItems.length-1, size)) match {
+        case d: models.Dataset => Parsers.toISO8601(d.created)
+        case f: models.File => Parsers.toISO8601(f.uploadDate)
+      }
+    } else ""
+
+    // check if there is a prev item
+
+    Ok(views.html.searchByTag(tag, nextItems.slice(0, size).toList, prev, next, size, mode))
   }
 
   def tagCloud() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
