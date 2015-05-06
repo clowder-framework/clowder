@@ -545,7 +545,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                             val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                               URLEncoder.encode(filename, "UTF-8")
                             } else {
-                              MimeUtility.encodeWord(filename)
+                              MimeUtility.encodeText(filename).replaceAll(",", "%2C")
                             }
                             Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)
