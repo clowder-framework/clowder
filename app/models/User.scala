@@ -36,7 +36,11 @@ trait User extends Identity {
     val size = "256"
     avatarUrl match {
       case Some(url) => {
-        url+"?s="+size
+        if (url.contains("?")) {
+          url+"&s="+size
+        } else {
+          url+"?s="+size
+        }
       }
       case None => {
         val configuration = play.api.Play.configuration
