@@ -1,6 +1,6 @@
 @(space: ProjectSpace, creator: Option[User], usersInSpace: List[User], externalUsers: List[User])(implicit user: Option[securesocial.core.Identity])
 
-<link href="@routes.Assets.at("stylesheets/transfer-list-builder/bootstrap.css")" rel="stylesheet">
+
 
 <h3>Members</h3>
 
@@ -34,15 +34,17 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.f
 	</ul>
 </div>
 
+
+
 @if(user.isDefined) {
 	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="modal"
-	href="#modalUser" id="edituseralloc"
+	data-target="#modalUser" id="edituseralloc"
 	title="Edit User Allocation">
-	    <span class="glyphicon glyphicon-modal-window"></span> Edit
+	    <span class="glyphicon glyphicon-edit"></span> Edit
 	</a>
 }
 
-<div class="modal" id="modalUser">
+<div class="modal fade bs-example-modal-lg" id="modalUser" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 <div class="modal-dialog">
 <div class="modal-content">
 <div class="modal-header">
