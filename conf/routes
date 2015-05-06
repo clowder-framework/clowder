@@ -404,6 +404,7 @@ POST 	/api/institutions/addinstitution		@api.Institutions.addinstitution(institu
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
+GET            /api/me                                                            @api.Users.getUser()
 
 POST 			/api/users/updateUserField												@api.Users.updateUserField(email: String, field: String, fieldText: String)
 

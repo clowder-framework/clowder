@@ -111,7 +111,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.removeDataset,
         api.routes.javascript.Collections.removeCollection,
         api.routes.javascript.Projects.addproject,
-        api.routes.javascript.Institutions.addinstitution
+        api.routes.javascript.Institutions.addinstitution,
+        api.routes.javascript.Users.getUser
       )
     ).as(JSON) 
   }
