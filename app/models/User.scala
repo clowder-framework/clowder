@@ -36,7 +36,11 @@ trait User extends Identity {
     val size = "256"
     avatarUrl match {
       case Some(url) => {
-        url+"?s="+size
+        if (url.contains("?")) {
+          url+"&s="+size
+        } else {
+          url+"?s="+size
+        }
       }
       case None => {
         val configuration = play.api.Play.configuration
@@ -79,6 +83,10 @@ trait User extends Identity {
       proj + ", " + next
     }
   }
+  
+  def getFollowedObjectList(objectType : String) : List[TypedID] = {
+    followedEntities.filter { x => x.objectType == objectType }  
+  }
 
   /**
   * return MiniUser constructed from the user model
@@ -86,7 +94,6 @@ trait User extends Identity {
   def getMiniUser: MiniUser = {
     new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl, email = email)
   }
-
 }
 
 
