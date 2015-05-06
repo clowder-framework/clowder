@@ -4,7 +4,7 @@ import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
-import util.License
+import _root_.util.{Parsers, License}
 import com.novus.salat._
 
 import scala.collection.mutable.ListBuffer
@@ -170,7 +170,7 @@ class MongoDBFileService @Inject() (
     val extra = Map("showPreviews" -> showPreviews,
                     "author" -> SocialUserDAO.toDBObject(author),
                     "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
-    MongoUtils.writeBlob(inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(id => get(id))
+    MongoUtils.writeBlob[File](inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(id => get(id))
   }
 
   /**
@@ -527,6 +527,24 @@ class MongoDBFileService @Inject() (
 
   def findByTag(tag: String): List[File] = {
     FileDAO.find(MongoDBObject("tags.name" -> tag)).toList
+  }
+
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File] = {
+    val filter = if (start == "") {
+      MongoDBObject("tags.name" -> tag)
+    } else {
+      if (reverse) {
+        MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $gte Parsers.fromISO8601(start))
+      } else {
+        MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $lte Parsers.fromISO8601(start))
+      }
+    }
+    val order = if (reverse) {
+      MongoDBObject("uploadDate" -> 1, "filename" -> 1)
+    } else {
+      MongoDBObject("uploadDate" -> -1, "filename" -> 1)
+    }
+    FileDAO.dao.find(filter).sort(order).limit(limit).toList
   }
 
   def findIntermediates(): List[File] = {

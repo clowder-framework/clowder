@@ -21,6 +21,7 @@ import javax.inject.Inject
 import java.util.Date
 import scala.sys.SystemProperties
 import securesocial.core.Identity
+import scala.collection.mutable.ListBuffer
 
 
 
@@ -121,15 +122,29 @@ class Files @Inject() (
         }
         commentsByFile = commentsByFile.sortBy(_.posted)
         
-        var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
-        var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
+        //Decode the datasets so that their free text will display correctly in the view
+        val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val datasetsNotContaining = datasets.findNotContainingFile(file.id).sortBy(_.name)              
+        var decodedDatasetsContaining = new ListBuffer[models.Dataset]()
+        var decodedDatasetsNotContaining = new ListBuffer[models.Dataset]()
+        
+        for (aDataset <- datasetsContainingFile) {
+        	val dDataset = Utils.decodeDatasetElements(aDataset)
+        	decodedDatasetsContaining += dDataset
+        }
+        
+        for (aDataset <- datasetsNotContaining) {
+        	val dDataset = Utils.decodeDatasetElements(aDataset)
+        	decodedDatasetsNotContaining += dDataset
+        }
         
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
         val extractionsByFile = extractions.findByFileId(id)
         
-        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
-          extractorsActive, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled, extractionsByFile))
+
+        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, 
+          extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList, userMetadata, isRDFExportEnabled, extractionsByFile))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."
@@ -554,7 +569,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                             val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                               URLEncoder.encode(filename, "UTF-8")
                             } else {
-                              MimeUtility.encodeWord(filename)
+                              MimeUtility.encodeText(filename).replaceAll(",", "%2C")
                             }
                             Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)
