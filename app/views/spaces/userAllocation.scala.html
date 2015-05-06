@@ -1,0 +1,28 @@
+@(usersInSpace: List[User], externalUsers: List[User])(implicit user: Option[securesocial.core.Identity])
+
+<link href="@routes.Assets.at("stylesheets/transfer-list-builder/bootstrap.css")" rel="stylesheet">
+<link href="@routes.Assets.at("stylesheets/transfer-list-builder/bootstrap-transfer.css")" rel="stylesheet">
+
+<script src="@routes.Assets.at("javascripts/transfer-list-builder/jquery.js")"></script>
+<script src="@routes.Assets.at("javascripts/transfer-list-builder/bootstrap-transfer.js")"></script>
+<script>
+    $(function() {
+        var t = $('#transferbuilder').bootstrapTransfer(
+            {'target_id': 'multi-select-input',
+             'height': '15em',
+             'hilite_selection': true});
+        
+        t.populate([
+            {value:"1", content:"Apple"},
+            {value:"2", content:"Orange"},
+            {value:"3", content:"Banana"},
+            {value:"4", content:"Peach"},
+            {value:"5", content:"Grapes"}
+        ]);
+        t.set_values(["2", "4"]);
+        console.log(t.get_values());
+    });
+</script>
+
+<div id="transferbuilder" style="width:450px">
+</div>

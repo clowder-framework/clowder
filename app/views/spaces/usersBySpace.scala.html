@@ -1,31 +1,62 @@
-@(space: ProjectSpace, creator: Option[User], usersInSpace: List[User], externalUsers: List[User])
+@(space: ProjectSpace, creator: Option[User], usersInSpace: List[User], externalUsers: List[User])(implicit user: Option[securesocial.core.Identity])
+
+<link href="@routes.Assets.at("stylesheets/transfer-list-builder/bootstrap.css")" rel="stylesheet">
 
 <h3>Members</h3>
 
-<ul class="list-unstyled">
-    <li>Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.fullName</a></li>
+Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.fullName</a>
 
-@if(usersInSpace.size == 0) {
-    <li>No other members</li>
+<div id="userlist">
+    <ul class="list-unstyled">
+	@if(usersInSpace.size == 0) {
+	    <li>No other members</li>
+	}
+	
+	@for(user <- usersInSpace) {    
+	    <li>@user.fullName (
+	        @for(spacerole <- user.spaceandrole) {
+	            @spacerole.m_role<br>
+	        }
+	    )</li>    
+	}
+	</ul>
+	
+	<h4>Non-Members</h4>
+	
+	<ul class="list-unstyled">
+	@if(externalUsers.size == 0) {
+	    <li>No external members</li>
+	}
+	
+	@for(user <- externalUsers) {    
+	    <li>@user.fullName (@user.email)</li>    
+	}
+	</ul>
+</div>
+
+@if(user.isDefined) {
+	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="modal"
+	href="#modalUser" id="edituseralloc"
+	title="Edit User Allocation">
+	    <span class="glyphicon glyphicon-modal-window"></span> Edit
+	</a>
 }
 
-@for(user <- usersInSpace) {    
-    <li>@user.fullName (
-        @for(spacerole <- user.spaceandrole) {
-            @spacerole.m_role<br>
-        }
-    )</li>    
-}
-</ul>
-
-<h4>Non-Members</h4>
-
-<ul class="list-unstyled">
-@if(externalUsers.size == 0) {
-    <li>No external members</li>
-}
-
-@for(user <- externalUsers) {    
-    <li>@user.fullName (@user.email)</li>    
-}
-</ul>
+<div class="modal" id="modalUser">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+&times;</button>
+<h4 class="modal-title">Modal Title Goes Here</h4>
+</div>
+<div class="modal-body">
+@spaces.userAllocation(usersInSpace, externalUsers)
+</div>
+<div class="modal-footer">
+<a href="#" class="btn btn-default" id="closebutton" data-dismiss="modal">Close</a>
+<a href="#" class="btn btn-primary" id="updatebutton">Update</a>
+</div>
+</div>
+</div>
+</div>
