@@ -107,9 +107,10 @@
             var tag = $('#tagField').val();
 
             var isTagPresent = false;
-            $("#tagList").children("div").each(function (index, tagLi) {
-                if($(tagLi).attr("name")===tag){
+            $("#tagList").children("div").each(function (index, tagListChild) {
+                if ($(tagListChild).children("a").first().text().trim()==tag) {
                     isTagPresent = true;
+                    return false;
                 }
             });
 
