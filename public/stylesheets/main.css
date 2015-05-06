@@ -509,3 +509,49 @@ textarea, input[type='text'], input[type='password']{
 .dataset-preview {
     padding: 20px 0px;
 }
+
+
+
+#scrollTableGalleria{
+	width: 100%;
+}
+#scrollTableGalleria thead,#scrollTableGalleria tbody,#scrollTableGalleria tr,#scrollTableGalleria td,#scrollTableGalleria th{
+	display:block;
+}
+#scrollTableGalleria tr:after{
+	content: ' ';
+    display: block;
+    visibility: hidden;
+    clear: both;
+
+}
+#scrollTableGalleria tbody{
+	overflow-y: auto;
+}
+#scrollTableGalleria tbody td, #scrollTableGalleria thead th{
+            float: left;
+}
+#scrollTableGalleria .galleriaOrder{
+	width: 5%;
+}
+#scrollTableGalleria .galleriaTheThumbnail{
+	width: 35%;
+}
+#scrollTableGalleria .galleriaInfo{
+	width: 35%;
+}
+#scrollTableGalleria .galleriaFindSimilar{
+	width: 25%;
+}
+#scrollTableGalleria thead{
+	width:98%;
+}
+
+/* any custom CSS will override the Galleria theme. Here we enlarge the thumbnails: */
+.galleria-thumbnails .galleria-image{width:90px;height:60px;}
+.galleria-thumbnails-list{height:60px;}
+.galleria-thumb-nav-left,
+.galleria-thumb-nav-right{height:55px;}
+.galleria-info,
+.galleria-counter{bottom:80px;}
+.galleria-thumbnails-container { height: 62px;}
