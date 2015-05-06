@@ -1,6 +1,6 @@
 9990:services.mongodb.MongoSalatPlugin
 9991:com.typesafe.plugin.CommonsMailerPlugin
-#9992:services.RabbitmqPlugin
+9992:services.RabbitmqPlugin
 9994:services.mongodb.MongoDBAuthenticatorStore
 9995:securesocial.core.DefaultIdGenerator
 9996:securesocial.core.providers.utils.DefaultPasswordValidator
@@ -9,7 +9,7 @@
 9999:securesocial.core.providers.utils.BCryptPasswordHasher
 10000:securesocial.core.providers.UsernamePasswordProvider
 #10001:services.VersusPlugin
-#10002:services.ElasticsearchPlugin
+10002:services.ElasticsearchPlugin
 #10003:securesocial.core.providers.TwitterProvider
 #10004:securesocial.core.providers.GoogleProvider
 #10005:services.PostgresPlugin

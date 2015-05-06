@@ -28,7 +28,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     // set admins
     AppConfiguration.setDefaultAdmins()
 
-    extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
+    extractorTimer = Akka.system().scheduler.schedule(0 minutes, 2 minutes) {
       ExtractionInfoSetUp.updateExtractorsInfo()
     }
 

@@ -131,7 +131,7 @@ class MongoDBFileService @Inject() (
     val extra = Map("showPreviews" -> showPreviews,
                     "author" -> SocialUserDAO.toDBObject(author),
                     "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
-    MongoUtils.writeBlob(inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(id => get(id))
+    MongoUtils.writeBlob[File](inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(id => get(id))
   }
 
   /**
