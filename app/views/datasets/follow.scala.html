@@ -5,6 +5,7 @@
         <button id="followButton"
                 class="btn-xs btn-success followButton"
                 objectId="@dataset.id"
+                objectName="@dataset.name"
                 objectType="dataset">
             Follow
         </button>
@@ -12,6 +13,7 @@
         <button id="followButton"
                 class="btn-xs btn-danger followButton"
                 objectId="@dataset.id"
+                objectName="@dataset.name"
                 objectType="dataset">
             Unfollow
         </button>
@@ -40,11 +42,12 @@
     <script>
         $(document).on('click', '.followButton', function() {
             var id = $(this).attr('objectId');
+            var name = $(this).attr('objectName');
             var type = $(this).attr('objectType');
             if ($(this).attr('id') === '') {
-              followHandler.call(this, jsRoutes, id, type, undefined, undefined);
+              followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
             } else {
-              followHandler.call(this, jsRoutes, id, type, function(data) {
+              followHandler.call(this, jsRoutes, id, name, type, function(data) {
                     recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
                                   data['recommendations']);
                 }, undefined);

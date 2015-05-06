@@ -2,7 +2,7 @@ package controllers
 
 import play.api.data.Form
 import play.api.data.Forms._
-import models.{UUID, Collection}
+import models.{UUID, Collection, MiniUser, Event}
 import java.util.Date
 import play.api.Logger
 import play.api.Play.current
@@ -19,11 +19,10 @@ import services._
 import org.apache.commons.lang.StringEscapeUtils
 import models.User
 
-
 object ThumbnailFound extends Exception {}
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService) extends SecuredController {  
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, users: UserService, events: EventService) extends SecuredController {  
 
   def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>
@@ -171,6 +170,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                 current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id, 
                 List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
                 
+                //Add to Events Table
+                var option_user = users.findByIdentity(identity)
+                events.addObjectEvent(option_user, collection.id, collection.name, "create_collection")
+
 	            // redirect to collection page
 	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
 	            Redirect(routes.Collections.collection(collection.id))	        

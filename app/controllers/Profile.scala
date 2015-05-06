@@ -1,16 +1,20 @@
 package controllers
 
-import services.UserService
+import services._
 import services.mongodb.MongoDBProjectService
 import services.mongodb.MongoDBInstitutionService
+import services.mongodb.MongoDBEventService
 import play.api.data.Form
 import play.api.data.Forms._
-import models.{User, Info, UUID}
+import models.{User, Info, UUID, MiniUser, Event}
 import play.api.Logger
 import javax.inject.Inject
+import java.text.SimpleDateFormat
+import java.util.Date
 
 
-class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService) extends  SecuredController {
+
+class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService) extends  SecuredController {
 
   val bioForm = Form(
     mapping(
@@ -91,12 +95,35 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
     } 
   }
 
-  def viewProfile(email: Option[String]) = SecuredAction() { request =>
-    implicit val user = request.user match {
-      case Some(x: User) => Some(x)
-      case _ => None
+  def viewProfileUUID(uuid: UUID) = SecuredAction() { request =>
+    implicit val user = request.user
+    val viewerUser = request.user
+    var ownProfile: Option[Boolean] = None
+    var muser = users.findById(uuid)
+    muser match {
+      case Some(existingUser) => {
+        viewerUser match {
+          case Some(loggedInUser) => {
+            if (loggedInUser.id == existingUser.id)
+              ownProfile = Option(true)
+            else
+              ownProfile = None
+          }
+          case None => {
+            ownProfile = None
+          }
+        }
+        Ok(views.html.profile(existingUser, ownProfile))
+      }
+      case None => {
+        Logger.error("no user model exists for " + uuid.stringify)
+        InternalServerError
+      }
     }
+  }
 
+  def viewProfile(email: Option[String]) = SecuredAction() { request =>
+    implicit val user = request.user
     var ownProfile: Option[Boolean] = None
     email match {
       case Some(addr) => {
@@ -176,23 +203,20 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
             email match {
               case Some(addr) => {
                 implicit val modeluser = users.findByEmail(addr.toString())
-                modeluser match {
-                  case Some(muser) => {
-                    users.updateUserField(addr.toString(), "avatarUrl", form.avatarUrl)
-                    users.updateUserField(addr.toString(), "biography", form.biography)
-                    users.updateUserField(addr.toString(), "currentprojects", form.currentprojects)
-                    users.updateUserField(addr.toString(), "institution", form.institution)
-                    users.updateUserField(addr.toString(), "orcidID", form.orcidID)
-                    users.updateUserField(addr.toString(), "pastprojects", form.pastprojects)
-                    users.updateUserField(addr.toString(), "position", form.position)
-                    Redirect(routes.Profile.viewProfile(email))
-                  }
-                }
+                users.updateUserField(addr.toString(), "avatarUrl", form.avatarUrl)
+                users.updateUserField(addr.toString(), "biography", form.biography)
+                users.updateUserField(addr.toString(), "currentprojects", form.currentprojects)
+                users.updateUserField(addr.toString(), "institution", form.institution)
+                users.updateUserField(addr.toString(), "orcidID", form.orcidID)
+                users.updateUserField(addr.toString(), "pastprojects", form.pastprojects)
+                users.updateUserField(addr.toString(), "position", form.position)    
+                events.addUserEvent(modeluser, "edit_profile")
+                Redirect(routes.Profile.viewProfile(email))
               }
             }
-          }
+          } 
           case None => {
-            Redirect(routes.RedirectUtility.authenticationRequired())
+          Redirect(routes.RedirectUtility.authenticationRequired())
           }
         }
       }

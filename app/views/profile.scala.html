@@ -46,6 +46,7 @@
                       "
                       autocomplete="off"
                       objectId="@profile.id.stringify"
+                      objectName="@profile.fullName"
                       objectType="user"
                     >
                       <!-- Is there a way to store a scala variable somewhere?... -->
@@ -102,11 +103,12 @@
                     $(document).ready(function() {
                       $(document).on('click', '.followButton', function() {
                         var id = $(this).attr('objectId');
+                        var name = $(this).attr('objectName');
                         var type = $(this).attr('objectType');
                         if ($(this).attr('id') === '') {
-                          followHandler.call(this, jsRoutes, id, type, undefined, undefined);
+                          followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
                         } else {
-                          followHandler.call(this, jsRoutes, id, type, followCallback, unfollowCallback);
+                          followHandler.call(this, jsRoutes, id, name, type, followCallback, unfollowCallback);
                         }
                       });
                     });

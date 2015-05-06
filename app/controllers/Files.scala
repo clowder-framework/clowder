@@ -22,6 +22,8 @@ import java.util.Date
 import scala.sys.SystemProperties
 import securesocial.core.Identity
 
+
+
 /**
  * Manage files.
  *
@@ -38,6 +40,8 @@ class Files @Inject() (
   previews: PreviewService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
+  users: UserService,
+  events: EventService,
   thumbnails: ThumbnailService) extends SecuredController {
 
   /**
@@ -361,7 +365,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-
+              var option_user = users.findByIdentity(identity)
+              events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
 	            if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"
 	            else if(showPreviews.equals("None"))

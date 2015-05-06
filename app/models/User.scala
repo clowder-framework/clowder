@@ -79,7 +79,16 @@ trait User extends Identity {
       proj + ", " + next
     }
   }
+
+  /**
+  * return MiniUser constructed from the user model
+  */
+  def getMiniUser: MiniUser = {
+    new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl, email = email)
+  }
+
 }
+
 
 case class MediciUser(
   id: UUID = UUID.generate(),

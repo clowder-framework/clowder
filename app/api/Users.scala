@@ -3,19 +3,19 @@ package api
 import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
-import models.{UUID, User, TypedID, MiniEntity}
+import models._
 import play.api.libs.json._
 import play.api.mvc.Action
-import services.UserService
+import services._
 import play.api.Play.current
+import java.util.Date
 
 /**
  * API to interact with the users.
  *
  * @author Rob Kooper
  */
-class Users @Inject()(users: UserService) extends ApiController {
-
+class Users @Inject()(users: UserService, events: EventService) extends ApiController {
   /**
    * Returns a list of all users in the system.
    */
@@ -72,14 +72,15 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Follow a user",
     responseClass = "None", httpMethod = "POST")
-  def follow(followeeUUID: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+  def follow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
-        val recommendations = getTopRecommendations(followeeUUID, loggedInUser)
+        events.addObjectEvent(user, followeeUUID, name, "follow_user")
         users.followUser(followeeUUID, followerUUID)
 
+        val recommendations = getTopRecommendations(followeeUUID, loggedInUser)
         recommendations match {
           case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
           case Nil => Ok(Json.obj("status" -> "success"))
@@ -93,11 +94,12 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(followeeUUID: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+  def unfollow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
+        events.addObjectEvent(user, followeeUUID, name, "unfollow_user")
         users.unfollowUser(followeeUUID, followerUUID)
         Ok(Json.obj("status" -> "success"))
       }

@@ -7,16 +7,18 @@ import play.Logger
 import java.util.Date
 import play.api.Play.current
 import javax.inject.Inject
-import services.{CommentService, DatasetService, ElasticsearchPlugin}
-import models.{Comment, UUID}
+import models.{Comment, UUID, MiniUser, Event}
+import services._
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
+
+
 
 /**
  * Comments on datasets.
  *
  * @author Rob Kooper
  */
-class Comments @Inject()(datasets: DatasetService, comments: CommentService) extends ApiController {
+class Comments @Inject()(datasets: DatasetService, comments: CommentService, events: EventService) extends ApiController {
 
   def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
     implicit request =>
@@ -169,6 +171,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
 	    		                 Logger.debug(s"editComment from file with id  $commentId.")
 
 	    		                 comments.editComment(commentId, commentText)
+	    		                 events.addObjectEvent(request.user, commentId, commentText, "edit_comment")
 	    		                 Ok(Json.obj("status" -> "success"))
 	    		             }
 	    		             else {

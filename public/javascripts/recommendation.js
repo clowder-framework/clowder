@@ -52,7 +52,7 @@ var getUrl = function (jsRoutes, id, type) {
 
 // Callback function for follow/unfollow onclick.
 // Call this function with 'this' as the follow button.
-var followHandler = function (jsRoutes, id, type, followCallback, unfollowCallback) {
+var followHandler = function (jsRoutes, id, name, type, followCallback, unfollowCallback) {
     if (this == window) {
         return;
     }
@@ -65,7 +65,7 @@ var followHandler = function (jsRoutes, id, type, followCallback, unfollowCallba
 
     var buttonText = $(this).text().trim();
     if (buttonText === 'Follow') {
-        var request = ajaxObj.follow(id).ajax({ type: 'POST' });
+        var request = ajaxObj.follow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
             $followButton.text("Unfollow");
             $followButton.removeClass('btn-success');
@@ -79,7 +79,7 @@ var followHandler = function (jsRoutes, id, type, followCallback, unfollowCallba
             console.log('Failed to follow.');
         });
     } else if (buttonText === 'Unfollow') {
-        var request = ajaxObj.unfollow(id).ajax({ type: 'POST' });
+        var request = ajaxObj.unfollow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
             $followButton.text("Follow");
             $followButton.removeClass('btn-danger');
@@ -120,6 +120,7 @@ var recommendationHandler = function(jsRoutes, $recPanel, $recDiv, recommendatio
                                             'aria-pressed="true" ' +
                                             'autocomplete="off" ' +
                                             'objectId="' + id + '" ' +
+                                            'objectName="' + name + '" ' +
                                             'objectType="' + objectType + '">' +
                                         'Follow' +
                                     '</button>' +

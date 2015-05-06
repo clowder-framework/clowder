@@ -206,6 +206,7 @@
                         <button id="followButton"
                                 class="btn btn-success followButton"
                                 objectId="@file.id"
+                                objectName="@file.filename"
                                 objectType="file">
                             Follow
                         </button>
@@ -213,6 +214,7 @@
                         <button id="followButton"
                                 class="btn btn-danger followButton"
                                 objectId="@file.id"
+                                objectName="@file.filename"
                                 objectType="file">
                             Unfollow
                         </button>
@@ -564,11 +566,12 @@
 
                     $(document).on('click', '.followButton', function() {
                         var id = $(this).attr('objectId');
+                        var name = $(this).attr('objectName');
                         var type = $(this).attr('objectType');
                         if ($(this).attr('id') === '') {
-                          followHandler.call(this, jsRoutes, id, type, undefined, undefined);
+                          followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
                         } else {
-                          followHandler.call(this, jsRoutes, id, type, function(data) {
+                          followHandler.call(this, jsRoutes, id, name, type, function(data) {
                                 recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
                                               data['recommendations']);
                             }, undefined);
