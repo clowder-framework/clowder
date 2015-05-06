@@ -36,9 +36,9 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     // Use if Mailer Server and stmp in Application.conf are set up
 
-    //jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
-    //  JobsScheduler.runScheduledJobs()
-    //}
+    jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
+      JobsScheduler.runScheduledJobs()
+    }
 
     Logger.info("Application has started")
   }

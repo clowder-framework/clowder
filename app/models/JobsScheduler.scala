@@ -60,8 +60,8 @@ import play.api.libs.concurrent.Akka
 
   /**
   * Gets the events for each viewer and sends out emails
+   * TODO : move to event class most likely MMDB-1842
   */
-
   def sendEmailUser(userList: List[TimerJob]) = {
   	for (job <- userList){
   		job.parameters match {
@@ -71,24 +71,23 @@ import play.api.libs.concurrent.Akka
   						user.email match {
   							case Some(email) => {	
   								job.lastJobTime match {
-  									case Some(date) =>{
-                    sendDigestEmail(email,events.getAllEventsByTime(user.followedEntities, date)) 
-  									}
-  									}
-  								}
-  							}
-  						}
-  					}
-  				}
-  				scheduler.updateLastRun("Digest[" + id + "]")
-  			}
-  		}
-  	}
+  									case Some(date) => {
+                      sendDigestEmail(email,events.getAllEventsByTime(user.followedEntities, date))
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        scheduler.updateLastRun("Digest[" + id + "]")
+      }
+    }
+  }
 
     /**
     * Sends and creates a Digest Email
     */
-
   def sendDigestEmail(email: String, events: List[Event]) = {
     var eventsList = events.sorted(Ordering.by((_: Event).created).reverse)
     val body = views.html.emailEvents(eventsList)
@@ -105,13 +104,8 @@ import play.api.libs.concurrent.Akka
   /**
   * Gets the Jobs for this current time
   */
-
   def getEmailJobs (minute: Integer, hour: Integer, day_of_week: Integer) = {
 	 var emailJobs = scheduler.getJobByTime(minute, hour, day_of_week)
 	 emailJobs
   }
-
-
-
 }
-
