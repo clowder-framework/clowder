@@ -2,6 +2,8 @@ package services
 import models._
 import play.api.libs.json.JsValue
 import com.mongodb.casbah.Imports._
+import java.util.Date
+
 
 import com.novus.salat.dao.SalatMongoCursor
 /**
@@ -55,6 +57,17 @@ trait EventService {
 	*/
 
 	def getEvents(id: String, id_type: String): SalatMongoCursor[Event]
+
+	/**
+	* Get all the events which come after a specificied time
+	*/
+
+	def getAllEventsByTime(followedEntities:List[TypedID], time: Date): List[Event]
+
+	/**
+	 * Get the latest N events
+	 */
+	def getLatestNEventsOfType(n: Int, event_type: Option[String]): List[Event]
 
 }
 

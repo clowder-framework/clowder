@@ -29,7 +29,7 @@ object MongoUtils {
    * to be written can be stored in extra. The values need to be able to be
    * converted to DBObject.
    */
-  def writeBlob(inputStream: InputStream, filename: String, contentType: Option[String], extra: Map[String, AnyRef], collection: String, useMongoProperty: String): Option[UUID] = {
+  def writeBlob[T](inputStream: InputStream, filename: String, contentType: Option[String], extra: Map[String, AnyRef], collection: String, useMongoProperty: String)(implicit ev: Manifest[T]): Option[UUID] = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
         Logger.error("No MongoSalatPlugin")
@@ -63,6 +63,8 @@ object MongoUtils {
         mongoFile.setFilename(filename)
         mongoFile.setContentType(ct)
         extra.foreach{e => mongoFile.put(e._1, e._2)}
+        Logger.debug("_typeHint = " + ev.runtimeClass.getCanonicalName)
+        mongoFile.put("_typeHint", ev.runtimeClass.getCanonicalName)
         mongoFile.save()
 
         Some(id)

@@ -4,7 +4,7 @@ import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
-import util.License
+import _root_.util.{Parsers, License}
 import com.novus.salat._
 
 import scala.collection.mutable.ListBuffer
@@ -104,6 +104,44 @@ class MongoDBFileService @Inject() (
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
+  
+  /**
+   * List files specific to a user after a specified date.
+   */
+  def listUserFilesAfter(date: String, limit: Int, email: String): List[File] = {
+    val order = MongoDBObject("created"-> -1)
+    if (date == "") {
+      var filesList = FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
+      filesList= filesList.filter(x=> x.author.email.toString == "Some(" +email +")")
+      filesList
+    } else {
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      Logger.info("After " + sinceDate)
+      var filesList = FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $lt sinceDate)).sort(order).limit(limit).toList
+      filesList= filesList.filter(x=> x.author.email.toString == "Some(" +email +")")
+      filesList
+    }
+  }
+
+  /**
+   * List files specific to a user before a specified date.
+   */
+  def listUserFilesBefore(date: String, limit: Int, email: String): List[File] = {
+    var order = MongoDBObject("created"-> -1)
+    if (date == "") {
+      var filesList = FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
+      filesList= filesList.filter(x=> x.author.email.toString == "Some(" +email +")")
+      filesList
+    } else {
+      order = MongoDBObject("created"-> 1)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      Logger.info("Before " + sinceDate)
+      var filesList = FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit + 1).toList.reverse
+      filesList = filesList.filter(_ != filesList.last)
+      filesList= filesList.filter(x=> x.author.email.toString == "Some(" +email +")")
+      filesList
+    }
+  }
 
   def latest(): Option[File] = {
     val results = FileDAO.find("isIntermediate" $ne true).sort(MongoDBObject("uploadDate" -> -1)).limit(1).toList
@@ -132,7 +170,7 @@ class MongoDBFileService @Inject() (
     val extra = Map("showPreviews" -> showPreviews,
                     "author" -> SocialUserDAO.toDBObject(author),
                     "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
-    MongoUtils.writeBlob(inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(id => get(id))
+    MongoUtils.writeBlob[File](inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(id => get(id))
   }
 
   /**
@@ -489,6 +527,24 @@ class MongoDBFileService @Inject() (
 
   def findByTag(tag: String): List[File] = {
     FileDAO.find(MongoDBObject("tags.name" -> tag)).toList
+  }
+
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File] = {
+    val filter = if (start == "") {
+      MongoDBObject("tags.name" -> tag)
+    } else {
+      if (reverse) {
+        MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $gte Parsers.fromISO8601(start))
+      } else {
+        MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $lte Parsers.fromISO8601(start))
+      }
+    }
+    val order = if (reverse) {
+      MongoDBObject("uploadDate" -> 1, "filename" -> 1)
+    } else {
+      MongoDBObject("uploadDate" -> -1, "filename" -> 1)
+    }
+    FileDAO.dao.find(filter).sort(order).limit(limit).toList
   }
 
   def findIntermediates(): List[File] = {

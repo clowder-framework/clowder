@@ -239,9 +239,8 @@ code {
 }
 
 .profilePicture {
-  margin-bottom:12px;
-  max-width:256px;
-  max-height:256px;
+  	width: 256px;
+    height: 256px;
 }
 
 .editProfileInput input[type='text']{
@@ -509,3 +508,81 @@ textarea, input[type='text'], input[type='password']{
 .dataset-preview {
     padding: 20px 0px;
 }
+
+.img_wrapper {
+	position: relative;
+	width: 128px;
+	height: 128px;
+	margin: 5px;
+	display: inline-block;
+}
+
+.img_hover {
+	position : absolute;
+	width: 128px;
+	height: 128px;
+	background-color: #ffa500;
+	top: 0;
+	left: 0;
+	opacity: 0;
+	transition: opacity 1s;
+	padding-top: 40%;
+	text-align: center;
+	text-color: #fff;
+}
+
+.img_wrapper:hover > .img_hover {
+	opacity: 0.9;
+}
+
+.img_thumbnail {
+	height: 128px;
+	width: 128px;
+	border:1px solid #d3d3d3; 
+	padding:3px; 
+	border-radius: 5px; 
+}
+
+#scrollTableGalleria{
+	width: 100%;
+}
+#scrollTableGalleria thead,#scrollTableGalleria tbody,#scrollTableGalleria tr,#scrollTableGalleria td,#scrollTableGalleria th{
+	display:block;
+}
+#scrollTableGalleria tr:after{
+	content: ' ';
+    display: block;
+    visibility: hidden;
+    clear: both;
+
+}
+#scrollTableGalleria tbody{
+	overflow-y: auto;
+}
+#scrollTableGalleria tbody td, #scrollTableGalleria thead th{
+            float: left;
+}
+#scrollTableGalleria .galleriaOrder{
+	width: 5%;
+}
+#scrollTableGalleria .galleriaTheThumbnail{
+	width: 35%;
+}
+#scrollTableGalleria .galleriaInfo{
+	width: 35%;
+}
+#scrollTableGalleria .galleriaFindSimilar{
+	width: 25%;
+}
+#scrollTableGalleria thead{
+	width:98%;
+}
+
+/* any custom CSS will override the Galleria theme. Here we enlarge the thumbnails: */
+.galleria-thumbnails .galleria-image{width:90px;height:60px;}
+.galleria-thumbnails-list{height:60px;}
+.galleria-thumb-nav-left,
+.galleria-thumb-nav-right{height:55px;}
+.galleria-info,
+.galleria-counter{bottom:80px;}
+.galleria-thumbnails-container { height: 62px;}

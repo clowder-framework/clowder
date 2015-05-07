@@ -56,6 +56,16 @@ trait FileService {
   def listFilesBefore(date: String, limit: Int): List[File]
   
   /**
+   * List files for a specific user after a specified date.
+   */
+  def listUserFilesAfter(date: String, limit: Int, email: String): List[File]
+  
+  /**
+   * List files for a specific user before a specified date.
+   */
+  def listUserFilesBefore(date: String, limit: Int, email: String): List[File]
+  
+  /**
    * Get file metadata.
    */
   def get(id: UUID): Option[File]
@@ -116,6 +126,8 @@ trait FileService {
   def addXMLMetadata(id: UUID, json: String)
 
   def findByTag(tag: String): List[File]
+
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File]
 
   def findIntermediates(): List[File]
 

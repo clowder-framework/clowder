@@ -21,7 +21,6 @@ class MongoDBEventService extends EventService {
     (for (event <- Event.find(MongoDBObject())) yield event).toList
   }
 
-
   def addEvent(event: Event) = {
     Event.insert(event);
   }
@@ -35,9 +34,11 @@ class MongoDBEventService extends EventService {
   }
 
   def addObjectEvent(user: Option[User], object_id: UUID, object_name: String, action_type: String) = {
-    user match {
-      case Some(modeluser) => {
-        Event.insert(new Event(modeluser.getMiniUser, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
+    if (object_name.toString() != "undefined"){
+      user match {
+        case Some(modeluser) => {
+          Event.insert(new Event(modeluser.getMiniUser, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
+        }
       }
     }
   }
@@ -50,27 +51,26 @@ class MongoDBEventService extends EventService {
     }
   }
 
+
+  def getAllEventsByTime(followedEntities:List[TypedID], time: Date) = {
+
+    var followedIDs = (for (typedid <- followedEntities) yield typedid.id).toList
+
+    var userEvents = getAllEventsOfType(followedIDs, "user._id")
+    var objectsEvents = getAllEventsOfType(followedIDs, "object_id")
+    var sourceEvents = getAllEventsOfType(followedIDs, "source_id")
+
+    var eventsList = List.concat(userEvents, objectsEvents)
+    eventsList = List.concat(eventsList, sourceEvents)
+
+    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.distinct
+    eventsList = eventsList.filter(_.created.after(time))
+    eventsList
+  }
+
   def getAllEvents(followedEntities:List[TypedID]) = {
-    /**
-    var userEvents = getAllEventsOfType(usersFollowed, "user._id")
 
-    var collections_objects = getAllEventsOfType(collectionsFollowed, "object_id")
-    var collections_source = getAllEventsOfType(collectionsFollowed, "source_id")
-
-    var datasets_objects = getAllEventsOfType(datasetsFollowed, "object_id")
-    var datasets_source = getAllEventsOfType(datasetsFollowed, "source_id")
-
-    var files_objects = getAllEventsOfType(filesFollowed, "object_id")
-    var files_source = getAllEventsOfType(filesFollowed, "source_id")
-
-    var collectionEvents = List.concat(collections_objects, collections_source)
-    var datasetEvents = List.concat(datasets_objects, datasets_source)
-    var fileEvents = List.concat(files_objects, files_source)
-
-    var eventsList = List.concat(userEvents, collectionEvents)
-    eventsList = List.concat(eventsList, datasetEvents)
-    eventsList = List.concat(eventsList, fileEvents)
-    */
     var followedIDs = (for (typedid <- followedEntities) yield typedid.id).toList
 
     var userEvents = getAllEventsOfType(followedIDs, "user._id")
@@ -96,6 +96,22 @@ class MongoDBEventService extends EventService {
 
   def getEvents(id: String, id_type: String) : SalatMongoCursor[Event] = {
     Event.find(MongoDBObject(id_type -> new ObjectId(id)))
+  }
+
+  def getLatestNEventsOfType(n: Int, event_type: Option[String]): List[Event] = {
+    event_type match {
+      case Some(type_to_search) => {
+        Event.find(
+          MongoDBObject(
+            "event_type" -> (".*" + type_to_search + ".*").r
+          )
+        ).sort(MongoDBObject("created" -> -1)).limit(n).toList
+      }
+      case None => {
+        Event.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(n).toList
+      }
+    }
+
   }
 
 }
