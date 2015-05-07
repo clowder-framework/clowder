@@ -87,7 +87,7 @@ GET      /collection/:id                                                     @co
 GET      /collections/:collection_id/previews                                @controllers.Collections.previews(collection_id: UUID)
 
 # Tags
-GET     /tags/search                      @controllers.Tags.search(tag)
+GET     /tags/search                      @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "tile")
 GET     /tags/cloud                       @controllers.Tags.tagCloud
 GET     /tags/list                        @controllers.Tags.tagList 
 
@@ -404,6 +404,7 @@ POST 	/api/institutions/addinstitution		@api.Institutions.addinstitution(institu
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
+GET            /api/me                                                            @api.Users.getUser()
 
 POST 			/api/users/updateUserField												@api.Users.updateUserField(email: String, field: String, fieldText: String)
 
