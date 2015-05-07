@@ -1,4 +1,4 @@
-@(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], creator: Option[User], usersInSpace: List[User], externalUsers: List[User])(implicit user: Option[securesocial.core.Identity])
+@(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 
@@ -30,7 +30,7 @@
             @spaces.datasetsBySpace(datasets)
         </div>
         <div class="col-md-4 space-col-right">
-            @spaces.usersBySpace(space, creator, usersInSpace, externalUsers)
+            @spaces.usersBySpace(space, creator, userRoleMap, externalUsers, roleList)
             @spaces.externalLinks(space.homePage)
             @spaces.spaceConfiguration(space)            
         </div>

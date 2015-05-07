@@ -1,4 +1,4 @@
-@(space: ProjectSpace, creator: Option[User], usersInSpace: List[User], externalUsers: List[User])(implicit user: Option[securesocial.core.Identity])
+@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[securesocial.core.Identity])
 
 
 
@@ -8,16 +8,12 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.f
 
 <div id="userlist">
     <ul class="list-unstyled">
-	@if(usersInSpace.size == 0) {
+	@if(userRoleMap.size == 0) {
 	    <li>No other members</li>
 	}
 	
-	@for(user <- usersInSpace) {    
-	    <li>@user.fullName (
-	        @for(spacerole <- user.spaceandrole) {
-	            @spacerole.m_role<br>
-	        }
-	    )</li>    
+	@for((k,v) <- userRoleMap) {    
+	    <li>@k.fullName (@v)</li>    
 	}
 	</ul>
 	
@@ -45,20 +41,20 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.f
 }
 
 <div class="modal fade bs-example-modal-lg" id="modalUser" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-<div class="modal-dialog">
-<div class="modal-content">
-<div class="modal-header">
-<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-&times;</button>
-<h4 class="modal-title">Modal Title Goes Here</h4>
-</div>
-<div class="modal-body">
-@spaces.userAllocation(usersInSpace, externalUsers)
-</div>
-<div class="modal-footer">
-<a href="#" class="btn btn-default" id="closebutton" data-dismiss="modal">Close</a>
-<a href="#" class="btn btn-primary" id="updatebutton">Update</a>
-</div>
-</div>
-</div>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+			&times;</button>
+			<h4 class="modal-title">Edit Users and Roles</h4>
+			</div>
+			<div class="modal-body">
+			@spaces.userAllocation(userRoleMap, externalUsers, roleList)
+			</div>
+			<div class="modal-footer">
+			<a href="#" class="btn btn-default" id="closebutton" data-dismiss="modal">Close</a>
+			<a href="#" class="btn btn-primary" id="updatebutton">Update</a>
+			</div>
+		</div>
+	</div>
 </div>

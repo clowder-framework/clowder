@@ -13,6 +13,8 @@ import util.Direction._
 import org.apache.commons.lang.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
+import models.Role
+import models.User
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -61,23 +63,44 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   def getSpace(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
-      case Some(s) => {
-        val creator = users.findById(s.creator)
-
-        val collectionsInSpace = spaces.getCollectionsInSpace(id)
-
-        val datasetsInSpace = spaces.getDatasetsInSpace(id)
-        
-        val usersInSpace = spaces.getUsersInSpace(id)
-        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]                
-        
-        var externalUsers = users.list.to[ArrayBuffer] 
-        
-        inSpaceBuffer += externalUsers(0)
-        externalUsers --= inSpaceBuffer
-
-        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
-        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, inSpaceBuffer.toList, externalUsers.toList))
+        case Some(s) => {
+	        val creator = users.findById(s.creator)
+	
+	        val collectionsInSpace = spaces.getCollectionsInSpace(id)
+	
+	        val datasetsInSpace = spaces.getDatasetsInSpace(id)
+	        
+	        val usersInSpace = spaces.getUsersInSpace(id)
+	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
+	        creator match {
+	            case Some(theCreator) => {
+	            	inSpaceBuffer += theCreator
+	            }
+	            case None => Logger.debug("-------- No creator for space found...")
+	        }
+	        
+	        
+	        var externalUsers = users.list.to[ArrayBuffer] 
+	        
+	        //inSpaceBuffer += externalUsers(0)
+	        externalUsers --= inSpaceBuffer
+	
+	        var userRoleMap: Map[User, String] = Map.empty
+	        for (aUser <- inSpaceBuffer) {
+	            var role = "What"
+	            spaces.getRoleForUserInSpace(id, aUser.id) match {
+	                case Some(aRole) => {
+	                    Logger.debug("-------- Match found at level " + aRole)
+	                    role = aRole.name
+	                }
+	                case None => {
+	                    Logger.debug("-------- No match")
+	                }
+	            }
+	            userRoleMap += (aUser -> role)
+	        }
+	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, Role.roleList))
       }
       case None => InternalServerError("Space not found")
     }
@@ -122,6 +145,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                                                 collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty)
                     // insert space
                     spaces.insert(newSpace)
+                    val role = Role(name = "Admin")
+                    spaces.addUser(userId, role, newSpace.id)
                     //TODO - Put Spaces in Elastic Search?
                     // index collection
                     // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")

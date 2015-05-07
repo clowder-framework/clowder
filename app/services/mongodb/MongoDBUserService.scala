@@ -14,6 +14,7 @@ import models.Role
 import models.UserSpaceAndRole
 import models.UserSpaceAndRole
 import scala.collection.mutable.ListBuffer
+import play.api.Logger
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -90,7 +91,7 @@ class MongoDBUserService extends UserService {
    */
   def addSpaceToUser(userId: UUID, role: Role, spaceId: UUID): Unit = {
       val spaceData = UserSpaceAndRole(Some(spaceId), Some(role))
-      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $addToSet("spaceroledata" -> UserSpaceAndRoleData.toDBObject(spaceData)));  
+      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));  
   }
  
   /**
@@ -101,7 +102,7 @@ class MongoDBUserService extends UserService {
    */
   def removeSpaceFromUser(userId: UUID, spaceId: UUID): Unit = {     
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
-    		  $pull("spaceroledata" ->  MongoDBObject( "m_spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
+    		  $pull("spaceandrole" ->  MongoDBObject( "m_spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
   }
   
   /**
@@ -112,7 +113,8 @@ class MongoDBUserService extends UserService {
    */
   def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
       val spaceData = UserSpaceAndRole(Some(spaceId), Some(role))
-      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $set("spaceroledata" -> UserSpaceAndRoleData.toDBObject(spaceData)));
+      removeSpaceFromUser(userId, spaceId)
+      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));
   }
   
   /**
@@ -127,7 +129,9 @@ class MongoDBUserService extends UserService {
       
       findById(userId) match {
           case Some(aUser) => {
+              Logger.debug("---- aUser is " + aUser)
               for (aSpaceAndRole <- aUser.spaceandrole) {
+                  Logger.debug("------ aSpaceAndRole is " + aSpaceAndRole)
                   if (!found) {
 	                  aSpaceAndRole.m_spaceId match {
 	                      case Some(anId) => {
@@ -140,6 +144,7 @@ class MongoDBUserService extends UserService {
                   }
               }
           }
+          case None => Logger.debug("No user found for getRoleInSpace")
       }
       
       retRole
@@ -161,6 +166,7 @@ class MongoDBUserService extends UserService {
                          retList += aUser
                      }
                  }
+                 case None => Logger.debug("No spaceId found for aSpaceAndRole in listUsersInSpace")
              }
          }
       }      
@@ -183,7 +189,7 @@ object UserDAO extends ModelCompanion[User, ObjectId] {
 object UserSpaceAndRoleData extends ModelCompanion[UserSpaceAndRole, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[UserSpaceAndRole, ObjectId](collection = x.collection("spaceroledata")) {}
+    case Some(x) => new SalatDAO[UserSpaceAndRole, ObjectId](collection = x.collection("spaceandrole")) {}
   }
 }
 

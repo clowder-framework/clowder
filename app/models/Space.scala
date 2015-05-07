@@ -43,8 +43,12 @@ case class UserSpace (
 
 case class Role(
    id: UUID = UUID.generate,
-   title: String = "Default")
+   name: String = "Default")
 
+object Role {
+    val roleList: List[String] = List("Admin", "Power User", "User", "Guest") 
+}   
+   
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
   created: Date,
