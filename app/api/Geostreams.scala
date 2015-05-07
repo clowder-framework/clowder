@@ -34,7 +34,6 @@ import scala.io.Source
  */
 object Geostreams extends ApiController {
 
-  val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssXXX")
   val pluginNotEnabled = InternalServerError(toJson("Geostreaming not enabled"))
 
   implicit val sensors = (
@@ -234,6 +233,17 @@ object Geostreams extends ApiController {
     }
   }
 
+  def deleteSensor(id: String) = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+    Logger.debug("Delete sensor " + id)
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        if (plugin.deleteSensor(id.toInt)) jsonp("""{"status":"ok"}""", request)
+        else jsonp("""{"status":"error"}""", request)
+      }
+      case None => pluginNotEnabled
+    }
+  }
+
   def deleteAll() = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
     Logger.debug("Drop all")
     current.plugin[PostgresPlugin] match {
@@ -264,6 +274,7 @@ object Geostreams extends ApiController {
       case (start_time, end_time, geoType, longlat, data, streamId) =>
         current.plugin[PostgresPlugin] match {
           case Some(plugin) => {
+            val formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssXXX")
             val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
             val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
             if (longlat.length == 3) {

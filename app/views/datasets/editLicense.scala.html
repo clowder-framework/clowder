@@ -1,0 +1,41 @@
+@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+
+@if(user.isDefined) {
+    <a class="btn btn-default btn-xs accordion-toggle collapsed" data-toggle="collapse"
+    data-parent="#accordion6" href="#collapseSix" id="editlicense"
+    title="Edit License Information">
+        <span class="glyphicon glyphicon-chevron-down"></span> Edit License
+    </a>
+}
+
+<div id="collapseSix" class="accordion-body collapse">
+    <div class="panel panel-primary">
+        <div class="panel-body">
+        @if(user.isDefined) {
+            @licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
+        }
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" language="javascript">
+    $(document).ready(function() {
+        //Will have to modify the if check to see if there is data that specifies what should be selected
+        //Incoming data may specifiy the type of license, the name of the owner of the rights, the text
+        //describing the license rights, the URL for the license, and whether or not downloading is
+        //allowed.
+        var datasetLicenseType = "@dataset.licenseData.m_licenseType";
+        var datasetRightsHolder = "@dataset.licenseData.m_rightsHolder";
+        var datasetLicenseText = "@dataset.licenseData.m_licenseText";
+        var datasetLicenseUrl = "@dataset.licenseData.m_licenseUrl";
+        var datasetAllowDownload = "@dataset.licenseData.isDownloadAllowed(user)";
+        var datasetImageBase = '@routes.Assets.at("images")';
+        var datasetAuthorName = '@dataset.author.fullName';
+
+        if (!@user.isDefined) {
+            updateInterface(datasetLicenseType, datasetRightsHolder, datasetLicenseText, datasetLicenseUrl, datasetAllowDownload,
+            datasetImageBase, datasetAuthorName);
+        }
+    });
+</script>
+<!-- End License elements -->

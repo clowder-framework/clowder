@@ -1,0 +1,148 @@
+package integration
+
+import play.api.test.FakeApplication
+import play.api.test.FakeRequest
+import play.api.test.Helpers._
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json
+import play.api.Logger
+import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.PlaySpec
+import play.api.Play
+import org.apache.http.entity.mime.content.ContentBody
+import org.apache.http.entity.mime.MultipartEntity
+import org.apache.commons.io.output.ByteArrayOutputStream
+import org.apache.http.entity.mime.content.FileBody
+import java.io.File
+import play.api.http.Writeable
+import play.api.mvc.MultipartFormData
+import play.api.libs.Files.TemporaryFile
+import play.api.mvc.MultipartFormData.FilePart
+import play.api.mvc.Codec
+import org.apache.http.entity.mime.MultipartEntityBuilder
+import org.apache.http.entity.mime.content.StringBody
+import org.apache.http.entity.ContentType
+import play.api.http._
+
+import play.api.test._
+import org.scalatest._
+import org.scalatestplus.play._
+import play.api.{Play, Application}
+
+/*
+ * Based on http://stackoverflow.com/questions/15133794/writing-a-test-case-for-file-uploads-in-play-2-1-and-scala
+ *
+ * Functional Test for DTS File Upload
+ * 
+ * @author Smruti Padhy
+ */
+
+//@DoNotDiscover
+class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+
+  
+  "The Extractions API Spec" must {
+    "provide a FakeApplication" in {
+      app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
+    }
+    "make the FakeApplication available implicitly" in {
+      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      getConfig("ehcacheplugin") mustBe Some("disabled")
+    }
+    "start the FakeApplication" in {
+      Play.maybeApplication mustBe Some(app)
+    }
+  }
+
+  "The Extractions API Spec" must {
+    "respond to the Upload File URL" in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val fileurl = "http://www.ncsa.illinois.edu/assets/img/logos_ncsa.png"
+      val request = FakeRequest(POST, "/api/extractions/upload_url?key=" + secretKey).withJsonBody(Json.toJson(Map("fileurl" -> fileurl)))
+      val result = route(request).get
+      info("Status=" + status(result))
+      status(result) mustEqual OK
+      info("contentType=" + contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include("id")
+      info("contentAsString" + contentAsString(result))
+
+    }
+    
+    "respond to the Upload File" in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val workingDir = System.getProperty("user.dir")
+      info("Working Directory: " + workingDir)
+      val file1 = new java.io.File(workingDir + "/test/data/extractions/morrowplots.jpg")
+      if (file1.isFile && file1.exists) {
+        Logger.debug("File1 is File:True")
+      }
+      val req = FakeRequest(POST, "/api/extractions/upload_file?key=" + secretKey).
+        withFileUpload("File", file1, "image/jpg")
+      val result = route(req).get
+
+      info("Status=" + status(result))
+      status(result) mustEqual OK
+      info("contentType=" + contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include("id")
+      info("contentAsString" + contentAsString(result))
+    }
+
+     "respond to the Thumbnail File Upload " in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val workingDir = System.getProperty("user.dir")
+      info("Working Directory: " + workingDir)
+      val file1 = new java.io.File(workingDir + "/test/data/extractions/morrowplots-thumb.jpg")
+      if (file1.isFile && file1.exists) {
+        Logger.debug("File1 is File:True")
+      }
+      val req = FakeRequest(POST, "/api/fileThumbnail?key=" + secretKey).
+        withFileUpload("File", file1, "image/jpg")
+      val result = route(req).get
+
+      info("Status=" + status(result))
+      status(result) mustEqual OK
+      info("contentType=" + contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include("id")
+      info("contentAsString" + contentAsString(result))
+    }
+
+     "respond to the getExtractorNamesAction" in {
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/extractors_names"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("Extractors")
+      info("content"+contentAsString(result))
+    }
+ "respond to the getExtractorServerIPsAction" in {
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/servers_ips"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("Servers")
+      info("content"+contentAsString(result))
+    }
+ "respond to the getExtractorSupportedInputTypesAction" in {
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/supported_input_types"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("InputTypes")
+      info("content"+contentAsString(result))
+    }
+ "respond to the getDTSRequests" in {
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/requests"))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+    }
+
+  }
+}

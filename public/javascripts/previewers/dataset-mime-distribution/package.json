@@ -1,0 +1,6 @@
+{ "name" : "dataset-mime-distribution",
+  "main" : "main.js",
+  "contentType" : [],
+  "dataset" : true,
+  "supported_previews" : []
+  }

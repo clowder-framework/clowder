@@ -10,6 +10,8 @@ var id = "__notset";
 //The original data to be submitted, for the initial file that handles the ajax call
 //to create the dataset
 var origData = null;
+//Flag to determine if authentication is being checked
+var authInProcess = false;
 
 //On page load, ensure that everything is in a clean state
 $(document).ready(function() {
@@ -53,8 +55,7 @@ function resetDatasetItems() {
 	//Ensure both tabs are shown
 	$('#tab1anchor').show();
 	$('#tab2anchor').show();
-	hideStatus();
-	clearErrors();
+	hideStatus();	
 	$('#uploadcreate').html("Create Dataset");
 	$('#existingcreate').html("Create Dataset");
 }
@@ -120,7 +121,7 @@ $(function () {
 });        
 
 function createEmptyDataset(data) {
- 	
+ 		
 	//Remove error messages if present
 	clearErrors();
 	
@@ -132,18 +133,19 @@ function createEmptyDataset(data) {
 	
 	//Update the input we are adding to the form programmatically      
 	var name = $('#name');
-    var desc = $('#description');
+    var desc = $('#description');    
     
-    //Add errors and return false if validation fails
+    //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
+    //variables.
     var error = false;
-    if (!name.val()) {
+    if (!name.val() && isNameRequired) {
     	$('#nameerror').show();
     	error = true;
     }
-    if (!desc.val()) {                                
+    if (!desc.val() && isDescRequired) {
         $('#descerror').show();
         error = true;
-    }
+    }    	   
     if (error) {
     	if (data != null) {
 	    	//On error, re-enable things to allow the user to fix items
@@ -194,7 +196,7 @@ function createEmptyDataset(data) {
 	            origData.submit();
             }
             
-            $('#status').html("Creation successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
+            $('#status').html("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>");
             $('#status').show();
             $('#uploadcreate').html(" Attach Files");
         });
@@ -213,6 +215,7 @@ function createEmptyDataset(data) {
             	enableFields();
             	//Also, reset the dataset elements, since the workflow is starting over.
             	resetDatasetItems();
+            	clearErrors();
             }  
         });
         //This block is the primary file, so don't submit yet, don't re-enable the buttons either.
@@ -240,7 +243,8 @@ function clearFiles() {
 	$("#filelist option:selected").removeAttr("selected");
 }
 
-//Call on Create button click. Move to create a dataset as specified, and attach any files if they are specified.
+//Call on Create button click. Move to create a dataset as specified, and attach any files if they are specified. This is the 
+//use case for attaching existing files to a given dataset.
 function attachFiles() {			
 	//Remove error messages if present
 	clearErrors();		
@@ -262,16 +266,20 @@ function attachFiles() {
 		var name = $('#name');
 	    var desc = $('#description');
 	    
-	    //Add errors and return false if validation fails
+	    console.log("isNameRequried is " + isNameRequired);
+	    console.log("isDescRequired is " + isDescRequired);
+
+	    //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
+	    //variables.
 	    var error = false;
-	    if (!name.val()) {
+	    if (!name.val() && isNameRequired) {
 	    	$('#nameerror').show();
 	    	error = true;
 	    }
-	    if (!desc.val()) {                                
+	    if (!desc.val() && isDescRequired) {
 	        $('#descerror').show();
 	        error = true;
-	    }
+	    }    	   
 	    if (error) {
 	    	enableFields();
 	    	$('#tab1anchor').show();
@@ -349,4 +357,85 @@ function attachFiles() {
 	}
     
     return false;
+}
+
+
+//Call needed for the new file upload page, in order to ensure that the user's authentication hasn't timed out.
+//This callback is invoked on user add of files, to try to catch it as early as possible. This code exists in
+//file-uploader/jquery-fileupload-medici-auth.js as well.
+//
+//It requires the loading page to also bring in the javascript/errorRedirect.js 
+//
+$(function () {	                	                 
+	//Callback for any submit call, whether it is the overall one, or individual files, in the multi-file-uploader
+    $('#fileupload').bind('fileuploadadd', function (e, data) {
+    	
+    	if (authInProcess) {    		
+    		return holdForAuthAdd();    		
+    	}
+    	else {
+    		//No auth started yet, so we'll start
+    		authInProcess = true;
+    	}
+    	//Perform authentication check
+    	var request = null;		                         	                        
+        request = jsRoutes.api.Users.getUser().ajax({
+            type: 'GET',
+            contentType: "application/json"
+        });
+    	                        	                        
+        request.done(function (response, textStatus, jqXHR){	                            
+            //Sucessful call, so authenticated. Need to simply ensure that we have a user. It always should be there in
+        	//this case, but log the odd corner case.
+            var responseText = jqXHR.responseText;           
+            authInProcess = false;
+            if (responseText == "No user found") {
+	            //The weird corner case - log it and alert for now
+	            console.log("Odd corner case in file uploader. Authenticated but no user found.");
+	            //Return false
+	            return false;
+            }
+            else {
+            	//User present and authentication successful, so proceed to submit the files
+            	return true;
+            }
+                        
+        });
+
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("addCallback - fileUploader - The following error occured: " + textStatus, errorThrown);
+            authInProcess = false;
+            var errMsg = "You must be logged in to upload new files.";                                
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {            	
+            	console.log("Different error message on failure.");
+            	alert("ERROR: " + jqXHR.responseText);
+            }  
+            return false;
+        });    	
+    });	    
+});        
+
+
+//Utility method to allow calls for files to be uploaded to wait until authentication is
+//verified before finally proceeding with the add. In reality, the holds will be canceled on 
+//an authentication failure, since the redirect to login will end them. This code exists in
+//file-uploader/jquery-fileupload-medici-auth.js as well.
+function holdForAuthAdd(data) { 
+	counter = 0;
+	function checkAuth() {		
+		if (authInProcess) {
+			counter++;
+			if (counter > 20) {
+				setTimeout(checkAuth, 500);
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return true;
+		}
+	}
+	checkAuth();	
 }

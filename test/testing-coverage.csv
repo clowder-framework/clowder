@@ -1,0 +1,159 @@
+HTTP Method  , Endpoint      , Description,Service/Method,In API Test
+GET  ,/api/files                                 ,List files,@api.Files.list,Yes
+POST ,/api/files                                 ,Upload file,"@api.Files.upload(showPreviews: String ?= ""DatasetLevel"", originalZipFile: String ?= """")",
+POST ,/api/files/searchusermetadata,Search user specified metadata,@api.Files.searchFilesUserMetadata,Yes
+POST ,/api/files/searchmetadata,Search system generated metadata,@api.Files.searchFilesGeneralMetadata,Yes
+POST ,/api/uploadToDataset/:id                   ,Upload file to dataset,"@api.Files.uploadToDataset(id: UUID, showPreviews: String ?= ""DatasetLevel"", originalZipFile: String ?= """")",
+POST ,/api/files/:fileId/remove,Delete File,@api.Files.removeFile(id: UUID),Yes
+GET  ,/api/files/:id/metadata                    ,Get file information,@api.Files.get(id: UUID),Yes
+POST ,/api/files/:file_id/thumbnails/:thumbnail_id,Attach thumbnail to file,"@api.Files.attachThumbnail(file_id: UUID,thumbnail_id: UUID)",Yes
+POST ,/api/files/:id/metadata           ,Add system-specified metadata,@api.Files.addMetadata(id: UUID),Yes
+POST ,/api/files/:id/usermetadata,Add user-specified metadata,@api.Files.addUserMetadata(id: UUID),Yes
+POST ,/api/files/:id/versus_metadata,,@api.Files.addVersusMetadata(id:UUID),
+GET,/api/files/:id/versus_metadata,,@api.Files.getVersusMetadataJSON(id:UUID),
+GET  ,/api/files/:id/technicalmetadatajson       ,Get system-specified metadata,@api.Files.getTechnicalMetadataJSON(id: UUID),
+GET,/api/files/:id/xmlmetadatajson,,@api.Files.getXMLMetadataJSON(id: UUID),
+GET,/api/files/:id/usermetadatajson,,@api.Files.getUserMetadataJSON(id: UUID),
+POST ,/api/files/:id/comment,Add comment to file,@api.Files.comment(id: UUID),
+POST ,/api/files/:id/setNotesHTML,,@api.Files.setNotesHTML(id: UUID),
+DELETE ,/api/files/:id,,@api.Files.removeFile(id: UUID),Yes
+GET  ,/api/files/:id/tags                        ,List file tags,@api.Files.getTags(id: UUID),Yes
+POST ,/api/files/:id/tags                        ,Add file tags           ,@api.Files.addTags(id: UUID),Yes
+POST ,/api/files/:id/tags/remove                 ,Remove file tags,@api.Files.removeTags(id: UUID),Yes
+POST ,/api/files/:id/tags/remove_all             ,Remove all tags from file,@api.Files.removeAllTags(id: UUID),Yes
+DELETE ,/api/files/:id/tags,,@api.Files.removeTags(id: UUID),Yes
+POST ,/api/files/:id/license,,@api.Files.updateLicense(id: UUID),Yes
+GET,/api/files/:id/extracted_metadata,,@api.Files.extract(id:UUID),
+POST ,/api/files/:id/previews/:p_id     ,Attach preview to file,"@api.Files.attachPreview(id: UUID, p_id: UUID)",Yes
+GET,/api/files/:id/listpreviews,List all previews associated with file,@api.Files.filePreviewsList(id: UUID),Yes
+GET,/api/files/:id/getPreviews,List previews associated with file filter by available previewers,@api.Files.getPreviews(id: UUID),Yes
+GET,/api/files/:id/isBeingProcessed,Whether a file is being processed,@api.Files.isBeingProcessed(id: UUID),
+GET,/api/files/:three_d_file_id/:filename,Get texture associated with file,"@api.Files.getTexture(three_d_file_id: UUID, filename)",
+POST ,/api/files/:three_d_file_id/geometries/:geometry_id,Attach geometry,"@api.Files.attachGeometry(three_d_file_id: UUID,geometry_id: UUID)",
+POST ,/api/files/:three_d_file_id/3dTextures/:texture_id,Attach texture,"@api.Files.attachTexture(three_d_file_id: UUID,texture_id: UUID)",
+GET  ,/api/files/:id/blob                           , Download original file,@api.Files.download(id: UUID),
+GET  ,/api/files/:id                             , Download original file,@api.Files.download(id: UUID),
+POST ,/api/files/uploadIntermediate/:idAndFlags,*,@api.Files.uploadIntermediate(idAndFlags),
+POST ,/api/files/sendJob/:fileId/:fileType,*,"@api.Files.sendJob(fileId: UUID,fileType)",
+GET,/api/files/getRDFURLsForFile/:id,*,@api.Files.getRDFURLsForFile(id: UUID),
+GET,/api/files/rdfUserMetadata/:id,*,"@api.Files.getRDFUserMetadata(id: UUID, mappingNum: String ?= ""1"")",
+GET,/api/download,,@api.Files.download(id: UUID),
+GET  ,/api/queries/:id,Versus download query,@api.Files.downloadquery(id: UUID),
+POST ,/api/collections/:coll_id/datasets/:ds_id,,"@api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)",Yes
+POST ,/api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound,Remove dataset from collection,"@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)",Yes
+POST ,/api/collections/:coll_id/remove,Associate dataset with collection,@api.Collections.removeCollection(coll_id: UUID),Yes
+GET,/api/collections/:coll_id/getDatasets,List datasets in collection,@api.Datasets.listInCollection(coll_id: UUID),Yes
+DELETE ,/api/collections/:coll_id/datasets/:ds_id,,"@api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= ""True"")",
+GET,/api/collections/:coll_id,,@api.Collections.getCollection(coll_id: UUID),Yes
+DELETE ,/api/collections/:coll_id,,@api.Collections.removeCollection(coll_id: UUID),Yes
+GET,/api/collections/list,,@api.Collections.listCollections,Yes
+POST ,/api/collections/:c_id/previews/:p_id,,"@api.Collections.attachPreview(c_id: UUID, p_id: UUID)",
+POST ,/api/collections,Create collections,@api.Collections.createCollection(),Yes
+GET,/api/collections,List datasets in collection,@api.Collections.listCollections,Yes
+GET  ,/api/datasets,List datasets,@api.Datasets.list,Yes
+POST ,/api/datasets                              ,Create new dataset,@api.Datasets.createDataset,Yes
+POST ,/api/datasets/searchusermetadata,Search datasets by user-specified metadata,@api.Datasets.searchDatasetsUserMetadata,Yes
+POST ,/api/datasets/searchmetadata,Search datasets system-specifed metadata,@api.Datasets.searchDatasetsGeneralMetadata,Yes
+GET,/api/datasets/listOutsideCollection/:coll_id,List all datasets not in a collection,@api.Datasets.listOutsideCollection(coll_id: UUID),Yes
+POST ,/api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound,Remove file from dataset,"@api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)",
+DELETE ,/api/datasets/:ds_id/:file_id,,"@api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= ""True"")",
+GET,/api/datasets/getRDFURLsForDataset/:id,Get dataset information as RDF,@api.Datasets.getRDFURLsForDataset(id: UUID),
+GET,/api/datasets/rdfUserMetadata/:id,Get user-specified metadata as RDF,"@api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= ""1"")",
+POST ,/api/datasets/:datasetId/remove,Delete dataset,@api.Datasets.deleteDataset(id: UUID),Yes
+POST ,/api/datasets/:id/metadata,Add system-specified metadata to dataset,@api.Datasets.addMetadata(id: UUID),Yes
+POST ,/api/datasets/:id/usermetadata,Add user-specified metadata to dataset,@api.Datasets.addUserMetadata(id: UUID),Yes
+GET  ,/api/datasets/:id/technicalmetadatajson   ,Get system-specified for dataset,@api.Datasets.getTechnicalMetadataJSON(id: UUID),Yes
+GET,/api/datasets/:id/xmlmetadatajson,,@api.Datasets.getXMLMetadataJSON(id: UUID),
+GET,/api/datasets/:id/usermetadatajson,,@api.Datasets.getUserMetadataJSON(id: UUID),Yes
+GET  ,/api/datasets/:id/listFiles,List files in dataset,@api.Datasets.datasetFilesList(id: UUID),Yes
+POST ,/api/datasets/:id/comment,Add comment to dataset,@api.Datasets.comment(id: UUID),Yes
+POST ,/api/datasets/:id/removeTag,Remove tag from dataset,@api.Datasets.removeTag(id: UUID),Yes
+GET  ,/api/datasets/:id/tags                    ,List tags in dataset,@api.Datasets.getTags(id: UUID),Yes
+POST ,/api/datasets/:id/tags                    ,Add tag to dataset,@api.Datasets.addTags(id: UUID),Yes
+POST ,/api/datasets/:id/tags/remove             ,Remove tags from dataset,@api.Datasets.removeTags(id: UUID),Yes
+POST ,/api/datasets/:id/tags/remove_all         ,Remove all tags from dataset ,@api.Datasets.removeAllTags(id: UUID),Yes
+DELETE ,/api/datasets/:id/tags,,@api.Datasets.removeTags(id: UUID),Yes
+POST ,/api/datasets/:id/editing,,@api.Datasets.updateInformation(id: UUID),Yes
+POST ,/api/datasets/:id/license,,@api.Datasets.updateLicense(id: UUID),Yes
+GET,/api/datasets/:id/isBeingProcessed,If dataset is being processed by extractors,@api.Datasets.isBeingProcessed(id: UUID),
+GET,/api/datasets/:id/getPreviews,Get previews associated with dataset,@api.Datasets.getPreviews(id: UUID),
+POST ,/api/datasets/:ds_id/files/:file_id,Associate file with dataset,"@api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)",
+GET,/api/datasets/:id,,@api.Datasets.datasetFilesList(id: UUID),Yes
+DELETE ,/api/datasets/:id,,@api.Datasets.deleteDataset(id: UUID),Yes
+GET  ,/api/previews/:preview_id/textures/dataset/:datasetid/json ,*,"@api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)",
+GET  ,/api/previews/:preview_id/textures/dataset/:dataset_id//:filename ,*,"@api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)",
+GET,/api/previews/:dzi_id_dir/:level/:filename,*,"@api.Previews.getTile(dzi_id_dir, level, filename)",
+POST ,/api/previews/:dzi_id/tiles/:tile_id/:level ,*,"@api.Previews.attachTile(dzi_id: UUID, tile_id: UUID, level)",
+POST ,/api/previews/:id/metadata ,Add metadata to preview,@api.Previews.uploadMetadata(id: UUID),Yes
+GET  ,/api/previews/:id/metadata  ,Get metadata from preview,@api.Previews.getMetadata(id: UUID),Yes
+POST ,/api/previews/:id/annotationAdd  ,Add annotation to 3D model,@api.Previews.attachAnnotation(id: UUID),
+POST ,/api/previews/:id/annotationEdit   ,Edit annotation of 3D model   ,@api.Previews.editAnnotation(id: UUID),
+GET  ,/api/previews/:id/annotationsList ,List annotations associated with preview,@api.Previews.listAnnotations(id: UUID),
+GET  ,/api/previews/:id         ,Get preview bytes,@api.Previews.download(id: UUID),Yes
+POST ,/api/previews             ,Create new preview,"@api.Previews.upload(iipKey: String ?= """")",Yes
+POST ,/api/indexes              ,Create a new content-based index,@api.Indexes.index,
+POST ,/api/indexes/features     ,Add feauture vector to content-based index,@api.Indexes.features,
+POST ,/api/sections             ,Create new section,@api.Sections.add,
+GET  ,/api/sections/:id          ,Get section metadata ,@api.Sections.get(id: UUID),
+POST ,/api/sections/:id/comments ,Add comment to section,@api.Sections.comment(id: UUID),
+GET  ,/api/sections/:id/tags      ,Get tags associated with section,@api.Sections.getTags(id: UUID),
+POST ,/api/sections/:id/tags      ,Associate tags with section,@api.Sections.addTags(id: UUID),
+POST ,/api/sections/:id/tags/remove ,Remove tags from section,@api.Sections.removeTags(id: UUID),
+POST ,/api/sections/:id/tags/remove_all  ,Remove all tags from section,@api.Sections.removeAllTags(id: UUID),
+DELETE ,/api/sections/:id/tags,,@api.Sections.removeTags(id: UUID),
+POST ,/api/geostreams/sensors,Create new sensor,api.Geostreams.createSensor,
+GET,/api/geostreams/sensors/update,,api.Geostreams.updateStatisticsStreamSensor(),
+GET,/api/geostreams/sensors/:id/stats,,api.Geostreams.getSensorStatistics(id: String),
+GET  ,/api/geostreams/sensors/:id/streams ,List streams associated with sensor,api.Geostreams.getSensorStreams(id: String),
+GET,/api/geostreams/sensors/:id/update,,api.Geostreams.updateStatisticsSensor(id: String),
+GET  ,/api/geostreams/sensors/:id     ,Get sensor information,api.Geostreams.getSensor(id: String),
+GET  ,/api/geostreams/sensors         ,Search sensors by space,api.Geostreams.searchSensors(geocode: Option[String] ?= None),
+POST ,/api/geostreams/streams,Create new stream,api.Geostreams.createStream,
+GET,/api/geostreams/streams/update,,api.Geostreams.updateStatisticsStreamSensor(),
+GET  ,/api/geostreams/streams/:id     ,Get stream information,api.Geostreams.getStream(id: String),
+,/api/geostreams/streams/:id/update,,api.Geostreams.updateStatisticsStream(id: String),
+GET  ,/api/geostreams/streams          ,Search streams by space,api.Geostreams.searchStreams(geocode: Option[String] ?= None),
+DELETE ,/api/geostreams/streams/:id    ,Delete stream,api.Geostreams.deleteStream(id: String),
+POST ,/api/geostreams/datapoints        ,Create new geotemporal datapoint,api.Geostreams.addDatapoint,
+GET  ,/api/geostreams/datapoints/:id    ,Get datapoint,api.Geostreams.getDatapoint(id: String),
+GET  ,/api/geostreams/datapoints        ,Search datapoints by space and time,"api.Geostreams.searchDatapoints(operator = """", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= ""json"", semi: Option[String])",
+GET,/api/geostreams/datapoints/trends,,"api.Geostreams.searchDatapoints(operator = ""trends"", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= ""json"", semi: Option[String])",
+GET,/api/geostreams/datapoints/bin/:time/:depth,,"api.Geostreams.binDatapoints(time, depth: Double, raw: Boolean ?= false, since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty)",
+GET,/api/geostreams/datapoints/averages,,"api.Geostreams.searchDatapoints(operator = ""averages"", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= ""json"", semi: Option[String])",
+GET,/api/geostreams/cache,,api.Geostreams.cacheListAction,
+GET,/api/geostreams/cache/invalidate,,api.Geostreams.cacheInvalidateAction,
+GET,/api/geostreams/cache/:id,,api.Geostreams.cacheFetchAction(id),
+DELETE ,/api/geostreams/dropall,,api.Geostreams.deleteAll,
+GET,/geostreams,,controllers.Geostreams.browse,
+GET  ,/api/geostreams/counts           ,"Return counts for sensors, streams and datapoints",api.Geostreams.counts,
+POST ,/api/tiles,Upload tile to image pyramid,@api.ZoomIt.uploadTile,
+POST ,/api/geometries,Upload geometry,@api.Geometry.uploadGeometry,
+POST ,/api/3dTextures,Upload 3D texture,@api.ThreeDTexture.uploadTexture,
+POST ,/api/fileThumbnail               ,Upload file thumbnail,@api.Thumbnail.uploadThumbnail,Yes
+POST ,/api/comment/:id,Create new comment,@api.Comments.comment(id: UUID),
+DELETE ,/api/comment/:id/removeComment,,@api.Comments.removeComment(id: UUID),
+POST ,/api/comment/:id/editComment,,@api.Comments.editComment(id: UUID),
+GET  ,/api/search,Text based search,"@api.Search.search(query: String ?= """")",
+POST ,/api/sparqlquery,,@api.Search.querySPARQL,
+GET,/api/extractions/requests,,@api.Extractions.getDTSRequests(),
+GET,/api/extractions/servers_ips,,@api.Extractions.getExtractorServersIP(),
+GET,/api/extractions/extractors_names,,@api.Extractions.getExtractorNames(),
+GET,/api/extractions/supported_input_types,,@api.Extractions.getExtractorInputTypes(),
+GET,/api/extractions/extractors_details,,@api.Extractions.getExtractorDetails(),
+POST ,/api/extractions/upload_url,,@api.Extractions.uploadByURL(),
+POST ,/api/extractions/upload_file,,"@api.Extractions.uploadExtract(showPreviews: String ?= ""DatasetLevel"")",
+GET,/api/extractions/:id/status,,@api.Extractions.checkExtractorsStatus(id:UUID),
+POST ,/api/extractions/:id/submit,,@api.Extractions.submitExtraction(id:UUID),
+GET,/api/extractions/:id/metadata,,@api.Extractions.fetch(id:UUID),
+GET,/api/delete-data,,api.Admin.deleteAllData,
+POST ,/api/remove-admin,,api.Admin.removeAdmin,
+POST ,/api/changeAppearance,,api.Admin.submitAppearance,
+GET  ,/api/sensors,,api.Sensors.list,
+POST ,/api/sensors,,api.Sensors.add,
+GET,/api/sensors/:id,,api.Sensors.get(id),
+GET,/api/sensors/search,,api.Sensors.search,
+DELETE ,/api/sensors/:id,,api.Sensors.delete(id),
+GET,/api/users,,@api.Users.list,
+GET,/api/users/email/:email,,@api.Users.findByEmail(email: String),
+GET,/api/users/:id,,@api.Users.findById(id: UUID),
+POST,/users/registerThroughAdmins,,,

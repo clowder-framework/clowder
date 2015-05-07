@@ -16,6 +16,7 @@ import javax.inject.{Singleton, Inject}
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.util.JSON
 import jsonutils.JsonUtil
+import util.Parsers
 import scala.collection.mutable.ListBuffer
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
@@ -103,9 +104,7 @@ class MongoDBDatasetService @Inject() (
     Logger.debug(s"List datasets inside collection $collectionId")
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
-        val list = for (dataset <- listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
-        list.foreach(d => Logger.debug(s"Dataset in $d"))
-        return list
+        for (dataset <- listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
       }
       case None =>{
         Logger.debug(s"Collection $collectionId not found")
@@ -384,6 +383,24 @@ class MongoDBDatasetService @Inject() (
 
   def findByTag(tag: String): List[Dataset] = {
     Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
+  }
+
+  def findByTag(tag: String,start: String, limit: Integer, reverse: Boolean): List[Dataset] = {
+    val filter = if (start == "") {
+      MongoDBObject("tags.name" -> tag)
+    } else {
+      if (reverse) {
+        MongoDBObject("tags.name" -> tag) ++ ("created" $gte Parsers.fromISO8601(start))
+      } else {
+        MongoDBObject("tags.name" -> tag) ++ ("created" $lte Parsers.fromISO8601(start))
+      }
+    }
+    val order = if (reverse) {
+      MongoDBObject("created" -> -1, "name" -> 1)
+    } else {
+      MongoDBObject("created" -> 1, "name" -> 1)
+    }
+    Dataset.dao.find(filter).sort(order).limit(limit).toList
   }
 
   def getMetadata(id: UUID): Map[String, Any] = {
