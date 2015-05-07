@@ -216,4 +216,42 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
         BadRequest(toJson(s"The given id $spaceid is not a valid ObjectId."))
       }
   }
+  
+   /**
+   * REST endpoint: POST call to update the user information associated with a specific Space
+   * 
+   *  Takes one arg, id:
+   *  
+   *  id, the UUID associated with the space that will be updated 
+   *  
+   *  The data contained in the request body will defined by the following String key-value pairs:
+   *  
+   *  rolesandusers -> A map that contains a role level as a key and a comma separated String of user IDs as the value
+   *  
+   */
+  @ApiOperation(value = "Update the information associated with a space", notes="",
+    responseClass = "None", httpMethod = "POST")
+  def updateUsers(spaceid: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateSpaces))
+  { request =>
+      if (UUID.isValid(spaceid.stringify)) {
+           var aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
+          
+          // Pattern matching
+          aResult match {
+              case roleMap: JsSuccess[Map[String, String]] => {
+                Logger.debug("------ Found, roleMap is " + roleMap)
+                Ok(Json.obj("status" -> "success"))
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson("rolesandusers data is missing from the updateUsers call."))
+              }                            
+          }
+      }
+      else {
+        Logger.error(s"The given id $spaceid is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $spaceid is not a valid ObjectId."))
+      }
+  }
+          
 }

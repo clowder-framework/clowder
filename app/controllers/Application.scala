@@ -117,6 +117,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.addCollection,
         api.routes.javascript.Spaces.addDataset,
         api.routes.javascript.Spaces.updateSpace,
+        api.routes.javascript.Spaces.updateUsers,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution
       )

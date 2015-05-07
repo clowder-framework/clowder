@@ -269,6 +269,7 @@ DELETE         /api/spaces/:id                                                  
 POST           /api/spaces/:id/addCollection                                            @api.Spaces.addCollection(id: UUID)
 POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
+POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT

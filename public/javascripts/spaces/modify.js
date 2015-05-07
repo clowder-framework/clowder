@@ -93,4 +93,43 @@ function updateSpaceEditLink(space_id, space_name) {
     $('#space_link').attr("href", jsRoutes.controllers.Spaces.getSpace(space_id).url).text(space_name);
 }
 
+function updateUsersInSpace(spaceId) {
+	//Hide the modal
+	$('#modalUser').modal('hide');
+	
+	//Generate the string for each level
+	var roleUserMap = {};
+	for (var i = 0; i < roleArray.length; i++) {
+		console.log("roleList[i] is " + roleArray[i] + " and " + roleArray[i].replace(/ /g, ''));
+		var ids = $("#" + roleArray[i].replace(/ /g, '') + " option:selected").map(function(){ return this.value }).get().join(",");
+		console.log("ids are " + ids); 
+		roleUserMap[roleArray[i]] = ids;
+	}		
+	
+	jsonData = JSON.stringify({"rolesandusers":roleUserMap});
+	request = jsRoutes.api.Spaces.updateUsers(spaceId).ajax({
+        data: jsonData,
+        type: 'POST',
+        contentType: "application/json",
+    });
+	                        	                        
+    request.done(function (response, textStatus, jqXHR){	    
+    	//Successful attachment of multiple files
+        console.log("Successful response from updateUsers.");
+    });
+
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to update the users contained within a space.";                                
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+        	$('#messageerror').html("Error in updating users within a space. " + errorThrown);
+        	$('#messageerror').show();
+        }  
+    });
+	
+    
+    return false;
+}
+
 window['changeSpace'] = changeSpace;

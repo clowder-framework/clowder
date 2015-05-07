@@ -46,7 +46,11 @@ case class Role(
    name: String = "Default")
 
 object Role {
-    val roleList: List[String] = List("Admin", "Power User", "User", "Guest") 
+    val roleList: List[String] = List("Admin", "Power User", "User", "Guest")
+    var roleMap: Map[String, Role] = Map.empty
+    for (aRole <- roleList) {
+        roleMap += (aRole -> Role(name = aRole))
+    }
 }   
    
 // New way to manage metadata. Will eventually be merged with space metadata.
