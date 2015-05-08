@@ -75,9 +75,12 @@
   var title = $('.page-header h1').text();
   if(title.indexOf("Edit Space") > 0)
   {
-    var timeToLive = $('#editTime').val();
-    timeToLive = timeToLive/3600000;
-    $('#editTime').val(timeToLive);
+    if(!$('.help-inline').text())
+    {
+       var timeToLive = $('#editTime').val();
+      timeToLive = timeToLive/3600000;
+      $('#editTime').val(timeToLive);
+    }
   }
   else
   {
@@ -128,6 +131,5 @@ $('.control-label').addClass('h3');
 
   });
   });
-
   </script>
 }
