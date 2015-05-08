@@ -22,7 +22,6 @@ class SpaceMongoDBSpec extends PlaySpec with OneServerPerSuite {
     homePage = List(new URL("http://isda.ncsa.illinois.edu/")),
     logoURL = None,
     bannerURL = None,
-    usersByRole = Map.empty, // roleId -> userId
     collectionCount = 0,
     datasetCount = 0,
     userCount = 0,
