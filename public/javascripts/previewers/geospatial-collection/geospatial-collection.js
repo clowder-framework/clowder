@@ -50,7 +50,33 @@
 				
 				// adding the base layer to the map
 				map.addLayer(baseLayer);
-				
+
+                // adding control box entry for the basemap (OSM)
+                var defaultOpacity = 0.5;
+                var visVar = 'osm-visible';
+                var opVar = 'osm-opacity';
+
+                // add checkbox and range input
+                var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />Basemap:&nbsp;&nbsp';
+                layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
+
+                // prepend the layer not "append" since the top item means the layer on top
+                $('#layer-control').prepend(layerControl);
+
+                // event handler for layer on/off
+                $("#" + visVar).change(function () {
+                    if ($(this).is(':checked')) {
+                        baseLayer.setVisible(true);
+                    } else {
+                        baseLayer.setVisible(false);
+                    }
+                });
+
+                // event handler for layer opacity
+                $("#" + opVar).change(function () {
+                    baseLayer.setOpacity($(this).val());
+                });
+
 				var current_coord = [];
 				// looping through the datasets
 				for (var i=0;i < data.length; i ++) {
@@ -70,161 +96,169 @@
 					file_req.done(function(data){
 						// this variable will be placed in $.ajax call to be used in .done function
 						var title = this.datasetTitle;
-						
-						var file_id = data[0]['id'];
-						
-						// setting up ajax call to get metadata from the file
-						var meta_req = $.ajax({
-							datasetTitle: title,
-							type: "GET",
-							url: "/api/files/"+file_id+"/technicalmetadatajson",
-							dataType: "json"
-						});
-						meta_req.done(function(data){
-							// this variable will be placed in $.ajax call to be used in .done function
-							var title = this.datasetTitle;
-							
-							// skip files without wms metadata
-							if (data == null) {
-								console.log("NO - null");
-								return;
-							}
-							if (data == undefined) {
-								console.log("NO - undefined");
-								return;
-							}
-							if (data.length == undefined) {
-								console.log("NO - length undefined");
-								return;
-							}
 
-                            // search the metadata index which contains geospatial metadata
-                            var geoMetadataIndex = -1;
-                            for (var i=0;i<data.length;i++)
-                            {
-                                if (data[i]["WMS Layer URL"] == undefined) {
-                                    console.log("NO - wms metadata is empty");
-                                    continue;
+                        // go through all the files
+						for(var j=0;j < data.length; j++) {
+
+                            // get file_id
+                            var file_id = data[j]['id'];
+                            var file_name = data[j]['filename'];
+
+                            // build a title for layer list ([dataset_title]-[filename])
+                            var file_title = title+"-"+file_name;
+
+                            // setting up ajax call to get metadata from the file
+                            var meta_req = $.ajax({
+                                fileTitle: file_title,
+                                type: "GET",
+                                url: "/api/files/" + file_id + "/technicalmetadatajson",
+                                dataType: "json"
+                            });
+                            meta_req.done(function (data) {
+                                // this variable will be placed in $.ajax call to be used in .done function
+                                var title = this.fileTitle;
+
+                                // skip files without wms metadata
+                                if (data == null) {
+                                    console.log("NO - null");
+                                    return;
                                 }
-                                if (data[i]["WMS Layer URL"] == "") {
-                                    console.log("NO - no wms metadata");
-                                    continue;
+                                if (data == undefined) {
+                                    console.log("NO - undefined");
+                                    return;
                                 }
-                                geoMetadataIndex = i;
-                                break;
-                            }
+                                if (data.length == undefined) {
+                                    console.log("NO - length undefined");
+                                    return;
+                                }
 
-                            // if it couldn't find the index, return
-                            if (geoMetadataIndex == -1)
-                                return;
+                                // search the metadata index which contains geospatial metadata
+                                var geoMetadataIndex = -1;
+                                for (var i = 0; i < data.length; i++) {
+                                    if (data[i]["WMS Layer URL"] == undefined) {
+                                        console.log("NO - wms metadata is empty");
+                                        continue;
+                                    }
+                                    if (data[i]["WMS Layer URL"] == "") {
+                                        console.log("NO - no wms metadata");
+                                        continue;
+                                    }
+                                    geoMetadataIndex = i;
+                                    break;
+                                }
 
-							console.log("YES - it is a geospatial data");
-							
-							// retrieve wms information 
-							var wmsUrl = data[geoMetadataIndex]["WMS Service URL"];
-							var layerName = data[geoMetadataIndex]["WMS Layer Name"];
-							var wmsLayerUrl = data[geoMetadataIndex]["WMS Layer URL"];
-							
-							// remove the 'wssi:' (workspace prefix) 
-							var name = layerName.split(":")
-							
-							// extract extent from WMS layer url
-							var parser = document.createElement('a'), searchObject = {}, queries, split;
-							parser.href = wmsLayerUrl;
-							var tmp = parser.search.substring(1,
-									parser.search.length);
-							var queries = tmp.split('&');
-							var ext = '';
-							for (var i = 0; i < queries.length; i++) {
-								split = queries[i].split('=');
-								if (split[0] === 'bbox') {
-									ext = split[1];
-									break;
-								}
-							}
-							var coord = ext.split(",");
-							for (var i = 0; i < coord.length; i++) {
-								coord[i] = parseFloat(coord[i]);
-							}
-							
-							// update the extent for all the layers
-							if (current_coord.length == 0) {
-								for (var i = 0; i < coord.length; i++) {
-									current_coord[i] = coord[i];
-								}
-							} else {
-								// min x
-								if (coord[0] < current_coord[0]) current_coord[0] = coord[0];
-								
-								// min y
-								if (coord[1] < current_coord[1]) current_coord[1] = coord[1];
-								
-								// max x
-								if (coord[2] > current_coord[2]) current_coord[2] = coord[2];
-								
-								// max y
-								if (coord[3] > current_coord[3]) current_coord[3] = coord[3];
-							}
-							
-							// create wms layer
-							var wmsLayer = new ol.layer.Tile({
-								source : new ol.source.TileWMS(({
-									url : wmsUrl,
-									params : {
-										'LAYERS' : layerName,
-										'TILED' : true
-									},
-									serverType : 'geoserver'
-								})),
-								opacity: defaultOpacity
-							});
-							
-							// add wms layer to the map
-							map.addLayer(wmsLayer);
-							
-							// Populate layer control for each layer
-							
-							// create id by using wms layer name
-							var visVar = name[1]+'-visible'; 
-							var opVar = name[1]+'-opacity';
-							
-							// add checkbox and range input
-							var layerControl = '<div><input id="'+visVar+'" type="checkbox" checked="checked" />'+title+':&nbsp;&nbsp';
-							layerControl += '<input id="'+opVar+'" type="range" min="0" max="1" step="0.01" value="'+defaultOpacity+'" style="width:100px;"/></div>';
-							
-							// prepend the layer not "append" since the top item means the layer on top
-							$('#layer-control').prepend(layerControl);
-							
-							// event handler for layer on/off
-							$("#"+visVar).change(function() {
-								if($(this).is(':checked')){
-									wmsLayer.setVisible(true);
-								} else {	
-									wmsLayer.setVisible(false);
-								}
-							});
-							
-							// event handler for layer opacity
-							$("#"+opVar).change(function() {
-								wmsLayer.setOpacity($(this).val());
-							});
-							
-							
-							// retrieving the map div size for fit
+                                // if it couldn't find the index, return
+                                if (geoMetadataIndex == -1)
+                                    return;
+
+                                console.log("YES - it is a geospatial data");
+
+                                // retrieve wms information
+                                var wmsUrl = data[geoMetadataIndex]["WMS Service URL"];
+                                var layerName = data[geoMetadataIndex]["WMS Layer Name"];
+                                var wmsLayerUrl = data[geoMetadataIndex]["WMS Layer URL"];
+
+                                // remove the 'wssi:' (workspace prefix)
+                                var name = layerName.split(":")
+
+                                // extract extent from WMS layer url
+                                var parser = document.createElement('a'), searchObject = {}, queries, split;
+                                parser.href = wmsLayerUrl;
+                                var tmp = parser.search.substring(1,
+                                    parser.search.length);
+                                var queries = tmp.split('&');
+                                var ext = '';
+                                for (var i = 0; i < queries.length; i++) {
+                                    split = queries[i].split('=');
+                                    if (split[0] === 'bbox') {
+                                        ext = split[1];
+                                        break;
+                                    }
+                                }
+                                var coord = ext.split(",");
+                                for (var i = 0; i < coord.length; i++) {
+                                    coord[i] = parseFloat(coord[i]);
+                                }
+
+                                // update the extent for all the layers
+                                if (current_coord.length == 0) {
+                                    for (var i = 0; i < coord.length; i++) {
+                                        current_coord[i] = coord[i];
+                                    }
+                                } else {
+                                    // min x
+                                    if (coord[0] < current_coord[0]) current_coord[0] = coord[0];
+
+                                    // min y
+                                    if (coord[1] < current_coord[1]) current_coord[1] = coord[1];
+
+                                    // max x
+                                    if (coord[2] > current_coord[2]) current_coord[2] = coord[2];
+
+                                    // max y
+                                    if (coord[3] > current_coord[3]) current_coord[3] = coord[3];
+                                }
+
+                                // create wms layer
+                                var wmsLayer = new ol.layer.Tile({
+                                    source: new ol.source.TileWMS(({
+                                        url: wmsUrl,
+                                        params: {
+                                            'LAYERS': layerName,
+                                            'TILED': true
+                                        },
+                                        serverType: 'geoserver'
+                                    })),
+                                    opacity: defaultOpacity
+                                });
+
+                                // add wms layer to the map
+                                map.addLayer(wmsLayer);
+
+                                // Populate layer control for each layer
+
+                                // create id by using wms layer name
+                                var visVar = name[1] + '-visible';
+                                var opVar = name[1] + '-opacity';
+
+                                // add checkbox and range input
+                                var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />' + title + ':&nbsp;&nbsp';
+                                layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
+
+                                // prepend the layer not "append" since the top item means the layer on top
+                                $('#layer-control').prepend(layerControl);
+
+                                // event handler for layer on/off
+                                $("#" + visVar).change(function () {
+                                    if ($(this).is(':checked')) {
+                                        wmsLayer.setVisible(true);
+                                    } else {
+                                        wmsLayer.setVisible(false);
+                                    }
+                                });
+
+                                // event handler for layer opacity
+                                $("#" + opVar).change(function () {
+                                    wmsLayer.setOpacity($(this).val());
+                                });
+
+
+                                // retrieving the map div size for fit
 //							zheight = $('#map').height() - 100;
 //							zwidth = $('#map').width();
 //
 //							console.log('extent:', current_coord);
 //							console.log('zoom with h:' + zheight
 //									+ ', w:' + zwidth);
-							
-							// create view object to zoom in
-							var view = new ol.View();
-							view.fitExtent(current_coord, map.getSize());
 
-							// zoom into the layer extent
-							map.setView(view);
-						});
+                                // create view object to zoom in
+                                var view = new ol.View();
+                                view.fitExtent(current_coord, map.getSize());
+
+                                // zoom into the layer extent
+                                map.setView(view);
+                            });
+                        }
 					});
 				}
 				// fix for MMDB-1617

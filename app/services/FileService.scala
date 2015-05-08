@@ -117,6 +117,8 @@ trait FileService {
 
   def findByTag(tag: String): List[File]
 
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File]
+
   def findIntermediates(): List[File]
 
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])

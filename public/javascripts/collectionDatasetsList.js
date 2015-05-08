@@ -12,61 +12,29 @@
 	var areRestDatasetsVisible = false;
 
 	function addDataset(datasetId, event){
+		
 		var request = jsRoutes.api.Collections.attachDataset(collectionId, datasetId).ajax({
 			type: 'POST'
 		});
-		request.done(function (response, textStatus, jqXHR){
-	        console.log("Response " + response);	        
+		
+		request.done(function (response, textStatus, jqXHR){	        
 	        //Remove selected dataset from datasets not in collection.
-	        var resultId = event.target.parentNode.parentNode.getAttribute('id');
-
-	        var inputDate = $("#" + resultId + " td:nth-child(2)").text();
-	        var inputDescr = $("#" + resultId + " td:nth-child(3)").text();
-	        var inputThumbnail = $("#" + resultId + " td:nth-child(4)").html(); 
-	        $("#addDatasetsTable tbody tr[id='" + resultId + "']").remove();
-	        $("#addDatasetsTable tbody tr[id='resultRow" + (currentFirstAdd+10) + "']").css('display','table-row');
-	        searchResultsCount--;
-	        if(currentFirstAdd + 10 > searchResultsCount)
-				 $('#addPagerNext').css('visibility','hidden');
-	        for(var i = parseInt(resultId.replace("resultRow",""))+1; i <= searchResultsCount + 1; i++){
-				 $("#addDatasetsTable tbody tr[id='resultRow" + i + "']").each(function() {
-					 $(this)[0].innerHTML = $(this)[0].innerHTML.replace("resultRow" + i, "resultRow" + (i-1));
-					 $(this).attr("id", "resultRow" + (i-1));				 
-				 });
-			 }
-	        if(currentFirstAdd > searchResultsCount)
-	        	if($('#addPagerPrev')[0].style.visibility == 'visible')
-	        		$('#addPagerPrev').click();
+	        var resultId = event.target.parentNode.parentNode.getAttribute('data-datasetid');
+	        var inputDate = $("tr[data-datasetid='" + resultId + "'] td:nth-child(2)").text();
+	        var inputDescr = $("tr[data-datasetid='" + resultId + "'] td:nth-child(3)").text();
+	        var inputThumbnail = $("tr[data-datasetid='" + resultId + "'] td:nth-child(4)").html(); 	        
+	        $("#addDatasetsTable tbody tr[data-datasetid='" + resultId + "']").remove();
 	        
-	        if($("#collectionDatasetsTable tbody tr[data-datasetId='" + datasetId + "']").length > 0)
-	        	return;	        
-	        //Add selected dataset to collection
-	        for(var i = datasetsInCollectionCount; i >= 1; i--){
-				 $("#collectionDatasetsTable tbody tr[id='datasetRow" + i + "']").each(function() {
-					 $(this).attr("id", "datasetRow" + (i+1));
-				 });
-			 }
-	        datasetsInCollectionCount++;
-	        $('#collectionDatasetsTable tbody').prepend("<tr id='datasetRow1' style='display:none;' data-datasetId='" + datasetId + "'> " +
-	        		"<td><a href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>"+ event.target.innerHTML + "</a></td>"
+	        //Add the node to the contained datasets table, with associated data
+	        $('#collectionDatasetsTable tbody').append("<tr data-datasetid='" + datasetId + "'><td><a href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>"+ event.target.innerHTML + "</a></td>"
 					+ "<td>" + inputDate + "</td>"
 					+ "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 					+ "<td>" + inputThumbnail + "</td>"
-					+ "<td><a href='#!' onclick='removeDataset(\"" + datasetId + "\",event)'>Remove</a></td></tr>");
-	        $('#collectionDatasetsTable tbody tr').css('display','none');
-	        for(var i = 0; i < 10; i++){
-	        	$("#collectionDatasetsTable tbody tr[id='datasetRow" + (i+1) + "']").each(function() {
-	        	    $(this).css('display','table-row');
-	        	});
-	        }
-	        $('#datasetsPagerPrev').css('visibility','hidden');
-	        if(datasetsInCollectionCount > 10)
-	        	$('#datasetsPagerNext').css('visibility','visible');
-	        else
-	        	$('#datasetsPagerNext').css('visibility','hidden');
-	        
-	        currentFirstDatasets = 1;
+					+ "<td><a href='#!' onclick='removeDataset(\"" + datasetId + "\",event)'>Remove</a>"
+					+ "<button class='btn btn-link' title='Detach the Dataset' style='text-align:right' onclick='removeDataset(\"" + datasetId + "\",event)'>"
+					+ "<span class='glyphicon glyphicon-trash'></span></button></td></tr>");
 		});	
+		
 		request.fail(function (jqXHR, textStatus, errorThrown){
 			console.error("The following error occured: "+textStatus, errorThrown);
 	        var errMsg = "You must be logged in to add a dataset to a collection.";
@@ -78,48 +46,27 @@
 	}
 	
 	function removeDataset(datasetId, event){
+		
 		var request = jsRoutes.api.Collections.removeDataset(collectionId, datasetId).ajax({
 			type: 'POST'
 		});
-		request.done(function (response, textStatus, jqXHR){
-	        console.log("Response " + response);
-	        
+		
+		request.done(function (response, textStatus, jqXHR){	        	       
 	      //Remove selected dataset from datasets in collection.
-	      var rowId = event.target.parentNode.parentNode.getAttribute('id');
-	      var inputDate = $("#" + rowId + " td:nth-child(2)").text();
-	      var inputDescr = $("#" + rowId + " td:nth-child(3)").text();
-	      var inputThumbnail = $("#" + rowId + " td:nth-child(4)").html();
-	      $("#collectionDatasetsTable tbody tr[id='" + rowId + "']").remove(); 
-	      $("#collectionDatasetsTable tbody tr[id='datasetRow" + (currentFirstDatasets+10) + "']").css('display','table-row');
-	      datasetsInCollectionCount--;
-	      if(currentFirstDatasets + 10 > datasetsInCollectionCount)
-	    	  $('#datasetsPagerNext').css('visibility','hidden');
-	      for(var i = parseInt(rowId.replace("datasetRow",""))+1; i <= datasetsInCollectionCount + 1; i++){
-	    	  $("#collectionDatasetsTable tbody tr[id='datasetRow" + i + "']").each(function() {
-	    		  $(this)[0].innerHTML = $(this)[0].innerHTML.replace("datasetRow" + i, "datasetRow" + (i-1));
-	    		  $(this).attr("id", "datasetRow" + (i-1));				 
-	    	  });
-	      }
-	      if(currentFirstDatasets > datasetsInCollectionCount)
-	    	  if($('#datasetsPagerPrev')[0].style.visibility == 'visible')
-	    		  $('#datasetsPagerPrev').click();
-	    
-	      if($("#addDatasetsTable tbody tr[data-datasetId='" + datasetId + "']").length > 0 || !areRestDatasetsVisible)
-	    	  return;	
-	      //Add selected dataset to datasets not in collection.
-	      var datasetPos = findPos(event.target.parentNode.parentNode);
-	      for(var i = searchResultsCount; i >= datasetPos; i--){  
-	    	  $("#addDatasetsTable tbody tr[id='resultRow" + i + "']").each(function() {
-	    		  $(this).attr("id", "resultRow" + (i+1));
-	    	  });
-	      }
-	      searchResultsCount++;  
-	      var newDatasetHTML = "<tr id='resultRow" + datasetPos + "' style='display:none;' data-datasetId='" + datasetId + "'><td><a href='#!' "
+	      var rowId = event.target.parentNode.parentNode.getAttribute('data-datasetid');	
+	      var inputDate = $("tr[data-datasetid='" + rowId + "'] td:nth-child(2)").text();
+	      var inputDescr = $("tr[data-datasetid='" + rowId + "'] td:nth-child(3)").text();
+	      var inputThumbnail = $("tr[data-datasetid='" + rowId + "'] td:nth-child(4)").html();
+	      $("#collectionDatasetsTable tbody tr[data-datasetid='" + rowId + "']").remove(); 
+	      
+	      //Add the data back to the uncontained datasets table
+	      var newDatasetHTML = "<tr data-datasetId='" + datasetId + "'><td><a href='#!' "
 	      + "onclick='addDataset(\"" + datasetId + "\",event)' "
 	      + ">"+ event.target.parentNode.parentNode.children[0].children[0].innerHTML + "</a></td>"
 	      + "<td>" + inputDate + "</td>"
 	      + "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 	      + "<td>" + inputThumbnail + "</td>"
+<<<<<<< HEAD
 	      + "<td><a target='_blank' href='" +  jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>View</a></td></tr>";
 	      
 	      if(datasetPos > 1)
@@ -139,7 +86,14 @@
 	    	  if(currentFirstAdd + 10 <= searchResultsCount)
 	    		  $('#addPagerNext').css('visibility','visible');
 	      }       
+=======
+	      + "<td><a target='_blank' href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>View</a></td></tr>";
+	      
+	      $('#addDatasetsTable tbody').append(newDatasetHTML);
+	      	      	      	          
+>>>>>>> 79a69c90e3adfd1f8f25f9cdce9126e8b0d477cb
 		});  	
+		
 		request.fail(function (jqXHR, textStatus, errorThrown){
 			console.error("The following error occured: "+textStatus, errorThrown);
 	        var errMsg = "You must be logged in to remove a dataset from a collection.";

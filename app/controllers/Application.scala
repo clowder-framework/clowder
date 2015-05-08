@@ -99,6 +99,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.updateLicense,
         api.routes.javascript.Files.extract,
         api.routes.javascript.Files.removeFile,
+        api.routes.javascript.Files.getTechnicalMetadataJSON,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Sections.add,
@@ -115,7 +116,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.removeDataset,
         api.routes.javascript.Collections.removeCollection,
         api.routes.javascript.Projects.addproject,
-        api.routes.javascript.Institutions.addinstitution
+        api.routes.javascript.Institutions.addinstitution,
+        api.routes.javascript.Users.getUser
       )
     ).as(JSON) 
   }

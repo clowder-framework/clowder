@@ -287,12 +287,11 @@ class Extractions @Inject() (
           var listIds = for { fileurl <- listURLs } yield {
             var urlsplit = fileurl.split("/")
             var filename = urlsplit(urlsplit.length - 1)
-            var contentType = MimeTypes.forFileName(filename.toLowerCase()).getOrElse(ContentTypes.BINARY)
             val futureResponse = WS.url(fileurl).get()
             var fid = for { response <- futureResponse } yield {
               if (response.status == 200) {
                 var inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
-                var file = files.save(inputStream, filename, Some(contentType), user, null)
+                var file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
                 file match {
                   case Some(f) => {
                     var fileType = f.contentType
