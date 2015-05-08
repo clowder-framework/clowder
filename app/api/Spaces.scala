@@ -219,11 +219,11 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
   }
   
    /**
-   * REST endpoint: POST call to update the user information associated with a specific Space
+   *  REST endpoint: POST call to update the user information associated with a specific Space
    * 
-   *  Takes one arg, id:
+   *  Takes one arg, spaceId:
    *  
-   *  id, the UUID associated with the space that will be updated 
+   *  spaceId, the UUID associated with the space that will be updated 
    *  
    *  The data contained in the request body will defined by the following String key-value pairs:
    *  
@@ -232,67 +232,55 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
    */
   @ApiOperation(value = "Update the information associated with a space", notes="",
     responseClass = "None", httpMethod = "POST")
-  def updateUsers(spaceid: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateSpaces))
+  def updateUsers(spaceId: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateSpaces))
   { request =>
-      if (UUID.isValid(spaceid.stringify)) {
+      if (UUID.isValid(spaceId.stringify)) {
            var aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
           
           // Pattern matching
           aResult match {
               case aMap: JsSuccess[Map[String, String]] => {
 				//Set up a map of existing users to check against
-                val existingUsers = spaces.getUsersInSpace(spaceid)
+                val existingUsers = spaces.getUsersInSpace(spaceId)
                 var existUserRole: Map[String, String] = Map.empty
                 for (aUser <- existingUsers) {
-                    spaces.getRoleForUserInSpace(spaceid, aUser.id) match {
+                    spaces.getRoleForUserInSpace(spaceId, aUser.id) match {
                         case Some(aRole) => {
                         	existUserRole += (aUser.id.stringify -> aRole.name)
                         }
-                        case None => Logger.debug("--- Odd, user in space with no role...")
-                    }
-                    
+                        case None => Logger.debug("This shouldn't happen. A user in a space should always have a role.")
+                    }                    
                 }
-				 
-                Logger.debug("---- existUserRole map is " + existUserRole)
-				Logger.debug("------ Found, aMap is " + aMap)
+				                 
 				var roleMap: Map[String, String] = aMap.get
 				for ((k, v) <- roleMap) {
-				    Logger.debug("key is " + k + " and value is " + v)
 				    //The role needs to exist
 				    Role.roleMap.get(k) match {
 				        case Some (aRole) => {
 				            var idArray: Array[String] = v.split(",").map(_.trim())
-				            Logger.debug("---- idArray length is " + idArray.length)
 					        				            
 				            //Deal with all the ids that were sent up (changes and adds)				            
 						    for (aUserId <- idArray) {
-						        Logger.debug("aUser Id is -"+aUserId+"-")
 						        //For some reason, an empty string is getting through as aUserId on length
 						        if (aUserId != "") {								        
 							        if (existUserRole.contains(aUserId)) {
-							            //The user exists in the space alread							            
+							            //The user exists in the space already							            
 							            existUserRole.get(aUserId) match { 
 							                case Some(existRole) => {
 									            if (existRole != k) {
-									                Logger.debug("---- contains, changing")
-									                spaces.changeUserRole(UUID(aUserId), aRole, spaceid)
-									            }
-									            else {
-									                //Same level, so no change
-									                Logger.debug("---- contains, no change")
-									            }
+									                spaces.changeUserRole(UUID(aUserId), aRole, spaceId)
+									            }									            
 							                }
-							                case None => Logger.debug("---- no role associated for some reason")
+							                case None => Logger.debug("This shouldn't happen. A user that is assigned to a space should always have a role.")
 							            }
 							        }							            
 							        else {
 							            //New user completely to the space
-						                Logger.debug("---- new, adding")
-						                spaces.addUser(UUID(aUserId), aRole, spaceid)
+						                spaces.addUser(UUID(aUserId), aRole, spaceId)
 						            }							        
 						        }
 						        else {
-					                Logger.debug("---- There was an empty string that counted as an array...")
+					                Logger.debug("There was an empty string that counted as an array...")
 					            }
 						    }
 				            				            
@@ -302,19 +290,18 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
 				                if (!idArray.contains(existUserId)) {
 				                    //Check if the role is for this level
 				                    existUserRole.get(existUserId) match {
-				                        case Some(existRole) => {
-				                            if (existRole == k) {
-				                                //In this case, the level is correct, so it is a removal
-						                        Logger.debug("---- missing, removing")
-							                    spaces.removeUser(UUID(existUserId), spaceid)
+				                        case Some(existRole) => {				                            
+				                            if (existRole == k) {				                                
+				                                //In this case, the level is correct, so it is a removal						                        
+							                    spaces.removeUser(UUID(existUserId), spaceId)
 				                            }
 				                        }
-				                        case None => Logger.debug("--- This should never happen. Clean these up")
+				                        case None => Logger.debug("This should never happen. A user in a space should always have a role.")
 				                    }			                    
 				                }
 				            }				            
 				        }
-				        case None => Logger.debug("---- A role was sent up that doesn't exist.")
+				        case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
 				    }				    
 				}
 				Ok(Json.obj("status" -> "success"))
@@ -326,8 +313,8 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
           }
       }
       else {
-        Logger.error(s"The given id $spaceid is not a valid ObjectId.")
-        BadRequest(toJson(s"The given id $spaceid is not a valid ObjectId."))
+        Logger.error(s"The given id $spaceId is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
       }
   }
           

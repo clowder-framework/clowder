@@ -89,8 +89,8 @@ class MongoDBUserService extends UserService {
    * Implementation of the UserService trait.
    * 
    */
-  def addSpaceToUser(userId: UUID, role: Role, spaceId: UUID): Unit = {
-      val spaceData = UserSpaceAndRole(Some(spaceId), Some(role))
+  def addUserToSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
+      val spaceData = UserSpaceAndRole(spaceId, role)
       val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));  
   }
  
@@ -100,9 +100,9 @@ class MongoDBUserService extends UserService {
    * Implementation of the UserService trait.
    * 
    */
-  def removeSpaceFromUser(userId: UUID, spaceId: UUID): Unit = {     
+  def removeUserFromSpace(userId: UUID, spaceId: UUID): Unit = {     
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
-    		  $pull("spaceandrole" ->  MongoDBObject( "m_spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
+    		  $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
   }
   
   /**
@@ -112,8 +112,8 @@ class MongoDBUserService extends UserService {
    * 
    */
   def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
-      val spaceData = UserSpaceAndRole(Some(spaceId), Some(role))
-      removeSpaceFromUser(userId, spaceId)
+      val spaceData = UserSpaceAndRole(spaceId, role)
+      removeUserFromSpace(userId, spaceId)
       val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));
   }
   
@@ -128,19 +128,13 @@ class MongoDBUserService extends UserService {
       var found = false
       
       findById(userId) match {
-          case Some(aUser) => {
-              Logger.debug("---- aUser is " + aUser)
-              for (aSpaceAndRole <- aUser.spaceandrole) {
-                  Logger.debug("------ aSpaceAndRole is " + aSpaceAndRole)
+          case Some(aUser) => {              
+              for (aSpaceAndRole <- aUser.spaceandrole) {                  
                   if (!found) {
-	                  aSpaceAndRole.m_spaceId match {
-	                      case Some(anId) => {
-	                          if (anId == spaceId) {
-	                              retRole = aSpaceAndRole.m_role
-	                              found = true
-	                          }
-	                      }
-	                  }
+                      if (aSpaceAndRole.spaceId == spaceId) {
+                          retRole = Some(aSpaceAndRole.role)
+                          found = true
+                      }	                  
                   }
               }
           }
@@ -160,14 +154,9 @@ class MongoDBUserService extends UserService {
       val retList: ListBuffer[User] = ListBuffer.empty
       for (aUser <- UserDAO.dao.find(MongoDBObject())) {
          for (aSpaceAndRole <- aUser.spaceandrole) {
-             aSpaceAndRole.m_spaceId match {
-                 case Some(anId) => {
-                     if (anId == spaceId) {
-                         retList += aUser
-                     }
-                 }
-                 case None => Logger.debug("No spaceId found for aSpaceAndRole in listUsersInSpace")
-             }
+             if (aSpaceAndRole.spaceId == spaceId) {
+                 retList += aUser
+             }             
          }
       }      
       retList.toList
@@ -182,7 +171,7 @@ object UserDAO extends ModelCompanion[User, ObjectId] {
 }
 
 /**
- * ModelCompanion object for the models.LicenseData class. Specific to MongoDB implementation, so should either
+ * ModelCompanion object for the models.UserSpaceAndRole class. Specific to MongoDB implementation, so should either
  * be in it's own utility class within services, or, as it is currently implemented, within one of the common
  * services classes that utilize it.
  */

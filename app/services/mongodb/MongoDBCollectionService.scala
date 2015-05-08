@@ -68,8 +68,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
    */
   def isCollectionInSpace(collection: Collection, spaceId: UUID): Boolean = {
       collection.space match {
-          case Some(storedId) => {
-              Logger.debug("Found a stored space that matches on the collection : " + collection.name)
+          case Some(storedId) => {              
               if (storedId == spaceId) {
                   true
               }

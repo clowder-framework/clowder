@@ -81,8 +81,7 @@ class MongoDBDatasetService @Inject() (
    */
   def isDatasetInSpace(dataset: Dataset, spaceId: UUID): Boolean = {
       dataset.space match {
-          case Some(storedId) => {
-              Logger.debug("Found a stored space that matches on the dataset : " + dataset.name)
+          case Some(storedId) => {              
               if (storedId == spaceId) {
                   true
               }

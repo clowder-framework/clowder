@@ -77,7 +77,7 @@ trait UserService {
    * @param spaceId The identifier of the space that is being associated with the user
    * 
    */
-  def addSpaceToUser(userId: UUID, role: Role, spaceId: UUID)
+  def addUserToSpace(userId: UUID, role: Role, spaceId: UUID)
   
   /**
    * Remove a space from a specific user.
@@ -86,7 +86,7 @@ trait UserService {
    * @param spaceId The space to be disassociated from the user
    * 
    */
-  def removeSpaceFromUser(userId: UUID, spaceId: UUID)
+  def removeUserFromSpace(userId: UUID, spaceId: UUID)
   
   /**
    * Update the role that a user has for a specific space.

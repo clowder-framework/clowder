@@ -94,14 +94,19 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 	        for (aUser <- inSpaceBuffer) {
 	            var role = "What"
 	            spaces.getRoleForUserInSpace(id, aUser.id) match {
-	                case Some(aRole) => {
-	                    Logger.debug("-------- Match found at level " + aRole)
+	                case Some(aRole) => {	                    
 	                    role = aRole.name
 	                }
-	                case None => {
-	                    Logger.debug("-------- No match")
+	                case None => {	  
+	                    //This case catches spaces that have been created before users and roles were assigned to them.
 	                    if (aUser == creatorActual) {
 	                        role = "Admin"
+	                        Role.roleMap.get(role) match {
+	                            case Some(realRole) => {
+	                                spaces.addUser(aUser.id, realRole, id)
+	                            }
+	                            case None => Logger.debug("No Admin role found for some reason.")
+	                        }	                            
 	                    }
 	                }
 	            }
