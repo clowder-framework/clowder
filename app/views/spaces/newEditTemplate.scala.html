@@ -68,12 +68,12 @@
   }, 0);
   }
 
-  $('.externalLinks').on('click', '.external-link-delete a', function () {
+  $('.homePages').on('click', '.external-link-delete a', function () {
   $(this).parent().prev().remove();
   $(this).parent().remove();
   renumberExternalLinkMap();
   });
-
+$('.control-label').addClass('h3');
   $('.external-link-add').click(function () {
   var value = $(this).prev().clone();
 

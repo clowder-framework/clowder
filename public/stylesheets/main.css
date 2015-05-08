@@ -232,12 +232,6 @@ code {
 	left:140px;
 }
 
-#nameDescrFieldSet .control-group .control-label
-{
-    font-size: 30px;
-
-}
-
 #datasetRadioFieldSet .control-group .controls span label{
 	position:relative;
 	top:-17px;
@@ -261,6 +255,10 @@ code {
     width: 85%;
 }
 
+#nameDescrFieldSet .homePages .control-label
+{
+    display: none;
+}
 
 .profilePicture {
   margin-bottom:12px;
