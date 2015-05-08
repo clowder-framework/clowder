@@ -66,32 +66,9 @@
 	      + "<td>" + inputDate + "</td>"
 	      + "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
 	      + "<td>" + inputThumbnail + "</td>"
-<<<<<<< HEAD
-	      + "<td><a target='_blank' href='" +  jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>View</a></td></tr>";
-	      
-	      if(datasetPos > 1)
-	    	  $("#addDatasetsTable tbody tr[id='resultRow" + (datasetPos-1) + "']").after(newDatasetHTML);
-	      else
-	    	  $('#addDatasetsTable tbody').prepend(newDatasetHTML);
-
-	      if(datasetPos < currentFirstAdd + 10){
-	    	  $("#addDatasetsTable tbody tr[id='resultRow" + (currentFirstAdd+10) + "']").css('display','none');
-	    	  if(datasetPos < currentFirstAdd){
-	    		  $("#addDatasetsTable tbody tr[id='resultRow" + currentFirstAdd + "']").css('display','table-row');
-	    	  }
-	    	  else{
-	    		  $("#addDatasetsTable tbody tr[id='resultRow" + datasetPos + "']").css('display','table-row');
-	    	  }
-
-	    	  if(currentFirstAdd + 10 <= searchResultsCount)
-	    		  $('#addPagerNext').css('visibility','visible');
-	      }       
-=======
 	      + "<td><a target='_blank' href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>View</a></td></tr>";
 	      
-	      $('#addDatasetsTable tbody').append(newDatasetHTML);
-	      	      	      	          
->>>>>>> 79a69c90e3adfd1f8f25f9cdce9126e8b0d477cb
+	      $('#addDatasetsTable tbody').append(newDatasetHTML);	      	      	      	          
 		});  	
 		
 		request.fail(function (jqXHR, textStatus, errorThrown){
