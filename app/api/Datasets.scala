@@ -163,32 +163,32 @@ class Datasets @Inject()(
                   //for the presence of existing files.
                   Logger.debug("About to call addDataset on spaces service")
                   //Below call is not what is needed? That already does what we are doing in the Dataset constructor... 
-                  //Items from space model still missing. New API will be needed to update it most likely. 
-                  spaces.addDataset(UUID(id), UUID(space))
+                  //Items from space model still missing. New API will be needed to update it most likely.
+                  if (space != "default") spaces.addDataset(UUID(id), UUID(space))
                   (request.body \ "existingfiles").asOpt[String].map { fileString =>
-                      var idArray = fileString.split(",").map(_.trim())
-                      for (anId <- idArray) {                      
-                          datasets.get(UUID(id)) match {
-    					      case Some(dataset) => {
-    					          files.get(UUID(anId)) match {
-    					              case Some(file) => {
-    					            	  attachExistingFileHelper(UUID(id), UUID(anId), dataset, file)
-    					            	  Ok(toJson(Map("status" -> "success")))
-    					              }
-    					              case None => {
-    					            	  Logger.error("Error getting file" + anId)
-    					            	  BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
-    					              }
-    					          }
-    				        }
-    				        case None => {
-    				            Logger.error("Error getting dataset" + id)
-    				            BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
-    				        }
-    				      }                      
+                    var idArray = fileString.split(",").map(_.trim())
+                    for (anId <- idArray) {
+                      datasets.get(UUID(id)) match {
+                        case Some(dataset) => {
+                          files.get(UUID(anId)) match {
+                            case Some(file) => {
+                              attachExistingFileHelper(UUID(id), UUID(anId), dataset, file)
+                              Ok(toJson(Map("status" -> "success")))
+                            }
+                            case None => {
+                              Logger.error("Error getting file" + anId)
+                              BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
+                            }
+                          }
+                        }
+                        case None => {
+                          Logger.error("Error getting dataset" + id)
+                          BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+                        }
                       }
-                      Ok(toJson(Map("id" -> id)))
-                  }.getOrElse(Ok(toJson(Map("id" -> id))))              
+                    }
+                    Ok(toJson(Map("id" -> id)))
+                  }.getOrElse(Ok(toJson(Map("id" -> id))))
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
               }            
