@@ -65,7 +65,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
     spaces.get(id) match {
         case Some(s) => {
 	        val creator = users.findById(s.creator)
-	
+	        var creatorActual: User = null 	
 	        val collectionsInSpace = spaces.getCollectionsInSpace(id)
 	
 	        val datasetsInSpace = spaces.getDatasetsInSpace(id)
@@ -75,6 +75,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 	        creator match {
 	            case Some(theCreator) => {
 	            	inSpaceBuffer += theCreator
+	            	creatorActual = theCreator
 	            }
 	            case None => Logger.debug("-------- No creator for space found...")
 	        }
@@ -95,8 +96,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 	                }
 	                case None => {
 	                    Logger.debug("-------- No match")
+	                    if (aUser == creatorActual) {
+	                        role = "Admin"
+	                    }
 	                }
 	            }
+	            
 	            userRoleMap += (aUser -> role)
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace

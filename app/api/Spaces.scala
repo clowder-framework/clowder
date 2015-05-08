@@ -14,6 +14,7 @@ import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
 import scala.collection.mutable.ListBuffer
+import models.Role
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -238,9 +239,85 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
           
           // Pattern matching
           aResult match {
-              case roleMap: JsSuccess[Map[String, String]] => {
-                Logger.debug("------ Found, roleMap is " + roleMap)
-                Ok(Json.obj("status" -> "success"))
+              case aMap: JsSuccess[Map[String, String]] => {
+				//Set up a map of existing users to check against
+                val existingUsers = spaces.getUsersInSpace(spaceid)
+                var existUserRole: Map[String, String] = Map.empty
+                for (aUser <- existingUsers) {
+                    spaces.getRoleForUserInSpace(spaceid, aUser.id) match {
+                        case Some(aRole) => {
+                        	existUserRole += (aUser.id.stringify -> aRole.name)
+                        }
+                        case None => Logger.debug("--- Odd, user in space with no role...")
+                    }
+                    
+                }
+				 
+                Logger.debug("---- existUserRole map is " + existUserRole)
+				Logger.debug("------ Found, aMap is " + aMap)
+				var roleMap: Map[String, String] = aMap.get
+				for ((k, v) <- roleMap) {
+				    Logger.debug("key is " + k + " and value is " + v)
+				    //The role needs to exist
+				    Role.roleMap.get(k) match {
+				        case Some (aRole) => {
+				            var idArray: Array[String] = v.split(",").map(_.trim())
+				            Logger.debug("---- idArray length is " + idArray.length)
+					        				            
+				            //Deal with all the ids that were sent up (changes and adds)				            
+						    for (aUserId <- idArray) {
+						        Logger.debug("aUser Id is -"+aUserId+"-")
+						        //For some reason, an empty string is getting through as aUserId on length
+						        if (aUserId != "") {								        
+							        if (existUserRole.contains(aUserId)) {
+							            //The user exists in the space alread							            
+							            existUserRole.get(aUserId) match { 
+							                case Some(existRole) => {
+									            if (existRole != k) {
+									                Logger.debug("---- contains, changing")
+									                spaces.changeUserRole(UUID(aUserId), aRole, spaceid)
+									            }
+									            else {
+									                //Same level, so no change
+									                Logger.debug("---- contains, no change")
+									            }
+							                }
+							                case None => Logger.debug("---- no role associated for some reason")
+							            }
+							        }							            
+							        else {
+							            //New user completely to the space
+						                Logger.debug("---- new, adding")
+						                spaces.addUser(UUID(aUserId), aRole, spaceid)
+						            }							        
+						        }
+						        else {
+					                Logger.debug("---- There was an empty string that counted as an array...")
+					            }
+						    }
+				            				            
+				            
+				            //Deal with users that were removed
+				            for (existUserId <- existUserRole.keySet) {
+				                if (!idArray.contains(existUserId)) {
+				                    //Check if the role is for this level
+				                    existUserRole.get(existUserId) match {
+				                        case Some(existRole) => {
+				                            if (existRole == k) {
+				                                //In this case, the level is correct, so it is a removal
+						                        Logger.debug("---- missing, removing")
+							                    spaces.removeUser(UUID(existUserId), spaceid)
+				                            }
+				                        }
+				                        case None => Logger.debug("--- This should never happen. Clean these up")
+				                    }			                    
+				                }
+				            }				            
+				        }
+				        case None => Logger.debug("---- A role was sent up that doesn't exist.")
+				    }				    
+				}
+				Ok(Json.obj("status" -> "success"))
               }
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())

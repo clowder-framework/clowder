@@ -7,28 +7,23 @@
 
 Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.fullName</a>
 
-<div id="userlist">
-    <ul class="list-unstyled">
+<div id="userlist">    
 	@if(userRoleMap.size == 0) {
-	    <li>No other members</li>
+	   <ul class="list-unstyled">
+	       <li>No other members</li>
+	   </ul>
 	}
 	
-	@for((k,v) <- userRoleMap) {    
-	    <li>@k.fullName (@v)</li>    
-	}
-	</ul>
-	
-	<h4>Non-Members</h4>
-	
-	<ul class="list-unstyled">
-	@if(externalUsers.size == 0) {
-	    <li>No external members</li>
-	}
-	
-	@for(user <- externalUsers) {    
-	    <li>@user.fullName (@user.email)</li>    
-	}
-	</ul>
+	@for(aRole <- roleList) {
+	    <h5>@aRole</h5>
+	    <ul>
+		@for((k,v) <- userRoleMap) {
+		    @if(aRole == v) {    
+		        <li>@k.fullName</li>
+		    }    
+		}
+		</ul> 
+	}		
 </div>
 
 
@@ -53,7 +48,7 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.f
 			@spaces.userAllocation(userRoleMap, externalUsers, roleList)
 			</div>
 			<div class="modal-footer">
-			<button class="btn btn-primary" title="Update User Information" onclick="return updateUsersInSpace('@space.id')">
+			<button class="btn btn-primary" title="Update User Information" onclick="return updateUsersInSpace('@space.id', '@(routes.Spaces.getSpace(space.id))')">
                 <span class="glyphicon glyphicon-edit"></span> Submit
             </button>
 			<a href="#" class="btn btn-default" id="closebutton" data-dismiss="modal">Close</a>			
