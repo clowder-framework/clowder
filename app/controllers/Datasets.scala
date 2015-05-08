@@ -22,6 +22,7 @@ import services.ExtractorMessage
 import api.WithPermission
 import org.apache.commons.lang.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
+import scala.collection.immutable._
 
 
 /**
@@ -330,7 +331,7 @@ class Datasets @Inject()(
           val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
           var decodedCollectionsOutside = new ListBuffer[models.Collection]()
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
-
+          var filesTags = TreeSet.empty[String]
           for (aCollection <- collectionsOutside) {
               val dCollection = decodeCollectionElements(aCollection)
                       decodedCollectionsOutside += dCollection
@@ -343,6 +344,7 @@ class Datasets @Inject()(
           var commentsByDataset = comments.findCommentsByDatasetId(id)
           filesInDataset.map {
               file =>
+
               commentsByDataset ++= comments.findCommentsByFileId(file.id)
               sections.findByFileId(UUID(file.id.toString)).map { section =>
               commentsByDataset ++= comments.findCommentsBySectionId(section.id)
@@ -354,16 +356,24 @@ class Datasets @Inject()(
 
           val space = dataset.space.flatMap(spaces.get(_))
           var decodedSpace: ProjectSpace = null;
+          filesInDataset.map
+          {
+            file =>
+              file.tags.map {
+                tag => filesTags += tag.name
+              }
+          }
+
           space match {
             case Some(s) => {
                 decodedSpace = Utils.decodeSpaceElements(s)
                 Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata,
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace)))
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace), filesTags))
             }
             case None => {
                 Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)
                 Ok(views.html.dataset(datasetWithFiles, commentsByDataset, previewslist.toMap, metadata, userMetadata,
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space))
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space, filesTags))
             }
           }
         }

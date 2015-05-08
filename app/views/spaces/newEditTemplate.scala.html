@@ -24,19 +24,25 @@
         <fieldset  id="nameDescrFieldSet">
           @inputText(myForm("name"), '_label -> "Name")
           @textarea(myForm("description"), '_label -> "Description")
+          <div class ="control-group"><label class="control-label" for="homePages">External Links</label></div>
           <div class = "homePages">
-            @repeat(myForm("homePages"), min = 1) {homePage =>
-              @inputText(homePage, '_label -> "Home Page")
+            @repeat(myForm("homePages"), min = 1) {externalLink =>
+              @inputText(externalLink, '_label -> "")
               @****** one too many delete buttons
               @if(myForm.hasErrors && myForm("homePages").indexes.length > 1) {
               <div class="home-page-delete"><a href="#">delete</a></div>
               }
               ******@
             }
-            <div class="home-page-add"><a href="#">add</a></div>
+            <div class="external-link-add"><a href="#">add</a></div>
           </div>
           @inputText(myForm("logoUrl"), '_label-> "Logo URL")
           @inputText(myForm("bannerUrl"), '_label-> "Banner URL")
+          @helper.inputText(myForm("editTime"), '_label -> "Time to live (hours):")
+          @helper.inputRadioGroup(myForm("expiration"), options("expiretrue"->"On", "expirefalse"->"Off"), '_label -> "Expiration")
+          @defining(myForm("isTimeToLiveEnabled")) { isTimeToLiveEnabled =>
+            <input type="hidden" name="isTimeToLiveEnabled" id="isTimeToLiveEnabled", value = @isTimeToLiveEnabled.value>
+          }
           @helper.input(myForm("space_id"), '_label ->"") {(id, name, value, args) =>
             <input type="hidden" name="@id" value="@value">
           }
@@ -66,17 +72,33 @@
   return i;
   }, 0);
   }
+  var timeToLive = $('#editTime').val();
+  timeToLive = timeToLive/3600000;
+  $('#editTime').val(timeToLive);
 
-  $('.homePages').on('click', '.home-page-delete a', function () {
+  var $radios = $('input:radio[name=expiration]');
+  var isEnabled =  $('#isTimeToLiveEnabled').val();
+
+  if (isEnabled === "true") {
+       $radios.filter('[value=expiretrue]').prop('checked', true);
+       //$('input:radio[name=radiogroup]')[0].checked = true;
+       $('#expireenabled').html("On");
+  }
+  else {
+      $radios.filter('[value=expirefalse]').prop('checked', true);
+       //$('input:radio[name=radiogroup]')[1].checked = true;
+      $('#expireenabled').html("Off");
+  }
+  $('.homePages').on('click', '.external-link-delete a', function () {
   $(this).parent().prev().remove();
   $(this).parent().remove();
   renumberHomePageMap();
   });
-
-  $('.home-page-add').click(function () {
+$('.control-label').addClass('h3');
+  $('.external-link-add').click(function () {
   var value = $(this).prev().clone();
 
-  $(this).prev().after($('<div class="home-page-delete"><a href="#">delete</a></div>'));
+  $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
   value.find('input').val('');
   $(this).before(value);
   renumberHomePageMap();
@@ -84,6 +106,8 @@
 
   //remove blank lines before submitting
   $('form').submit(function () {
+  var expireEnabled = $('#expiration_expiretrue').prop('checked');
+  $('#isTimeToLiveEnabled').val(expireEnabled);
   $('.homePages .control-group').each(function () {
   var valueInput = $(this).find('input');
 
