@@ -566,8 +566,9 @@
                      
                     var isTagPresent = false;
                     $("#tagList").children("li").each(function (index, tagLi) {
-                      if($(tagLi).attr("name")===tag) {
+                      if($(tagLi).children("a").first().attr("id")===tag) {
                         isTagPresent = true;
+                        return false;
                       }
                     });
         
