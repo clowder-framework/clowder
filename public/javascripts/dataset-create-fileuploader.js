@@ -193,10 +193,8 @@ function createEmptyDataset(data) {
 	            //creation.
 	            origData.submit();
             }
-            
-            $('#status').html("Creation successful. Go to the <strong><u><a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a></u></strong>");
-            $('#status').show();
-            //notify("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);            
+                        
+            notify("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);            
             $('#uploadcreate').html(" Attach Files");
         });
 
@@ -205,9 +203,7 @@ function createEmptyDataset(data) {
             console.error("The following error occured: " + textStatus, errorThrown);
             var errMsg = "You must be logged in to create a new dataset.";                                
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            	$('#messageerror').html("Error in creating dataset. : " + errorThrown);
-            	$('#messageerror').show();
-            	//notify("Error in creating dataset. : " + errorThrown, "error");            	
+            	notify("Error in creating dataset. : " + errorThrown, "error");            	
             	if (data != null) {
 	            	//On error, re-enable things to allow the user to fix items
 	            	data.context.find('button').prop('disabled', false);
@@ -300,9 +296,7 @@ function attachFiles() {
 	    	//Successful creation and file attachment. Update the staus label accordingly.
 	        id = response["id"];
 	        console.log("Successful response from createEmptyDataset existing files. ID is " + id);
-	        $('#status').html("Creation successful. Go to the <strong><u><a href=\"/datasets/" + id + "\">Dataset</a></u></strong>");
-	        $('#status').show();
-	        //notify("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);	        
+	        notify("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);	        
 	        $('#existingcreate').html(" Attach Files");
 	    });
 	
@@ -311,9 +305,7 @@ function attachFiles() {
 	        console.error("The following error occured: " + textStatus, errorThrown);
 	        var errMsg = "You must be logged in to create a new dataset.";                                
 	        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-	        	$('#messageerror').html("Error in creating dataset with exising files.");
-	        	$('#messageerror').show();
-	        	//notify("Error in creating dataset with existing files. : " + errorThrown, "error");	        	
+	        	notify("Error in creating dataset with existing files. : " + errorThrown, "error");	        	
 	        }  
 	    });
 	}
@@ -322,9 +314,7 @@ function attachFiles() {
 		if (ids.length == 0) {
 			hideStatus();
 			//No files selected, show error.
-			$('#messageerror').html("No files selected to attach. Please select some files.");
-        	$('#messageerror').show();
-			//notify("No files selected to attach. Please select some files.", "error");
+			notify("No files selected to attach. Please select some files.", "error");
         	return false;
 		}
 		
@@ -338,9 +328,7 @@ function attachFiles() {
 	    request.done(function (response, textStatus, jqXHR){	    
 	    	//Successful attachment of multiple files
 	        console.log("Successful response from attachMultipleFiles.");
-	        $('#status').html("Attach files successful. Go to the <strong><u><a href=\"/datasets/" + id + "\">Dataset</a></u></strong>");
-	        $('#status').show();
-	        //notify("Attach files successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);	        
+	        notify("Attach files successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);	        
 	    });
 	
 	
@@ -348,9 +336,7 @@ function attachFiles() {
 	        console.error("The following error occured: " + textStatus, errorThrown);
 	        var errMsg = "You must be logged in to attach files to a dataset.";                                
 	        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-	        	$('#messageerror').html("Error in attaching exising files to a dataset. " + errorThrown);
-	        	$('#messageerror').show();
-	        	//notify("Error in attaching exising files to a dataset. : " + errorThrown, "error");	        	
+	        	notify("Error in attaching exising files to a dataset. : " + errorThrown, "error");	        	
 	        }  
 	    });
 	}
