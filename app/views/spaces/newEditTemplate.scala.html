@@ -24,16 +24,17 @@
         <fieldset  id="nameDescrFieldSet">
           @inputText(myForm("name"), '_label -> "Name")
           @textarea(myForm("description"), '_label -> "Description")
+          <div class ="control-group"><label class="control-label" for="homePages">External Links</label></div>
           <div class = "homePages">
-            @repeat(myForm("homePages"), min = 1) {homePage =>
-              @inputText(homePage, '_label -> "Home Page")
+            @repeat(myForm("homePages"), min = 1) {externalLink =>
+              @inputText(externalLink, '_label -> "")
               @****** one too many delete buttons
               @if(myForm.hasErrors && myForm("homePages").indexes.length > 1) {
               <div class="home-page-delete"><a href="#">delete</a></div>
               }
               ******@
             }
-            <div class="home-page-add"><a href="#">add</a></div>
+            <div class="external-link-add"><a href="#">add</a></div>
           </div>
           @inputText(myForm("logoUrl"), '_label-> "Logo URL")
           @inputText(myForm("bannerUrl"), '_label-> "Banner URL")
@@ -47,10 +48,10 @@
   </div>
 
   <script language="javascript">
-  // as fields are added, they get the same default homePages[0] name For automatic binding the names need to
-  // be homePages[0], homePages[1],.. etc. This function renumbers all the fields appropriately even if a field in the
+  // as fields are added, they get the same default externalLinks[0] name For automatic binding the names need to
+  // be externalLinks[0], externalLinks[1],.. etc. This function renumbers all the fields appropriately even if a field in the
   // middle of the list is deleted.
-  var renumberHomePageMap = function() {
+  var renumberExternalLinkMap = function() {
   Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
   var label = $(next).children('label');
   label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
@@ -67,30 +68,30 @@
   }, 0);
   }
 
-  $('.homePages').on('click', '.home-page-delete a', function () {
+  $('.homePages').on('click', '.external-link-delete a', function () {
   $(this).parent().prev().remove();
   $(this).parent().remove();
-  renumberHomePageMap();
+  renumberExternalLinkMap();
   });
-
-  $('.home-page-add').click(function () {
+$('.control-label').addClass('h3');
+  $('.external-link-add').click(function () {
   var value = $(this).prev().clone();
 
-  $(this).prev().after($('<div class="home-page-delete"><a href="#">delete</a></div>'));
+  $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
   value.find('input').val('');
   $(this).before(value);
-  renumberHomePageMap();
+  renumberExternalLinkMap();
   });
 
   //remove blank lines before submitting
   $('form').submit(function () {
-  $('.homePages .control-group').each(function () {
+  $('.externalLinks .control-group').each(function () {
   var valueInput = $(this).find('input');
 
   if (valueInput.val() === '') {
   $(this).next().remove();
   $(this).remove();
-  renumberHomePageMap();
+  renumberExternalLinkMap();
   }
 
   });
