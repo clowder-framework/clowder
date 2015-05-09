@@ -462,6 +462,12 @@ textarea, input[type='text'], input[type='password']{
     margin-right: -5px;
 }
 
+.tag-first-char {
+    font-size: 3em;
+    bottom: -1em;
+    font-weight: bold;
+}
+
 .input-table-cell {
 	padding-top: 10px;
 	padding-bottom: 10px;

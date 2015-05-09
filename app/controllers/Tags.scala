@@ -100,7 +100,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     Ok(views.html.tagCloud(computeTagWeights))
   }
 
-  def tagList() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+  def tagListWeighted() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
     implicit val user = request.user
 
     val tags = computeTagWeights
@@ -110,12 +110,50 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     } else {
       val minFont = current.configuration.getDouble("tag.list.minFont").getOrElse(1.0)
       val maxFont = current.configuration.getDouble("tag.list.maxFont").getOrElse(5.0)
-      val maxWeight =  tags.maxBy(_._2)._2
-      val minWeight =  tags.minBy(_._2)._2
+      val maxWeight = tags.maxBy(_._2)._2
+      val minWeight = tags.minBy(_._2)._2
       val divide = (maxFont - minFont) / (maxWeight - minWeight)
 
-      Ok(views.html.tagList(tags.map{case (k, v) => (k, minFont + (v - minWeight) * divide) }))
+      Ok(views.html.tagList(tags.map { case (k, v) => (k, minFont + (v - minWeight) * divide) }))
     }
+  }
+
+  def tagListOrdered() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+    implicit val user = request.user
+
+    Ok(views.html.tagListChar(createTagList))
+  }
+
+  def createTagList() = {
+    val tagMap = collection.mutable.Map.empty[Char, collection.mutable.Map[String, Integer]]
+
+    // TODO allow for tags in collections
+    //    for(collection <- collections.listCollections(); tag <- collection.tags) {
+    //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
+    //    }
+
+    for(dataset <- datasets.listDatasets; tag <- dataset.tags) {
+      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
+      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
+      val map = tagMap(firstChar)
+      map(tag.name) = map(tag.name) + 1
+    }
+
+    for(file <- files.listFiles; tag <- file.tags) {
+      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
+      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
+      val map = tagMap(firstChar)
+      map(tag.name) = map(tag.name) + 1
+    }
+
+    for(section <- sections.listSections; tag <- section.tags) {
+      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
+      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
+      val map = tagMap(firstChar)
+      map(tag.name) = map(tag.name) + 1
+    }
+
+    tagMap.map{ case (k, v) => (k, v.toMap)}.toMap
   }
 
   def computeTagWeights() = {
