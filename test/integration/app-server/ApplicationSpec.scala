@@ -29,7 +29,7 @@ class ApplicationSpec extends IntegrationSpec with ServerFixture {
   }
 
   "Application" should "render index template" in {
-    val html = views.html.index(List.empty, 0, 0, 0, "Clowder", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    val html = views.html.index(List.empty, 0, 0, 0, "Clowder", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", List.empty[models.Event])
     contentType(html) shouldBe ("text/html")
     contentAsString(html) should include ("Clowder")
     contentAsString(html) should include ("Hello stranger!")
