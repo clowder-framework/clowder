@@ -2,9 +2,10 @@ package api
 
 import javax.inject.Inject
 import com.wordnik.swagger.annotations.ApiOperation
-import models.{UUID, User}
+import models._
 import play.api.libs.json._
 import play.api.mvc.Action
+import play.api.Play.current
 import services.UserService
 import java.util.Date
 import models._
@@ -109,7 +110,12 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
         val followerUUID = loggedInUser.id
         events.addObjectEvent(user, followeeUUID, name, "follow_user")
         users.followUser(followeeUUID, followerUUID)
-        Ok(Json.obj("status" -> "success"))
+
+        val recommendations = getTopRecommendations(followeeUUID, loggedInUser)
+        recommendations match {
+          case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+          case Nil => Ok(Json.obj("status" -> "success"))
+        }
       }
       case None => {
         Ok(Json.obj("status" -> "fail"))
@@ -130,6 +136,21 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
       }
       case None => {
         Ok(Json.obj("status" -> "fail"))
+      }
+    }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = users.findById(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        users.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
       }
     }
   }

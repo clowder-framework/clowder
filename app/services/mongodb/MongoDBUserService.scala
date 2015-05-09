@@ -6,9 +6,10 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.MongoDBList
 import com.mongodb.util.JSON
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import models.{TypedID, MediciUser, UUID, User}
+import models.{TypedID, MediciUser, UUID, User, MiniEntity}
 import org.bson.types.ObjectId
 import play.api.Logger
 import securesocial.core.Identity
@@ -17,10 +18,11 @@ import play.api.Application
 import play.api.Play.current
 import securesocial.core.providers.Token
 import securesocial.core._
-import services.{DI, UserService}
+import services.{DI, UserService, FileService, DatasetService, CollectionService}
 import services.mongodb.MongoContext.context
 import util.Direction._
 import services.mongodb.TypedIDDAO
+import javax.inject.Inject
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -30,7 +32,10 @@ import services.mongodb.TypedIDDAO
  *
  * @author Rob Kooper
  */
-class MongoDBUserService extends services.UserService {
+class MongoDBUserService @Inject() (
+  files: FileService,
+  datasets: DatasetService,
+  collections: CollectionService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
@@ -206,6 +211,69 @@ class MongoDBUserService extends services.UserService {
                         $pull("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(followeeId, "user"))))
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followeeId.stringify)),
                         $pull("followers" -> new ObjectId(followerId.stringify)))
+  }
+
+  /**
+   * return List of tuples {id, objectType, score}
+   *   representing the top N recommendations for an object with followerIDs
+   *   This list will also filter out excludeIDs (i.e. items the logged in user already follows)
+   */
+  override def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int): List[MiniEntity] = {
+    val followerIDObjects = followerIDs.map(id => new ObjectId(id.stringify))
+    val excludeIDObjects = excludeIDs.map(id => new ObjectId(id.stringify))
+
+    val recs = UserDAO.dao.collection.aggregate(
+        MongoDBObject("$match" -> MongoDBObject("_id" -> MongoDBObject("$in" -> followerIDObjects))),
+        MongoDBObject("$unwind" -> "$followedEntities"),
+        MongoDBObject("$group" -> MongoDBObject(
+          "_id" -> "$followedEntities._id",
+          "objectType" -> MongoDBObject("$first" -> "$followedEntities.objectType"),
+          "score" -> MongoDBObject("$sum" -> 1)
+        )),
+        MongoDBObject("$match" -> MongoDBObject("_id" -> MongoDBObject("$nin" -> excludeIDObjects))),
+        MongoDBObject("$sort" -> MongoDBObject("score" -> -1)),
+        MongoDBObject("$limit" -> num)
+    )
+
+    recs.results.map(entity => new MiniEntity(
+      UUID(entity.as[ObjectId]("_id").toString),
+      getEntityName(
+        UUID(entity.as[ObjectId]("_id").toString),
+        entity.as[String]("objectType")
+      ),
+      entity.as[String]("objectType"))
+    ).toList
+  }
+
+  def getEntityName(uuid: UUID, objType: String): String = {
+    val default = "Not found"
+    objType match {
+      case "user" => {
+        get(uuid) match {
+          case Some(user) => user.fullName
+          case None => default
+        }
+      }
+      case "file" => {
+        files.get(uuid) match {
+          case Some(file) => file.filename
+          case None => default
+        }
+      }
+      case "dataset" => {
+        datasets.get(uuid) match {
+          case Some(dataset) => dataset.name
+          case None => default
+        }
+      }
+      case "collection" => {
+        collections.get(uuid) match {
+          case Some(collection) => collection.name
+          case None => default
+        }
+      }
+      case _ => default
+    }
   }
 }
 

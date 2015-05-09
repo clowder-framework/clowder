@@ -2,8 +2,9 @@ package api
 
 import play.api.Logger
 import play.api.Play.current
-import models.{UUID, Collection, MiniUser, Event}
+import models._
 import services._
+import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
@@ -220,7 +221,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               events.addObjectEvent(user, id, name, "follow_collection")
               collections.addFollower(id, loggedInUser.id)
               userService.followCollection(loggedInUser.id, id)
-              Ok
+
+              val recommendations = getTopRecommendations(id, loggedInUser)
+              recommendations match {
+                case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+                case Nil => Ok(Json.obj("status" -> "success"))
+              }
             }
             case None => {
               NotFound
@@ -258,6 +264,21 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           Unauthorized
         }
       }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = collections.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
   }
 
 }

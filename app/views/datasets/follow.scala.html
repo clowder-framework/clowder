@@ -1,46 +1,58 @@
 @(dataset: Dataset)(implicit user: Option[models.User])
 
 @if(user.isDefined) {
-  @if(!dataset.followers.contains(user.get.id)) {
-    <button id="followButton" class="btn-xs btn-success">Follow</button>
-  } else {
-    <button id="followButton" class="btn-xs btn-danger">Unfollow</button>
-  }
+    @if(!dataset.followers.contains(user.get.id)) {
+        <button id="followButton"
+                class="btn-xs btn-success followButton"
+                objectId="@dataset.id"
+                objectName="@dataset.name"
+                objectType="dataset">
+            Follow
+        </button>
+    } else {
+        <button id="followButton"
+                class="btn-xs btn-danger followButton"
+                objectId="@dataset.id"
+                objectName="@dataset.name"
+                objectType="dataset">
+            Unfollow
+        </button>
+    }
 
-  <script>
-    $("#followButton" ).on('click', function () {
-        if ($(this ).text() === 'Follow') {
-            var followRequest = jsRoutes.api.Datasets.follow('@dataset.id').ajax({
-                type: 'POST'
-            });
+    <div id="recommendPanel" class="panel panel-default" style="display : none;">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-parent="#accordion"
+                href="#collapseThree"
+                aria-expanded="true"
+                style="float:left;">
+                    Also follow these?
+                </a>
+                <a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
+                <div style="clear : both;"></div>
+            </h4>
+        </div>
+        <div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
+            <div id="recommendDiv" class="panel-body">
+            </div>
+        </div>
+    </div>
 
-            followRequest.done(function (response, textStatus, jqXHR) {
-                var $followButton = $('#followButton');
-                $followButton.text('Unfollow');
-                $followButton.removeClass('btn-success');
-                $followButton.addClass('btn-danger');
-            });
-
-            followRequest.fail(function (jqXHR, textStatus, errorThrown){
-                console.error('Failed to follow!');
-            });
-        } else if ($(this ).text() === 'Unfollow') {
-            var unfollowRequest = jsRoutes.api.Datasets.unfollow('@dataset.id').ajax({
-                type: 'POST'
-            });
-
-            unfollowRequest.done(function (response, textStatus, jqXHR) {
-                var $followButton = $('#followButton');
-                $followButton.text('Follow');
-                $followButton.removeClass('btn-danger');
-                $followButton.addClass('btn-success');
-            });
-
-            unfollowRequest.fail(function (jqXHR, textStatus, errorThrown){
-                console.error('Failed to unfollow!');
-            });
-        }
-    });
-  </script>
+    <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
+    <script>
+        $(document).on('click', '.followButton', function() {
+            var id = $(this).attr('objectId');
+            var name = $(this).attr('objectName');
+            var type = $(this).attr('objectType');
+            if ($(this).attr('id') === '') {
+              followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
+            } else {
+              followHandler.call(this, jsRoutes, id, name, type, function(data) {
+                    recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
+                                  data['recommendations']);
+                }, undefined);
+            }
+        });
+    </script>
 }
 

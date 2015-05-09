@@ -1853,7 +1853,12 @@ class Files @Inject()(
               events.addObjectEvent(user, id, name, "follow_file")
               files.addFollower(id, loggedInUser.id)
               userService.followFile(loggedInUser.id, id)
-              Ok
+
+              val recommendations = getTopRecommendations(id, loggedInUser)
+              recommendations match {
+                case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+                case Nil => Ok(Json.obj("status" -> "success"))
+              }
             }
             case None => {
               NotFound
@@ -1891,6 +1896,21 @@ class Files @Inject()(
           Unauthorized
         }
       }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = files.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
   }
 
 }

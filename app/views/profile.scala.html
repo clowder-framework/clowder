@@ -24,7 +24,7 @@
                     <button
                       id="userFollowButton"
                       type="button"
-                      class="
+                      class="followButton 
                         @if(profile.followers.contains(viewer.id)) {
                           btn btn-danger
                         }else {
@@ -40,6 +40,9 @@
                         }
                       "
                       autocomplete="off"
+                      objectId="@profile.id.stringify"
+                      objectName="@profile.fullName"
+                      objectType="user"
                     >
                       <!-- Is there a way to store a scala variable somewhere?... -->
                       @if(profile.followers.contains(viewer.id)) {
@@ -49,15 +52,37 @@
                       }
                     </button>
                   </h4>
+                  <div id="recommendPanel" class="panel panel-default" style="display : none;">
+                    <div class="panel-heading">
+                      <h4 class="panel-title">
+                        <a data-parent="#accordion"
+                            href="#collapseThree"
+                            aria-expanded="true"
+                            style="float:left;">
+                          Also follow these?
+                        </a>
+                        <a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
+                        <div style="clear : both;"></div>
+                      </h4>
+                    </div>
+                    <div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
+                      <div id="recommendDiv" class="panel-body">
+                      </div>
+                    </div>
+                  </div>
+
                   <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
+                  <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
                   <script>
-                    function followCallback() {
+                    function followCallback(data) {
                         var $followerSize = $('#followerSize');
                         var followerSize = parseInt($followerSize.text());
                         $followerSize.text(followerSize + 1);
 
                         var newRowHtml = '<tr><td>@viewer.id</td></tr>';
                         $('#followersTable tr:last').after(newRowHtml);
+                        recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
+                                              data['recommendations']);
                     }
 
                     function unfollowCallback() {
@@ -70,39 +95,15 @@
                         }).first().remove();
                     }
 
-                    var profileUUID = "@profile.id.stringify";
-                    var profileName = "@profile.fullName";
-                    $(document ).ready(function() {
-                      var followButton = $("#userFollowButton");
-                      followButton.click(function() {
-                        if (followButton.text( ).trim() === "Follow") {
-                          jsRoutes.api.Users.follow(profileUUID, profileName).ajax({
-                            type: "POST"
-                          })
-                            .done(function(data) {
-                              followButton.text("Unfollow");
-                              followButton.removeClass('btn-success');
-                              followButton.addClass('btn-danger');
-                              followCallback();
-                            })
-                            .fail(function(data) {
-                              console.log(data);
-                              console.log("Failed to follow");
-                            });
+                    $(document).ready(function() {
+                      $(document).on('click', '.followButton', function() {
+                        var id = $(this).attr('objectId');
+                        var name = $(this).attr('objectName');
+                        var type = $(this).attr('objectType');
+                        if ($(this).attr('id') === '') {
+                          followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
                         } else {
-                          jsRoutes.api.Users.unfollow(profileUUID,profileName).ajax({
-                            type: "POST"
-                          })
-                            .done(function(data) {
-                              followButton.text("Follow");
-                              followButton.removeClass('btn-danger');
-                              followButton.addClass('btn-success');
-                              unfollowCallback();
-                            })
-                            .fail(function(data) {
-                              console.log(data);
-                              console.log("Failed to unfollow");
-                            });
+                          followHandler.call(this, jsRoutes, id, name, type, followCallback, unfollowCallback);
                         }
                       });
                     });

@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, User}
+import models.{UUID, User, MiniEntity}
 import securesocial.core.Identity
 import util.Direction._
 
@@ -130,4 +130,9 @@ trait UserService  {
    * Unfollow a user.
    */
   def unfollowUser(followeeId: UUID, followerId: UUID)
+
+  /**
+   * return List[MiniEntity] - the top N recommendations rooted from sourceID
+   */
+  def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int): List[MiniEntity]
 }
