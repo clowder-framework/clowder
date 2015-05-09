@@ -108,6 +108,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads.files").drop()
     collection("uploadquery.files").drop()
     collection("versus.descriptors").drop()
+    collection("spaces.projects").drop()
+    collection("spaces.users").drop()
     Logger.debug("**DANGER** Data deleted **DANGER**")
   }
 }
