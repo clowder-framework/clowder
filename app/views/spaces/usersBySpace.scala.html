@@ -18,8 +18,8 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.f
 	    <h5>@aRole</h5>
 	    <ul>
 		@for((k,v) <- userRoleMap) {
-		    @if(aRole == v) {    
-		        <li>@k.fullName</li>
+		    @if(aRole == v) {    		         
+		        <li><a href= "@routes.Profile.viewProfile(k.email)">@k.fullName (@k.email)</a></li>
 		    }    
 		}
 		</ul> 
