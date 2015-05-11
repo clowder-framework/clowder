@@ -8,11 +8,11 @@
 			<option value=""></option>
 			@for((k,v) <- userRoleMap) {
 			    @if(v == roleLevel) {
-			         <option value="@k.id" selected>@k.fullName</option>
+			         <option value="@k.id" selected>@k.fullName (@k.email)</option>
 			    }
 			}
 			@for(extUser <- externalUsers) {
-			     <option value="@extUser.id">@extUser.fullName</option>
+			     <option value="@extUser.id">@extUser.fullName (@extUser.email)</option>
 			}
 	    </select>
     }
