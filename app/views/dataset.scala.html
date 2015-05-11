@@ -89,7 +89,7 @@
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset)
+                        @datasets.home(dataset, space)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       @if(user.isDefined) {

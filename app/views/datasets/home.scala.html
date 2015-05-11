@@ -1,4 +1,4 @@
-@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+@(dataset: Dataset, space: Option [ProjectSpace])(implicit user: Option[securesocial.core.Identity])
 
 <div class="row">
     <div class="col-md-12 box-white-space">
@@ -7,6 +7,7 @@
                 <ul class="list-unstyled">
                     <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
                     <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+                    <li>Space: @spaces.spaceLink(space, 0, dataset.id)</li>
                 </ul>
             </div>
             <div class="col-md-6">
