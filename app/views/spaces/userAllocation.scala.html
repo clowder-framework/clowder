@@ -4,15 +4,15 @@
     <div class="col-lg-3">
     @for(roleLevel <- roleList){
         <h4>@roleLevel</h4>        
-		<select data-placeholder="Choose a Country" class="chosen-select" multiple style="width: 500px;" id='@roleLevel.replaceAll("\\s+", "")'>
+		<select class="chosen-select" multiple style="width: 500px;" id='@roleLevel.replaceAll("\\s+", "")'>
 			<option value=""></option>
 			@for((k,v) <- userRoleMap) {
 			    @if(v == roleLevel) {
-			         <option value="@k.id" selected>@k.fullName</option>
+			         <option value="@k.id" selected>@k.fullName (@k.email)</option>
 			    }
 			}
 			@for(extUser <- externalUsers) {
-			     <option value="@extUser.id">@extUser.fullName</option>
+			     <option value="@extUser.id">@extUser.fullName (@extUser.email)</option>
 			}
 	    </select>
     }
@@ -22,20 +22,9 @@
  
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
-
-<!--
-<script src="http://harvesthq.github.com/chosen/chosen/chosen.jquery.js"></script>
-<link rel="stylesheet" href="http://harvesthq.github.com/chosen/chosen/chosen.css"> 
---> 
  
  <script language="javascript">
   $(".chosen-select").chosen({    
-    width: "500px"});
+    width: "500px",
+    placeholder_text_multiple: "Select Users for this Level..."});
 </script>
-<!-- 
-<script language="javascript">
-$document.ready(function() {
-    $('.chosen-select').chosen();
-});
-</script>
- -->

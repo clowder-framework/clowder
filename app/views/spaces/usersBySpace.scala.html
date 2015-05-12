@@ -5,7 +5,7 @@
 
 <h3>Members</h3>
 
-Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.fullName</a>
+Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator.get.email"> @creator.get.fullName</a>
 
 <div id="userlist">    
 	@if(userRoleMap.size == 0) {
@@ -18,8 +18,8 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)"> @creator.get.f
 	    <h5>@aRole</h5>
 	    <ul>
 		@for((k,v) <- userRoleMap) {
-		    @if(aRole == v) {    
-		        <li>@k.fullName</li>
+		    @if(aRole == v) {    		         
+		        <li><a href= "@routes.Profile.viewProfile(k.email)" title="@k.email">@k.fullName</a></li>
 		    }    
 		}
 		</ul> 
