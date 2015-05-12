@@ -85,6 +85,7 @@ object Previewers extends Controller with SecuredController {
             (json \ "main").as[String],
             (json \ "contentType").as[List[String]],
             (json \ "supported_previews").asOpt[List[String]].getOrElse(List.empty[String]),
+            false,
             (json \ "dataset").asOpt[Boolean].getOrElse(false)
           )
           if (preview.dataset) result +:= preview
