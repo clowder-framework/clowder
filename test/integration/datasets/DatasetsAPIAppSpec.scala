@@ -139,7 +139,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
           //val file_id = ""
 
           val req = FakeRequest(POST, "/api/datasets?key=" + secretKey).
-              withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> file_id)))
+              withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> file_id, "space" -> "default")))
           val result3 = route(req).get
 
           info("Status=" + status(result3))
