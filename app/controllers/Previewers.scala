@@ -73,4 +73,28 @@ object Previewers extends Controller with SecuredController {
     result
   }
 
+  def findDatasetPreviewers(): Array[Previewer] = {
+    var result = Array[Previewer]()
+    val previewers = ResourceLister.listFiles("public.javascripts.previewers", "package.json")
+    for (previewer <- previewers) {
+      Play.resourceAsStream(previewer) match {
+        case Some(stream) => {
+          val json = Json.parse(Source.fromInputStream(stream).mkString)
+          val preview = Previewer((json \ "name").as[String],
+            previewer.replace("public/", "").replace("/package.json", ""),
+            (json \ "main").as[String],
+            (json \ "contentType").as[List[String]],
+            (json \ "supported_previews").asOpt[List[String]].getOrElse(List.empty[String]),
+            (json \ "dataset").asOpt[Boolean].getOrElse(false)
+          )
+          if (preview.dataset) result +:= preview
+        }
+        case None => {
+          Logger.warn("Thought I saw previewer " + previewer)
+        }
+      }
+    }
+    result
+  }
+
 }

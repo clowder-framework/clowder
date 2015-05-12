@@ -147,6 +147,8 @@ class CassandraDataset extends DatasetService {
 
   def findByTag(tag: String) = List.empty
 
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean) = List.empty
+
   def getMetadata(id: UUID) = Map.empty
 
   def getUserMetadata(id: UUID) = scala.collection.mutable.Map.empty

@@ -1,0 +1,13 @@
+#ds-path-map-canvas {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 1px solid black;
+    height: 500px;
+}
+
+.ds-path-img-tmb {
+    max-height: 90px;
+    max-width: 90px;
+    margin-bottom: 5px;
+}

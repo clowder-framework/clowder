@@ -1,4 +1,4 @@
-@(dataset: Dataset, space: Option [ProjectSpace])(implicit user: Option[securesocial.core.Identity])
+@(dataset: Dataset, space: Option [ProjectSpace], previewers: List[Previewer])(implicit user: Option[securesocial.core.Identity])
 
 <div class="row">
     <div class="col-md-12 box-white-space">
@@ -20,9 +20,16 @@
     <div class="col-md-12 box-white-space">
         @dataset.description
     </div>
+
+    @datasets.previews(dataset, previewers)
+
     <div class="col-md-12 box-white-space">
         @datasets.editInfo(dataset)
         @datasets.editLicense(dataset)
         @datasets.deleteButton(dataset)
     </div>
+
+
+
+
 </div>

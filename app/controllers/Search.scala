@@ -15,6 +15,7 @@ import scala.concurrent.Future
 import scala.Some
 import util.SearchResult
 import models.UUID
+import org.elasticsearch.action.search.SearchResponse
 
 /**
  * Text search.
@@ -42,8 +43,19 @@ class Search @Inject() (
         var mapdatasetIds = new scala.collection.mutable.HashMap[String, ListBuffer[(String, String)]]
         var mapcollectionIds = new scala.collection.mutable.HashMap[String, ListBuffer[(String, String)]]
         if (query != "") {
-          import play.api.Play.current
-          val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([:/\\\\])", "\\\\$1")) }
+          var result: Option[SearchResponse] = if (query.contains(":")) {
+            var fields = query.split(":")
+            if (fields(0).isEmpty()) {
+              Logger.debug("field(0) is empty and field 1 =" + query.replaceAll("([+:/\\\\])", "\\\\$1"))
+              current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([+:/\\\\])", "\\\\$1")) }
+            } else {
+              Logger.debug("field(0)=" + fields(0) + "  fields(1)= " + fields(1).replaceAll("([+:/\\\\])", "\\\\$1"))
+              val fieldsArray = fields(0).split(",")
+              current.plugin[ElasticsearchPlugin].map { _.search("data", fieldsArray, fields(1).replaceAll("([+:/\\\\])", "\\\\$1")) }
+            }
+          } else
+            current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([+:/\\\\])", "\\\\$1")) }
+
           result match {
             case Some(searchResponse) => {
               for (hit <- searchResponse.getHits().getHits()) {
@@ -137,7 +149,7 @@ class Search @Inject() (
           }
         }
 
-        Logger.debug("newquery: " + query.replaceAll("([:/\\\\])", "\\\\$1"))
+        Logger.debug("newquery: " + query.replaceAll("([/\\\\])", "\\\\$1"))
         Ok(views.html.searchResults(query, listOfFiles.toArray, listOfdatasets.toArray, listOfcollections.toArray, mapdatasetIds, mapcollectionIds))
 
       }

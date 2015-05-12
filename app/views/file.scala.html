@@ -2,14 +2,15 @@
   previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
   sections: List[models.Section], beingProcessed: Boolean, fileDataset: List[models.Dataset],
   datasetsOutside: List[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any],
-  rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
+  rdfExported: Boolean,
+  extractionsStatus: List[Extraction])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
 @import collection.JavaConverters._
 @import play.api.Play.current
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
+	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
 		@for((key,value) <- metadata) {
 			<li><b>@(key):</b>
 			@if(value.isInstanceOf[String]) {
@@ -19,18 +20,55 @@
 					@value
 				}
 			} else {
-				@if(value.isInstanceOf[java.lang.Integer]) {
+				@if(value.isInstanceOf[java.lang.Integer] || value.isInstanceOf[java.lang.Double] || value.isInstanceOf[java.lang.Float] ) {
 					@value.toString
-			    } else {
-			    	@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
-			    		@value.toString.replace("[","").replace("]","")
-			    	} else {
-			    		<ul>
-			    		@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-			    		</ul>
-			    	}
-			    }
+				} else {
+					@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
+						<ul>
+							@printList(value.asInstanceOf[com.mongodb.BasicDBList].toList)
+						</ul>
+					} else {
+						@if(value.isInstanceOf[com.mongodb.BasicDBObject]) {
+							<ul>
+							  @printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+							</ul>
+						} else {
+							@value.toString
+						}
+					}
+				}
 			}</li>
+		}
+	}
+
+	@printList(metadata: List[AnyRef])	= {
+		@metadata.indices.map { i =>
+			<li><b>@i:</b>
+				@if(metadata(i).isInstanceOf[String]) {
+					@if(metadata(i).asInstanceOf[String].startsWith("http://") || metadata(i).asInstanceOf[String].startsWith("https://")) {
+						<a href="@metadata(i)">@metadata(i)</a>
+					} else {
+						@metadata(i)
+					}
+				} else {
+					@if(metadata(i).isInstanceOf[java.lang.Integer] || metadata(i).isInstanceOf[java.lang.Double] || metadata(i).isInstanceOf[java.lang.Float] ) {
+						@metadata(i).toString
+					} else {
+						@if(metadata(i).isInstanceOf[com.mongodb.BasicDBList]) {
+							<ul>
+							@printList(metadata(i).asInstanceOf[com.mongodb.BasicDBList].toList)
+							</ul>
+						} else {
+							@if(metadata(i).isInstanceOf[com.mongodb.BasicDBObject]) {
+								<ul>
+								@printLevel(metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+								</ul>
+							} else {
+								@metadata(i)
+							}
+						}
+					}
+				}</li>
 		}
 	}
 
@@ -172,7 +210,7 @@
 			  	<div class="row border-top">
 			  	  <div class="col-md-12">
                     <h4>Sections</h4>
-				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
+				  	<div id="galleria" style="float:left;clear:none;width:100%;height:400px;">
 					  	@sections.map { s =>
 					  		@if(s.preview.isDefined) {
 					  			<img src="@api.routes.Previews.download(s.preview.get.id)"
@@ -190,27 +228,39 @@
 					  		}
 					  	}
 				  	</div>
+				  	<script type="text/javascript">
+				  		$(document).ready(function() {
+				  			window["currGalleriaWidth"]= $("#galleria").css("width").replace("px","");
+				  			$(window).resize(function(){
+				  				newWidth = $("#galleria").css("width").replace("px","");
+				  				if(newWidth != window["currGalleriaWidth"]){
+				  					$("#galleria").css("height", Math.round(parseInt($("#galleria").css("height").replace("px",""))*parseInt(newWidth)/parseFloat(window["currGalleriaWidth"]))+"px" );
+				  					window["currGalleriaWidth"]=newWidth;
+				  				}		
+				  			});
+				  		});
+				  	</script>
 				  </div>
 				</div>
 				<div class="row" style="padding-top: 10px">
-				    <div class="col-md-10">
-						<table class="table">
+				    <div class="col-md-12">
+						<table class="table" id="scrollTableGalleria">
 							<thead>
 								<tr>
-									<th>#</th>
-									<th>Thumbnail</th>
-									<th>Information</th>
-									<th>Find</th>
+									<th class="galleriaOrder">#</th>
+									<th class="galleriaTheThumbnail">Thumbnail</th>
+									<th class="galleriaInfo">Information</th>
+									<th class="galleriaFindSimilar">Find</th>
 								</tr>
 							</thead>
 							<tbody>
 					  		@sections.map { s =>
 					  			<tr>
-						  			<td>@(if (s.order > 0) s.order else "")</td>
-						  			<td>
+						  			<td class="galleriaOrder">@(if (s.order > 0) s.order else "")</td>
+						  			<td class="galleriaTheThumbnail">
 								  		@if(s.preview.isDefined) {
 								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
-								  				class="img-polaroid" style="max-width: 100px;max-height: 100px;"
+								  				class="img-polaroid" style="max-width: 100%;"
 								  			@if(s.startTime.isDefined) {
 								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
 								  		 	} else {
@@ -223,7 +273,7 @@
 								  		 	></img>
 								  		}
 					  				</td>
-						  			 <td>
+						  			 <td class="galleriaInfo">
 						  			 @if(s.startTime.isDefined) {
 						  			 	@(s.startTime.get / 60):@("%02d".format(s.startTime.get % 60))
 						  		 	 } else {
@@ -234,9 +284,22 @@
 						  		 		}
 						  		 	}
 						  			 </td>
-						  			 <td><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
+						  			 <td class="galleriaFindSimilar"><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
 					  			 </tr>
 					  		}
+					  		</tbody>
+					  		<script>
+					  			function fixGalleriaTable(){
+					  				galleriaScenesVisible = $("#scrollTableGalleria tbody tr").length;
+						  			if(galleriaScenesVisible > 5)
+						  				galleriaScenesVisible = 5;					  		
+						  			$("#scrollTableGalleria tbody").css("height", (parseInt($("#scrollTableGalleria tbody tr").css("height").replace("px",""))*galleriaScenesVisible)+"px");
+					  			}
+					  			fixGalleriaTable();
+					  			$(window).resize(function(){
+					  				fixGalleriaTable();
+					  			});
+					  		</script>
 				  		</table>
 				  	</div>
 			  	</div>
@@ -356,6 +419,19 @@
                 </script>
             }
 
+
+			<div class="row border-top">
+				<div class="col-md-12">
+					<h4>Extractions</h4>
+					<a class="btn btn-link" data-toggle="collapse" href="#extractions" aria-expanded="false"
+					aria-controls="collapseExample">
+						List extraction events
+					</a>
+					<div class="collapse" id="extractions">
+						@extractions.extractionsByFile(extractionsStatus)
+					</div>
+				</div>
+			</div>
 
             <div class="row border-top">
                 <div class="col-md-12">

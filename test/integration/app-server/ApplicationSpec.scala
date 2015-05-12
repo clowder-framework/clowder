@@ -12,7 +12,7 @@ import org.scalatest._
  *
  * @author Luigi Marini
  */
-@DoNotDiscover
+//@DoNotDiscover
 class ApplicationSpec extends IntegrationSpec with ServerFixture {
 
   implicit val user: Option[securesocial.core.Identity] = None
@@ -29,9 +29,9 @@ class ApplicationSpec extends IntegrationSpec with ServerFixture {
   }
 
   "Application" should "render index template" in {
-    val html = views.html.index(List.empty, 0, 0, 0, 0, "Medici 2.0", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    val html = views.html.index(List.empty, 0, 0, 0, 0, "Clowder", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     contentType(html) shouldBe ("text/html")
-    contentAsString(html) should include ("Medici 2.0")
+    contentAsString(html) should include ("Clowder")
     contentAsString(html) should include ("Hello stranger!")
     contentAsString(html) should include ("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
   }
