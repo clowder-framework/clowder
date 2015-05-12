@@ -9,13 +9,13 @@ import org.scalatest._
  *
  * @author Luigi Marini
  */
-@DoNotDiscover
+//@DoNotDiscover
 class ApplicationFunctionalTest extends IntegrationSpec {
 
   "Application" should "load home page" in {
     running(TestServer(3333), HTMLUNIT) { browser =>
       browser.goTo("http://localhost:3333/")
-      browser.pageSource should include("Medici 2.0")
+      browser.pageSource should include("Clowder")
     }
   }
 
@@ -37,7 +37,7 @@ class ApplicationFunctionalTest2 extends IntegrationSpec with ServerFixture {
 
   "Application" should "load home page" in {
     go to "http://localhost:3333/"
-    pageSource should include("Medici 2.0")
+    pageSource should include("Clowder")
   }
 
   "Application" should "load files page" in {

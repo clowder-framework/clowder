@@ -16,6 +16,7 @@ import javax.inject.{Singleton, Inject}
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.util.JSON
 import jsonutils.JsonUtil
+import util.Parsers
 import scala.collection.mutable.ListBuffer
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
@@ -422,6 +423,24 @@ class MongoDBDatasetService @Inject() (
 
   def findByTag(tag: String): List[Dataset] = {
     Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
+  }
+
+  def findByTag(tag: String,start: String, limit: Integer, reverse: Boolean): List[Dataset] = {
+    val filter = if (start == "") {
+      MongoDBObject("tags.name" -> tag)
+    } else {
+      if (reverse) {
+        MongoDBObject("tags.name" -> tag) ++ ("created" $gte Parsers.fromISO8601(start))
+      } else {
+        MongoDBObject("tags.name" -> tag) ++ ("created" $lte Parsers.fromISO8601(start))
+      }
+    }
+    val order = if (reverse) {
+      MongoDBObject("created" -> -1, "name" -> 1)
+    } else {
+      MongoDBObject("created" -> 1, "name" -> 1)
+    }
+    Dataset.dao.find(filter).sort(order).limit(limit).toList
   }
 
   def getMetadata(id: UUID): Map[String, Any] = {

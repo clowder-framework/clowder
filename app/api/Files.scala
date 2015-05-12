@@ -12,6 +12,7 @@ import java.io.FileWriter
 
 import java.io.FileReader
 import java.io.ByteArrayInputStream
+import javax.mail.internet.MimeUtility
 
 import scala.collection.mutable.MutableList
 
@@ -165,9 +166,15 @@ class Files @Inject()(
 		                }
 		              }
 		              case None => {
-		                Ok.chunked(Enumerator.fromStream(inputStream))
+                    val userAgent = request.headers("user-agent")
+                    val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
+                      URLEncoder.encode(filename, "UTF-8")
+                    } else {
+                      MimeUtility.encodeWord(filename).replaceAll(",", "%2C")
+                    }
+                    Ok.chunked(Enumerator.fromStream(inputStream))
 		                  .withHeaders(CONTENT_TYPE -> contentType)
-		                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8")))
+                      .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + filenameStar))
 		              }
 		            }
 		          }
@@ -373,12 +380,13 @@ class Files @Inject()(
                   dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
 
                   /*---------------------------------------*/ 
+			            val extra = Map("filename" -> f.filename)
 	            
                   // index the file using Versus
                   current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 
                   // TODO replace null with None 
-	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
 
 	            
 	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -484,10 +492,11 @@ class Files @Inject()(
           val key = "unknown." + "file." + fileType.replace("__", ".")
 
           val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
+          val extra = Map("filename" -> theFile.filename)
 
           // TODO replace null with None
           current.plugin[RabbitmqPlugin].foreach {
-            _.extract(ExtractorMessage(id, id, host, key, Map.empty, theFile.length.toString, null, flags))
+            _.extract(ExtractorMessage(id, id, host, key, extra, theFile.length.toString, null, flags))
           }
 
           Ok(toJson(Map("id" -> id.stringify)))
@@ -585,12 +594,13 @@ class Files @Inject()(
               val clientIP = request.remoteAddress
               val serverIP = request.host
               dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
+		          val extra = Map("filename" -> f.filename)
                       
 			        // index the file using Versus
 			        current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
 	              
 	            current.plugin[RabbitmqPlugin].foreach {
-                _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, Map.empty, f.length.toString,
+                _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, extra, f.length.toString,
                   dataset_id, flags)) }
 	          
 	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -696,6 +706,7 @@ class Files @Inject()(
                   }
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+				          val extra = Map("filename" -> f.filename)
 
                   val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
                   val id = f.id
@@ -703,7 +714,7 @@ class Files @Inject()(
                   current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
                   // TODO replace null with None
                   current.plugin[RabbitmqPlugin].foreach {
-                    _.extract(ExtractorMessage(UUID(originalId), id, host, key, Map.empty, f.length.toString, null, flags))
+                    _.extract(ExtractorMessage(UUID(originalId), id, host, key, extra, f.length.toString, null, flags))
                   }
                   Ok(toJson(Map("id" -> id.stringify)))
                 }

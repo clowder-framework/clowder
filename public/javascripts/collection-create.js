@@ -19,16 +19,17 @@ function createCollection() {
     var desc = $('#description');
     var space = $('#spaceid').find(":selected").val();
     
-    //Add errors and return false if validation fails
+    //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
+    //variables.
     var error = false;
-    if (!name.val()) {
+    if (!name.val() && isNameRequired) {
     	$('#nameerror').show();
     	error = true;
     }
-    if (!desc.val()) {                                
+    if (!desc.val() && isDescRequired) {
         $('#descerror').show();
         error = true;
-    }
+    }    
     if (error) {	    	
     	return false;
     }
