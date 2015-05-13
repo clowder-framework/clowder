@@ -52,13 +52,13 @@ class MongoDBEventService extends EventService {
   }
 
 
-  def getAllEventsByTime(followedEntities:List[TypedID], time: Date) = {
+  def getEventsByTime(followedEntities:List[TypedID], time: Date, limit: Option[Integer]) = {
 
     var followedIDs = (for (typedid <- followedEntities) yield typedid.id).toList
 
-    var userEvents = getAllEventsOfType(followedIDs, "user._id")
-    var objectsEvents = getAllEventsOfType(followedIDs, "object_id")
-    var sourceEvents = getAllEventsOfType(followedIDs, "source_id")
+    var userEvents = getEventsOfType(followedIDs, "user._id", limit)
+    var objectsEvents = getEventsOfType(followedIDs, "object_id", limit)
+    var sourceEvents = getEventsOfType(followedIDs, "source_id", limit)
 
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
@@ -66,36 +66,53 @@ class MongoDBEventService extends EventService {
     eventsList = eventsList.sortBy(_.created)
     eventsList = eventsList.distinct
     eventsList = eventsList.filter(_.created.after(time))
-    eventsList
+
+    limit match {
+      case Some(x) => eventsList.take(x)
+      case None => eventsList
+    }
   }
 
-  def getAllEvents(followedEntities:List[TypedID]) = {
+  def getEvents(followedEntities:List[TypedID], limit: Option[Integer]) = {
 
     var followedIDs = (for (typedid <- followedEntities) yield typedid.id).toList
 
-    var userEvents = getAllEventsOfType(followedIDs, "user._id")
-    var objectsEvents = getAllEventsOfType(followedIDs, "object_id")
-    var sourceEvents = getAllEventsOfType(followedIDs, "source_id")
+    var userEvents = getEventsOfType(followedIDs, "user._id", limit)
+    var objectsEvents = getEventsOfType(followedIDs, "object_id", limit)
+    var sourceEvents = getEventsOfType(followedIDs, "source_id", limit)
 
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
     eventsList = eventsList.sortBy(_.created)
     eventsList = eventsList.distinct
-    eventsList
+
+    limit match {
+      case Some(x) => eventsList.take(x)
+      case None => eventsList
+    }
   }
 
 
-  def getAllEventsOfType(following: List[UUID], id_type: String): List[Event] = {
-    var listOfLists = (for (id <- following) yield (for (event <- getEvents(id.stringify, id_type)) yield event)).toList
+  def getEventsOfType(following: List[UUID], id_type: String, limit: Option[Integer]): List[Event] = {
+    var listOfLists = (for (id <- following) yield (for (event <- getEvents(id.stringify, id_type, limit)) yield event)).toList
     var eventList = List[models.Event]()
     for (list <- listOfLists) for (resultLine <- list) (eventList =   resultLine :: eventList)
-    eventList
+
+    limit match {
+      case Some(x) => eventList.take(x)
+      case None => eventList
+    }
   }
 
 
-  def getEvents(id: String, id_type: String) : SalatMongoCursor[Event] = {
-    Event.find(MongoDBObject(id_type -> new ObjectId(id)))
+  def getEvents(id: String, id_type: String, limit: Option[Integer]) : SalatMongoCursor[Event] = {
+    val result = Event.find(MongoDBObject(id_type -> new ObjectId(id)))
+
+    limit match {
+      case Some(x) => result.limit(x)
+      case None => result
+    }
   }
 
   def getLatestNEventsOfType(n: Int, event_type: Option[String]): List[Event] = {

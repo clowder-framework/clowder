@@ -35,8 +35,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val collectionCount = collections.count()
     request.user match {
       case Some(loggedInUser) => {
-        var newsfeedEvents = events.getAllEvents(
-          loggedInUser.followedEntities
+        var newsfeedEvents = events.getEvents(
+          loggedInUser.followedEntities, Some(20)
         ).sorted(Ordering.by((_: Event).created).reverse)
         Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
