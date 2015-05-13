@@ -24,7 +24,7 @@ object Formatters {
     if (elapsed < 1) {
       "never"
     } else if (elapsed < 60) {
-      "less than a miunte"
+      "less than a minute"
     } else if (elapsed < 120) {
       "1 minute"
     } else if (elapsed < 3600) {
