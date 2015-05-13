@@ -124,7 +124,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // migrate users to new model
     if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-typehint-users")) {
-      if (System.getProperty("MEDICI2UPDATE") != null) {
+      if (System.getProperty("MONGOUPDATE") != null) {
         Logger.info("[MongoDBUpdate] : Fixing _typeHint for users.")
         val q = MongoDBObject("_typeHint" -> "securesocial.core.SocialUser")
         val o = MongoDBObject("$set" -> MongoDBObject("_typeHint" -> "models.MediciUser"))
