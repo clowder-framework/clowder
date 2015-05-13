@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import services.EventService
+import services.{AppConfiguration, EventService}
 import models.Event
 import models.UUID
 import play.Logger
@@ -63,8 +63,8 @@ class RSS @Inject() (events: EventService) extends SecuredController {
     val rss =
       <rss version="2.0">
         <channel>
-          <title>Medici RSS feed</title>
-          <description>The latest events happening in Medici</description>
+          <title>{AppConfiguration.getDisplayName} RSS feed</title>
+          <description>The latest events happening in {AppConfiguration.getDisplayName}</description>
           <link>{routes.Application.index().absoluteURL()}</link>
           {
             for (item <- feedItems) yield {
@@ -77,6 +77,7 @@ class RSS @Inject() (events: EventService) extends SecuredController {
           }
         </channel>
       </rss>
+
     Ok(rss)
   }
 
@@ -91,10 +92,11 @@ class RSS @Inject() (events: EventService) extends SecuredController {
       feedItems = events.getLatestNEventsOfType(itemsToGet, Option(event_type))
     }
     Ok(
+      <?xml version="1.0" encoding="UTF-8" ?>
       <rss version="2.0">
         <channel>
-          <title>Medici RSS feed</title>
-          <description>The latest events happening in Medici</description>
+          <title>{AppConfiguration.getDisplayName} RSS feed</title>
+          <description>The latest events happening in {AppConfiguration.getDisplayName}</description>
           <link>{routes.Application.index().absoluteURL()}</link>
           {
           for (item <- feedItems) yield {
