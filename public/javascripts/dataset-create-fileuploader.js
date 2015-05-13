@@ -336,7 +336,7 @@ function attachFiles() {
 	    request.done(function (response, textStatus, jqXHR){	    
 	    	//Successful attachment of multiple files
 	        console.log("Successful response from attachMultipleFiles.");
-	        notify("Attach files successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);	        
+	        notify("Attach files successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);
 	    });
 	
 	

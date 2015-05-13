@@ -10,7 +10,7 @@ function checkErrorAndRedirect(jqXHR, userMsg) {
     console.log("jqXHR.responseText is " + responseText);    
     if (responseText == "Not authenticated") {
     	var origUrl = window.location.href;
-        window.location.href="/utils/authenticationRequiredMessage/" + encodeURIComponent(userMsg) + "/" + encodeURIComponent(origUrl);
+    	window.location.href = jsRoutes.controllers.RedirectUtility.authenticationRequiredMessage(userMsg, origUrl).url;        
         return true;
     }
     else {

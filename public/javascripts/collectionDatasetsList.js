@@ -68,8 +68,7 @@
 	      + "<td>" + inputThumbnail + "</td>"
 	      + "<td><a target='_blank' href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>View</a></td></tr>";
 	      
-	      $('#addDatasetsTable tbody').append(newDatasetHTML);
-	      	      	      	          
+	      $('#addDatasetsTable tbody').append(newDatasetHTML);	      	      	      	          
 		});  	
 		
 		request.fail(function (jqXHR, textStatus, errorThrown){
@@ -184,6 +183,7 @@
 		       url: queryIp,
 		       dataType: "json",
 		     });
+			
 			request.done(function (respJSON){
 		        console.log("Response " + respJSON);
 		        $('#addPagerPrev').css('visibility','hidden');
@@ -206,8 +206,8 @@
 		        								+ "<td>" + createdDate + "</td>"
 		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 		        								+ "<td>" + datasetThumbnail + "</td>"
-		        								+ "<td><a target='_blank' href='" +  window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')			
-		        								+ "/datasets/" + respJSON[i].id + "'>View</a></td></tr>");
+		        								+ "<td><a target='_blank' href='" +  jsRoutes.controllers.Datasets.dataset(respJSON[i].id).url + "'>View</a></td></tr>");
+		        	
 		        }
 		        $('#addDatasetsTable').show();
 		        
