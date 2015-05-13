@@ -70,6 +70,7 @@ object Permission extends Enumeration {
 		SearchSensors,
 		RemoveSensors,
 		AddThumbnail,
+		ListThumbnails,
 		DownloadFiles,
     GetUser,
     AddProject,

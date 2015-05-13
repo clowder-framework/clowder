@@ -8,11 +8,27 @@ import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import services.{ByteStorageService, ThumbnailService}
 import models.{UUID, Thumbnail}
 import MongoContext.context
+import com.mongodb.casbah.commons.MongoDBObject
 
 /**
  * Created by lmarini on 2/27/14.
  */
 class MongoDBThumbnailService @Inject()(storage: ByteStorageService) extends ThumbnailService {
+
+
+  /**
+   * Count all files
+   */
+  def count(): Long = {
+    ThumbnailDAO.count(MongoDBObject())
+  }
+
+  /**
+   * List all thumbnail files.
+   */
+  def listThumbnails(): List[Thumbnail] = {
+    (for (thumbnail <- ThumbnailDAO.find(MongoDBObject())) yield thumbnail).toList
+  }
 
   def get(thumbnailId: UUID): Option[Thumbnail] = {
     ThumbnailDAO.findOneById(new ObjectId(thumbnailId.stringify))

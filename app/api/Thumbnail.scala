@@ -7,9 +7,27 @@ import play.api.Logger
 import javax.inject.{Inject, Singleton}
 import services.ThumbnailService
 
+import com.wordnik.swagger.annotations.{ApiOperation, Api}
+
+import play.api.libs.json.JsValue
+import models.Thumbnail
+
 
 @Singleton
+@Api(value = "/thumbnails", listingPath = "/api-docs.json/thumbnails", description = "A thumbnail is the raw bytes plus metadata.")
 class Thumbnail @Inject() (thumbnails: ThumbnailService) extends Controller with ApiController {
+
+
+   /**
+   * List all files.
+   */
+  @ApiOperation(value = "List all thumbnail files", notes = "Returns list of thumbnail files and descriptions.", responseClass = "None", httpMethod = "GET")
+  def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListThumbnails)) {
+    request =>
+      val list = for (t <- thumbnails.listThumbnails()) yield jsonThumbnail(t)
+
+      Ok(toJson(list))
+  }
   
    /**
    * Upload a file thumbnail.
@@ -30,6 +48,11 @@ class Thumbnail @Inject() (thumbnails: ThumbnailService) extends Controller with
       }.getOrElse {
          BadRequest(toJson("File not attached."))
       }
+  }
+
+
+  def jsonThumbnail(thumbnail: Thumbnail): JsValue = {
+    toJson(Map("id" -> thumbnail.id.toString, "filename" -> thumbnail.filename, "content-type" -> thumbnail.contentType,  "size" -> file.length.toString))
   }
 
 }
