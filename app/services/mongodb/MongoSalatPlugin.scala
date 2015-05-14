@@ -127,7 +127,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       if (System.getProperty("MONGOUPDATE") != null) {
         Logger.info("[MongoDBUpdate] : Fixing _typeHint for users.")
         val q = MongoDBObject("_typeHint" -> "securesocial.core.SocialUser")
-        val o = MongoDBObject("$set" -> MongoDBObject("_typeHint" -> "models.MediciUser"))
+        val o = MongoDBObject("$set" -> MongoDBObject("_typeHint" -> "models.ClowderUser"))
         collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
         appConfig.addPropertyValue("mongodb.updates", "fixing-typehint-users")
       } else {

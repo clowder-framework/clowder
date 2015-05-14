@@ -7,8 +7,8 @@ import play.api.mvc.Action
 import play.api.mvc.BodyParser
 import play.api.mvc.Controller
 import play.api.mvc.Result
-import models.{User, MediciUser, UUID}
-import securesocial.core.{AuthenticationMethod, Authorization, IdentityId, SecureSocial, SocialUser, UserService, Authenticator}
+import models.{User, UUID}
+import securesocial.core.{Authorization, SecureSocial, UserService, Authenticator}
 import securesocial.core.providers.UsernamePasswordProvider
 import services.DI
 
@@ -19,8 +19,6 @@ import services.DI
  *
  */
 trait ApiController extends Controller {
-  val anonymous = new MediciUser(UUID.generate(), new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, AuthenticationMethod.UserPassword)
-
   def SecuredAction[A](p: BodyParser[A] = parse.json, authorization: Authorization = WithPermission(Permission.Public), resourceId: Option[UUID] = None)(f: RequestWithUser[A] => Result) = Action(p) {
     implicit request => {
       // API will check permissions in the following order:
@@ -100,8 +98,8 @@ trait ApiController extends Controller {
           // TODO this needs to become more secure
           if (key.length > 0) {
             if (key(0).equals(play.Play.application().configuration().getString("commKey"))) {
-              if (authorization.isAuthorized(anonymous)) {
-                f(RequestWithUser(Some(anonymous), request))
+              if (authorization.isAuthorized(User.anonymous)) {
+                f(RequestWithUser(Some(User.anonymous), request))
               }
               else
                 Unauthorized("Not authorized")

@@ -140,7 +140,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       }
       case None => {
         Logger.error("no user model exists for " + uuid.stringify)
-        InternalServerError
+        BadRequest("no user model exists for " + uuid.stringify)
       }
     }
   }
@@ -153,7 +153,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       case Some(user) => Redirect(routes.Profile.viewProfileUUID(user.id))
       case None => {
         Logger.error("no user model exists for " + email.getOrElse(""))
-        InternalServerError
+        BadRequest("no user model exists for " + email.getOrElse(""))
       }
     }
   }
