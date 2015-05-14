@@ -1,5 +1,5 @@
 @(files: List[models.File], datasetsCount: Long, filesCount: Long, collectionCount: Long,
-        displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[securesocial.core.Identity])
+        displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[models.User])
 @import _root_.util.Formatters
 
 @main(displayedName) {

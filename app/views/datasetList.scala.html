@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: String)(implicit user: Option[securesocial.core.Identity])
+@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 

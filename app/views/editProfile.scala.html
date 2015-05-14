@@ -1,4 +1,4 @@
-@(myForm: Form[models.Profile], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: List[String])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(myForm: Form[models.Profile], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }

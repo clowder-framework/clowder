@@ -1,4 +1,4 @@
-@(query: String, files: Array[models.File], datasets: Array[models.Dataset], collections: Array[models.Collection], mapdatasetIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]], mapcollectionIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]])(implicit user: Option[securesocial.core.Identity])
+@(query: String, files: Array[models.File], datasets: Array[models.Dataset], collections: Array[models.Collection], mapdatasetIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]], mapcollectionIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]])(implicit user: Option[models.User])
 
 
 @import scala.collection.mutable.ListBuffer

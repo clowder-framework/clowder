@@ -1,4 +1,4 @@
-@(event: models.Event)(implicit user: Option[securesocial.core.Identity] = None)
+@(event: models.Event)(implicit user: Option[models.User] = None)
 @linkForObject(obj_type: String, obj_id: Option[UUID], obj_name: Option[String]) = {
   @obj_type match {
     case "file" => {
