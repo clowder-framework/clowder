@@ -293,7 +293,7 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
     // first convert the socialuser object to a mongodbobject
     val userobj = com.novus.salat.grater[Identity].asDBObject(user)
     // replace _typeHint with the right model type so it will get correctly deserialized
-    userobj.put("_typeHint", "models.MediciUser")
+    userobj.put("_typeHint", "models.ClowderUser")
     // query to find the user based on identityId
     val query = MongoDBObject("identityId.userId" -> user.identityId.userId, "identityId.providerId" -> user.identityId.providerId)
     // update all fields from past in user object
