@@ -1,4 +1,4 @@
-@(myForm: Form[Info], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: List[String])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(myForm: Form[models.Profile], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: List[String])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -46,6 +46,6 @@
   </div>
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script language="javascript">
-  $(".chosen-select").chosen({no_results_text: "Not found. Press enter to add "});
+  $(".chosen-select").chosen({no_results_text: "Not found. Press enter to add", allow_single_deselect: true});
 </script>
 }

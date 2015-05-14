@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, User, MiniEntity}
+import models.{Profile, UUID, User, MiniEntity}
 import securesocial.core.Identity
 import util.Direction._
 
@@ -72,6 +72,11 @@ trait UserService  {
    * @deprecated please find
    */
   def findByEmail(email: String): Option[User]
+
+  /**
+   * Update the give user profile
+   */
+  def updateProfile(id: UUID, profile: Profile)
 
   /**
    * Updates a value in the User Model

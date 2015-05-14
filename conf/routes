@@ -22,10 +22,13 @@ GET            /assets/*file                                                    
 POST           /users/registerThroughAdmins                                             controllers.Users.handleStartSignUp
 
 # Profile
+# deprecated use profile/:uuid
 GET            /profile/viewProfile                                                     @controllers.Profile.viewProfile(email: Option[String])
+# deprecated use /profile/:uuid
 GET            /profile/viewProfile/:uuid                                               @controllers.Profile.viewProfileUUID(uuid: UUID)
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
 GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
+GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
 
 # Utilities
 GET            /utils/authenticationRequired                                            @controllers.RedirectUtility.authenticationRequired
@@ -410,7 +413,7 @@ POST           /api/institutions/addinstitution                                 
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
-GET            /api/me                                                            @api.Users.getUser()
+GET            /api/me                                                                  @api.Users.getUser()
 
 POST           /api/users/updateUserField                                               @api.Users.updateUserField(email: String, field: String, fieldText: String)
 

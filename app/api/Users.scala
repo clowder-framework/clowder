@@ -161,6 +161,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
       "lastName" -> user.lastName,
       "fullName" -> user.fullName,
       "email" -> user.email,
-      "avatar" -> user.avatarUrl)
+      "avatar" -> user.getAvatarUrl())
   }
 }

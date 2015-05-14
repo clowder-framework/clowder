@@ -6,22 +6,19 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.commons.MongoDBList
 import com.mongodb.util.JSON
+import com.novus.salat._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import models.{TypedID, MediciUser, UUID, User, MiniEntity}
+import models._
 import org.bson.types.ObjectId
-import play.api.Logger
 import securesocial.core.Identity
-import services.UserService
 import play.api.Application
 import play.api.Play.current
 import securesocial.core.providers.Token
 import securesocial.core._
-import services.{DI, UserService, FileService, DatasetService, CollectionService}
+import services.{FileService, DatasetService, CollectionService}
 import services.mongodb.MongoContext.context
-import util.Direction._
-import services.mongodb.TypedIDDAO
+import _root_.util.Direction._
 import javax.inject.Inject
 
 /**
@@ -137,23 +134,21 @@ class MongoDBUserService @Inject() (
     UserDAO.dao.findOne(MongoDBObject("email" -> email))
   }
 
+  override def updateProfile(id: UUID, profile: Profile) {
+    val pson = grater[Profile].asDBObject(profile)
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("profile" -> pson))
+  }
+
   override def updateUserField(email: String, field: String, fieldText: Any) {
-    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText))
+    UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText))
   }
 
   override def addUserDatasetView(email: String, dataset: UUID) {
-    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $push("viewed" -> dataset))
+    UserDAO.dao.update(MongoDBObject("email" -> email), $push("viewed" -> dataset))
   }
 
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
-    val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList))
-  }
-
-  object UserDAO extends ModelCompanion[User, ObjectId] {
-    val dao = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
-    }
+    UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList))
   }
 
   override def followFile(followerId: UUID, fileId: UUID) {
@@ -273,6 +268,13 @@ class MongoDBUserService @Inject() (
         }
       }
       case _ => default
+    }
+  }
+
+  object UserDAO extends ModelCompanion[User, ObjectId] {
+    val dao = current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
     }
   }
 }
