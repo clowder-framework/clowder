@@ -1,4 +1,4 @@
-@(files: List[models.File], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: String)(implicit user: Option[securesocial.core.Identity])
+@(files: List[models.File], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 @import org.apache.commons.io._

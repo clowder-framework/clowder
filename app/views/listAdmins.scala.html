@@ -1,4 +1,4 @@
-@(admins: List[String])(implicit user: Option[securesocial.core.Identity])
+@(admins: List[String])(implicit user: Option[models.User])
 
 @main("Admins") {
 	<script src="@routes.Assets.at("javascripts/manageAdmins.js")" type="text/javascript"></script>

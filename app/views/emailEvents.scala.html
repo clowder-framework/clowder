@@ -1,4 +1,4 @@
-@(events: List[models.Event])(implicit user: Option[securesocial.core.Identity] = None) 
+@(events: List[models.Event])(implicit user: Option[models.User] = None)
 @import _root_.util.Formatters
 <h1> Clowder Email Digest </h1>
       @for(event <- events) {

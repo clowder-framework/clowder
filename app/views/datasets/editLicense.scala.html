@@ -1,4 +1,4 @@
-@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+@(dataset: Dataset)(implicit user: Option[models.User])
 
 @if(user.isDefined) {
     <a class="btn btn-default btn-xs accordion-toggle collapsed" data-toggle="collapse"
