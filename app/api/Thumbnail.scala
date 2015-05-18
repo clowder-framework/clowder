@@ -12,10 +12,15 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import play.api.libs.json.JsValue
 import models.Thumbnail
 
+// import play.api.libs.json
+
+// import scala.collection.mutable.MutableList
+
+
 
 @Singleton
 @Api(value = "/thumbnails", listingPath = "/api-docs.json/thumbnails", description = "A thumbnail is the raw bytes plus metadata.")
-class Thumbnail @Inject() (thumbnails: ThumbnailService) extends Controller with ApiController {
+class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller with ApiController {
 
 
    /**
@@ -52,7 +57,7 @@ class Thumbnail @Inject() (thumbnails: ThumbnailService) extends Controller with
 
 
   def jsonThumbnail(thumbnail: Thumbnail): JsValue = {
-    toJson(Map("id" -> thumbnail.id.toString, "filename" -> thumbnail.filename, "content-type" -> thumbnail.contentType,  "size" -> file.length.toString))
+    toJson(Map("id" -> thumbnail.id.toString, "filename" -> thumbnail.filename, "content-type" -> thumbnail.contentType,  "size" -> thumbnail.length.toString))
   }
 
 }

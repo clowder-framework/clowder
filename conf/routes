@@ -378,8 +378,8 @@ GET     /geostreams                       controllers.Geostreams.browse
 POST	/api/tiles						  @api.ZoomIt.uploadTile
 POST	/api/geometries					  @api.Geometry.uploadGeometry
 POST	/api/3dTextures					  @api.ThreeDTexture.uploadTexture
-POST    /api/fileThumbnail                @api.Thumbnail.uploadThumbnail
-GET     /api/thumbnails                   @api.Thumbnail.list
+POST    /api/fileThumbnail                @api.Thumbnails.uploadThumbnail
+GET     /api/thumbnails                   @api.Thumbnails.list
 
 GET      /api/sensors                                                        api.Sensors.list
 POST     /api/sensors                                                        api.Sensors.add
