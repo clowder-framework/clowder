@@ -15,7 +15,7 @@ import org.scalatest._
 //@DoNotDiscover
 class ApplicationSpec extends IntegrationSpec with ServerFixture {
 
-  implicit val user: Option[securesocial.core.Identity] = None
+  implicit val user: Option[models.User] = None
 
   "Application" should "send 404 on a bad request" in {
     route(FakeRequest(GET, "/wut")) shouldBe (None)
