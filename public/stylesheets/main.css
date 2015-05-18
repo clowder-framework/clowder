@@ -263,6 +263,12 @@ code {
 	width:208px;
 	height:30px;
 }
+
+.checkbox
+{
+    font-weight: normal;
+}
+
 fieldset #username_field .controls #username{
 	width:208px;
 	height:30px;
