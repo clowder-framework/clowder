@@ -11,7 +11,11 @@ import scala.concurrent.Future
 import javax.inject.{Inject, Singleton}
 import play.api.data.Form
 import play.api.data.Forms._
-
+import scala.collection.{mutable, Map}
+import play.api.data.{Forms, Form}
+import scala.collection.immutable._
+import api._
+import play.api.mvc._
 /**
  * Administration pages.
  *
@@ -382,7 +386,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   val roleForm = Form(
     mapping(
       "name" -> nonEmptyText,
-      "description" -> nonEmptyText
+      "description" -> nonEmptyText,
+      "permissions" -> Forms.list(nonEmptyText)
     )(roleFormData.apply)(roleFormData.unapply)
   )
 
@@ -390,7 +395,12 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     implicit val user = request.user
     user match {
       case Some(x) => {
-        Ok(views.html.roles.createRole(roleForm))
+        var permissionMap = Map.empty[String, Boolean]
+        Permission.values.map{
+          permission => permissionMap += (permission.toString() -> false)
+
+        }
+        Ok(views.html.roles.createRole(roleForm, permissionMap))
       }
     }
   }
@@ -400,10 +410,10 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     user match {
       case Some(x) => {
         roleForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.roles.createRole(errors)),
+          errors => BadRequest(views.html.roles.createRole(errors, Map.empty[String, Boolean])),
           formData => {
             Logger.debug("Creating role " + formData.name)
-            val role = Role(name = formData.name, description = formData.description)
+            val role = Role(name = formData.name, description = formData.description, permissions = formData.permissions)
             userService.addRole(role)
             Redirect(routes.Admin.listRoles()).flashing("success" -> "Role created")
           }
@@ -411,6 +421,21 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       }
     }
   }
+
+  def removeRole(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.UserAdmin), resourceId = Some(id)) {
+    implicit request =>
+    deleteRoleHelper(id, request)
+  }
+
+  def deleteRoleHelper(id: UUID, request: RequestWithUser[AnyContent]) = {
+    userService.findRole(id.stringify) match {
+      case Some(role) => {
+        userService.deleteRole(id.stringify)
+        Redirect(routes.Admin.listRoles()).flashing("success" -> "Role removed")
+      }
+      case None =>  Redirect(routes.Admin.listRoles()).flashing("success" -> "Role removed")
+    }
+  }
 }
 
-case class roleFormData(name: String, description: String)
+case class roleFormData(name: String, description: String, permissions: List[String])

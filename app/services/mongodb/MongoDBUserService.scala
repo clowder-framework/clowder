@@ -103,8 +103,8 @@ class MongoDBUserService extends UserService {
   /**
    * Delete role.
    */
-  def deleteRole(role: Role): Unit = {
-    RoleDAO.removeById(role.id.stringify)
+  def deleteRole(id: String): Unit = {
+    RoleDAO.removeById(id)
   }
 }
 
@@ -123,10 +123,10 @@ object RoleDAO extends ModelCompanion[Role, ObjectId] {
   }
 
   def findById(id: String): Option[Role] = {
-    dao.findOne(MongoDBObject("id" -> id))
+    dao.findOne(MongoDBObject("_id" -> new ObjectId(id)))
   }
 
   def removeById(id: String) {
-    dao.remove(MongoDBObject("id" -> id), WriteConcern.Normal)
+    dao.remove(MongoDBObject("_id" -> new ObjectId(id)), WriteConcern.Normal)
   }
 }

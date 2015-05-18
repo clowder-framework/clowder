@@ -1,6 +1,7 @@
-@(newRoleForm: Form[controllers.roleFormData])(implicit user: Option[securesocial.core.Identity])
+@(newRoleForm: Form[controllers.roleFormData], permissionsMap: Map[String, Boolean])(implicit user: Option[securesocial.core.Identity])
 
 @import helper._
+@import views.html.bootstrap3._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
 
 @main("Create Role") {
@@ -21,6 +22,7 @@
                 <fieldset id="nameDescrFieldSet">
                     @inputText(newRoleForm("name"), '_label -> "Name")
                     @textarea(newRoleForm("description"), '_label -> "Description")
+                    @checkboxes(newRoleForm("permissions"), label = "Permissions", checkboxMap = permissionsMap, help ="Select the permissions you want to add to this role" )
                 </fieldset>
                 <div class="form-actions">
                     <input type="submit" class="btn btn-default" name = "submitValue" value="Create"/>

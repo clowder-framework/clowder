@@ -169,6 +169,7 @@ DELETE         /admin/index                                                     
 GET            /admin/roles                                                             @controllers.Admin.listRoles
 GET            /admin/roles/new                                                         @controllers.Admin.createRole
 POST           /admin/roles/submitNew                                                   @controllers.Admin.submitCreateRole
+DELETE         /admin/roles/delete/:id                                                  @controllers.Admin.removeRole(id: UUID)
 
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 POST           /admin/theme                                                             @controllers.Admin.setTheme

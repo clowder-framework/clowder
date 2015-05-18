@@ -1,6 +1,12 @@
 @(roles: List[Role])
 
 @main("Manage Roles") {
+    <script src="@routes.Assets.at("javascripts/manageRoles.js")" type="text/javascript"></script>
+    <script>
+		function handleRemoval(roleid, theElement, url){
+			var couldRemove = removeRole(roleid, url);
+		}
+	</script>
     <div class="page-header">
         <h1>Roles</h1>
     </div>
@@ -15,9 +21,16 @@
             <div><a href="@routes.Admin.createRole()" class="btn btn-default">Create new role</a></div>
             @if(!roles.isEmpty) {
                 <table class="table">
-                    <thead><tr><th>Name</th><th>Description</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Description</th><th>Permissions</th><th>Delete</th></tr></thead>
                     @for(role <- roles) {
-                        <tr><td>@role.name</td><td>@role.description</td></tr>
+                        <tr><td>@role.name</td><td>@role.description</td><td>
+                        @for(permission <- role.permissions){
+                            @permission
+                            }
+                        </td>
+                        <td><button onclick="handleRemoval('@role.id',this, '@(routes.Admin.listRoles())')"
+                        type="button" class="btn btn-link"><span class="glyphicon glyphicon-trash"/></button></td>
+                        </tr>
                     }
                 </table>
             }

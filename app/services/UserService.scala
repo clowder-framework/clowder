@@ -87,6 +87,6 @@ trait UserService {
   /**
    * Delete role.
    */
-  def deleteRole(role: Role)
+  def deleteRole(id: String)
 
 }
