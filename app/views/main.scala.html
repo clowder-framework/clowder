@@ -81,25 +81,21 @@
 						</li>
                         <li><a href="@routes.Assets.at("docs/api/index.html")">API</a></li>
 					</ul>
-					
-					
-					@play.api.Play.current.plugin[services.ElasticsearchPlugin] match {
-						case Some(p) => {
-							<div class="nav navbar-nav navbar-right col-md-3" style="vertical-align: middle;">
-								<form class="navbar-form navbar-right form-horizontal" role="search" action="@routes.Search.search("")">
-						        <div class="input-group">
-						            <input type="text" class="form-control input-sm" placeholder="Search" name="query" id="srch-term">
-						            <div class="input-group-btn">
-						                <button class="btn btn-default btn-sm" type="submit"><i class="glyphicon glyphicon-search"></i></button>
-						            </div>
-						        </div>
-						        </form>
-						    </div>
-						}
-						case None => {}
-					}
 
 					<ul class="nav navbar-nav navbar-right">
+						@if(play.api.Play.current.plugin[services.ElasticsearchPlugin].isDefined) {
+							<li>
+								<form class="navbar-form" role="search" action="@routes.Search.search("")">
+									<div class="input-group">
+										<input type="text" class="form-control input-sm" placeholder="Search" name="query" id="srch-term">
+										<div class="input-group-btn">
+											<button class="btn btn-default btn-sm" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+										</div>
+									</div>
+								</form>
+							</li>
+						}
+
                         @user match {
 							case Some(x) => {
 								<li class="dropdown">
