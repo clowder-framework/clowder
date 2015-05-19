@@ -12,6 +12,7 @@ import services.{UserService, SpaceService}
 import util.Direction._
 import org.apache.commons.lang.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
+import play.api.data.Form
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.

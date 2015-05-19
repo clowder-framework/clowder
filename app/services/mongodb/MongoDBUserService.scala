@@ -106,6 +106,10 @@ class MongoDBUserService extends UserService {
   def deleteRole(id: String): Unit = {
     RoleDAO.removeById(id)
   }
+
+  def updateRole(role: Role): Unit = {
+    RoleDAO.save(role)
+  }
 }
 
 object UserDAO extends ModelCompanion[User, ObjectId] {

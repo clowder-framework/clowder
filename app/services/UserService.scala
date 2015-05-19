@@ -89,4 +89,9 @@ trait UserService {
    */
   def deleteRole(id: String)
 
+  /**
+   * Update role
+   * @param role
+   */
+  def updateRole(role: Role)
 }

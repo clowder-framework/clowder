@@ -385,6 +385,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
 
   val roleForm = Form(
     mapping(
+    "id" -> optional(Utils.CustomMappings.uuidType),
       "name" -> nonEmptyText,
       "description" -> nonEmptyText,
       "permissions" -> Forms.list(nonEmptyText)
@@ -436,6 +437,60 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       case None =>  Redirect(routes.Admin.listRoles()).flashing("success" -> "Role removed")
     }
   }
+
+  def editRole(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.UserAdmin), resourceId = Some(id))
+  {
+    implicit request =>
+      implicit val user = request.user
+      userService.findRole(id.stringify) match {
+        case Some(s) => {
+          var permissionMap = Map.empty[String, Boolean]
+          Permission.values.map{
+            permission =>
+              if(s.permissions.contains(permission.toString))
+              {
+                permissionMap += (permission.toString() -> true)
+              }
+              else {
+                permissionMap += (permission.toString() -> false)
+              }
+
+          }
+          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, s.permissions)), permissionMap))
+        }
+        case None => InternalServerError("Role not found")
+      }
+  }
+
+  def updateRole() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.UserAdmin))
+  {
+    implicit request =>
+      implicit val user = request.user
+      var permissionMap = Map.empty[String, Boolean]
+      Permission.values.map{
+        permission => permissionMap += (permission.toString() -> false)
+
+      }
+        roleForm.bindFromRequest.fold(
+        errors => BadRequest(views.html.roles.editRole(errors, permissionMap)),
+        formData =>
+        {
+          Logger.debug("Updating role " + formData.name)
+          userService.findRole(formData.id.get.toString) match {
+            case Some(role) =>
+            {
+              val updated_role = role.copy(name = formData.name  , description = formData.description, permissions = formData.permissions )
+              userService.updateRole(updated_role)
+              Redirect(routes.Admin.listRoles())
+            }
+            case None =>
+              BadRequest("The role does not exist")
+          }
+        })
+
+
+  }
+
 }
 
-case class roleFormData(name: String, description: String, permissions: List[String])
+case class roleFormData(id: Option[UUID], name: String, description: String, permissions: List[String])

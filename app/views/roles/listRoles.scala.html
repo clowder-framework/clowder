@@ -21,15 +21,17 @@
             <div><a href="@routes.Admin.createRole()" class="btn btn-default">Create new role</a></div>
             @if(!roles.isEmpty) {
                 <table class="table">
-                    <thead><tr><th>Name</th><th>Description</th><th>Permissions</th><th>Delete</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Description</th><th>Permissions</th><th>Edit / Delete</th></tr></thead>
                     @for(role <- roles) {
                         <tr><td>@role.name</td><td>@role.description</td><td>
                         @for(permission <- role.permissions){
                             @permission
                             }
                         </td>
-                        <td><button onclick="handleRemoval('@role.id',this, '@(routes.Admin.listRoles())')"
-                        type="button" class="btn btn-link"><span class="glyphicon glyphicon-trash"/></button></td>
+                        <td>
+                            <a href="@routes.Admin.editRole(role.id)" class ="btn btn-link"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a>
+                            <button onclick="handleRemoval('@role.id',this, '@(routes.Admin.listRoles())')"
+                            type="button" class="btn btn-link"><span class="glyphicon glyphicon-trash"/></button></td>
                         </tr>
                     }
                 </table>
