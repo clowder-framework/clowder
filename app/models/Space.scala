@@ -22,7 +22,6 @@ case class ProjectSpace (
   homePage: List[URL],
   logoURL: Option[URL],
   bannerURL: Option[URL],
-  usersByRole: Map[UUID, List[UUID]], // roleId -> userId
   collectionCount: Integer,
   datasetCount: Integer,
   userCount: Integer,
@@ -42,17 +41,6 @@ case class UserSpace (
    datasetCount: Integer,
    userCount: Integer)
 
-case class Role(
-   id: UUID = UUID.generate,
-   name: String = "Default")
-
-object Role {
-    val roleList: List[String] = List("Admin", "Power User", "User", "Guest")
-    var roleMap: Map[String, Role] = Map.empty
-    for (aRole <- roleList) {
-        roleMap += (aRole -> Role(name = aRole))
-    }
-}   
    
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
