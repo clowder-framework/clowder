@@ -29,14 +29,23 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.Codec
 import org.apache.http.entity.ContentType
 
+import play.api.test._
+import org.scalatest._
+import org.scalatestplus.play._
+import play.api.{Play, Application}
 
-class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpload {
-  val excludedPlugins = List(
-    "services.RabbitmqPlugin",
-    "services.VersusPlugin")
+
+/*
+ * Integration test for Files API - Router test
+ * @author Eugene Roeder
+ * 
+ */
 
 
-  implicit override lazy val app: FakeApplication = FakeApplication(withoutPlugins = excludedPlugins)
+//@DoNotDiscover
+class FilesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+
+  
 
   def printList[T](list: List[T]) {
     list match {
@@ -59,8 +68,23 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
     (__ \ "filename").read[String]
   )(FileName.apply _)
 
+
+
+  "The Files API Spec" must {
+    "provide a FakeApplication" in {
+      app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
+    }
+    "make the FakeApplication available implicitly" in {
+      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      getConfig("ehcacheplugin") mustBe Some("disabled")
+    }
+    "start the FakeApplication" in {
+      Play.maybeApplication mustBe Some(app)
+    }
+  }
+
  	
- "The OneAppPerSuite for Files API Router test" must {
+ "The Files API Spec" must {
     "respond to the Upload File URL" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val fileurl = "http://www.ncsa.illinois.edu/assets/img/logos_ncsa.png"
@@ -78,7 +102,7 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/morrowplots.jpg")
+      val file1 = new java.io.File(workingDir + "/test/data/files/morrowplots.jpg")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
@@ -98,7 +122,7 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/morrowplots-thumb-1.jpg")
+      val file1 = new java.io.File(workingDir + "/test/data/files/morrowplots-thumb-1.jpg")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
@@ -154,7 +178,7 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
           //link up json file here before fake request.
           val workingDir = System.getProperty("user.dir")
           info("Working Directory: " + workingDir)
-          val file1 = new java.io.File(workingDir + "/test/data/data-test-general.json")
+          val file1 = new java.io.File(workingDir + "/test/data/files/data-test-general.json")
           if (file1.isFile && file1.exists) {
             Logger.debug("File1 is File:True")
           }
@@ -210,7 +234,7 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
           //link up json file here before fake request.
           val workingDir = System.getProperty("user.dir")
           info("Working Directory: " + workingDir)
-          val file1 = new java.io.File(workingDir + "/test/data/data-test-user.json")
+          val file1 = new java.io.File(workingDir + "/test/data/files/data-test-user.json")
           if (file1.isFile && file1.exists) {
             Logger.debug("File1 is File:True")
           }
@@ -283,7 +307,7 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/data-search-general.json")
+      val file1 = new java.io.File(workingDir + "/test/data/files/data-search-general.json")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
@@ -313,7 +337,7 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val workingDir = System.getProperty("user.dir")
       info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/data-search-user.json")
+      val file1 = new java.io.File(workingDir + "/test/data/files/data-search-user.json")
       if (file1.isFile && file1.exists) {
         Logger.debug("File1 is File:True")
       }
@@ -364,7 +388,7 @@ class FilesAPIAppSpec extends PlaySpec with OneAppPerSuite with FakeMultipartUpl
 
           val workingDir = System.getProperty("user.dir")
           info("Working Directory: " + workingDir)
-          val file1 = new java.io.File(workingDir + "/test/data/morrowplots-thumb.jpg")
+          val file1 = new java.io.File(workingDir + "/test/data/files/morrowplots-thumb.jpg")
           if (file1.isFile && file1.exists) {
             Logger.debug("File1 is File:True")
           }

@@ -7,6 +7,8 @@ import play.api.data.format.Formatter
 import play.api.data._
 import play.api.mvc.Request
 import models.ProjectSpace
+import models.Dataset
+import models.Collection
 import org.apache.commons.lang.StringEscapeUtils
 
 object Utils {
@@ -39,7 +41,7 @@ object Utils {
    * description
    *  
    */
-  def decodeSpaceElements(space: ProjectSpace): ProjectSpace = {      
+  def decodeSpaceElements(space: ProjectSpace): ProjectSpace = {
       val decodedName = StringEscapeUtils.unescapeHtml(space.name)
       val decodedDesc = StringEscapeUtils.unescapeHtml(space.description)
       space.copy(name = decodedName, description = decodedDesc)
@@ -97,4 +99,35 @@ object Utils {
   def uuidType: Mapping[UUID] = Forms.of[UUID]
 }
 
+  /*
+   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   *
+   * Currently, the following dataset elements are encoded:
+   * name
+   * description
+   */
+  def decodeDatasetElements(dataset: Dataset) : Dataset = {
+      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
+              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
+              							  
+      decodedDataset
+  }
+  
+  /**
+   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   * 
+   * Currently, the following collection elements are encoded:
+   * 
+   * name
+   * description
+   *  
+   */
+  def decodeCollectionElements(collection: Collection) : Collection  = {
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+              							  description = StringEscapeUtils.unescapeHtml(collection.description))
+              							  
+      decodedCollection
+  }
 }

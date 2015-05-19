@@ -2,6 +2,7 @@ package services
 
 import models.{Role, UUID, User}
 import securesocial.core.Identity
+import models.Role
 
 /**
  * Service definition to interact with the users.
@@ -68,6 +69,55 @@ trait UserService {
    * TODO: use UUID instead of email
    */
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
+  
+  /**
+   * Add a space to a specific user.
+   * 
+   * @param userId The identifier of the user that is being modified by this service
+   * @param spaceId The identifier of the space that is being associated with the user
+   * 
+   */
+  def addUserToSpace(userId: UUID, role: Role, spaceId: UUID)
+  
+  /**
+   * Remove a space from a specific user.
+   * 
+   * @param userId The identifier of the user that is being modified by this service
+   * @param spaceId The space to be disassociated from the user
+   * 
+   */
+  def removeUserFromSpace(userId: UUID, spaceId: UUID)
+  
+  /**
+   * Update the role that a user has for a specific space.
+   * 
+   * @param userId The identifier of the user to be modified
+   * @param role The new role to be associated with the user
+   * @param spaceId The identifier of the space 
+   * 
+   */
+  def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID)
+  
+  /**
+   * Retrieve the role that a user has for a specific space.
+   * 
+   * @param userId The identifier of the user to retrieve
+   * @param spaceId The identifier of the space to get the role for
+   * 
+   * @return The role that the user has associated with the space specified
+   * 
+   */
+  def getUserRoleInSpace(userId: UUID, spaceId: UUID): Option[Role]
+  
+  /**
+   * List the users that are associated with a specific space.
+   * 
+   * @param spaceId The identifier of the space to build a list of users for
+   * 
+   * @return A list of users that are associated with a space
+   */
+  def listUsersInSpace(spaceId: UUID): List[User]
+  
 
   /**
    * List user roles.

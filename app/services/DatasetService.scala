@@ -152,6 +152,8 @@ trait DatasetService {
 
   def findByTag(tag: String): List[Dataset]
 
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[Dataset]
+
   def getMetadata(id: UUID): Map[String, Any]
 
   def getUserMetadata(id: UUID): scala.collection.mutable.Map[String, Any]

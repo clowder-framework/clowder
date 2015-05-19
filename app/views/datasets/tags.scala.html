@@ -1,4 +1,5 @@
-@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+
+@(dataset: Dataset, filesTags: Set[String])(implicit user: Option[securesocial.core.Identity])
 
 <div class="row bottom-padding">
     <div class="col-md-12">
@@ -41,20 +42,23 @@
         </a>
         <div class="collapse" id="tagsFromFiles">
             <div class="well">
+
+                @filesTags.map { tag =>
+                    <div class="tag">
+                        <a href="@routes.Tags.search(tag)">@tag</a>
+                    </div>
+                }
                 @dataset.files.map { file =>
-                    @file.tags.map { tag =>
+                @file.sections.map { section =>
+                    @section.tags.map { tag =>
                         <div class="tag">
                             <a href="@routes.Tags.search(tag.name)">@tag.name</a>
                         </div>
                     }
-                    @file.sections.map { section =>
-                        @section.tags.map { tag =>
-                            <div class="tag">
-                                <a href="@routes.Tags.search(tag.name)">@tag.name</a>
-                            </div>
-                        }
-                    }
                 }
+            }
+
+
             </div>
         </div>
     </div>

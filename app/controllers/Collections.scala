@@ -1,8 +1,8 @@
 package controllers
 
-import play.api.data.Form
-import play.api.data.Forms._
-import models.{UUID, Collection, ProjectSpace}
+import models.ProjectSpace
+import models.{UUID, Collection}
+import util.RequiredFieldsConfig
 import java.util.Date
 import play.api.Logger
 import play.api.Play.current
@@ -32,7 +32,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       for (aSpace <- spacesList) {
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
-      Ok(views.html.newCollection(null, decodedSpaceList.toList))
+      Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
   }
 
   /**
@@ -113,10 +113,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       collectionsWithThumbnails = collectionsWithThumbnails.reverse
       
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
-      //of the datasets names or descriptions
+      //of the collection's names or descriptions
       var decodedCollections = new ListBuffer[models.Collection]()
       for (aCollection <- collectionsWithThumbnails) {
-          val dCollection = decodeCollectionElements(aCollection)
+          val dCollection = Utils.decodeCollectionElements(aCollection)
           decodedCollections += dCollection
       }
       
@@ -160,36 +160,36 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         
       implicit val user = request.user
       user match {
-	      case Some(identity) => {	      	            
-                if (colName == null || colDesc == null || colSpace == null) {
-                    val spacesList = spaces.list()
-                    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-				    for (aSpace <- spacesList) {
-				        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-				    }
-                    //This case shouldn't happen as it is validated on the client. 
-                    BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList))
-                }
-	            
-	            var collection : Collection = null
-	            if (colSpace(0) == "default") {
-	                collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
-	            }
-	            else {
-	                collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, space = Some(UUID(colSpace(0))))
-	            }
-	           	       
-	            Logger.debug("Saving collection " + collection.name)
-	            collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), space = collection.space))
-	          
-	            //index collection
-                val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-                current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id, 
-                List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-                
-	            // redirect to collection page
-	            current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
-	            Redirect(routes.Collections.collection(collection.id))	        
+        case Some(identity) => {
+          if (colName == null || colDesc == null || colSpace == null) {
+            val spacesList = spaces.list()
+            var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+            for (aSpace <- spacesList) {
+              decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+            }
+            //This case shouldn't happen as it is validated on the client.
+            BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
+          }
+
+          var collection : Collection = null
+          if (colSpace(0) == "default") {
+              collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
+          }
+          else {
+              collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, space = Some(UUID(colSpace(0))))
+          }
+
+          Logger.debug("Saving collection " + collection.name)
+          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), space = collection.space))
+
+          //index collection
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+            List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+
+          // redirect to collection page
+          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
+          Redirect(routes.Collections.collection(collection.id))
 	      }
 	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
       }
@@ -209,7 +209,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
           
           //Decode the encoded items
-          val dCollection = decodeCollectionElements(collection)
+          val dCollection = Utils.decodeCollectionElements(collection)
           
           for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
           val filteredPreviewers = for (
@@ -223,18 +223,26 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           Logger.debug("Num previewers " + filteredPreviewers.size)
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
+          //Decode the datasets so that their free text will display correctly in the view
+          val datasetsInside = datasets.listInsideCollection(id)
+          var decodedDatasetsInside = new ListBuffer[models.Dataset]()
+          for (aDataset <- datasetsInside) {
+            val dDataset = Utils.decodeDatasetElements(aDataset)
+            decodedDatasetsInside += dDataset
+          }
+
           val space = collection.space.flatMap(spaces.get(_))
           var decodedSpace: ProjectSpace = null;
-	      space match {
-	          case Some(s) => {
-	              decodedSpace = Utils.decodeSpaceElements(s)
-	              Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList, Some(decodedSpace)))
-	          }
-	          case None => {
-	              Logger.error("Problem in decoding the space element for this dataset: " + dCollection.name)
-	              Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), dCollection, filteredPreviewers.toList, space))
-	          }
-	      }          
+          space match {
+              case Some(s) => {
+                  decodedSpace = Utils.decodeSpaceElements(s)
+                  Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpace)))
+              }
+              case None => {
+                  Logger.error("Problem in decoding the space element for this dataset: " + dCollection.name)
+                  Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, space))
+              }
+          }
 
         }
         case None => {

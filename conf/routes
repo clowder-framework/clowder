@@ -30,6 +30,7 @@ GET            /profile/addFriend                                               
 # Utilities
 GET            /utils/authenticationRequired                                            @controllers.RedirectUtility.authenticationRequired
 GET            /utils/authenticationRequiredMessage/:msg/:url                           @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
+GET            /utils/noPermissions                                                     @controllers.RedirectUtility.incorrectPermissions(msg ?= null)
 
 # DTS Information
 GET            /extractions/requests                                                    @controllers.ExtractionInfo.getDTSRequests()
@@ -95,9 +96,10 @@ GET            /spaces/:id/updateSpace                                          
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # Tags
-GET            /tags/search                                                             @controllers.Tags.search(tag)
-GET            /tags/cloud                                                              @controllers.Tags.tagCloud
-GET            /tags/list                                                               @controllers.Tags.tagList
+GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "tile")
+GET     /tags/list/ordered                                                              @controllers.Tags.tagListOrdered
+GET     /tags/list/weighted                                                             @controllers.Tags.tagListWeighted
+GET     /tags/cloud                                                                     @controllers.Tags.tagCloud
 
 
 # Authentication
@@ -276,6 +278,7 @@ DELETE         /api/spaces/:id                                                  
 POST           /api/spaces/:id/addCollection                                            @api.Spaces.addCollection(id: UUID)
 POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
+POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
@@ -425,6 +428,7 @@ POST           /api/institutions/addinstitution                                 
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
+GET            /api/me                                                            @api.Users.getUser()
 
 POST           /api/users/updateUserField                                               @api.Users.updateUserField(email: String, field: String, fieldText: String)
 

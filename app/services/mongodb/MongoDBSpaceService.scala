@@ -16,6 +16,8 @@ import MongoContext.context
 import util.Direction._
 import models.Collection
 import models.Dataset
+import models.Role
+import models.User
 
 /**
  * Store Spaces in MongoDB.
@@ -27,7 +29,8 @@ import models.Dataset
 class MongoDBSpaceService @Inject() (
   collections: CollectionService,
   files: FileService,
-  datasets: DatasetService) extends SpaceService {
+  datasets: DatasetService,
+  users: UserService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
@@ -296,7 +299,7 @@ class MongoDBSpaceService @Inject() (
   /**
    * @see app.services.SpaceService.scala
    * 
-   * Implementation of the SpaceServie trait.
+   * Implementation of the SpaceService trait.
    * 
    */
   def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
@@ -304,7 +307,58 @@ class MongoDBSpaceService @Inject() (
           $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled), 
           false, false, WriteConcern.Safe);
   }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def addUser(user: UUID, role: Role, space: UUID): Unit = {      
+      users.addUserToSpace(user, role, space)
+  }
 
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def removeUser(userId: UUID, space: UUID): Unit = {      
+      users.removeUserFromSpace(userId, space)
+  }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def getUsersInSpace(spaceId: UUID): List[User] = {      
+      var retList = users.listUsersInSpace(spaceId)      
+      retList
+  }
+  
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Option[Role] = {      
+      var retRole = users.getUserRoleInSpace(userId, spaceId)      
+      retRole
+  }
+
+  /**
+   * @see app.services.SpaceService.scala
+   * 
+   * Implementation of the SpaceService trait.
+   * 
+   */
+  def changeUserRole(userId: UUID, role: Role, space: UUID): Unit = {      
+      users.changeUserRoleInSpace(userId, role, space)
+  }
 }
 
 

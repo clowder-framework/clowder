@@ -11,6 +11,11 @@ import play.api.Play.current
 import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
+import models.Role
+import models.UserSpaceAndRole
+import models.UserSpaceAndRole
+import scala.collection.mutable.ListBuffer
+import play.api.Logger
 
 /**
  * Wrapper around SecureSocial to get access to the users. There is
@@ -78,6 +83,85 @@ class MongoDBUserService extends UserService {
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
     val result = UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList));
   }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def addUserToSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
+      val spaceData = UserSpaceAndRole(spaceId, role)
+      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));  
+  }
+ 
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def removeUserFromSpace(userId: UUID, spaceId: UUID): Unit = {     
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
+    		  $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
+      val spaceData = UserSpaceAndRole(spaceId, role)
+      removeUserFromSpace(userId, spaceId)
+      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def getUserRoleInSpace(userId: UUID, spaceId: UUID): Option[Role] = {
+      var retRole: Option[Role] = None
+      var found = false
+      
+      findById(userId) match {
+          case Some(aUser) => {              
+              for (aSpaceAndRole <- aUser.spaceandrole) {                  
+                  if (!found) {
+                      if (aSpaceAndRole.spaceId == spaceId) {
+                          retRole = Some(aSpaceAndRole.role)
+                          found = true
+                      }	                  
+                  }
+              }
+          }
+          case None => Logger.debug("No user found for getRoleInSpace")
+      }
+      
+      retRole
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def listUsersInSpace(spaceId: UUID): List[User] = {
+      val retList: ListBuffer[User] = ListBuffer.empty
+      for (aUser <- UserDAO.dao.find(MongoDBObject())) {
+         for (aSpaceAndRole <- aUser.spaceandrole) {
+             if (aSpaceAndRole.spaceId == spaceId) {
+                 retList += aUser
+             }             
+         }
+      }      
+      retList.toList
+  }
 
   /**
    * List user roles.
@@ -134,3 +218,16 @@ object RoleDAO extends ModelCompanion[Role, ObjectId] {
     dao.remove(MongoDBObject("_id" -> new ObjectId(id)), WriteConcern.Normal)
   }
 }
+
+/**
+ * ModelCompanion object for the models.UserSpaceAndRole class. Specific to MongoDB implementation, so should either
+ * be in it's own utility class within services, or, as it is currently implemented, within one of the common
+ * services classes that utilize it.
+ */
+object UserSpaceAndRoleData extends ModelCompanion[UserSpaceAndRole, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[UserSpaceAndRole, ObjectId](collection = x.collection("spaceandrole")) {}
+  }
+}
+

@@ -14,6 +14,7 @@ import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
 import scala.collection.mutable.ListBuffer
+import models.Role
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -40,7 +41,7 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
           // TODO: add creator
           val userId = request.mediciUser.fold(UUID.generate)(_.id)
           val c = ProjectSpace(name = name, description = description, created = new Date(), creator = userId,
-            homePage = List.empty, logoURL = None, bannerURL = None, usersByRole= Map.empty, collectionCount=0,
+            homePage = List.empty, logoURL = None, bannerURL = None, collectionCount=0,
             datasetCount=0, userCount=0, metadata=List.empty)
           spaces.insert(c) match {
             case Some(id) => {
@@ -216,4 +217,105 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
         BadRequest(toJson(s"The given id $spaceid is not a valid ObjectId."))
       }
   }
+  
+   /**
+   *  REST endpoint: POST call to update the user information associated with a specific Space
+   * 
+   *  Takes one arg, spaceId:
+   *  
+   *  spaceId, the UUID associated with the space that will be updated 
+   *  
+   *  The data contained in the request body will defined by the following String key-value pairs:
+   *  
+   *  rolesandusers -> A map that contains a role level as a key and a comma separated String of user IDs as the value
+   *  
+   */
+  @ApiOperation(value = "Update the information associated with a space", notes="",
+    responseClass = "None", httpMethod = "POST")
+  def updateUsers(spaceId: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateSpaces))
+  { request =>
+      if (UUID.isValid(spaceId.stringify)) {
+           var aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
+          
+          // Pattern matching
+          aResult match {
+              case aMap: JsSuccess[Map[String, String]] => {
+				//Set up a map of existing users to check against
+                val existingUsers = spaces.getUsersInSpace(spaceId)
+                var existUserRole: Map[String, String] = Map.empty
+                for (aUser <- existingUsers) {
+                    spaces.getRoleForUserInSpace(spaceId, aUser.id) match {
+                        case Some(aRole) => {
+                        	existUserRole += (aUser.id.stringify -> aRole.name)
+                        }
+                        case None => Logger.debug("This shouldn't happen. A user in a space should always have a role.")
+                    }                    
+                }
+				                 
+				var roleMap: Map[String, String] = aMap.get
+				for ((k, v) <- roleMap) {
+				    //The role needs to exist
+				    Role.roleMap.get(k) match {
+				        case Some (aRole) => {
+				            var idArray: Array[String] = v.split(",").map(_.trim())
+					        				            
+				            //Deal with all the ids that were sent up (changes and adds)				            
+						    for (aUserId <- idArray) {
+						        //For some reason, an empty string is getting through as aUserId on length
+						        if (aUserId != "") {								        
+							        if (existUserRole.contains(aUserId)) {
+							            //The user exists in the space already							            
+							            existUserRole.get(aUserId) match { 
+							                case Some(existRole) => {
+									            if (existRole != k) {
+									                spaces.changeUserRole(UUID(aUserId), aRole, spaceId)
+									            }									            
+							                }
+							                case None => Logger.debug("This shouldn't happen. A user that is assigned to a space should always have a role.")
+							            }
+							        }							            
+							        else {
+							            //New user completely to the space
+						                spaces.addUser(UUID(aUserId), aRole, spaceId)
+						            }							        
+						        }
+						        else {
+					                Logger.debug("There was an empty string that counted as an array...")
+					            }
+						    }
+				            				            
+				            
+				            //Deal with users that were removed
+				            for (existUserId <- existUserRole.keySet) {
+				                if (!idArray.contains(existUserId)) {
+				                    //Check if the role is for this level
+				                    existUserRole.get(existUserId) match {
+				                        case Some(existRole) => {				                            
+				                            if (existRole == k) {				                                
+				                                //In this case, the level is correct, so it is a removal						                        
+							                    spaces.removeUser(UUID(existUserId), spaceId)
+				                            }
+				                        }
+				                        case None => Logger.debug("This should never happen. A user in a space should always have a role.")
+				                    }			                    
+				                }
+				            }				            
+				        }
+				        case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
+				    }				    
+				}
+				Ok(Json.obj("status" -> "success"))
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson("rolesandusers data is missing from the updateUsers call."))
+              }                            
+          }
+      }
+      else {
+        Logger.error(s"The given id $spaceId is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
+      }
+  }
+          
 }

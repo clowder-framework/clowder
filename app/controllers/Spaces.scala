@@ -12,7 +12,9 @@ import services.{UserService, SpaceService}
 import util.Direction._
 import org.apache.commons.lang.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
-import play.api.data.Form
+import scala.collection.mutable.ArrayBuffer
+import models.Role
+import models.User
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -28,6 +30,8 @@ case class spaceFormData(
   logoURL: Option[URL],
   bannerURL: Option[URL],
   spaceId:Option[UUID],
+  resourceTimeToLive: Long,
+  isTimeToLiveEnabled: Boolean,
   submitButtonValue:String)
 
 class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
@@ -43,14 +47,16 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
       "homePages" -> Forms.list(Utils.CustomMappings.urlType),
       "space_id" -> optional(Utils.CustomMappings.uuidType),
+      "editTime" -> longNumber,
+      "isTimeToLiveEnabled" -> boolean,
       "submitValue" -> text
     )
       (
-          (name, description, logoUrl, bannerUrl, homePages, space_id, bvalue) => spaceFormData(name = name, description = description,
-             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, bvalue)
+          (name, description, logoUrl, bannerUrl, homePages, space_id, editTime, isTimeToLiveEnabled, bvalue) => spaceFormData(name = name, description = description,
+             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, resourceTimeToLive = editTime, isTimeToLiveEnabled = isTimeToLiveEnabled, bvalue)
         )
       (
-          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.submitButtonValue)
+          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.resourceTimeToLive, d.isTimeToLiveEnabled, d.submitButtonValue)
         )
   )
 
@@ -61,14 +67,54 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   def getSpace(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
-      case Some(s) => {
-        val creator = users.findById(s.creator)
-
-        val collectionsInSpace = spaces.getCollectionsInSpace(id)
-
-        val datasetsInSpace = spaces.getDatasetsInSpace(id)
-
-        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator))
+        case Some(s) => {
+	        val creator = users.findById(s.creator)
+	        var creatorActual: User = null 	
+	        val collectionsInSpace = spaces.getCollectionsInSpace(id)
+	
+	        val datasetsInSpace = spaces.getDatasetsInSpace(id)
+	        
+	        val usersInSpace = spaces.getUsersInSpace(id)
+	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
+	        creator match {
+	            case Some(theCreator) => {
+	            	inSpaceBuffer += theCreator
+	            	creatorActual = theCreator
+	            }
+	            case None => Logger.debug("-------- No creator for space found...")
+	        }
+	        
+	        
+	        var externalUsers = users.list.to[ArrayBuffer] 
+	        
+	        //inSpaceBuffer += externalUsers(0)
+	        externalUsers --= inSpaceBuffer
+	
+	        var userRoleMap: Map[User, String] = Map.empty
+	        for (aUser <- inSpaceBuffer) {
+	            var role = "What"
+	            spaces.getRoleForUserInSpace(id, aUser.id) match {
+	                case Some(aRole) => {	                    
+	                    role = aRole.name
+	                }
+	                case None => {	  
+	                    //This case catches spaces that have been created before users and roles were assigned to them.
+	                    if (aUser == creatorActual) {
+	                        role = "Admin"
+	                        Role.roleMap.get(role) match {
+	                            case Some(realRole) => {
+	                                spaces.addUser(aUser.id, realRole, id)
+	                            }
+	                            case None => Logger.debug("No Admin role found for some reason.")
+	                        }	                            
+	                    }
+	                }
+	            }
+	            
+	            userRoleMap += (aUser -> role)
+	        }
+	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, Role.roleList))
       }
       case None => InternalServerError("Space not found")
     }
@@ -85,7 +131,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), "Update"))))}
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update"))))}
         case None => InternalServerError("Space not found")
       }
     }
@@ -109,10 +155,14 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                     Logger.debug("Creating space " + formData.name)
                     val newSpace = ProjectSpace(name = formData.name, description = formData.description,
                                                 created = new Date, creator = userId, homePage = formData.homePage,
-                                                logoURL = formData.logoURL, bannerURL = formData.bannerURL, usersByRole = Map.empty,
-                                                collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty)
+                                                logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                                                collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
+                                                resourceTimeToLive = formData.resourceTimeToLive, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+
                     // insert space
                     spaces.insert(newSpace)
+                    val role = Role(name = "Admin")
+                    spaces.addUser(userId, role, newSpace.id)
                     //TODO - Put Spaces in Elastic Search?
                     // index collection
                     // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -131,7 +181,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                     Logger.debug("updating space " + formData.name)
                     spaces.get(formData.spaceId.get) match {
                       case Some(existing_space) => {
-                        val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL, homePage = formData.homePage)
+                        val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                          homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
                         spaces.update(updated_space)
                         Redirect(routes.Spaces.getSpace(existing_space.id))
                       }
