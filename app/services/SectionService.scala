@@ -27,4 +27,9 @@ trait SectionService {
   def removeSection(s: Section)
 
   def insert(json: JsValue): String
+  
+  /**
+   * Update thumbnail used to represent this section.
+   */
+  def updateThumbnail(sectionId: UUID, thumbnailId: UUID)
 }

@@ -25,7 +25,7 @@
 		s.src = Configuration.previewer + "/../sectionRubberband.js";
 		$(Configuration.tab).append(s);
 
-		$(Configuration.tab).append(sectionRubberband(prNum));
+		$(Configuration.tab).append(rubberbandCreate(prNum, showPage));
 	}
 
 	// ----------------------------------------------------------------------

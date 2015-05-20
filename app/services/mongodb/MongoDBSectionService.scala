@@ -87,6 +87,15 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.dao.collection.save(doc)
     id.toString
   }
+  
+  /**
+   * Update thumbnail used to represent this section.
+   */
+  def updateThumbnail(sectionId: UUID, thumbnailId: UUID) {
+    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(sectionId.stringify)),
+      $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
+  }
+  
 }
 
 object SectionDAO extends ModelCompanion[Section, ObjectId] {

@@ -4,6 +4,7 @@
 
 	var prNum = Configuration.tab.replace("#previewer","");
 	window["configs" + prNum] = Configuration;
+	window["configsFileId" + prNum] = Configuration.fileid;
 		
 	// --------------------------------------------------------
 	// IMAGE FORMATS SUPPORTED BY MOST BROWSERS
@@ -24,26 +25,14 @@
 			s.src = Configuration.previewer + "/../sectionRubberband.js";
 			$(Configuration.tab).append(s);
 
-			$(Configuration.tab).append(sectionRubberband(prNum));
+			$(Configuration.tab).append(rubberbandCreate(prNum, showImage));
 		}
 
 		// ----------------------------------------------------------------------
 		// IMAGE LOADED CODE
 		// ----------------------------------------------------------------------
 		$("#rubberbandimage"+prNum).on("load", function() {
-			var image = $("#rubberbandimage"+prNum)[0];
-			var canvas = $("#rubberbandCanvas"+prNum)[0];
-			var context = canvas.getContext('2d');
-
-			if (image.width < 750) {
-				canvas.width = image.width;
-				canvas.height = image.height;
-			} else {
-				canvas.width = 750;
-				canvas.height = image.height * (canvas.width / image.width);
-			}
-
-			context.drawImage(image, 0, 0, canvas.width, canvas.height);
+			showImage(prNum);
 		});
 	}
 
@@ -67,5 +56,21 @@
 			"<b>ERROR: Unrecognised image format.</b>"
 	 	);
 	}
-		
+
+	function showImage(prNum) {
+		var image = $("#rubberbandimage"+prNum)[0];
+		var canvas = $("#rubberbandCanvas"+prNum)[0];
+		var context = canvas.getContext('2d');
+
+		if (image.width < 750) {
+			canvas.width = image.width;
+			canvas.height = image.height;
+		} else {
+			canvas.width = 750;
+			canvas.height = image.height * (canvas.width / image.width);
+		}
+
+		context.drawImage(image, 0, 0, canvas.width, canvas.height);
+	}
+
 }(jQuery, Configuration));

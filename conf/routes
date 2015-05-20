@@ -87,9 +87,10 @@ GET      /collection/:id                                                     @co
 GET      /collections/:collection_id/previews                                @controllers.Collections.previews(collection_id: UUID)
 
 # Tags
-GET     /tags/search                      @controllers.Tags.search(tag)
+GET     /tags/search                      @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "tile")
+GET     /tags/list/ordered                @controllers.Tags.tagListOrdered
+GET     /tags/list/weighted               @controllers.Tags.tagListWeighted
 GET     /tags/cloud                       @controllers.Tags.tagCloud
-GET     /tags/list                        @controllers.Tags.tagList 
 
 
 # Authentication
@@ -330,6 +331,7 @@ POST     /api/indexes/features                                               @ap
 POST    /api/sections                                           @api.Sections.add
 GET     /api/sections/:id                                       @api.Sections.get(id: UUID)
 POST    /api/sections/:id/comments                              @api.Sections.comment(id: UUID)
+POST	/api/sections/:section_id/thumbnails/:thumbnail_id		@api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 
 GET     /api/sections/:id/tags                                  @api.Sections.getTags(id: UUID)
 POST    /api/sections/:id/tags                                  @api.Sections.addTags(id: UUID)
@@ -403,6 +405,7 @@ POST 	/api/institutions/addinstitution		@api.Institutions.addinstitution(institu
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
+GET            /api/me                                                            @api.Users.getUser()
 
 POST 			/api/users/updateUserField												@api.Users.updateUserField(email: String, field: String, fieldText: String)
 

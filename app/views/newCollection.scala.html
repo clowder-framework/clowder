@@ -1,4 +1,4 @@
-@(errorString: String)(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(errorString: String, isNameRequired: Boolean, isDescriptionRequired: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -7,6 +7,11 @@
   <!-- Custom items for the create collection workflow -->
   <script src="@routes.Assets.at("javascripts/collection-create.js")" type="text/javascript"></script>
   <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+  <script type="text/javascript" language="javascript">
+      //Global so that the javascript for the collection creation can reference this.
+      var isNameRequired = @isNameRequired;
+      var isDescRequired = @isDescriptionRequired;             
+  </script>
 
   <div class="page-header">
     <h1>Add New Collection</h1>

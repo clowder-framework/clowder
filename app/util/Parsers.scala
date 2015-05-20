@@ -1,5 +1,8 @@
 package util
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import org.joda.time.DateTime
 import play.api.libs.json.JsValue
 
@@ -54,4 +57,20 @@ object Parsers {
    * @return the cleaned up string.
    */
   def parseString(s: String) : String = s.replaceAll("^[\"'](.*)[\"']", "$1")
+
+  /**
+   * Parse the string assuming ISO8601 dateformat and return a date object.
+   */
+  def fromISO8601(s: String) : Date = {
+    val ISO8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    ISO8601.parse(s)
+  }
+
+  /**
+   * Format a date object as a ISO8601 formatted string.
+   */
+  def toISO8601(d: Date) : String = {
+    val ISO8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    ISO8601.format(d)
+  }
 }

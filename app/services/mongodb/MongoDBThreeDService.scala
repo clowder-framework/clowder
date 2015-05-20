@@ -52,7 +52,7 @@ class MongoDBThreeDService extends ThreeDService {
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob(inputStream, filename, contentType, Map.empty[String, AnyRef], "textures", "nevereverused").fold("")(_.stringify)
+    MongoUtils.writeBlob[ThreeDTexture](inputStream, filename, contentType, Map.empty[String, AnyRef], "textures", "nevereverused").fold("")(_.stringify)
   }
 
   /**
@@ -75,7 +75,7 @@ class MongoDBThreeDService extends ThreeDService {
    * Save blob.
    */
   def saveGeometry(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob(inputStream, filename, contentType, Map.empty[String, AnyRef], "geometries", "nevereverused").fold("")(_.stringify)
+    MongoUtils.writeBlob[Geometry](inputStream, filename, contentType, Map.empty[String, AnyRef], "geometries", "nevereverused").fold("")(_.stringify)
   }
 
   def getGeometry(id: UUID): Option[ThreeDGeometry] = {
