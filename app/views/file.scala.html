@@ -122,6 +122,13 @@
 	    	          {title: 'Test template 2', content: 'Test 2'}
 	    	      ]
 	    });
+		
+		function stopevent(e){
+			if(e.preventDefault != undefined)
+	    		e.preventDefault();
+	    	if(e.stopPropagation != undefined)
+	    		e.stopPropagation();
+		}
 	</script>
 	<script>
     	var isPageLoaded = false;
@@ -210,6 +217,7 @@
 			  	<div class="row border-top">
 			  	  <div class="col-md-12">
                     <h4>Sections</h4>
+                    <div class="galleriaHelp">Right-click on main image to toggle sections gallery fullscreen view</div>
 				  	<div id="galleria" style="float:left;clear:none;width:600px;height:300px;">
 					  	@sections.map { s =>
 					  		@if(s.preview.isDefined) {
@@ -314,12 +322,23 @@
 					    var gallery = $('#galleria').data('galleria');
 
 						Galleria.ready(function(options) {
-
 						    // 'this' is the gallery instance
 						    // 'options' is the gallery options
-
 						    this.bind('image', function(e) {
 						        Galleria.log('Now viewing ' + e.imageTarget.src);
+						    });
+						    var gallery = this; // galleria is ready and the gallery is assigned
+					    	$(document).on("contextmenu", ".galleria-images .galleria-image img", function(e){
+					    			stopevent(e);							    		
+					    		    return false;
+					    	});
+						    $(document).on("mousedown", ".galleria-images .galleria-image img", function(e){
+						          if( e.button == 2 ) {
+						        	  gallery.toggleFullscreen(); // toggles the fullscreen
+						        	  stopevent(e);
+						              return false; 
+						          } 
+						          return true;
 						    });
 						});
 
