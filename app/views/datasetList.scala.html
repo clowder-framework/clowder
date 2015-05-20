@@ -37,7 +37,6 @@
                   viewMode = "tile";
                   updatePage();
                   $.cookie('view-mode', 'tile'); 
-                  console.log("setting tile " + $.cookie('view-mode'));
                   $('#masonry').masonry().masonry({
                       itemSelector: '.post-box',
                       columnWidth: '.post-box',
@@ -56,17 +55,12 @@
                   //to the options, curly braces and all. For example, {path: '/'} will actually become the value instead of the second
                   //arg. Swapping the arg order doesn't matter. MMF - 12/14
                   $.cookie("view-mode", "list");
-                  console.log("setting list " + $.cookie('view-mode'));
                 });
             });
             
-            $(document).ready(function() {            	            
-            	console.log("on load, cookies are " + $.cookie('view-mode'));
-                console.log("on load, viewMode is " + viewMode); 
+            $(document).ready(function() { 
                 var aMode = $.cookie('view-mode');
-                console.log("on load, after cookie check, a mode is " + aMode);
                 if (typeof aMode != 'undefined') {
-                    console.log("setting the value");
                     viewMode = aMode;
                 }      
             	updatePage();            	
@@ -75,10 +69,8 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
 	        function updatePage() {
-	            var modUrl = "&mode=" + viewMode;
-	            console.log("updatePage - url is " + modUrl);
-	            $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit))" + modUrl);
-	            $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit))" + modUrl);
+	            $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit))");
+	            $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit))");
 	        }
         </script>
     </div>

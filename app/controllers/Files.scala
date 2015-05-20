@@ -212,8 +212,7 @@ class Files @Inject() (
     	}
 	}                      
       
-      Logger.debug("------- file view - viewMode is " + viewMode + " ---------")
-      //Pass the viewMode into the view
+    //Pass the viewMode into the view
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
   }
 
