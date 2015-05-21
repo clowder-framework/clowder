@@ -1,4 +1,4 @@
-@(collections: List[models.Collection], prev: String, next: String, limit: Int, mode: String)(implicit user: Option[securesocial.core.Identity])
+@(collections: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String])(implicit user: Option[securesocial.core.Identity])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -15,18 +15,14 @@
 
 <div class="row">
     <div class="col-md-12">
-        <div class="btn-group btn-group-sm pull-right">
-            @if(mode == "list") {
-                <button type="button" class="btn btn-default" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
-                <button type="button" class="btn btn-default active" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
-            } else {
-                <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
-                <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
-            }
+        <div class="btn-group btn-group-sm pull-right">            
+            <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
+            <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>            
         </div>
         <script>
-	        var viewMode = '@mode';
+	        var viewMode = '@mode.getOrElse("tile")';
 	        $.cookie.raw = true;
+	        $.cookie.json = true;
             $(function() {            	                
                 $('#tile-view-btn').click(function() {
                   $('#tile-view').removeClass('hidden');
@@ -35,7 +31,7 @@
                   $('#list-view-btn').removeClass('active');
                   viewMode = "tile";
                   updatePage();                  
-                  $.cookie('view-mode', 'tile');
+                  $.cookie('view-mode', 'tile', { path: '/' });
                   $('#masonry').masonry().masonry({
                       itemSelector: '.post-box',
                       columnWidth: '.post-box',
@@ -49,18 +45,25 @@
                   $('#tile-view-btn').removeClass('active');
                   viewMode = "list";
                   updatePage();
-                  //It should be noted, that adding a third arg to the setting of the cookie value, which should work according to 
-                  //the docs at https://github.com/carhartl/jquery-cookie/tree/v1.4.1 seems to instead set the value of the cookie
-                  //to the options, curly braces and all. For example, {path: '/'} will actually become the value instead of the second
-                  //arg. Swapping the arg order doesn't matter. MMF - 12/14
-                  $.cookie("view-mode", "list");
+                  //Utilizing library from https://github.com/carhartl/jquery-cookie/tree/v1.4.1
+                  $.cookie("view-mode", "list", { path: '/' });
                 });                                
             });
             
             $(document).ready(function() {  
-                var aMode = $.cookie('view-mode');
-                if (typeof aMode != 'undefined') {
-                    viewMode = aMode;
+            	//Set the cookie, for the case when it is passed in by the parameter
+                $.cookie("view-mode", viewMode, { path: '/' });
+                if (viewMode == "list") {
+                    $('#tile-view').addClass('hidden');
+                    $('#list-view').removeClass('hidden');
+                    $('#list-view-btn').addClass('active');
+                    $('#tile-view-btn').removeClass('active');                      
+                }
+                else {
+                    $('#tile-view').removeClass('hidden');
+                    $('#list-view').addClass('hidden');
+                    $('#tile-view-btn').addClass('active');
+                    $('#list-view-btn').removeClass('active');                      
                 }
                 updatePage();               
             });
@@ -76,11 +79,7 @@
 </div>
 
 
-@if(mode == "list") {
   <div class="row hidden" id="tile-view">
-} else {
-  <div class="row" id="tile-view">
-}
     <div class="col-md-12">
         <div id="masonry">
             @collections.map { collection =>
@@ -123,11 +122,8 @@
     </div>
 </div>
 
-@if(mode == "list") {
-  <div class="row" id="list-view">
-} else {
+
   <div class="row hidden" id="list-view">
-}
 	<div class="col-md-12">
 		<table class="table table-bordered table-hover">
 			<thead>

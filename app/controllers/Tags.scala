@@ -94,19 +94,24 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
     //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
     //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-    var viewMode = mode;
-    //Always check to see if there is a session value          
-    request.cookies.get("view-mode") match {
-        case Some(cookie) => {           
-            viewMode = cookie.value
-        }
-        case None => {
-            //If there is no cookie, and a mode was not passed in, default it to tile
-            if (viewMode == null || viewMode == "") {
-                viewMode = "tile"
+    var viewMode: Option[String] = Some(mode);
+    Logger.debug("----- ORIGINAL, mode is " + mode)
+    //If the mode String passed in is null or empty, use the cookie (this should be the majority of cases)
+    if (mode == null || mode == "") {
+        Logger.debug("----- NO MODE PASSED IN")
+        request.cookies.get("view-mode") match {
+            case Some(cookie) => { 
+                Logger.debug("----- cookie present")
+                viewMode = Some(cookie.value)
+            }
+            case None => {
+                //If there is no cookie, and a mode was not passed in, default it to tile                
+                Logger.debug("---- setting it to None")
+                viewMode = None
+            
             }
         }
-    }                      
+    }
       
     //Pass the viewMode into the view            
     Ok(views.html.searchByTag(tag, nextItems.slice(0, size).toList, prev, next, size, viewMode))
