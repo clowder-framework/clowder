@@ -1,5 +1,6 @@
 package services.mongodb
 
+import org.bson.types.ObjectId
 import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -20,7 +21,6 @@ import util.Parsers
 import scala.collection.mutable.ListBuffer
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
-import scala.Some
 import scala.util.parsing.json.JSONArray
 import models.File
 import com.mongodb.casbah.Imports._
@@ -48,15 +48,23 @@ class MongoDBDatasetService @Inject() (
   /**
    * Count all datasets
    */
-  def count(): Long = {
-    Dataset.count(MongoDBObject())
+  def count(space: Option[String]): Long = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    Dataset.count(filter)
   }
 
   /**
    * List all datasets in the system.
    */
-  def listDatasets(): List[Dataset] = {
-    (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList
+  def listDatasets(space: Option[String]): List[Dataset] = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    Dataset.find(filter).toList
   }
 
   /**
@@ -100,37 +108,49 @@ class MongoDBDatasetService @Inject() (
   /**
    * List all datasets in the system in reverse chronological order.
    */
-  def listDatasetsChronoReverse(): List[Dataset] = {
+  def listDatasetsChronoReverse(space: Option[String]): List[Dataset] = {
     val order = MongoDBObject("created"-> -1)
-    Dataset.findAll.sort(order).toList
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    Dataset.find(filter).sort(order).toList
   }
 
   /**
    * List datasets after a specified date.
    */
-  def listDatasetsAfter(date: String, limit: Int): List[Dataset] = {
+  def listDatasetsAfter(date: String, limit: Int, space: Option[String]): List[Dataset] = {
     val order = MongoDBObject("created"-> -1)
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
     if (date == "") {
-      Dataset.findAll.sort(order).limit(limit).toList
+      Dataset.find(filter).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("After " + sinceDate)
-      Dataset.find("created" $lt sinceDate).sort(order).limit(limit).toList
+      Dataset.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
 
   /**
    * List datasets before a specified date.
    */
-  def listDatasetsBefore(date: String, limit: Int): List[Dataset] = {
+  def listDatasetsBefore(date: String, limit: Int, space: Option[String]): List[Dataset] = {
     var order = MongoDBObject("created"-> -1)
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
     if (date == "") {
-      Dataset.findAll.sort(order).limit(limit).toList
+      Dataset.find(filter).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("created"-> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("Before " + sinceDate)
-      var datasetList = Dataset.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
+      var datasetList = Dataset.find(filter ++ ("created" $gt sinceDate)).sort(order).limit(limit + 1).toList.reverse
       datasetList = datasetList.filter(_ != datasetList.last)
       datasetList
     }
@@ -143,7 +163,7 @@ class MongoDBDatasetService @Inject() (
     Logger.debug(s"List datasets inside collection $collectionId")
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
-        for (dataset <- listDatasetsChronoReverse; if(isInCollection(dataset,collection))) yield dataset
+        for (dataset <- listDatasetsChronoReverse(); if(isInCollection(dataset,collection))) yield dataset
       }
       case None =>{
         Logger.debug(s"Collection $collectionId not found")
@@ -167,16 +187,24 @@ class MongoDBDatasetService @Inject() (
     Dataset.findOneById(new ObjectId(id.stringify))
   }
 
-  def latest(): Option[Dataset] = {
-    val results = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+  def latest(space: Option[String]): Option[Dataset] = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    val results = Dataset.find(filter).sort(MongoDBObject("created" -> -1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
       None
   }
 
-  def first(): Option[Dataset] = {
-    val results = Dataset.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+  def first(space: Option[String]): Option[Dataset] = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    val results = Dataset.find(filter).sort(MongoDBObject("created" -> 1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else

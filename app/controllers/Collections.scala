@@ -55,7 +55,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * List collections.
    */	
-  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListCollections)) {
+  def list(when: String, date: String, limit: Int, space: Option[String] = None, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListCollections)) {
     implicit request =>
       implicit val user = request.user
       var direction = "b"
@@ -64,17 +64,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       var prev, next = ""
       var collectionList = List.empty[models.Collection]
       if (direction == "b") {
-        collectionList = collections.listCollectionsBefore(date, limit)
+        collectionList = collections.listCollectionsBefore(date, limit, space)
       } else if (direction == "a") {
-        collectionList = collections.listCollectionsAfter(date, limit)
+        collectionList = collections.listCollectionsAfter(date, limit, space)
       } else {
         badRequest
       }
 
       // latest object
-      val latest = collections.latest()
+      val latest = collections.latest(space)
       // first object
-      val first = collections.first()
+      val first = collections.first(space)
       var firstPage = false
       var lastPage = false
       if (latest.size == 1) {
@@ -138,7 +138,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 		}
 
       //Pass the viewMode into the view
-      Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode))
+      Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space))
   }
 
   def jsonCollection(collection: Collection): JsValue = {

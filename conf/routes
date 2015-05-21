@@ -69,7 +69,7 @@ POST           /uploadDragDrop                                                  
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 
 # Datasets
-GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+GET		/datasets					      @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "tile")
 GET     /datasets/userDatasets            @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile", email: String)
 GET     /datasets/new                     @controllers.Datasets.newDataset
 GET     /datasets/addToDataset/:id/:name/:desc     @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
@@ -80,7 +80,7 @@ GET     /datasets_by_section/:id          @controllers.Datasets.datasetBySection
 POST    /dataset/submit                   @controllers.Datasets.submit
 
 # Collections
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "tile")
 GET            /collections/new                                                         @controllers.Collections.newCollection
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)

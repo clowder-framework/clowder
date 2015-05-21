@@ -132,7 +132,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
     //    }
 
-    for(dataset <- datasets.listDatasets; tag <- dataset.tags) {
+    for(dataset <- datasets.listDatasets(); tag <- dataset.tags) {
       var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
       if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
       val map = tagMap(firstChar)
@@ -164,7 +164,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
 //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
 //    }
 
-    for(dataset <- datasets.listDatasets; tag <- dataset.tags) {
+    for(dataset <- datasets.listDatasets(); tag <- dataset.tags) {
       weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.dataset").getOrElse(1)
     }
 

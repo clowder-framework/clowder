@@ -62,7 +62,7 @@ class Datasets @Inject()(
       responseClass = "None", httpMethod = "GET")
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListDatasets)) {
     request =>
-      val list = datasets.listDatasets.map(datasets.toJSON(_))
+      val list = datasets.listDatasets().map(datasets.toJSON(_))
       Ok(toJson(list))
   }
 
@@ -75,12 +75,12 @@ class Datasets @Inject()(
 
       collections.get(collectionId) match {
         case Some(collection) => {
-          val list = for (dataset <- datasets.listDatasetsChronoReverse; if (!datasets.isInCollection(dataset, collection)))
+          val list = for (dataset <- datasets.listDatasetsChronoReverse(); if (!datasets.isInCollection(dataset, collection)))
           yield datasets.toJSON(dataset)
           Ok(toJson(list))
         }
         case None => {
-          val list = datasets.listDatasetsChronoReverse.map(datasets.toJSON(_))
+          val list = datasets.listDatasetsChronoReverse().map(datasets.toJSON(_))
           Ok(toJson(list))
         }
       }

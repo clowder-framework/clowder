@@ -15,27 +15,27 @@ trait DatasetService {
   /**
    * The number of datasets
    */
-  def count(): Long
+  def count(space: Option[String] = None): Long
 
   /**
    * List all datasets in the system.
    */
-  def listDatasets(): List[Dataset]
+  def listDatasets(space: Option[String] = None): List[Dataset]
   
   /**
    * List all datasets in the system in reverse chronological order.
    */
-  def listDatasetsChronoReverse(): List[Dataset]
+  def listDatasetsChronoReverse(space: Option[String] = None): List[Dataset]
   
   /**
    * List datasets after a specified date.
    */
-  def listDatasetsAfter(date: String, limit: Int): List[Dataset]
+  def listDatasetsAfter(date: String, limit: Int, space: Option[String] = None): List[Dataset]
   
   /**
    * List datasets before a specified date.
    */
-  def listDatasetsBefore(date: String, limit: Int): List[Dataset]
+  def listDatasetsBefore(date: String, limit: Int, space: Option[String] = None): List[Dataset]
   
   /**
    * List datasets that belong to a specific space. Empty list is returned if there
@@ -61,12 +61,12 @@ trait DatasetService {
   /**
    * Lastest dataset in chronological order.
    */
-  def latest(): Option[Dataset]
+  def latest(space: Option[String] = None): Option[Dataset]
 
   /**
    * First dataset in chronological order.
    */
-  def first(): Option[Dataset]
+  def first(space: Option[String] = None): Option[Dataset]
   
   /**
    * 

@@ -73,7 +73,7 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
     implicit request =>      
       implicit val user = request.user
       var direction = "b"
@@ -82,17 +82,17 @@ class Datasets @Inject()(
       var prev, next = ""
       var datasetList = List.empty[models.Dataset]
       if (direction == "b") {
-        datasetList = datasets.listDatasetsBefore(date, limit)
+        datasetList = datasets.listDatasetsBefore(date, limit, space)
       } else if (direction == "a") {
-        datasetList = datasets.listDatasetsAfter(date, limit)
+        datasetList = datasets.listDatasetsAfter(date, limit, space)
       } else {
         badRequest
       }
       
       // latest object
-      val latest = datasets.latest()
+      val latest = datasets.latest(space)
       // first object
-      val first = datasets.first()
+      val first = datasets.first(space)
       var firstPage = false
       var lastPage = false
       if (latest.size == 1) {
@@ -149,7 +149,7 @@ class Datasets @Inject()(
 		}
       
       //Pass the viewMode into the view
-      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
+      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space))
   }
 
   def userDatasets(when: String, date: String, limit: Int, mode: String, email: String)
@@ -229,7 +229,7 @@ class Datasets @Inject()(
           }
       }                       
       
-      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
+      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, None))
   }
 
   def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {

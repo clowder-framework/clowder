@@ -7,6 +7,7 @@ import com.mongodb.casbah.WriteConcern
 import models.{UUID, Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
+import org.bson.types.ObjectId
 import play.api.Logger
 import scala.util.Try
 import services.{DatasetService, CollectionService}
@@ -34,15 +35,23 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   /**
    * Count all collections
    */
-  def count(): Long = {
-    Collection.count(MongoDBObject())
+  def count(space: Option[String]): Long = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    Collection.count(filter)
   }
 
   /**
    * List all collections in the system.
    */
-  def listCollections(): List[Collection] = {
-    (for (collection <- Collection.find(MongoDBObject())) yield collection).toList
+  def listCollections(space: Option[String]): List[Collection] = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    Collection.find(filter).toList
   }
   
   /**
@@ -86,37 +95,49 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   /**
    * List all collections in the system in reverse chronological order.
    */
-  def listCollectionsChronoReverse(): List[Collection] = {
+  def listCollectionsChronoReverse(space: Option[String]): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
-    Collection.findAll.sort(order).toList
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    Collection.find(filter).sort(order).toList
   }
 
   /**
    * List collections after a specified date.
    */
-  def listCollectionsAfter(date: String, limit: Int): List[Collection] = {
+  def listCollectionsAfter(date: String, limit: Int, space: Option[String]): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
     if (date == "") {
-    	Collection.findAll.sort(order).limit(limit).toList
+    	Collection.find(filter).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
-      Collection.find("created" $lt sinceDate).sort(order).limit(limit).toList
+      Collection.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
 
   /**
    * List collections before a specified date.
    */
-  def listCollectionsBefore(date: String, limit: Int): List[Collection] = {
+  def listCollectionsBefore(date: String, limit: Int, space: Option[String]): List[Collection] = {
     var order = MongoDBObject("created" -> -1)
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
     if (date == "") {
-    	Collection.findAll.sort(order).limit(limit).toList
+    	Collection.find(filter).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("created" -> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
-      Collection.find("created" $gt sinceDate).sort(order).limit(limit).toList.reverse
+      Collection.find(filter ++ ("created" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
 
@@ -127,16 +148,24 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
     Collection.findOneById(new ObjectId(id.stringify))
   }
 
-  def latest(): Option[Collection] = {
-    val results = Collection.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
+  def latest(space: Option[String]): Option[Collection] = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    val results = Collection.find(filter).sort(MongoDBObject("created" -> -1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else
       None
   }
 
-  def first(): Option[Collection] = {
-    val results = Collection.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
+  def first(space: Option[String]): Option[Collection] = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    val results = Collection.find(filter).sort(MongoDBObject("created" -> 1)).limit(1).toList
     if (results.size > 0)
       Some(results(0))
     else

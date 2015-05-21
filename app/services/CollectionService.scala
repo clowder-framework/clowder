@@ -13,12 +13,12 @@ trait CollectionService {
   /**
    * The number of collections
    */
-  def count(): Long
+  def count(space: Option[String] = None): Long
 
   /**
    * List all collections in the system.
    */
-  def listCollections(): List[Collection]
+  def listCollections(space: Option[String] = None): List[Collection]
   
   /**
    * List collections that belong to a specific space. Empty list is returned if there
@@ -34,17 +34,17 @@ trait CollectionService {
   /**
    * List all collections in the system in reverse chronological order.
    */
-  def listCollectionsChronoReverse(): List[Collection]
+  def listCollectionsChronoReverse(space: Option[String] = None): List[Collection]
   
   /**
    * List collections after a specified date.
    */
-  def listCollectionsAfter(date: String, limit: Int): List[Collection]
+  def listCollectionsAfter(date: String, limit: Int, space: Option[String] = None): List[Collection]
   
   /**
    * List collections before a specified date.
    */
-  def listCollectionsBefore(date: String, limit: Int): List[Collection]
+  def listCollectionsBefore(date: String, limit: Int, space: Option[String] = None): List[Collection]
   
   /**
    * Get collection.
@@ -54,12 +54,12 @@ trait CollectionService {
   /**
    * Lastest collection in chronological order.
    */
-  def latest(): Option[Collection]
+  def latest(space: Option[String] = None): Option[Collection]
 
   /**
    * First collection in chronological order.
    */
-  def first(): Option[Collection]
+  def first(space: Option[String] = None): Option[Collection]
 
   /**
    * Create collection.

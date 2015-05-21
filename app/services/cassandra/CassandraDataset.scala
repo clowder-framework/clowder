@@ -17,35 +17,35 @@ class CassandraDataset extends DatasetService {
  /**
   * Count all datasets
   */
- def count(): Long = {
+ def count(space: Option[String]): Long = {
   -1
  }
 
  /**
    * List all datasets in the system.
    */
-  def listDatasets(): List[Dataset] = {
+  def listDatasets(space: Option[String]): List[Dataset] = {
     List.empty[Dataset]
   }
   
   /**
    * List all datasets in the system in reverse chronological order.
    */
-  def listDatasetsChronoReverse(): List[Dataset] = {
+  def listDatasetsChronoReverse(space: Option[String]): List[Dataset] = {
     List.empty[Dataset]
   }
   
   /**
    * List datasets after a specified date.
    */
-  def listDatasetsAfter(date: String, limit: Int): List[Dataset] = {
+  def listDatasetsAfter(date: String, limit: Int, space: Option[String]): List[Dataset] = {
     List.empty[Dataset]
   }
   
   /**
    * List datasets before a specified date.
    */
-  def listDatasetsBefore(date: String, limit: Int): List[Dataset] = {
+  def listDatasetsBefore(date: String, limit: Int, space: Option[String]): List[Dataset] = {
     List.empty[Dataset]
   }
   
@@ -68,12 +68,12 @@ class CassandraDataset extends DatasetService {
   /**
    * Lastest dataset in chronological order.
    */
-  def latest(): Option[Dataset] = None
+  def latest(space: Option[String]): Option[Dataset] = None
 
   /**
    * First dataset in chronological order.
    */
-  def first(): Option[Dataset] = None
+  def first(space: Option[String]): Option[Dataset] = None
 
   def insert(dataset: Dataset): Option[String] = None
 

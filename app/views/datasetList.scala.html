@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: String)(implicit user: Option[securesocial.core.Identity])
+@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: String, space: Option[String])(implicit user: Option[securesocial.core.Identity])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -77,8 +77,8 @@
 	        function updatePage() {
 	            var modUrl = "&mode=" + viewMode;
 	            console.log("updatePage - url is " + modUrl);
-	            $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit))" + modUrl);
-	            $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit))" + modUrl);
+	            $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit, space))" + modUrl);
+	            $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit, space))" + modUrl);
 	        }
         </script>
     </div>
