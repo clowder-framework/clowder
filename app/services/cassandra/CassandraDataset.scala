@@ -9,7 +9,7 @@ import models.File
 
 /**
  * Store datasets in Cassandra.
- * 
+ *
  * @author Luigi Marini
  *
  */
@@ -27,37 +27,44 @@ class CassandraDataset extends DatasetService {
   def listDatasets(): List[Dataset] = {
     List.empty[Dataset]
   }
-  
+
   /**
    * List all datasets in the system in reverse chronological order.
    */
   def listDatasetsChronoReverse(): List[Dataset] = {
     List.empty[Dataset]
   }
-  
+
   /**
    * List datasets after a specified date.
    */
   def listDatasetsAfter(date: String, limit: Int): List[Dataset] = {
     List.empty[Dataset]
   }
-  
+
   /**
    * List datasets before a specified date.
    */
   def listDatasetsBefore(date: String, limit: Int): List[Dataset] = {
     List.empty[Dataset]
   }
-  
+
   /**
    * @see app.services.DatasetService.scala
-   * 
+   *
    * Implementation of the DatasetService trait.
    */
   def listDatasetsBySpace(space: UUID): List[Dataset] = {
       List.empty[Dataset]
   }
-  
+
+  /**
+   * Implementation of a DatasetService trait.
+   */
+  def listDatasetsBySpaceWithLimit(space: UUID, limit: Int): List[Dataset] = {
+      List.empty[Dataset]
+  }
+
   /**
    * Get dataset.
    */
@@ -78,14 +85,14 @@ class CassandraDataset extends DatasetService {
   def insert(dataset: Dataset): Option[String] = None
 
   /**
-   * 
+   *
    */
   def listInsideCollection(collectionId: UUID) : List[Dataset] = {
     List.empty[Dataset]
   }
-  
+
   /**
-   * 
+   *
    */
   def isInCollection(dataset: Dataset, collection: Collection): Boolean  = {
     false
@@ -102,9 +109,9 @@ class CassandraDataset extends DatasetService {
   def isInCollection(datasetId: UUID, collectionId: UUID): Boolean = {
     return false
   }
-  
+
   def modifyRDFOfMetadataChangedDatasets(){}
-  
+
   def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1") {}
 
   def addMetadata(id: UUID, json: String) {}
@@ -168,7 +175,7 @@ class CassandraDataset extends DatasetService {
    * Implementation of updateLicenseing defined in services/DatasetService.scala.
    */
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {}
-  
+
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {}
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean) {}
@@ -194,7 +201,7 @@ class CassandraDataset extends DatasetService {
   def newThumbnail(datasetId: UUID) {}
 
   def update(dataset: Dataset) {}
-  
+
   def setNotesHTML(id: UUID, notesHTML: String) {}
 
   def addToSpace(dataset: UUID, space: UUID) {}
