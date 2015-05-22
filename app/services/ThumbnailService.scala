@@ -16,16 +16,21 @@ trait ThumbnailService {
   /**
    * Count all Thumbnails
    */
-  def count()
-
+  def count(): Long
 
   /**
    * List all Thumbnails in the system.
    */
   def listThumbnails(): List[Thumbnail]
 
+  /**
+   * Remove Thumbnail in the system with specific id:UUID value.
+   */
+  def removeThumbnail(id: UUID)
 
-
+  /**
+   * Retrieve information for specific thumbnail
+   */
   def get(thumbnailId: UUID): Option[Thumbnail]
 
   /**
