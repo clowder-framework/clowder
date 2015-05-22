@@ -88,10 +88,3 @@ documented in the application.conf file.
 If you are using the dist version of Clowder you can place your custom.conf and play.plugins in the custom folder in
 the root of the distribution. This allows you to easily save all your changes if you ever want to update your version
 of Clowder.
-
-## Funding
-
-Clowder is supported by the following grants:
-
-- Brown Dog is supported by the National Science Foundation under Grant No. ACI-1261582.
-- SEAD is funded by the National Science Foundation under cooperative agreement \#OCI0940824.
