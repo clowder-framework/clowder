@@ -562,3 +562,24 @@ textarea, input[type='text'], input[type='password']{
 .galleria-thumbnails-container { height: 62px;}
 
 .galleriaHelp{margin-bottom: 1%;}
+
+.galleria-fscr{
+    position:absolute;
+    bottom:2%;
+    right:2%;
+    z-index:4;
+    cursor: pointer;
+    font-size: 25px;
+}
+.galleria-fscr:before{
+	font-family:"Glyphicons Halflings";
+	content:"\e140";
+	line-height:1;
+  	margin:5px;
+}
+.galleria-fscr:hover{
+    color: #fff;
+}
+.galleria-fscr:active{
+    color: #fff;
+}
