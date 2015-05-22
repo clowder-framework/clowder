@@ -138,6 +138,9 @@ object ApplicationBuild extends Build {
     // custom/custom.conf                   - to customize application.conf
     scriptClasspath += "../custom",
 
+    // same for development mode
+    unmanagedClasspath in Runtime += baseDirectory.value / "custom",
+
     // add build number so we can use it in templates
     bashScriptExtraDefines += "addJava \"-Dbuild.version=" + version + "\"",
     bashScriptExtraDefines += "addJava \"-Dbuild.bamboo=" + getBambooBuild + "\"",
