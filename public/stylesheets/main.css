@@ -570,6 +570,7 @@ textarea, input[type='text'], input[type='password']{
     z-index:4;
     cursor: pointer;
     font-size: 25px;
+    color: #bbb;
 }
 .galleria-fscr:before{
 	font-family:"Glyphicons Halflings";
