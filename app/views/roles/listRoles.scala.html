@@ -25,7 +25,7 @@
                     @for(role <- roles) {
                         <tr><td>@role.name</td><td>@role.description</td><td>
                         @for(permission <- role.permissions){
-                            @permission
+                            @permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2"),
                             }
                         </td>
                         <td>

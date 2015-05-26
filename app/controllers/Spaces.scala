@@ -99,7 +99,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 	                    //This case catches spaces that have been created before users and roles were assigned to them.
 	                    if (aUser == creatorActual) {
 	                        role = "Admin"
-	                        Role.roleMap.get(role) match {
+	                        users.findRole(role) match {
 	                            case Some(realRole) => {
 	                                spaces.addUser(aUser.id, realRole, id)
 	                            }
@@ -112,7 +112,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 	            userRoleMap += (aUser -> role)
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, Role.roleList))
+          var roleList: List[String] = List.empty
+          users.listRoles().map{
+            role => roleList = role.name :: roleList
+          }
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, roleList))
       }
       case None => InternalServerError("Space not found")
     }

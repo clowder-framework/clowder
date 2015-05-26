@@ -130,9 +130,14 @@ trait UserService {
   def addRole(role: Role)
 
   /**
-   * Find existing role.
+   * Find existing role by id.
    */
   def findRole(id: String): Option[Role]
+
+  /**
+   * Find existing by name
+   */
+  def findRoleByName(name: String): Option[Role]
 
   /**
    * Delete role.
@@ -141,7 +146,7 @@ trait UserService {
 
   /**
    * Update role
-   * @param role
    */
   def updateRole(role: Role)
+
 }

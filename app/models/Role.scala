@@ -14,11 +14,3 @@ case class Role(
   description: String = "N/A",
   permissions: List[String] = List.empty
 )
-
-object Role {
-  val roleList: List[String] = List("Admin", "Power User", "User", "Guest")
-  var roleMap: Map[String, Role] = Map.empty
-  for (aRole <- roleList) {
-    roleMap += (aRole -> Role(name = aRole))
-  }
-}

@@ -378,7 +378,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     implicit val user = request.user
     user match {
       case Some(x) => {
-        Ok(views.html.roles.listRoles(userService.listRoles()))
+        Ok(views.html.roles.listRoles(userService.listRoles().sortWith(_.name.toLowerCase < _.name.toLowerCase)))
       }
     }
   }
@@ -396,9 +396,9 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     implicit val user = request.user
     user match {
       case Some(x) => {
-        var permissionMap = Map.empty[String, Boolean]
+        var permissionMap = SortedMap.empty[String, Boolean]
         Permission.values.map{
-          permission => permissionMap += (permission.toString() -> false)
+          permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> false)
 
         }
         Ok(views.html.roles.createRole(roleForm, permissionMap))
@@ -414,7 +414,11 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
           errors => BadRequest(views.html.roles.createRole(errors, Map.empty[String, Boolean])),
           formData => {
             Logger.debug("Creating role " + formData.name)
-            val role = Role(name = formData.name, description = formData.description, permissions = formData.permissions)
+            var permissionsList: List[String] = List.empty
+            formData.permissions.map {
+              permission => permissionsList = permission.toString().replace(" ", "") :: permissionsList;
+            }
+            val role = Role(name = formData.name, description = formData.description, permissions = permissionsList)
             userService.addRole(role)
             Redirect(routes.Admin.listRoles()).flashing("success" -> "Role created")
           }
@@ -445,18 +449,19 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       userService.findRole(id.stringify) match {
         case Some(s) => {
           var permissionMap = Map.empty[String, Boolean]
+          var permissionsList: List[String] = List.empty
           Permission.values.map{
             permission =>
               if(s.permissions.contains(permission.toString))
               {
-                permissionMap += (permission.toString() -> true)
+                permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> true)
               }
               else {
-                permissionMap += (permission.toString() -> false)
+                permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> false)
               }
-
+              permissionsList = permission.toString().replace(" ", "") :: permissionsList;
           }
-          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, s.permissions)), permissionMap))
+          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, permissionsList)), permissionMap))
         }
         case None => InternalServerError("Role not found")
       }
