@@ -1,10 +1,10 @@
 (function($, Configuration) {
-	console.log("Person tracking previewer for " + Configuration.id);	
+	console.log("Person tracking previewer for " + Configuration.id);    
 	
     var pathJs = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + Configuration.jsPath + "/";
 	
 	// retrieve the metadata
-    var jsRoutesObject = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.fileid);
+    var jsRoutesObject = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.id);
     var metadataApiUrl = jsRoutesObject.url;
 	var request = $.ajax({
 		type : "GET",
@@ -289,7 +289,7 @@
                 video.one('play', 
                     function (event) {
                         // Updating canvas width and height
-                        var canvasHeight = video.height() - 30;
+                        var canvasHeight = video.height() - 35;
                         var canvasWidth = video.width();
                         canvas.attr({width:canvasWidth,height:canvasHeight});                        
                     }
