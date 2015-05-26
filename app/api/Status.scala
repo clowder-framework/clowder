@@ -17,7 +17,8 @@ import scala.collection.mutable
  *
  * @author Rob Kooper
  */
-class Status @Inject()(collections: CollectionService,
+class Status @Inject()(spaces: SpaceService,
+                       collections: CollectionService,
                        datasets: DatasetService,
                        files: FileService,
                        users: UserService,
@@ -112,7 +113,8 @@ class Status @Inject()(collections: CollectionService,
   }
 
   def getCounts: JsValue = {
-    Json.obj("collections" -> collections.count(),
+    Json.obj("spaces" -> spaces.count(),
+      "collections" -> collections.count(),
       "datasets" -> datasets.count(),
       "files" -> files.count(),
       "users" -> users.count())
