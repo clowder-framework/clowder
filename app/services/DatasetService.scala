@@ -20,12 +20,12 @@ trait DatasetService {
   /**
    * List all datasets in the system.
    */
-  def listDatasets(space: Option[String] = None): List[Dataset]
+  def listDatasets(limit: Option[Integer] = None, space: Option[String] = None): List[Dataset]
 
   /**
    * List all datasets in the system in reverse chronological order.
    */
-  def listDatasetsChronoReverse(space: Option[String] = None): List[Dataset]
+  def listDatasetsChronoReverse(limit: Option[Integer] = None, space: Option[String] = None): List[Dataset]
 
   /**
    * List datasets after a specified date.
@@ -36,28 +36,6 @@ trait DatasetService {
    * List datasets before a specified date.
    */
   def listDatasetsBefore(date: String, limit: Int, space: Option[String] = None): List[Dataset]
-
-  /**
-   * List datasets that belong to a specific space. Empty list is returned if there
-   * are none that apply.
-   *
-   * @param spaceId The identifier for the space to be checked
-   *
-   * @return A List of Dataset objects that are assigned to the specified Space.
-   *
-   */
-  def listDatasetsBySpace(spaceId: UUID): List[Dataset]
-
-  /**
-   * List of Datasets for a given Space, but only the requested amount. An empty
-   * list is returned if none found.
-   *
-   * @param spaceId Identifies the space requested
-   * @param limit Limit the size of the list to this number of datasets
-   * @return List of datasets attached to the given space, bounded by 'limit'.
-   *
-   */
-  def listDatasetsBySpaceWithLimit(spaceId: UUID, limit: Int): List[Dataset]
 
   /**
    * Get dataset.

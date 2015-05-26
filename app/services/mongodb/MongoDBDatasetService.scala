@@ -57,77 +57,32 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
-   * List all datasets in the system.
+   * List datasets in the system.
    */
-  def listDatasets(space: Option[String]): List[Dataset] = {
+  def listDatasets(limit: Option[Integer], space: Option[String]): List[Dataset] = {
     val filter = space match {
       case Some(s) => MongoDBObject("space" -> new ObjectId(s))
       case None => MongoDBObject()
     }
-    Dataset.find(filter).toList
-  }
-
-  /**
-   * @see app.services.DatasetService.scala
-   *
-   * Implementation of the DatasetService trait.
-   */
-  def listDatasetsBySpace(spaceId: UUID): List[Dataset] = {
-      ProjectSpaceDAO.findOneById(new ObjectId(spaceId.stringify)) match {
-          case Some(aSpace) => {
-              val list = for (aDataset <- listDatasets(); if (isDatasetInSpace(aDataset, aSpace.id))) yield aDataset
-              list
-          }
-          case None => {
-              Logger.debug("No space found for the ID provided in listDatasetsBySpace.")
-              List.empty
-          }
-      }
-  }
-
-  /**
-   * Implementation of a DatasetService trait.
-   */
-  def listDatasetsBySpaceWithLimit(spaceId: UUID, limit: Int): List[Dataset] = {
-    val list = Dataset.findAll.sort(MongoDBObject("created"-> -1)).limit(limit).toList
-    if (list.size > 0) {
-      list
-    } else {
-      Logger.debug("No space found for the ID provided in listDatasetsBySpaceWithLimit.")
-      List.empty
+    limit match {
+      case Some(l) => Dataset.find(filter).limit(l).toList
+      case None => Dataset.find(filter).toList
     }
   }
 
   /**
-   * Helper method to check to see if a dataset belongs to a specified Space.
+   * List datasets in the system in reverse chronological order.
    */
-  def isDatasetInSpace(dataset: Dataset, spaceId: UUID): Boolean = {
-      dataset.space match {
-          case Some(storedId) => {
-              if (storedId == spaceId) {
-                  true
-              }
-              else {
-                  false
-              }
-          }
-          case None => {
-              Logger.debug("No stored space found on the dataset with id : " + dataset.name)
-              false
-          }
-      }
-  }
-
-  /**
-   * List all datasets in the system in reverse chronological order.
-   */
-  def listDatasetsChronoReverse(space: Option[String]): List[Dataset] = {
+  def listDatasetsChronoReverse(limit: Option[Integer], space: Option[String]): List[Dataset] = {
     val order = MongoDBObject("created"-> -1)
     val filter = space match {
       case Some(s) => MongoDBObject("space" -> new ObjectId(s))
       case None => MongoDBObject()
     }
-    Dataset.find(filter).sort(order).toList
+    limit match {
+      case Some(l) => Dataset.find(filter).sort(order).limit(l).toList
+      case None => Dataset.find(filter).sort(order).toList
+    }
   }
 
   /**

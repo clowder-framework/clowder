@@ -22,16 +22,16 @@ class CassandraDataset extends DatasetService {
  }
 
  /**
-   * List all datasets in the system.
+   * List datasets in the system.
    */
-  def listDatasets(space: Option[String]): List[Dataset] = {
+  def listDatasets(limit: Option[Integer], space: Option[String]): List[Dataset] = {
     List.empty[Dataset]
   }
 
   /**
-   * List all datasets in the system in reverse chronological order.
+   * List datasets in the system in reverse chronological order.
    */
-  def listDatasetsChronoReverse(space: Option[String]): List[Dataset] = {
+  def listDatasetsChronoReverse(limit: Option[Integer], space: Option[String]): List[Dataset] = {
     List.empty[Dataset]
   }
 
@@ -47,22 +47,6 @@ class CassandraDataset extends DatasetService {
    */
   def listDatasetsBefore(date: String, limit: Int, space: Option[String]): List[Dataset] = {
     List.empty[Dataset]
-  }
-
-  /**
-   * @see app.services.DatasetService.scala
-   *
-   * Implementation of the DatasetService trait.
-   */
-  def listDatasetsBySpace(space: UUID): List[Dataset] = {
-      List.empty[Dataset]
-  }
-
-  /**
-   * Implementation of a DatasetService trait.
-   */
-  def listDatasetsBySpaceWithLimit(space: UUID, limit: Int): List[Dataset] = {
-      List.empty[Dataset]
   }
 
   /**

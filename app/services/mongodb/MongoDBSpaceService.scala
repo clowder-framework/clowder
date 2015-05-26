@@ -43,7 +43,7 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def getCollectionsInSpace(spaceId: UUID): List[Collection] = {
-      collections.listCollectionsBySpace(spaceId)
+      collections.listCollections(None, Some(spaceId.stringify))
   }
 
   /**
@@ -53,14 +53,14 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def getDatasetsInSpace(spaceId: UUID): List[Dataset] = {
-      datasets.listDatasetsBySpace(spaceId)
+      datasets.listDatasets(None, Some(spaceId.stringify))
   }
 
   /**
    * Implementation of a SpaceService trait.
    */
   def getDatasetsInSpaceWithLimit(spaceId: UUID, limit: Int): List[Dataset] = {
-    datasets.listDatasetsBySpaceWithLimit(spaceId, limit)
+    datasets.listDatasets(Some(limit), Some(spaceId.stringify))
   }
 
   def insert(dataset: ProjectSpace): Option[String] = {

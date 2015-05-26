@@ -44,64 +44,32 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
   }
 
   /**
-   * List all collections in the system.
+   * List collections in the system.
    */
-  def listCollections(space: Option[String]): List[Collection] = {
+  def listCollections(limit: Option[Integer], space: Option[String]): List[Collection] = {
     val filter = space match {
       case Some(s) => MongoDBObject("space" -> new ObjectId(s))
       case None => MongoDBObject()
     }
-    Collection.find(filter).toList
-  }
-  
-  /**
-   * @see app.services.CollectionService.scala
-   * 
-   * Implementation of the CollectionService trait.
-   */
-  def listCollectionsBySpace(spaceId: UUID): List[Collection] = {
-      ProjectSpaceDAO.findOneById(new ObjectId(spaceId.stringify)) match {
-          case Some(aSpace) => {
-              val list = for (aCollection <- listCollections(); if (isCollectionInSpace(aCollection, aSpace.id))) yield aCollection
-              list
-          }
-          case None => {
-              Logger.debug("No space found for the ID provided in listCollectionsBySpace.")
-              List.empty
-          }
-      }
-  }
-  
-  /**
-   * Helper method to check to see if a collection belongs to a specified Space.
-   */
-  def isCollectionInSpace(collection: Collection, spaceId: UUID): Boolean = {
-      collection.space match {
-          case Some(storedId) => {              
-              if (storedId == spaceId) {
-                  true
-              }
-              else {
-                  false
-              }
-          }
-          case None => {
-              Logger.debug("No stored space found on the collection with id : " + collection.name)
-              false
-          }
-      }
+    limit match {
+      case Some(l) => Collection.find(filter).limit(l).toList
+      case None => Collection.find(filter).toList
+    }
   }
 
   /**
-   * List all collections in the system in reverse chronological order.
+   * List collections in the system in reverse chronological order.
    */
-  def listCollectionsChronoReverse(space: Option[String]): List[Collection] = {
+  def listCollectionsChronoReverse(limit: Option[Integer], space: Option[String]): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
     val filter = space match {
       case Some(s) => MongoDBObject("space" -> new ObjectId(s))
       case None => MongoDBObject()
     }
-    Collection.find(filter).sort(order).toList
+    limit match {
+      case Some(l) => Collection.find(filter).sort(order).limit(l).toList
+      case None => Collection.find(filter).sort(order).toList
+    }
   }
 
   /**

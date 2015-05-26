@@ -16,25 +16,14 @@ trait CollectionService {
   def count(space: Option[String] = None): Long
 
   /**
-   * List all collections in the system.
+   * List collections in the system.
    */
-  def listCollections(space: Option[String] = None): List[Collection]
-  
-  /**
-   * List collections that belong to a specific space. Empty list is returned if there
-   * are none that apply.
-   * 
-   * @param spaceId The identifier for the space to be checked
-   * 
-   * @return A List of Collection objects that are assigned to the specified Space.
-   * 
-   */
-  def listCollectionsBySpace(spaceId: UUID): List[Collection]
+  def listCollections(limit: Option[Integer] = None, space: Option[String] = None): List[Collection]
 
   /**
-   * List all collections in the system in reverse chronological order.
+   * List collections in the system in reverse chronological order.
    */
-  def listCollectionsChronoReverse(space: Option[String] = None): List[Collection]
+  def listCollectionsChronoReverse(limit: Option[Integer] = None, space: Option[String] = None): List[Collection]
   
   /**
    * List collections after a specified date.
