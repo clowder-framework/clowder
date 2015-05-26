@@ -35,25 +35,32 @@ class MongoDBSpaceService @Inject() (
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
   }
-  
+
   /**
    * @see app.services.SpaceService.scala
-   * 
+   *
    * Implementation of the SpaceService trait.
-   * 
+   *
    */
   def getCollectionsInSpace(spaceId: UUID): List[Collection] = {
       collections.listCollectionsBySpace(spaceId)
   }
-  
+
   /**
    * @see app.services.SpaceService.scala
-   * 
+   *
    * Implementation of the SpaceService trait.
-   * 
+   *
    */
   def getDatasetsInSpace(spaceId: UUID): List[Dataset] = {
       datasets.listDatasetsBySpace(spaceId)
+  }
+
+  /**
+   * Implementation of a SpaceService trait.
+   */
+  def getDatasetsInSpaceWithLimit(spaceId: UUID, limit: Int): List[Dataset] = {
+    datasets.listDatasetsBySpaceWithLimit(spaceId, limit)
   }
 
   def insert(dataset: ProjectSpace): Option[String] = {
@@ -202,14 +209,14 @@ class MongoDBSpaceService @Inject() (
     log.debug(s"Space Service - Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
   }
-  
+
   /**
    * Check if the time to live scope for a space is enabled.
-   * 
+   *
    * @param space The id of the space to check
-   * 
+   *
    * @return A Boolean, true if it is enabled, false otherwise or if there was an error
-   * 
+   *
    */
   def isTimeToLiveEnabled(space: UUID): Boolean = {
       get(space) match {
@@ -223,13 +230,13 @@ class MongoDBSpaceService @Inject() (
           }
       }
   }
-  
+
   /**
    * Retrieve the time to live value that a space is scoped by.
-   * 
+   *
    * @param space The id of the space to check
-   * 
-   * @return An Integer that represents that lifetime of resources in whole days. 
+   *
+   * @return An Integer that represents that lifetime of resources in whole days.
    */
   def getTimeToLive(space: UUID): Long = {
       get(space) match {
@@ -243,30 +250,30 @@ class MongoDBSpaceService @Inject() (
           }
       }
   }
-  
-  
+
+
   /**
    * Go through the resources in the space, currently Collections and Datasets, and remove their contents if the
    * last modified time on them is older than the time to live that is scoping the space.
-   * 
+   *
    *  @param space The id of the space to check
-   *   
+   *
    */
   def purgeExpiredResources(space: UUID): Unit = {
       var datasetsList = getDatasetsInSpace(space)
       var collectionsList = getCollectionsInSpace(space)
       val timeToLive = getTimeToLive(space)
       val currentTime = System.currentTimeMillis()
-      
+
       for (aDataset <- datasetsList) {
     	  val datasetTime = aDataset.lastModifiedDate.getTime()
     	  val difference = currentTime - datasetTime
     	  if (difference > timeToLive) {
-    	       //It was last modified longer than the time to live, so remove it.      
-    	       datasets.removeDataset(aDataset.id)    	       
+    	       //It was last modified longer than the time to live, so remove it.
+    	       datasets.removeDataset(aDataset.id)
     	  }
       }
-      
+
       for (aCollection <- collectionsList) {
           val collectionTime = aCollection.lastModifiedDate.getTime()
           val difference = currentTime - collectionTime
@@ -282,81 +289,81 @@ class MongoDBSpaceService @Inject() (
                           }
                           //Nothing to be done in the else case, as it will simply detach the dataset when the collection is deleted.
                       }
-                      
+
                       case None => {
                           //In this case, the dataset is in the default space, so do not remove it, it will detach on collection deletion.
                           log.debug("collection being purged contained a dataset in the default space. The dataset will not be deleted.")
                       }
-                  }                  
+                  }
               }
-              
+
               //Remove the collection. Any remaining datasets are to be simply detached.
               collections.delete(aCollection.id)
           }
       }
   }
-  
+
   /**
    * @see app.services.SpaceService.scala
-   * 
+   *
    * Implementation of the SpaceService trait.
-   * 
+   *
    */
   def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
-      val result = ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)), 
-          $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled), 
+      val result = ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
+          $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
           false, false, WriteConcern.Safe);
   }
-  
+
   /**
    * @see app.services.SpaceService.scala
-   * 
+   *
    * Implementation of the SpaceService trait.
-   * 
+   *
    */
-  def addUser(user: UUID, role: Role, space: UUID): Unit = {      
+  def addUser(user: UUID, role: Role, space: UUID): Unit = {
       users.addUserToSpace(user, role, space)
   }
 
   /**
    * @see app.services.SpaceService.scala
-   * 
+   *
    * Implementation of the SpaceService trait.
-   * 
+   *
    */
-  def removeUser(userId: UUID, space: UUID): Unit = {      
+  def removeUser(userId: UUID, space: UUID): Unit = {
       users.removeUserFromSpace(userId, space)
   }
-  
+
   /**
    * @see app.services.SpaceService.scala
-   * 
+   *
    * Implementation of the SpaceService trait.
-   * 
+   *
    */
-  def getUsersInSpace(spaceId: UUID): List[User] = {      
-      var retList = users.listUsersInSpace(spaceId)      
+  def getUsersInSpace(spaceId: UUID): List[User] = {
+      var retList = users.listUsersInSpace(spaceId)
       retList
   }
-  
+
   /**
    * @see app.services.SpaceService.scala
-   * 
+   *
    * Implementation of the SpaceService trait.
-   * 
+   *
    */
-  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Option[Role] = {      
-      var retRole = users.getUserRoleInSpace(userId, spaceId)      
+  def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Option[Role] = {
+      var retRole = users.getUserRoleInSpace(userId, spaceId)
       retRole
   }
 
   /**
    * @see app.services.SpaceService.scala
-   * 
+   *
    * Implementation of the SpaceService trait.
-   * 
+   *
    */
-  def changeUserRole(userId: UUID, role: Role, space: UUID): Unit = {      
+  def changeUserRole(userId: UUID, role: Role, space: UUID): Unit = {
       users.changeUserRoleInSpace(userId, role, space)
   }
 }

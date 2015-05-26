@@ -7,7 +7,7 @@ import models.File
 
 /**
  * Generic dataset service.
- * 
+ *
  * @author Luigi Marini
  *
  */
@@ -21,33 +21,44 @@ trait DatasetService {
    * List all datasets in the system.
    */
   def listDatasets(space: Option[String] = None): List[Dataset]
-  
+
   /**
    * List all datasets in the system in reverse chronological order.
    */
   def listDatasetsChronoReverse(space: Option[String] = None): List[Dataset]
-  
+
   /**
    * List datasets after a specified date.
    */
   def listDatasetsAfter(date: String, limit: Int, space: Option[String] = None): List[Dataset]
-  
+
   /**
    * List datasets before a specified date.
    */
   def listDatasetsBefore(date: String, limit: Int, space: Option[String] = None): List[Dataset]
-  
+
   /**
    * List datasets that belong to a specific space. Empty list is returned if there
    * are none that apply.
-   * 
+   *
    * @param spaceId The identifier for the space to be checked
-   * 
+   *
    * @return A List of Dataset objects that are assigned to the specified Space.
-   * 
+   *
    */
   def listDatasetsBySpace(spaceId: UUID): List[Dataset]
-  
+
+  /**
+   * List of Datasets for a given Space, but only the requested amount. An empty
+   * list is returned if none found.
+   *
+   * @param spaceId Identifies the space requested
+   * @param limit Limit the size of the list to this number of datasets
+   * @return List of datasets attached to the given space, bounded by 'limit'.
+   *
+   */
+  def listDatasetsBySpaceWithLimit(spaceId: UUID, limit: Int): List[Dataset]
+
   /**
    * Get dataset.
    */
@@ -67,17 +78,17 @@ trait DatasetService {
    * First dataset in chronological order.
    */
   def first(space: Option[String] = None): Option[Dataset]
-  
+
   /**
-   * 
+   *
    */
   def listInsideCollection(collectionId: UUID) : List[Dataset]
-  
+
   /**
    * Check if a dataset is in a specific collection.
    */
   def isInCollection(dataset: Dataset, collection: Collection): Boolean
-  
+
   /**
    * Get the id of a file based on its filename and dataset it belongs to.
    */
@@ -95,7 +106,7 @@ trait DatasetService {
 
 
   def modifyRDFOfMetadataChangedDatasets()
-  
+
 
 
   def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1")
@@ -189,12 +200,12 @@ trait DatasetService {
   def newThumbnail(datasetId: UUID)
 
   def update(dataset: Dataset)
-  
+
   /**
-   * Update the administrative information associated with the dataset. This information includes the owner, the 
+   * Update the administrative information associated with the dataset. This information includes the owner, the
    * description, and the date created. Currently, only the description is editable. In the future, other items
    * or new data may be added that will be editable.
-   * 
+   *
    * id: The id of the dataset
    * description: A String that represents the updated information for the dataset description.
    * name: A String that represents the updated name for this dataset.
@@ -203,7 +214,7 @@ trait DatasetService {
 
   /**
    * Update the license data that is currently associated with the dataset.
-   * 
+   *
    * id: The id of the dataset
    * licenseType: A String representing the type of license
    * rightsHolder: A String that is the free-text describing the owner of the license. Only required for certain license types

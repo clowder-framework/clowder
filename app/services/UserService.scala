@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, User}
+import models.{Role, UUID, User}
 import securesocial.core.Identity
 import models.Role
 
@@ -118,4 +118,30 @@ trait UserService {
    */
   def listUsersInSpace(spaceId: UUID): List[User]
   
+
+  /**
+   * List user roles.
+   */
+  def listRoles(): List[Role]
+
+  /**
+   * Add new role.
+   */
+  def addRole(role: Role)
+
+  /**
+   * Find existing role.
+   */
+  def findRole(id: String): Option[Role]
+
+  /**
+   * Delete role.
+   */
+  def deleteRole(id: String)
+
+  /**
+   * Update role
+   * @param role
+   */
+  def updateRole(role: Role)
 }

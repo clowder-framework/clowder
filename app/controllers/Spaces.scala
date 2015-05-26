@@ -1,20 +1,18 @@
 package controllers
 
 import java.net.URL
-import javax.inject.Inject
-import api.{Permission, WithPermission}
-import models.{Dataset, Collection, ProjectSpace, UUID}
-import play.api.Logger
-import play.api.data.{Forms, Form}
-import play.api.data.Forms._
 import java.util.Date
-import services.{UserService, SpaceService}
+import javax.inject.Inject
+
+import api.{Permission, WithPermission}
+import models.{ProjectSpace, Role, UUID, User}
+import play.api.Logger
+import play.api.data.Forms._
+import play.api.data.{Form, Forms}
+import services.{SpaceService, UserService}
 import util.Direction._
-import org.apache.commons.lang.StringEscapeUtils
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.ArrayBuffer
-import models.Role
-import models.User
+
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -64,16 +62,16 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   /**
    * Space main page.
    */
-  def getSpace(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
+  def getSpace(id: UUID, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
         case Some(s) => {
 	        val creator = users.findById(s.creator)
-	        var creatorActual: User = null 	
+	        var creatorActual: User = null
 	        val collectionsInSpace = spaces.getCollectionsInSpace(id)
-	
-	        val datasetsInSpace = spaces.getDatasetsInSpace(id)
-	        
+
+	        val datasetsInSpace = spaces.getDatasetsInSpaceWithLimit(id, limit)
+
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
@@ -83,21 +81,21 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 	            }
 	            case None => Logger.debug("-------- No creator for space found...")
 	        }
-	        
-	        
-	        var externalUsers = users.list.to[ArrayBuffer] 
-	        
+
+
+	        var externalUsers = users.list.to[ArrayBuffer]
+
 	        //inSpaceBuffer += externalUsers(0)
 	        externalUsers --= inSpaceBuffer
-	
+
 	        var userRoleMap: Map[User, String] = Map.empty
 	        for (aUser <- inSpaceBuffer) {
 	            var role = "What"
 	            spaces.getRoleForUserInSpace(id, aUser.id) match {
-	                case Some(aRole) => {	                    
+	                case Some(aRole) => {
 	                    role = aRole.name
 	                }
-	                case None => {	  
+	                case None => {
 	                    //This case catches spaces that have been created before users and roles were assigned to them.
 	                    if (aUser == creatorActual) {
 	                        role = "Admin"
@@ -106,11 +104,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 	                                spaces.addUser(aUser.id, realRole, id)
 	                            }
 	                            case None => Logger.debug("No Admin role found for some reason.")
-	                        }	                            
+	                        }
 	                    }
 	                }
 	            }
-	            
+
 	            userRoleMap += (aUser -> role)
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace

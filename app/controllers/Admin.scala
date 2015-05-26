@@ -1,8 +1,8 @@
 package controllers
 
 import api.{WithPermission, Permission}
-import models.{UUID, VersusIndexTypeName}
-import services.{SectionIndexInfoService, AppConfiguration, VersusPlugin}
+import models.{Role, UUID, VersusIndexTypeName}
+import services.{UserService, SectionIndexInfoService, AppConfiguration, VersusPlugin}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{Json, JsValue}
@@ -11,7 +11,11 @@ import scala.concurrent.Future
 import javax.inject.{Inject, Singleton}
 import play.api.data.Form
 import play.api.data.Forms._
-
+import scala.collection.{mutable, Map}
+import play.api.data.{Forms, Form}
+import scala.collection.immutable._
+import api._
+import play.api.mvc._
 /**
  * Administration pages.
  *
@@ -19,9 +23,8 @@ import play.api.data.Forms._
  * @author Inna Zharnitsky
  *
  */
-
 @Singleton
-class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
+class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService) extends SecuredController {
 
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val theme = AppConfiguration.getTheme
@@ -371,4 +374,123 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
     }
   }
 
+  def listRoles() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        Ok(views.html.roles.listRoles(userService.listRoles()))
+      }
+    }
+  }
+
+  val roleForm = Form(
+    mapping(
+    "id" -> optional(Utils.CustomMappings.uuidType),
+      "name" -> nonEmptyText,
+      "description" -> nonEmptyText,
+      "permissions" -> Forms.list(nonEmptyText)
+    )(roleFormData.apply)(roleFormData.unapply)
+  )
+
+  def createRole() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        var permissionMap = Map.empty[String, Boolean]
+        Permission.values.map{
+          permission => permissionMap += (permission.toString() -> false)
+
+        }
+        Ok(views.html.roles.createRole(roleForm, permissionMap))
+      }
+    }
+  }
+
+  def submitCreateRole() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        roleForm.bindFromRequest.fold(
+          errors => BadRequest(views.html.roles.createRole(errors, Map.empty[String, Boolean])),
+          formData => {
+            Logger.debug("Creating role " + formData.name)
+            val role = Role(name = formData.name, description = formData.description, permissions = formData.permissions)
+            userService.addRole(role)
+            Redirect(routes.Admin.listRoles()).flashing("success" -> "Role created")
+          }
+        )
+      }
+    }
+  }
+
+  def removeRole(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.UserAdmin), resourceId = Some(id)) {
+    implicit request =>
+    deleteRoleHelper(id, request)
+  }
+
+  def deleteRoleHelper(id: UUID, request: RequestWithUser[AnyContent]) = {
+    userService.findRole(id.stringify) match {
+      case Some(role) => {
+        userService.deleteRole(id.stringify)
+        Redirect(routes.Admin.listRoles()).flashing("success" -> "Role removed")
+      }
+      case None =>  Redirect(routes.Admin.listRoles()).flashing("success" -> "Role removed")
+    }
+  }
+
+  def editRole(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.UserAdmin), resourceId = Some(id))
+  {
+    implicit request =>
+      implicit val user = request.user
+      userService.findRole(id.stringify) match {
+        case Some(s) => {
+          var permissionMap = Map.empty[String, Boolean]
+          Permission.values.map{
+            permission =>
+              if(s.permissions.contains(permission.toString))
+              {
+                permissionMap += (permission.toString() -> true)
+              }
+              else {
+                permissionMap += (permission.toString() -> false)
+              }
+
+          }
+          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, s.permissions)), permissionMap))
+        }
+        case None => InternalServerError("Role not found")
+      }
+  }
+
+  def updateRole() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.UserAdmin))
+  {
+    implicit request =>
+      implicit val user = request.user
+      var permissionMap = Map.empty[String, Boolean]
+      Permission.values.map{
+        permission => permissionMap += (permission.toString() -> false)
+
+      }
+        roleForm.bindFromRequest.fold(
+        errors => BadRequest(views.html.roles.editRole(errors, permissionMap)),
+        formData =>
+        {
+          Logger.debug("Updating role " + formData.name)
+          userService.findRole(formData.id.get.toString) match {
+            case Some(role) =>
+            {
+              val updated_role = role.copy(name = formData.name  , description = formData.description, permissions = formData.permissions )
+              userService.updateRole(updated_role)
+              Redirect(routes.Admin.listRoles())
+            }
+            case None =>
+              BadRequest("The role does not exist")
+          }
+        })
+
+
+  }
+
 }
+
+case class roleFormData(id: Option[UUID], name: String, description: String, permissions: List[String])
