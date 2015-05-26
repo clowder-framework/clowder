@@ -1,4 +1,4 @@
-@(datasets: List[Dataset])(implicit user: Option[securesocial.core.Identity])
+@(datasets: List[Dataset], space: String)(implicit user: Option[securesocial.core.Identity])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -6,7 +6,7 @@
 
 <p>
     Most recent uploads:
-    <a href="@(routes.Datasets.list())" class="pull-right btn btn-default btn-xs">
+    <a href="@(routes.Datasets.list("", "", 12, Some(space)))" class="pull-right btn btn-default btn-xs">
         <span class="glyphicon glyphicon-hand-right"></span>
         All Datasets
     </a>

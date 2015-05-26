@@ -27,7 +27,7 @@
     <div class="row">
         <div class="col-md-8 space-col-left">
             @spaces.collectionsBySpace(collections)
-            @spaces.datasetsBySpace(datasets)
+            @spaces.datasetsBySpace(datasets, space.id.stringify)
         </div>
         <div class="col-md-4 space-col-right">
             @spaces.usersBySpace(space, creator, userRoleMap, externalUsers, roleList)
