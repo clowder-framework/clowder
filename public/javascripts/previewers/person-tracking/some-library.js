@@ -46,7 +46,9 @@
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
         var pathPopcornJS = pathJs + "popcorn-complete.min.js";
+        var videoFrameJS = pathJs + "VideoFrame.min.js";
         var sortedFrameDataArray = new Array();
+        var frameDataArray = new Array(); // To acommodate the cases where the extractor does not run from the first frame of the video
         
         var deferredGetScript = function(url) {
             var deferred = $.Deferred();
@@ -70,7 +72,8 @@
             deferredGetScript( pathFlotJS ),
             deferredGetScript( pathNavigateJS ),
             deferredGetScript( pathCrosshairJS ),
-            deferredGetScript( pathPopcornJS )
+            deferredGetScript( pathPopcornJS ),
+            deferredGetScript( videoFrameJS )
             /*,
             $.Deferred(function( deferred ){
                 $( deferred.resolve );
@@ -82,12 +85,18 @@
 
                 // Processing JSON data            
                 var jsonFrameArray = data[trackingMetadataIndex]["person-tracking-result"].frame;
-                var jsonFrameArrayLength = jsonFrameArray.length;            
+                var jsonFrameArrayLength = jsonFrameArray.length;
+                var videoHeight = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@video-height"]);
+                var videoWidth = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@video-width"]);
+                var videoFrameRate = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@frame-rate"]);
+
                 // Pass 1: Rearrange data
                 for(var i = 0; i < jsonFrameArrayLength; i++) {
                     var frameIndex = parseInt(jsonFrameArray[i]["@number"]);
                     var objList = jsonFrameArray[i].objectlist;                
                     if(typeof(objList) == 'object' && (objList != undefined || objList != null)){
+
+                        frameDataArray[frameIndex-1] = jsonFrameArray[i];
 
                         // When there is only one person in frame    
                         if(objList.object.length == undefined && objList.object["@id"]) {
@@ -200,62 +209,158 @@
                 //display video on screen and visualize person tracking
         		console.log("Updating tab " + Configuration.tab);    		
                 
-                //add video to display
+                //add video and canvas to display
                 $(Configuration.tab).append("<br/>");
-                $(Configuration.tab).append("<video width='750px' id='video' controls><source src='" + Configuration.url + "'></source></video>");
+                $(Configuration.tab).append("<div id='videoDiv' style='width: 750px; position: relative; top: 0px; left: 0px;'></div>");
+                $("#videoDiv").append("<video width='750px' id='video' controls><source src='" + Configuration.url + "'></source></video>");
+                $("#videoDiv").append("<canvas id='canvas' style='position: absolute; top: 0px; left: 0px;' ></canvas>");
                 
-                // add graph div div and legend div for jQuery flot
+                // add graph div and legend div for jQuery flot
                 $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-bottom: 20px; margin-top: 20px;'></div>");
         		$("#persontracking").append("<div id='placeholder' style='width: 650px; height: 400px; margin-right: 10px; float: left;'></div>");
     	    	$("#persontracking").append("<div id='legend' style='margin-right: 10px; margin-top: 10px; float: left;'></div>");
                 
+                var canvas = $("#canvas");
+                var video = $("#video");
+                var context = canvas[0].getContext('2d');
+
+                // Display bounding boxes on canvas
+                renderBoundingBoxes = function(frame) {
+
+                    context.clearRect(0, 0, canvas.width(), canvas.height()); 
+
+                    if(frameDataArray[frame-1] != null && frameDataArray[frame-1] != undefined){
+
+                        var objList = frameDataArray[frame-1].objectlist;
+                        var displayHeight = video.height();
+                        var displayWidth = video.width();
+                        var scaleHeight = displayHeight/videoHeight;
+                        var scaleWidth = displayWidth/videoWidth;
+
+                        // When there is only one person in frame    
+                        if(objList.object.length == undefined && objList.object["@id"]) {
+                            var personObj = objList.object;
+                            var id = parseInt(personObj["@id"]);
+
+                            var xCenter = parseInt(personObj.box["@xc"]) * scaleWidth;
+                            var yCenter = parseInt(personObj.box["@yc"]) * scaleHeight;
+                            var boxWidth = parseInt(personObj.box["@w"]) * scaleWidth;
+                            var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;
+                                                
+                            context.beginPath();
+                            context.strokeStyle = "#FF0000";
+                            context.lineWidth = 1;
+                            context.rect(xCenter - boxWidth/2, yCenter - boxHeight/2, boxWidth, boxHeight);
+                            context.stroke();
+                            context.closePath();
+                        }
+                        // When there are multiple people in a frame
+                        else if(objList.object.length > 0) {
+
+                            for(var j=0; j< objList.object.length; j++){                            
+                                var personObj = objList.object[j];
+                                var id = parseInt(personObj["@id"]);                                
+
+                                var xCenter = parseInt(personObj.box["@xc"]) * scaleWidth;
+                                var yCenter = parseInt(personObj.box["@yc"]) * scaleHeight;
+                                var boxWidth = parseInt(personObj.box["@w"]) * scaleWidth;
+                                var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;
+                                                    
+                                context.beginPath();
+                                context.strokeStyle = "#FF0000";
+                                context.lineWidth = 1;
+                                context.rect(xCenter - boxWidth/2, yCenter - boxHeight/2, boxWidth, boxHeight);
+                                context.stroke();
+                                context.closePath();
+                            }
+                        }
+
+                        
+                    }                        
+                }
+
+                var videoFrameObj = VideoFrame({
+                    id : 'video',
+                    frameRate: videoFrameRate,
+                    callback : renderBoundingBoxes
+                });
+
+                // Change the canvas dimensions the first time
+                video.one('play', 
+                    function (event) {
+                        // Updating canvas width and height
+                        var canvasHeight = video.height() - 30;
+                        var canvasWidth = video.width();
+                        canvas.attr({width:canvasWidth,height:canvasHeight});                        
+                    }
+                );
+
+                // Stop listening to frame change
+                video.on('pause', 
+                    function (event) {                        
+                        videoFrameObj.stopListen();
+                    }
+                );
+
+                // Displaying video through canvas
+                video.on('play', 
+                    function (event) {
+                        var $this = this; //cache
+                        videoFrameObj.listen('frame');
+                        (function loop() {
+                            if (!$this.paused && !$this.ended) {
+                                context.drawImage($this, 0, 0, video[0].clientWidth, video[0].clientHeight);
+                                setTimeout(loop, 1000 / videoFrameRate); // drawing at current frame rate
+                            }
+                        })();
+                    }
+                );
+
                 var totalFrames = 2000;
                 var maxFrames = 300;
-                var numPeople = sortedFrameDataArray.length + 1;
-                var fps = 30;
+                var numPeople = sortedFrameDataArray.length + 1;                
                 var offsetVal = 5;
 
                 var ticksArray = new Array();
 
-                var timeInSec = Math.ceil(totalFrames / fps);
+                var timeInSec = Math.ceil(totalFrames / videoFrameRate);
 
                 for (var i = 1; i <= timeInSec; i++) {
                     if( i % 2 != 0)
-                        ticksArray.push(i * fps);
+                        ticksArray.push(i * videoFrameRate);
                 }
                 
                 function timeTickFormatter (val, axis) {
-                            var hr = 0,
-                                min = 0,
-                                sec = 0,
-                                milli = 0;
-                            var fps = 30,
-                                calc = 0;
-                            sec = Math.floor(val / fps);
-                            min = Math.floor(sec / 60);
-                            sec = sec % 60;
+                    var hr = 0,
+                        min = 0,
+                        sec = 0,
+                        milli = 0;
+                    var calc = 0;
+                    sec = Math.floor(val / videoFrameRate);
+                    min = Math.floor(sec / 60);
+                    sec = sec % 60;
 
-                            hr = Math.floor(min / 60);
-                            min = min % 60;
-                            milli = Math.round((val % fps) * 1000 / fps);
+                    hr = Math.floor(min / 60);
+                    min = min % 60;
+                    milli = Math.round((val % videoFrameRate) * 1000 / videoFrameRate);
 
-                            var time = "";
+                    var time = "";
 
-                            if (hr != 0) {
-                                time += hr + ":";
-                            }
-                            if (min != 0) {
-                                time += min + ":";
-                            }
-                            if (sec != 0) {
-                                time += sec + ":";
-                            }
-                            if (milli != 0) {
-                                time += milli
-                            }
-                            return hr + ":" + min + ":" + sec + ":" + milli;
-                            //return val;
-                        }
+                    if (hr != 0) {
+                        time += hr + ":";
+                    }
+                    if (min != 0) {
+                        time += min + ":";
+                    }
+                    if (sec != 0) {
+                        time += sec + ":";
+                    }
+                    if (milli != 0) {
+                        time += milli
+                    }
+                    return hr + ":" + min + ":" + sec + ":" + milli;
+                    //return val;
+                }
 
                 var options = {
                     crosshair: {
@@ -348,7 +453,7 @@
                 var $pop = Popcorn("#video");
                 $pop.on("timeupdate", function () {
                     var currentTime = this.currentTime();
-                    var frameNumber = currentTime * fps
+                    var frameNumber = currentTime * videoFrameRate
                     crossHairPos = frameNumber;
                     setCrossHairPosition();
                 });
