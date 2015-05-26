@@ -1,37 +1,36 @@
 package services.mongodb
 
-import services._
-import models._
-import com.mongodb.casbah.commons.MongoDBObject
-import java.text.SimpleDateFormat
-import play.api.Logger
-import Transformation.LidoToCidocConvertion
-import java.util.ArrayList
 import java.io._
+import java.text.SimpleDateFormat
+import java.util.{ArrayList, Date}
+import javax.inject.{Inject, Singleton}
+
+import Transformation.LidoToCidocConvertion
+import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.util.JSON
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import jsonutils.JsonUtil
+import models.{File, _}
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
+import play.api.Logger
+import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
-import javax.inject.{Singleton, Inject}
-import com.mongodb.casbah.WriteConcern
-import com.mongodb.util.JSON
-import jsonutils.JsonUtil
+import services._
+import services.mongodb.MongoContext.context
 import util.Parsers
-import scala.collection.mutable.ListBuffer
-import collection.JavaConverters._
+
 import scala.collection.JavaConversions._
-import scala.Some
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
-import models.File
-import com.mongodb.casbah.Imports._
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import java.util.Date
 
 /**
  * Use Mongodb to store datasets.
- * 
+ *
  * @author Luigi Marini
  *
  */
@@ -61,7 +60,7 @@ class MongoDBDatasetService @Inject() (
 
   /**
    * @see app.services.DatasetService.scala
-   * 
+   *
    * Implementation of the DatasetService trait.
    */
   def listDatasetsBySpace(spaceId: UUID): List[Dataset] = {
@@ -76,13 +75,26 @@ class MongoDBDatasetService @Inject() (
           }
       }
   }
-  
+
+  /**
+   * Implementation of a DatasetService trait.
+   */
+  def listDatasetsBySpaceWithLimit(spaceId: UUID, limit: Int): List[Dataset] = {
+    val list = Dataset.findAll.sort(MongoDBObject("created"-> -1)).limit(limit).toList
+    if (list.size > 0) {
+      list
+    } else {
+      Logger.debug("No space found for the ID provided in listDatasetsBySpaceWithLimit.")
+      List.empty
+    }
+  }
+
   /**
    * Helper method to check to see if a dataset belongs to a specified Space.
    */
   def isDatasetInSpace(dataset: Dataset, spaceId: UUID): Boolean = {
       dataset.space match {
-          case Some(storedId) => {              
+          case Some(storedId) => {
               if (storedId == spaceId) {
                   true
               }
@@ -96,7 +108,7 @@ class MongoDBDatasetService @Inject() (
           }
       }
   }
-  
+
   /**
    * List all datasets in the system in reverse chronological order.
    */
@@ -151,14 +163,14 @@ class MongoDBDatasetService @Inject() (
       }
     }
   }
-  
+
   def isInCollection(dataset: Dataset, collection: Collection): Boolean = {
     for(collDataset <- collection.datasets){
       if(collDataset.id == dataset.id)
         return true
     }
     return false
-  }  
+  }
 
   /**
    * Get dataset.
@@ -546,26 +558,26 @@ class MongoDBDatasetService @Inject() (
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
-  
+
   /**
    * Implementation of updateInformation defined in services/DatasetService.scala.
    */
   def updateInformation(id: UUID, description: String, name: String) {
-      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
-          $set("description" -> description, "name" -> name), 
+      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+          $set("description" -> description, "name" -> name),
           false, false, WriteConcern.Safe);
   }
 
   /**
    * Implementation of updateLicenseing defined in services/DatasetService.scala.
    */
-  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {      
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {
       val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
-      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
-          $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
-          false, false, WriteConcern.Safe);      
+      val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+          $set("licenseData" -> LicenseData.toDBObject(licenseData)),
+          false, false, WriteConcern.Safe);
   }
-  
+
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
@@ -663,7 +675,7 @@ class MongoDBDatasetService @Inject() (
             val currValue = reqValue.asInstanceOf[String]
             if (keyTrimmed.endsWith("__not")) {
               if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if(!currValue.contains(" ANYWHERE")){
                   realValue = "^"+realValue+"$";
                 }
@@ -678,7 +690,7 @@ class MongoDBDatasetService @Inject() (
             }
             else {
               if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if(!currValue.contains(" ANYWHERE")){
                   realValue = "^"+realValue+"$";
                 }
@@ -714,7 +726,7 @@ class MongoDBDatasetService @Inject() (
                 val currValue = reqValue.asInstanceOf[String]
                 if (keyTrimmed.endsWith("__not")) {
                   if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
 	                if(!currValue.contains(" ANYWHERE")){
 	                  realValue = "^"+realValue+"$";
 	                }
@@ -729,7 +741,7 @@ class MongoDBDatasetService @Inject() (
                 }
                 else {
                   if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
 	                if(!currValue.contains(" ANYWHERE")){
 	                  realValue = "^"+realValue+"$";
 	                }
@@ -950,24 +962,24 @@ class MongoDBDatasetService @Inject() (
 
         val xmlMd = getXMLMetadataJSON(id)
         Logger.debug("xmlmd=" + xmlMd)
-        
+
         var fileDsId = ""
-        var fileDsName = ""          
+        var fileDsName = ""
         for(file <- dataset.files){
           fileDsId = fileDsId + file.id.stringify + "  "
           fileDsName = fileDsName + file.filename + "  "
         }
-        
+
         var dsCollsId = ""
         var dsCollsName = ""
-          
+
         for(collection <- collections.listInsideDataset(dataset.id)){
           dsCollsId = dsCollsId + collection.id.stringify + " %%% "
           dsCollsName = dsCollsName + collection.name + " %%% "
         }
 
         val formatter = new SimpleDateFormat("dd/MM/yyyy")
-       
+
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "dataset", id,
             List(("name", dataset.name), ("description", dataset.description), ("author",dataset.author.fullName),("created",formatter.format(dataset.created)), ("fileId",fileDsId),("fileName",fileDsName), ("collId",dsCollsId),("collName",dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
@@ -976,7 +988,7 @@ class MongoDBDatasetService @Inject() (
       case None => Logger.error("Dataset not found: " + id)
     }
   }
-  
+
   def setNotesHTML(id: UUID, notesHTML: String){
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
