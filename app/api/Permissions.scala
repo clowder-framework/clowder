@@ -7,11 +7,7 @@ import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
 import play.api.Play.configuration
-<<<<<<< HEAD
 import services._
-=======
-import services.{CollectionService, DatasetService, FileService, SectionService, AppConfiguration}
->>>>>>> origin/develop
 
  /**
   * A request that adds the User for the current call
@@ -101,7 +97,6 @@ case class WithPermission(permission: Permission) extends Authorization {
   val files: FileService = services.DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = services.DI.injector.getInstance(classOf[DatasetService])
 	val collections: CollectionService = services.DI.injector.getInstance(classOf[CollectionService])
-  val collections: CollectionService = services.DI.injector.getInstance(classOf[CollectionService])
   val sections: SectionService = services.DI.injector.getInstance(classOf[SectionService])
 	val spaces: SpaceService = services.DI.injector.getInstance(classOf[SpaceService])
 

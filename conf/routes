@@ -78,7 +78,6 @@ GET            /datasets/generalMetadataSearch                                  
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
->>>>>>> origin/feature/spaces
 
 # Collections
 GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "tile")
@@ -284,7 +283,6 @@ POST           /api/spaces/:id/updateUsers                                      
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
 # ----------------------------------------------------------------------
-<<<<<<< HEAD
 GET            /api/collections                                                         @api.Collections.listCollections
 POST           /api/collections                                                         @api.Collections.createCollection()
 GET            /api/collections/list                                                    @api.Collections.listCollections
