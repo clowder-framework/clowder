@@ -1,8 +1,8 @@
-@(collections: List[Collection])(implicit user: Option[securesocial.core.Identity])
+@(collections: List[Collection], space: String)(implicit user: Option[securesocial.core.Identity])
 
 <h3>Collections</h3>
 @if(collections.size == 0) {
     <p>You can add a collection to this space from a collection page.</p>
 } else {
-    @spaces.collectionsGrid(collections)
+    @spaces.collectionsGrid(collections, space)
 }
