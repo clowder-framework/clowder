@@ -91,7 +91,7 @@ function rubberbandFormSubmit(prNum) {
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify({
-            file_id: window["configsFileId" + prNum],
+            file_id: Configuration["id"],
             area: {
                 x: x,
                 y: y,
