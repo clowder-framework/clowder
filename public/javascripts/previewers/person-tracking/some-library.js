@@ -61,7 +61,8 @@
                 deferred.resolve( data );
             })
             .fail(function(err) {
-                deferred.notify( "deferred notify fail for " + url);                
+                deferred.notify( "deferred notify fail for " + url); 
+                console.log("Falied to load: " + url);
                 deferred.reject(err)
             });
 
@@ -477,8 +478,8 @@
                 $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, invalid person tracking metadata. Preview generation failed.</h4></div>');
             }
         })
-        .fail(function(jqxhr, settings, exception){
-            console.log("Failed to load JS scripts.");
+        .fail(function(jqxhr){
+            console.log("Failed to load JS scripts.");            
             console.log("Updating tab " + Configuration.tab);
             $(Configuration.tab).append("<br/>");
             $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, data loading failed. Please refresh and try again.</h4></div>');
