@@ -249,7 +249,7 @@
                             var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;
                                                 
                             context.beginPath();
-                            context.strokeStyle = "#FF0000";
+                            context.strokeStyle = series[0].color;
                             context.lineWidth = 1;
                             context.rect(xCenter - boxWidth/2, yCenter - boxHeight/2, boxWidth, boxHeight);
                             context.stroke();
@@ -265,10 +265,10 @@
                                 var xCenter = parseInt(personObj.box["@xc"]) * scaleWidth;
                                 var yCenter = parseInt(personObj.box["@yc"]) * scaleHeight;
                                 var boxWidth = parseInt(personObj.box["@w"]) * scaleWidth;
-                                var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;
+                                var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;                            
                                                     
                                 context.beginPath();
-                                context.strokeStyle = "#FF0000";
+                                context.strokeStyle = series[j].color;
                                 context.lineWidth = 1;
                                 context.rect(xCenter - boxWidth/2, yCenter - boxHeight/2, boxWidth, boxHeight);
                                 context.stroke();
@@ -424,7 +424,8 @@
                     }
                 }
                 var placeholder = $("#placeholder");
-                plot = $.plot(placeholder, sortedFrameDataArray, options);           
+                plot = $.plot(placeholder, sortedFrameDataArray, options);
+                series = plot.getData();
 
                panPlot = function () {
                     plot.getOptions().xaxes[0].min += offsetVal;
@@ -483,8 +484,7 @@
             console.log("Updating tab " + Configuration.tab);
             $(Configuration.tab).append("<br/>");
             $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, data loading failed. Please refresh and try again.</h4></div>');
-        });
-	    
-	});	
+        });	    
+	});
 	
 }(jQuery, Configuration));
