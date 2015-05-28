@@ -7,7 +7,7 @@ import securesocial.core.Identity
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Request
 import play.api.Play.configuration
-import services.{CollectionService, DatasetService, FileService, AppConfiguration}
+import services.{CollectionService, DatasetService, FileService, SectionService, AppConfiguration}
 
  /**
   * A request that adds the User for the current call
@@ -93,6 +93,7 @@ case class WithPermission(permission: Permission) extends Authorization {
   val files: FileService = services.DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = services.DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = services.DI.injector.getInstance(classOf[CollectionService])
+  val sections: SectionService = services.DI.injector.getInstance(classOf[SectionService])
 
 	def isAuthorized(user: Identity): Boolean = {
 		isAuthorized(if (user == null) None else Some(user), None)
@@ -223,10 +224,29 @@ case class WithPermission(permission: Permission) extends Authorization {
 
 				case CreateCollections => Some(checkCollectionOwnership(user, resource.get))
 				case DeleteCollections => Some(checkCollectionOwnership(user, resource.get))
+				
+				case AddSections => Some(checkSectionOwnership(user, resource.get))
+				
 				case _ => None
 			}
 		} else {
 			None
+		}
+	}
+	
+	/**
+	 * Check to see if the user is the owner of the section pointed to by the resource.
+	 * Works by checking the ownership of the file the section belongs to.
+	 */
+	def checkSectionOwnership(user: Option[Identity], resource: UUID): Boolean = {
+		sections.get(resource) match {
+			case Some(section) =>{
+			  checkFileOwnership(user, section.file_id)
+			}
+			case None => {
+				Logger.error("Section requested to be accessed not found. Denying request.")
+				false
+			}
 		}
 	}
 

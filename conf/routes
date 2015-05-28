@@ -377,17 +377,20 @@ POST           /api/previews                                                    
 POST           /api/indexes                                                             @api.Indexes.index
 POST           /api/indexes/features                                                    @api.Indexes.features
 
+
 # ----------------------------------------------------------------------
 # SECTIONS ENDPOINT
 # ----------------------------------------------------------------------
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
+POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
 POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
 POST           /api/sections/:id/tags/remove_all                                        @api.Sections.removeAllTags(id: UUID)
 DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
+
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
@@ -424,7 +427,7 @@ GET            /geostreams                                                      
 # ----------------------------------------------------------------------
 POST           /api/fileThumbnail                                                       @api.Thumbnails.uploadThumbnail
 GET            /api/thumbnails                                                          @api.Thumbnails.list
-DELETE	       /api/thumbnails/:id											            @api.Thumbnails.removeThumbnail(id: UUID)
+DELETE         /api/thumbnails/:id                                                      @api.Thumbnails.removeThumbnail(id: UUID)
 
 
 # ----------------------------------------------------------------------
