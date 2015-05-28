@@ -1,11 +1,8 @@
 package services
 
 import java.io.InputStream
-import models.{UUID, Thumbnail, File}
+import models.{UUID, Thumbnail}
 
-import play.api.libs.json._
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json._
 
 /**
  * Created by lmarini on 2/27/14.
@@ -23,10 +20,6 @@ trait ThumbnailService {
    */
   def listThumbnails(): List[Thumbnail]
 
-  /**
-   * Remove Thumbnail in the system with specific id:UUID value.
-   */
-  def removeThumbnail(id: UUID)
 
   /**
    * Retrieve information for specific thumbnail

@@ -1,14 +1,12 @@
 package api
 
-import controllers.Utils
-import play.api.Play._
+
 import play.api.mvc.Controller
 import java.io.FileInputStream
 import play.api.libs.json.Json._
-import play.api.libs.json._
 import play.api.Logger
 import javax.inject.{Inject, Singleton}
-import services.{AdminsNotifierPlugin, ElasticsearchPlugin, VersusPlugin, ThumbnailService}
+import services.{ThumbnailService}
 
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
@@ -39,30 +37,23 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
 
   @ApiOperation(value = "Delete thumbnail",
     notes = "Remove thumbnail file from system).",
-    responseClass = "None", httpMethod = "DELETE")
+    responseClass = "None", httpMethod = "POST")
   def removeThumbnail(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteThumbnails)) {
     request =>
       thumbnails.get(id) match {
         case Some(thumbnail) => {
 
-          //this stmt has to be before files.removeFile
-          Logger.debug("Deleting file from indexes" + thumbnail.filename)
-          current.plugin[VersusPlugin].foreach {
-            _.removeFromIndexes(id)
-          }
           Logger.debug("Deleting file: " + thumbnail.filename)
-          thumbnails.removeThumbnail(id)
+          thumbnails.remove(id)
 
-          Ok(toJson(Map("status"->"success")))
-          current.plugin[AdminsNotifierPlugin].foreach{
-            _.sendAdminsNotification(Utils.baseUrl(request), "File","removed",id.stringify, getFilenameOrEmpty(thumbnail))}
           Ok(toJson(Map("status"->"success")))
         }
-        case None => Ok(toJson(Map("status" -> "success")))
+        case None => {
+          Logger.debug("Couldn't find thumbnail")
+          Ok(toJson(Map("status" -> "success")))
+        }
       }
   }
-
-
 
 
 
@@ -96,16 +87,11 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
   }
 
 
-  def getFilenameOrEmpty(thumbanail: Thumbnail): String = {
-    thumbanail.filename match {
+  def getFilenameOrEmpty(thumbnail: Thumbnail): String = {
+    thumbnail.filename match {
       case Some(string) => string
       case None => ""
     }
   }
-
-//  def jsonFile(file: File): JsValue = {
-//    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
-//      "authorId" -> file.author.identityId.userId))
-//  }
 
 }

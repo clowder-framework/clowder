@@ -424,7 +424,7 @@ GET            /geostreams                                                      
 # ----------------------------------------------------------------------
 POST           /api/fileThumbnail                                                       @api.Thumbnails.uploadThumbnail
 GET            /api/thumbnails                                                          @api.Thumbnails.list
-DELETE	       /api/thumbnais/:id											            @api.Thumbnails.removeThumbnail(id: UUID)
+DELETE	       /api/thumbnails/:id											            @api.Thumbnails.removeThumbnail(id: UUID)
 
 
 # ----------------------------------------------------------------------
