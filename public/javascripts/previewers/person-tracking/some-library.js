@@ -46,15 +46,20 @@
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
         var pathPopcornJS = pathJs + "popcorn-complete.min.js";
-        var videoFrameJS = pathJs + "VideoFrame.min.js";
+        var pathVideoFrameJS = pathJs + "VideoFrame.min.js";
         var sortedFrameDataArray = new Array();
         var frameDataArray = new Array(); // To acommodate the cases where the extractor does not run from the first frame of the video
         
-        var deferredGetScript = function(url) {
+        var syncGetScript = function(url){
             var deferred = $.Deferred();
 
-            $.getScript( url, function() {
-                deferred.notify( "deferred notify GET for " + url );
+            $.ajax({
+                url: url,
+                dataType: "script",
+                async: false,
+                success: function(data){
+                    deferred.notify( "deferred notify GET for " + url );                  
+                }
             })
             .done(function(data) {
                 deferred.notify( "deferred notify done for " + url );
@@ -62,23 +67,53 @@
             })
             .fail(function(err) {
                 deferred.notify( "deferred notify fail for " + url); 
-                console.log("Falied to load: " + url);
+                console.log("Failed to load: " + url);
+                deferred.reject(err)
+            });
+
+            return deferred.promise();
+        }
+
+        var deferredGetScript = function(url) {
+            var deferred = $.Deferred();            
+
+            $.getScript( url, function(xhr) {
+                deferred.notify( "deferred notify GET for " + url );
+
+            })
+            .done(function(data) {
+                deferred.notify( "deferred notify done for " + url );
+                deferred.resolve( data );
+            })
+            .fail(function(err) {
+                deferred.notify( "deferred notify fail for " + url); 
+                console.log("Failed to load: " + url);
                 deferred.reject(err)
             });
 
             return deferred.promise();
         };
 
-        $.when(
-            deferredGetScript( pathFlotJS ),
-            deferredGetScript( pathNavigateJS ),
-            deferredGetScript( pathCrosshairJS ),
-            deferredGetScript( pathPopcornJS ),
-            deferredGetScript( videoFrameJS )
-            /*,
-            $.Deferred(function( deferred ){
-                $( deferred.resolve );
-            })*/
+        /*var deferredFotJS = deferredGetScript( pathFlotJS );
+        var deferredNavigateJS = deferredGetScript( pathNavigateJS );
+        var deferredCrosshairJS = deferredGetScript( pathCrosshairJS );
+        var deferredPopcornJS = deferredGetScript( pathPopcornJS );
+        var deferredVideoFrameJS = deferredGetScript( pathVideoFrameJS );*/
+
+        var syncFlotJS = syncGetScript( pathFlotJS );
+        var syncNavigateJS = syncGetScript( pathNavigateJS );
+        var syncCrosshairJS = syncGetScript( pathCrosshairJS );
+        var syncPopcornJS = syncGetScript( pathPopcornJS );
+        var syncVideoFrameJS = syncGetScript( pathVideoFrameJS );
+
+
+        $.when(            
+            syncFlotJS,
+            syncNavigateJS,
+            syncCrosshairJS,
+            syncPopcornJS,
+            syncVideoFrameJS
+
         ).done(function(){
             console.log("downloaded JS sciprts");
 
