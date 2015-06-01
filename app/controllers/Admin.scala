@@ -414,11 +414,11 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
           errors => BadRequest(views.html.roles.createRole(errors, Map.empty[String, Boolean])),
           formData => {
             Logger.debug("Creating role " + formData.name)
-            var permissionsList: List[String] = List.empty
+            var permissionsSet: SortedSet[String] = SortedSet.empty
             formData.permissions.map {
-              permission => permissionsList = permission.toString().replace(" ", "") :: permissionsList;
+              permission => permissionsSet += permission.toString().replace(" ", "")
             }
-            val role = Role(name = formData.name, description = formData.description, permissions = permissionsList)
+            val role = Role(name = formData.name, description = formData.description, permissions = permissionsSet)
             userService.addRole(role)
             Redirect(routes.Admin.listRoles()).flashing("success" -> "Role created")
           }
@@ -448,8 +448,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       implicit val user = request.user
       userService.findRole(id.stringify) match {
         case Some(s) => {
-          var permissionMap = Map.empty[String, Boolean]
-          var permissionsList: List[String] = List.empty
+          var permissionMap = SortedMap.empty[String, Boolean]
+          var permissionsSet: SortedSet[String] = SortedSet.empty
           Permission.values.map{
             permission =>
               if(s.permissions.contains(permission.toString))
@@ -459,9 +459,9 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
               else {
                 permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> false)
               }
-              permissionsList = permission.toString().replace(" ", "") :: permissionsList;
+              permissionsSet += permission.toString().replace(" ", "")
           }
-          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, permissionsList)), permissionMap))
+          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, permissionsSet.toList)), permissionMap))
         }
         case None => InternalServerError("Role not found")
       }
@@ -484,7 +484,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
           userService.findRole(formData.id.get.toString) match {
             case Some(role) =>
             {
-              val updated_role = role.copy(name = formData.name  , description = formData.description, permissions = formData.permissions )
+              val updated_role = role.copy(name = formData.name  , description = formData.description, permissions = formData.permissions.toSet )
               userService.updateRole(updated_role)
               Redirect(routes.Admin.listRoles())
             }

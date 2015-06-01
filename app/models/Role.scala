@@ -12,5 +12,5 @@ case class Role(
   id: UUID = UUID.generate,
   name: String = "N/A",
   description: String = "N/A",
-  permissions: List[String] = List.empty
+  permissions: Set[String] = Set.empty
 )
