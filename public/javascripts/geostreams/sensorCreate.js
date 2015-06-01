@@ -182,15 +182,18 @@ $(document).ready(function() {
           console.log(streamJSON);
           deferredStreams.push(deferredPost(mediciStreamsURL, JSON.stringify(streamJSON)));
         });
+
+        $.when.apply($, deferredStreams).done(function(data) {
+          console.log("should redirect now.");
+          // redirect removing the "/new" from the current href
+          // necessary until we add the Geostreams to the @controllers
+          window.location.href = window.location.href.substring(0, window.location.href.length - 4);
+        });
+        
       });
     });
 
-    $.when.apply($, deferredStreams).done(function(data) {
-        console.log("should redirect now.");
-        // redirect removing the "/new" from the current href
-        // necessary until we add the Geostreams to the @controllers
-        window.location.href = window.location.href.substring(0, window.location.href.length - 4);
-    });
+
   });
 
   if (window.L) {
