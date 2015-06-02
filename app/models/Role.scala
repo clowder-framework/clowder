@@ -1,7 +1,5 @@
 package models
 
-import api.Permission.Permission
-
 /**
  * A role is a set of permissions. Permissions are defined in api.Permissions.
  * Roles are defined by system administrators.

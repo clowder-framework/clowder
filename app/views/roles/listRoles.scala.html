@@ -23,7 +23,8 @@
                 <table class="table">
                     <thead><tr><th>Name</th><th>Description</th><th>Permissions</th><th>Edit / Delete</th></tr></thead>
                     @for(role <- roles) {
-                        <tr><td>@role.name</td><td>@role.description</td><td>
+                        <tr><td>@role.name</td><td>@role.description</td><td id="permission">
+
                         @for(permission <- role.permissions){
                             @permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2"),
                             }
@@ -38,4 +39,20 @@
             }
         </div>
     </div>
+    <script languate ="javascript">
+        //Changes the id's in the permissions. And replaces the last ',' with a '.'
+        var renumberpermission = function() {
+        Array.prototype.reduce.call($('td#permission'), function(i, next) {
+        var input = $(next);
+        input.attr('id', input.attr('id')+ '_' + i + '_');
+        var text = input.html();
+        input.replaceWith(text.substring(0, text.lastIndexOf(',') - 1) + ".");
+        if(input.attr('id').match(/permission_\d+|/)) {
+        return i + 1;
+        }
+        return i;
+        }, 0);
+        }
+        renumberpermission();
+    </script>
 }
