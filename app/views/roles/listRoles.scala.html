@@ -47,7 +47,7 @@
                 input.attr('id', input.attr('id')+ '_' + i + '_');
                 var text = input.html();
                 if(text.trim()) {
-                    input.replaceWith("<td>"+ text.substring(0, text.lastIndexOf(',') - 1) + ".</td>");
+                    input.replaceWith("<td>"+ text.substring(0, text.lastIndexOf(',')) + ".</td>");
                 }
 
                 if(input.attr('id').match(/permission_\d+|/)) {
