@@ -116,7 +116,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
           users.listRoles().map{
             role => roleList = role.name :: roleList
           }
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, roleList))
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, roleList.sorted))
       }
       case None => InternalServerError("Space not found")
     }
