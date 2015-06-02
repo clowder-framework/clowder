@@ -73,7 +73,7 @@
 					<dt> Name:</dt>
 					<dd><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></dd>
 					<dt>  Descriptions:</dt>
-					<dd> @dataset.description</dd>
+					<dd> @Html(dataset.description)</dd>
 					<dt>Collection name(s):</dt>
 					<dd>
 						@for(currMapping <- mapcollectionIds.get(dataset.id.toString).get){
@@ -109,7 +109,7 @@
 					<dt> Name:</dt>
 					<dd><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></dd>
 					<dt>  Description:</dt>
-					<dd> @collection.description</dd>
+					<dd> @Html(collection.description)</dd>
 				</dl>
 			</div>
 		</div>

@@ -32,7 +32,7 @@
 						<dd>@collection.author.get.fullName</dd>
 					}
 					<dt>Description:</dt>
-					<dd>@collection.description</dd>																						            
+					<dd>@Html(collection.description)</dd>
 				</dl>
 				@if(user.isDefined) {
                             <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
@@ -88,7 +88,7 @@
 					<tr data-datasetId="@(dataset.id.toString)">
 						<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
-						<td style="white-space:pre-line;">@dataset.description</td>
+						<td>@Html(dataset.description)</td>
 						<td>
 							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}

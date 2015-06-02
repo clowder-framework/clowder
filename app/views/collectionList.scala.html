@@ -96,7 +96,7 @@
                         }
                         <div class="caption break-word">
                             <h4><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></h4>
-                            <p>@ellipsize(collection.description, 200)</p>
+                            <p>@Html(ellipsize(collection.description, 200))</p>
                         </div>
                     </div>                    
                     <!-- Collection Info -->
@@ -148,7 +148,7 @@
 					<tr>
 						<td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></td>
 						<td>@collection.created.format("MMM dd, yyyy")</td>
-						<td style="white-space:pre-line">@collection.description</td>
+						<td>@Html(collection.description)</td>
 						<td>
 							@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(collection.name)" width="120">}
 							@if(collection.thumbnail_id.isEmpty){No thumbnail available}

@@ -13,13 +13,13 @@ title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down">
                     <tr>
                         <td style="width: 30%; vertical-align:top;">Name: </td>
                         <td>
-                            <textarea cols=30 rows=4 type="text" id="editname">@dataset.name</textarea>
+                            <textarea cols=30 rows=4 type="text" id="editname">@dataset.name.replace("<br>", "\n")</textarea>
                         </td>
                     </tr>
                     <tr>
                         <td style="width: 30%; vertical-align:top;">Description: </td>
                         <td>
-                            <textarea cols=30 rows=4 type="text" id="editdesc">@dataset.description</textarea>
+                            <textarea cols=30 rows=4 type="text" id="editdesc">@dataset.description.replace("<br>", "\n")</textarea>
                         </td>
                     </tr>
                 </table>
@@ -36,9 +36,15 @@ title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down">
 <script type="text/javascript" language="javascript">
 function closeAboutEdit() {
 //Reset the data to the current values
-var text = $("#aboutdesc").text();
+var text = $("#aboutdesc").html().trim();
+console.log("desc text is " + text);
+text = text.replace(/<br>/g, "\n");
+console.log("desc after replacement, text is " + text);
 $("#editdesc").val(text);
-text = $("#datasettitle").text();
+text = $("#datasettitle").html().trim();
+console.log("text is " + text);
+text = text.replace(/<br>/g, "\n");
+console.log("after replacement, text is " + text);
 $("#editname").val(text);
 
 //Close the edit form
@@ -48,8 +54,8 @@ return false;
 }
 
 function updateAboutData(datasetId) {
-var description = $("#editdesc").val();
-var name = $("#editname").val();
+var description = $("#editdesc").val().replace(/\n/g, "<br>");
+var name = $("#editname").val().replace(/\n/g, "<br>");
 var encName = htmlEncode(name);
 var encDescription = htmlEncode(description);
 var jsonData = JSON.stringify({"description":encDescription, "name":encName});
@@ -63,9 +69,8 @@ contentType: "application/json"
 request.done(function (response, textStatus, jqXHR){
 ///console.log("Response " + response);
 //Sucessful update of the DB - update the interface
-
-$("#aboutdesc").text(htmlDecode(encDescription));
-$("#datasettitle").text(htmlDecode(encName));
+$("#aboutdesc").html(htmlDecode(encDescription));
+$("#datasettitle").html(htmlDecode(encName));
 
 closeAboutEdit();
 });

@@ -23,7 +23,7 @@ $(document).ready(function() {
 //Disable common input fields
 function disableFields() {
 	var name=$('#name').val();
-	var desc=$('#description').val();
+	var desc=$('#description').val().replace(/\n/g, "<br>");
 	$('#name').addClass("hiddenholdspace");
 	$('#description').addClass("hiddenholdspace");	
 	$("input[name=radiogroup]").attr('disabled', true);
@@ -166,7 +166,7 @@ function createEmptyDataset(data) {
     }
     
     var encName = htmlEncode(name.val());
-	var encDescription = htmlEncode(desc.val());
+	var encDescription = htmlEncode(desc.val()).replace(/\n/g, "<br>");
     
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);

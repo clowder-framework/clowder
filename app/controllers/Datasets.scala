@@ -267,7 +267,6 @@ class Datasets @Inject()(
 
           var datasetWithFiles = dataset.copy(files = filesInDataset)
           datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
-
           // previews
 //          val filteredPreviewers = for (
 //              previewer <- Previewers.findDatasetPreviewers;
