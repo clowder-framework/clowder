@@ -374,6 +374,15 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
+  def getPermissionsMap() : scala.collection.immutable.Map[String, Boolean] = {
+    var permissionMap = SortedMap.empty[String, Boolean]
+    Permission.values.map {
+      permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
+
+    }
+    return permissionMap;
+  }
+
   def listRoles() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
     user match {
@@ -396,12 +405,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     implicit val user = request.user
     user match {
       case Some(x) => {
-        var permissionMap = SortedMap.empty[String, Boolean]
-        Permission.values.map{
-          permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> false)
 
-        }
-        Ok(views.html.roles.createRole(roleForm, permissionMap))
+        Ok(views.html.roles.createRole(roleForm, getPermissionsMap()))
       }
     }
   }
@@ -411,7 +416,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     user match {
       case Some(x) => {
         roleForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.roles.createRole(errors, Map.empty[String, Boolean])),
+          errors =>
+            BadRequest(views.html.roles.createRole(errors, getPermissionsMap())),
           formData => {
             Logger.debug("Creating role " + formData.name)
             var permissionsSet: SortedSet[String] = SortedSet.empty
@@ -471,13 +477,9 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   {
     implicit request =>
       implicit val user = request.user
-      var permissionMap = Map.empty[String, Boolean]
-      Permission.values.map{
-        permission => permissionMap += (permission.toString() -> false)
 
-      }
         roleForm.bindFromRequest.fold(
-        errors => BadRequest(views.html.roles.editRole(errors, permissionMap)),
+        errors => BadRequest(views.html.roles.editRole(errors, getPermissionsMap())),
         formData =>
         {
           Logger.debug("Updating role " + formData.name)
