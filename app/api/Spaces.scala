@@ -9,7 +9,7 @@ import controllers.Utils
 import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import services.{AdminsNotifierPlugin, SpaceService}
+import services.{AdminsNotifierPlugin, SpaceService, UserService}
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
@@ -25,7 +25,7 @@ import models.Role
  *
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
-class Spaces @Inject()(spaces: SpaceService) extends ApiController {
+class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -255,7 +255,7 @@ class Spaces @Inject()(spaces: SpaceService) extends ApiController {
 				var roleMap: Map[String, String] = aMap.get
 				for ((k, v) <- roleMap) {
 				    //The role needs to exist
-				    Role.roleMap.get(k) match {
+				    userService.findRoleByName(k) match {
 				        case Some (aRole) => {
 				            var idArray: Array[String] = v.split(",").map(_.trim())
 					        				            

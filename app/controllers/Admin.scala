@@ -374,11 +374,20 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
+  def getPermissionsMap() : scala.collection.immutable.Map[String, Boolean] = {
+    var permissionMap = SortedMap.empty[String, Boolean]
+    Permission.values.map {
+      permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
+
+    }
+    return permissionMap;
+  }
+
   def listRoles() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
-        Ok(views.html.roles.listRoles(userService.listRoles()))
+        Ok(views.html.roles.listRoles(userService.listRoles().sortWith(_.name.toLowerCase < _.name.toLowerCase)))
       }
     }
   }
@@ -396,12 +405,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     implicit val user = request.user
     user match {
       case Some(x) => {
-        var permissionMap = Map.empty[String, Boolean]
-        Permission.values.map{
-          permission => permissionMap += (permission.toString() -> false)
 
-        }
-        Ok(views.html.roles.createRole(roleForm, permissionMap))
+        Ok(views.html.roles.createRole(roleForm, getPermissionsMap()))
       }
     }
   }
@@ -411,10 +416,15 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     user match {
       case Some(x) => {
         roleForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.roles.createRole(errors, Map.empty[String, Boolean])),
+          errors =>
+            BadRequest(views.html.roles.createRole(errors, getPermissionsMap())),
           formData => {
             Logger.debug("Creating role " + formData.name)
-            val role = Role(name = formData.name, description = formData.description, permissions = formData.permissions)
+            var permissionsSet: SortedSet[String] = SortedSet.empty
+            formData.permissions.map {
+              permission => permissionsSet += permission.toString().replace(" ", "")
+            }
+            val role = Role(name = formData.name, description = formData.description, permissions = permissionsSet)
             userService.addRole(role)
             Redirect(routes.Admin.listRoles()).flashing("success" -> "Role created")
           }
@@ -444,19 +454,20 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       implicit val user = request.user
       userService.findRole(id.stringify) match {
         case Some(s) => {
-          var permissionMap = Map.empty[String, Boolean]
+          var permissionMap = SortedMap.empty[String, Boolean]
+          var permissionsSet: SortedSet[String] = SortedSet.empty
           Permission.values.map{
             permission =>
               if(s.permissions.contains(permission.toString))
               {
-                permissionMap += (permission.toString() -> true)
+                permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> true)
               }
               else {
-                permissionMap += (permission.toString() -> false)
+                permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> false)
               }
-
+              permissionsSet += permission.toString().replace(" ", "")
           }
-          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, s.permissions)), permissionMap))
+          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, permissionsSet.toList)), permissionMap))
         }
         case None => InternalServerError("Role not found")
       }
@@ -466,20 +477,16 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   {
     implicit request =>
       implicit val user = request.user
-      var permissionMap = Map.empty[String, Boolean]
-      Permission.values.map{
-        permission => permissionMap += (permission.toString() -> false)
 
-      }
         roleForm.bindFromRequest.fold(
-        errors => BadRequest(views.html.roles.editRole(errors, permissionMap)),
+        errors => BadRequest(views.html.roles.editRole(errors, getPermissionsMap())),
         formData =>
         {
           Logger.debug("Updating role " + formData.name)
           userService.findRole(formData.id.get.toString) match {
             case Some(role) =>
             {
-              val updated_role = role.copy(name = formData.name  , description = formData.description, permissions = formData.permissions )
+              val updated_role = role.copy(name = formData.name  , description = formData.description, permissions = formData.permissions.toSet )
               userService.updateRole(updated_role)
               Redirect(routes.Admin.listRoles())
             }

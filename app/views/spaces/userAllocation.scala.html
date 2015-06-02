@@ -1,7 +1,6 @@
 @(userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[securesocial.core.Identity])
 
 <div class="row">
-    <div class="col-lg-3">
     @for(roleLevel <- roleList){
         <h4>@roleLevel</h4>        
 		<select class="chosen-select" multiple style="width: 500px;" id='@roleLevel.replaceAll("\\s+", "")'>
@@ -16,7 +15,7 @@
 			}
 	    </select>
     }
-    </div>
+
 </div>
 
  

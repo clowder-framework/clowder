@@ -184,6 +184,9 @@ class MongoDBUserService extends UserService {
     RoleDAO.findById(id)
   }
 
+  def findRoleByName(name: String): Option[Role] = {
+    RoleDAO.findByName(name)
+  }
   /**
    * Delete role.
    */
@@ -216,6 +219,10 @@ object RoleDAO extends ModelCompanion[Role, ObjectId] {
 
   def removeById(id: String) {
     dao.remove(MongoDBObject("_id" -> new ObjectId(id)), WriteConcern.Normal)
+  }
+
+  def findByName(name: String): Option[Role] = {
+    dao.findOne(MongoDBObject("name" -> name))
   }
 }
 
