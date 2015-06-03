@@ -34,6 +34,10 @@ body {
 
 /* Custom page CSS
 -------------------------------------------------- */
+a.dropdown-toggle.nav-icon {
+    padding-left: 0px;
+    padding-right: 0px;
+}
 
 /* Basic button bars */
 span.button-bar {
