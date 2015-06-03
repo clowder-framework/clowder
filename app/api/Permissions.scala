@@ -58,6 +58,8 @@ object Permission extends Enumeration {
 		SearchFiles,
 		CreateTagsFiles,
 		DeleteTagsFiles,
+		ListPreviews,
+		DeletePreviews,
 		CreateStreams,
 		AddDataPoints,
 		SearchStreams,
