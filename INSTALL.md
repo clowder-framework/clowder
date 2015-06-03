@@ -1,4 +1,4 @@
-# Installing Medici 2
+# Installing Clowder
 
 This assumes you are using Ubuntu (debian might work), and are logged in as root. If not you can use `sudo -s` to become root.
 
@@ -9,9 +9,9 @@ apt-get -y update
 apt-get -y dist-upgrade
 ```
 
-## Medici2 Requirements
+## clowder Requirements
 
-First we need to install the requirements for Medici, java, rabbitmq and mongodb. The latter 2 are not required to be installed on the same machine, you can modify the medici 2 configuration to point to those servers.
+First we need to install the requirements for clowder, java, rabbitmq and mongodb. The latter 2 are not required to be installed on the same machine, you can modify the clowder configuration to point to those servers.
 
 ```bash
 # setup repository for rabbitMQ
@@ -36,23 +36,23 @@ apt-get -y update
 apt-get -y install unzip openjdk-7-jre-headless postfix
 ```
 
-## Medici2 Scripts
+## clowder Scripts
 
-First create a user that will run the medici software
+First create a user that will run the clowder software
 
 ```
-# create a user for medici
-adduser --system --group users --disabled-login medici
+# create a user for clowder
+adduser --system --group users --disabled-login clowder
 ```
 
-Create the scripts to automatically start/stop medici
+Create the scripts to automatically start/stop clowder
 
 ```bash
-cat << EOF > /etc/init/medici.conf
-# Medici Server
-# this runs a medici as user medici
+cat << EOF > /etc/init/clowder.conf
+# clowder Server
+# this runs a clowder as user clowder
  
-description "Medici Server"
+description "clowder Server"
  
 start on runlevel [2345]
 stop on runlevel [!2345]
@@ -61,81 +61,81 @@ kill timeout 30
 respawn
 
 pre-start script
-  if [ -f /home/medici/medici-play-1.0-SNAPSHOT/RUNNING_PID ] ; then
-  	if ps -p `cat /home/medici/medici-play-1.0-SNAPSHOT/RUNNING_PID` > /dev/null ; then
+  if [ -f /home/clowder/clowder-2.0-SNAPSHOT/RUNNING_PID ] ; then
+  	if ps -p `cat /home/clowder/clowder-2.0-SNAPSHOT/RUNNING_PID` > /dev/null ; then
       echo "Found running version, killing old version"
-      kill `cat /home/medici/medici-play-1.0-SNAPSHOT/RUNNING_PID`
+      kill `cat /home/clowder/clowder-2.0-SNAPSHOT/RUNNING_PID`
     fi
-    rm /home/medici/medici-play-1.0-SNAPSHOT/RUNNING_PID
+    rm /home/clowder/clowder-2.0-SNAPSHOT/RUNNING_PID
   fi
 end script
 
 script
-  exec start-stop-daemon --start --chuid medici --exec /home/medici/medici-play-1.0-SNAPSHOT/bin/medici-play --name Medici -- -Dhttp.port=9000
+  exec start-stop-daemon --start --chuid clowder --exec /home/clowder/clowder-2.0-SNAPSHOT/bin/clowder-play --name clowder -- -Dhttp.port=9000
 end script
 EOF
 
-ln -s /lib/init/upstart-job /etc/init.d/medici
-update-rc.d medici defaults
+ln -s /lib/init/upstart-job /etc/init.d/clowder
+update-rc.d clowder defaults
 ```
 
-Next we install the script that will install or update medici.
+Next we install the script that will install or update clowder.
 
 ```bash
-cat > /home/browndog/update-medici.sh << EOF
+cat > /home/browndog/update-clowder.sh << EOF
 #!/bin/bash
 
-# MMDB-WWW (master) is the main branch for this server
-# MMDB-WWW1 (develop) if you want the latest version
-MEDICI2_BRANCH=${MEDICI2_BRANCH:-"MMDB-WWW1"}
+# CATS-WWW (master) is the main branch for this server
+# CATS-WWW1 (develop) if you want the latest version
+clowder_BRANCH=${clowder_BRANCH:-"CATS-WWW1"}
 
 # change to folder where script is installed
-cd /home/medici
+cd /home/clowder
 
 # fetch software
-/usr/bin/wget -N -q -O medici-play-1.0-SNAPSHOT.zip https://opensource.ncsa.illinois.edu/bamboo/browse/${MEDICI2_BRANCH}/latest/artifact/JOB1/medici-dist/medici-play-1.0-SNAPSHOT.zip
+/usr/bin/wget -N -q -O clowder-2.0-SNAPSHOT.zip https://opensource.ncsa.illinois.edu/bamboo/browse/${clowder_BRANCH}/latest/artifact/JOB1/clowder-dist/clowder-2.0-SNAPSHOT.zip
 
-if [ -s medici-play-1.0-SNAPSHOT.zip ]; then
-  if [ medici-play-1.0-SNAPSHOT.zip -nt medici-play-1.0-SNAPSHOT ]; then
-    echo "UPDATING MEDICI2 TO NEWER VERSION"
+if [ -s clowder-2.0-SNAPSHOT.zip ]; then
+  if [ clowder-2.0-SNAPSHOT.zip -nt clowder-2.0-SNAPSHOT ]; then
+    echo "UPDATING clowder TO NEWER VERSION"
 
-    /sbin/stop medici2
+    /sbin/stop clowder
 
-    /bin/rm -rf medici-play-1.0-SNAPSHOT
-    /usr/bin/unzip -q medici-play-1.0-SNAPSHOT.zip
-    /usr/bin/touch medici-play-1.0-SNAPSHOT
+    /bin/rm -rf clowder-2.0-SNAPSHOT
+    /usr/bin/unzip -q clowder-2.0-SNAPSHOT.zip
+    /usr/bin/touch clowder-2.0-SNAPSHOT
 
     # local modifications
-    /bin/sed -i 's/app_classpath="/app_classpath="$conf_dir:/' medici-play-1.0-SNAPSHOT/bin/medici-play
-    /usr/bin/patch -R medici-play-1.0-SNAPSHOT/bin/medici-play medici2.diff
+    /bin/sed -i 's/app_classpath="/app_classpath="$conf_dir:/' clowder-2.0-SNAPSHOT/bin/clowder-play
+    /usr/bin/patch -R clowder-2.0-SNAPSHOT/bin/clowder-play clowder.diff
     if [ -e application.conf ]; then
-      /bin/cp application.conf medici-play-1.0-SNAPSHOT/conf
+      /bin/cp application.conf clowder-2.0-SNAPSHOT/conf
     fi
     if [ -e securesocial.conf ]; then
-      /bin/cp securesocial.conf medici-play-1.0-SNAPSHOT/conf
+      /bin/cp securesocial.conf clowder-2.0-SNAPSHOT/conf
     fi
     if [ -e play.plugins ]; then
-      /bin/cp play.plugins medici-play-1.0-SNAPSHOT/conf
+      /bin/cp play.plugins clowder-2.0-SNAPSHOT/conf
     else
-      /bin/rm medici-play-1.0-SNAPSHOT/conf/play.plugins
+      /bin/rm clowder-2.0-SNAPSHOT/conf/play.plugins
     fi
 
     # change permissions
-    /bin/chown -R medici medici-play-1.0-SNAPSHOT
+    /bin/chown -R clowder clowder-2.0-SNAPSHOT
 
-    /sbin/start medici2
+    /sbin/start clowder
   fi
 fi
 EOF
-chmod 755 /home/medici/update-medici.sh
+chmod 755 /home/clowder/update-clowder.sh
 ```
 
-## Medici2 Customization
+## clowder Customization
 
-Any customization for medici should be placed in the folder custom. The following files/folders are currently supported:
+Any customization for clowder should be placed in the folder custom. The following files/folders are currently supported:
 
 custom/custom.conf:
-This file allows you to override any settings in conf/*.conf. If you make any changes to this file you will need to restart medici. For example you can use this to change the permissions of this medici instance from public to private, and have an admin approve new users  by adding the following to custom.conf:
+This file allows you to override any settings in conf/*.conf. If you make any changes to this file you will need to restart clowder. For example you can use this to change the permissions of this clowder instance from public to private, and have an admin approve new users  by adding the following to custom.conf:
 ```
 permissions=private
 initialAdmins="<your-email-address>"
@@ -147,7 +147,7 @@ Common things you might want to modify in custom.conf are:
 - hostIp : set this to the fully qualified hostname.
 - permissions : public or private server.
 - initialAdmins and registerThroughAdmins :  if you want to prevent anybody from signing up.
-- application.context : if you have a web server running in front of medici.
+- application.context : if you have a web server running in front of clowder.
 - commKey and application.secret : change these since the defaults are not secure.
 - smtp.from : set this to the user all email should come from.
 - securesocial.onLoginGoTo and securesocial.onLogoutGoTo : prefix the path with the same path as used for application.context, default assumes root context.
@@ -155,25 +155,25 @@ Common things you might want to modify in custom.conf are:
 
 
 custom/public/stylesheets/themes/:
-This folder can contain any custom stylesheets you want to use in medici. These themes will be applied to the whole system. The themes are based on the bootstrap them. You can place new files in this folder and the system will find them without a restart.
+This folder can contain any custom stylesheets you want to use in clowder. These themes will be applied to the whole system. The themes are based on the bootstrap them. You can place new files in this folder and the system will find them without a restart.
 
 custom/public/javascript/previewers/:
-This folder can contain any custom previewers you want to use in medici. These previewers will be be picked up with a restart of medici. THIS FEATURE HAS NOT BEEN TESTED YET!
+This folder can contain any custom previewers you want to use in clowder. These previewers will be be picked up with a restart of clowder. THIS FEATURE HAS NOT BEEN TESTED YET!
 
 
-Finally install medici using the update script. You can from now on, just call this script to install the latest version of medici.
+Finally install clowder using the update script. You can from now on, just call this script to install the latest version of clowder.
 
 ```
-/home/medici/update-medici.sh
+/home/clowder/update-clowder.sh
 ```
 
-You can add a cron entry that runs to call this script. It will only update this instance of medici if a newer version is available. This will make it so you are always running the latest version.
+You can add a cron entry that runs to call this script. It will only update this instance of clowder if a newer version is available. This will make it so you are always running the latest version.
 
 # Medic2 Extractors
 
 To get people started to create their own extractors we will add the example extractors, as well as the required software to compile these.
 
-## Medici2 Extractors Requirements
+## clowder Extractors Requirements
 
 First we will install all the required software to compile these plugins.
 
@@ -198,14 +198,14 @@ apt-get -y install git
 exit
 ```
 
-## Medici2 Example Extractors
+## clowder Example Extractors
 
 This will install and compile the example extractors
 
 ```bash
 # clone extractors
 cd
-git clone https://opensource.ncsa.illinois.edu/stash/scm/mmdb/extractors-examples.git
+git clone https://opensource.ncsa.illinois.edu/stash/scm/cats/extractors-examples.git
 
 # compile java code
 cd extractors-examples/java
