@@ -18,16 +18,16 @@
 		    	var webpageURL = data.split("\n")[1];
 		    	var appendStr = "";
 		    	var fileId = Configuration.fileid;
-		    	
+		    			    	
 		    	appendStr = appendStr.concat("<div class='modal fade iframeModalDiv' id='externResource_"+fileId+"' tabindex='-1' role='dialog' aria-labelledby='externResource_"+fileId+"' aria-hidden='true'>");
 		    	appendStr = appendStr.concat('<div class="modal-content"><div class="modal-header"><button type="button" class="close iframeClose" data-dismiss="modal" aria-hidden="true">&times;</button>');
 		    	appendStr = appendStr.concat('<h4 class="modal-title" id="externResourceLabel_'+fileId+'">'+webpageTitle+'</h4>');
-		    	appendStr = appendStr.concat('</div><div class="modal-body"><iframe class="iframeModal" src="'+webpageURL+'" frameBorder="0"></iframe></div></div></div>');
-		    	appendStr = appendStr.concat('<div class="prevIframeWrap"><iframe class="prevIframe" scrolling="no" src="'+webpageURL+'"></iframe></div>');
+		    	appendStr = appendStr.concat('</div><div class="modal-body"><iframe class="iframeModal" src="'+webpageURL+'" frameBorder="0"><p>Could not load iframe</p></iframe></div></div></div>');
+		    	appendStr = appendStr.concat('<div class="prevIframeWrap"><iframe class="prevIframe" scrolling="no" src="'+webpageURL+'"><p>Could not load iframe</p></iframe></div>');
 		    	appendStr = appendStr.concat('<a class="iframeLink" href="#!" data-toggle="modal" data-target="#externResource_'+fileId+'">');
 		    	appendStr = appendStr.concat('<div class="transbox"><button type="button" class="btn btn-default iframeBtn" aria-hidden="true">&plus;</button></div></a>');
 		    	$(Configuration.tab).append(appendStr);
-		    	
+		    			    	
 		    	$(document).ready(function() {
 		    		$("#externResource_"+fileId).css("height", Math.round($(window).height()*90/parseFloat(100))+"px" );
 		    		$("#externResource_"+fileId+" .modal-content").css("height", Math.round($(window).height()*90/parseFloat(100))+"px" );

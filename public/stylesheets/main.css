@@ -598,6 +598,8 @@ textarea, input[type='text'], input[type='password']{
 	width: 22em;
     height: 100%;
     border: none;
+    background-image: url("../javascripts/previewers/iframe/images/iframe_error.jpg");
+    background-size: cover;
 }
 .iframeLink{
 	position: relative;
