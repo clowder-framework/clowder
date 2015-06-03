@@ -16,7 +16,6 @@ import fileutils.FilesUtils
 import api.Permission
 import javax.inject.Inject
 import scala.Some
-import scala.collection.mutable.ListBuffer
 import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
@@ -118,7 +117,7 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
-      var decodedDatasetList = new ListBuffer[models.Dataset]()
+      var decodedDatasetList = ListBuffer.empty[models.Dataset]
       for (aDataset <- datasetList) {
           decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
@@ -195,7 +194,7 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
-      var decodedDatasetList = new ListBuffer[models.Dataset]()
+      var decodedDatasetList = ListBuffer.empty[models.Dataset]
       for (aDataset <- datasetList) {
           decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
@@ -290,8 +289,8 @@ class Datasets @Inject()(
 	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
 	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
 	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
-	          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
-	          var decodedCollectionsInside = new ListBuffer[models.Collection]()
+	          var decodedCollectionsOutside = ListBuffer.empty[models.Collection]
+	          var decodedCollectionsInside = ListBuffer.empty[models.Collection]
 	          
 	          for (aCollection <- collectionsOutside) {
 	              val dCollection = Utils.decodeCollectionElements(aCollection)

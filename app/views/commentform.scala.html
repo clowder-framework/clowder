@@ -11,7 +11,7 @@
        var origText = "";
   
      function showEditComment(id) {
-       var commentText = $("#comment-body_" + id).html();
+       var commentText = $("#comment-body_" + id).html().replace(/<br>/g, "\n");
        origText = commentText;
        if ($("#commentField_" + id).length == 0) {
                var form="<form class=\"form-inline\">";               
@@ -30,13 +30,13 @@
      }
      
      function updateComment(id) {
-       var text = $("#editField_" + id).val();  
+       var text = $("#editField_" + id).val().replace(/\n/g, "<br>");
        editComment(id, text);              
        return false;
      }
      
      function cancelEditComment(id) {           
-           $("#comment-body_" + id).html(origText);
+           $("#comment-body_" + id).html(origText.replace(/\n/g, "<br>"));
            return false;
        }
      
@@ -67,7 +67,7 @@
     }
 
     function postComment(id, resourceType) {
-      var text = $('#commentField_' + id).val();
+      var text = $('#commentField_' + id).val().replace(/\n/g, "<br>");
       $('#commentField_' + id).val("");
 
       console.log("Posting " + text);

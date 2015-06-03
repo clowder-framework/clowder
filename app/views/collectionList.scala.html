@@ -91,11 +91,11 @@
                     <div class="panel-body">
                         @if(!collection.thumbnail_id.isEmpty){
                         <a href="@(routes.Collections.collection(collection.id))">
-                            <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(collection.name)">
+                            <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
                         </a>
                         }
                         <div class="caption break-word">
-                            <h4><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></h4>
+                            <h4><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h4>
                             <p>@Html(ellipsize(collection.description, 200))</p>
                         </div>
                     </div>                    
@@ -146,11 +146,11 @@
 			<tbody>
 				@collections.map { collection =>
 					<tr>
-						<td><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></td>
+						<td><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></td>
 						<td>@collection.created.format("MMM dd, yyyy")</td>
 						<td>@Html(collection.description)</td>
 						<td>
-							@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(collection.name)" width="120">}
+							@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120">}
 							@if(collection.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
 						<td class="requiresLogin">

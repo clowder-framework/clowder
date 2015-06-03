@@ -22,7 +22,7 @@ $(document).ready(function() {
 
 //Disable common input fields
 function disableFields() {
-	var name=$('#name').val();
+	var name=$('#name').val().replace(/\n/g, "<br>");
 	var desc=$('#description').val().replace(/\n/g, "<br>");
 	$('#name').addClass("hiddenholdspace");
 	$('#description').addClass("hiddenholdspace");	
@@ -165,7 +165,7 @@ function createEmptyDataset(data) {
         }
     }
     
-    var encName = htmlEncode(name.val());
+    var encName = htmlEncode(name.val()).replace(/\n/g, "<br>");
 	var encDescription = htmlEncode(desc.val()).replace(/\n/g, "<br>");
     
     $('#hiddenname').val(encName);
@@ -284,8 +284,8 @@ function attachFiles() {
 	    	return false;
 	    }
 	    
-	    var encName = htmlEncode(name.val());
-		var encDescription = htmlEncode(desc.val());
+	    var encName = htmlEncode(name.val()).replace(/\n/g, "<br>");
+		var encDescription = htmlEncode(desc.val()).replace(/\n/g, "<br>");
 	    
 		if (ids.length == 0) {
 			jsonData = JSON.stringify({"name":encName, "description":encDescription});

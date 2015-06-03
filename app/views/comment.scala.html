@@ -58,7 +58,7 @@
 <script type='text/javascript'>
     $( document ).ready( function() {
         //Set the body for the comment
-        $("#comment-body_" + "@c.id").html("@c.text");
+        $("#comment-body_" + "@c.id").html("@Html(c.text)");
     });
   </script>
 }

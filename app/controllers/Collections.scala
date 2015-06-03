@@ -93,7 +93,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the collection's names or descriptions
-      var decodedCollections = new ListBuffer[models.Collection]()
+      var decodedCollections = ListBuffer.empty[models.Collection]
       for (aCollection <- collectionsWithThumbnails) {
           val dCollection = Utils.decodeCollectionElements(aCollection)
           decodedCollections += dCollection
@@ -188,7 +188,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           
           //Decode the datasets so that their free text will display correctly in the view
           val datasetsInside = datasets.listInsideCollection(id)
-          var decodedDatasetsInside = new ListBuffer[models.Dataset]()
+          var decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetsInside) {
               val dDataset = Utils.decodeDatasetElements(aDataset)
               decodedDatasetsInside += dDataset

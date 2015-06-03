@@ -35,15 +35,27 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def search(tag: String, start: String, size: Integer, mode: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     implicit val user = request.user
 
-    var nextItems = collection.mutable.ListBuffer.empty[AnyRef]
-    var prevItems = collection.mutable.ListBuffer.empty[AnyRef]
+    var nextItems = ListBuffer.empty[AnyRef]
+    var prevItems = ListBuffer.empty[AnyRef]
+    var tempItems = ListBuffer.empty[models.Dataset]
 
     // Clean up leading, trailing and multiple contiguous white spaces.
     val tagCleaned = tag.trim().replaceAll("\\s+", " ")
 
     // get all datasets tagged
-    nextItems ++= datasets.findByTag(tagCleaned, start, size + 1, false)
-    if (start != "") prevItems ++= datasets.findByTag(tagCleaned, start, size + 1, true)
+    //Modifications to decode HTML entities that were stored in an encoded fashion as part
+    //of the datasets names or descriptions
+    tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, false)
+    for (aDataset <- tempItems) {
+        nextItems += Utils.decodeDatasetElements(aDataset)
+    }
+    tempItems = ListBuffer.empty[models.Dataset]
+    if (start != "") {
+        tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, true)
+        for (aDataset <- tempItems) {
+          prevItems += Utils.decodeDatasetElements(aDataset)
+        }
+    }
 
     // get all files tagged
     nextItems ++= files.findByTag(tagCleaned, start, size + 1, false)

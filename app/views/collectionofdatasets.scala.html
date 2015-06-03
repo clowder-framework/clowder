@@ -17,9 +17,10 @@
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
 
 <div class="page-header">
-  <h1>@collection.name</h1>
+  <h1>@Html(collection.name)</h1>
 </div>
 <div class="row">
 	<div class="col-md-2">
@@ -86,11 +87,11 @@
 			<tbody>
 				@datasetsInCollection.map { dataset =>
 					<tr data-datasetId="@(dataset.id.toString)">
-						<td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
+						<td><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></td>
 						<td>@dataset.created.format("MMM dd, yyyy")</td>
 						<td>@Html(dataset.description)</td>
 						<td>
-							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
+							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
 						<td class="requiresLogin"><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>

@@ -176,7 +176,9 @@
 		 
 		 return false;
 	 });
-	 
+
+	//TODO - MMF - Is this really necessary? The list of available datasets that are external to the collection should be available already.
+	//This would also unify the htmlDecoding on the server side instead of having to happen both here and there.
 	 $('body').on('click','#addDatasetBtn',function(e){
 			var request = $.ajax({
 		       type: 'GET',
@@ -199,12 +201,12 @@
 		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' width='120'>";
 		        	else
 		        		datasetThumbnail = "No thumbnail available"
-		        	
+
 		        	$('#addDatasetsTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;' data-datasetId='" + respJSON[i].id + "'><td><a href='#!' "
 		        								+ "onclick='addDataset(\"" + respJSON[i].id + "\",event)' "
-		        								+ ">"+ respJSON[i].datasetname + "</a></td>"
+		        								+ ">"+ htmlDecode(respJSON[i].datasetname) + "</a></td>"
 		        								+ "<td>" + createdDate + "</td>"
-		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
+		        								+ "<td style='white-space:pre-line;'>" + htmlDecode(respJSON[i].description) + "</td>"
 		        								+ "<td>" + datasetThumbnail + "</td>"
 		        								+ "<td><a target='_blank' href='" +  jsRoutes.controllers.Datasets.dataset(respJSON[i].id).url + "'>View</a></td></tr>");
 		        	
