@@ -463,6 +463,12 @@ textarea, input[type='text'], input[type='password']{
     margin-right: -5px;
 }
 
+.tag-first-char {
+    font-size: 3em;
+    bottom: -1em;
+    font-weight: bold;
+}
+
 .input-table-cell {
 	padding-top: 10px;
 	padding-bottom: 10px;
@@ -511,7 +517,6 @@ textarea, input[type='text'], input[type='password']{
 }
 
 
-
 #scrollTableGalleria{
 	width: 100%;
 }
@@ -555,3 +560,27 @@ textarea, input[type='text'], input[type='password']{
 .galleria-info,
 .galleria-counter{bottom:80px;}
 .galleria-thumbnails-container { height: 62px;}
+
+.galleriaHelp{margin-bottom: 1%;}
+
+.galleria-fscr{
+    position:absolute;
+    bottom:2%;
+    right:2%;
+    z-index:4;
+    cursor: pointer;
+    font-size: 25px;
+    color: #bbb;
+}
+.galleria-fscr:before{
+	font-family:"Glyphicons Halflings";
+	content:"\e140";
+	line-height:1;
+  	margin:5px;
+}
+.galleria-fscr:hover{
+    color: #fff;
+}
+.galleria-fscr:active{
+    color: #fff;
+}
