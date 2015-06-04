@@ -261,9 +261,9 @@
                 var context = canvas[0].getContext('2d');
 
                 // Display bounding boxes on canvas
-                renderBoundingBoxes = function(frame) {
+                var renderBoundingBoxes = function(frame) {
 
-                    context.clearRect(0, 0, canvas.width(), canvas.height()); 
+                    context.clearRect(0, 0, canvas.width(), canvas.height());
 
                     if(frameDataArray[frame-1] != null && frameDataArray[frame-1] != undefined){
 
@@ -282,10 +282,18 @@
                             var yCenter = parseInt(personObj.box["@yc"]) * scaleHeight;
                             var boxWidth = parseInt(personObj.box["@w"]) * scaleWidth;
                             var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;
+                            var personSeriesIndex = 0;
+
+                            for(var k=0; k< series.length; k++){
+                                if(personObj["@id"] == series[k].label.split(" ")[1]){
+                                    personSeriesIndex = k;
+                                    break;
+                                }
+                            }
                                                 
                             context.beginPath();
-                            context.strokeStyle = series[0].color;
-                            context.lineWidth = 1;
+                            context.strokeStyle = series[personSeriesIndex].color;
+                            context.lineWidth = 1.5;
                             context.rect(xCenter - boxWidth/2, yCenter - boxHeight/2, boxWidth, boxHeight);
                             context.stroke();
                             context.closePath();
@@ -301,10 +309,17 @@
                                 var yCenter = parseInt(personObj.box["@yc"]) * scaleHeight;
                                 var boxWidth = parseInt(personObj.box["@w"]) * scaleWidth;
                                 var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;                            
+
+                                for(var k=0; k< series.length; k++){
+                                    if(personObj["@id"] == series[k].label.split(" ")[1]){
+                                        personSeriesIndex = k;
+                                        break;
+                                    }
+                                }
                                                     
                                 context.beginPath();
-                                context.strokeStyle = series[j].color;
-                                context.lineWidth = 1;
+                                context.strokeStyle = series[personSeriesIndex].color;
+                                context.lineWidth = 1.5;
                                 context.rect(xCenter - boxWidth/2, yCenter - boxHeight/2, boxWidth, boxHeight);
                                 context.stroke();
                                 context.closePath();
