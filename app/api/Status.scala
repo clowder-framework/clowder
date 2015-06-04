@@ -126,7 +126,7 @@ class Status @Inject()(spaces: SpaceService,
     // TODO use the following URL to indicate if there updates to Medici.
     // if returned object has an empty values medici is up to date
     // need to figure out how to pass in the branch
-    //val checkurl = "https://opensource.ncsa.illinois.edu/stash/rest/api/1.0/projects/MMDB/repos/medici-play/commits?since=" + sha1
+    //val checkurl = "https://opensource.ncsa.illinois.edu/stash/rest/api/1.0/projects/CATS/repos/clowder/commits?since=" + sha1
 
     Json.obj("number" -> sys.props.getOrElse("build.version", default = "0.0.0").toString,
       "build" -> sys.props.getOrElse("build.bamboo", default = "development").toString,

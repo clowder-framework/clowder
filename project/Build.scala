@@ -12,8 +12,8 @@ import NativePackagerKeys._
 
 object ApplicationBuild extends Build {
 
-  val appName = "medici-play"
-  val version = "2.0.0"
+  val appName = "clowder"
+  val version = "0.9.1"
 
   def appVersion: String = {
     if (gitBranchName == "master") {
