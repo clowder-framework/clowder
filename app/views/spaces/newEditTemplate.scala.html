@@ -10,7 +10,7 @@
   <div class="row">
     <div class="col-md-12">
       @if(myForm.hasErrors) {
-        <div class="alert alert-error">
+        <div class="alert alert-error error">
           <p>Please fix all errors</p>
         </div>
       }
@@ -20,7 +20,7 @@
         </div>
       }
 
-      @form(action = routes.Spaces.submit, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+      @form(action = routes.Spaces.submit, 'enctype -> "multipart/form-data", 'class -> "form-horizontal", 'id -> "spaceForm") {
         <fieldset  id="nameDescrFieldSet">
           @inputText(myForm("name"), '_label -> "Name")
           @textarea(myForm("description"), '_label -> "Description")
@@ -57,21 +57,33 @@
   // be homePages[0], homePages[1],.. etc. This function renumbers all the fields appropriately even if a field in the
   // middle of the list is deleted.
   var renumberHomePageMap = function() {
-  Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
-  var label = $(next).children('label');
-  label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
+      Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
+      var label = $(next).children('label');
+      label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
 
-  var input = $(next).find('input');
-  input.attr('id', input.attr('id').replace(/_\d+_/, '_' + i + '_'));
-  input.attr('name', input.attr('name').replace(/\[\d+\]/, '[' + i + ']'));
+      var input = $(next).find('input');
+      input.attr('id', input.attr('id').replace(/_\d+_/, '_' + i + '_'));
+      input.attr('name', input.attr('name').replace(/\[\d+\]/, '[' + i + ']'));
 
-  if (input.attr('id').match(/homePages_\d+_/)) {
-  return i + 1;
+      if (input.attr('id').match(/homePages_\d+_/)) {
+        return i + 1;
+      }
+
+      return i;
+    }, 0);
   }
 
-  return i;
-  }, 0);
-  }
+  var addDeleteInCaseOfError = function() {
+    vals = $('.homePages .control-group')
+    for(var i = 0; i < vals.length - 1 ; i++)
+    {
+      $(vals[i]).after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
+    }
+  };
+
+   addDeleteInCaseOfError();
+
+
   var title = $('.page-header h1').text();
   if(title.indexOf("Edit Space") > 0)
   {
@@ -102,34 +114,34 @@
       $('#expireenabled').html("Off");
   }
   $('.homePages').on('click', '.external-link-delete a', function () {
-  $(this).parent().prev().remove();
-  $(this).parent().remove();
-  renumberHomePageMap();
+    $(this).parent().prev().remove();
+    $(this).parent().remove();
+    renumberHomePageMap();
   });
-$('.control-label').addClass('h3');
+  $('.control-label').addClass('h3');
   $('.external-link-add').click(function () {
-  var value = $(this).prev().clone();
+    var value = $(this).prev().clone();
 
-  $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
-  value.find('input').val('');
-  $(this).before(value);
-  renumberHomePageMap();
+    $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
+    value.find('input').val('');
+    $(this).before(value);
+    renumberHomePageMap();
   });
 
   //remove blank lines before submitting
   $('form').submit(function () {
-  var expireEnabled = $('#expiration_expiretrue').prop('checked');
-  $('#isTimeToLiveEnabled').val(expireEnabled);
-  $('.homePages .control-group').each(function () {
-  var valueInput = $(this).find('input');
+    var expireEnabled = $('#expiration_expiretrue').prop('checked');
+    $('#isTimeToLiveEnabled').val(expireEnabled);
+    $('.homePages .control-group').each(function () {
+      var valueInput = $(this).find('input');
 
-  if (valueInput.val() === '') {
-  $(this).next().remove();
-  $(this).remove();
-  renumberHomePageMap();
-  }
+      if (valueInput.val() === '') {
+        $(this).next().remove();
+        $(this).remove();
+        renumberHomePageMap();
+      }
 
-  });
+    });
   });
   </script>
 }
