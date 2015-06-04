@@ -21,6 +21,7 @@ import javax.inject.Inject
 import java.util.Date
 import scala.sys.SystemProperties
 import securesocial.core.Identity
+import scala.collection.mutable.ListBuffer
 
 /**
  * Manage files.
@@ -113,15 +114,29 @@ class Files @Inject() (
         }
         commentsByFile = commentsByFile.sortBy(_.posted)
         
-        var fileDataset = datasets.findByFileId(file.id).sortBy(_.name)
-        var datasetsOutside = datasets.findNotContainingFile(file.id).sortBy(_.name)
+        //Decode the datasets so that their free text will display correctly in the view
+        val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val datasetsNotContaining = datasets.findNotContainingFile(file.id).sortBy(_.name)              
+        var decodedDatasetsContaining = new ListBuffer[models.Dataset]()
+        var decodedDatasetsNotContaining = new ListBuffer[models.Dataset]()
+        
+        for (aDataset <- datasetsContainingFile) {
+        	val dDataset = Utils.decodeDatasetElements(aDataset)
+        	decodedDatasetsContaining += dDataset
+        }
+        
+        for (aDataset <- datasetsNotContaining) {
+        	val dDataset = Utils.decodeDatasetElements(aDataset)
+        	decodedDatasetsNotContaining += dDataset
+        }
         
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
         val extractionsByFile = extractions.findByFileId(id)
         
-        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
-          extractorsActive, fileDataset, datasetsOutside, userMetadata, isRDFExportEnabled, extractionsByFile))
+
+        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, 
+          extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList, userMetadata, isRDFExportEnabled, extractionsByFile))
       }
       case None => {
         val error_str = "The file with id " + id + " is not found."
@@ -182,23 +197,18 @@ class Files @Inject() (
     
     //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
     //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14	
-	var viewMode = mode;
-	//Always check to see if there is a session value          
-	request.cookies.get("view-mode") match {
-    	case Some(cookie) => {
-    		viewMode = cookie.value
-    	}
-    	case None => {
-    		//If there is no cookie, and a mode was not passed in, default it to tile
-    	    if (viewMode == null || viewMode == "") {
-    	        viewMode = "tile"
-    	    }
-    	}
-	}                      
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
+    val viewMode: Option[String] = 
+    if (mode == null || mode == "") {
+      request.cookies.get("view-mode") match {
+          case Some(cookie) => Some(cookie.value)
+          case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+      }
+    } else {
+        Some(mode)
+    }                     
       
-      Logger.debug("------- file view - viewMode is " + viewMode + " ---------")
-      //Pass the viewMode into the view
+    //Pass the viewMode into the view
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
   }
 
@@ -545,7 +555,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                             val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                               URLEncoder.encode(filename, "UTF-8")
                             } else {
-                              MimeUtility.encodeWord(filename)
+                              MimeUtility.encodeText(filename).replaceAll(",", "%2C")
                             }
                             Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)

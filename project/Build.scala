@@ -12,8 +12,8 @@ import NativePackagerKeys._
 
 object ApplicationBuild extends Build {
 
-  val appName = "medici-play"
-  val version = "2.0.0"
+  val appName = "clowder"
+  val version = "0.9.1"
 
   def appVersion: String = {
     if (gitBranchName == "master") {
@@ -137,6 +137,9 @@ object ApplicationBuild extends Build {
     // custom/public/javascripts/previewers - for custom previewers
     // custom/custom.conf                   - to customize application.conf
     scriptClasspath += "../custom",
+
+    // same for development mode
+    unmanagedClasspath in Runtime += baseDirectory.value / "custom",
 
     // add build number so we can use it in templates
     bashScriptExtraDefines += "addJava \"-Dbuild.version=" + version + "\"",
