@@ -91,6 +91,14 @@
 		}
 		else if("@p._2" === "Oni"){			
 		}
+		else if("@p._2" === "Video presentation"){
+			Configuration.authenticatedFileModify = false;
+			@if(user.isDefined) {
+	     	 	@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+					Configuration.authenticatedFileModify = true;
+	     	 	}
+			}			
+		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 }
@@ -190,7 +198,7 @@
                     <button id="downloadButton" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
                 </span>
                 @if(user.isDefined) {
-                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
                     @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
                         <span class="align-right">
 				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
@@ -211,10 +219,15 @@
 			  	<div class="row border-top">
 			  	  <div class="col-md-12">
                     <h4>Sections</h4>
+                    <div class="galleriaHelp">Click on icon at bottom-right of gallery to toggle sections gallery fullscreen view</div>
 				  	<div id="galleria" style="float:left;clear:none;width:100%;height:400px;">
 					  	@sections.map { s =>
-					  		@if(s.preview.isDefined) {
-					  			<img src="@api.routes.Previews.download(s.preview.get.id)"
+					  		@if(s.preview.isDefined || s.thumbnail_id.isDefined) {
+					  			@if(s.thumbnail_id.isDefined){
+					  				<img src="@(routes.Files.thumbnail(UUID(s.thumbnail_id.get)))"				  			
+					  			} else {
+					  				<img src="@api.routes.Previews.download(s.preview.get.id)"
+					  			}					  			
 					  				class="img-polaroid" height="100px"
 					  			@if(s.startTime.isDefined) {
 					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -260,8 +273,12 @@
 					  			<tr>
 						  			<td class="galleriaOrder">@(if (s.order > 0) s.order else "")</td>
 						  			<td class="galleriaTheThumbnail">
-								  		@if(s.preview.isDefined) {
-								  			<img src="@api.routes.Previews.download(s.preview.get.id)"
+								  		@if(s.preview.isDefined || s.thumbnail_id.isDefined) {
+								  			@if(s.thumbnail_id.isDefined){
+								  				<img src="@(routes.Files.thumbnail(UUID(s.thumbnail_id.get)))"				  			
+								  			} else {
+								  				<img src="@api.routes.Previews.download(s.preview.get.id)"
+								  			}
 								  				class="img-polaroid" style="max-width: 100%;"
 								  			@if(s.startTime.isDefined) {
 								  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
@@ -361,13 +378,18 @@
 					    var gallery = $('#galleria').data('galleria');
 
 						Galleria.ready(function(options) {
-
 						    // 'this' is the gallery instance
 						    // 'options' is the gallery options
-
 						    this.bind('image', function(e) {
 						        Galleria.log('Now viewing ' + e.imageTarget.src);
 						    });
+						    var gallery = this; // galleria is ready and the gallery is assigned
+						    this.addElement('fscr');
+						    this.appendChild('stage','fscr');
+						    var fscr = this.$('fscr')
+						        .click(function() {
+						            gallery.toggleFullscreen();
+						        });
 						});
 
 

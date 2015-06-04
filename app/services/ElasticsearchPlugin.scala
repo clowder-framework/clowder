@@ -14,6 +14,8 @@ import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
 import play.api.Play.current
+import org.elasticsearch.index.query.QueryStringQueryBuilder
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
 
 
 /**
@@ -54,9 +56,19 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       client match {
         case Some(x) => {
           Logger.debug("Index \"data\"  is being created if it does not exist ---")
+          val indexSettings = ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder()
+            .startObject()
+            .startObject("analysis")
+            .startObject("analyzer")
+            .startObject("default")
+            .field("type", "snowball")
+            .endObject()
+            .endObject()
+            .endObject()
+            .endObject().string())
           val indexExists = x.admin().indices().prepareExists("data").execute().actionGet().isExists()
           if (!indexExists) {
-            x.admin().indices().prepareCreate("data").execute().actionGet()
+            x.admin().indices().prepareCreate("data").setSettings(indexSettings).execute().actionGet()
           }
           Logger.info("Connected to Elasticsearch")
           true
@@ -66,7 +78,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           false
         }
       }
-      
+
     } catch {
       case nn: NoNodeAvailableException => {
         Logger.error("Error connecting to elasticsearch: " + nn)
@@ -93,7 +105,34 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val response = x.prepareSearch(index)
           .setTypes("file", "dataset")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(QueryBuilders.queryString(query))
+          .setQuery(QueryBuilders.queryString(query).analyzer("snowball"))
+          .setFrom(0).setSize(60).setExplain(true)
+          .execute()
+          .actionGet()
+        Logger.info("Search hits: " + response.getHits().getTotalHits())
+        response
+      }
+      case None => {
+        Logger.error("Could not call search because we are not connected.")
+        new SearchResponse()
+      }
+    }
+  }
+
+  def search(index: String, fields: Array[String], query: String): SearchResponse = {
+    connect
+    Logger.info("Searching ElasticSearch for " + query)
+    client match {
+      case Some(x) => {
+        Logger.info("Searching ElasticSearch for " + query)
+        var qbqs = QueryBuilders.queryString(query)
+        for (f <- fields) {
+          qbqs.field(f.trim())
+        }
+        val response = x.prepareSearch(index)
+          .setTypes("file", "dataset")
+          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+          .setQuery(qbqs.analyzer("snowball"))
           .setFrom(0).setSize(60).setExplain(true)
           .execute()
           .actionGet()
@@ -221,19 +260,19 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
     index("data", "dataset", dataset.id,
-    List(("name", dataset.name),
-      ("description", dataset.description),
-      ("author", dataset.author.fullName),
-      ("created", formatter.format(dataset.created)),
-      ("fileId", fileDsId),
-      ("fileName", fileDsName),
-      ("collId", dsCollsId),
-      ("collName", dsCollsName),
-      ("tag", tagsJson.toString()),
-      ("comments", commentJson.toString()),
-      ("usermetadata", usrMd),
-      ("technicalmetadata", techMd),
-      ("xmlmetadata", xmlMd)))
+      List(("name", dataset.name),
+        ("description", dataset.description),
+        ("author", dataset.author.fullName),
+        ("created", formatter.format(dataset.created)),
+        ("fileId", fileDsId),
+        ("fileName", fileDsName),
+        ("collId", dsCollsId),
+        ("collName", dsCollsName),
+        ("tag", tagsJson.toString()),
+        ("comments", commentJson.toString()),
+        ("usermetadata", usrMd),
+        ("technicalmetadata", techMd),
+        ("xmlmetadata", xmlMd)))
   }
 
   /**

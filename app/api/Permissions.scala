@@ -231,6 +231,22 @@ case class WithPermission(permission: Permission) extends Authorization {
 			None
 		}
 	}
+	
+	/**
+	 * Check to see if the user is the owner of the section pointed to by the resource.
+	 * Works by checking the ownership of the file the section belongs to.
+	 */
+	def checkSectionOwnership(user: Option[Identity], resource: UUID): Boolean = {
+		sections.get(resource) match {
+			case Some(section) =>{
+			  checkFileOwnership(user, section.file_id)
+			}
+			case None => {
+				Logger.error("Section requested to be accessed not found. Denying request.")
+				false
+			}
+		}
+	}
 
 	/**
 	 * Check to see if the user is the owner of the section pointed to by the resource.

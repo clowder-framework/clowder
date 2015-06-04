@@ -15,6 +15,7 @@ case class Section(
   area: Option[Rectangle] = None,
   preview: Option[Preview] = None,
   description: Option[String] = None,
+  thumbnail_id: Option[String] = None,
   tags: List[Tag] = List.empty)
 
 case class Rectangle(

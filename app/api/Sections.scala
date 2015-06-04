@@ -21,7 +21,8 @@ class Sections @Inject()(
   queries: MultimediaQueryService,
   tags: TagService,
   sections: SectionService,
-  comments: CommentService) extends ApiController {
+  comments: CommentService,
+  thumbnails: ThumbnailService) extends ApiController {
 
   /**
    * REST endpoint: POST: Add a section.
@@ -184,6 +185,25 @@ class Sections @Inject()(
 	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
 	  }
     }
-  
+
+  /**
+   * Add thumbnail to section.
+   */
+  def attachThumbnail(section_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddSections),
+		  			resourceId = Some(section_id)) {
+    implicit request =>
+      sections.get(section_id) match {
+        case Some(section) => {
+          thumbnails.get(thumbnail_id) match {
+            case Some(thumbnail) => {
+              sections.updateThumbnail(section_id, thumbnail_id)              
+              Ok(toJson(Map("status" -> "success")))
+            }
+            case None => BadRequest(toJson("Thumbnail not found"))
+          }
+        }
+        case None => BadRequest(toJson("Section not found " + section_id))
+      }
+  }
   
 }
