@@ -45,8 +45,7 @@
         var pathFlotJS = pathJs + "jquery.flot.js";
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
-        var pathPopcornJS = pathJs + "popcorn-complete.min.js";
-        var pathVideoFrameJS = pathJs + "VideoFrame.min.js";
+        var pathPopcornJS = pathJs + "popcorn-complete.min.js";        
         var sortedFrameDataArray = new Array();
         var frameDataArray = new Array(); // To acommodate the cases where the extractor does not run from the first frame of the video
         
@@ -97,22 +96,18 @@
         /*var deferredFotJS = deferredGetScript( pathFlotJS );
         var deferredNavigateJS = deferredGetScript( pathNavigateJS );
         var deferredCrosshairJS = deferredGetScript( pathCrosshairJS );
-        var deferredPopcornJS = deferredGetScript( pathPopcornJS );
-        var deferredVideoFrameJS = deferredGetScript( pathVideoFrameJS );*/
+        var deferredPopcornJS = deferredGetScript( pathPopcornJS );*/        
 
         var syncFlotJS = syncGetScript( pathFlotJS );
         var syncNavigateJS = syncGetScript( pathNavigateJS );
         var syncCrosshairJS = syncGetScript( pathCrosshairJS );
         var syncPopcornJS = syncGetScript( pathPopcornJS );
-        var syncVideoFrameJS = syncGetScript( pathVideoFrameJS );
-
 
         $.when(            
             syncFlotJS,
             syncNavigateJS,
             syncCrosshairJS,
-            syncPopcornJS,
-            syncVideoFrameJS
+            syncPopcornJS
 
         ).done(function(){
             console.log("downloaded JS sciprts");
@@ -125,6 +120,7 @@
                 var videoHeight = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@video-height"]);
                 var videoWidth = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@video-width"]);
                 var videoFrameRate = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@frame-rate"]);
+                var endFrameNumber = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@end-frame"]);
 
                 // Pass 1: Rearrange data
                 for(var i = 0; i < jsonFrameArrayLength; i++) {
@@ -285,6 +281,7 @@
                             var personSeriesIndex = 0;
 
                             for(var k=0; k< series.length; k++){
+                                //Finding the series whose ID is same as that of the current person
                                 if(personObj["@id"] == series[k].label.split(" ")[1]){
                                     personSeriesIndex = k;
                                     break;
@@ -311,6 +308,7 @@
                                 var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;                            
 
                                 for(var k=0; k< series.length; k++){
+                                    //Finding the series whose ID is same as that of the current person
                                     if(personObj["@id"] == series[k].label.split(" ")[1]){
                                         personSeriesIndex = k;
                                         break;
@@ -330,12 +328,6 @@
                     }                        
                 }
 
-                var videoFrameObj = VideoFrame({
-                    id : 'video',
-                    frameRate: videoFrameRate,
-                    callback : renderBoundingBoxes
-                });
-
                 // Change the canvas dimensions the first time
                 video.one('play', 
                     function (event) {
@@ -346,28 +338,31 @@
                     }
                 );
 
-                // Stop listening to frame change
-                video.on('pause', 
-                    function (event) {                        
-                        videoFrameObj.stopListen();
-                    }
-                );
-
                 // Displaying video through canvas
                 video.on('play', 
-                    function (event) {
-                        var $this = this; //cache
-                        videoFrameObj.listen('frame');
+                    function (event) {                       
+                        var $this = this; //cache                        
                         (function loop() {
                             if (!$this.paused && !$this.ended) {
                                 context.drawImage($this, 0, 0, video[0].clientWidth, video[0].clientHeight);
+                                
+                                var frameNumber = Math.floor(video[0].currentTime * videoFrameRate);
+                                renderBoundingBoxes(frameNumber);
                                 setTimeout(loop, 1000 / videoFrameRate); // drawing at current frame rate
                             }
                         })();
                     }
                 );
 
-                var totalFrames = 2000;
+                //Draw video frame and bounding boxes after seeking to a particular time
+                video.on('seeked', 
+                    function (event) {
+                        context.drawImage(this, 0, 0, video[0].clientWidth, video[0].clientHeight);
+                        var frameNumber = Math.floor(video[0].currentTime * videoFrameRate);
+                        renderBoundingBoxes(frameNumber);
+                    });
+
+                var totalFrames = endFrameNumber;
                 var maxFrames = 300;
                 var numPeople = sortedFrameDataArray.length + 1;                
                 var offsetVal = 5;
@@ -509,11 +504,6 @@
                     crossHairPos = frameNumber;
                     setCrossHairPosition();
                 });
-
-                //Debug code start
-                //$pop.mute();
-                //$pop.play();
-                //Debug code end
 
                 placeholder.bind("plotpan plotzoom", function (event, plot) {
                     plot.unlockCrosshair();
