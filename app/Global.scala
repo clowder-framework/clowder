@@ -36,12 +36,12 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
       // admin role
       val adminPerm = Permission.values
-      val adminRole = new Role(name="Admin", description="Admin Role", permissions = adminPerm.map(_.toString).toList)
+      val adminRole = new Role(name="Admin", description="Admin Role", permissions = adminPerm.map(_.toString).toSet)
       users.updateRole(adminRole)
 
       // editor role
       val editorPerm = for(perm <- adminPerm if perm.toString.toLowerCase.indexOf("admin") == -1) yield perm
-      val editorRole = new Role(name="Editor", description="Editor Role", permissions = editorPerm.map(_.toString).toList)
+      val editorRole = new Role(name="Editor", description="Editor Role", permissions = editorPerm.map(_.toString).toSet)
       users.updateRole(editorRole)
 
       // viewer role
@@ -52,7 +52,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
         Permission.CreateTagsSections, Permission.ListFiles, Permission.ShowFilesMetadata, Permission.ShowFile,
         Permission.SearchFiles, Permission.CreateTagsFiles, Permission.SearchStreams, Permission.ListSensors,
         Permission.GetSensors, Permission.SearchSensors, Permission.DownloadFiles)
-      val viewerRole = new Role(name="Viewer", description="Viewer Role", permissions = viewerPerm.map(_.toString).toList)
+      val viewerRole = new Role(name="Viewer", description="Viewer Role", permissions = viewerPerm.map(_.toString).toSet)
       users.updateRole(viewerRole)
     }
 
