@@ -53,6 +53,11 @@ public class FilesUtils {
 	                	mainFileType = "model/sfm-zipped";
 	                	return mainFileType;
 	                }
+	                if(fileName.toLowerCase().contains("__slides")){
+	                	zipFile.close();
+	                	mainFileType = "multi/video-presentation-zipped";
+	                	return mainFileType;
+	                }
 	                if(fileName.toLowerCase().endsWith(".ptm") && allPTMsFlag.equals("notfound")){
 	                	allPTMsFlag = "found";
 	                }

@@ -57,7 +57,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob(inputStream, filename, contentType, Map.empty[String, AnyRef], "previews", "medici2.mongodb.storePreviews").fold("")(_.stringify)
+    MongoUtils.writeBlob[Preview](inputStream, filename, contentType, Map.empty[String, AnyRef], "previews", "medici2.mongodb.storePreviews").fold("")(_.stringify)
   }
 
   /**

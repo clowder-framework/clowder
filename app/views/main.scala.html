@@ -81,8 +81,9 @@
 						<li class="dropdown">
 						   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags<b class="caret"></b></a>
 						   <ul class="dropdown-menu">
-                               <li><a href="@routes.Tags.tagCloud">Tag cloud</a></li>
-                               <li><a href="@routes.Tags.tagList">Tag list</a></li>
+							   <li><a href="@routes.Tags.tagListOrdered">List (Ordered)</a></li>
+							   <li><a href="@routes.Tags.tagListWeighted">List (Weighted)</a></li>
+                               <li><a href="@routes.Tags.tagCloud">Cloud</a></li>
 						   </ul>
 						</li>
                         <li><a href="@routes.Assets.at("docs/api/index.html")">API</a></li>
@@ -149,7 +150,7 @@
   
   <div id="footer">
     <div class="container">
-      <p class="muted credit">Powered by <a href="http://medici.ncsa.illinois.edu">Medici</a>
+      <p class="muted credit">Powered by <a href="http://clowder.ncsa.illinois.edu">Clowder</a>
 		  (@sys.props.getOrElse("build.version", default = "0.0.0")#@sys.props.getOrElse("build.bamboo", default = "development")
 		  branch:@sys.props.getOrElse("build.branch", default = "unknown") sha1:@sys.props.getOrElse("build.gitsha1", default = "unknown")).</p>
     </div>

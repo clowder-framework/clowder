@@ -11,7 +11,6 @@ GET            /*path/                                                          
 # Home page
 GET            /                                                                        @controllers.Application.index
 
-
 # Map static resources from the /public folder to the /assets URL path
 #GET      /documentation/api/*testFile                                        controllers.Assets.at(path="/public/docs/api", testFile)
 GET            /assets/img/glyphicons-halflings-white.png                               controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
@@ -52,7 +51,8 @@ POST           /extraction/upload                                               
 #End
 
 # Files
-GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+
+GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
@@ -69,8 +69,8 @@ POST           /uploadDragDrop                                                  
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 
 # Datasets
-GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
-GET            /datasets/userDatasets                                                   @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile", email: String)
+GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
+GET            /datasets/userDatasets                                                   @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", email: String)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -80,7 +80,7 @@ GET            /datasets_by_section/:id                                         
 POST           /dataset/submit                                                          @controllers.Datasets.submit
 
 # Collections
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile")
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
 GET            /collections/new                                                         @controllers.Collections.newCollection
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
@@ -96,10 +96,10 @@ GET            /spaces/:id/updateSpace                                          
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # Tags
-GET            /tags/search                                                             @controllers.Tags.search(tag)
+GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
+GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
+GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
 GET            /tags/cloud                                                              @controllers.Tags.tagCloud
-GET            /tags/list                                                               @controllers.Tags.tagList
-
 
 # Authentication
 GET            /loginTest                                                               controllers.Authentication.login
@@ -118,7 +118,6 @@ GET            /searchbyfeature/:section_id                                     
 GET            /files/:id/similar                                                       @controllers.Search.findSimilarToExistingFile(id: UUID)
 GET            /queries/:id/similar                                                     @controllers.Search.findSimilarToQueryFile(id: UUID, typeToSearch:String, sectionsSelected:List[String] ?= List.empty )
 POST           /queries/similarWeightedIndexes                                          @controllers.Search.findSimilarWeightedIndexes()
-
 
 # Previewers
 GET            /previewers/list                                                         controllers.Previewers.list
@@ -205,7 +204,8 @@ POST           /api/files/:id/remove                                            
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
 
-#new endpoint for JSON-LD format
+
+#JSON-LD support
 POST           /api/files/:id/metadataJsonLD                                            @api.Files.addMetadataJsonLD(id: UUID)
 GET            /api/files/:id/metadataJsonLD                                            @api.Files.getMetadataJsonLD(id: UUID)
 
@@ -239,9 +239,7 @@ GET            /api/extractions/extractors_names                                
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
 
 #API for temporary fix for BD-289
-
 GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()
-
 POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL()
 POST           /api/extractions/multiple_uploadby_url                                   @api.Extractions.multipleUploadByURL()
 POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
@@ -283,6 +281,9 @@ GET            /api/spaces/:id                                                  
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)
 POST           /api/spaces/:id/addCollection                                            @api.Spaces.addCollection(id: UUID)
+
+POST           /api/remove-admin                                                        api.Admin.removeAdmin
+POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
@@ -364,6 +365,8 @@ POST           /api/sections                                                    
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
 
+POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
+
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
 POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
@@ -436,6 +439,7 @@ POST           /api/institutions/addinstitution                                 
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
+GET            /api/me                                                                  @api.Users.getUser()
 
 POST           /api/users/updateUserField                                               @api.Users.updateUserField(email: String, field: String, fieldText: String)
 

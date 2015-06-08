@@ -3,6 +3,7 @@ package controllers
 import play.api.data.Form
 import play.api.data.Forms._
 import models.{UUID, Collection}
+import util.RequiredFieldsConfig
 import java.util.Date
 import play.api.Logger
 import play.api.Play.current
@@ -31,24 +32,7 @@ class Collections @Inject()(
   def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
     implicit request =>
       implicit val user = request.user
-      Ok(views.html.newCollection(null))
-  }
-
-  /**
-   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   * 
-   * Currently, the following collection elements are encoded:
-   * 
-   * name
-   * description
-   *  
-   */
-  def decodeCollectionElements(collection: Collection) : Collection = {      
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
-              							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
-      decodedCollection
+      Ok(views.html.newCollection(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
   }
   
   /**
@@ -112,30 +96,26 @@ class Collections @Inject()(
       collectionsWithThumbnails = collectionsWithThumbnails.reverse
       
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
-      //of the datasets names or descriptions
+      //of the collection's names or descriptions
       var decodedCollections = new ListBuffer[models.Collection]()
       for (aCollection <- collectionsWithThumbnails) {
-          val dCollection = decodeCollectionElements(aCollection)
+          val dCollection = Utils.decodeCollectionElements(aCollection)
           decodedCollections += dCollection
       }
       
-        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-	    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-	    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14	
-		var viewMode = mode;
-		//Always check to see if there is a session value          
-		request.cookies.get("view-mode") match {
-	    	case Some(cookie) => {
-	    		viewMode = cookie.value
-	    	}
-	    	case None => {
-	    		//If there is no cookie, and a mode was not passed in, default it to tile
-	    	    if (viewMode == null || viewMode == "") {
-	    	        viewMode = "tile"
-	    	    }
-	    	}
-		}
-
+    //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
+    val viewMode: Option[String] = 
+        if (mode == null || mode == "") {
+          request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+          }
+        } else {
+            Some(mode)
+        }    
+    
       //Pass the viewMode into the view
       Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode))
   }
@@ -161,7 +141,7 @@ class Collections @Inject()(
 	      case Some(identity) => {	      	            
                 if (colName == null || colDesc == null) {
                     //This case shouldn't happen as it is validated on the client. 
-                    BadRequest(views.html.newCollection("Name or Description was missing during collection creation."))
+                    BadRequest(views.html.newCollection("Name or Description was missing during collection creation.", RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
                 }
 	            
 	            var collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
@@ -196,7 +176,7 @@ class Collections @Inject()(
           Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
           
           //Decode the encoded items
-          val dCollection = decodeCollectionElements(collection)
+          val dCollection = Utils.decodeCollectionElements(collection)
           
           for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
           val filteredPreviewers = for (
@@ -212,7 +192,15 @@ class Collections @Inject()(
 
           val space = collection.space.flatMap(spaces.get(_))
 
-          Ok(views.html.collectionofdatasets(datasets.listInsideCollection(id), collection, filteredPreviewers.toList, space))
+          //Decode the datasets so that their free text will display correctly in the view
+          val datasetsInside = datasets.listInsideCollection(id)
+          var decodedDatasetsInside = new ListBuffer[models.Dataset]()
+          for (aDataset <- datasetsInside) {
+              val dDataset = Utils.decodeDatasetElements(aDataset)
+              decodedDatasetsInside += dDataset
+          }
+          
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, space))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

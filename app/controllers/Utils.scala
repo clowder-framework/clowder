@@ -7,6 +7,9 @@ import play.api.data.FormError
 import play.api.data.format.Formatter
 import play.api.data._
 import play.api.mvc.Request
+import models.Dataset
+import models.Collection
+import org.apache.commons.lang.StringEscapeUtils
 
 object Utils {
   /**
@@ -73,12 +76,44 @@ object Utils {
     }
     def urlType: Mapping[URL] = Forms.of[URL]
 
-  implicit def uuidFormat: Formatter[UUID] = new Formatter[UUID] {
-    override val format = Some(("format.uuid", Nil))
-    def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.url", Nil)(key, data)
-    def unbind(key: String, value: UUID) = Map(key -> value.toString)
+    implicit def uuidFormat: Formatter[UUID] = new Formatter[UUID] {
+      override val format = Some(("format.uuid", Nil))
+      def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.url", Nil)(key, data)
+      def unbind(key: String, value: UUID) = Map(key -> value.toString)
+    }
+    def uuidType: Mapping[UUID] = Forms.of[UUID]
   }
-  def uuidType: Mapping[UUID] = Forms.of[UUID]
-}
 
+  /**
+   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   * 
+   * Currently, the following dataset elements are encoded:
+   * name
+   * description
+   *  
+   */
+  def decodeDatasetElements(dataset: Dataset) : Dataset = {            
+      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
+              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
+              							  
+      decodedDataset
+  }
+  
+  /**
+   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   * 
+   * Currently, the following collection elements are encoded:
+   * 
+   * name
+   * description
+   *  
+   */
+  def decodeCollectionElements(collection: Collection) : Collection  = {
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+              							  description = StringEscapeUtils.unescapeHtml(collection.description))
+              							  
+      decodedCollection
+  }
 }

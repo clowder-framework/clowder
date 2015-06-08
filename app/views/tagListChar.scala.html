@@ -1,0 +1,40 @@
+@(tagMap: Map[Char, Map[String, Integer]])(implicit user: Option[securesocial.core.Identity])
+
+@main("Tag list") {
+    @if(tagMap.isEmpty) {
+        <div class="row">
+            <div id="tagList" class="col-md-12" style="text-align: justify">
+                No tags found.
+            </div>
+        </div>
+    } else {
+        <div class="row">
+            <div id="tagList" class="col-md-12">
+            @for(firstChar <- tagMap.keys.toList.sorted) {
+                <a href="#tag_@firstChar">@firstChar</a>&nbsp;
+            }
+            </div>
+        </div>
+        @for(firstChar <- tagMap.keys.toList.sorted) {
+            <div id="tag_@firstChar" class="row" style="height: 60px;"></div>
+            @defining(tagMap(firstChar).toList.sorted) { tagList =>
+                @for(idx <- List.range(0, tagList.size)) {
+                    @defining(tagList(idx)) { tag =>
+                        <div class="row">
+                            @if(idx == 0) {
+                                <div class="col-md-1" style="height: 1em;">
+                                    <span class="tag-first-char">@firstChar</span>
+                                </div>
+                            } else {
+                                <div class="col-md-1" style="text-align: justify">&nbsp</div>
+                            }
+                            <div class="col-md-11">
+                                <a href="@routes.Tags.search(tag._1)">@tag._1</a> (@tag._2)
+                            </div>
+                        </div>
+                    }
+                }
+            }
+        }
+    }
+}

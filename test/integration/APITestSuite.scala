@@ -16,10 +16,11 @@ import org.scalatest._
 
 
 class APITestSuite extends Suites (
-		new ExtractionFileUploadFunctionSpec ,
+		new ExtractionsAPIAppSpec ,
 		new FilesAPIAppSpec ,
 		new DatasetsAPIAppSpec ,
-		new CollectionsAPIAppSpec
+		new CollectionsAPIAppSpec ,
+		new PreviewsAPIAppSpec
 	) with OneAppPerSuite
 {
 // Override app if you need a FakeApplication with other than non-default parameters.
