@@ -99,7 +99,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 	                    //This case catches spaces that have been created before users and roles were assigned to them.
 	                    if (aUser == creatorActual) {
 	                        role = "Admin"
-	                        users.findRole(role) match {
+	                        users.findRoleByName(role) match {
 	                            case Some(realRole) => {
 	                                spaces.addUser(aUser.id, realRole, id)
 	                            }
