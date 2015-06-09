@@ -294,9 +294,14 @@ class Files @Inject()(
                 //add to db and get an ID
                 val contextID = context.map(contextService.addContext(new JsString("context name"), _))
                 
+                //processing date. Remove external "" from date string
+                var dateString = (json \ "created_at").toString.replace("\"", "")
+                //example date is "Fri Jan 16 15:57:20 CST 2015"
+                val  dateFormat: SimpleDateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy")
+                val createdAt: Date = dateFormat.parse(dateString)
+                
                 //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = Map(("files_id", id))
-                val createdAt = (json \ "created_at").as[Date]
+                val attachedTo = Map(("file_id", id))
                 val content = (json \ "content")
                 val version = None
                 val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)
