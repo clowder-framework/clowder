@@ -95,6 +95,7 @@ GET            /tags/list/ordered                                               
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
 GET            /tags/cloud                                                              @controllers.Tags.tagCloud
 
+
 # Authentication
 GET            /loginTest                                                               controllers.Authentication.login
 POST           /loginTest                                                               controllers.Authentication.loginSubmit
@@ -112,6 +113,7 @@ GET            /searchbyfeature/:section_id                                     
 GET            /files/:id/similar                                                       @controllers.Search.findSimilarToExistingFile(id: UUID)
 GET            /queries/:id/similar                                                     @controllers.Search.findSimilarToQueryFile(id: UUID, typeToSearch:String, sectionsSelected:List[String] ?= List.empty )
 POST           /queries/similarWeightedIndexes                                          @controllers.Search.findSimilarWeightedIndexes()
+
 
 # Previewers
 GET            /previewers/list                                                         controllers.Previewers.list
@@ -221,7 +223,6 @@ DELETE         /api/files/:id/tags                                              
 POST           /api/files/:id/license                                                   @api.Files.updateLicense(id: UUID)
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
-
 
 #This may change depending on our discussion on identifying the details of extraction in DTS service
 # DTS Information
@@ -339,14 +340,13 @@ POST           /api/indexes/features                                            
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
-POST	       /api/sections/:section_id/thumbnails/:thumbnail_id		        @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
+POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
 POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
 POST           /api/sections/:id/tags/remove_all                                        @api.Sections.removeAllTags(id: UUID)
 DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
-
 
 
 # geostreaming
@@ -417,11 +417,8 @@ GET            /api/users/:id                                                   
 GET            /api/me                                                                  @api.Users.getUser()
 
 POST           /api/users/updateUserField                                               @api.Users.updateUserField(email: String, field: String, fieldText: String)
-
 POST           /api/users/addUserDatasetView                                            @api.Users.addUserDatasetView(email: String, dataset: UUID)
-
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
-
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)

@@ -5,7 +5,7 @@ With the required software in place and the code checked out, it is just a matte
 Please make sure all services are running before doing this.
 
 The web frontend is setup using the `sbt <http://www.scala-sbt.org/>`_ build system. Change directory into the
-medici-play main directory and run the code using the following command
+clowder main directory and run the code using the following command
 
 ::
 
