@@ -14,8 +14,8 @@
 		    url: Configuration.url,
 		    async:false,
 		    success: function (data) {
-		    	var webpageTitle = data.split("\n")[0];
-		    	var webpageURL = data.split("\n")[1];
+		    	var webpageTitle = data.split("\n")[0].trim();
+		    	var webpageURL = data.split("\n")[1].trim();
 		    	var appendStr = "";
 		    	var fileId = Configuration.fileid;
 		    			    	

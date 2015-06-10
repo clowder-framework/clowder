@@ -589,40 +589,46 @@ textarea, input[type='text'], input[type='password']{
 
 .prevIframeWrap{
 	width: 36em;
-    height: 25em;
+    height: 27em;
     padding: 0;
     overflow: hidden;
     align-content: center;
 }
 .prevIframe{
-	width: 22em;
-    height: 100%;
+	width: 72em;
+	-moz-transform: scale(0.5);
+	-moz-transform-origin: 0 0;
+	-o-transform: scale(0.5);
+    -o-transform-origin: 0 0;
+    -webkit-transform: scale(0.5);
+    -webkit-transform-origin: 0 0;
+    height: 54em;
     border: none;
     background-image: url("../javascripts/previewers/iframe/images/iframe_error.jpg");
     background-size: cover;
 }
 .iframeLink{
 	position: relative;
-	top: -25em;
-	width: 22em;
-	height: 28em;
+	top: -27em;
+	width: 36em;
+	height: 30em;
 	display:block;
-	margin-bottom: -25em;
+	margin-bottom: -26em;
 	border: 1px solid grey;
 }
 .iframeLink:hover {
 	opacity:0.5;
 }
 .iframeBtn{
-	bottom: -25em;
+	bottom: -27em;
 	position: relative;
-	left: 10em;
+	left: 17em;
 }
 .iframeModalDiv{
-	width: 56%;
+	width: 72%;
 	overflow:hidden !important;
 	position: fixed !important;
-    left: 24% !important;
+    left: 14% !important;
     top: 5% !important;
 }
 .iframeModal{
