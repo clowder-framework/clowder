@@ -14,10 +14,14 @@
 		    url: Configuration.url,
 		    async:false,
 		    success: function (data) {
-		    	var webpageTitle = data.split("\n")[0].trim();
-		    	var webpageURL = data.split("\n")[1].trim();
+		    	var dataArray = data.split("\n");
+		    	var webpageTitle = dataArray[0].trim();
+		    	var webpageURL = dataArray[1].trim();
 		    	var appendStr = "";
 		    	var fileId = Configuration.fileid;
+		    	if(dataArray.length > 2)
+		    		if(dataArray[2] == "::REDIRECTED")
+		    			$(Configuration.tab).append("<p><b>NOTE: Due to insecure content in iframe, iframe URL was auto-converted to HTTPS.</b></p>");
 		    			    	
 		    	appendStr = appendStr.concat("<div class='modal fade iframeModalDiv' id='externResource_"+fileId+"' tabindex='-1' role='dialog' aria-labelledby='externResource_"+fileId+"' aria-hidden='true'>");
 		    	appendStr = appendStr.concat('<div class="modal-content"><div class="modal-header"><button type="button" class="close iframeClose" data-dismiss="modal" aria-hidden="true">&times;</button>');
