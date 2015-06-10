@@ -91,7 +91,7 @@ GET            /collections/:collection_id/previews                             
 # ----------------------------------------------------------------------
 GET            /spaces                                                                  @controllers.Spaces.list(order: Option[String] ?= None, direction: String ?= "asc", start: Option[String] ?= None, limit: Int ?= 12, filter: Option[String] ?= None, mode: String ?= "")
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
-GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 10)
+GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9)
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
