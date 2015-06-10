@@ -1,11 +1,9 @@
 package unit.metadata
-import models.Metadata
-import models.UserAgent
+import models.{ResourceRef, Metadata, UserAgent, UUID}
 import unit.TestData
 import unit.UnitSpec
 import org.scalatest.mock.MockitoSugar._
 import org.mockito.Mockito.when
-import models.UUID
 import java.net.URL
 /**
  * Unit Test for Metadata model
@@ -15,12 +13,12 @@ import java.net.URL
 
 class MetadataSpec extends UnitSpec {
   val mockMetadata = mock[Metadata]
-  when(mockMetadata.attachedTo).thenReturn(Map("file_id"->UUID.generate))
+  when(mockMetadata.attachedTo).thenReturn(ResourceRef("file", UUID.generate))
   when(mockMetadata.creator).thenReturn(new UserAgent(id = UUID.generate, userId = Some(new URL("http://dts.ncsa.illinois.edu/user06"))))
   //when(mockMetadata.creator).thenReturn(new UserAgent(id = UUID.generate, userId = Some("http://xyz.com/user")))
       
   "A metadata" should "have attachedTo set" in {
-    assert( mockMetadata.attachedTo.contains("file_id") == true)
+    assert( mockMetadata.attachedTo.resourceType == "file")
   }  
   
   "A metadata" should "have a creator" in {

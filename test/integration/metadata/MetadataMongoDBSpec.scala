@@ -3,7 +3,7 @@ package integration.metadata
 import java.net.URL
 import java.util.Date
 import com.google.inject.Guice
-import models.{UUID, Metadata, UserAgent}
+import models.{ResourceRef, UUID, Metadata, UserAgent}
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import services.{DI, MetadataService, FileService}
 import play.api.libs.json.JsObject
@@ -22,7 +22,7 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
   val contextId = UUID.generate
   val testMetadata = Metadata(
     id = UUID.generate,
-    attachedTo = Map("file_id"->fileId, "dataset_id"-> datasetId), 
+    attachedTo = ResourceRef("file", fileId),
     contextId = Some(contextId),
     createdAt = new Date,
     creator = testCreator,

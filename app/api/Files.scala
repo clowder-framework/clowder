@@ -301,7 +301,7 @@ class Files @Inject()(
                 val createdAt: Date = dateFormat.parse(dateString)
                 
                 //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = Map(("file_id", id))
+                val attachedTo = ResourceRef("file", id)
                 val content = (json \ "content")
                 val version = None
                 val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)

@@ -1,8 +1,7 @@
 package models
-import play.api.Logger
+
 import java.net.URL
 import java.util.Date
-import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.libs.json.Writes
 import play.api.libs.json.Reads
@@ -10,27 +9,22 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
-import play.api.libs.json.JsResult
 import play.api.data.validation.ValidationError
+
 /**
  * A piece of metadata for a section/file/dataset/collection/space
- * 
- * @author Luigi Marini
- * @author Smruti Padhy
- * @author Inna Zharnitsky
- *
  **/
 case class Metadata (
-  id : UUID = UUID.generate,
-  attachedTo: Map[String, UUID], //metadata attached to an ElementType e.g. file, dataset, collection, space
-                                 //e.g. (file_id->UUID)
-  contextId : Option[UUID] = None,
-  createdAt : Date,
-  creator : Agent,
-  content  : JsValue,
-  version : Option[String] = None
+  id: UUID = UUID.generate,
+  attachedTo: ResourceRef,
+  contextId: Option[UUID] = None,
+  createdAt: Date = new Date(),
+  creator: Agent,
+  content: JsValue,
+  version: Option[String] = None
 )
 
+case class ResourceRef(resourceType: String, id: UUID)
 
 trait Agent {
   val id: UUID

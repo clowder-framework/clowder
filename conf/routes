@@ -206,8 +206,8 @@ POST           /api/files/:id/metadata                                          
 
 
 #JSON-LD support
-POST           /api/files/:id/metadataJsonLD                                            @api.Files.addMetadataJsonLD(id: UUID)
-GET            /api/files/:id/metadataJsonLD                                            @api.Files.getMetadataJsonLD(id: UUID)
+POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
+GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
 
 POST           /api/files/:id/versus_metadata                                           @api.Files.addVersusMetadata(id:UUID)
 GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)
@@ -342,8 +342,8 @@ DELETE         /api/datasets/:id                                                
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 
 #new endpoint for JSON-LD format
-POST           /api/datasets/:id/metadataJsonLD                                         @api.Datasets.addMetadataJsonLD(id: UUID)
-GET            /api/datasets/:id/metadataJsonLD                                         @api.Datasets.getMetadataJsonLD(id: UUID)
+POST           /api/datasets/:id/metadata.jsonld                                        @api.Datasets.addMetadataJsonLD(id: UUID)
+GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
 
 GET            /api/previews/:preview_id/textures/dataset/:datasetid/json               @api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET            /api/previews/:preview_id/textures/dataset/:dataset_id//:filename        @api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
