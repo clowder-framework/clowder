@@ -1,15 +1,14 @@
 package controllers
 
 import java.net.URL
-import models.UUID
+import models._
 import play.api.data.FormError
 import play.api.data.format.Formatter
 import play.api.data._
 import play.api.mvc.Request
-import models.ProjectSpace
-import models.Dataset
-import models.Collection
 import org.apache.commons.lang.StringEscapeUtils
+
+import scala.collection.mutable.ListBuffer
 
 object Utils {
   /**
@@ -129,5 +128,45 @@ object Utils {
               							  description = StringEscapeUtils.unescapeHtml(collection.description))
               							  
       decodedCollection
+  }
+
+  /*
+   * Utility method to modify the elements in a comment that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable. Called recursively in order
+   * to easily decode all the replies associated with individual comments as well.
+   *
+   * Currently, the following comment elements are encoded:
+   *
+   * text
+   * replies
+   *
+   * @param comment The comment to be HTML decoded
+   * @return A copy of the original comment, with the specified elements decoded
+   */
+  def decodeCommentElements(comment: Comment) : Comment = {
+    val decodedComment = comment.copy(text = StringEscapeUtils.unescapeHtml(comment.text),
+                              replies = decodeCommentReplies(comment))
+
+    decodedComment
+  }
+
+  /**
+   * Utility method to decode the replies within a comment. Makes a recursive call to decodeCommentElements that in turn
+   * invokes this for nested replies.
+   *
+   * @param comment The original comment that is to be checked for replies that need to be decoded
+   * @return A list of comments that represent top level replies for the original comment
+   */
+  def decodeCommentReplies(comment: Comment): List[Comment] = {
+    var decodedReplies = ListBuffer.empty[Comment]
+    if (comment.replies.isEmpty) {
+      decodedReplies.toList
+    }
+    else {
+      for (aReply <- comment.replies) {
+        decodedReplies += decodeCommentElements(aReply)
+      }
+      decodedReplies.toList
+    }
   }
 }
