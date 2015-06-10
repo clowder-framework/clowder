@@ -32,6 +32,7 @@
 		    	appendStr = appendStr.concat('<div class="transbox"><button type="button" class="btn btn-default iframeBtn" aria-hidden="true">&plus;</button></div></a>');
 		    	$(Configuration.tab).append(appendStr);
 		    			    	
+		    	//Dynamic resize of modal iframe
 		    	$(document).ready(function() {
 		    		$("#externResource_"+fileId).css("height", Math.round($(window).height()*90/parseFloat(100))+"px" );
 		    		$("#externResource_"+fileId+" .modal-content").css("height", Math.round($(window).height()*90/parseFloat(100))+"px" );
