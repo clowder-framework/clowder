@@ -20,8 +20,8 @@ import scala.collection.mutable.ListBuffer
 import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
-import org.apache.commons.lang.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
+import util.RequiredFieldsConfig
 
 
 /**
@@ -52,7 +52,7 @@ class Datasets @Inject()(
     implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      Ok(views.html.newDataset(filesList)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      Ok(views.html.newDataset(filesList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
   
   def addToDataset(id: UUID, name: String, desc: String) = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
@@ -120,25 +120,21 @@ class Datasets @Inject()(
       //of the datasets names or descriptions
       var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
-          decodedDatasetList += decodeDatasetElements(aDataset)
+          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
       
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-	    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-	    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14	
-		var viewMode = mode;
-		//Always check to see if there is a session value          
-		request.cookies.get("view-mode") match {
-	    	case Some(cookie) => {
-	    		viewMode = cookie.value
-	    	}
-	    	case None => {
-	    		//If there is no cookie, and a mode was not passed in, default it to tile
-	    	    if (viewMode == null || viewMode == "") {
-	    	        viewMode = "tile"
-	    	    }
-	    	}
-		}
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
+        val viewMode: Option[String] = 
+        if (mode == null || mode == "") {
+          request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+          }
+        } else {
+            Some(mode)
+        }
       
       //Pass the viewMode into the view
       Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
@@ -201,26 +197,26 @@ class Datasets @Inject()(
       //of the datasets names or descriptions
       var decodedDatasetList = new ListBuffer[models.Dataset]()
       for (aDataset <- datasetList) {
-          decodedDatasetList += decodeDatasetElements(aDataset)
+          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
       
-      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14      
-      var viewMode = mode;
-      
-      //Always check to see if there is a session value          
-      request.cookies.get("view-mode") match {
-          case Some(cookie) => {                  
-              viewMode = cookie.value
-          }
-          case None => {
-              //If there is no cookie, and viewMode is not set, default it to tile
-              if (viewMode == null || viewMode == "") {
-                  viewMode = "tile"
-              }
-          }
-      }                       
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
+        var viewMode: Option[String] = Some(mode);    
+        //If the mode String passed in is null or empty, use the cookie (this should be the majority of cases)
+        if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+                case Some(cookie) => { 
+                    viewMode = Some(cookie.value)
+                }
+                case None => {
+                    //If there is no cookie, and a mode was not passed in, default it to tile                
+                    viewMode = None
+                
+                }
+            }
+        }                       
       
       Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
   }
@@ -270,7 +266,7 @@ class Datasets @Inject()(
           val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset)
-          datasetWithFiles = decodeDatasetElements(datasetWithFiles)
+          datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
           // previews
 //          val filteredPreviewers = for (
@@ -299,11 +295,11 @@ class Datasets @Inject()(
 	          var decodedCollectionsInside = new ListBuffer[models.Collection]()
 	          
 	          for (aCollection <- collectionsOutside) {
-	              val dCollection = decodeCollectionElements(aCollection)
+	              val dCollection = Utils.decodeCollectionElements(aCollection)
 	              decodedCollectionsOutside += dCollection
 	          }
               for (aCollection <- collectionsInside) {
-                  val dCollection = decodeCollectionElements(aCollection)
+                  val dCollection = Utils.decodeCollectionElements(aCollection)
                   decodedCollectionsInside += dCollection
               }
 	          
@@ -325,39 +321,6 @@ class Datasets @Inject()(
           Logger.error("Error getting dataset" + id); InternalServerError
         }
       }
-  }
-  
-  /**
-   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   * 
-   * Currently, the following dataset elements are encoded:
-   * name
-   * description
-   *  
-   */
-  def decodeDatasetElements(dataset: Dataset) : Dataset = {            
-      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
-              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
-              							  
-      decodedDataset
-  }
-  
-  /**
-   * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   * 
-   * Currently, the following collection elements are encoded:
-   * 
-   * name
-   * description
-   *  
-   */
-  def decodeCollectionElements(collection: Collection) : Collection  = {
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
-              							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
-      decodedCollection
   }
 
   /**

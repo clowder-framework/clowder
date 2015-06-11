@@ -44,7 +44,7 @@ function uploadFileToExistingDataset(data) {
     }
      
     var id = $("#hiddenid").val();
-    $('#status').html("View the <a href=\"/datasets/" + id + "\">Dataset</a>");
+    $('#status').html("View the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>");
     $('#status').show();
     
     return true;
@@ -96,7 +96,7 @@ function attachFiles() {
     request.done(function (response, textStatus, jqXHR){	    
     	//Successful attachment of multiple files
         console.log("Successful response from attachMultipleFiles.");
-        $('#status').html("Attach files successful. Go to the <a href=\"/datasets/" + id + "\">Dataset</a>");
+        $('#status').html("Attach files successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>");
         $('#status').show();
     });
 
