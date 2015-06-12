@@ -4,7 +4,7 @@
 				console.log("Posting " + theText + " to " + posturl);
 				var request = $.ajax({
 					url:  posturl,
-					data: JSON.stringify({ descript: theText }),
+					data: JSON.stringify({ description: theText }),
 					type: "POST",
 					contentType: "application/json",
 		     	});

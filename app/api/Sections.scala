@@ -169,7 +169,7 @@ class Sections @Inject()(
   def description(id: UUID) = SecuredAction(authorization=WithPermission(Permission.AddSections))  { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
-		    request.body.\("descript").asOpt[String] match {
+		    request.body.\("description").asOpt[String] match {
 			    case Some(descr) => {
 			        sections.setDescription(id, descr)
 			        Ok(toJson(Map("status"->"success")))
