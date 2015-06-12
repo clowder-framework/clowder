@@ -322,27 +322,27 @@
 			  	</div>
 				
 				<script>
-				    document.addEventListener("DOMContentLoaded", function () {
-						if ($("#ourvideo").length>0) {
-					        var pop = Popcorn("#ourvideo");
+// 				    document.addEventListener("DOMContentLoaded", function () {
+// 						if ($("#ourvideo").length>0) {
+// 					        var pop = Popcorn("#ourvideo");
 
-							@sections.map { s =>
-					  			@if(s.startTime.isDefined) {
-							   		pop.code({
-								        start: @s.startTime,
-								        onStart: function() {
-								          var frame = @s.order - 1;
-								          console.log("Jumping to " + frame + " " + @s.startTime);
-								          $('#galleria').data('galleria').show(frame);
-								        },
-								        onEnd: function() {
-								          //console.log("end");
-								       }
-								    });
-								}
-						    }
-						}
-				    });
+// 							@sections.map { s =>
+// 					  			@if(s.startTime.isDefined) {
+// 							   		pop.code({
+// 								        start: @s.startTime,
+// 								        onStart: function() {
+// 								          var frame = @s.order - 1;
+// 								          console.log("Jumping to " + frame + " " + @s.startTime);
+// 								          $('#galleria').data('galleria').show(frame);
+// 								        },
+// 								        onEnd: function() {
+// 								          //console.log("end");
+// 								       }
+// 								    });
+// 								}
+// 						    }
+// 						}
+// 				    });
 		         </script>
 			    
 			    <script>
@@ -373,8 +373,6 @@
 						        }
 					    });
 
-					    var gallery = $('#galleria').data('galleria');
-
 						Galleria.ready(function(options) {
 						    // 'this' is the gallery instance
 						    // 'options' is the gallery options
@@ -389,8 +387,6 @@
 						            gallery.toggleFullscreen();
 						        });
 						});
-
-
 				    });
 			    </script>
     			}
