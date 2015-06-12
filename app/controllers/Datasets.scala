@@ -117,7 +117,7 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
-      var decodedDatasetList = ListBuffer.empty[models.Dataset]
+      val decodedDatasetList = ListBuffer.empty[models.Dataset]
       for (aDataset <- datasetList) {
           decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
@@ -194,7 +194,7 @@ class Datasets @Inject()(
 
       //Modifications to decode HTML entities that were stored in an encoded fashion as part 
       //of the datasets names or descriptions
-      var decodedDatasetList = ListBuffer.empty[models.Dataset]
+      val decodedDatasetList = ListBuffer.empty[models.Dataset]
       for (aDataset <- datasetList) {
           decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
@@ -289,8 +289,8 @@ class Datasets @Inject()(
 	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
 	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
 	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
-	          var decodedCollectionsOutside = ListBuffer.empty[models.Collection]
-	          var decodedCollectionsInside = ListBuffer.empty[models.Collection]
+	          val decodedCollectionsOutside = ListBuffer.empty[models.Collection]
+	          val decodedCollectionsInside = ListBuffer.empty[models.Collection]
 	          
 	          for (aCollection <- collectionsOutside) {
 	              val dCollection = Utils.decodeCollectionElements(aCollection)
