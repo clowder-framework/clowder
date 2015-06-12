@@ -27,3 +27,17 @@
     width: "500px",
     placeholder_text_multiple: "Select Users for this Level..."});
 </script>
+
+<script language="javascript">
+    $(".chosen-select").chosen().change(function () {
+        console.log("Inside the chose callback.");
+        //Need to maintain a list of the currently selected items?
+        //Diff it with the new list? Or is there a way to check what has been selected/deselected... <-- Check on this first
+        //Update the options for all elements based on the newly selected/deselected element
+
+        //THe following call now to tell all the items to update. Change the selector to be correct.
+        $("#form_field").trigger("chosen:updated");
+    });
+
+
+</script>
