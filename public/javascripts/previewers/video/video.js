@@ -25,47 +25,32 @@
 			  );
   }
   else{	//Showing a preview, so have to check if it is a multi-option cross-browser compatibility combination (new video extractor versions)
-	  //or a single video (old version of the video extractor). For previews, this can be done by getting their preview metadata.
-	  var request = $.ajax({
-	       type: 'GET',
-	       url: jsRoutes.api.Previews.getMetadata(fileId).url,
-	       contentType: "application/json"
-	     });
-	  request.done(function (respJSON){
-	        console.log("Response " + respJSON);
-	        if(respJSON.contentType == "video/videoalternativeslist"){
-	        	$.ajax({
-	        	    url: referenceUrl,
-	        	    async:true,
-	        	    success: function (data) {
-	        	    	  var videosIds = data.split("\n");	        	    		
-	        	    	  $(useTab).append(			  
-	        	    	     "<video width='750px' id='ourvideo' controls>" +
-	        	    	     		"<source src='" + jsRoutes.api.Previews.download(videosIds[0]).url  + "' type='video/mp4'></source>" +
-	        	    	     		"<source src='" + jsRoutes.api.Previews.download(videosIds[1]).url  + "' type='video/webm'></source>"+
-	        	    	     		"<p>Your browser cannot play MP4 or WebM (maybe no codex), cannot play video.</p>"+
-	        	    	     "</video>"
-	        	    	  );
-	        	    	 },
-	        	    	 error: function(jqXHR, textStatus, errorThrown) { 
-	        	    	        alert("Status: " + textStatus); alert("Error: " + errorThrown); 
-	        	    	    },
-	        	    dataType: 'text'
-	        	});
-	        }
-	        else{
-	        	$(useTab).append(			  
-	   			     "<video width='750px' id='ourvideo' controls><source src='" + referenceUrl + "'></source></video>"
-	   			  );
-	        }
-	  });
-	  request.fail(function (jqXHR, textStatus, errorThrown){
-  		console.error(
-      		"The following error occured: "+
-      		textStatus, errorThrown		            
-  			);
-  		alert("ERROR: " + errorThrown +". Cannot retrieve exact preview type. Aborting video display." );
-	   });
+	  //or a single video (old version of the video extractor). For previews, this can be done by checking their preview metadata.
+	  if(Configuration.fileType == "video/videoalternativeslist"){
+      	$.ajax({
+      	    url: referenceUrl,
+      	    async:true,
+      	    success: function (data) {
+      	    	  var videosIds = data.split("\n");	        	    		
+      	    	  $(useTab).append(			  
+      	    	     "<video width='750px' id='ourvideo' controls>" +
+      	    	     		"<source src='" + jsRoutes.api.Previews.download(videosIds[0]).url  + "' type='video/mp4'></source>" +
+      	    	     		"<source src='" + jsRoutes.api.Previews.download(videosIds[1]).url  + "' type='video/webm'></source>"+
+      	    	     		"<p>Your browser cannot play MP4 or WebM (maybe no codex), cannot play video.</p>"+
+      	    	     "</video>"
+      	    	  );
+      	    	 },
+      	    	 error: function(jqXHR, textStatus, errorThrown) { 
+      	    	        alert("Status: " + textStatus); alert("Error: " + errorThrown); 
+      	    	    },
+      	    dataType: 'text'
+      	});
+      }
+      else{
+      	$(useTab).append(			  
+ 			     "<video width='750px' id='ourvideo' controls><source src='" + referenceUrl + "'></source></video>"
+ 			  );
+      }
   }
   
      
