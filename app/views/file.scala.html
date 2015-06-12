@@ -229,7 +229,7 @@
 					  			}					  			
 					  				class="img-polaroid" height="100px"
 					  			@if(s.startTime.isDefined) {
-					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."
+					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."  data_time="@s.startTime"
 					  		 	} else {
 					  		 		if (s.area.isDefined) {
 					  		 			data-title="Area" data-description="@s.area.toString"
@@ -350,8 +350,28 @@
 					    // Load the classic theme
 					    Galleria.loadTheme('@routes.Assets.at("javascripts/galleria-classic/galleria.classic.min.js")');
 
-					    // Initialize Galleria
-					    Galleria.run('#galleria');
+					 // Initialize Galleria and, if for a video, onclick events for going to time of selected image when clicking main image
+					    Galleria.run('#galleria', {					   		
+						        extend: function(options) {
+						          if ($("#ourvideo").length>0) {
+						            Galleria.log(this); // the gallery instance
+						            Galleria.log(options); // the gallery options
+	
+						            // listen to when an image is shown
+						            this.bind('image', function(e) {
+	
+						                Galleria.log(e); // the event object may contain custom objects, in this case the main image
+						                Galleria.log(e.imageTarget); // the current image
+	
+						                // lets make galleria make the video jump to the time of the selected image when clicking it:
+						                $(e.imageTarget).click(this.proxy(function(){
+						                	var pop = Popcorn("#ourvideo");
+						                	pop.currentTime(parseInt(this._data[this._active].description.match(/\d+/)[0]));
+						                }));
+						            });
+						          }
+						        }
+					    });
 
 					    var gallery = $('#galleria').data('galleria');
 
