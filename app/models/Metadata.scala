@@ -15,14 +15,13 @@ import play.api.data.validation.ValidationError
  * A piece of metadata for a section/file/dataset/collection/space
  **/
 case class Metadata (
-  id: UUID = UUID.generate,
-  attachedTo: ResourceRef,
-  contextId: Option[UUID] = None,
-  createdAt: Date = new Date(),
-  creator: Agent,
-  content: JsValue,
-  version: Option[String] = None
-)
+    id: UUID = UUID.generate,
+    attachedTo: ResourceRef,
+    contextId: Option[UUID] = None,
+    createdAt: Date = new Date(),
+    creator: Agent,
+    content: JsValue,
+    version: Option[String] = None)
 
 case class ResourceRef(resourceType: String, id: UUID)
 
@@ -33,12 +32,13 @@ trait Agent {
 }
 
 // User through the GUI
-case class UserAgent( id: UUID, var typeOfAgent : String = "user", userId: Option[URL]) extends Agent
+case class UserAgent(id: UUID, var typeOfAgent: String = "user", userId: Option[URL]) extends Agent
 
 // Automatic extraction
-case class ExtractorAgent( id: UUID, var typeOfAgent : String = "extractor" , extractorId: Option[URL]) extends Agent
+case class ExtractorAgent(id: UUID, var typeOfAgent: String = "extractor" , extractorId: Option[URL]) extends Agent
 
 object Agent {
+
   implicit object AgentReads extends Reads[Agent] {
     def reads(json: JsValue) = {
       //creator(agent) may be User or Extractor depending on the json 
@@ -71,6 +71,7 @@ object Agent {
 }
 
 object Metadata{
+
   implicit object ExtractorAgentWrites extends Writes[ExtractorAgent] {
     def writes(extractor: ExtractorAgent): JsObject = {
       val extractor_id_string = extractor.extractorId.map(_.toString).getOrElse("")

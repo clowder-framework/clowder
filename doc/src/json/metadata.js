@@ -1,20 +1,20 @@
 [
     {
         "@context": [
-            "http://medici.ncsa.illinois.edu/metadata.jsonld", // includes definitions for the core object (content, agent, created_at)
-            "http://medici.ncsa.illinois.edu/prov.jsonld", // includes definitions for agent types
+            "http://medici.ncsa.illinois.edu/metadata.jsonld",
+            "http://medici.ncsa.illinois.edu/prov.jsonld",
             {
                 "extractor_id": {
                     "@id": "http://dts.ncsa.illinois.edu/api/extractor/id",
-                    "@type": "@id" // string associated with extractor_id is a IRI
+                    "@type": "@id"
                 },
                 "score": "http://www.vision.caltech.edu/Image_Datasets/Caltech101/score",
                 "category": "http://www.vision.caltech.edu/Image_Datasets/Caltech101/category"
             }],
         "created_at": "Fri Jan 16 15:57:20 CST 2015",
         "agent": {
-            "@type": "cat:extractor", // cat definited in prov.jsonld
-            "extractor_id": "http://dts.ncsa.illinois.edu/api/extractors/ncsa.cv.caltech101" // definited in local context
+            "@type": "cat:extractor",
+            "extractor_id": "http://dts.ncsa.illinois.edu/api/extractors/ncsa.cv.caltech101"
         },
         "content": {
             "score": [
@@ -27,9 +27,9 @@
     },
     {
         "@context": [
-            "http://medici.ncsa.illinois.edu/metadata.jsonld", // could the standard definitions be move to the root?
+            "http://medici.ncsa.illinois.edu/metadata.jsonld",
             "http://medici.ncsa.illinois.edu/prov.jsonld",
-            "http://dts.ncsa.illinois.edu/api/extractors/ncsa.cv.caltech101/metadata.jsonld" // extractor's defined context
+            "http://dts.ncsa.illinois.edu/api/extractors/ncsa.cv.caltech101/metadata.jsonld"
         ],
         "created_at": "Fri Jan 16 15:57:20 CST 2015",
         "agent": {
@@ -50,7 +50,7 @@
             "http://medici.ncsa.illinois.edu/metadata.jsonld",
             "http://medici.ncsa.illinois.edu/prov.jsonld",
             {
-                "dc": "http://purl.org/dc/terms/" // namespace syntax
+                "dc": "http://purl.org/dc/terms/"
             }],
         "created_at": "Fri Jan 16 9:51:20 CST 2015",
         "agent": {
