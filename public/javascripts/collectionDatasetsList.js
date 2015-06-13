@@ -21,7 +21,7 @@
 	        //Remove selected dataset from datasets not in collection.
 	        var resultId = event.target.parentNode.parentNode.getAttribute('data-datasetid');
 	        var inputDate = $("tr[data-datasetid='" + resultId + "'] td:nth-child(2)").text();
-	        var inputDescr = $("tr[data-datasetid='" + resultId + "'] td:nth-child(3)").text();
+	        var inputDescr = $("tr[data-datasetid='" + resultId + "'] td:nth-child(3)").html();
 	        var inputThumbnail = $("tr[data-datasetid='" + resultId + "'] td:nth-child(4)").html(); 	        
 	        $("#addDatasetsTable tbody tr[data-datasetid='" + resultId + "']").remove();
 	        
@@ -55,7 +55,7 @@
 	      //Remove selected dataset from datasets in collection.
 	      var rowId = event.target.parentNode.parentNode.getAttribute('data-datasetid');	
 	      var inputDate = $("tr[data-datasetid='" + rowId + "'] td:nth-child(2)").text();
-	      var inputDescr = $("tr[data-datasetid='" + rowId + "'] td:nth-child(3)").text();
+	      var inputDescr = $("tr[data-datasetid='" + rowId + "'] td:nth-child(3)").html();
 	      var inputThumbnail = $("tr[data-datasetid='" + rowId + "'] td:nth-child(4)").html();
 	      $("#collectionDatasetsTable tbody tr[data-datasetid='" + rowId + "']").remove(); 
 	      
@@ -204,9 +204,9 @@
 
 		        	$('#addDatasetsTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;' data-datasetId='" + respJSON[i].id + "'><td><a href='#!' "
 		        								+ "onclick='addDataset(\"" + respJSON[i].id + "\",event)' "
-		        								+ ">"+ htmlDecode(respJSON[i].datasetname) + "</a></td>"
+		        								+ ">"+ respJSON[i].datasetname + "</a></td>"
 		        								+ "<td>" + createdDate + "</td>"
-		        								+ "<td style='white-space:pre-line;'>" + htmlDecode(respJSON[i].description) + "</td>"
+		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 		        								+ "<td>" + datasetThumbnail + "</td>"
 		        								+ "<td><a target='_blank' href='" +  jsRoutes.controllers.Datasets.dataset(respJSON[i].id).url + "'>View</a></td></tr>");
 		        	

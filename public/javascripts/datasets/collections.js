@@ -6,6 +6,7 @@ function addToCollection(datasetId) {
 
     var selectedId = $("#collectionAddSelect").val();
     var selectedName = $("#collectionAddSelect option:selected").text();
+    selectedName = selectedName.replace(/\n/g, "<br>");
 
     var request = jsRoutes.api.Collections.attachDataset(selectedId, datasetId).ajax({
         type: 'POST'

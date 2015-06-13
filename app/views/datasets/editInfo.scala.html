@@ -13,13 +13,13 @@ title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down">
                     <tr>
                         <td style="width: 30%; vertical-align:top;">Name: </td>
                         <td>
-                            <textarea cols=30 rows=4 type="text" id="editname">@dataset.name.replace("<br>", "\n")</textarea>
+                            <textarea cols=30 rows=4 type="text" id="editname">@Html(dataset.name.replace("<br>", "\n"))</textarea>
                         </td>
                     </tr>
                     <tr>
                         <td style="width: 30%; vertical-align:top;">Description: </td>
                         <td>
-                            <textarea cols=30 rows=4 type="text" id="editdesc">@dataset.description.replace("<br>", "\n")</textarea>
+                            <textarea cols=30 rows=4 type="text" id="editdesc">@Html(dataset.description.replace("<br>", "\n"))</textarea>
                         </td>
                     </tr>
                 </table>
@@ -38,10 +38,10 @@ function closeAboutEdit() {
 //Reset the data to the current values
 var text = $("#aboutdesc").html().trim();
 text = text.replace(/<br>/g, "\n");
-$("#editdesc").val(text);
+$("#editdesc").val(htmlDecode(text));
 text = $("#datasettitle").html().trim();
 text = text.replace(/<br>/g, "\n");
-$("#editname").val(text);
+$("#editname").val(htmlDecode(text));
 
 //Close the edit form
 $("#editabout").addClass('collapsed');
@@ -50,10 +50,12 @@ return false;
 }
 
 function updateAboutData(datasetId) {
-var description = $("#editdesc").val().replace(/\n/g, "<br>");
-var name = $("#editname").val().replace(/\n/g, "<br>");
+var description = $("#editdesc").val();
+var name = $("#editname").val();
 var encName = htmlEncode(name);
+encName = encName.replace(/\n/g, "<br>");
 var encDescription = htmlEncode(description);
+encDescription = encDescription.replace(/\n/g, "<br>");
 var jsonData = JSON.stringify({"description":encDescription, "name":encName});
 
 var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
@@ -66,8 +68,8 @@ request.done(function (response, textStatus, jqXHR){
 ///console.log("Response " + response);
 //Sucessful update of the DB - update the interface
 
-$("#aboutdesc").html(htmlDecode(encDescription));
-$("#datasettitle").html(htmlDecode(encName));
+$("#aboutdesc").html(encDescription);
+$("#datasettitle").html(encName);
 
 closeAboutEdit();
 });
