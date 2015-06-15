@@ -42,7 +42,7 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getCollectionsInSpace(limit: Option[Integer], space: Option[String]): List[Collection] = {
+  def getCollectionsInSpace(space: Option[String], limit: Option[Integer]): List[Collection] = {
       collections.listCollections(limit, space)
   }
 
@@ -52,7 +52,7 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getDatasetsInSpace(limit: Option[Integer], space: Option[String]): List[Dataset] = {
+  def getDatasetsInSpace(space: Option[String], limit: Option[Integer]): List[Dataset] = {
       datasets.listDatasets(limit, space)
   }
 
@@ -122,7 +122,7 @@ class MongoDBSpaceService @Inject() (
       }
     }
     // update DOs with collection and dataset counts
-    spacesFromDB.map{ s => s.copy(collectionCount = getCollectionsInSpace(None, Some(s.id.stringify)).size, datasetCount = getDatasetsInSpace(None, Some(s.id.stringify)).size) }
+    spacesFromDB.map{ s => s.copy(collectionCount = getCollectionsInSpace(Some(s.id.stringify)).size, datasetCount = getDatasetsInSpace(Some(s.id.stringify)).size) }
   }
 
   override def getNext(order: Option[String], direction: Direction, start: Date, limit: Integer,
@@ -253,8 +253,8 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def purgeExpiredResources(space: UUID): Unit = {
-      val datasetsList = getDatasetsInSpace(None, Some(space.stringify))
-      val collectionsList = getCollectionsInSpace(None, Some(space.stringify))
+      val datasetsList = getDatasetsInSpace(Some(space.stringify))
+      val collectionsList = getCollectionsInSpace(Some(space.stringify))
       val timeToLive = getTimeToLive(space)
       val currentTime = System.currentTimeMillis()
 

@@ -69,8 +69,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
         case Some(s) => {
 	        val creator = users.findById(s.creator)
 	        var creatorActual: User = null
-	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(displayQty), Some(id.stringify))
-	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(displayQty), Some(id.stringify))
+	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(displayQty))
+	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(displayQty))
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
