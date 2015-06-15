@@ -62,16 +62,15 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   /**
    * Space main page.
    */
-  def getSpace(id: UUID, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
+  def getSpace(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowSpace)) { implicit request =>
     implicit val user = request.user
+    val displayQty = 9
     spaces.get(id) match {
         case Some(s) => {
 	        val creator = users.findById(s.creator)
 	        var creatorActual: User = null
-	        val collectionsInSpace = spaces.getCollectionsInSpace(id)
-
-	        val datasetsInSpace = spaces.getDatasetsInSpaceWithLimit(id, limit)
-
+	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(displayQty), Some(id.stringify))
+	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(displayQty), Some(id.stringify))
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {

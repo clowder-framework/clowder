@@ -42,8 +42,8 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getCollectionsInSpace(spaceId: UUID): List[Collection] = {
-      collections.listCollections(None, Some(spaceId.stringify))
+  def getCollectionsInSpace(limit: Option[Integer], space: Option[String]): List[Collection] = {
+      collections.listCollections(limit, space)
   }
 
   /**
@@ -52,15 +52,8 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getDatasetsInSpace(spaceId: UUID): List[Dataset] = {
-      datasets.listDatasets(None, Some(spaceId.stringify))
-  }
-
-  /**
-   * Implementation of a SpaceService trait.
-   */
-  def getDatasetsInSpaceWithLimit(spaceId: UUID, limit: Int): List[Dataset] = {
-    datasets.listDatasets(Some(limit), Some(spaceId.stringify))
+  def getDatasetsInSpace(limit: Option[Integer], space: Option[String]): List[Dataset] = {
+      datasets.listDatasets(limit, space)
   }
 
   def insert(dataset: ProjectSpace): Option[String] = {
@@ -129,7 +122,7 @@ class MongoDBSpaceService @Inject() (
       }
     }
     // update DOs with collection and dataset counts
-    spacesFromDB.map{ s => s.copy(collectionCount = getCollectionsInSpace(s.id).size, datasetCount = getDatasetsInSpace(s.id).size)}
+    spacesFromDB.map{ s => s.copy(collectionCount = getCollectionsInSpace(None, Some(s.id.stringify)).size, datasetCount = getDatasetsInSpace(None, Some(s.id.stringify)).size) }
   }
 
   override def getNext(order: Option[String], direction: Direction, start: Date, limit: Integer,
@@ -260,8 +253,8 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def purgeExpiredResources(space: UUID): Unit = {
-      var datasetsList = getDatasetsInSpace(space)
-      var collectionsList = getCollectionsInSpace(space)
+      val datasetsList = getDatasetsInSpace(None, Some(space.stringify))
+      val collectionsList = getCollectionsInSpace(None, Some(space.stringify))
       val timeToLive = getTimeToLive(space)
       val currentTime = System.currentTimeMillis()
 
