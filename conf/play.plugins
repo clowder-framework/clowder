@@ -19,5 +19,8 @@
 #10010:services.AdminsNotifierPlugin
 #10013:services.RDFExportService
 #10014:services.irods.IRODSPlugin
+#10015:services.FileMetadataAutodumpService
+#10016:services.DatasetsAutodumpService
+#10017:services.DatasetsMetadataAutodumpService
 #10100:services.TempFilesPlugin
 #10101:services.RDFExporterPlugin

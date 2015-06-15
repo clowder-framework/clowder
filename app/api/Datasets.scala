@@ -1286,6 +1286,36 @@ class Datasets @Inject()(
 	    }
     }
   }
+  
+  def dumpDatasetGroupings = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.Admin)) { request =>
+  
+	  val unsuccessfulDumps = datasets.dumpAllDatasetGroupings
+	  if(unsuccessfulDumps.size == 0)
+	    Ok("Dumping of dataset file groupings was successful for all datasets.")
+	  else{
+	    var unsuccessfulMessage = "Dumping of dataset file groupings was successful for all datasets except dataset(s) with id(s) "
+	    for(badDataset <- unsuccessfulDumps){
+	      unsuccessfulMessage = unsuccessfulMessage + badDataset + ", "
+	    }
+	    unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
+	    Ok(unsuccessfulMessage)  
+	  }      
+	}
+
+  def dumpDatasetsMetadata = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.Admin)) { request =>
+  
+	  val unsuccessfulDumps = datasets.dumpAllDatasetMetadata
+	  if(unsuccessfulDumps.size == 0)
+	    Ok("Dumping of datasets metadata was successful for all datasets.")
+	  else{
+	    var unsuccessfulMessage = "Dumping of datasets metadata was successful for all datasets except dataset(s) with id(s) "
+	    for(badDataset <- unsuccessfulDumps){
+	      unsuccessfulMessage = unsuccessfulMessage + badDataset + ", "
+	    }
+	    unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
+	    Ok(unsuccessfulMessage)  
+	  }      
+	}
 
 }
 

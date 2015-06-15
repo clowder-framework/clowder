@@ -824,6 +824,72 @@ class MongoDBFileService @Inject() (
   def setNotesHTML(id: UUID, html: String) {
 	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
   }
+  
+  def dumpAllFileMetadata(): List[String] = {    
+		    Logger.debug("Dumping metadata of all files.")
+		    
+		    val fileSep = System.getProperty("file.separator")
+		    val lineSep = System.getProperty("line.separator")
+		    var fileMdDumpDir = play.api.Play.configuration.getString("filedump.dir").getOrElse("")
+			if(!fileMdDumpDir.endsWith(fileSep))
+				fileMdDumpDir = fileMdDumpDir + fileSep
+			var fileMdDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")	
+			if(fileMdDumpMoveDir.equals("")){
+				Logger.warn("Will not move dumped files metadata to staging directory. No staging directory set.")	  
+			}
+			else{
+			    if(!fileMdDumpMoveDir.endsWith(fileSep))
+				  fileMdDumpMoveDir = fileMdDumpMoveDir + fileSep
+			}
+		    
+			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty 	
+				
+			for(file <- FileDAO.findAll){
+			  try{
+				  val fileId = file.id.toString
+				  
+				  val fileTechnicalMetadata = getTechnicalMetadataJSON(file.id)
+				  val fileUserMetadata = getUserMetadataJSON(file.id)
+				  if(fileTechnicalMetadata != "{}" || fileUserMetadata != "{}"){
+				    
+				    val filenameNoExtension = file.filename.substring(0, file.filename.lastIndexOf("."))
+				    val filePathInDirs = fileId.charAt(fileId.length()-3)+ fileSep + fileId.charAt(fileId.length()-2)+fileId.charAt(fileId.length()-1)+ fileSep + fileId + fileSep + filenameNoExtension + "__metadata.txt"
+				    val mdFile = new java.io.File(fileMdDumpDir + filePathInDirs)
+				    mdFile.getParentFile().mkdirs()
+				    
+				    val fileWriter =  new BufferedWriter(new FileWriter(mdFile))
+					fileWriter.write(fileTechnicalMetadata + lineSep + lineSep + fileUserMetadata)
+					fileWriter.close()
+					
+					if(!fileMdDumpMoveDir.equals("")){
+					  try{
+						  val mdMoveFile = new java.io.File(fileMdDumpMoveDir + filePathInDirs)
+					      mdMoveFile.getParentFile().mkdirs()
+					      
+						  if(mdFile.renameTo(mdMoveFile)){
+			            	Logger.info("File metadata dumped and moved to staging directory successfully.")
+						  }else{
+			            	Logger.warn("Could not move dumped file metadata to staging directory.")
+			            	throw new Exception("Could not move dumped file metadata to staging directory.")
+						  }
+					  }catch {case ex:Exception =>{
+						  val badFileId = file.id.toString
+						  Logger.error("Unable to stage dumped metadata of file with id "+badFileId+": "+ex.printStackTrace())
+						  unsuccessfulDumps += badFileId
+					  }}
+					}		    
+				  }
+
+			  }catch {case ex:Exception =>{
+			    val badFileId = file.id.toString
+			    Logger.error("Unable to dump metadata of file with id "+badFileId+": "+ex.printStackTrace())
+			    unsuccessfulDumps += badFileId
+			  }}
+			}
+		    
+		    return unsuccessfulDumps.toList
+
+	}
 
 }
 

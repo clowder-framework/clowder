@@ -162,6 +162,8 @@ DELETE         /admin/index                                                     
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 POST           /admin/theme                                                             @controllers.Admin.setTheme
 
+GET      	   /admin/dataDumps           												@controllers.Admin.viewDumpers 
+
 # Javascript Endpoints
 GET            /javascriptRoutes                                                        @controllers.Application.javascriptRoutes
 
@@ -255,6 +257,10 @@ GET            /api/delete-data                                                 
 
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
+
+POST		   /api/dumpFilesMd															@api.Files.dumpFilesMetadata
+POST		   /api/dumpDatasetsMd														@api.Datasets.dumpDatasetsMetadata
+POST		   /api/dumpDatasetGroupings												@api.Datasets.dumpDatasetGroupings
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT

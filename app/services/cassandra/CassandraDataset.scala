@@ -188,6 +188,8 @@ class CassandraDataset extends DatasetService {
   
   def setNotesHTML(id: UUID, notesHTML: String) {}
 
-
+  def dumpAllDatasetGroupings(): List[String] = {List.empty}
+  
+  def dumpAllDatasetMetadata(): List[String] = {List.empty}
 
 }
