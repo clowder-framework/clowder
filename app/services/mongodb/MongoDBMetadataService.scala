@@ -20,12 +20,10 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Writes
 import play.api.libs.json.JsPath
 import services.ContextLDService
+
 /**
  * MongoDB Metadata Service Implementation
- * @author Smruti Padhy
- * 
  */
-
 @Singleton
 class MongoDBMetadataService @Inject() (
   contextService: ContextLDService) extends MetadataService{
@@ -48,10 +46,11 @@ class MongoDBMetadataService @Inject() (
   }
 
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
-  def getMetadataByAttachTo(elementType: String, elementId: UUID): List[Metadata] = {
+  def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata] = {
     //val eidMap = Map(elementType + "_id" -> new ObjectId(elementId.stringify))
     // val MetadataAttachedTo  = MetadataDAO.find(MongoDBObject("attachedTo" -> eidMap))
-    val MetadataAttachedTo = MetadataDAO.find(MongoDBObject(("attachedTo." + elementType + "_id") -> new ObjectId(elementId.stringify)))
+    val MetadataAttachedTo = MetadataDAO.find(MongoDBObject(("attachedTo." + resourceRef.resourceType + "_id") ->
+      new ObjectId(resourceRef.id.stringify)))
     var md: List[Metadata] = List.empty
     for (e <- MetadataAttachedTo) {
       md = e :: md
@@ -60,9 +59,10 @@ class MongoDBMetadataService @Inject() (
   }
 
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
-  def getMetadataByCreator(elementType: String, elementId: UUID, typeofAgent: String): List[Metadata] = {
+  def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent: String): List[Metadata] = {
     //val eidMap = Map(elementType + "_id" -> new ObjectId(elementId.stringify))
-    val mdlistForElementType = MetadataDAO.find(MongoDBObject("attachedTo" + "." + elementType + "_id" -> new ObjectId(elementId.stringify)))
+    val mdlistForElementType = MetadataDAO.find(MongoDBObject("attachedTo" + "." + resourceRef.resourceType + "_id" ->
+      new ObjectId(resourceRef.id.stringify)))
     var mdlist: List[Metadata] = List.empty
     for (md <- mdlistForElementType) {
       var creator = md.creator

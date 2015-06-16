@@ -475,7 +475,7 @@ class Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {    
           //get metadata and also fetch context information
-          val listOfMetadata = metadataService.getMetadataByAttachTo("dataset", id).map(jsonMetadataWithContext(_))        
+          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef("dataset", id)).map(jsonMetadataWithContext(_))
           Ok(toJson(listOfMetadata))
         }
         case None => {

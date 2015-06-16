@@ -329,7 +329,7 @@ class Files @Inject()(
       files.get(id) match {
         case Some(file) => {    
           //get metadata and also fetch context information
-          val listOfMetadata = metadataService.getMetadataByAttachTo("file", id).map(jsonMetadataWithContext(_))        
+          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef("file", id)).map(jsonMetadataWithContext(_))
           Ok(toJson(listOfMetadata))
         }
         case None => {

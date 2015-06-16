@@ -204,11 +204,6 @@ POST           /api/files/:id/remove                                            
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
 
-
-#JSON-LD support
-POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
-GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
-
 POST           /api/files/:id/versus_metadata                                           @api.Files.addVersusMetadata(id:UUID)
 GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)
 
@@ -266,12 +261,17 @@ POST           /api/remove-admin                                                
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 #----------------------------------------------------------------------
-# JSON-LD CONTEXT ENDPOINT
+# JSON-LD ENDPOINTS
 #----------------------------------------------------------------------
 POST           /api/contexts                                                            @api.ContextLD.addContext()
 GET            /api/contexts/:id                                                        @api.ContextLD.getContextById(id: UUID)
 GET            /api/contexts/:name/context.json                                         @api.ContextLD.getContextByName(name: String)
 DELETE         /api/contexts/:id                                                        @api.ContextLD.removeById(id: UUID)
+
+POST           /api/datasets/:id/metadata.jsonld                                        @api.Datasets.addMetadataJsonLD(id: UUID)
+GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
+POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
+GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
 
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
@@ -340,10 +340,6 @@ POST           /api/datasets/:ds_id/files/:file_id                              
 GET            /api/datasets/:id                                                        @api.Datasets.datasetFilesList(id: UUID)
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
-
-#new endpoint for JSON-LD format
-POST           /api/datasets/:id/metadata.jsonld                                        @api.Datasets.addMetadataJsonLD(id: UUID)
-GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
 
 GET            /api/previews/:preview_id/textures/dataset/:datasetid/json               @api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET            /api/previews/:preview_id/textures/dataset/:dataset_id//:filename        @api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)

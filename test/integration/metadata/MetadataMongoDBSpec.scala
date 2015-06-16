@@ -39,17 +39,14 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
       val retrievedMetadata = metadata.getMetadataById(id)
       info("retrieving metadata " + retrievedMetadata)
       
-      val mdByattachTo = metadata.getMetadataByAttachTo("file", fileId)
+      val mdByattachTo = metadata.getMetadataByAttachTo(ResourceRef("file", fileId))
       info("Get Metadata By attachedTo field" + mdByattachTo)
       
-      val mdByCreator = metadata.getMetadataByCreator("file", fileId, "cat:user")
+      val mdByCreator = metadata.getMetadataByCreator(ResourceRef("file", fileId), "cat:user")
       info("Get Metadata By creator field" + mdByCreator)
       
       val mdByContextId = metadata.getMetadataContext(id)
       info("Get Metadata context " + mdByContextId)
-      
-     // metadata.removeMetadata(id)
-     //info("remove metadata " + id)
     }
    }
 }
