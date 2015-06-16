@@ -632,9 +632,15 @@ textarea, input[type='text'], input[type='password']{
     top: 5% !important;
 }
 .iframeModal{
-	height: 60em;
-	width: 100%;
+/* 	height: 60em; */
+/* 	width: 100%; */
 }
+
+.iframeModalDivInternal{
+	position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;
+}
+.iframeModalDivInternal iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
 .iframeClose{
 	font-size: 30px !important;
 	margin-top: -5px !important;

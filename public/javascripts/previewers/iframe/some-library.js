@@ -15,7 +15,7 @@
 		    async:false,
 		    success: function (data) {
 		    	var resourceData = JSON.parse(data.trim());
-
+		    	resourceData.url = "http://supercomputing.cyi.ac.cy";
 		    	var appendStr = "";
 		    	var fileId = Configuration.fileid;
 
@@ -25,7 +25,7 @@
 		    	appendStr = appendStr.concat("<div class='modal fade iframeModalDiv' id='externResource_"+fileId+"' tabindex='-1' role='dialog' aria-labelledby='externResource_"+fileId+"' aria-hidden='true'>");
 		    	appendStr = appendStr.concat('<div class="modal-content"><div class="modal-header"><button type="button" class="close iframeClose" data-dismiss="modal" aria-hidden="true">&times;</button>');
 		    	appendStr = appendStr.concat('<h4 class="modal-title" id="externResourceLabel_'+fileId+'">'+resourceData.title+'</h4>');
-		    	appendStr = appendStr.concat('</div><div class="modal-body"><iframe class="iframeModal" src="'+resourceData.url+'" frameBorder="0"><p>Could not load iframe</p></iframe></div></div></div>');
+		    	appendStr = appendStr.concat('</div><div class="modal-body iframeModalDivInternal"><iframe class="iframeModal" src="'+resourceData.url+'" frameBorder="0"><p>Could not load iframe</p></iframe></div></div></div>');
 		    	appendStr = appendStr.concat('<div class="prevIframeWrap"><iframe class="prevIframe" scrolling="no" src="'+resourceData.url+'"><p>Could not load iframe</p></iframe></div>');
 		    	appendStr = appendStr.concat('<a class="iframeLink" href="#!" data-toggle="modal" data-target="#externResource_'+fileId+'">');
 		    	appendStr = appendStr.concat('<div class="transbox"><button type="button" class="btn btn-default iframeBtn" aria-hidden="true">&plus;</button></div></a>');
