@@ -70,7 +70,7 @@ GET            /fileThumbnail/:id/blob                                          
 
 # Datasets
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "")
-GET            /datasets/userDatasets                                                   @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "tile", email: String)
+GET            /datasets/userDatasets                                                   @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", email: String)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -246,12 +246,14 @@ GET            /api/extractions/supported_input_types                           
 GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()
 
 POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL()
+POST           /api/extractions/multiple_uploadby_url                                   @api.Extractions.multipleUploadByURL()
 POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
 GET            /api/extractions/:id/status                                              @api.Extractions.checkExtractorsStatus(id:UUID)
 POST           /api/extractions/:id/submit                                              @api.Extractions.submitExtraction(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 
-# End of change segment
+GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
+
 POST           /api/files/:id/previews/:p_id                                            @api.Files.attachPreview(id: UUID, p_id: UUID)
 GET            /api/files/:id/listpreviews                                              @api.Files.filePreviewsList(id: UUID)
 GET            /api/files/:id/getPreviews                                               @api.Files.getPreviews(id: UUID)
@@ -355,7 +357,7 @@ POST           /api/indexes/features                                            
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
-POST	       /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
+POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
@@ -429,7 +431,7 @@ POST           /api/institutions/addinstitution                                 
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
-GET            /api/me                                                            @api.Users.getUser()
+GET            /api/me                                                                  @api.Users.getUser()
 
 POST           /api/users/updateUserField                                               @api.Users.updateUserField(email: String, field: String, fieldText: String)
 
