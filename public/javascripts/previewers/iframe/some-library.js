@@ -30,6 +30,7 @@
 		    	appendStr = appendStr.concat('<a class="iframeLink" href="#!" data-toggle="modal" data-target="#externResource_'+fileId+'">');
 		    	appendStr = appendStr.concat('<div class="transbox"><button type="button" class="btn btn-default iframeBtn" aria-hidden="true">&plus;</button></div></a>');
 		    	$(Configuration.tab).append(appendStr);
+		    	$(Configuration.tab).append('<p><a href="'+resourceData.url+'" target="_blank">Click here to open in new window</a></p>');
 		    			    	
 		    	//Dynamic resize of modal iframe
 		    	$(document).ready(function() {
