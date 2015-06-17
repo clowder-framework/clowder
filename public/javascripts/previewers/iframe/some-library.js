@@ -19,7 +19,7 @@
 		    	var appendStr = "";
 		    	var fileId = Configuration.fileid;
 
-		    	if(resourceData.wasRedirected)
+		    	if(resourceData.wasRedirected && Configuration.authenticatedFileModify)
 		    			$(Configuration.tab).append("<p><b>NOTE: Due to insecure content in iframe, iframe URL was auto-converted to HTTPS.</b></p>");
 		    			    	
 		    	appendStr = appendStr.concat("<div class='modal fade iframeModalDiv' id='externResource_"+fileId+"' tabindex='-1' role='dialog' aria-labelledby='externResource_"+fileId+"' aria-hidden='true'>");
