@@ -323,7 +323,7 @@ POST           /api/previews/:id/annotationEdit                                 
 GET            /api/previews/:id/annotationsList                                        @api.Previews.listAnnotations(id: UUID)
 GET            /api/previews                                                            @api.Previews.list
 GET            /api/previews/:id                                                        @api.Previews.download(id: UUID)
-DELETE         /api/previews/:id                                                        @api.Previews.download(id: UUID)
+DELETE         /api/previews/:id                                                        @api.Previews.removePreview(id: UUID)
 POST           /api/previews                                                            @api.Previews.upload(iipKey: String ?= "")
 
 

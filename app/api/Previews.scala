@@ -25,7 +25,7 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 @Singleton
 class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
 
-  @ApiOperation(value = "List all thumbnail files", notes = "Returns list of thumbnail files and descriptions.", responseClass = "None", httpMethod = "GET")
+  @ApiOperation(value = "List all preview files", notes = "Returns list of preview files and descriptions.", responseClass = "None", httpMethod = "GET")
   def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListPreviews)) {
     request =>
       val list = for (p <- previews.listPreviews()) yield jsonPreview(p)

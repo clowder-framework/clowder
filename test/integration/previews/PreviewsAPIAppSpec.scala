@@ -1,36 +1,13 @@
 package integration
 
-import play.api.test.FakeApplication
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.Logger
-import org.scalatestplus.play.OneAppPerSuite
 import org.scalatestplus.play.PlaySpec
-import play.api.Play
-import org.apache.http.entity.mime.content.ContentBody
-import org.apache.http.entity.mime.MultipartEntity
-import org.apache.http.entity.mime.MultipartEntityBuilder
-import org.apache.commons.io.output.ByteArrayOutputStream
-import org.apache.http.entity.mime.content.FileBody
-import play.api.libs.json.JsObject
 import scala.io.Source
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.FileReader
-import java.io.File
-import play.api.http.Writeable
-import play.api.mvc.MultipartFormData
-import play.api.libs.Files.TemporaryFile
-import play.api.mvc.MultipartFormData.FilePart
-import play.api.mvc.Codec
-import org.apache.http.entity.ContentType
-
-import play.api.test._
-import org.scalatest._
 import org.scalatestplus.play._
 import play.api.{Play, Application}
 
@@ -54,6 +31,16 @@ class PreviewsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
     (__ \ "content-type").read[String] and
     (__ \ "filename").read[String]
   )(FileName.apply _)
+
+
+
+  case class PreviewName( id: String, filename: String, contentType: String)
+
+  implicit val previewReads: Reads[PreviewName] = (
+      (__ \ "id").read[String] and
+      (__ \ "filename").read[String] and
+      (__ \ "contentType").read[String]
+    )(PreviewName.apply _)
 
  	
   "The Previews API Spec" must {
@@ -363,7 +350,180 @@ class PreviewsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
       }
     }
 
-    "respond to the removeFile(id:UUID) function routed by DELETE /api/files/:id  " in {
+   "respond to the list() function routed by GET /api/previews" in {
+     val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+     val Some(result) = route(FakeRequest(GET, "/api/previews?key=" + secretKey))
+     info("Status="+status(result))
+     status(result) mustEqual OK
+     info("contentType="+contentType(result))
+     contentType(result) mustEqual Some("application/json")
+     //contentAsString(result) must include ("File")
+     info("content"+contentAsString(result))
+   }
+
+   "respond to the removePreview(id:UUID) function routed by DELETE /api/previews/:id for morrowplots preview file " in {
+     //link up json file here before fake request.
+     val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+     val Some(result) = route(FakeRequest(GET, "/api/previews?key=" + secretKey))
+     info("Status="+status(result))
+     status(result) mustEqual OK
+     info("contentType="+contentType(result))
+     contentType(result) mustEqual Some("application/json")
+     contentAsString(result) must include ("filename")
+     info("content"+contentAsString(result))
+     val json: JsValue = Json.parse(contentAsString(result))
+     val readableString: String = Json.prettyPrint(json)
+     info("Pretty JSON format")
+     info(readableString)
+     val nameResult = json.validate[List[PreviewName]]
+     val fileInfo = nameResult match {
+       case JsSuccess(list : List[PreviewName], _) => (list)
+         info("Mapping file model to Json worked")
+         info("Number of file in System " + list.length.toString())
+         info(list.toString())
+         info(list.filter(_.filename contains "morrowplots-preview").toString().split(",")(0).split("\\(")(2))
+         val id = list.filter(_.filename contains "morrowplots-preview").toString().split(",")(0).split("\\(")(2)
+
+         // After finding specific "id" of file call RESTful API to get JSON information
+         info("DELETE /api/previews/" + id)
+         val Some(result_get) = route(FakeRequest(DELETE, "/api/previews/" + id + "?key=" + secretKey))
+         info("Status_Get="+status(result_get))
+         status(result_get) mustEqual OK
+         info("contentType_Get="+contentType(result_get))
+         contentType(result_get) mustEqual Some("application/json")
+         val json: JsValue = Json.parse(contentAsString(result_get))
+         val readableString: String = Json.prettyPrint(json)
+         info("Pretty JSON format")
+         info(readableString)
+       case e: JsError => {
+         info("Errors: " + JsError.toFlatJson(e).toString())
+       }
+     }
+   }
+
+   "respond to the removePreview(id:UUID) function routed by DELETE /api/previews/:id for morrowplots preview meta file " in {
+     //link up json file here before fake request.
+     val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+     val Some(result) = route(FakeRequest(GET, "/api/previews?key=" + secretKey))
+     info("Status="+status(result))
+     status(result) mustEqual OK
+     info("contentType="+contentType(result))
+     contentType(result) mustEqual Some("application/json")
+     contentAsString(result) must include ("filename")
+     info("content"+contentAsString(result))
+     val json: JsValue = Json.parse(contentAsString(result))
+     val readableString: String = Json.prettyPrint(json)
+     info("Pretty JSON format")
+     info(readableString)
+     val nameResult = json.validate[List[PreviewName]]
+     val fileInfo = nameResult match {
+       case JsSuccess(list : List[PreviewName], _) => (list)
+         info("Mapping file model to Json worked")
+         info("Number of file in System " + list.length.toString())
+         info(list.toString())
+         info(list.filter(_.filename contains "morrowplots-preview-meta").toString().split(",")(0).split("\\(")(2))
+         val id = list.filter(_.filename contains "morrowplots-preview-meta").toString().split(",")(0).split("\\(")(2)
+
+         // After finding specific "id" of file call RESTful API to get JSON information
+         info("DELETE /api/previews/" + id)
+         val Some(result_get) = route(FakeRequest(DELETE, "/api/previews/" + id + "?key=" + secretKey))
+         info("Status_Get="+status(result_get))
+         status(result_get) mustEqual OK
+         info("contentType_Get="+contentType(result_get))
+         contentType(result_get) mustEqual Some("application/json")
+         val json: JsValue = Json.parse(contentAsString(result_get))
+         val readableString: String = Json.prettyPrint(json)
+         info("Pretty JSON format")
+         info(readableString)
+       case e: JsError => {
+         info("Errors: " + JsError.toFlatJson(e).toString())
+       }
+     }
+   }
+
+
+   "respond to the removePreview(id:UUID) function routed by DELETE /api/previews/:id for morrowplots preview 1 file " in {
+     //link up json file here before fake request.
+     val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+     val Some(result) = route(FakeRequest(GET, "/api/previews?key=" + secretKey))
+     info("Status="+status(result))
+     status(result) mustEqual OK
+     info("contentType="+contentType(result))
+     contentType(result) mustEqual Some("application/json")
+     contentAsString(result) must include ("filename")
+     info("content"+contentAsString(result))
+     val json: JsValue = Json.parse(contentAsString(result))
+     val readableString: String = Json.prettyPrint(json)
+     info("Pretty JSON format")
+     info(readableString)
+     val nameResult = json.validate[List[PreviewName]]
+     val fileInfo = nameResult match {
+       case JsSuccess(list : List[PreviewName], _) => (list)
+         info("Mapping file model to Json worked")
+         info("Number of file in System " + list.length.toString())
+         info(list.toString())
+         info(list.filter(_.filename contains "morrowplots-preview-1").toString().split(",")(0).split("\\(")(2))
+         val id = list.filter(_.filename contains "morrowplots-preview-1").toString().split(",")(0).split("\\(")(2)
+
+         // After finding specific "id" of file call RESTful API to get JSON information
+         info("DELETE /api/previews/" + id)
+         val Some(result_get) = route(FakeRequest(DELETE, "/api/previews/" + id + "?key=" + secretKey))
+         info("Status_Get="+status(result_get))
+         status(result_get) mustEqual OK
+         info("contentType_Get="+contentType(result_get))
+         contentType(result_get) mustEqual Some("application/json")
+         val json: JsValue = Json.parse(contentAsString(result_get))
+         val readableString: String = Json.prettyPrint(json)
+         info("Pretty JSON format")
+         info(readableString)
+       case e: JsError => {
+         info("Errors: " + JsError.toFlatJson(e).toString())
+       }
+     }
+   }
+
+   "respond to the removePreview(id:UUID) function routed by DELETE /api/previews/:id for morrowplots preview file 2 " in {
+     //link up json file here before fake request.
+     val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+     val Some(result) = route(FakeRequest(GET, "/api/previews?key=" + secretKey))
+     info("Status="+status(result))
+     status(result) mustEqual OK
+     info("contentType="+contentType(result))
+     contentType(result) mustEqual Some("application/json")
+     contentAsString(result) must include ("filename")
+     info("content"+contentAsString(result))
+     val json: JsValue = Json.parse(contentAsString(result))
+     val readableString: String = Json.prettyPrint(json)
+     info("Pretty JSON format")
+     info(readableString)
+     val nameResult = json.validate[List[PreviewName]]
+     val fileInfo = nameResult match {
+       case JsSuccess(list : List[PreviewName], _) => (list)
+         info("Mapping file model to Json worked")
+         info("Number of file in System " + list.length.toString())
+         info(list.toString())
+         info(list.filter(_.filename contains "morrowplots-preview").toString().split(",")(0).split("\\(")(2))
+         val id = list.filter(_.filename contains "morrowplots-preview").toString().split(",")(0).split("\\(")(2)
+
+         // After finding specific "id" of file call RESTful API to get JSON information
+         info("DELETE /api/previews/" + id)
+         val Some(result_get) = route(FakeRequest(DELETE, "/api/previews/" + id + "?key=" + secretKey))
+         info("Status_Get="+status(result_get))
+         status(result_get) mustEqual OK
+         info("contentType_Get="+contentType(result_get))
+         contentType(result_get) mustEqual Some("application/json")
+         val json: JsValue = Json.parse(contentAsString(result_get))
+         val readableString: String = Json.prettyPrint(json)
+         info("Pretty JSON format")
+         info(readableString)
+       case e: JsError => {
+         info("Errors: " + JsError.toFlatJson(e).toString())
+       }
+     }
+   }
+
+
+   "respond to the removeFile(id:UUID) function routed by DELETE /api/files/:id  " in {
       //link up json file here before fake request.
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
       val Some(result) = route(FakeRequest(GET, "/api/files"))
