@@ -18,8 +18,8 @@ run it from the command line.
   `./sbt 'eclipse with-source=true execution-environment=JavaSE-1.7'`.
 - To run Clowder from the command line you can use the following line: `./sbt 'run'`.
  
-You can also download a precompiled version of Clowder from https://opensource.ncsa.illinois.edu/projects/MMDB. Once
-you have this version unzipped you can start it using `bin/medici-play`.
+You can also download a precompiled version of Clowder from https://opensource.ncsa.illinois.edu/projects/CATS. Once
+you have this version unzipped you can start it using `bin/clowder`.
 
 You can then connect to Clowder using the following URL: http://localhost:9000/.
   
