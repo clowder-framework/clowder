@@ -77,7 +77,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
 		  notes = "Method takes the comment id as a UUID. No arguments necessary in the request body.",
 		  responseClass = "None", httpMethod = "DELETE")
   def removeComment(id: UUID) = 
-  SecuredAction(parse.json, authorization = WithPermission(Permission.RemoveComment)) {
+  SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteComment)) {
 	  implicit request =>
 	  request.user match {
 		  case Some(identity) => {

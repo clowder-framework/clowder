@@ -19,57 +19,57 @@ case class RequestWithUser[A](user: Option[Identity], mediciUser: Option[User], 
  */
 object Permission extends Enumeration {
 	type Permission = Value
-	val Public,					// Page is public accessible, i.e. no login needed
-		Admin,
-
+	val Public, // Page is public accessible, i.e. no login needed
+    Admin,
+    
     // spaces
-	  ViewSpace,
-		CreateSpace,
-		DeleteSpace,
-		EditSpace,
-
+    ViewSpace,
+    CreateSpace,
+    DeleteSpace,
+    EditSpace,
+    
     // datasets
     ViewDataset,
     CreateDataset,
-		DeleteDataset,
+    DeleteDataset,
     EditDataset,
-
+    
     // collections
     ViewCollection,
     CreateCollection,
     DeleteCollection,
     EditCollection,
-
+    
     // files
     AddFile,
     DeleteFile,
     ViewFile,
     DownloadFiles,
     EditLicense,
-    CreatePreview,  // Used by extractors
+    CreatePreview,    // Used by extractors
     MultimediaIndexDocument,
     CreateNote,
-
+    
     // sections
     CreateSection,
     ViewSection,
-    DeleteSection, // FIXME: Unused right now
-    EditSection, // FIXME: Unused right now
-
+    DeleteSection,   // FIXME: Unused right now
+    EditSection,     // FIXME: Unused right now
+    
     // metadata
     AddMetadata,
-		ViewMetadata,
+    ViewMetadata,
     DeleteMetadata, // FIXME: Unused right now
     EditMetadata,   // FIXME: Unused right now
-
+    
     // social annotation
     AddTag,
-		DeleteTag,
-		ViewTags,
+    DeleteTag,
+    ViewTags,
     AddComment,
-    RemoveComment,
-		EditComment,
-
+    DeleteComment,
+    EditComment,
+    
     // geostreaming api
     GSCreateStream,
     GSAddDatapoint,
@@ -77,10 +77,10 @@ object Permission extends Enumeration {
     GSAddSensor,
     GSViewSensor,
     GSDeleteSensor,
-
+    
     // users
     ViewUser,
-	  EditUser = Value
+    EditUser = Value
 }
 
 import api.Permission._
