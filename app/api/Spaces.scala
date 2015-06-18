@@ -31,7 +31,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     notes = "",
     responseClass = "None", httpMethod = "POST")
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
-  def createSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
+  def createSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpace)) {
     request =>
       Logger.debug("Creating new space")
       val nameOpt = (request.body \ "name").asOpt[String]
@@ -59,7 +59,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     notes = "Does not delete the individual datasets and collections in the space.",
     responseClass = "None", httpMethod = "DELETE")
   def removeSpace(spaceId: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.DeleteSpaces), resourceId = Some(spaceId)) { request =>
+    authorization = WithPermission(Permission.DeleteSpace), resourceId = Some(spaceId)) { request =>
     spaces.get(spaceId) match {
       case Some(space) => {
         spaces.delete(spaceId)
@@ -76,7 +76,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     notes = "Retrieves information about a space",
     responseClass = "None", httpMethod = "GET")
   def get(id: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.ShowSpace), resourceId = Some(id)) { request =>
+    authorization = WithPermission(Permission.ViewSpace), resourceId = Some(id)) { request =>
     spaces.get(id) match {
       case Some(space) => Ok(spaceToJson(Utils.decodeSpaceElements(space)))
       case None => BadRequest("Space not found")
@@ -87,7 +87,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
   def list() = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.ListSpaces)) { request => {
+    authorization = WithPermission(Permission.Public)) { request => {
         var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
 	    for (aSpace <- spaces.list()) {
 	        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
@@ -140,7 +140,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
    */
   @ApiOperation(value = "Update the information associated with a space", notes="",
     responseClass = "None", httpMethod = "POST")
-  def updateSpace(spaceid: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateSpaces))
+  def updateSpace(spaceid: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.EditSpace))
   { request =>
       if (UUID.isValid(spaceid.stringify)) {          
 
@@ -232,7 +232,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
    */
   @ApiOperation(value = "Update the information associated with a space", notes="",
     responseClass = "None", httpMethod = "POST")
-  def updateUsers(spaceId: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateSpaces))
+  def updateUsers(spaceId: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.EditSpace))
   { request =>
       if (UUID.isValid(spaceId.stringify)) {
            var aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]

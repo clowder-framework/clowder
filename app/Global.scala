@@ -46,12 +46,12 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
       // viewer role
       val viewerPerm = List(Permission.Public,
-        Permission.ListCollections, Permission.ShowCollection, Permission.ListSpaces, Permission.ShowSpace,
-        Permission.ListDatasets, Permission.ShowDataset, Permission.SearchDatasets, Permission.ShowDatasetsMetadata,
-        Permission.ShowTags, Permission.CreateComments, Permission.AddSections, Permission.GetSections,
-        Permission.CreateTagsSections, Permission.ListFiles, Permission.ShowFilesMetadata, Permission.ShowFile,
-        Permission.SearchFiles, Permission.CreateTagsFiles, Permission.SearchStreams, Permission.ListSensors,
-        Permission.GetSensors, Permission.SearchSensors, Permission.DownloadFiles)
+        Permission.ViewSpace, Permission.ViewCollection, Permission.ViewSpace,
+        Permission.Public, Permission.ViewDataset, Permission.ViewDataset, Permission.ViewMetadata,
+        Permission.ViewTags, Permission.AddComment, Permission.CreateSection, Permission.ViewSection,
+        Permission.AddTag, Permission.Public, Permission.ViewMetadata, Permission.ViewFile,
+        Permission.ViewFile, Permission.AddTag, Permission.GSViewDatapoints, Permission.GSViewSensor,
+        Permission.GSViewSensor, Permission.GSViewSensor, Permission.DownloadFiles)
       val viewerRole = new Role(name="Viewer", description="Viewer Role", permissions = viewerPerm.map(_.toString).toSet)
       users.updateRole(viewerRole)
     }

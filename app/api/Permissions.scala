@@ -15,82 +15,78 @@ import services._
 case class RequestWithUser[A](user: Option[Identity], mediciUser: Option[User], request: Request[A]) extends WrappedRequest(request)
 
 /**
- * List of all permissions available in Medici
- * 
- * @author Rob Kooper
+ * List of all permissions used by the system to authorize users.
  */
 object Permission extends Enumeration {
 	type Permission = Value
 	val Public,					// Page is public accessible, i.e. no login needed
 		Admin,
-		CreateCollections,
-		DeleteCollections,
-		EditCollection,
-		ListCollections,
-		ShowCollection,
-		CreateSpaces,
-		UpdateSpaces,
-		DeleteSpaces,
+
+    // spaces
+	  ViewSpace,
+		CreateSpace,
+		DeleteSpace,
 		EditSpace,
-		ListSpaces,
-		ShowSpace,
-		CreateDatasets,
-		DeleteDatasets,
-		ListDatasets,
-		ShowDataset,
-		SearchDatasets,
-		AddDatasetsMetadata,
-		ShowDatasetsMetadata,
-		CreateTagsDatasets,
-		DeleteTagsDatasets,
-		ShowTags,
-		UpdateDatasetInformation,
-		UpdateLicense,
-		CreateComments,
-		RemoveComments,
-		EditComments,
-		CreateNotes,
-		AddSections,
-		GetSections,
-		CreateTagsSections,
-		DeleteTagsSections,
-		CreateFiles,
-		DeleteFiles,
-		ListFiles,
-		ExtractMetadata,
-		AddFilesMetadata,
-		ShowFilesMetadata,
-		ShowFile,
-		SearchFiles,
-		CreateTagsFiles,
-		DeleteTagsFiles,
-		CreateStreams,
-		AddDataPoints,
-		SearchStreams,
-		AddZoomTile,
-		Add3DTexture,
-		AddIndex,
-		CreateSensors,
-		ListSensors,
-		GetSensors,
-		SearchSensors,
-		RemoveSensors,
-		AddThumbnail,
-		DownloadFiles,
-    GetUser,
-    AddProject,
-    AddInstitution,
-    UserAdmin = Value        // Permission to work with users (list/add/remove/register)
+
+    // datasets
+    ViewDataset,
+    CreateDataset,
+		DeleteDataset,
+    EditDataset,
+
+    // collections
+    ViewCollection,
+    CreateCollection,
+    DeleteCollection,
+    EditCollection,
+
+    // files
+    AddFile,
+    DeleteFile,
+    ViewFile,
+    DownloadFiles,
+    EditLicense,
+    CreatePreview,  // Used by extractors
+    MultimediaIndexDocument,
+    CreateNote,
+
+    // sections
+    CreateSection,
+    ViewSection,
+    DeleteSection, // FIXME: Unused right now
+    EditSection, // FIXME: Unused right now
+
+    // metadata
+    AddMetadata,
+		ViewMetadata,
+    DeleteMetadata, // FIXME: Unused right now
+    EditMetadata,   // FIXME: Unused right now
+
+    // social annotation
+    AddTag,
+		DeleteTag,
+		ViewTags,
+    AddComment,
+    RemoveComment,
+		EditComment,
+
+    // geostreaming api
+    GSCreateStream,
+    GSAddDatapoint,
+    GSViewDatapoints,
+    GSAddSensor,
+    GSViewSensor,
+    GSDeleteSensor,
+
+    // users
+    ViewUser,
+	  EditUser = Value
 }
 
 import api.Permission._
 
 /**
  * Specific implementation of an Authorization
- * 
- * @author Rob Kooper
- * @author Constantinos Sophocleous
- * @author Luigi Marini
  */
 case class WithPermission(permission: Permission) extends Authorization {
 
@@ -112,7 +108,7 @@ case class WithPermission(permission: Permission) extends Authorization {
     if (permission == Public) {
 			// public pages are always visible
       true
-    } else if (permission == UserAdmin) {
+    } else if (permission == Admin) {
 			// user admin always requires admin privileges
 			checkUserAdmin(user)
 		} else {
@@ -140,35 +136,34 @@ case class WithPermission(permission: Permission) extends Authorization {
     // order is important
     (user, permission, resource) match {
       // anybody can list/show
-      case (_, ListCollections, _)      => true
-      case (_, ShowCollection, _)       => true
-      case (_, ListDatasets, _)         => true
-      case (_, ShowDataset, _)          => true
-      case (_, SearchDatasets, _)       => true
-      case (_, SearchFiles, _)          => true
-      case (_, GetSections, _)          => true
-      case (_, ListFiles, _)            => true
-      case (_, ShowFile, _)             => true
-      case (_, ShowFilesMetadata, _)    => true
-      case (_, ShowDatasetsMetadata, _) => true
-      case (_, ListSpaces, _)           => true
-      case (_, ShowSpace, _)            => true
-      case (_, SearchStreams, _)        => true
-      case (_, ListSensors, _)          => true
-      case (_, GetSensors, _)           => true
-      case (_, SearchSensors, _)        => true
-      case (_, ExtractMetadata, _)      => true
-      case (_, ShowTags, _)             => true
+      case (_, ViewSpace, _)        => true
+      case (_, ViewCollection, _)   => true
+      case (_, Public, _)           => true
+      case (_, ViewDataset, _)      => true
+      case (_, ViewDataset, _)      => true
+      case (_, ViewFile, _)         => true
+      case (_, ViewSection, _)      => true
+      case (_, Public, _)           => true
+      case (_, ViewFile, _)         => true
+      case (_, ViewMetadata, _)     => true
+      case (_, ViewMetadata, _)     => true
+      case (_, ViewSpace, _)        => true
+      case (_, GSViewDatapoints, _) => true
+      case (_, GSViewSensor, _)     => true
+      case (_, GSViewSensor, _)     => true
+      case (_, GSViewSensor, _)     => true
+      case (_, ViewMetadata, _)     => true
+      case (_, ViewTags, _)         => true
 
       // FIXME: required by ShowDataset if preview uses original file
       // FIXME:  Needs to be here, as plugins called by browsers for previewers (Java, Acrobat, Quicktime for QTVR) cannot for now use cookies to authenticate as users.
-      case (_, DownloadFiles, _)        => true
+      case (_, DownloadFiles, _)    => true
 
 			// all other permissions require authenticated user
-			case (Some(u), _, _) => true
+			case (Some(u), _, _)          => true
 
 			// not logged in results in permission denied
-			case (None, _, _)  => false
+			case (None, _, _)             => false
     }
   }
 
@@ -205,7 +200,7 @@ case class WithPermission(permission: Permission) extends Authorization {
 	/**
 	 * Check to see if the user is logged in and is an admin.
 	 */
-	def checkUserAdmin(user: Option[Identity]) = {
+	def checkUserAdmin(user: Option[Identity]): Boolean = {
 		user match {
 			case Some(u) => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get)
 			case None => false
@@ -221,21 +216,21 @@ case class WithPermission(permission: Permission) extends Authorization {
 		if (resource.isDefined && configuration(play.api.Play.current).getBoolean("ownerOnly").getOrElse(false)) {
 			// only check if resource is defined and we want owner only permissions
 			permission match {
-				case CreateFiles => Some(checkFileOwnership(user, resource.get))
-				case DeleteFiles => Some(checkFileOwnership(user, resource.get))
-				case AddFilesMetadata => Some(checkFileOwnership(user, resource.get))
+				case AddFile => Some(checkFileOwnership(user, resource.get))
+				case DeleteFile => Some(checkFileOwnership(user, resource.get))
+				case AddMetadata => Some(checkFileOwnership(user, resource.get))
 
-				case CreateDatasets => Some(checkDatasetOwnership(user, resource.get))
-				case DeleteDatasets => Some(checkDatasetOwnership(user, resource.get))
-				case AddDatasetsMetadata => Some(checkDatasetOwnership(user, resource.get))
+				case CreateDataset => Some(checkDatasetOwnership(user, resource.get))
+				case DeleteDataset => Some(checkDatasetOwnership(user, resource.get))
+				case AddMetadata => Some(checkDatasetOwnership(user, resource.get))
 
-				case CreateCollections => Some(checkCollectionOwnership(user, resource.get))
-				case DeleteCollections => Some(checkCollectionOwnership(user, resource.get))
+				case CreateCollection => Some(checkCollectionOwnership(user, resource.get))
+				case DeleteCollection => Some(checkCollectionOwnership(user, resource.get))
 
-				case CreateSpaces => Some(checkSpaceOwnership(user, resource.get))
-				case DeleteSpaces => Some(checkSpaceOwnership(user, resource.get))
+				case CreateSpace => Some(checkSpaceOwnership(user, resource.get))
+				case DeleteSpace => Some(checkSpaceOwnership(user, resource.get))
 
-				case AddSections => Some(checkSectionOwnership(user, resource.get))
+				case CreateSection => Some(checkSectionOwnership(user, resource.get))
 				
 				case _ => None
 			}

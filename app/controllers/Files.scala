@@ -53,7 +53,7 @@ class Files @Inject() (
   /**
    * File info.
    */
-  def file(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+  def file(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewFile)) { implicit request =>
     implicit val user = request.user
     Logger.info("GET file with id " + id)
     files.get(id) match {
@@ -149,7 +149,7 @@ class Files @Inject() (
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListFiles)) { implicit request =>    
+  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -215,7 +215,7 @@ class Files @Inject() (
   /**
    * Upload file page.
    */
-  def uploadFile = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploadFile = SecuredAction(authorization = WithPermission(Permission.AddFile)) { implicit request =>
     implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
@@ -230,12 +230,12 @@ class Files @Inject() (
   )
 
   
-  def extractFile = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+  def extractFile = SecuredAction(authorization = WithPermission(Permission.AddFile)) { implicit request =>
     implicit val user = request.user
     Ok(views.html.uploadExtract(extractForm))
   }
   
-def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) { implicit request =>
     implicit val user = request.user
     user match {        
       case Some(identity) => {
@@ -341,7 +341,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
    * contain data for each of the file that the upload interface can use to accurately update the display based on the success
    * or failure of the upload process.
    */
-  def upload() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+  def upload() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) { implicit request =>
     implicit val user = request.user
     Logger.debug("--------- in upload ------------ ")
     user match {
@@ -590,7 +590,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
       }
   }
 
-  def thumbnail(id: UUID) = SecuredAction(authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+  def thumbnail(id: UUID) = SecuredAction(authorization=WithPermission(Permission.ViewFile)) { implicit request =>
     thumbnails.getBlob(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
@@ -638,7 +638,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
    * Uploads query to temporary folder.
    * Gets type of index and list of sections, and passes on to the Search controller
   */
-  def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     //=== processing searching within files or sections of files or both ===    
     //dataParts are from the seach form in view/multimediasearch
     //get type of index and list of sections, and pass on to the Search controller
@@ -750,7 +750,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   }
 
   /* Drag and drop */
-  def uploadDragDrop() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def uploadDragDrop() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
       request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
@@ -845,7 +845,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   }
 
 
-  def uploaddnd(dataset_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateDatasets), resourceId = Some(dataset_id)) { implicit request =>
+  def uploaddnd(dataset_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateDataset), resourceId = Some(dataset_id)) { implicit request =>
     request.user match {
       case Some(identity) => {
         datasets.get(dataset_id) match {
@@ -993,12 +993,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }
   }
 
-  def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { implicit request =>
+  def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.ViewFile)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileMetadataSearch()) 
   }
 
-  def generalMetadataSearch()  = SecuredAction(authorization=WithPermission(Permission.SearchFiles)) { implicit request =>
+  def generalMetadataSearch()  = SecuredAction(authorization=WithPermission(Permission.ViewFile)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileGeneralMetadataSearch()) 
   }

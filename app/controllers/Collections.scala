@@ -24,7 +24,7 @@ object ThumbnailFound extends Exception {}
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, spaces: SpaceService) extends SecuredController {  
 
-  def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollections)) {
+  def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollection)) {
     implicit request =>
       implicit val user = request.user
       val spacesList = spaces.list()
@@ -55,7 +55,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * List collections.
    */	
-  def list(when: String, date: String, limit: Int, space: Option[String] = None, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListCollections)) {
+  def list(when: String, date: String, limit: Int, space: Option[String] = None, mode: String) = SecuredAction(authorization = WithPermission(Permission.ViewSpace)) {
     implicit request =>
       implicit val user = request.user
       var direction = "b"
@@ -147,7 +147,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    * page with the appropriate error to be displayed.
    *  
    */
-  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateCollections)) {
+  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateCollection)) {
     implicit request =>
       Logger.debug("------- in Collections.submit ---------")
       var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
@@ -194,7 +194,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Collection.
    */
-  def collection(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowCollection)) {
+  def collection(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewCollection)) {
     implicit request =>
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user

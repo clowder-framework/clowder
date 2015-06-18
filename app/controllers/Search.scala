@@ -32,7 +32,7 @@ class Search @Inject() (
   /**
    * Search results.
    */
-  def search(query: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def search(query: String) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     implicit val user = request.user
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
@@ -161,7 +161,7 @@ class Search @Inject() (
 
   }
 
-  def multimediasearch() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def multimediasearch() = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     Logger.debug("Starting multimedia search interface")
     implicit val user = request.user
     Ok(views.html.multimediasearch())
@@ -170,7 +170,7 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     Logger.debug("Searching multimedia index " + section_id.stringify)
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
@@ -227,12 +227,12 @@ class Search @Inject() (
     }
   }
 
-  def advanced() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def advanced() = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     Logger.debug("Starting Advanced Search interface")
     Ok(views.html.advancedsearch())
   }
 
-  def SearchByText(query: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def SearchByText(query: String) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     Logger.debug("Searching for" + query)
     Ok("")
   }
@@ -240,7 +240,7 @@ class Search @Inject() (
   /*
    * GET the query file from a URL and compare within the database and show the result   
    * */
-  def searchbyURL(queryURL: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def searchbyURL(queryURL: String) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     Async {
       implicit val user = request.user
       current.plugin[VersusPlugin] match {
@@ -280,7 +280,7 @@ class Search @Inject() (
    * Finds similar objects(images, pdfs, etc) in Multiple index for a temporary file
    * Input file is NOT in db, just uploaded by user.
    */
-  def findSimilarToQueryFile(fileID: UUID, typeToSearch: String, sectionsSelected: List[String]) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def findSimilarToQueryFile(fileID: UUID, typeToSearch: String, sectionsSelected: List[String]) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     Async {
       implicit val user = request.user
       //query file is a new/temp file, it will be stored in MultimediaQueryService
@@ -334,7 +334,7 @@ class Search @Inject() (
    * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is already in db)
    *
    */
-  def findSimilarToExistingFile(inputFileId: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def findSimilarToExistingFile(inputFileId: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     Async {
       implicit val user = request.user
       //file will be stored in FileService
@@ -463,7 +463,7 @@ class Search @Inject() (
    */
   def findSimilarWeightedIndexes() =
     SecuredAction(parse.multipartFormData,
-      authorization = WithPermission(Permission.SearchDatasets)) {
+      authorization = WithPermission(Permission.ViewDataset)) {
         implicit request =>
           Async {
             implicit val user = request.user
@@ -531,7 +531,7 @@ class Search @Inject() (
 
   //  def Filterby(id: String) = TODO
 
-  def uploadquery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def uploadquery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     request.body.file("picture").map { picture =>
       import java.io.File
       picture.ref.moveTo(new File("/tmp/picture"))

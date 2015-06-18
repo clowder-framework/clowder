@@ -38,7 +38,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.adminIndex())
   }
   
-  def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.AddIndex)) { request =>
+  def reindexFiles = SecuredAction(parse.json, authorization = WithPermission(Permission.MultimediaIndexDocument)) { request =>
     Ok("Reindexing")
   }
 
@@ -336,12 +336,12 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
      	})
 )
   
-  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+  def newAdmin()  = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.newAdmin(adminForm))
   }
   
-  def submitNew() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+  def submitNew() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -360,7 +360,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
   
-  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+  def listAdmins() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -383,7 +383,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     return permissionMap;
   }
 
-  def listRoles() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+  def listRoles() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -401,7 +401,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     )(roleFormData.apply)(roleFormData.unapply)
   )
 
-  def createRole() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+  def createRole() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -411,7 +411,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
-  def submitCreateRole() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+  def submitCreateRole() = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -433,7 +433,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
-  def removeRole(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.UserAdmin), resourceId = Some(id)) {
+  def removeRole(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.Admin), resourceId = Some(id)) {
     implicit request =>
     deleteRoleHelper(id, request)
   }
@@ -448,7 +448,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
-  def editRole(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.UserAdmin), resourceId = Some(id))
+  def editRole(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.Admin), resourceId = Some(id))
   {
     implicit request =>
       implicit val user = request.user
@@ -473,7 +473,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       }
   }
 
-  def updateRole() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.UserAdmin))
+  def updateRole() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Admin))
   {
     implicit request =>
       implicit val user = request.user

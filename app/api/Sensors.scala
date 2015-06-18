@@ -12,7 +12,7 @@ import services.PostgresPlugin
  */
 object Sensors extends Controller with ApiController {
 
-  def add() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
+  def add() = SecuredAction(authorization=WithPermission(Permission.GSAddSensor)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           Ok("")
@@ -23,7 +23,7 @@ object Sensors extends Controller with ApiController {
       }
   }
   
-  def get(id: String) = SecuredAction(authorization=WithPermission(Permission.GetSensors)) { request =>
+  def get(id: String) = SecuredAction(authorization=WithPermission(Permission.GSViewSensor)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           Ok("")
@@ -34,7 +34,7 @@ object Sensors extends Controller with ApiController {
       }
   }
   
-  def list() = SecuredAction(authorization=WithPermission(Permission.ListSensors)) { request =>
+  def list() = SecuredAction(authorization=WithPermission(Permission.GSViewSensor)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           val sensors = plugin.listSensors()
@@ -46,7 +46,7 @@ object Sensors extends Controller with ApiController {
       }
   }
   
-  def search() = SecuredAction(authorization=WithPermission(Permission.SearchSensors)) { request =>
+  def search() = SecuredAction(authorization=WithPermission(Permission.GSViewSensor)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           Ok("")
@@ -57,7 +57,7 @@ object Sensors extends Controller with ApiController {
       }
   }
   
-  def delete(id: String) = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+  def delete(id: String) = SecuredAction(authorization=WithPermission(Permission.GSDeleteSensor)) { request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
           Ok("")

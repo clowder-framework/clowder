@@ -94,7 +94,7 @@ class Files @Inject()(
   @ApiOperation(value = "Retrieve physical file object metadata",
       notes = "Get metadata of the file object (not the resource it describes) as JSON. For example, size of file, date created, content type, filename.",
       responseClass = "None", httpMethod = "GET")
-  def get(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def get(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
     implicit request =>
       Logger.info("GET file with id " + id)
       files.get(id) match {
@@ -109,7 +109,7 @@ class Files @Inject()(
    * List all files.
    */
   @ApiOperation(value = "List all files", notes = "Returns list of files and descriptions.", responseClass = "None", httpMethod = "GET")
-  def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListFiles)) {
+  def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) {
     request =>
       val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f)
 
@@ -252,7 +252,7 @@ class Files @Inject()(
       notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
       responseClass = "None", httpMethod = "POST")
   def addMetadata(id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata), resourceId = Some(id)) {
+    SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
       request =>
         Logger.debug(s"Adding metadata to file $id")
         val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
@@ -273,7 +273,7 @@ class Files @Inject()(
    * REST enpoint:POST api/files/:id/versus_metadata
    */
   def addVersusMetadata(id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) { request =>
+    SecuredAction(authorization = WithPermission(Permission.AddMetadata)) { request =>
 
      Logger.debug("INSIDE ADDVersusMetadata=: "+id.toString )
       files.get(id) match {
@@ -301,7 +301,7 @@ class Files @Inject()(
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
-  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -443,7 +443,7 @@ class Files @Inject()(
   @ApiOperation(value = "Reindex a file",
     notes = "Reindex the existing file.",
     responseClass = "None", httpMethod = "GET")
-  def reindex(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+  def reindex(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddFile)) {
     request =>
       files.get(id) match {
         case Some(file) => {
@@ -465,7 +465,7 @@ class Files @Inject()(
   @ApiOperation(value = "(Re)send preprocessing job for file",
       notes = "Force Medici to (re)send preprocessing job for selected file, processing the file as a file of the selected MIME type. Returns file id on success. In the requested file type, replace / with __ (two underscores).",
       responseClass = "None", httpMethod = "POST")
-  def sendJob(file_id: UUID, fileType: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles), Some(file_id)) {
+  def sendJob(file_id: UUID, fileType: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddFile), Some(file_id)) {
     implicit request =>
       files.get(file_id) match {
         case Some(theFile) => {
@@ -515,7 +515,7 @@ class Files @Inject()(
   @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets), Some(dataset_id)) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDataset), Some(dataset_id)) { implicit request =>
     request.user match {
      case Some(user) => {
       datasets.get(dataset_id) match {
@@ -676,7 +676,7 @@ class Files @Inject()(
   /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
-  def uploadIntermediate(originalIdAndFlags: String) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def uploadIntermediate(originalIdAndFlags: String) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -735,7 +735,7 @@ class Files @Inject()(
   /**
    * Upload metadata for preview and attach it to a file.
    */
-  def uploadPreview(file_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles), Some(file_id)) {
+  def uploadPreview(file_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile), Some(file_id)) {
     implicit request =>
       request.body.file("File").map {
         f =>
@@ -754,7 +754,7 @@ class Files @Inject()(
   @ApiOperation(value = "Attach existing preview to file",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def attachPreview(file_id: UUID, preview_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles), resourceId = Some(file_id)) {
+  def attachPreview(file_id: UUID, preview_id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFile), resourceId = Some(file_id)) {
     request =>
     // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
@@ -796,7 +796,7 @@ class Files @Inject()(
   @ApiOperation(value = "Get the user-generated metadata of the selected file in an RDF file",
 	      notes = "",
 	      responseClass = "None", httpMethod = "GET")
-  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) {implicit request =>  
+  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewMetadata)) {implicit request =>
    current.plugin[RDFExportService].isDefined match{
     case true => {
       current.plugin[RDFExportService].get.getRDFUserMetadataFile(id.stringify, mappingNumber) match{
@@ -842,7 +842,7 @@ class Files @Inject()(
   @ApiOperation(value = "Get URLs of file's RDF metadata exports.",
 	      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
 	      responseClass = "None", httpMethod = "GET")
-  def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+  def getRDFURLsForFile(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewMetadata)) { request =>
     current.plugin[RDFExportService].isDefined match{
       case true =>{
 	    current.plugin[RDFExportService].get.getRDFURLsForFile(id.stringify)  match {
@@ -861,7 +861,7 @@ class Files @Inject()(
   @ApiOperation(value = "Add user-generated metadata to file",
       notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
       responseClass = "None", httpMethod = "POST")
-  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata), resourceId = Some(id)) {
+  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
       implicit request =>
         Logger.debug("Adding user metadata to file " + id)
         val theJSON = Json.stringify(request.body)
@@ -905,7 +905,7 @@ class Files @Inject()(
   @ApiOperation(value = "List file previews",
       notes = "Return the currently existing previews' basic characteristics (id, filename, content type) of the selected file.",
       responseClass = "None", httpMethod = "GET")
-  def filePreviewsList(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def filePreviewsList(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
     request =>
       files.get(id) match {
         case Some(file) => {
@@ -934,7 +934,7 @@ class Files @Inject()(
   /**
    * Add 3D geometry file to file.
    */
-  def attachGeometry(file_id: UUID, geometry_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles), resourceId = Some(file_id)) {
+  def attachGeometry(file_id: UUID, geometry_id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFile), resourceId = Some(file_id)) {
     request =>
       request.body match {
         case JsObject(fields) => {
@@ -958,7 +958,7 @@ class Files @Inject()(
   /**
    * Add 3D texture to file.
    */
-  def attachTexture(file_id: UUID, texture_id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateFiles), resourceId = Some(file_id)) {
+  def attachTexture(file_id: UUID, texture_id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddFile), resourceId = Some(file_id)) {
     request =>
       request.body match {
         case JsObject(fields) => {
@@ -983,7 +983,7 @@ class Files @Inject()(
    * Add thumbnail to file.
    */
   @ApiOperation(value = "Add thumbnail to file", notes = "Attaches an already-existing thumbnail to a file.", responseClass = "None", httpMethod = "POST")
-  def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles), resourceId = Some(file_id)) {
+  def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddFile), resourceId = Some(file_id)) {
     implicit request =>
       files.get(file_id) match {
         case Some(file) => {
@@ -1016,7 +1016,7 @@ class Files @Inject()(
    * Add thumbnail to query file.
    */
   @ApiOperation(value = "Add thumbnail to a query image", notes = "Attaches an already-existing thumbnail to a query image.", responseClass = "None", httpMethod = "POST")
-  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateFiles)) {
+  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddFile)) {
     implicit request =>
       queries.get(query_id) match {
         case Some(file) => {
@@ -1043,7 +1043,7 @@ class Files @Inject()(
    * Find geometry file for given 3D file and geometry filename.
    */
   def getGeometry(three_d_file_id: UUID, filename: String) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
       request =>
         threeD.findGeometry(three_d_file_id, filename) match {
           case Some(geometry) => {
@@ -1100,7 +1100,7 @@ class Files @Inject()(
    * Find texture file for given 3D file and texture filename.
    */
   def getTexture(three_d_file_id: UUID, filename: String) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
       request =>
         threeD.findTexture(three_d_file_id, filename) match {
           case Some(texture) => {
@@ -1189,7 +1189,7 @@ class Files @Inject()(
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
   def updateLicense(id: UUID) = 
-    SecuredAction(parse.json, authorization = WithPermission(Permission.UpdateLicense)) {    
+    SecuredAction(parse.json, authorization = WithPermission(Permission.EditLicense)) {
     implicit request =>
       if (UUID.isValid(id.stringify)) {         
 
@@ -1305,7 +1305,7 @@ class Files @Inject()(
    * REST endpoint: GET: gets the tag data associated with this file.
    */
   @ApiOperation(value = "Gets tags of a file", notes = "Returns a list of strings, List[String].", responseClass = "None", httpMethod = "GET")
-  def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
     implicit request =>
       Logger.info("Getting tags for file with id " + id)
       /* Found in testing: given an invalid ObjectId, a runtime exception
@@ -1383,7 +1383,7 @@ class Files @Inject()(
   @ApiOperation(value = "Adds tags to a file",
       notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.  The tags are expected as a list of strings: List[String].  An example is:<br>    curl -H 'Content-Type: application/json' -d '{\"tags\":[\"namo\", \"amitabha\"], \"extractor_id\": \"curl\"}' \"http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey\"",
       responseClass = "None", httpMethod = "POST")
-  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTagsFiles)) {
+  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddTag)) {
     implicit request =>
       val theResponse = addTagsHelper(TagCheck_File, id, request)
   	  files.index(id)
@@ -1400,7 +1400,7 @@ class Files @Inject()(
   @ApiOperation(value = "Removes tags of a file",
       notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.  The tags are expected as a list of strings: List[String].",
       responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsFiles)) {
+  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTag)) {
     implicit request =>
       val theResponse = removeTagsHelper(TagCheck_File, id, request)
   	  files.index(id)
@@ -1415,7 +1415,7 @@ class Files @Inject()(
   @ApiOperation(value = "Removes all tags of a file",
       notes = "This is a big hammer -- it does not check the userId or extractor_id and forcefully remove all tags for this file.  It is mainly intended for testing.",
       responseClass = "None", httpMethod = "POST")
-  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsFiles)) {
+  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTag)) {
     implicit request =>
       Logger.info("Removing all tags for file with id: " + id)
       if (UUID.isValid(id.stringify)) {
@@ -1444,7 +1444,7 @@ class Files @Inject()(
   * 
   */
   @ApiOperation(value = "Provides metadata extracted for a file", notes = "", responseClass = "None", httpMethod = "GET")  
-  def extract(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ExtractMetadata)) { implicit request =>
+  def extract(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewMetadata)) { implicit request =>
     Logger.info("Getting extract info for file with id " + id)
     if (UUID.isValid(id.stringify)) {
      files.get(id) match {
@@ -1472,7 +1472,7 @@ class Files @Inject()(
   }
 
   @ApiOperation(value = "Add comment to file", notes = "", responseClass = "None", httpMethod = "POST")
-  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
+  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddComment)) {
     implicit request =>
       request.user match {
         case Some(identity) => {
@@ -1502,7 +1502,7 @@ class Files @Inject()(
   @ApiOperation(value = "Is being processed",
       notes = "Return whether a file is currently being processed by a preprocessor.",
       responseClass = "None", httpMethod = "GET")
-  def isBeingProcessed(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def isBeingProcessed(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
     request =>
       files.get(id) match {
         case Some(file) => {
@@ -1548,7 +1548,7 @@ class Files @Inject()(
   @ApiOperation(value = "Get file previews",
       notes = "Return the currently existing previews of the selected file (full description, including paths to preview files, previewer names etc).",
       responseClass = "None", httpMethod = "GET")
-  def getPreviews(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def getPreviews(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
       request =>
         files.get(id) match {
           case Some(file) => {
@@ -1593,7 +1593,7 @@ class Files @Inject()(
     @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
         notes = "",
         responseClass = "None", httpMethod = "GET")
-    def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewMetadata)) { request =>
       files.get(id)  match {
         case Some(file) => {
           Ok(files.getXMLMetadataJSON(id))
@@ -1605,7 +1605,7 @@ class Files @Inject()(
     @ApiOperation(value = "Get community-generated metadata of the resource described by the file",
           notes = "",
           responseClass = "None", httpMethod = "GET")
-    def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFilesMetadata)) { request =>
+    def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewMetadata)) { request =>
      files.get(id)  match {
         case Some(file) => {
           Ok(files.getUserMetadataJSON(id))
@@ -1617,7 +1617,7 @@ class Files @Inject()(
     @ApiOperation(value = "Get technical metadata of the resource described by the file",
           notes = "",
           responseClass = "None", httpMethod = "GET")
-    def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+    def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewMetadata)) {
       request =>
         files.get(id) match {
           case Some(file) => {
@@ -1632,7 +1632,7 @@ class Files @Inject()(
      @ApiOperation(value = "Get Versus metadata of the resource described by the file",
           notes = "",
           responseClass = "None", httpMethod = "GET")
-    def getVersusMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+    def getVersusMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewMetadata)) {
       request =>
         files.get(id) match {
           case Some(file) => {
@@ -1658,7 +1658,7 @@ class Files @Inject()(
   @ApiOperation(value = "Delete file",
       notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
       responseClass = "None", httpMethod = "POST")
-  def removeFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteFiles)) {
+  def removeFile(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteFile)) {
     request =>
       files.get(id) match {
         case Some(file) => {
@@ -1696,7 +1696,7 @@ class Files @Inject()(
   /**
    * List datasets satisfying a user metadata search tree.
    */
-  def searchFilesUserMetadata = SecuredAction(authorization = WithPermission(Permission.SearchFiles)) {
+  def searchFilesUserMetadata = SecuredAction(authorization = WithPermission(Permission.ViewFile)) {
     request =>
       Logger.debug("Searching files' user metadata for search tree.")
 
@@ -1719,7 +1719,7 @@ class Files @Inject()(
   /**
    * List datasets satisfying a general metadata search tree.
    */
-  def searchFilesGeneralMetadata = SecuredAction(authorization = WithPermission(Permission.SearchFiles)) {
+  def searchFilesGeneralMetadata = SecuredAction(authorization = WithPermission(Permission.ViewFile)) {
     request =>
       Logger.debug("Searching files' metadata for search tree.")
 
@@ -1788,7 +1788,7 @@ class Files @Inject()(
     }
   }
 
-  def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNotes))  { implicit request =>
+  def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNote))  { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
 		    request.body.\("notesHTML").asOpt[String] match {

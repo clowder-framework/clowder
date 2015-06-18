@@ -60,7 +60,7 @@ object Geostreams extends ApiController {
     (__ \ 'stream_id).read[String]
   ) tupled
 
-  def createSensor() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
+  def createSensor() = SecuredAction(authorization=WithPermission(Permission.GSAddSensor)) { request =>
       Logger.debug("Creating sensor")
       request.body.validate[(String, String, List[Double], JsValue)].map {
         case (name, geoType, longlat, metadata) => {
@@ -177,7 +177,7 @@ object Geostreams extends ApiController {
       }
   }
 
-  def createStream() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { request =>
+  def createStream() = SecuredAction(authorization=WithPermission(Permission.GSAddSensor)) { request =>
       Logger.debug("Creating stream: " + request.body)
       request.body.validate[(String, String, List[Double], JsValue, String)].map {
         case (name, geoType, longlat, metadata, sensor_id) => {
@@ -222,7 +222,7 @@ object Geostreams extends ApiController {
       }
     }
 
-  def deleteStream(id: String) = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+  def deleteStream(id: String) = SecuredAction(authorization=WithPermission(Permission.GSDeleteSensor)) { request =>
     Logger.debug("Delete stream " + id)
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
@@ -233,7 +233,7 @@ object Geostreams extends ApiController {
     }
   }
 
-  def deleteSensor(id: String) = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+  def deleteSensor(id: String) = SecuredAction(authorization=WithPermission(Permission.GSDeleteSensor)) { request =>
     Logger.debug("Delete sensor " + id)
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
@@ -244,7 +244,7 @@ object Geostreams extends ApiController {
     }
   }
 
-  def deleteAll() = SecuredAction(authorization=WithPermission(Permission.RemoveSensors)) { request =>
+  def deleteAll() = SecuredAction(authorization=WithPermission(Permission.GSDeleteSensor)) { request =>
     Logger.debug("Drop all")
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
@@ -268,7 +268,7 @@ object Geostreams extends ApiController {
       }
     }
 
-  def addDatapoint()  = SecuredAction(authorization=WithPermission(Permission.AddDataPoints)) { request =>
+  def addDatapoint()  = SecuredAction(authorization=WithPermission(Permission.GSAddDatapoint)) { request =>
     Logger.debug("Adding datapoint: " + request.body)
     request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
       case (start_time, end_time, geoType, longlat, data, streamId) =>

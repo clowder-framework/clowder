@@ -7,7 +7,7 @@
       <td valign="top">
         <img src=@profile.getAvatarUrl class="profilePicture">
         <div align="center">
-          <h4><a href="@routes.Datasets.userDatasets("", "", 12, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
+          <h4><a href="@routes.Datasets.userDatasets("", "", 12, None, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
           @user match {
             case Some(viewer) => {
               @ownProfile match {
