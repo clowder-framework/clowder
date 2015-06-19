@@ -42,8 +42,8 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getCollectionsInSpace(space: Option[String], limit: Option[Integer]): List[Collection] = {
-      collections.listCollections(limit, space)
+  def getCollectionsInSpace(space: Option[String], order: Option[String], limit: Option[Integer]): List[Collection] = {
+      collections.listCollections(order, limit, space)
   }
 
   /**
@@ -52,8 +52,8 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getDatasetsInSpace(space: Option[String], limit: Option[Integer]): List[Dataset] = {
-      datasets.listDatasets(limit, space)
+  def getDatasetsInSpace(space: Option[String], order: Option[String], limit: Option[Integer]): List[Dataset] = {
+      datasets.listDatasets(order, limit, space)
   }
 
   def insert(dataset: ProjectSpace): Option[String] = {
