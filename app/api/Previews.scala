@@ -26,7 +26,7 @@ import services.{TileService, PreviewService}
 class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
 
   def downloadPreview(id: UUID, datasetid: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
       request =>
         Redirect(routes.Previews.download(id))
     }
@@ -35,7 +35,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Download preview bytes.
    */
   def download(id: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
       request =>
         previews.getBlob(id) match {
 
@@ -82,7 +82,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Upload a preview.
    */
   def upload(iipKey: String = "") =
-    SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+    SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) {
       implicit request =>
         request.body.file("File").map {
           f =>
@@ -127,7 +127,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    */
 
   def uploadMetadata(id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+    SecuredAction(authorization = WithPermission(Permission.AddFile)) {
       request =>
         Logger.debug(request.body.toString)
         request.body match {
@@ -151,7 +151,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    *
    */
   def getMetadata(id: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
       request =>
         previews.get(id) match {
           case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString)))
@@ -163,7 +163,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Add pyramid tile to preview.
    */
   def attachTile(preview_id: UUID, tile_id: UUID, level: String) =
-    SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+    SecuredAction(authorization = WithPermission(Permission.AddFile)) {
       request =>
         request.body match {
           case JsObject(fields) => {
@@ -189,7 +189,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Find tile for given preview, level and filename (row and column).
    */
   def getTile(dzi_id_dir: String, level: String, filename: String) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
       request =>
         val dzi_id = dzi_id_dir.replaceAll("_files", "")
         tiles.findTile(UUID(dzi_id), filename, level) match {
@@ -244,7 +244,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Add annotation to 3D model preview.
    */
   def attachAnnotation(preview_id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+    SecuredAction(authorization = WithPermission(Permission.AddFile)) {
       request =>
         val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
         val y_coord = (request.body \ "y_coord").asOpt[String].getOrElse("0.0")
@@ -262,7 +262,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     }
 
   def editAnnotation(preview_id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.CreateFiles)) {
+    SecuredAction(authorization = WithPermission(Permission.AddFile)) {
       request =>
         Logger.debug("thereq: " + request.body.toString)
         val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
@@ -287,7 +287,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     }
 
   def listAnnotations(preview_id: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
       request =>
         previews.get(preview_id) match {
           case Some(preview) => {

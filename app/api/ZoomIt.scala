@@ -13,7 +13,7 @@ class ZoomIt @Inject()(tiles: TileService) extends Controller with ApiController
   /**
    * Upload a pyramid tile.
    */
-  def uploadTile() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddZoomTile)) {
+  def uploadTile() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreatePreview)) {
     request =>
       request.body.file("File").map {
         f =>

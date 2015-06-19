@@ -15,7 +15,7 @@ import api.Permission
  */
 object Geostreams extends Controller with SecuredController {
   
-  def browse() = SecuredAction(authorization=WithPermission(Permission.SearchSensors)) { implicit request =>
+  def browse() = SecuredAction(authorization=WithPermission(Permission.GSViewSensor)) { implicit request =>
     implicit val user = request.user
     Ok(views.html.geostreams())
   }

@@ -18,7 +18,7 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
  */
 class Comments @Inject()(datasets: DatasetService, comments: CommentService) extends ApiController {
 
-  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
+  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddComment)) {
     implicit request =>
       Logger.trace("Adding comment")
       comments.get(id) match {          
@@ -77,7 +77,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
 		  notes = "Method takes the comment id as a UUID. No arguments necessary in the request body.",
 		  responseClass = "None", httpMethod = "DELETE")
   def removeComment(id: UUID) = 
-  SecuredAction(parse.json, authorization = WithPermission(Permission.RemoveComments)) {    
+  SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteComment)) {
 	  implicit request =>
 	  request.user match {
 		  case Some(identity) => {
@@ -138,7 +138,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
       notes = "Method takes the comment id as a UUID. commentText key-value pair necessary in the request body.",
       responseClass = "None", httpMethod = "POST")
   def editComment(id: UUID) = 
-  SecuredAction(parse.json, authorization = WithPermission(Permission.EditComments)) {    
+  SecuredAction(parse.json, authorization = WithPermission(Permission.EditComment)) {
 	  implicit request =>             
 	  request.user match {
 	       case Some(identity) => {

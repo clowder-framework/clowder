@@ -12,7 +12,7 @@ class Institutions @Inject() (institutions: MongoDBInstitutionService) extends A
   /*
    * Add a new institution to the database
    */
-  def addinstitution(institution: String) = SecuredAction(authorization = WithPermission(Permission.AddInstitution)) {
+  def addinstitution(institution: String) = SecuredAction(authorization = WithPermission(Permission.EditUser)) {
     implicit request =>
       institutions.addNewInstitution(institution)
       Ok(toJson("added institution"))

@@ -121,7 +121,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
     }
   }
 
-  def newSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpaces)) {
+  def newSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpace)) {
     implicit request =>
       implicit val user = request.user
     Ok(views.html.spaces.newSpace(spaceForm))
@@ -209,7 +209,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
    */
   def list(order: Option[String], direction: String, start: Option[String], limit: Int,
            filter: Option[String], mode: String) =
-    SecuredAction(authorization = WithPermission(Permission.ListSpaces)) {
+    SecuredAction(authorization = WithPermission(Permission.Public)) {
     implicit request =>
       implicit val user = request.user
       val d = if (direction.toLowerCase.startsWith("a")) {
@@ -228,7 +228,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       for (aSpace <- spaceList) {
         decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
-      val deletePermission = WithPermission(Permission.DeleteDatasets).isAuthorized(user)
+      val deletePermission = WithPermission(Permission.DeleteDataset).isAuthorized(user)
       val prev = if (decodedSpaceList.size > 0) {
         spaces.getPrev(order, d, decodedSpaceList.head.created, limit, filter).getOrElse("")
       } else {

@@ -16,7 +16,7 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
   /**
    * Search results.
    */
-  def search(query: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def search(query: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         Logger.debug("Searching for: " + query)
@@ -102,7 +102,7 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
     }
   }
   
-  def querySPARQL() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
+  def querySPARQL() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewMetadata)) {
     implicit request =>
 
       configuration.getString("userdfSPARQLStore").getOrElse("no") match {

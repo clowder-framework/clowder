@@ -30,7 +30,7 @@ class Sections @Inject()(
    * otherwise returns a BadRequest.
    * A new ObjectId is created for this section.
    */
-  def add() = SecuredAction(authorization = WithPermission(Permission.AddSections)) {
+  def add() = SecuredAction(authorization = WithPermission(Permission.CreateSection)) {
     implicit request =>
       request.body.\("file_id").asOpt[String] match {
         case Some(file_id) => {
@@ -54,7 +54,7 @@ class Sections @Inject()(
   /**
    * REST endpoint: GET: get info of this section.
    */
-  def get(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetSections)) {
+  def get(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewSection)) {
     implicit request =>
       Logger.info("Getting info for section with id " + id)
       sections.get(id) match {
@@ -71,7 +71,7 @@ class Sections @Inject()(
    * Returns a JSON object of multiple fields.
    * One returned field is "tags", containing a list of string values.
    */
-  def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
+  def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
     implicit request =>
       Logger.info("Getting tags for section with id " + id)
       sections.get(id) match {
@@ -89,7 +89,7 @@ class Sections @Inject()(
    * REST endpoint: POST: Add tags to a section.
    * Requires that the request body contains a "tags" field of List[String] type.
    */
-  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTagsSections)) {
+  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddTag)) {
     implicit request =>
       val (not_found, error_str) = tags.addTagsHelper(TagCheck_Section, id, request)
 
@@ -110,7 +110,7 @@ class Sections @Inject()(
    * REST endpoint: POST: remove tags.
    * Requires that the request body contains a "tags" field of List[String] type.
    */
-  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsSections)) {
+  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTag)) {
     implicit request =>
       val (not_found, error_str) = tags.removeTagsHelper(TagCheck_Section, id, request)
 
@@ -129,7 +129,7 @@ class Sections @Inject()(
   /**
    * REST endpoint: POST: remove all tags.
    */
-  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsSections)) {
+  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTag)) {
     implicit request =>
       Logger.info("Removing all tags for section with id: " + id)
       sections.get(id) match {
@@ -146,7 +146,7 @@ class Sections @Inject()(
 
   // ---------- Tags related code ends ------------------
 
-  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
+  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddComment)) {
     implicit request =>
       request.user match {
         case Some(identity) => {
@@ -169,7 +169,7 @@ class Sections @Inject()(
   /**
    * Add thumbnail to section.
    */
-  def attachThumbnail(section_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddSections),
+  def attachThumbnail(section_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateSection),
 		  			resourceId = Some(section_id)) {
     implicit request =>
       sections.get(section_id) match {

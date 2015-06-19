@@ -86,7 +86,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Uploads a file for extraction of metadata and returns file id",
     notes = "Saves the uploaded file and sends it for extraction to Rabbitmq. Does not index the file. Same as upload() except for upload()",
     responseClass = "None", httpMethod = "POST")
-  def uploadExtract(showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
+  def uploadExtract(showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) {
     implicit request =>
 
       request.user match {
@@ -197,7 +197,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Uploads a file for extraction using the file's URL",
     notes = "Saves the uploaded file and sends it for extraction. Does not index the file.  ",
     responseClass = "None", httpMethod = "POST")
-  def uploadByURL() = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+  def uploadByURL() = SecuredAction(authorization = WithPermission(Permission.AddFile)) { implicit request =>
     request.user match {
       case Some(user) => {
         val configuration = play.api.Play.configuration
@@ -276,7 +276,7 @@ class Extractions @Inject() (
     @ApiOperation(value = "Uploads files for a given list of files' URLs ",
     notes = "Saves the uploaded files and sends it for extraction. Does not index the files. Returns id for the web resource ",
     responseClass = "None", httpMethod = "POST")
-  def multipleUploadByURL() = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
+  def multipleUploadByURL() = SecuredAction(authorization = WithPermission(Permission.AddFile)) { implicit request =>
     Async {
       request.user match {
         case Some(user) => {
@@ -345,7 +345,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Submits a previously uploaded file's id for extraction",
     notes = "Notifies the user that the file is sent for extraction. check the status  ",
     responseClass = "None", httpMethod = "POST")
-  def submitExtraction(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+  def submitExtraction(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) { implicit request =>
     current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         if (UUID.isValid(id.stringify)) {
@@ -383,7 +383,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Checks for the status of all extractors processing the file with id",
     notes = " A list of status of all extractors responsible for extractions on the file and the final status of extraction job",
     responseClass = "None", httpMethod = "GET")
-  def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+  def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) { implicit request =>
     Async {
       current.plugin[RabbitmqPlugin] match {
 
@@ -430,7 +430,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Provides the metadata extracted from the file",
     notes = " Retruns Status of extractions and metadata extracted so far ",
     responseClass = "None", httpMethod = "GET")
-  def fetch(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+  def fetch(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) { implicit request =>
     Async {
       current.plugin[RabbitmqPlugin] match {
 
@@ -489,7 +489,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Checks for the extraction statuses of all files",
     notes = " Returns a list (file id, status of extractions) ",
     responseClass = "None", httpMethod = "GET")
-  def checkExtractionsStatuses(id: models.UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) { implicit request =>
+  def checkExtractionsStatuses(id: models.UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) { implicit request =>
     Async {
       request.user match {
         case Some(user) => {

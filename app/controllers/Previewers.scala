@@ -22,7 +22,7 @@ import scala.io.Source
  *
  */
 object Previewers extends Controller with SecuredController {
-  def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+  def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewFile)) { implicit request =>
     Ok(views.html.previewers(findPreviewers()))
   }
 

@@ -26,7 +26,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def createCollection() = SecuredAction(authorization=WithPermission(Permission.CreateCollections)) {
+  def createCollection() = SecuredAction(authorization=WithPermission(Permission.CreateCollection)) {
     request =>
       Logger.debug("Creating new collection")
       (request.body \ "name").asOpt[String].map { name =>
@@ -54,7 +54,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
+                    authorization=WithPermission(Permission.CreateCollection), resourceId = Some(collectionId)) { request =>
 
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
@@ -70,7 +70,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "Reindex the existing collection, if recursive is set to true it will also reindex all datasets and files.",
     httpMethod = "GET")
   def reindex(id: UUID, recursive: Boolean) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollections)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollection)) {
     request =>
       collections.get(id) match {
         case Some(coll) => {
@@ -90,7 +90,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
+                    authorization=WithPermission(Permission.CreateCollection), resourceId = Some(collectionId)) { request =>
 
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
@@ -102,7 +102,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "Does not delete the individual datasets in the collection.",
       responseClass = "None", httpMethod = "POST")
   def removeCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-    authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
+    authorization=WithPermission(Permission.DeleteCollection), resourceId = Some(collectionId)) { request =>
     collections.get(collectionId) match {
       case Some(collection) => {
         collections.delete(collectionId)
@@ -119,7 +119,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "",
       responseClass = "None", httpMethod = "GET")
   def listCollections() = SecuredAction(parse.anyContent,
-                                        authorization=WithPermission(Permission.ListCollections)) { request =>
+                                        authorization=WithPermission(Permission.ViewSpace)) { request =>
     val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
     Ok(toJson(list))
   }
@@ -127,7 +127,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Get a specific collection",
     responseClass = "Collection", httpMethod = "GET")
   def getCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-    authorization=WithPermission(Permission.ShowCollection)) { request =>
+    authorization=WithPermission(Permission.ViewCollection)) { request =>
     collections.get(collectionId) match {
       case Some(x) => Ok(jsonCollection(x))
       case None => BadRequest(toJson("collection not found"))

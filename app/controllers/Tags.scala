@@ -32,7 +32,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
    * The code will query the datasets, files and sections and combine the lists into a single sorted list
    * and display it to the user.
    */
-  def search(tag: String, start: String, size: Integer, mode: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def search(tag: String, start: String, size: Integer, mode: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
     implicit val user = request.user
 
     var nextItems = collection.mutable.ListBuffer.empty[AnyRef]
@@ -108,13 +108,13 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     Ok(views.html.searchByTag(tag, nextItems.slice(0, size).toList, prev, next, size, viewMode))
   }
 
-  def tagCloud() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+  def tagCloud() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewTags)) { implicit request =>
     implicit val user = request.user
 
     Ok(views.html.tagCloud(computeTagWeights))
   }
 
-  def tagListWeighted() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+  def tagListWeighted() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewTags)) { implicit request =>
     implicit val user = request.user
 
     val tags = computeTagWeights
@@ -132,7 +132,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     }
   }
 
-  def tagListOrdered() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+  def tagListOrdered() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewTags)) { implicit request =>
     implicit val user = request.user
 
     Ok(views.html.tagListChar(createTagList))

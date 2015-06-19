@@ -19,7 +19,7 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "List all users in the system",
     responseClass = "User", httpMethod = "GET")
-  def list() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.UserAdmin)) { request =>
+  def list() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Admin)) { request =>
     Ok(Json.toJson(users.list))
   }
 
@@ -28,7 +28,7 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "Return the user associated with the request.",
     responseClass = "User", httpMethod = "GET")
-  def getUser() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def getUser() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
       request.user match {
           case Some(identity) => {
               Logger.debug("Have an identity. It is " + identity)
@@ -57,7 +57,7 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "Return a single user.",
     responseClass = "User", httpMethod = "GET")
-  def findById(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def findById(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
     users.findById(id) match {
       case Some(x) => Ok(Json.toJson(x))
       case None => BadRequest("no user found with that id.")
@@ -69,7 +69,7 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "Return a single user.",
     responseClass = "User", httpMethod = "GET")
-  def findByEmail(email: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def findByEmail(email: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
     users.findByEmail(email) match {
       case Some(x) => Ok(Json.toJson(x))
       case None => BadRequest("no user found with that email.")
@@ -78,28 +78,28 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   @ApiOperation(value = "Edit User Field.",
     responseClass = "None", httpMethod = "POST")
-  def updateUserField(email: String, field: String, fieldText: Any) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def updateUserField(email: String, field: String, fieldText: Any) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
     users.updateUserField(email, field, fieldText)
     Ok(Json.obj("status" -> "success"))
   }
 
   @ApiOperation(value = "Add a friend.",
     responseClass = "None", httpMethod = "POST")
-  def addUserFriend(email: String, newFriend: String)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def addUserFriend(email: String, newFriend: String)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
     users.addUserFriend(email, newFriend)
     Ok(Json.obj("status" -> "success"))
   }
 
   @ApiOperation(value = "Add a dataset View.",
     responseClass = "None", httpMethod = "POST")
-  def addUserDatasetView(email: String, dataset: UUID)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def addUserDatasetView(email: String, dataset: UUID)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
     users.addUserDatasetView(email, dataset)
     Ok(Json.obj("status" -> "success"))
   }
 
   @ApiOperation(value = "Create a List.",
     responseClass = "None", httpMethod = "POST")
-  def createNewListInUser(email: String, field: String, fieldList: List[Any])= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def createNewListInUser(email: String, field: String, fieldList: List[Any])= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
     users.createNewListInUser(email, field, fieldList)
     Ok(Json.obj("status" -> "success"))
   }
