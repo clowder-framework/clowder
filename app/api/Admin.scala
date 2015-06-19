@@ -17,13 +17,13 @@ object Admin extends Controller with ApiController {
   /**
    * DANGER: deletes all data, keep users.
    */
-  def deleteAllData = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Admin)) { request =>
+  def deleteAllData = ServerAdminAction { request =>
     current.plugin[MongoSalatPlugin].map(_.dropAllData())
     Ok(toJson("done"))
   }
   
   
-  def removeAdmin = SecuredAction(authorization=WithPermission(Permission.Admin)) { request =>    
+  def removeAdmin = ServerAdminAction(parse.json) { request =>
     Logger.debug("Removing admin")
 
     request.user match {
@@ -54,7 +54,7 @@ object Admin extends Controller with ApiController {
   }
   
   
-  def submitAppearance = SecuredAction(parse.json, authorization=WithPermission(Permission.Admin)) { request =>
+  def submitAppearance = ServerAdminAction(parse.json) { request =>
     (request.body \ "displayName").asOpt[String] match {
       case Some(displayName) => AppConfiguration.setDisplayName(displayName)
     }

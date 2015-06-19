@@ -2,7 +2,7 @@ package api
 
 import play.api.Logger
 import play.api.Play.current
-import models.{UUID, Collection}
+import models.{ResourceRef, UUID, Collection}
 import services._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
@@ -26,7 +26,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def createCollection() = SecuredAction(authorization=WithPermission(Permission.CreateCollection)) {
+  def createCollection() = PermissionAction(Permission.CreateCollection)(parse.json) {
     request =>
       Logger.debug("Creating new collection")
       (request.body \ "name").asOpt[String].map { name =>
@@ -53,9 +53,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Add dataset to collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollection), resourceId = Some(collectionId)) { request =>
-
+  def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { request =>
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
@@ -69,8 +67,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Reindex a collection",
     notes = "Reindex the existing collection, if recursive is set to true it will also reindex all datasets and files.",
     httpMethod = "GET")
-  def reindex(id: UUID, recursive: Boolean) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollection)) {
+  def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, id))) {
     request =>
       collections.get(id) match {
         case Some(coll) => {
@@ -89,9 +86,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollection), resourceId = Some(collectionId)) { request =>
-
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { request =>
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
@@ -101,8 +96,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove collection",
       notes = "Does not delete the individual datasets in the collection.",
       responseClass = "None", httpMethod = "POST")
-  def removeCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-    authorization=WithPermission(Permission.DeleteCollection), resourceId = Some(collectionId)) { request =>
+  def removeCollection(collectionId: UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { request =>
     collections.get(collectionId) match {
       case Some(collection) => {
         collections.delete(collectionId)
@@ -118,16 +112,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "List all collections",
       notes = "",
       responseClass = "None", httpMethod = "GET")
-  def listCollections() = SecuredAction(parse.anyContent,
-                                        authorization=WithPermission(Permission.ViewSpace)) { request =>
+  def listCollections() = PermissionAction(Permission.ViewSpace) { request =>
     val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
     Ok(toJson(list))
   }
 
   @ApiOperation(value = "Get a specific collection",
     responseClass = "Collection", httpMethod = "GET")
-  def getCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-    authorization=WithPermission(Permission.ViewCollection)) { request =>
+  def getCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { request =>
     collections.get(collectionId) match {
       case Some(x) => Ok(jsonCollection(x))
       case None => BadRequest(toJson("collection not found"))
@@ -145,8 +137,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Attach existing preview to collection",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def attachPreview(collection_id: UUID, preview_id: UUID) = SecuredAction(authorization = WithPermission(Permission.EditCollection)) {
-    request =>
+  def attachPreview(collection_id: UUID, preview_id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collection_id)))(parse.json) { request =>
       // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
       val extractor_id = if (eid.isDefined) {

@@ -1,29 +1,28 @@
 package api
 
-import models.{User, UUID}
-import play.Logger
-import securesocial.core.Authorization
-import securesocial.core.Identity
-import play.api.mvc.WrappedRequest
-import play.api.mvc.Request
+import models.{ResourceRef, User, UUID}
+import org.apache.commons.codec.binary.Base64
+import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
+import securesocial.core.UserService
+import securesocial.core._
+import play.api.mvc._
 import play.api.Play.configuration
+import securesocial.core.providers.UsernamePasswordProvider
 import services._
 
- /**
-  * A request that adds the User for the current call
-  */
-case class RequestWithUser[A](user: Option[Identity], mediciUser: Option[User], request: Request[A]) extends WrappedRequest(request)
+import scala.concurrent.Future
 
 /**
  * List of all permissions used by the system to authorize users.
  */
 object Permission extends Enumeration {
+	val anonymous = new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
+
 	type Permission = Value
-	val Public, // Page is public accessible, i.e. no login needed
-    Admin,
-    
-    // spaces
-    ViewSpace,
+
+	// spaces
+	val ViewSpace,
     CreateSpace,
     DeleteSpace,
     EditSpace,
@@ -81,9 +80,24 @@ object Permission extends Enumeration {
     // users
     ViewUser,
     EditUser = Value
+
+	def checkServerAdmin(user: Option[Identity]) = {
+		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
+	}
+
+	def checkPermission(user: Option[Identity], permission: Permission, resourceRef: Option[ResourceRef]) = {
+		false
+	}
 }
 
+/**
+ * A request that adds the User for the current call
+ */
+case class UserRequest[A](user: Option[Identity], mediciUser: Option[User], request: Request[A]) extends WrappedRequest[A](request)
+
+
 import api.Permission._
+
 
 /**
  * Specific implementation of an Authorization
@@ -320,3 +334,79 @@ case class WithPermission(permission: Permission) extends Authorization {
 		}
 	}
 }
+
+case class PermissionAccess(permission: Permission) extends Authorization {
+	val spaces: SpaceService = services.DI.injector.getInstance(classOf[SpaceService])
+	val collections: CollectionService = services.DI.injector.getInstance(classOf[CollectionService])
+	val datasets: DatasetService = services.DI.injector.getInstance(classOf[DatasetService])
+	val files: FileService = services.DI.injector.getInstance(classOf[FileService])
+	val sections: SectionService = services.DI.injector.getInstance(classOf[SectionService])
+
+	def isAuthorized(user: Identity): Boolean = {
+		isAuthorized(Option(user), None)
+	}
+
+	def isAuthorized(user: Identity, resourceRef: Option[ResourceRef]): Boolean = {
+		isAuthorized(Option(user), resourceRef)
+	}
+
+	def isAuthorized(user: Option[Identity], resourceRef: Option[ResourceRef] = None): Boolean = {
+		checkResourceOwnership(user, resourceRef) || checkResourcePermission(user, permission, resourceRef)
+	}
+
+	/**
+	 * See if user is owner of the object
+	 */
+	def checkResourceOwnership(user: Option[Identity], resourceRef: Option[ResourceRef]): Boolean = {
+		user match {
+			case Some(u) => {
+				resourceRef match {
+					case Some(ResourceRef(ResourceRef.collection, id)) => {
+						collections.get(id).exists(x => x.author.exists(_.identityId == u.identityId))
+					}
+					case Some(ResourceRef(ResourceRef.dataset, id)) => {
+						datasets.get(id).exists(_.author.identityId == u.identityId)
+					}
+					case Some(ResourceRef(ResourceRef.file, id)) => {
+						files.get(id).exists(_.author.identityId == u.identityId)
+					}
+					case Some(ResourceRef(resType, id)) => {
+						Logger.warn(s"Do not know how to handle $resType")
+						false
+					}
+					case None => false
+				}
+			}
+			case None => false
+		}
+	}
+
+	def checkResourcePermission(user: Option[Identity], permission: Permission, resourceRef: Option[ResourceRef]): Boolean = {
+		false
+	}
+}
+
+case class PublicAccess() extends Authorization {
+	def isAuthorized(user: Identity): Boolean = true
+}
+
+case class ServerAccess() extends Authorization {
+	def isAuthorized(user: Identity): Boolean = {
+		if (configuration(play.api.Play.current).getString("permissions").exists(_ == "public")) {
+			true
+		} else {
+			user != null
+		}
+	}
+}
+
+case class ServerAdminAccess() extends Authorization {
+	def isAuthorized(user: Identity): Boolean = {
+		if (user == null) {
+			false
+		} else {
+			user.email.exists(AppConfiguration.checkAdmin)
+		}
+	}
+}
+

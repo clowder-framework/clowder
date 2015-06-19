@@ -23,8 +23,10 @@ object ResourceRef {
 
   implicit val ResourceRefFormat = Json.format[ResourceRef]
 
+  val space = 'space
   val dataset = 'dataset
   val file = 'file
   val collection = 'collection
   val user = 'user
+  val comment = 'comment
 }
