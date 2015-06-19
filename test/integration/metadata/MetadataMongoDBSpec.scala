@@ -29,24 +29,20 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
     content = testcontent)
         
   "The Metadata MongoDB Service" must {
-    "be able to add, retrieve and remove Metadata" in {
-      info("insert metadata")
+    "be able to add metadata" in {
       val injector = Guice.createInjector(new services.ConfigurationModule)
-      val metadata : MetadataService =  injector.getInstance(classOf[MetadataService])
-      info("testMetadata"+ testMetadata)
+      val metadata: MetadataService = injector.getInstance(classOf[MetadataService])
       val id = metadata.addMetadata(testMetadata)
-      info("new metadata added " + id)
-      val retrievedMetadata = metadata.getMetadataById(id)
-      info("retrieving metadata " + retrievedMetadata)
-      
+      assert(id == testMetadata.id)
+    }
+    "be able retrieve metadata" in {
+      val injector = Guice.createInjector(new services.ConfigurationModule)
+      val metadata: MetadataService = injector.getInstance(classOf[MetadataService])
+      val retrievedMetadata = metadata.getMetadataById(testMetadata.id)
       val mdByattachTo = metadata.getMetadataByAttachTo(ResourceRef("file", fileId))
-      info("Get Metadata By attachedTo field" + mdByattachTo)
-      
+      assert(mdByattachTo(0).id == testMetadata.id)
       val mdByCreator = metadata.getMetadataByCreator(ResourceRef("file", fileId), "cat:user")
-      info("Get Metadata By creator field" + mdByCreator)
-      
-      val mdByContextId = metadata.getMetadataContext(id)
-      info("Get Metadata context " + mdByContextId)
+      assert(mdByCreator(0).id == testMetadata.id)
     }
    }
 }
