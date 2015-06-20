@@ -1,64 +1,25 @@
 package api
 
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.OutputStream
+import java.io.{FileInputStream, InputStream}
 import java.net.URL
-import java.net.HttpURLConnection
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.File
-import java.util.Date
-import java.util.ArrayList
-import java.io.BufferedWriter
-import java.io.FileWriter
-import java.io.FileReader
-import java.io.ByteArrayInputStream
-import scala.collection.mutable.MutableList
+import java.util.Calendar
+import javax.inject.Inject
+
+import com.wordnik.swagger.annotations.{Api, ApiOperation}
+import controllers.Utils
+import fileutils.FilesUtils
 import models._
 import play.api.Logger
-import play.api.Play.current
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json._
-import play.api.libs.ws.Response
-import javax.inject.Inject
-import scala.collection.mutable.ListBuffer
-import org.json.JSONObject
-import Transformation.LidoToCidocConvertion
-import jsonutils.JsonUtil
-import services._
-import fileutils.FilesUtils
-import controllers.Previewers
-import play.api.libs.json.JsString
-import scala.Some
-import services.DumpOfFile
-import services.ExtractorMessage
-import play.api.mvc.ResponseHeader
-import scala.util.parsing.json.JSONArray
-import models.Preview
-import play.api.mvc.SimpleResult
-import models.File
-import play.api.libs.json.JsObject
-import play.api.Play.configuration
-import com.wordnik.swagger.annotations.{ApiOperation, Api}
-import services.ExtractorMessage
-import scala.concurrent.Future
-import scala.util.control._
-import javax.activation.MimetypesFileTypeMap
-import java.util.Calendar
-import api.WithPermission
-import controllers.Utils
-import org.apache.commons.io.FileUtils
-import play.api.libs.MimeTypes
+import play.api.Play.{configuration, current}
 import play.api.http.ContentTypes
-import java.io.InputStream
-import scala.collection.mutable.HashMap
-import play.api.libs.ws.WS
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import play.api.libs.MimeTypes
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json._
+import play.api.libs.json.{JsArray, Json, JsObject, JsValue}
+import play.api.libs.ws.{Response, WS}
+import services._
+
+import scala.concurrent.Future
 
 
 /**
@@ -86,8 +47,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Uploads a file for extraction of metadata and returns file id",
     notes = "Saves the uploaded file and sends it for extraction to Rabbitmq. Does not index the file. Same as upload() except for upload()",
     responseClass = "None", httpMethod = "POST")
-  def uploadExtract(showPreviews: String = "DatasetLevel") = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) {
-    implicit request =>
+  def uploadExtract(showPreviews: String = "DatasetLevel") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { request =>
 
       request.user match {
         case Some(user) => {
@@ -197,7 +157,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Uploads a file for extraction using the file's URL",
     notes = "Saves the uploaded file and sends it for extraction. Does not index the file.  ",
     responseClass = "None", httpMethod = "POST")
-  def uploadByURL() = SecuredAction(authorization = WithPermission(Permission.AddFile)) { implicit request =>
+  def uploadByURL() = PermissionAction(Permission.AddFile)(parse.json) { request =>
     request.user match {
       case Some(user) => {
         val configuration = play.api.Play.configuration
@@ -276,8 +236,7 @@ class Extractions @Inject() (
     @ApiOperation(value = "Uploads files for a given list of files' URLs ",
     notes = "Saves the uploaded files and sends it for extraction. Does not index the files. Returns id for the web resource ",
     responseClass = "None", httpMethod = "POST")
-  def multipleUploadByURL() = SecuredAction(authorization = WithPermission(Permission.AddFile)) { implicit request =>
-    Async {
+  def multipleUploadByURL() = PermissionAction(Permission.AddFile).async(parse.json) { request =>
       request.user match {
         case Some(user) => {
           val pageurl = request.body.\("webPageURL").as[String]
@@ -330,7 +289,6 @@ class Extractions @Inject() (
         }
         case None => Future(BadRequest(toJson("Not authorized.")))
       }
-    }
   }
 
  /**
@@ -345,7 +303,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Submits a previously uploaded file's id for extraction",
     notes = "Notifies the user that the file is sent for extraction. check the status  ",
     responseClass = "None", httpMethod = "POST")
-  def submitExtraction(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) { implicit request =>
+  def submitExtraction(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
     current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         if (UUID.isValid(id.stringify)) {
@@ -383,8 +341,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Checks for the status of all extractors processing the file with id",
     notes = " A list of status of all extractors responsible for extractions on the file and the final status of extraction job",
     responseClass = "None", httpMethod = "GET")
-  def checkExtractorsStatus(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) { implicit request =>
-    Async {
+  def checkExtractorsStatus(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { request =>
       current.plugin[RabbitmqPlugin] match {
 
         case Some(plugin) => {
@@ -417,7 +374,6 @@ class Extractions @Inject() (
           Future(Ok("No Rabbitmq Service"))
         }
       }
-    } //Async ends
   }
 
   /**
@@ -430,8 +386,7 @@ class Extractions @Inject() (
   @ApiOperation(value = "Provides the metadata extracted from the file",
     notes = " Retruns Status of extractions and metadata extracted so far ",
     responseClass = "None", httpMethod = "GET")
-  def fetch(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) { implicit request =>
-    Async {
+  def fetch(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { request =>
       current.plugin[RabbitmqPlugin] match {
 
         case Some(plugin) => {
@@ -483,14 +438,12 @@ class Extractions @Inject() (
           Future(Ok("No Rabbitmq Service"))
         }
       }
-    } //Async 
   }
 
   @ApiOperation(value = "Checks for the extraction statuses of all files",
     notes = " Returns a list (file id, status of extractions) ",
     responseClass = "None", httpMethod = "GET")
-  def checkExtractionsStatuses(id: models.UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) { implicit request =>
-    Async {
+  def checkExtractionsStatuses(id: models.UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { request =>
       request.user match {
         case Some(user) => {
           val configuration = play.api.Play.configuration
@@ -537,7 +490,6 @@ class Extractions @Inject() (
         } //end of match user
         case None => Future(BadRequest(toJson(Map("request" -> "Not authorized."))))
       } //user
-    } //Async 
   }
   
   
@@ -607,9 +559,8 @@ class Extractions @Inject() (
  @ApiOperation(value = "Lists servers IPs running the extractors",
     notes = "  ",
     responseClass = "None", httpMethod = "GET") 
- def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
-	 
-     val listServersIPs = extractors.getExtractorServerIPList()
+ def getExtractorServersIP() = AuthenticatedAction { request =>
+   val listServersIPs = extractors.getExtractorServerIPList()
 	 val listServersIPsJson=toJson(listServersIPs)
 	 Ok(Json.obj("Servers" -> listServersIPs))
       
@@ -617,7 +568,7 @@ class Extractions @Inject() (
  @ApiOperation(value = "Lists the currenlty running extractors",
     notes = "  ",
     responseClass = "None", httpMethod = "GET") 
- def getExtractorNames() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
+ def getExtractorNames() = AuthenticatedAction { request =>
 
     val listNames = extractors.getExtractorNames()
     val listNamesJson= toJson(listNames)
@@ -629,7 +580,7 @@ class Extractions @Inject() (
  */
  @ApiOperation(value = "Lists the currenlty details running extractors",
     responseClass = "None", httpMethod = "GET") 
- def getExtractorDetails() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
+ def getExtractorDetails() = AuthenticatedAction { request =>
 
     val listNames = extractors.getExtractorDetail()
     val listNamesJson= toJson(listNames)
@@ -640,7 +591,7 @@ class Extractions @Inject() (
  @ApiOperation(value = "Lists the input file format supported by currenlty running extractors",
     notes = "  ",
     responseClass = "None", httpMethod = "GET") 
- def getExtractorInputTypes() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
+ def getExtractorInputTypes() = AuthenticatedAction { request =>
 
     val listInputTypes = extractors.getExtractorInputTypes()
     val listInputTypesJson= toJson(listInputTypes)
@@ -650,7 +601,7 @@ class Extractions @Inject() (
  @ApiOperation(value = "Lists dts extraction requests information",
     notes = "  ",
     responseClass = "None", httpMethod = "GET") 
-  def getDTSRequests() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
+  def getDTSRequests() = AuthenticatedAction { request =>
     Logger.debug("---GET DTS Requests---")
     var list_requests = dtsrequests.getDTSRequests()
     var startTime = models.ServerStartTime.startTime

@@ -16,7 +16,7 @@ object ResourceRef {
     }
 
     def writes(s: Symbol): JsValue = {
-      JsString(s.toString)
+      JsString(s.toString())
     }
 
   }
@@ -29,4 +29,5 @@ object ResourceRef {
   val collection = 'collection
   val user = 'user
   val comment = 'comment
+  val section = 'section
 }

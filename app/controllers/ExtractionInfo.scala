@@ -30,8 +30,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
    * Directs currently running extractor's server IPs to the webpage
    */
 
-  def getExtractorServersIP() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
-    Async {
+  def getExtractorServersIP() = UserAction.async(parse.json) { implicit request =>
       for {
         x <- ExtractionInfoSetUp.updateExtractorsInfo()
         status <- x
@@ -51,8 +50,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
         Ok(views.html.extractorsServersIP(list_servers1,list_servers1.size))
       }
     }
-  }
-  
+
 /**
  * Directs currently running extractors information to the webpage 
  */

@@ -33,8 +33,8 @@ trait ApiController extends Controller {
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      val authenticatedRequest =
-        authenticatedRequest match {
+      val authenticatedRequest = getUser(request)
+        authenticatedRequest.user match {
           case Some(_) => block(authenticatedRequest)
           case None => Future.successful(Unauthorized("Not authorized"))
         }
@@ -76,7 +76,7 @@ trait ApiController extends Controller {
 
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     for (
-      authenticator <- SecureSocial.authenticatorFromRequest;
+      authenticator <- SecureSocial.authenticatorFromRequest(request);
       identity <- UserService.find(authenticator.identityId)
     ) yield {
       Authenticator.save(authenticator.touch)

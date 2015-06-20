@@ -3,7 +3,6 @@ package api
 import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
-import models.User
 import play.api.Play._
 import play.api.libs.json.{JsValue, Json}
 import securesocial.core.Identity
@@ -14,8 +13,6 @@ import scala.collection.mutable
 
 /**
  * class that contains all status/version information about medici.
- *
- * @author Rob Kooper
  */
 class Status @Inject()(spaces: SpaceService,
                        collections: CollectionService,
@@ -30,14 +27,14 @@ class Status @Inject()(spaces: SpaceService,
   @ApiOperation(value = "version",
     notes = "returns the version information",
     responseClass = "None", httpMethod = "GET")
-  def version = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
+  def version = UserAction { request =>
     Ok(Json.obj("version" -> getVersionInfo))
   }
 
   @ApiOperation(value = "status",
     notes = "returns the status information",
     responseClass = "None", httpMethod = "GET")
-  def status = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
+  def status = UserAction { request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
       "counts" -> getCounts,
@@ -51,7 +48,7 @@ class Status @Inject()(spaces: SpaceService,
     // mongo
     result.put("mongo", current.plugin[MongoSalatPlugin] match {
       case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
+        if (Permission.checkServerAdmin(user)) {
           Json.obj("uri" -> p.mongoURI.toString(),
             "updates" -> appConfig.getProperty[List[String]]("mongodb.updates", List.empty[String]))
         } else {
@@ -64,7 +61,7 @@ class Status @Inject()(spaces: SpaceService,
     // elasticsearch
     result.put("elasticsearch", current.plugin[ElasticsearchPlugin] match {
       case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
+        if (Permission.checkServerAdmin(user)) {
           jsontrue
         } else {
           jsontrue
@@ -76,7 +73,7 @@ class Status @Inject()(spaces: SpaceService,
     // rabbitmq
     result.put("rabbitmq", current.plugin[RabbitmqPlugin] match {
       case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
+        if (Permission.checkServerAdmin(user)) {
           Json.obj("uri" -> p.rabbitmquri)
         } else {
           jsontrue
@@ -88,7 +85,7 @@ class Status @Inject()(spaces: SpaceService,
     // geostream
     result.put("geostream", current.plugin[PostgresPlugin] match {
       case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
+        if (Permission.checkServerAdmin(user)) {
           Json.obj("database" -> p.conn.getSchema)
         } else {
           jsontrue
@@ -100,7 +97,7 @@ class Status @Inject()(spaces: SpaceService,
     // versus
     result.put("versus", current.plugin[VersusPlugin] match {
       case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
+        if (Permission.checkServerAdmin(user)) {
           Json.obj("host" -> configuration.getString("versus.host").getOrElse("").toString)
         } else {
           jsontrue

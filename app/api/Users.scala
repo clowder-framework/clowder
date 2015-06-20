@@ -1,17 +1,14 @@
 package api
 
 import javax.inject.Inject
+
 import com.wordnik.swagger.annotations.ApiOperation
-import models.{UUID, User}
+import models.{ResourceRef, UUID}
 import play.api.libs.json._
-import play.api.mvc.Action
 import services.UserService
-import play.api.Logger
 
 /**
  * API to interact with the users.
- *
- * @author Rob Kooper
  */
 class Users @Inject()(users: UserService) extends ApiController {
   /**
@@ -19,7 +16,7 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "List all users in the system",
     responseClass = "User", httpMethod = "GET")
-  def list() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Admin)) { request =>
+  def list() = ServerAdminAction { request =>
     Ok(Json.toJson(users.list))
   }
 
@@ -28,36 +25,19 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "Return the user associated with the request.",
     responseClass = "User", httpMethod = "GET")
-  def getUser() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
-      request.user match {
-          case Some(identity) => {
-              Logger.debug("Have an identity. It is " + identity)
-              identity.email match {
-                  case Some(emailAddress) => {
-		              users.findByEmail(emailAddress) match {
-		                  case Some(user) => Ok(Json.toJson(user))
-		                  //The None case should never happen, as this is a secured action, and requires a user?
-		                  case None => {
-		                      Logger.debug("--------- In the NONE case for findById in getUser")
-		                      Ok(Json.toJson("No user found"))
-		                  }
-		              }
-                  }
-                  case None => Unauthorized("Not authenticated")
-              }
-          }
-          case None => {
-              Unauthorized("Not authenticated")
-          }
-      }
-  }  
-  
+  def getUser = UserAction { request =>
+    request.mediciUser match {
+      case Some(user) => Ok(Json.toJson(user))
+      case None => Unauthorized("Not authenticated")
+    }
+  }
+
   /**
    * Returns a single user based on the id specified.
    */
   @ApiOperation(value = "Return a single user.",
     responseClass = "User", httpMethod = "GET")
-  def findById(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
+  def findById(id: UUID) = PermissionAction(Permission.ViewUser, Some(ResourceRef(ResourceRef.user, id))) { request =>
     users.findById(id) match {
       case Some(x) => Ok(Json.toJson(x))
       case None => BadRequest("no user found with that id.")
@@ -66,40 +46,45 @@ class Users @Inject()(users: UserService) extends ApiController {
 
   /**
    * Returns a single user based on the email specified.
+   * @deprecated use findById
    */
   @ApiOperation(value = "Return a single user.",
     responseClass = "User", httpMethod = "GET")
-  def findByEmail(email: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
+  def findByEmail(email: String) = PermissionAction(Permission.ViewUser) { request =>
     users.findByEmail(email) match {
       case Some(x) => Ok(Json.toJson(x))
       case None => BadRequest("no user found with that email.")
     }
   }
 
+  /** @deprecated use id instead of email */
   @ApiOperation(value = "Edit User Field.",
     responseClass = "None", httpMethod = "POST")
-  def updateUserField(email: String, field: String, fieldText: Any) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
+  def updateUserField(email: String, field: String, fieldText: Any) = PermissionAction(Permission.ViewUser) { request =>
     users.updateUserField(email, field, fieldText)
     Ok(Json.obj("status" -> "success"))
   }
 
+  /** @deprecated use id instead of email */
   @ApiOperation(value = "Add a friend.",
     responseClass = "None", httpMethod = "POST")
-  def addUserFriend(email: String, newFriend: String)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
+  def addUserFriend(email: String, newFriend: String) = PermissionAction(Permission.ViewUser) { request =>
     users.addUserFriend(email, newFriend)
     Ok(Json.obj("status" -> "success"))
   }
 
+  /** @deprecated use id instead of email */
   @ApiOperation(value = "Add a dataset View.",
     responseClass = "None", httpMethod = "POST")
-  def addUserDatasetView(email: String, dataset: UUID)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
+  def addUserDatasetView(email: String, dataset: UUID) = PermissionAction(Permission.ViewUser) { request =>
     users.addUserDatasetView(email, dataset)
     Ok(Json.obj("status" -> "success"))
   }
 
+  /** @deprecated use id instead of email */
   @ApiOperation(value = "Create a List.",
     responseClass = "None", httpMethod = "POST")
-  def createNewListInUser(email: String, field: String, fieldList: List[Any])= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewUser)) { request =>
+  def createNewListInUser(email: String, field: String, fieldList: List[Any])= PermissionAction(Permission.ViewUser) { request =>
     users.createNewListInUser(email, field, fieldList)
     Ok(Json.obj("status" -> "success"))
   }
