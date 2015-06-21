@@ -53,7 +53,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Add dataset to collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { request =>
+  def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
@@ -86,7 +86,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { request =>
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => Ok(toJson(Map("status" -> "success")))
       case Failure(t) => InternalServerError
@@ -96,7 +96,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove collection",
       notes = "Does not delete the individual datasets in the collection.",
       responseClass = "None", httpMethod = "POST")
-  def removeCollection(collectionId: UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { request =>
+  def removeCollection(collectionId: UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
         collections.delete(collectionId)
@@ -112,14 +112,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "List all collections",
       notes = "",
       responseClass = "None", httpMethod = "GET")
-  def listCollections() = PermissionAction(Permission.ViewSpace) { request =>
+  def listCollections() = PermissionAction(Permission.ViewSpace) { implicit request =>
     val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
     Ok(toJson(list))
   }
 
   @ApiOperation(value = "Get a specific collection",
     responseClass = "Collection", httpMethod = "GET")
-  def getCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { request =>
+  def getCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.get(collectionId) match {
       case Some(x) => Ok(jsonCollection(x))
       case None => BadRequest(toJson("collection not found"))
@@ -137,7 +137,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Attach existing preview to collection",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def attachPreview(collection_id: UUID, preview_id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collection_id)))(parse.json) { request =>
+  def attachPreview(collection_id: UUID, preview_id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collection_id)))(parse.json) { implicit request =>
       // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
       val extractor_id = if (eid.isDefined) {

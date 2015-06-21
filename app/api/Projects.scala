@@ -10,7 +10,7 @@ class Projects @Inject()(projects: MongoDBProjectService) extends ApiController 
   /*
    * Add a new project to the database
    */
-  def addproject(project: String) = PermissionAction(Permission.EditUser) { request =>
+  def addproject(project: String) = PermissionAction(Permission.EditUser) { implicit request =>
     projects.addNewProject(project)
     Ok(toJson("added project"))
   }

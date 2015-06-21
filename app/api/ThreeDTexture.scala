@@ -13,7 +13,7 @@ class ThreeDTexture @Inject()(threeD: ThreeDService) extends Controller with Api
   /**
    * Upload a 3D texture file.
    */  
-  def uploadTexture() = PermissionAction(Permission.CreatePreview)(parse.multipartFormData) { request =>
+  def uploadTexture() = PermissionAction(Permission.CreatePreview)(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>        
         Logger.info("Uploading 3D texture file " + f.filename)
         // store file

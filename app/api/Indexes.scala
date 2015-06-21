@@ -19,7 +19,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
   /**
    * Submit section, preview, file for indexing.
    */
-  def index() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { request =>
+  def index() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { implicit request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
             previews.get(UUID(preview_id)) match {
@@ -48,7 +48,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
   /**
    * Add feature to index.
    */
-  def features() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { request =>
+  def features() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { implicit request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
         val sectionUUID = UUID(section_id)
         multimediaSearch.findFeatureBySection(sectionUUID) match {

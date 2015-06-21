@@ -18,7 +18,7 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
  */
 class Comments @Inject()(datasets: DatasetService, comments: CommentService) extends ApiController {
 
-  def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { request =>
+  def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
       Logger.trace("Adding comment")
       comments.get(id) match {          
         case Some(parent) => {
@@ -75,7 +75,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
   @ApiOperation(value = "Remove a specific comment associated with this file",
 		  notes = "Method takes the comment id as a UUID. No arguments necessary in the request body.",
 		  responseClass = "None", httpMethod = "DELETE")
-  def removeComment(id: UUID) = PermissionAction(Permission.DeleteComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { request =>
+  def removeComment(id: UUID) = PermissionAction(Permission.DeleteComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
 	  request.user match {
 		  case Some(identity) => {
 			  var commentId: UUID = id        
@@ -134,7 +134,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService) ext
   @ApiOperation(value = "Edit a specific comment associated with this file",
       notes = "Method takes the comment id as a UUID. commentText key-value pair necessary in the request body.",
       responseClass = "None", httpMethod = "POST")
-  def editComment(id: UUID) = PermissionAction(Permission.EditComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { request =>
+  def editComment(id: UUID) = PermissionAction(Permission.EditComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
 	  request.user match {
 	       case Some(identity) => {
 	    	   var commentId: UUID = id        

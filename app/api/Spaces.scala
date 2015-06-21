@@ -25,7 +25,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     notes = "",
     responseClass = "None", httpMethod = "POST")
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
-  def createSpace() = PermissionAction(Permission.CreateSpace)(parse.json) { request =>
+  def createSpace() = PermissionAction(Permission.CreateSpace)(parse.json) { implicit request =>
       Logger.debug("Creating new space")
       val nameOpt = (request.body \ "name").asOpt[String]
       val descOpt = (request.body \ "description").asOpt[String]
@@ -51,7 +51,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Remove a space",
     notes = "Does not delete the individual datasets and collections in the space.",
     responseClass = "None", httpMethod = "DELETE")
-  def removeSpace(spaceId: UUID) = PermissionAction(Permission.DeleteSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { request =>
+  def removeSpace(spaceId: UUID) = PermissionAction(Permission.DeleteSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     spaces.get(spaceId) match {
       case Some(space) => {
         spaces.delete(spaceId)
@@ -67,7 +67,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Get a space",
     notes = "Retrieves information about a space",
     responseClass = "None", httpMethod = "GET")
-  def get(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { request =>
+  def get(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     spaces.get(id) match {
       case Some(space) => Ok(spaceToJson(Utils.decodeSpaceElements(space)))
       case None => BadRequest("Space not found")
@@ -77,7 +77,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "List spaces",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list() = UserAction { request => {
+  def list() = UserAction { implicit request => {
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
 	    for (aSpace <- spaces.list()) {
 	        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
@@ -96,7 +96,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Associate a collection with a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def addCollection(space: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { request =>
+  def addCollection(space: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
     val collectionId = (request.body \ "collection_id").as[String]
     spaces.addCollection(UUID(collectionId), space)
     Ok(toJson("success"))
@@ -105,7 +105,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Associate a dataset with a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def addDataset(space: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { request =>
+  def addDataset(space: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
     val datasetId = (request.body \ "dataset_id").as[String]
     spaces.addDataset(UUID(datasetId), space)
     Ok(toJson("success"))
@@ -128,7 +128,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
    */
   @ApiOperation(value = "Update the information associated with a space", notes="",
     responseClass = "None", httpMethod = "POST")
-  def updateSpace(spaceid: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceid)))(parse.json) { request =>
+  def updateSpace(spaceid: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceid)))(parse.json) { implicit request =>
       if (UUID.isValid(spaceid.stringify)) {
 
           //Set up the vars we are looking for
@@ -217,7 +217,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
    */
   @ApiOperation(value = "Update the information associated with a space", notes="",
     responseClass = "None", httpMethod = "POST")
-  def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { request =>
+  def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
       if (UUID.isValid(spaceId.stringify)) {
            val aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
           

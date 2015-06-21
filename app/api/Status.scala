@@ -27,14 +27,14 @@ class Status @Inject()(spaces: SpaceService,
   @ApiOperation(value = "version",
     notes = "returns the version information",
     responseClass = "None", httpMethod = "GET")
-  def version = UserAction { request =>
+  def version = UserAction { implicit request =>
     Ok(Json.obj("version" -> getVersionInfo))
   }
 
   @ApiOperation(value = "status",
     notes = "returns the status information",
     responseClass = "None", httpMethod = "GET")
-  def status = UserAction { request =>
+  def status = UserAction { implicit request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
       "counts" -> getCounts,

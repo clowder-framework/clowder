@@ -48,7 +48,7 @@ class Files @Inject()(
   @ApiOperation(value = "Retrieve physical file object metadata",
       notes = "Get metadata of the file object (not the resource it describes) as JSON. For example, size of file, date created, content type, filename.",
       responseClass = "None", httpMethod = "GET")
-  def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       Logger.info("GET file with id " + id)
       files.get(id) match {
         case Some(file) => Ok(jsonFile(file))
@@ -62,13 +62,13 @@ class Files @Inject()(
    * List all files.
    */
   @ApiOperation(value = "List all files", notes = "Returns list of files and descriptions.", responseClass = "None", httpMethod = "GET")
-  def list = UserAction { request =>
+  def list = UserAction { implicit request =>
       val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f)
 
       Ok(toJson(list))
   }
 
-  def downloadByDatasetAndFilename(datasetId: UUID, filename: String, preview_id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, datasetId))) { request =>
+  def downloadByDatasetAndFilename(datasetId: UUID, filename: String, preview_id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
         datasets.getFileId(datasetId, filename) match {
           case Some(id) => Redirect(routes.Files.download(id))
           case None => Logger.error("Error getting dataset" + datasetId); InternalServerError
@@ -81,7 +81,7 @@ class Files @Inject()(
   @ApiOperation(value = "Download file",
       notes = "Can use Chunked transfer encoding if the HTTP header RANGE is set.",
       responseClass = "None", httpMethod = "GET")
-  def download(id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def download(id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       //Check the license type before doing anything.
       files.get(id) match {
           case Some(file) => {    
@@ -151,7 +151,7 @@ class Files @Inject()(
    * Download query used by Versus
    *
    */
-  def downloadquery(id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def downloadquery(id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
         queries.get(id) match {
           case Some((inputStream, filename, contentType, contentLength)) => {
             request.headers.get(RANGE) match {
@@ -197,7 +197,7 @@ class Files @Inject()(
   @ApiOperation(value = "Add technical metadata to file",
       notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
       responseClass = "None", httpMethod = "POST")
-  def addMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
+  def addMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
         Logger.debug(s"Adding metadata to file $id")
         val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
         files.get(id) match {
@@ -216,7 +216,7 @@ class Files @Inject()(
    * Add Versus metadata to file: use by Versus Extractor
    * REST enpoint:POST api/files/:id/versus_metadata
    */
-  def addVersusMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
+  def addVersusMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
 
      Logger.debug("INSIDE ADDVersusMetadata=: "+id.toString )
       files.get(id) match {
@@ -244,7 +244,7 @@ class Files @Inject()(
   @ApiOperation(value = "Upload file",
       notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
       responseClass = "None", httpMethod = "POST")
-  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { request =>
+  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
       request.user match {
         case Some(user) => {
         	request.body.file("File").map { f =>        
@@ -385,7 +385,7 @@ class Files @Inject()(
   @ApiOperation(value = "Reindex a file",
     notes = "Reindex the existing file.",
     responseClass = "None", httpMethod = "GET")
-  def reindex(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def reindex(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       files.get(id) match {
         case Some(file) => {
           current.plugin[ElasticsearchPlugin].foreach {
@@ -406,7 +406,7 @@ class Files @Inject()(
   @ApiOperation(value = "(Re)send preprocessing job for file",
       notes = "Force Medici to (re)send preprocessing job for selected file, processing the file as a file of the selected MIME type. Returns file id on success. In the requested file type, replace / with __ (two underscores).",
       responseClass = "None", httpMethod = "POST")
-  def sendJob(file_id: UUID, fileType: String) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id))) { request =>
+  def sendJob(file_id: UUID, fileType: String) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
       files.get(file_id) match {
         case Some(theFile) => {
           var nameOfFile = theFile.filename
@@ -455,7 +455,7 @@ class Files @Inject()(
   @ApiOperation(value = "Upload a file to a specific dataset",
       notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     request.user match {
      case Some(user) => {
       datasets.get(dataset_id) match {
@@ -616,7 +616,7 @@ class Files @Inject()(
   /**
    * Upload intermediate file of extraction chain using multipart form enconding and continue chaining.
    */
-  def uploadIntermediate(originalIdAndFlags: String) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { request =>
+  def uploadIntermediate(originalIdAndFlags: String) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
       request.user match {
         case Some(user) => {
           request.body.file("File").map {
@@ -674,7 +674,7 @@ class Files @Inject()(
   /**
    * Upload metadata for preview and attach it to a file.
    */
-  def uploadPreview(file_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.multipartFormData) { request =>
+  def uploadPreview(file_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.multipartFormData) { implicit request =>
       request.body.file("File").map {
         f =>
           Logger.debug("Uploading file " + f.filename)
@@ -692,7 +692,7 @@ class Files @Inject()(
   @ApiOperation(value = "Attach existing preview to file",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def attachPreview(file_id: UUID, preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { request =>
+  def attachPreview(file_id: UUID, preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { implicit request =>
     // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
       val extractor_id = if (eid.isDefined) {
@@ -733,7 +733,7 @@ class Files @Inject()(
   @ApiOperation(value = "Get the user-generated metadata of the selected file in an RDF file",
 	      notes = "",
 	      responseClass = "None", httpMethod = "GET")
-  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
    current.plugin[RDFExportService].isDefined match{
     case true => {
       current.plugin[RDFExportService].get.getRDFUserMetadataFile(id.stringify, mappingNumber) match{
@@ -779,7 +779,7 @@ class Files @Inject()(
   @ApiOperation(value = "Get URLs of file's RDF metadata exports.",
 	      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
 	      responseClass = "None", httpMethod = "GET")
-  def getRDFURLsForFile(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def getRDFURLsForFile(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     current.plugin[RDFExportService].isDefined match{
       case true =>{
 	    current.plugin[RDFExportService].get.getRDFURLsForFile(id.stringify)  match {
@@ -798,7 +798,7 @@ class Files @Inject()(
   @ApiOperation(value = "Add user-generated metadata to file",
       notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
       responseClass = "None", httpMethod = "POST")
-  def addUserMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
+  def addUserMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
         Logger.debug("Adding user metadata to file " + id)
         val theJSON = Json.stringify(request.body)
         files.addUserMetadata(id, theJSON)
@@ -841,7 +841,7 @@ class Files @Inject()(
   @ApiOperation(value = "List file previews",
       notes = "Return the currently existing previews' basic characteristics (id, filename, content type) of the selected file.",
       responseClass = "None", httpMethod = "GET")
-  def filePreviewsList(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def filePreviewsList(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       files.get(id) match {
         case Some(file) => {
           val filePreviews = previews.findByFileId(file.id);
@@ -869,7 +869,7 @@ class Files @Inject()(
   /**
    * Add 3D geometry file to file.
    */
-  def attachGeometry(file_id: UUID, geometry_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { request =>
+  def attachGeometry(file_id: UUID, geometry_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { implicit request =>
       request.body match {
         case JsObject(fields) => {
           files.get(file_id) match {
@@ -892,7 +892,7 @@ class Files @Inject()(
   /**
    * Add 3D texture to file.
    */
-  def attachTexture(file_id: UUID, texture_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { request =>
+  def attachTexture(file_id: UUID, texture_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { implicit request =>
       request.body match {
         case JsObject(fields) => {
           files.get((file_id)) match {
@@ -916,7 +916,7 @@ class Files @Inject()(
    * Add thumbnail to file.
    */
   @ApiOperation(value = "Add thumbnail to file", notes = "Attaches an already-existing thumbnail to a file.", responseClass = "None", httpMethod = "POST")
-  def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id))) { request =>
+  def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
       files.get(file_id) match {
         case Some(file) => {
           thumbnails.get(thumbnail_id) match {
@@ -948,7 +948,7 @@ class Files @Inject()(
    * Add thumbnail to query file.
    */
   @ApiOperation(value = "Add thumbnail to a query image", notes = "Attaches an already-existing thumbnail to a query image.", responseClass = "None", httpMethod = "POST")
-  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = PermissionAction(Permission.AddFile) { request =>
+  def attachQueryThumbnail(query_id: UUID, thumbnail_id: UUID) = PermissionAction(Permission.AddFile) { implicit request =>
     // TODO should we check here for permission on query?
       queries.get(query_id) match {
         case Some(file) => {
@@ -974,7 +974,7 @@ class Files @Inject()(
   /**
    * Find geometry file for given 3D file and geometry filename.
    */
-  def getGeometry(three_d_file_id: UUID, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, three_d_file_id))) { request =>
+  def getGeometry(three_d_file_id: UUID, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, three_d_file_id))) { implicit request =>
         threeD.findGeometry(three_d_file_id, filename) match {
           case Some(geometry) => {
 
@@ -1029,7 +1029,7 @@ class Files @Inject()(
   /**
    * Find texture file for given 3D file and texture filename.
    */
-  def getTexture(three_d_file_id: UUID, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, three_d_file_id))) { request =>
+  def getTexture(three_d_file_id: UUID, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, three_d_file_id))) { implicit request =>
         threeD.findTexture(three_d_file_id, filename) match {
           case Some(texture) => {
 
@@ -1116,7 +1116,7 @@ class Files @Inject()(
   @ApiOperation(value = "Update License information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
-  def updateLicense(id: UUID) = PermissionAction(Permission.EditLicense, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
+  def updateLicense(id: UUID) = PermissionAction(Permission.EditLicense, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
       if (UUID.isValid(id.stringify)) {
 
           //Set up the vars we are looking for
@@ -1231,7 +1231,7 @@ class Files @Inject()(
    * REST endpoint: GET: gets the tag data associated with this file.
    */
   @ApiOperation(value = "Gets tags of a file", notes = "Returns a list of strings, List[String].", responseClass = "None", httpMethod = "GET")
-  def getTags(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def getTags(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       Logger.info("Getting tags for file with id " + id)
       /* Found in testing: given an invalid ObjectId, a runtime exception
        * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.get().
@@ -1308,7 +1308,7 @@ class Files @Inject()(
   @ApiOperation(value = "Adds tags to a file",
       notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.  The tags are expected as a list of strings: List[String].  An example is:<br>    curl -H 'Content-Type: application/json' -d '{\"tags\":[\"namo\", \"amitabha\"], \"extractor_id\": \"curl\"}' \"http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey\"",
       responseClass = "None", httpMethod = "POST")
-  def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
+  def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
       val theResponse = addTagsHelper(TagCheck_File, id, request)
   	  files.index(id)
   	  theResponse
@@ -1324,7 +1324,7 @@ class Files @Inject()(
   @ApiOperation(value = "Removes tags of a file",
       notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.  The tags are expected as a list of strings: List[String].",
       responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
+  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
       val theResponse = removeTagsHelper(TagCheck_File, id, request)
   	  files.index(id)
   	  theResponse
@@ -1338,7 +1338,7 @@ class Files @Inject()(
   @ApiOperation(value = "Removes all tags of a file",
       notes = "This is a big hammer -- it does not check the userId or extractor_id and forcefully remove all tags for this file.  It is mainly intended for testing.",
       responseClass = "None", httpMethod = "POST")
-  def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       Logger.info("Removing all tags for file with id: " + id)
       if (UUID.isValid(id.stringify)) {
         files.get(id) match {
@@ -1366,7 +1366,7 @@ class Files @Inject()(
   * 
   */
   @ApiOperation(value = "Provides metadata extracted for a file", notes = "", responseClass = "None", httpMethod = "GET")  
-  def extract(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def extract(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.info("Getting extract info for file with id " + id)
     if (UUID.isValid(id.stringify)) {
      files.get(id) match {
@@ -1394,7 +1394,7 @@ class Files @Inject()(
   }
 
   @ApiOperation(value = "Add comment to file", notes = "", responseClass = "None", httpMethod = "POST")
-  def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
+  def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
       request.user match {
         case Some(identity) => {
           (request.body \ "text").asOpt[String] match {
@@ -1423,7 +1423,7 @@ class Files @Inject()(
   @ApiOperation(value = "Is being processed",
       notes = "Return whether a file is currently being processed by a preprocessor.",
       responseClass = "None", httpMethod = "GET")
-  def isBeingProcessed(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def isBeingProcessed(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       files.get(id) match {
         case Some(file) => {
           var isActivity = "false"
@@ -1468,7 +1468,7 @@ class Files @Inject()(
   @ApiOperation(value = "Get file previews",
       notes = "Return the currently existing previews of the selected file (full description, including paths to preview files, previewer names etc).",
       responseClass = "None", httpMethod = "GET")
-  def getPreviews(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def getPreviews(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
         files.get(id) match {
           case Some(file) => {
 
@@ -1512,7 +1512,7 @@ class Files @Inject()(
     @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
         notes = "",
         responseClass = "None", httpMethod = "GET")
-    def getXMLMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { request =>
+    def getXMLMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       files.get(id)  match {
         case Some(file) => {
           Ok(files.getXMLMetadataJSON(id))
@@ -1524,7 +1524,7 @@ class Files @Inject()(
     @ApiOperation(value = "Get community-generated metadata of the resource described by the file",
           notes = "",
           responseClass = "None", httpMethod = "GET")
-    def getUserMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { request =>
+    def getUserMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
      files.get(id)  match {
         case Some(file) => {
           Ok(files.getUserMetadataJSON(id))
@@ -1536,7 +1536,7 @@ class Files @Inject()(
     @ApiOperation(value = "Get technical metadata of the resource described by the file",
           notes = "",
           responseClass = "None", httpMethod = "GET")
-    def getTechnicalMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { request =>
+    def getTechnicalMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
         files.get(id) match {
           case Some(file) => {
             Ok(files.getTechnicalMetadataJSON(id))
@@ -1550,7 +1550,7 @@ class Files @Inject()(
      @ApiOperation(value = "Get Versus metadata of the resource described by the file",
           notes = "",
           responseClass = "None", httpMethod = "GET")
-    def getVersusMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { request =>
+    def getVersusMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
         files.get(id) match {
           case Some(file) => {
              files.getVersusMetadata(id) match {
@@ -1575,7 +1575,7 @@ class Files @Inject()(
   @ApiOperation(value = "Delete file",
       notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
       responseClass = "None", httpMethod = "POST")
-  def removeFile(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { request =>
+  def removeFile(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       files.get(id) match {
         case Some(file) => {
           
@@ -1612,7 +1612,7 @@ class Files @Inject()(
   /**
    * List datasets satisfying a user metadata search tree.
    */
-  def searchFilesUserMetadata = PermissionAction(Permission.ViewFile)(parse.json) { request =>
+  def searchFilesUserMetadata = PermissionAction(Permission.ViewFile)(parse.json) { implicit request =>
       Logger.debug("Searching files' user metadata for search tree.")
 
       var searchJSON = Json.stringify(request.body)
@@ -1634,7 +1634,7 @@ class Files @Inject()(
   /**
    * List datasets satisfying a general metadata search tree.
    */
-  def searchFilesGeneralMetadata = PermissionAction(Permission.ViewFile)(parse.json) { request =>
+  def searchFilesGeneralMetadata = PermissionAction(Permission.ViewFile)(parse.json) { implicit request =>
       Logger.debug("Searching files' metadata for search tree.")
 
       var searchJSON = Json.stringify(request.body)
@@ -1702,7 +1702,7 @@ class Files @Inject()(
     }
   }
 
-  def setNotesHTML(id: UUID) =PermissionAction(Permission.CreateNote, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { request =>
+  def setNotesHTML(id: UUID) =PermissionAction(Permission.CreateNote, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
 		    request.body.\("notesHTML").asOpt[String] match {
