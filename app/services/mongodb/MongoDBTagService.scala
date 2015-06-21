@@ -1,17 +1,16 @@
 package services.mongodb
 
-import play.api.libs.json.JsValue
-import play.api.Logger
 import javax.inject.Inject
-import services._
-import api.RequestWithUser
-import scala.Some
+
+import api.UserRequest
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import models.{Tag, UUID}
 import org.bson.types.ObjectId
-import com.novus.salat.dao.ModelCompanion
-import com.novus.salat.dao.SalatDAO
-import MongoContext.context
+import play.api.Logger
 import play.api.Play.current
-import models.{UUID, Tag}
+import play.api.libs.json.JsValue
+import services._
+import services.mongodb.MongoContext.context
 
 /**
  * Created by lmarini on 1/17/14.
@@ -50,7 +49,7 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
    *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
    *      record the extractor_id, but omit the userId field, so we leave userOpt as None.
    */
-  def checkErrorsForTag(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): TagCheck = {
+  def checkErrorsForTag(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): TagCheck = {
     val userObj = request.user
     Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
       + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
@@ -114,7 +113,7 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
    *      which contains the cause of the error, such as "No 'tags' specified", and
    *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
    */
-  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): (Boolean, String) = {
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String) = {
     val tagCheck = checkErrorsForTag(obj_type, id, request)
 
     val error_str = tagCheck.error_str
@@ -139,7 +138,7 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
     (not_found, error_str)
   }
 
-  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): (Boolean, String) = {
+  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String) = {
     val tagCheck = checkErrorsForTag(obj_type, id, request)
 
     val error_str = tagCheck.error_str
