@@ -58,6 +58,7 @@ GET            /files/metadataSearch                                            
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
 GET            /files/:id                                                               @controllers.Files.file(id: UUID)
 GET            /files/:id/blob                                                          @controllers.Files.download(id: UUID)
+GET            /files/:id/:format                                                       @controllers.Files.downloadAsFormat(id: UUID, format: String)
 #GET    /queries/:id/blob				  @controllers.Files.downloadquery(id: UUID)
 #GET    /files/:id/similar                @controllers.Files.findSimilar(id: UUID)
 POST           /upload                                                                  @controllers.Files.upload
