@@ -1,15 +1,16 @@
 package controllers
 
-import services.UserService
-import services.mongodb.MongoDBProjectService
-import services.mongodb.MongoDBInstitutionService
-import play.api.data.Form
-import play.api.data.Forms._
-import models.Info
-import play.api.Logger
 import javax.inject.Inject
 
+import models.Info
+import play.api.Logger
+import play.api.data.Form
+import play.api.data.Forms._
+import services.UserService
+import services.mongodb.{MongoDBInstitutionService, MongoDBProjectService}
 
+
+// TODO CATS-66 remove MongoDBInstitutionService, make part of UserService?
 class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService) extends  SecuredController {
 
   val bioForm = Form(
@@ -24,9 +25,8 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
     )(Info.apply)(Info.unapply)
   )
 
-  def editProfile() = SecuredAction() {
-    implicit request =>
-      implicit val user = request.user
+  def editProfile() = UserAction { implicit request =>
+    implicit val user = request.user
     var avatarUrl: Option[String] = None
     var biography: Option[String] = None
     var currentprojects: List[String] = List.empty
@@ -107,7 +107,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
   }
 
 
-  def addFriend(email: String) = SecuredAction() { request =>
+  def addFriend(email: String) = UserAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -146,7 +146,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
   }
    
 
-  def viewProfile(email: Option[String]) = SecuredAction() { request =>
+  def viewProfile(email: Option[String]) = UserAction { implicit request =>
     implicit val user = request.user
     var ownProfile: Option[Boolean] = None
     email match {
@@ -188,7 +188,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
     }
   }
 
-  def submitChanges = SecuredAction() {  implicit request =>
+  def submitChanges = UserAction { implicit request =>
     implicit val user  = request.user
     bioForm.bindFromRequest.fold(
       errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty)),

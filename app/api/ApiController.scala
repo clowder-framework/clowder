@@ -74,6 +74,9 @@ trait ApiController extends Controller {
     //    key it will assume you are anonymous!
     // 4) anonymous access
 
+    // is the user a superadmin (this should still check serverAdmin)
+    val superAdmin = request.cookies.get("superAdmin").isDefined || request.headers.get("superAdmin").isDefined
+
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     for (
       authenticator <- SecureSocial.authenticatorFromRequest(request);
@@ -81,7 +84,7 @@ trait ApiController extends Controller {
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-      return UserRequest(Some(identity), user, request)
+      return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
     }
 
     // 2) basic auth, this allows you to call the api with your username/password
@@ -91,7 +94,7 @@ trait ApiController extends Controller {
       UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword).foreach { identity =>
         val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
         if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
-          return UserRequest(Some(identity), user, request)
+          return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
         }
       }
     }
@@ -102,12 +105,12 @@ trait ApiController extends Controller {
       // TODO this needs to become more secure
       if (key.nonEmpty) {
         if (key.head.equals(play.Play.application().configuration().getString("commKey"))) {
-          return UserRequest(None, None, request)
+          return UserRequest(Some(Permission.anonymous), None, superAdmin, request)
         }
       }
     }
 
     // 4) anonymous access
-    UserRequest(None, None, request)
+    UserRequest(None, None, superAdmin=false, request)
   }
 }

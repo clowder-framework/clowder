@@ -34,8 +34,8 @@ trait SecuredController extends Controller {
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      val UserRequest =
-        UserRequest match {
+      val UserRequest = getUser(request)
+        UserRequest.user match {
           case Some(_) => block(UserRequest)
           case None => Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
         }
@@ -74,15 +74,16 @@ trait SecuredController extends Controller {
 
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     for (
-      authenticator <- SecureSocial.authenticatorFromRequest;
+      authenticator <- SecureSocial.authenticatorFromRequest(request);
       identity <- UserService.find(authenticator.identityId)
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-      return UserRequest(Some(identity), user, request)
+      val superAdmin = request.cookies.get("superAdmin").isDefined
+      return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
     }
 
     // 2) anonymous access
-    UserRequest(None, None, request)
+    UserRequest(None, None, superAdmin=false, request)
   }
 }

@@ -1,27 +1,14 @@
 package controllers
+
+import java.util.Calendar
+import javax.inject.Inject
+
+import models.ExtractionInfoSetUp
 import play.api.Logger
 import play.api.Play.current
-import play.api.mvc._
-import services._
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.concurrent.Promise
-import scala.concurrent.Future
-import java.text.SimpleDateFormat
-import views.html.defaultpages.badRequest
-import java.util.Date
-import play.api.libs.json.Json._
-import models.Extraction
-import api.WithPermission
-import api.Permission
-import javax.inject.Inject
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsArray
-import services.ExtractorService
-import services.ExtractionRequestsService
-import models.ExtractionInfoSetUp
 import play.api.libs.json._
-import java.util.Calendar
-import java.net.InetAddress
+import services.{ExtractionRequestsService, ExtractorService}
 
 
 class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: ExtractionRequestsService) extends SecuredController {
@@ -54,7 +41,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
 /**
  * Directs currently running extractors information to the webpage 
  */
-  def getExtractorNames() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+  def getExtractorNames() = UserAction { implicit request =>
 
     val list_names = extractors.getExtractorNames()
     var jarr = new JsArray()
@@ -74,7 +61,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
 /**
  * Directs input type supported by currently running extractors information to the webpage
  */
-  def getExtractorInputTypes() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+  def getExtractorInputTypes() = UserAction { implicit request =>
 
     val list_inputtypes = extractors.getExtractorInputTypes()
     var jarr = new JsArray()
@@ -94,7 +81,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
   /**
    * Directs DTS extractions requests information to the webpage
    */
-   def getDTSRequests() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+   def getDTSRequests() = UserAction { implicit request =>
 
     var list_requests = dtsrequests.getDTSRequests()
     var startTime = models.ServerStartTime.startTime
@@ -105,7 +92,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
    /**
    * DTS Bookmarklet page
    */
-   def getBookmarkletPage() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+   def getBookmarkletPage() = UserAction { implicit request =>
 
       Ok(views.html.dtsbookmarklet(Utils.baseUrl(request)))
   }
@@ -113,7 +100,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
   /**
    * DTS Chrome Extension page
    */
-  def getExtensionPage() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+  def getExtensionPage() = UserAction { implicit request =>
     val configuration = play.api.Play.configuration
     val url = Utils.baseUrl(request)
     var hostname = if (url.indexOf('.') == -1) { url.substring(url.indexOf('/') + 2, url.lastIndexOf(':')) } else { url.substring(url.indexOf('/') + 2, url.indexOf('.')) }

@@ -2,31 +2,28 @@ package controllers
 
 import java.io._
 import java.net.URLEncoder
+import java.text.SimpleDateFormat
+import java.util.Date
+import javax.inject.Inject
 import javax.mail.internet.MimeUtility
-import models.{UUID, FileMD, File, Thumbnail}
+
+import api.Permission
+import fileutils.FilesUtils
+import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.libs.iteratee._
-import services._
 import play.api.libs.concurrent.Execution.Implicits._
-import java.text.SimpleDateFormat
-import views.html.defaultpages.badRequest
+import play.api.libs.iteratee._
 import play.api.libs.json.Json._
-import fileutils.FilesUtils
-import api.WithPermission
-import api.Permission
-import javax.inject.Inject
-import java.util.Date
-import scala.sys.SystemProperties
-import securesocial.core.Identity
+import services._
+import views.html.defaultpages.badRequest
+
 import scala.collection.mutable.ListBuffer
 
 /**
  * Manage files.
- *
- * @author Luigi Marini
  */
 class Files @Inject() (
   files: FileService,
@@ -53,7 +50,7 @@ class Files @Inject() (
   /**
    * File info.
    */
-  def file(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewFile)) { implicit request =>
+  def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     implicit val user = request.user
     Logger.info("GET file with id " + id)
     files.get(id) match {
@@ -149,7 +146,7 @@ class Files @Inject() (
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+  def list(when: String, date: String, limit: Int, mode: String) = UserAction { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when
@@ -215,7 +212,7 @@ class Files @Inject() (
   /**
    * Upload file page.
    */
-  def uploadFile = SecuredAction(authorization = WithPermission(Permission.AddFile)) { implicit request =>
+  def uploadFile = PermissionAction(Permission.AddFile) { implicit request =>
     implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
@@ -230,12 +227,12 @@ class Files @Inject() (
   )
 
   
-  def extractFile = SecuredAction(authorization = WithPermission(Permission.AddFile)) { implicit request =>
+  def extractFile = PermissionAction(Permission.AddFile) { implicit request =>
     implicit val user = request.user
     Ok(views.html.uploadExtract(extractForm))
   }
   
-def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) { implicit request =>
+def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     user match {        
       case Some(identity) => {
@@ -341,7 +338,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
    * contain data for each of the file that the upload interface can use to accurately update the display based on the success
    * or failure of the upload process.
    */
-  def upload() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) { implicit request =>
+  def upload() = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     Logger.debug("--------- in upload ------------ ")
     user match {
@@ -518,7 +515,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>    
+  def download(id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       if (UUID.isValid(id.stringify)) {
           //Check the license type before doing anything. 
           files.get(id) match {
@@ -535,7 +532,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                           range match { case (start,end) =>
 
                           inputStream.skip(start)
-                          import play.api.mvc.{ SimpleResult, ResponseHeader }
+                          import play.api.mvc.{ResponseHeader, SimpleResult}
                           SimpleResult(
                                   header = ResponseHeader(PARTIAL_CONTENT,
                                           Map(
@@ -590,7 +587,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
       }
   }
 
-  def thumbnail(id: UUID) = SecuredAction(authorization=WithPermission(Permission.ViewFile)) { implicit request =>
+  def thumbnail(id: UUID) = PermissionAction(Permission.ViewFile) { implicit request =>
     thumbnails.getBlob(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
@@ -603,7 +600,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
 	             
 	              inputStream.skip(start)
-	              import play.api.mvc.{SimpleResult, ResponseHeader}
+	              import play.api.mvc.{ResponseHeader, SimpleResult}
 	              SimpleResult(
 	                header = ResponseHeader(PARTIAL_CONTENT,
 	                  Map(
@@ -638,8 +635,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
    * Uploads query to temporary folder.
    * Gets type of index and list of sections, and passes on to the Search controller
   */
-  def uploadSelectQuery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
-    //=== processing searching within files or sections of files or both ===    
+  def uploadSelectQuery() = PermissionAction(Permission.ViewDataset)(parse.multipartFormData) { implicit request =>
+    //=== processing searching within files or sections of files or both ===
     //dataParts are from the seach form in view/multimediasearch
     //get type of index and list of sections, and pass on to the Search controller
     //pass them on to Search.findSimilarToQueryFile for further processing
@@ -750,7 +747,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   }
 
   /* Drag and drop */
-  def uploadDragDrop() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
+  def uploadDragDrop() = PermissionAction(Permission.ViewDataset)(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>
         var nameOfFile = f.filename
       	var flags = ""
@@ -845,7 +842,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   }
 
 
-  def uploaddnd(dataset_id: UUID) = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateDataset), resourceId = Some(dataset_id)) { implicit request =>
+  def uploaddnd(dataset_id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     request.user match {
       case Some(identity) => {
         datasets.get(dataset_id) match {
@@ -993,12 +990,12 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }
   }
 
-  def metadataSearch()  = SecuredAction(authorization=WithPermission(Permission.ViewFile)) { implicit request =>
+  def metadataSearch() = PermissionAction(Permission.ViewFile) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileMetadataSearch()) 
   }
 
-  def generalMetadataSearch()  = SecuredAction(authorization=WithPermission(Permission.ViewFile)) { implicit request =>
+  def generalMetadataSearch()  = PermissionAction(Permission.ViewFile) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileGeneralMetadataSearch()) 
   }
@@ -1049,7 +1046,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   //   */
   //  
   //  
-  //  def uploadAjax = Action(parse.temporaryFile) { request =>
+  //  def uploadAjax = Action(parse.temporaryFile) { implicit request =>
   //
   //    val f = request.body.file
   //    val filename=f.getName()
@@ -1085,7 +1082,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   /**
    * Reactive file upload.
    */
-  //  def reactiveUpload = Action(BodyParser(rh => new SomeIteratee)) { request =>
+  //  def reactiveUpload = Action(BodyParser(rh => new SomeIteratee)) { implicit request =>
   //     Ok("Done")
   //   }
 

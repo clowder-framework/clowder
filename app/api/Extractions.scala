@@ -336,7 +336,6 @@ class Extractions @Inject() (
    * REST endpoint  GET /api/extractions/:id/status
    * input: file id
    * returns: a list of status of all extractors responsible for extractions on the file and the final status of extraction job
-   * Async is going to deprecreate in subsequent version of Play Framework. So need to change SecuredAction class to be able use the Action.async
    */
   @ApiOperation(value = "Checks for the status of all extractors processing the file with id",
     notes = " A list of status of all extractors responsible for extractions on the file and the final status of extraction job",
