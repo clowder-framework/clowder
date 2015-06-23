@@ -1,4 +1,4 @@
 { "name" : "Person Tracking",
   "main" : "some-library.js",
-  "contentType" : ["application/vnd.clowder+persontracking"]
+  "contentType" : ["application/vnd.clowder+persontracking+xml"]
 }
