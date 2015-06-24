@@ -80,6 +80,22 @@ object Permission extends Enumeration {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
 	}
 
+  def checkPermission(permission: Permission)(implicit user: Option[Identity]) = {
+    checkPermission(user, permission, None)
+  }
+
+  def checkPermission(permission: Permission)(implicit request: UserRequest) = {
+    checkPermission(request.user, permission, None)
+  }
+
+  def checkPermission(permission: Permission, resourceRef: ResourceRef)(implicit request: UserRequest) = {
+    checkPermission(request.user, permission, Some(resourceRef))
+  }
+
+  def checkPermission(user: Option[Identity], permission: Permission, resourceRef: ResourceRef) = {
+    checkPermission(user, permission, Some(resourceRef))
+  }
+
 	def checkPermission(user: Option[Identity], permission: Permission, resourceRef: Option[ResourceRef] = None) = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
       case "public"  => true
