@@ -27,27 +27,29 @@ trait SecuredController extends Controller {
   /** get user if logged in */
   def UserAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      block(getUser(request))
+      val userRequest = getUser(request)
+      block(userRequest)
     }
   }
 
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      val UserRequest = getUser(request)
-        UserRequest.user match {
-          case Some(_) => block(UserRequest)
-          case None => Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
-        }
+      val userRequest = getUser(request)
+      if (userRequest.user.isDefined) {
+        block(userRequest)
+      } else {
+        Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
+      }
     }
   }
 
   /** call code iff user is a server admin */
   def ServerAdminAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      val UserRequest = getUser(request)
-      if (Permission.checkServerAdmin(UserRequest.user)) {
-        block(UserRequest)
+      val userRequest = getUser(request)
+      if (Permission.checkServerAdmin(userRequest.user)) {
+        block(userRequest)
       } else {
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
       }
@@ -57,9 +59,9 @@ trait SecuredController extends Controller {
   /** call code iff user has right permission for resource */
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      val UserRequest = getUser(request)
-      if (Permission.checkPermission(UserRequest.user, permission, resourceRef)) {
-        block(UserRequest)
+      val userRequest = getUser(request)
+      if (Permission.checkPermission(userRequest.user, permission, resourceRef)) {
+        block(userRequest)
       } else {
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
       }

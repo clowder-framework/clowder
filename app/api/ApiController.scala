@@ -26,27 +26,29 @@ trait ApiController extends Controller {
   /** get user if logged in */
   def UserAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      block(getUser(request))
+      val userRequest = getUser(request)
+      block(userRequest)
     }
   }
 
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      val authenticatedRequest = getUser(request)
-        authenticatedRequest.user match {
-          case Some(_) => block(authenticatedRequest)
-          case None => Future.successful(Unauthorized("Not authorized"))
-        }
+      val userRequest = getUser(request)
+      if (userRequest.user.isDefined) {
+        block(userRequest)
+      } else {
+        Future.successful(Unauthorized("Not authorized"))
+      }
     }
   }
 
   /** call code iff user is a server admin */
   def ServerAdminAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      val authenticatedRequest = getUser(request)
-      if (Permission.checkServerAdmin(authenticatedRequest.user)) {
-        block(authenticatedRequest)
+      val userRequest = getUser(request)
+      if (Permission.checkServerAdmin(userRequest.user)) {
+        block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
       }
@@ -56,9 +58,9 @@ trait ApiController extends Controller {
   /** call code iff user has right permission for resource */
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      val authenticatedRequest = getUser(request)
-      if (Permission.checkPermission(authenticatedRequest.user, permission, resourceRef)) {
-        block(authenticatedRequest)
+      val userRequest = getUser(request)
+      if (Permission.checkPermission(userRequest.user, permission, resourceRef)) {
+        block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
       }

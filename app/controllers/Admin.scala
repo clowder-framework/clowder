@@ -330,16 +330,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
 
   def listAdmins() = ServerAdminAction { implicit request =>
     implicit val user = request.user
-    user match {
-      case Some(x) => {
-        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
-          val admins = AppConfiguration.getAdmins
-          Ok(views.html.listAdmins(admins))
-        } else {
-          Unauthorized("Not authorized")
-        }
-      }
-    }
+    val admins = AppConfiguration.getAdmins
+    Ok(views.html.listAdmins(admins))
   }
 
   def getPermissionsMap() : scala.collection.immutable.Map[String, Boolean] = {
