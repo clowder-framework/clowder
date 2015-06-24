@@ -1,4 +1,4 @@
-@(dataset: Dataset, previewers: List[Previewer])(implicit user: Option[securesocial.core.Identity])
+@(dataset: Dataset, previewers: List[Previewer])(implicit user: Option[models.User])
 
 <div class="row">
     <div class="col-md-12 box-white-space">
@@ -26,6 +26,7 @@
         @datasets.editInfo(dataset)
         @datasets.editLicense(dataset)
         @datasets.deleteButton(dataset)
+        @datasets.follow(dataset)
     </div>
 
 

@@ -40,7 +40,8 @@ class MongoDBDatasetService @Inject() (
   collections: CollectionService,
   files: FileService,
   comments: CommentService,
-  sparql: RdfSPARQLService) extends DatasetService {
+  sparql: RdfSPARQLService,
+  userService: UserService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -94,6 +95,34 @@ class MongoDBDatasetService @Inject() (
       var datasetList = Dataset.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
       datasetList = datasetList.filter(_ != datasetList.last)
       datasetList
+    }
+  }
+
+  /**
+   * List datasets after a specified date.
+   */
+  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset] = {
+    val order = MongoDBObject("uploadDate"-> -1)
+    if (date == "") {
+      Dataset.find("author.email" $eq email).sort(order).limit(limit).toList
+    } else {
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      Dataset.find(("uploadDate" $lt sinceDate) ++ ("author.email" -> email)).sort(order).limit(limit).toList
+    }
+  }
+
+  /**
+   * List datasets before a specified date.
+   */
+  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset] = {
+    var order = MongoDBObject("uploadDate"-> -1)
+    if (date == "") {
+      Dataset.find("author.email" $eq email).sort(order).limit(limit).toList
+    } else {
+      order = MongoDBObject("uploadDate"-> 1)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      Dataset.find(("uploadDate" $gt sinceDate) ++ ("author.email" $eq email))
+        .sort(order).limit(limit).toList.reverse
     }
   }
 
@@ -876,6 +905,9 @@ class MongoDBDatasetService @Inject() (
           if (notTheDataset.size == 0)
             files.removeFile(f.id)
         }
+        for (follower <- dataset.followers) {
+          userService.unfollowDataset(follower, id)
+        }
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
       case None =>
@@ -939,6 +971,16 @@ class MongoDBDatasetService @Inject() (
   
   def setNotesHTML(id: UUID, notesHTML: String){
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
+  }
+
+  def addFollower(id: UUID, userId: UUID) {
+    Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def removeFollower(id: UUID, userId: UUID) {
+    Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 }
 

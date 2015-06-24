@@ -1,4 +1,4 @@
-@(file: models.File, fileDataset: List[models.Dataset], datasetsOutside: List[models.Dataset])(implicit user: Option[securesocial.core.Identity])
+@(file: models.File, fileDataset: List[models.Dataset], datasetsOutside: List[models.Dataset])(implicit user: Option[models.User])
 
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 

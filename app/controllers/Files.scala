@@ -3,7 +3,7 @@ package controllers
 import java.io._
 import java.net.URLEncoder
 import javax.mail.internet.MimeUtility
-import models.{UUID, FileMD, File, Thumbnail}
+import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
@@ -23,6 +23,8 @@ import scala.sys.SystemProperties
 import securesocial.core.Identity
 import scala.collection.mutable.ListBuffer
 
+
+
 /**
  * Manage files.
  *
@@ -39,6 +41,8 @@ class Files @Inject() (
   previews: PreviewService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
+  users: UserService,
+  events: EventService,
   thumbnails: ThumbnailService) extends SecuredController {
 
   /**
@@ -54,7 +58,11 @@ class Files @Inject() (
    * File info.
    */
   def file(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
-    implicit val user = request.user
+    implicit val user = request.user match {
+      case Some(x: User) => Some(x)
+      case _ => None
+    }
+
     Logger.info("GET file with id " + id)
     files.get(id) match {
       case Some(file) => {
@@ -367,7 +375,8 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-
+              var option_user = users.findByIdentity(identity)
+              events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
 	            if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"
 	            else if(showPreviews.equals("None"))

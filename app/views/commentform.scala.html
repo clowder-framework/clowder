@@ -1,4 +1,4 @@
-@(id: String, resourceType: String)(implicit user: Option[securesocial.core.Identity])
+@(id: String, resourceType: String)(implicit user: Option[models.User])
 
 @if(user.isDefined) {
   <form class="form-inline">

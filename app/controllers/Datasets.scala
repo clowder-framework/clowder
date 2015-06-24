@@ -148,9 +148,9 @@ class Datasets @Inject()(
       var prev, next = ""
       var datasetList = List.empty[models.Dataset]
       if (direction == "b") {
-        datasetList = datasets.listDatasetsBefore(date, limit)
+        datasetList = datasets.listUserDatasetsBefore(date, limit, email)
       } else if (direction == "a") {
-        datasetList = datasets.listDatasetsAfter(date, limit)
+        datasetList = datasets.listUserDatasetsAfter(date, limit, email)
       } else {
         badRequest
       }
@@ -177,7 +177,6 @@ class Datasets @Inject()(
         }
       }
       
-      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
 
       
 
@@ -257,7 +256,11 @@ class Datasets @Inject()(
    * Dataset.
    */
   def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) { implicit request =>
-      implicit val user = request.user
+    implicit val user = request.user match {
+      case Some(x: User) => Some(x)
+      case _ => None
+    }
+
       Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
       datasets.get(id) match {
         case Some(dataset) => {
