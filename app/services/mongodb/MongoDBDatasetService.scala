@@ -102,17 +102,12 @@ class MongoDBDatasetService @Inject() (
    * List datasets after a specified date.
    */
   def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset] = {
-    val order = MongoDBObject("created"-> -1)
+    val order = MongoDBObject("uploadDate"-> -1)
     if (date == "") {
-      var datasetList = Dataset.findAll.sort(order).limit(limit).toList
-      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
-      datasetList
+      Dataset.find("author.email" $eq email).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
-      Logger.info("After " + sinceDate)
-      var datasetList = Dataset.find("created" $lt sinceDate).sort(order).limit(limit).toList
-      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
-      datasetList
+      Dataset.find(("uploadDate" $lt sinceDate) ++ ("author.email" -> email)).sort(order).limit(limit).toList
     }
   }
 
@@ -120,19 +115,14 @@ class MongoDBDatasetService @Inject() (
    * List datasets before a specified date.
    */
   def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset] = {
-    var order = MongoDBObject("created"-> -1)
+    var order = MongoDBObject("uploadDate"-> -1)
     if (date == "") {
-      var datasetList = Dataset.findAll.sort(order).limit(limit).toList
-      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
-      datasetList
+      Dataset.find("author.email" $eq email).sort(order).limit(limit).toList
     } else {
-      order = MongoDBObject("created"-> 1)
+      order = MongoDBObject("uploadDate"-> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
-      Logger.info("Before " + sinceDate)
-      var datasetList = Dataset.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
-      datasetList = datasetList.filter(_ != datasetList.last)
-      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
-      datasetList
+      Dataset.find(("uploadDate" $gt sinceDate) ++ ("author.email" $eq email))
+        .sort(order).limit(limit).toList.reverse
     }
   }
 
