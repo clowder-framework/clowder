@@ -26,8 +26,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def createCollection() = PermissionAction(Permission.CreateCollection)(parse.json) {
-    request =>
+  def createCollection() = PermissionAction(Permission.CreateCollection)(parse.json) { implicit request =>
       Logger.debug("Creating new collection")
       (request.body \ "name").asOpt[String].map { name =>
           (request.body \ "description").asOpt[String].map { description =>
@@ -67,8 +66,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Reindex a collection",
     notes = "Reindex the existing collection, if recursive is set to true it will also reindex all datasets and files.",
     httpMethod = "GET")
-  def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, id))) {
-    request =>
+  def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, id))) {  implicit request =>
       collections.get(id) match {
         case Some(coll) => {
           current.plugin[ElasticsearchPlugin].foreach {
