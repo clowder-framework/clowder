@@ -130,6 +130,17 @@ object Utils {
       decodedCollection
   }
 
+  /**
+   * Encoded text can have newlines. When displayed via a view, they must be translated into linebreaks
+   * in order to render correctly.
+   *
+   * @param text The text to be updated with linebreaks
+   * @return An updated String with newlines replaced.
+   */
+  def updateEncodedTextNewlines(text: String): String = {
+    text.replace("\n", "<br>")
+  }
+
   /*
    * Utility method to modify the elements in a comment that are encoded when submitted and stored. These elements
    * are decoded when a view requests the objects, so that they can be human readable. Called recursively in order
@@ -144,10 +155,8 @@ object Utils {
    * @return A copy of the original comment, with the specified elements decoded
    */
   def decodeCommentElements(comment: Comment) : Comment = {
-    val decodedComment = comment.copy(text = StringEscapeUtils.unescapeHtml(comment.text),
-                              replies = decodeCommentReplies(comment))
-
-    decodedComment
+    val updatedText = updateEncodedTextNewlines(comment.text)
+    comment.copy(text = updatedText, replies = decodeCommentReplies(comment))
   }
 
   /**

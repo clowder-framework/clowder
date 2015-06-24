@@ -15,7 +15,7 @@
                     <span>@c.posted.format("MMM dd, yyyy HH:mm:ss")</span>
 
 			</div>
-			<div class="comment-body" id="comment-body_@c.id"></div>
+			<div class="comment-body" id="comment-body_@c.id">@Html(c.text)</div>
 			@if(user.isDefined) {
 			<div class="comment-footer">
 				<a href="#" 
@@ -55,11 +55,5 @@
     }    
 </script>
 
-<script type='text/javascript'>
-    $( document ).ready( function() {
-        //Set the body for the comment
-        $("#comment-body_" + "@c.id").html("@c.text");
-    });
-  </script>
 }
 
