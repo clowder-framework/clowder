@@ -15,7 +15,6 @@
 		    async:false,
 		    success: function (data) {
 		    	var resourceData = JSON.parse(data.trim());
-		    	resourceData.url = "http://supercomputing.cyi.ac.cy";
 		    	var appendStr = "";
 		    	var fileId = Configuration.fileid;
 
