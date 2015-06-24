@@ -22,14 +22,14 @@ $(document).ready(function() {
 
 //Disable common input fields
 function disableFields() {
-	var name=$('#name').val().replace(/\n/g, "<br>");
-	var desc=$('#description').val().replace(/\n/g, "<br>");
+	var name=$('#name').val();
+	var desc=$('#description').val();
 	$('#name').addClass("hiddenholdspace");
 	$('#description').addClass("hiddenholdspace");	
 	$("input[name=radiogroup]").attr('disabled', true);
-	$('#namelabel').html(name);
+	$('#namelabel').html(htmlEncode(name).replace(/\n/g, "<br>"));
 	$('#namelabel').show();
-	$('#desclabel').html(desc);
+	$('#desclabel').html(htmlEncode(desc).replace(/\n/g, "<br>"));
 	$('#desclabel').show();
 }
 
@@ -124,7 +124,7 @@ function createEmptyDataset(data) {
  		
 	//Remove error messages if present
 	clearErrors();
-	
+
 	//Disable input elements
 	disableFields();
 	
@@ -165,8 +165,8 @@ function createEmptyDataset(data) {
         }
     }
     
-    var encName = htmlEncode(name.val()).replace(/\n/g, "<br>");
-	var encDescription = htmlEncode(desc.val()).replace(/\n/g, "<br>");
+    var encName = htmlEncode(name.val());
+	var encDescription = htmlEncode(desc.val());
     
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
@@ -284,8 +284,8 @@ function attachFiles() {
 	    	return false;
 	    }
 	    
-	    var encName = htmlEncode(name.val()).replace(/\n/g, "<br>");
-		var encDescription = htmlEncode(desc.val()).replace(/\n/g, "<br>");
+	    var encName = htmlEncode(name.val());
+		var encDescription = htmlEncode(desc.val());
 	    
 		if (ids.length == 0) {
 			jsonData = JSON.stringify({"name":encName, "description":encDescription});

@@ -30,7 +30,7 @@ function addToCollection(datasetId) {
     });
 }
 
-function removeCollection(collectionId, collectionName, datasetId, event){
+function removeCollection(collectionId, datasetId, event){
 
     var request = jsRoutes.api.Collections.removeDataset(collectionId, datasetId, "True").ajax({
         type: 'POST'

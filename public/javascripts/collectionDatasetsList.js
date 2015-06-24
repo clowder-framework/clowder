@@ -16,7 +16,8 @@
 		var request = jsRoutes.api.Collections.attachDataset(collectionId, datasetId).ajax({
 			type: 'POST'
 		});
-		
+
+		//Note - need to make the "replace" calls below more generic.
 		request.done(function (response, textStatus, jqXHR){	        
 	        //Remove selected dataset from datasets not in collection.
 	        var resultId = event.target.parentNode.parentNode.getAttribute('data-datasetid');
@@ -26,9 +27,9 @@
 	        $("#addDatasetsTable tbody tr[data-datasetid='" + resultId + "']").remove();
 	        
 	        //Add the node to the contained datasets table, with associated data
-	        $('#collectionDatasetsTable tbody').append("<tr data-datasetid='" + datasetId + "'><td><a href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>"+ event.target.innerHTML + "</a></td>"
+	        $('#collectionDatasetsTable tbody').append("<tr data-datasetid='" + datasetId + "'><td><a href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>"+ event.target.innerHTML.replace(/\n/g, "<br>") + "</a></td>"
 					+ "<td>" + inputDate + "</td>"
-					+ "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
+					+ "<td style='white-space:pre-line;'>" + inputDescr.replace(/\n/g, "<br>") + "</td>"
 					+ "<td>" + inputThumbnail + "</td>"
 					+ "<td><a href='#!' onclick='removeDataset(\"" + datasetId + "\",event)'>Remove</a>"
 					+ "<button class='btn btn-link' title='Detach the Dataset' style='text-align:right' onclick='removeDataset(\"" + datasetId + "\",event)'>"
@@ -179,6 +180,7 @@
 
 	//TODO - MMF - Is this really necessary? The list of available datasets that are external to the collection should be available already.
 	//This would also unify the htmlDecoding on the server side instead of having to happen both here and there.
+	//Note - need to make the "replace" calls below more generic.
 	 $('body').on('click','#addDatasetBtn',function(e){
 			var request = $.ajax({
 		       type: 'GET',
@@ -198,15 +200,15 @@
 		        	var datasetThumbnail = "";
 		        	if(respJSON[i].thumbnail != "None")
 		        		datasetThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
-		        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' width='120'>";
+		        							+ "alt='Thumbnail of " + respJSON[i].datasetname.replace(/\n/g, "<br>") + "' width='120'>";
 		        	else
 		        		datasetThumbnail = "No thumbnail available"
 
 		        	$('#addDatasetsTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;' data-datasetId='" + respJSON[i].id + "'><td><a href='#!' "
 		        								+ "onclick='addDataset(\"" + respJSON[i].id + "\",event)' "
-		        								+ ">"+ respJSON[i].datasetname + "</a></td>"
+		        								+ ">"+ respJSON[i].datasetname.replace(/\n/g, "<br>") + "</a></td>"
 		        								+ "<td>" + createdDate + "</td>"
-		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
+		        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description.replace(/\n/g, "<br>") + "</td>"
 		        								+ "<td>" + datasetThumbnail + "</td>"
 		        								+ "<td><a target='_blank' href='" +  jsRoutes.controllers.Datasets.dataset(respJSON[i].id).url + "'>View</a></td></tr>");
 		        	

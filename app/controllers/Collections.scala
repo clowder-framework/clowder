@@ -90,11 +90,19 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
       }
       collectionsWithThumbnails = collectionsWithThumbnails.reverse
-      
-    //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-    val viewMode: Option[String] = 
+
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part
+      //of the collection's names or descriptions
+      val decodedCollections = ListBuffer.empty[models.Collection]
+      for (aCollection <- collectionsWithThumbnails) {
+        val dCollection = Utils.decodeCollectionElements(aCollection)
+        decodedCollections += dCollection
+      }
+
+      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+      val viewMode: Option[String] =
         if (mode == null || mode == "") {
           request.cookies.get("view-mode") match {
               case Some(cookie) => Some(cookie.value)
@@ -105,7 +113,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         }    
     
       //Pass the viewMode into the view
-      Ok(views.html.collectionList(collectionsWithThumbnails, prev, next, limit, viewMode))
+      Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode))
   }
 
   def jsonCollection(collection: Collection): JsValue = {
@@ -163,6 +171,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           // only show previewers that have a matching preview object associated with collection
           Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
 
+          //Decode the encoded items
+          val dCollection = Utils.decodeCollectionElements(collection)
+
           for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
           val filteredPreviewers = for (
             previewer <- Previewers.findCollectionPreviewers;
@@ -176,8 +187,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           val datasetsInside = datasets.listInsideCollection(id)
+          val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
+          for (aDataset <- datasetsInside) {
+            val dDataset = Utils.decodeDatasetElements(aDataset)
+            decodedDatasetsInside += dDataset
+          }
 
-          Ok(views.html.collectionofdatasets(datasetsInside, collection, filteredPreviewers.toList))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList))
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")

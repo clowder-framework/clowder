@@ -113,6 +113,13 @@ class Datasets @Inject()(
         }
         dataset.id -> allComments.size
       }.toMap
+
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part
+      //of the datasets names or descriptions
+      val decodedDatasetList = ListBuffer.empty[models.Dataset]
+      for (aDataset <- datasetList) {
+        decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+      }
       
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
         //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
@@ -128,7 +135,7 @@ class Datasets @Inject()(
         }
       
       //Pass the viewMode into the view
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
+      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
   }
   def userDatasets(when: String, date: String, limit: Int, mode: String, email: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
     implicit request =>
@@ -182,7 +189,14 @@ class Datasets @Inject()(
         }
         dataset.id -> allComments.size
       }.toMap
-      
+
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part
+      //of the datasets names or descriptions
+      val decodedDatasetList = ListBuffer.empty[models.Dataset]
+      for (aDataset <- datasetList) {
+        decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+      }
+
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
         //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
         //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
@@ -201,7 +215,7 @@ class Datasets @Inject()(
             }
         }                       
       
-      Ok(views.html.datasetList(datasetList, commentMap, prev, next, limit, viewMode))
+      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
   }
 
 
@@ -249,6 +263,7 @@ class Datasets @Inject()(
           val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset)
+          datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
           // previews
 //          val filteredPreviewers = for (
@@ -273,8 +288,19 @@ class Datasets @Inject()(
 	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
 	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
 	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
+            val decodedCollectionsOutside = ListBuffer.empty[models.Collection]
+            val decodedCollectionsInside = ListBuffer.empty[models.Collection]
 
-	          var commentsByDataset = comments.findCommentsByDatasetId(id)
+            for (aCollection <- collectionsOutside) {
+              val dCollection = Utils.decodeCollectionElements(aCollection)
+              decodedCollectionsOutside += dCollection
+            }
+            for (aCollection <- collectionsInside) {
+              val dCollection = Utils.decodeCollectionElements(aCollection)
+              decodedCollectionsInside += dCollection
+            }
+
+          var commentsByDataset = comments.findCommentsByDatasetId(id)
 	          filesInDataset.map {
 	            file =>
 	              commentsByDataset ++= comments.findCommentsByFileId(file.id)
@@ -286,7 +312,7 @@ class Datasets @Inject()(
 	          
 	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata, collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled))
         }
         case None => {
           Logger.error("Error getting dataset" + id); InternalServerError

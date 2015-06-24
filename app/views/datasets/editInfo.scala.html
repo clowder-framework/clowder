@@ -34,55 +34,54 @@ title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down">
     </div>
 </div>
 <script type="text/javascript" language="javascript">
-function closeAboutEdit() {
-//Reset the data to the current values
-var text = $("#aboutdesc").html().trim();
-text = text.replace(/<br>/g, "\n");
-$("#editdesc").val(htmlDecode(text));
-text = $("#datasettitle").html().trim();
-text = text.replace(/<br>/g, "\n");
-$("#editname").val(htmlDecode(text));
 
-//Close the edit form
-$("#editabout").addClass('collapsed');
-$("#collapseSeven").collapse('toggle');
-return false;
+function closeAboutEdit() {
+    //Reset the data to the current values
+    var text = $("#aboutdesc").html().trim();
+    text = text.replace(/<br>/g, "\n");
+    $("#editdesc").val(htmlDecode(text));
+    text = $("#datasettitle").html().trim();
+    text = text.replace(/<br>/g, "\n");
+    $("#editname").val(htmlDecode(text));
+
+    //Close the edit form
+    $("#editabout").addClass('collapsed');
+    $("#collapseSeven").collapse('toggle');
+    return false;
 }
 
 function updateAboutData(datasetId) {
-var description = $("#editdesc").val();
-var name = $("#editname").val();
-var encName = htmlEncode(name);
-encName = encName.replace(/\n/g, "<br>");
-var encDescription = htmlEncode(description);
-encDescription = encDescription.replace(/\n/g, "<br>");
-var jsonData = JSON.stringify({"description":encDescription, "name":encName});
+    var description = $("#editdesc").val();
+    var name = $("#editname").val();
+    var encName = htmlEncode(name);
+    var encDescription = htmlEncode(description);
+    var jsonData = JSON.stringify({"description":encDescription, "name":encName});
 
-var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
-data: jsonData,
-type: 'POST',
-contentType: "application/json"
-});
+    var request = jsRoutes.api.Datasets.updateInformation(datasetId).ajax({
+        data: jsonData,
+        type: 'POST',
+        contentType: "application/json"
+    });
 
-request.done(function (response, textStatus, jqXHR){
-///console.log("Response " + response);
-//Sucessful update of the DB - update the interface
+    request.done(function (response, textStatus, jqXHR){
+        ///console.log("Response " + response);
+        //Sucessful update of the DB - update the interface
 
-$("#aboutdesc").html(encDescription);
-$("#datasettitle").html(encName);
+        $("#aboutdesc").html(encDescription.replace(/\n/g, "<br>"));
+        $("#datasettitle").html(encName.replace(/\n/g, "<br>"));
 
-closeAboutEdit();
-});
+        closeAboutEdit();
+    });
 
-request.fail(function (jqXHR, textStatus, errorThrown){
-console.error("The following error occured: "+textStatus, errorThrown);
-var errMsg = "You must be logged in to update the information about a dataset.";
-if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-notify("The dataset information was not updated due to : " + errorThrown, "error");
-}
-});
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: "+textStatus, errorThrown);
+        var errMsg = "You must be logged in to update the information about a dataset.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("The dataset information was not updated due to : " + errorThrown, "error");
+        }
+    });
 
-return false;
+    return false;
 }
 </script>
 

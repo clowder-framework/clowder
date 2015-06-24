@@ -33,8 +33,8 @@ function createCollection() {
     	return false;
     }
     
-    var encName = htmlEncode(name.val()).replace(/\n/g, "<br>");
-	var encDescription = htmlEncode(desc.val()).replace(/\n/g, "<br>");
+    var encName = htmlEncode(name.val());
+	var encDescription = htmlEncode(desc.val());
 	$('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
     

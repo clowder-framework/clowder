@@ -29,7 +29,7 @@
                             @collection.datasets.size datasets
                         }
                         @if(user.isDefined) {
-                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)', '@dataset.id', event)" title="Remove from collection">
                                 Remove</a>
                         }
                     </div>
