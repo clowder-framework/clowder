@@ -96,7 +96,6 @@ $(document).ready(function() {
   $("#sensor-link-1").click();
 
   $("#additionalSensors").on('click', '.removeSensor', function() {
-    console.log($(this).data('id'));
     var sensorNumber = $(this).data('id');
     $("#sensor-" + sensorNumber).remove();
   });
@@ -156,19 +155,16 @@ $(document).ready(function() {
     data.properties.type.title = $("#sensorDataSource").val();
     data.properties.region = $("#sensorRegion").val();
 
-    console.log(data);
     var sensorPUTpromise = deferredPut(mediciSensorPutURL, JSON.stringify(data.properties));
 
 
     $.when(sensorPUTpromise).done(function() {
-        console.log("should go back to sensors list");
         // redirect removing the "/new" from the current href
         // necessary until we add the Geostreams to the @controllers
         window.location.href = jsRoutes.controllers.Geostreams.list().url
     });
   });
   $("#cancelSubmit").click(function(event) {
-    console.log('cancelSubmit');
     event.preventDefault();
     window.location.href = jsRoutes.controllers.Geostreams.list().url
   });

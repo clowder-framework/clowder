@@ -128,8 +128,6 @@ $(document).ready(function() {
           instrumentID: "You must provide a unique ID for this instrument"
         }
       });
-      console.log($(this));
-      console.log($(this).valid());
       if (!$(this).valid()) {
         $(this).find('.collapse').collapse('show');
         sensorsValid = false;
@@ -154,7 +152,6 @@ $(document).ready(function() {
     data.properties.type.title = $("#sensorDataSource").val();
     data.properties.region = $("#sensorRegion").val();
 
-    console.log(data);
     var sensorPOSTpromise = deferredPost(mediciSensorsURL, JSON.stringify(data));
 
     var deferredStreams = [];
@@ -162,7 +159,6 @@ $(document).ready(function() {
     $.when(sensorPOSTpromise).done(function() {
       var sensorGETpromise = deferredGet(mediciSensorsURL + '?geocode=' + data.geometry.coordinates[1] + ',' + data.geometry.coordinates[0] + ',0');
       $.when(sensorGETpromise).done(function(sensorData) {
-        console.log(sensorData);
         var sensorJSON = sensorData[0];
         $(".single-stream-tmpl").each(function() {
 
@@ -179,12 +175,10 @@ $(document).ready(function() {
           streamJSON['geometry'] = sensorJSON['geometry'];
           streamJSON['sensor_id'] = sensorJSON['id'].toString();
           streamJSON['type'] = sensorJSON['type'];
-          console.log(streamJSON);
           deferredStreams.push(deferredPost(mediciStreamsURL, JSON.stringify(streamJSON)));
         });
 
         $.when.apply($, deferredStreams).done(function(data) {
-          console.log("should redirect now.");
           // redirect removing the "/new" from the current href
           // necessary until we add the Geostreams to the @controllers
           window.location.href = window.location.href.substring(0, window.location.href.length - 4);

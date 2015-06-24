@@ -48,8 +48,7 @@
 		};
 
 	   
-	        console.log("Sensors found " + @sensors.length );
-            // prefacing with HTML prevents Play from escaping quotes and other JSON characters
+	        // prefacing with HTML prevents Play from escaping quotes and other JSON characters
             var geojsonLayer = L.geoJson(@Html(Json.stringify(Json.toJson(sensors))), {
 
 		        style: function (feature) {
@@ -110,7 +109,6 @@
 		     });
 
 		  	 request.done(function (response, textStatus, jqXHR){
-			  	 console.log('Got streams for sensor');
 			  	 var listStreamsElement = $('#list_streams');
 			  	listStreamsElement.empty();
 			  	for (var i = 0; i < response.length; i++) {
@@ -133,8 +131,7 @@
 	     }
 
 	     function listDatapoints(stream_id) {
-		     console.log("clicked on " + stream_id);
-               var searchDatapointsURL = jsRoutes.api.Geostreams.searchDatapoints("", null, null, null, stream_id, null, null, null, "json").url;
+		       var searchDatapointsURL = jsRoutes.api.Geostreams.searchDatapoints("", null, null, null, stream_id, null, null, null, "json").url;
                var request = $.ajax({
                    url: searchDatapointsURL,
 			  	   type: 'GET',
@@ -143,8 +140,7 @@
 			     });
 
 		  	 request.done(function (response, textStatus, jqXHR){
-			  	console.log('Got datapoints for stream');
-			    var datapointsElement = $('#datapoints');
+			  	var datapointsElement = $('#datapoints');
                 datapointsElement.empty();
 			  	datapointsElement.append(JSON.stringify(response, null, '   '));
 		  	 });

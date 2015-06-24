@@ -95,7 +95,6 @@ $(document).ready(function() {
   });
 
   $("#instruments").on('click', '.removeInstrument', function() {
-    console.log($(this).data('id'));
     var instrumentNumber = $(this).data('id');
     $("#instrument-" + instrumentNumber).remove();
   });
@@ -152,8 +151,6 @@ $(document).ready(function() {
           instrumentID: "You must provide a unique ID for this instrument"
         }
       });
-      console.log($(this));
-      console.log($(this).valid());
       if (!$(this).valid()) {
         $(this).find('.collapse').collapse('show');
         instrumentsValid = false;
@@ -170,8 +167,6 @@ $(document).ready(function() {
           instrumentID: "You must provide a unique ID for this instrument"
         }
       });
-      console.log($(this));
-      console.log($(this).valid());
       if (!$(this).valid()) {
         $(this).find('.collapse').collapse('show');
         instrumentsValid = false;
@@ -197,7 +192,6 @@ $(document).ready(function() {
     data.properties.type.title = $("#sensorDataSource").val();
     data.properties.region = $("#sensorRegion").val();
 
-    console.log(data);
     var sensorPUTpromise = deferredPut(mediciUpdateSensorMetadataURL, JSON.stringify(data.properties));
 
     $.when(sensorPUTpromise).done(function(data) {
@@ -234,15 +228,12 @@ $(document).ready(function() {
           streamJSON['geometry'] = sensorJSON['geometry'];
           streamJSON['sensor_id'] = sensorJSON['id'].toString();
           streamJSON['type'] = sensorJSON['type'];
-          console.log(streamJSON);
           var postDeferred = deferredPost(mediciStreamsURL, JSON.stringify(streamJSON));
           deferredStreams.push(postDeferred);
         });
 
 
         $.when.apply($, deferredStreams).done(function(data) {
-          console.log(data);
-          console.log("should redirect now.");
           // redirect to the sensors list
           window.location.href = jsRoutes.controllers.Geostreams.list().url;
         });
