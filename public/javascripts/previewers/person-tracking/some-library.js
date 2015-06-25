@@ -48,6 +48,7 @@
         var pathPopcornJS = pathJs + "popcorn-complete.min.js";        
         var sortedFrameDataArray = new Array();
         var frameDataArray = new Array(); // To acommodate the cases where the extractor does not run from the first frame of the video
+        var labelArray = new Array(); // To store person label/ID information
         
         var syncGetScript = function(url){
             var deferred = $.Deferred();
@@ -136,7 +137,7 @@
                             // if array element is not existing
                             if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
                                 var objPerson = new Object();
-                                objPerson.label = "Person " + id;
+                                objPerson.label = "Person_" + id;
                                 var personFrameData = new Array();
                                 personFrameData.push(new Array(frameIndex-1, id));
                                 objPerson.data = personFrameData;                        
@@ -157,7 +158,7 @@
                                 // if array element is not existing
                                 if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
                                     var objPerson = new Object();
-                                    objPerson.label = "Person " + id;
+                                    objPerson.label = "Person_" + id;
                                     var personFrameData = new Array();
                                     personFrameData.push(new Array(frameIndex-1, id));
                                     objPerson.data = personFrameData;                        
@@ -237,6 +238,13 @@
                         }    
                     }                
                 }
+
+                // Creating the label array
+                for(var i=0; i < sortedFrameDataArray.length; i++) {
+                    labelArray.push(sortedFrameDataArray[i].label);
+                }
+                labelArray.push("Invalid");
+                console.log(sortedFrameDataArray); //Debug code. will be deleted
                                                         
                 //display video on screen and visualize person tracking
         		console.log("Updating tab " + Configuration.tab);    		
@@ -285,9 +293,9 @@
                     $("#videoDiv").append("<canvas id='canvas' style='position: absolute; top: 0px; left: 0px;' ></canvas>");
                     
                     // add graph div and legend div for jQuery flot
-                    $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-bottom: 20px; margin-top: 20px;'></div>");
-                    $("#persontracking").append("<div id='placeholder' style='width: 650px; height: 400px; margin-right: 10px; float: left;'></div>");
-                    $("#persontracking").append("<div id='legend' style='margin-right: 10px; margin-top: 10px; float: left;'></div>");                                    
+                    $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-bottom: 20px; margin-top: 10px;'></div>");
+                    $("#persontracking").append("<div id='placeholder' style='width: 560px; height: 400px; margin-right: 10px; float: left;'></div>");
+                    $("#persontracking").append("<div id='legend' style='margin-right: 10px; margin-top: 5px; float: left;'></div>");                                    
 
                     var canvas = $("#canvas");
                     var video = $("#video");
@@ -445,16 +453,68 @@
                         //return val;
                     }
 
+                    saveLabel = function (oldLabel){
+
+                        var newVal = $("#" + oldLabel+ "Select").val();
+                        if(oldLabel != newVal){
+
+                            for(var i=0; i < sortedFrameDataArray.length; i++) {
+                                if(sortedFrameDataArray[i].label == oldLabel){
+
+                                    for(var j=0; j < sortedFrameDataArray.length; j++) {
+                                        if(sortedFrameDataArray[j].label == newVal){
+                                            sortedFrameDataArray[j].data = sortedFrameDataArray[j].data.concat(sortedFrameDataArray[i].data);
+                                            break;
+                                        }
+                                    }
+                                    //sortedFrameDataArray[i].label = newVal;
+                                    sortedFrameDataArray.splice(i,1);
+                                    break;
+                                }
+                            }
+
+                            console.log(sortedFrameDataArray);
+
+                            plot.setData(sortedFrameDataArray);
+                            plot.setupGrid(); //only necessary if your new data will change the axes or grid
+                            plot.draw();
+
+                            var index = $.inArray(oldLabel, labelArray);
+                            labelArray.splice(index,1);
+                            //$("#" + newVal+ "Select").remove();
+                            $("#" + oldLabel + "Div").remove();
+                        
+                        } else{
+
+                            $("#" + oldLabel + "Div").replaceWith('<a id="'+ label +'" href="#" onClick="editLabel(\'' + label + '\'); return false;">' + label + '</a>');
+                        }                        
+                    }
+
+                    editLabel = function (label) { 
+                        //alert(label);
+                        $("#" + label).replaceWith('<span id="'+ label + "Div" + '"><select id="'+ label + "Select" + '"></select> <button type="button" onclick="saveLabel(\'' + label + '\');">Save</button></span');
+                        for(var i=0; i < labelArray.length; i++) {                    
+                            $("#" + label+ "Select").append('<option value="' + labelArray[i] + '">'+ labelArray[i] +'</option>');
+                        }
+                        $("#" + label + "Select").val(label);
+                    }
+
+                    formatLabel = function (label, series){
+                        return '<a id="'+ label +'" href="#" onClick="editLabel(\'' + label + '\'); return false;">' + label + '</a>';
+                    }                    
+
                     var options = {
                         crosshair: {
                             mode: "x"
                         },
                         legend: {
-                            container: $("#legend")
+                            container: $("#legend"),
+                            labelFormatter: formatLabel
                         },
                         grid: {
                             show: true,
                             hoverable: false,
+                            clickable: true,
                             color: "#5E5E5E"
                         },
                         series: {
@@ -548,6 +608,11 @@
                             x: crossHairPos
                         })
                         plot.lockCrosshair();
+                    });
+
+                    //Debug code. Will be deleted.
+                    placeholder.bind("plotclick", function (event, pos, item) {
+                        alert("You clicked at " + pos.x + ", " + pos.y);
                     });
                 })
                 .fail(function(jqxhr){
