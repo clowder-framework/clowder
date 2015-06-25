@@ -47,10 +47,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
    * List collections in the system.
    */
   def listCollections(order: Option[String], limit: Option[Integer], space: Option[String]): List[Collection] = {
-    order match {
-      case Some("descending") => listCollectionsChronoReverse(limit, space)
-      case _ =>
-    }
+    if (order.exists(_.equals("desc"))) { return listCollectionsChronoReverse(limit, space) }
 
     val filter = space match {
       case Some(s) => MongoDBObject("space" -> new ObjectId(s))
