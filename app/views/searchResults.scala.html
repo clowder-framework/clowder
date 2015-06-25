@@ -66,14 +66,14 @@
 	    @for(dataset <- datasets) {
 		  <div class="row elasticsearchResult" id="datasetdiv_@dataset.id.toString">
 		    <div class="col-md-2">
-				@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120" style="margin-bottom:20%;">}
+				@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120" style="margin-bottom:20%;">}
 			</div>
 			<div class="col-md-10">
 				<dl class="dl-horizontal">
 					<dt> Name:</dt>
-					<dd><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></dd>
+					<dd><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></dd>
 					<dt>  Descriptions:</dt>
-					<dd> @dataset.description</dd>
+					<dd> @Html(dataset.description)</dd>
 					<dt>Collection name(s):</dt>
 					<dd>
 						@for(currMapping <- mapcollectionIds.get(dataset.id.toString).get){
@@ -102,14 +102,14 @@
 	    @for(collection <- collections) {
 		  <div class="row elasticsearchResult">
 		    <div class="col-md-2">  
-				@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(collection.name)" width="120" style="margin-bottom:30%;">}
+				@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120" style="margin-bottom:30%;">}
 			</div>
 			<div class="col-md-10">
 				<dl class="dl-horizontal">
 					<dt> Name:</dt>
-					<dd><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></dd>
+					<dd><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></dd>
 					<dt>  Description:</dt>
-					<dd> @collection.description</dd>
+					<dd> @Html(collection.description)</dd>
 				</dl>
 			</div>
 		</div>

@@ -95,12 +95,12 @@
                             <div class="panel-body">
                                 @if(!dataset.thumbnail_id.isEmpty){
                                     <a href="@(routes.Datasets.dataset(dataset.id))">
-                                        <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)">
+                                        <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
                                     </a>
                                 }
                             <div class="caption break-word">
-                                <h4><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
-                                <p>@ellipsize(dataset.description, 200)</p>
+                                <h4><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h4>
+                                <p>@Html(ellipsize(dataset.description, 200))</p>
                             </div>
                             </div>
                                 <!-- Dataset Info -->
@@ -166,11 +166,11 @@
                     @item match {
                         case dataset: models.Dataset => {
                             <tr>
-                                <td><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></td>
+                                <td><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></td>
                                 <td>@dataset.created.format("MMM dd, yyyy")</td>
-                                <td style="white-space:pre-line">@dataset.description</td>
+                                <td>@Html(dataset.description)</td>
                                 <td>
-                                    @if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)" width="120">}
+                                    @if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
                                     @if(dataset.thumbnail_id.isEmpty){No thumbnail available}
                                 </td>
                                 <td>Dataset</td>

@@ -35,11 +35,10 @@ object Utils {
    * description
    *  
    */
-  def decodeDatasetElements(dataset: Dataset) : Dataset = {            
-      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
-              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
-              							  
-      decodedDataset
+  def decodeDatasetElements(dataset: Dataset) : Dataset = {
+      val updatedName = updateEncodedTextNewlines(dataset.name)
+      val updatedDesc = updateEncodedTextNewlines(dataset.description)
+      dataset.copy(name = updatedName, description = updatedDesc)
   }
   
   /**
@@ -53,9 +52,20 @@ object Utils {
    *  
    */
   def decodeCollectionElements(collection: Collection) : Collection  = {
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
-              							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
-      decodedCollection
+      val updatedName = updateEncodedTextNewlines(collection.name)
+      val updatedDesc = updateEncodedTextNewlines(collection.description)
+      collection.copy(name = updatedName, description = updatedDesc)
+  }
+
+
+  /**
+   * Encoded text can have newlines. When displayed via a view, they must be translated into linebreaks
+   * in order to render correctly.
+   *
+   * @param text The text to be updated with linebreaks
+   * @return An updated String with newlines replaced.
+   */
+  def updateEncodedTextNewlines(text: String): String = {
+    text.replace("\n", "<br>")
   }
 }

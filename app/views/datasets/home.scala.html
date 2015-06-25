@@ -16,8 +16,8 @@
             </div>
         </div>
     </div>
-    <div class="col-md-12 box-white-space">
-        @dataset.description
+    <div class="col-md-12 box-white-space" id="aboutdesc">
+        @Html(dataset.description)
     </div>
 
     @datasets.previews(dataset, previewers)
