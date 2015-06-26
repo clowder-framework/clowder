@@ -12,7 +12,7 @@ import services.{CollectionService, DatasetService, FileService, SectionService,
  /**
   * A request that adds the User for the current call
   */
-case class RequestWithUser[A](user: Option[Identity], mediciUser: Option[User], request: Request[A]) extends WrappedRequest(request)
+case class RequestWithUser[A](user: Option[User], request: Request[A]) extends WrappedRequest(request)
 
 /**
  * List of all permissions available in Medici
@@ -22,6 +22,7 @@ case class RequestWithUser[A](user: Option[Identity], mediciUser: Option[User], 
 object Permission extends Enumeration {
 	type Permission = Value
 	val Public,					// Page is public accessible, i.e. no login needed
+		LoggedIn,
 		Admin,
 		CreateCollections,
 		DeleteCollections,
@@ -58,6 +59,8 @@ object Permission extends Enumeration {
 		SearchFiles,
 		CreateTagsFiles,
 		DeleteTagsFiles,
+		ListPreviews,
+		DeletePreviews,
 		CreateStreams,
 		AddDataPoints,
 		SearchStreams,
@@ -74,7 +77,9 @@ object Permission extends Enumeration {
     GetUser,
     AddProject,
     AddInstitution,
-    UserAdmin = Value        // Permission to work with users (list/add/remove/register)
+    AddEvent,
+    UserAdmin = Value      // Permission to work with users (list/add/remove/register)
+    
 }
 
 import api.Permission._

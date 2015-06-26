@@ -36,6 +36,16 @@ trait CollectionService {
   def listCollectionsBefore(date: String, limit: Int): List[Collection]
   
   /**
+   * List collections for a specific user after a specified date.
+   */
+  def listUserCollectionsAfter(date: String, limit: Int, email: String) : List[Collection]
+  
+  /**
+   * List collections for a specific user before a specified date.
+   */
+  def listUserCollectionsBefore(date: String, limit: Int, email: String) : List[Collection]
+  
+  /**
    * Get collection.
    */
   def get(id: UUID): Option[Collection]
@@ -96,5 +106,15 @@ trait CollectionService {
    * Set new thumbnail.
    */
   def createThumbnail(collectionId: UUID)
+
+  /**
+   * Add follower to a collection.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a collection.
+   */
+  def removeFollower(id: UUID, userId: UUID)
 
 }

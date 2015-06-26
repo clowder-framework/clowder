@@ -1,4 +1,4 @@
-@(comments: List[models.Comment])(implicit user: Option[securesocial.core.Identity])
+@(comments: List[models.Comment])(implicit user: Option[models.User])
 
 @comments.reverse.map { c =>
 <div class="comment" id="comment_@c.id">
@@ -15,7 +15,7 @@
                     <span>@c.posted.format("MMM dd, yyyy HH:mm:ss")</span>
 
 			</div>
-			<div class="comment-body" id="comment-body_@c.id"></div>
+			<div class="comment-body comment-linebreaks" id="comment-body_@c.id"></div>
 			@if(user.isDefined) {
 			<div class="comment-footer">
 				<a href="#" 
@@ -58,7 +58,7 @@
 <script type='text/javascript'>
     $( document ).ready( function() {
         //Set the body for the comment
-        $("#comment-body_" + "@c.id").html("@c.text");
+        $("#comment-body_" + "@c.id").html("@Html(c.text)");
     });
   </script>
 }
