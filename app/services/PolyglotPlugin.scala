@@ -27,7 +27,9 @@ class PolyglotPlugin(application: Application) extends Plugin {
   val polyglotConvertURL: Option[String] = configuration.getString("polyglot.convertURL")
   val polyglotInputsURL: Option[String] = configuration.getString("polyglot.inputsURL")
 
-  val table = scala.collection.mutable.HashMap.empty[String, List[String]]
+  //table to store output formats for each input format
+  //store them in memory to avoind making a request to Polyglot each time
+  val formatsTable = scala.collection.mutable.HashMap.empty[String, List[String]]
 
   override def onStart() {
     Logger.debug("Starting Polyglot Plugin")
@@ -58,6 +60,7 @@ class PolyglotPlugin(application: Application) extends Plugin {
    */
   def checkForFileAndDownload(triesLeft: Int, url: String, outputStream: OutputStream): Future[Unit] =
     {
+	  //check that credentials are set in config file
       if ( !polyglotUser.isDefined || !polyglotPassword.isDefined) {
         throw new RuntimeException("Polyglot credentials not defined.")
       }
@@ -127,17 +130,17 @@ class PolyglotPlugin(application: Application) extends Plugin {
   }
   
   /**
-   * If outputs are stored locally, returns them. Otherwise, calls another method to fetch outputs from Polyglot.
+   * Gets all output formats for the given input format. 
+   * If outputs are stored in memory, returns them. Otherwise, calls another method to fetch outputs from Polyglot.
    */
   def getOutputFormats(inputType: String): Future[Option[List[String]]] = {
-    for ((k, v) <- table) Logger.debug("key: " + k)
+    for ((k, v) <- formatsTable) Logger.debug("key: " + k)
 
-    //check if outputs are already in the table, and that they are non-empty
-    if ((table contains inputType) && (table(inputType).length > 0)) {
-      Logger.debug("output formats for " + inputType + " already in table " + table(inputType))
-      Future(Some(table(inputType)))
+    //check if outputs are stored in the table in memory, and that they are non-empty
+    if ((formatsTable contains inputType) && (formatsTable(inputType).length > 0)) {
+      Future(Some(formatsTable(inputType)))
     } else {
-      Logger.debug("output formats for " + inputType + " NOT in table")
+      //output formats are not found, make a request to Polyglot to get them
       getOutputFormatsPolyglot(inputType)
     }
   }
@@ -160,10 +163,10 @@ class PolyglotPlugin(application: Application) extends Plugin {
                 Logger.debug("success getting response from Polyglot")
                 val formatsList = response.body.split("\n").toList
                 //save list of output formats in the table
-                table(inputType) = formatsList
+                formatsTable(inputType) = formatsList
                 Some(formatsList)
               } else {
-                Logger.debug("Problems getting response from Polyglot, response status = " + response.status + ", " + response.statusText)
+                Logger.debug("Problems getting output formats from Polyglot, response status = " + response.status + ", " + response.statusText)
                 None
               }
             }

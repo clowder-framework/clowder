@@ -645,7 +645,10 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   }
   
  
-                                
+  /**
+   *  Uses Polyglot service to convert file to a new format and download to user's computer.
+   *  
+   */                            
   def downloadAsFormat(id: UUID, outputFormat: String) = SecuredAction(authorization = WithPermission(Permission.DownloadFiles)) { request =>
     Async {
       current.plugin[PolyglotPlugin] match {
@@ -656,6 +659,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                 //get bytes for file to be converted
                 files.getBytes(id) match {
                   case Some((inputStream, filename, contentType, contentLength)) => {
+                    
                     //prepare encoded file name for converted file
                     val lastSeparatorIndex = file.filename.replace("_", ".").lastIndexOf(".")
                     val outputFileName = file.filename.substring(0, lastSeparatorIndex) + "." + outputFormat
@@ -677,16 +681,19 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
                     val polyglotConvertURL: Option[String] = configuration.getString("polyglot.convertURL")
 
                     if (polyglotConvertURL.isDefined && polyglotUser.isDefined && polyglotPassword.isDefined) {
+                      
+                      //first call to Polyglot to get url of converted file
                       plugin.getConvertedFileURL(filename, inputStream, outputFormat)
                         .flatMap {
                           convertedFileURL =>
                             val triesLeft = 30
+                            //Cponverted file is initially empty. Have to wait for Polyglot to finish conversion.
                             //keep checking until file exists or until too many tries
                             //returns future success only if file is found and downloaded
                             plugin.checkForFileAndDownload(triesLeft, convertedFileURL, outputStream)
                         }.map {
                           x =>
-                            //successfuly completed future - get here only after getConvertedFileURL is done executing
+                            //successfuly completed future - get here only after polyglotPlugin.getConvertedFileURL is done executing
                             Ok.chunked(Enumerator.fromStream(new FileInputStream(tempFileName)))
                               .withHeaders(CONTENT_TYPE -> "some-content-Type")
                               .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + outputFileNameEncoded))
