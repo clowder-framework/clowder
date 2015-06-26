@@ -1,0 +1,11 @@
+@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+
+<div class="row border-top bottom-padding">
+    <div class="col-md-12">
+        <h5>
+            <a href="@routes.Datasets.users(dataset.id)">
+                <span class="glyphicon glyphicon-hand-right"></span> Users with access to the dataset
+            </a>
+        </h5>
+    </div>
+</div>

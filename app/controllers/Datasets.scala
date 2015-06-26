@@ -617,7 +617,23 @@ class Datasets @Inject()(
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
   }
-	
+
+  /**
+   * Show all users with access to a dataset (identified by its id)
+   */
+  def users(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
+    datasets.get(id) match {
+      case Some(dataset) => {
+        datasets.getSpaceId(id) match {
+          case Some(spaceId) => {
+            Ok(views.html.datasets.users(dataset, spaces.getUsersInSpace(spaceId)))
+          }
+          case None => InternalServerError("Dataset's space not found")
+        }
+      }
+      case None => InternalServerError("Dataset not found")
+    }
+  }
 
   def metadataSearch() = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) {
     implicit request =>

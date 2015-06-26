@@ -1,0 +1,28 @@
+@(dataset: models.Dataset, users: List[User])
+
+@main("Dataset") {
+
+    <div class="row">
+
+        <div class="row bottom-padding">
+            <div class="col-md-12" id="ds-title">
+                <h1 id="datasettitle">@dataset.name</h1>
+            </div>
+        </div>
+
+        <div class="row bottom-padding">
+            <div class="col-md-12">
+                <h4>Users with access to this dataset (excluding creator):</h4>
+            </div>
+        </div>
+
+        <div class="row bottom-padding">
+            <div id ="userList" class="col-md-12">
+                <ul> @users.map { user => <li> @user.fullName (space: ...) </li> } </ul>
+            </div>
+        </div>
+
+    </div>
+
+}
+

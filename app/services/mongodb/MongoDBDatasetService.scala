@@ -983,7 +983,20 @@ class MongoDBDatasetService @Inject() (
       $set("space" -> Some(new ObjectId(spaceId.stringify))),
       false, false)
   }
+
+  def getSpaceId(datasetId: UUID): Option[UUID] = {
+    get(datasetId) match {
+      case Some(dataset) => {
+        dataset.space match {
+          case Some(spaceId) => { return Some(spaceId) }
+          case None => { Logger.error("Space not found for this dataset " + datasetId); return None }
+        }
+      }
+      case None => { Logger.error("Error getting dataset " + datasetId); return None }
+    }
+  }
 }
+
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
