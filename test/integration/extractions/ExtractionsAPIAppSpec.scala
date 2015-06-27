@@ -110,7 +110,8 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
     }
 
      "respond to the getExtractorNamesAction" in {
-      val Some(result) = route(FakeRequest(GET, "/api/extractions/extractors_names"))
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/extractors_names?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -118,8 +119,10 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       contentAsString(result) must include ("Extractors")
       info("content"+contentAsString(result))
     }
- "respond to the getExtractorServerIPsAction" in {
-      val Some(result) = route(FakeRequest(GET, "/api/extractions/servers_ips"))
+
+    "respond to the getExtractorServerIPsAction" in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/servers_ips?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -127,8 +130,10 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       contentAsString(result) must include ("Servers")
       info("content"+contentAsString(result))
     }
- "respond to the getExtractorSupportedInputTypesAction" in {
-      val Some(result) = route(FakeRequest(GET, "/api/extractions/supported_input_types"))
+
+    "respond to the getExtractorSupportedInputTypesAction" in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/supported_input_types?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -136,8 +141,10 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       contentAsString(result) must include ("InputTypes")
       info("content"+contentAsString(result))
     }
- "respond to the getDTSRequests" in {
-      val Some(result) = route(FakeRequest(GET, "/api/extractions/requests"))
+
+    "respond to the getDTSRequests" in {
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/extractions/requests?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))

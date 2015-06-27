@@ -1,16 +1,13 @@
 package controllers
 
-import api.{Permission, WithPermission}
-import play.api.Routes
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
+
+import play.api.{Logger, Routes}
 import play.api.mvc.Action
 import services._
-import play.api.Logger
 
 /**
  * Main application controller.
- * 
- * @author Luigi Marini
  */
 @Singleton
 class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
@@ -27,7 +24,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   /**
    * Main page.
    */
-  def index = SecuredAction(authorization = WithPermission(Permission.Public)) { request =>
+  def index = UserAction { implicit request =>
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
@@ -38,7 +35,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
   
-  def options(path:String) = SecuredAction() { implicit request =>
+  def options(path:String) = UserAction { implicit request =>
     Logger.info("---controller: PreFlight Information---")
     Ok("")
    }
@@ -46,7 +43,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   /**
    * Bookmarklet
    */
-  def bookmarklet() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
+  def bookmarklet() = UserAction { implicit request =>
     val protocol = Utils.protocol(request)
     Ok(views.html.bookmarklet(request.host, protocol)).as("application/javascript")
   }

@@ -3,7 +3,7 @@ package api
 import java.util.Date
 import javax.inject.Inject
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
-import models.{UUID, ProjectSpace}
+import models.{ResourceRef, UUID, ProjectSpace}
 import play.api.Logger
 import controllers.Utils
 import play.api.Play._
@@ -14,15 +14,9 @@ import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
 import scala.collection.mutable.ListBuffer
-import models.Role
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
- *
- * @author Luigi Marini
- * @author Rob Kooper
- * @author Jong Lee
- *
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
 class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends ApiController {
@@ -31,15 +25,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     notes = "",
     responseClass = "None", httpMethod = "POST")
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
-  def createSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpace)) {
-    request =>
+  def createSpace() = UserAction(parse.json) { implicit request =>
       Logger.debug("Creating new space")
       val nameOpt = (request.body \ "name").asOpt[String]
       val descOpt = (request.body \ "description").asOpt[String]
       (nameOpt, descOpt) match{
         case(Some(name), Some(description)) =>{
           // TODO: add creator
-          val userId = request.mediciUser.fold(UUID.generate)(_.id)
+          val userId = request.mediciUser.fold(UUID.generate())(_.id)
           val c = ProjectSpace(name = name, description = description, created = new Date(), creator = userId,
             homePage = List.empty, logoURL = None, bannerURL = None, collectionCount=0,
             datasetCount=0, userCount=0, metadata=List.empty)
@@ -58,8 +51,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Remove a space",
     notes = "Does not delete the individual datasets and collections in the space.",
     responseClass = "None", httpMethod = "DELETE")
-  def removeSpace(spaceId: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.DeleteSpace), resourceId = Some(spaceId)) { request =>
+  def removeSpace(spaceId: UUID) = PermissionAction(Permission.DeleteSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     spaces.get(spaceId) match {
       case Some(space) => {
         spaces.delete(spaceId)
@@ -75,8 +67,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Get a space",
     notes = "Retrieves information about a space",
     responseClass = "None", httpMethod = "GET")
-  def get(id: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.ViewSpace), resourceId = Some(id)) { request =>
+  def get(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     spaces.get(id) match {
       case Some(space) => Ok(spaceToJson(Utils.decodeSpaceElements(space)))
       case None => BadRequest("Space not found")
@@ -86,9 +77,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "List spaces",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list() = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.Public)) { request => {
-        var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+  def list() = UserAction { implicit request => {
+      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
 	    for (aSpace <- spaces.list()) {
 	        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
 	    }
@@ -106,8 +96,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Associate a collection with a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def addCollection(space: UUID) = SecuredAction(parse.json,
-    authorization = WithPermission(Permission.EditCollection)) { request =>
+  def addCollection(space: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
     val collectionId = (request.body \ "collection_id").as[String]
     spaces.addCollection(UUID(collectionId), space)
     Ok(toJson("success"))
@@ -116,8 +105,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Associate a dataset with a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def addDataset(space: UUID) = SecuredAction(parse.json,
-    authorization = WithPermission(Permission.EditCollection)) { request =>
+  def addDataset(space: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
     val datasetId = (request.body \ "dataset_id").as[String]
     spaces.addDataset(UUID(datasetId), space)
     Ok(toJson("success"))
@@ -140,15 +128,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
    */
   @ApiOperation(value = "Update the information associated with a space", notes="",
     responseClass = "None", httpMethod = "POST")
-  def updateSpace(spaceid: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.EditSpace))
-  { request =>
-      if (UUID.isValid(spaceid.stringify)) {          
+  def updateSpace(spaceid: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceid)))(parse.json) { implicit request =>
+      if (UUID.isValid(spaceid.stringify)) {
 
           //Set up the vars we are looking for
           var description: String = null
           var name: String = null
           var timeAsString: String = null
-          var enabled: Boolean = false;
+          var enabled: Boolean = false
           
           var aResult: JsResult[String] = (request.body \ "description").validate[String]
           
@@ -189,10 +176,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
               }                            
           }
           
-          var boolResult = (request.body \ "enabled").validate[Boolean]
-          
           // Pattern matching
-          boolResult match {
+          (request.body \ "enabled").validate[Boolean] match {
               case b: JsSuccess[Boolean] => {
                 enabled = b.get
               }
@@ -232,10 +217,9 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
    */
   @ApiOperation(value = "Update the information associated with a space", notes="",
     responseClass = "None", httpMethod = "POST")
-  def updateUsers(spaceId: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.EditSpace))
-  { request =>
+  def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
       if (UUID.isValid(spaceId.stringify)) {
-           var aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
+           val aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
           
           // Pattern matching
           aResult match {
@@ -252,12 +236,12 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
                     }                    
                 }
 				                 
-				var roleMap: Map[String, String] = aMap.get
+				val roleMap: Map[String, String] = aMap.get
 				for ((k, v) <- roleMap) {
 				    //The role needs to exist
 				    userService.findRoleByName(k) match {
 				        case Some (aRole) => {
-				            var idArray: Array[String] = v.split(",").map(_.trim())
+				            val idArray: Array[String] = v.split(",").map(_.trim())
 					        				            
 				            //Deal with all the ids that were sent up (changes and adds)				            
 						    for (aUserId <- idArray) {

@@ -1,35 +1,26 @@
 package controllers
 
-import play.api.Logger
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.mvc.Cookie
 import java.io.FileInputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import javax.inject.Inject
+
+import api.Permission
+import fileutils.FilesUtils
+import models._
+import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json._
-import services._
-import java.util.Date
-import java.text.SimpleDateFormat
-import views.html.defaultpages.badRequest
-import models._
-import fileutils.FilesUtils
-import api.Permission
-import javax.inject.Inject
-import scala.Some
-import scala.collection.mutable.ListBuffer
-import scala.xml.Utility
-import services.ExtractorMessage
-import api.WithPermission
-import scala.collection.mutable.ListBuffer
-import scala.collection.immutable._
+import services.{ExtractorMessage, _}
 import util.RequiredFieldsConfig
+import views.html.defaultpages.badRequest
+
+import scala.collection.immutable._
+import scala.collection.mutable.ListBuffer
 
 
 /**
  * A dataset is a collection of files and streams.
- *
- * @author Luigi Marini
- *
  */
 class Datasets @Inject()(
   datasets: DatasetService,
@@ -51,8 +42,7 @@ class Datasets @Inject()(
    * Display the page that allows users to create new datasets, either by uploading multiple new files,
    * or by selecting multiple existing files.
    */
-  def newDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDataset)) {
-    implicit request =>
+  def newDataset() = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
       val spacesList = spaces.list()
@@ -63,8 +53,7 @@ class Datasets @Inject()(
       Ok(views.html.newDataset(filesList, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
   
-  def addToDataset(id: UUID, name: String, desc: String) = SecuredAction(authorization = WithPermission(Permission.CreateDataset)) {
-    implicit request =>
+  def addToDataset(id: UUID, name: String, desc: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
       Ok(views.html.addToExistingDataset(filesList, id, name, desc)).flashing("error" -> "Cannot add to the dataset")
@@ -73,8 +62,7 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String) = SecuredAction(authorization = WithPermission(Permission.Public)) {
-    implicit request =>      
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String) = UserAction { implicit request =>
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when
@@ -148,9 +136,7 @@ class Datasets @Inject()(
       Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space))
   }
 
-  def userDatasets(when: String, date: String, limit: Int, space: Option[String], mode: String, email: String)
-    = SecuredAction(authorization = WithPermission(Permission.Public)) {
-    implicit request =>
+  def userDatasets(when: String, date: String, limit: Int, space: Option[String], mode: String, email: String) = UserAction { implicit request =>
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when
@@ -262,7 +248,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
+  def dataset(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
@@ -347,8 +333,7 @@ class Datasets @Inject()(
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) {
-    request =>
+  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           datasets.findOneByFileId(section.file_id) match {
@@ -362,7 +347,7 @@ class Datasets @Inject()(
 
   /**
    * TODO where is this used?
-  def upload = Action(parse.temporaryFile) { request =>
+  def upload = Action(parse.temporaryFile) { implicit request =>
     request.body.moveTo(new File("/tmp/picture"))
     Ok("File uploaded")
   }
@@ -374,7 +359,7 @@ class Datasets @Inject()(
    * the checks are made here as well. 
    * 
    */
-  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDataset)) { implicit request =>
+  def submit() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
     var dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
@@ -619,14 +604,12 @@ class Datasets @Inject()(
   }
 	
 
-  def metadataSearch() = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) {
-    implicit request =>
+  def metadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
       implicit val user = request.user
       Ok(views.html.metadataSearch())
   }
 
-  def generalMetadataSearch() = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) {
-    implicit request =>
+  def generalMetadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }

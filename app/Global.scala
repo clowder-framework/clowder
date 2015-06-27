@@ -31,7 +31,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     // create default roles
     val users: UserService = DI.injector.getInstance(classOf[UserService])
-    if (users.listRoles().size == 0) {
+    if (users.listRoles().isEmpty) {
       Logger.debug("Ensuring roles exist")
 
       // admin role
@@ -45,14 +45,12 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
       users.updateRole(editorRole)
 
       // viewer role
-      val viewerPerm = List(Permission.Public,
-        Permission.ViewSpace, Permission.ViewCollection, Permission.ViewSpace,
-        Permission.Public, Permission.ViewDataset, Permission.ViewDataset, Permission.ViewMetadata,
-        Permission.ViewTags, Permission.AddComment, Permission.CreateSection, Permission.ViewSection,
-        Permission.AddTag, Permission.Public, Permission.ViewMetadata, Permission.ViewFile,
-        Permission.ViewFile, Permission.AddTag, Permission.GSViewDatapoints, Permission.GSViewSensor,
-        Permission.GSViewSensor, Permission.GSViewSensor, Permission.DownloadFiles)
-      val viewerRole = new Role(name="Viewer", description="Viewer Role", permissions = viewerPerm.map(_.toString).toSet)
+      val viewerPerm = Set(
+        Permission.ViewSpace, Permission.ViewCollection, Permission.ViewDataset, Permission.ViewFile,
+        Permission.ViewGeoStream, Permission.ViewMetadata, Permission.DownloadFiles,
+        Permission.AddTag, Permission.ViewTags, Permission.AddComment, Permission.ViewComments,
+        Permission.CreateSection, Permission.ViewSection)
+      val viewerRole = new Role(name="Viewer", description="Viewer Role", permissions = viewerPerm.map(_.toString))
       users.updateRole(viewerRole)
     }
 

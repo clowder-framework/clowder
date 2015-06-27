@@ -1,22 +1,21 @@
 package controllers
 
-import models.ProjectSpace
-import models.{UUID, Collection}
-import util.RequiredFieldsConfig
+import java.text.SimpleDateFormat
 import java.util.Date
+import javax.inject.{Inject, Singleton}
+
+import api.Permission
+import models.{Collection, ProjectSpace, UUID}
+import org.apache.commons.lang.StringEscapeUtils
 import play.api.Logger
 import play.api.Play.current
-import java.text.SimpleDateFormat
-import views.html.defaultpages.badRequest
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
-import api.WithPermission
-import api.Permission
-import javax.inject.{ Singleton, Inject }
+import services.{CollectionService, DatasetService, _}
+import util.RequiredFieldsConfig
+import views.html.defaultpages.badRequest
+
 import scala.collection.mutable.ListBuffer
-import services.{ DatasetService, CollectionService }
-import services._
-import org.apache.commons.lang.StringEscapeUtils
 
 
 object ThumbnailFound extends Exception {}
@@ -24,8 +23,7 @@ object ThumbnailFound extends Exception {}
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, spaces: SpaceService) extends SecuredController {  
 
-  def newCollection() = SecuredAction(authorization = WithPermission(Permission.CreateCollection)) {
-    implicit request =>
+  def newCollection() = PermissionAction(Permission.CreateCollection) { implicit request =>
       implicit val user = request.user
       val spacesList = spaces.list()
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
@@ -55,8 +53,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * List collections.
    */	
-  def list(when: String, date: String, limit: Int, space: Option[String] = None, mode: String) = SecuredAction(authorization = WithPermission(Permission.ViewSpace)) {
-    implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String] = None, mode: String) = PermissionAction(Permission.ViewSpace) { implicit request =>
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when
@@ -147,8 +144,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    * page with the appropriate error to be displayed.
    *  
    */
-  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateCollection)) {
-    implicit request =>
+  def submit() = PermissionAction(Permission.CreateCollection)(parse.multipartFormData) { implicit request =>
       Logger.debug("------- in Collections.submit ---------")
       var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
       var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
@@ -194,8 +190,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Collection.
    */
-  def collection(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewCollection)) {
-    implicit request =>
+  def collection(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
       collections.get(id) match {
@@ -247,8 +242,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
   }
 
-  def previews(collection_id: UUID) = SecuredAction(authorization = WithPermission(Permission.EditCollection)) {
-    implicit request =>
+  def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection) { implicit request =>
       collections.get(collection_id) match {
         case Some(collection) => {
           val previewsByCol = previewsService.findByCollectionId(collection_id)

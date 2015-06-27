@@ -1,15 +1,12 @@
 package controllers
 
 import java.net.URL
-import models.UUID
-import play.api.data.FormError
-import play.api.data.format.Formatter
-import play.api.data._
-import play.api.mvc.Request
-import models.ProjectSpace
-import models.Dataset
-import models.Collection
+
+import models.{Collection, Dataset, ProjectSpace, UUID}
 import org.apache.commons.lang.StringEscapeUtils
+import play.api.data.{FormError, _}
+import play.api.data.format.Formatter
+import play.api.mvc.Request
 
 object Utils {
   /**

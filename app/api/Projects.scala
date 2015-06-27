@@ -1,21 +1,17 @@
 package api
 
-import services.mongodb.MongoDBProjectService
 import javax.inject.Inject
-import play.api.Play.current
-import play.api.Play.configuration
-import models.Project
+
 import play.api.libs.json.Json.toJson
+import services.mongodb.MongoDBProjectService
 
-class Projects @Inject() (projects: MongoDBProjectService) extends ApiController {
-
+// TODO CATS-66 convert this to non mongo classs
+class Projects @Inject()(projects: MongoDBProjectService) extends ApiController {
   /*
    * Add a new project to the database
    */
-  def addproject(project: String) = SecuredAction(authorization = WithPermission(Permission.EditUser)) {
-    implicit request =>
-      projects.addNewProject(project)
-      Ok(toJson("added project"))
+  def addproject(project: String) = PermissionAction(Permission.EditUser) { implicit request =>
+    projects.addNewProject(project)
+    Ok(toJson("added project"))
   }
-
 }
