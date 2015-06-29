@@ -88,13 +88,13 @@ object Permission extends Enumeration {
     checkPermission(user, permission, Some(resourceRef))
   }
 
-  def checkPermission[A](permission: Permission)(implicit request: UserRequest[A]): Boolean = {
-    checkPermission(request.user, permission, None)
-  }
-
-  def checkPermission[A](permission: Permission, resourceRef: ResourceRef)(implicit request: UserRequest[A]): Boolean = {
-    checkPermission(request.user, permission, Some(resourceRef))
-  }
+  // TODO: figure out how to set type A and deal with the collision with checkPermission(implicit user: Option[Identity])
+//  def checkPermission[A](permission: Permission)(implicit request: UserRequest[A]): Boolean = {
+//    checkPermission(request.user, permission, None)
+//  }
+//  def checkPermission[A](permission: Permission, resourceRef: ResourceRef)(implicit request: UserRequest[A]): Boolean = {
+//    checkPermission(request.user, permission, Some(resourceRef))
+//  }
 
   def checkPermission(user: Option[Identity], permission: Permission, resourceRef: ResourceRef): Boolean = {
     checkPermission(user, permission, Some(resourceRef))
