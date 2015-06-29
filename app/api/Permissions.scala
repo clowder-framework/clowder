@@ -76,27 +76,31 @@ object Permission extends Enumeration {
     ViewUser,
     EditUser = Value
 
-	def checkServerAdmin(user: Option[Identity]) = {
+	def checkServerAdmin(user: Option[Identity]): Boolean = {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
 	}
 
-  def checkPermission(permission: Permission)(implicit user: Option[Identity]) = {
+  def checkPermission(permission: Permission)(implicit user: Option[Identity]): Boolean = {
     checkPermission(user, permission, None)
   }
 
-  def checkPermission(permission: Permission)(implicit request: UserRequest) = {
-    checkPermission(request.user, permission, None)
-  }
-
-  def checkPermission(permission: Permission, resourceRef: ResourceRef)(implicit request: UserRequest) = {
-    checkPermission(request.user, permission, Some(resourceRef))
-  }
-
-  def checkPermission(user: Option[Identity], permission: Permission, resourceRef: ResourceRef) = {
+  def checkPermission(permission: Permission, resourceRef: ResourceRef)(implicit user: Option[Identity]): Boolean = {
     checkPermission(user, permission, Some(resourceRef))
   }
 
-	def checkPermission(user: Option[Identity], permission: Permission, resourceRef: Option[ResourceRef] = None) = {
+  def checkPermission[A](permission: Permission)(implicit request: UserRequest[A]): Boolean = {
+    checkPermission(request.user, permission, None)
+  }
+
+  def checkPermission[A](permission: Permission, resourceRef: ResourceRef)(implicit request: UserRequest[A]): Boolean = {
+    checkPermission(request.user, permission, Some(resourceRef))
+  }
+
+  def checkPermission(user: Option[Identity], permission: Permission, resourceRef: ResourceRef): Boolean = {
+    checkPermission(user, permission, Some(resourceRef))
+  }
+
+	def checkPermission(user: Option[Identity], permission: Permission, resourceRef: Option[ResourceRef] = None): Boolean = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
       case "public"  => true
       case "private" => checkServerAdmin(user)
