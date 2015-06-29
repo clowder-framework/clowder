@@ -1,5 +1,7 @@
 @(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
 
+@import api.Permission
+
 @if(user.isDefined) {
 <a class="btn btn-default btn-xs accordion-toggle collapsed" data-toggle="collapse"
 data-parent="#accordion7" href="#collapseSeven" id="editabout"
@@ -7,7 +9,8 @@ title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down">
 <div id="collapseSeven" class="accordion-body collapse">
     <div class="panel panel-info">
         <div class="panel-body">
-        @if(user.isDefined) {
+        <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
             <form class="form-inline" id="form2">
                 <table>
                     <tr>
@@ -27,6 +30,28 @@ title="Edit Dataset Information"><span class="glyphicon glyphicon-chevron-down">
                 <button class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');"
                 title="Update Information"><span class="glyphicon glyphicon-edit"></span> Submit</button>
                 <button class="btn btn-default" onclick="return closeAboutEdit();"
+                title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span> Close</button>
+            </form>
+        } else {
+            <form class="form-inline" id="form2">
+                <table>
+                    <tr>
+                        <td style="width: 30%; vertical-align:top;">Name: </td>
+                        <td>
+                            <textarea disabled cols=30 rows=4 type="text" id="editname">@dataset.name</textarea>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 30%; vertical-align:top;">Description: </td>
+                        <td>
+                            <textarea disabled cols=30 rows=4 type="text" id="editdesc">@dataset.description</textarea>
+                        </td>
+                    </tr>
+                </table>
+
+                <button disabled class="btn btn-primary" onclick="return updateAboutData('@dataset.id.stringify');"
+                title="Update Information"><span class="glyphicon glyphicon-edit"></span> Submit</button>
+                <button disabled class="btn btn-default" onclick="return closeAboutEdit();"
                 title="Close Editor"><span class="glyphicon glyphicon-chevron-up"></span> Close</button>
             </form>
         }

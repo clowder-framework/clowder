@@ -1,51 +1,55 @@
 @(comments: List[models.Comment])(implicit user: Option[securesocial.core.Identity])
 
-@comments.reverse.map { c =>
-<div class="comment" id="comment_@c.id">
-	<div class="media">
-  		<a class="pull-left" href="#">
-  			<div class="thumbnail">
-    			<img class="avatar" src='@c.author.avatarUrl.getOrElse("")'>
-    		</div>
-  		</a>
-		<div class="media-body">
-			<div class="comment-header">
-                    <a href="@routes.Profile.viewProfile(c.author.email)">@c.author.fullName</a>
-                    <span>•</span>
-                    <span>@c.posted.format("MMM dd, yyyy HH:mm:ss")</span>
+@import api.Permission
 
-			</div>
-			<div class="comment-body" id="comment-body_@c.id"></div>
-			@if(user.isDefined) {
-			<div class="comment-footer">
-				<a href="#" 
-				    onclick="return showReplyComment('@c.id');"
-				    class="btn btn-link btn-xs" title="Reply To Comment">
-				    <span class="glyphicon glyphicon-share-alt"></span> Reply
-				</a>
-				&nbsp;
-				&nbsp;
-				@if(user.getOrElse(null).email == c.author.email) {
-					<a href="#" onclick="return showEditComment('@c.id');" class="btn btn-link btn-xs" title="Edit Comment">
-	                    <span class="glyphicon glyphicon-edit"></span> Edit
-	                </a>
+@comments.reverse.map { c =>
+<!-- If the user can view the comment, it will be displayed. If not, nothing is displayed. -->
+@if(Permission.checkPermission(Permission.ViewComments, ResourceRef(ResourceRef.comment, c.id))) {
+	<div class="comment" id="comment_@c.id">
+		<div class="media">
+			<a class="pull-left" href="#">
+				<div class="thumbnail">
+					<img class="avatar" src='@c.author.avatarUrl.getOrElse("")'>
+				</div>
+			</a>
+			<div class="media-body">
+				<div class="comment-header">
+						<a href="@routes.Profile.viewProfile(c.author.email)">@c.author.fullName</a>
+						<span>•</span>
+						<span>@c.posted.format("MMM dd, yyyy HH:mm:ss")</span>
+
+				</div>
+				<div class="comment-body" id="comment-body_@c.id"></div>
+				@if(user.isDefined) {
+				<div class="comment-footer">
+					<a href="#"
+						onclick="return showReplyComment('@c.id');"
+						class="btn btn-link btn-xs" title="Reply To Comment">
+						<span class="glyphicon glyphicon-share-alt"></span> Reply
+					</a>
 					&nbsp;
-	                &nbsp;
-	                <a href="#" onclick="return deleteComment('@c.id');" class="btn btn-link btn-xs" title="Delete Comment">
-	                    <span class="glyphicon glyphicon-trash"></span> Delete
-	                </a>
-                }
-			</div>			
-			}
-			<div class="comment-reply">
-				<div class="comment-threads unstyled" id="reply_@c.id">
-				@comment(c.replies)
+					&nbsp;
+					@if(user.getOrElse(null).email == c.author.email) {
+						<a href="#" onclick="return showEditComment('@c.id');" class="btn btn-link btn-xs" title="Edit Comment">
+							<span class="glyphicon glyphicon-edit"></span> Edit
+						</a>
+						&nbsp;
+						&nbsp;
+						<a href="#" onclick="return deleteComment('@c.id');" class="btn btn-link btn-xs" title="Delete Comment">
+							<span class="glyphicon glyphicon-trash"></span> Delete
+						</a>
+					}
+				</div>
+				}
+				<div class="comment-reply">
+					<div class="comment-threads unstyled" id="reply_@c.id">
+					@comment(c.replies)
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-</div>
-
+}
 <script src="@routes.Assets.at("javascripts/comment-delete.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/comment-edit.js")" type="text/javascript"></script>
 

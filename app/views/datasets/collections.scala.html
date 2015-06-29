@@ -1,5 +1,7 @@
 @(dataset: Dataset, collectionsInside: List[models.Collection], collectionsOutside: List[models.Collection])(implicit user: Option[securesocial.core.Identity])
 
+@import api.Permission
+
 <div class="row border-top bottom-padding">
     <div class="col-md-12">
         <h4>Collections containing the dataset</h4>
@@ -28,9 +30,14 @@
                         @if(collection.datasets.size != 1) {
                             @collection.datasets.size datasets
                         }
-                        @if(user.isDefined) {
+                        <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                            | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
                                 Remove</a>
+                        }
+                        else {
+                            <a href="#" class="btn btn-link btn-xs disabled" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                            Remove</a>
                         }
                     </div>
                 </div>
@@ -39,7 +46,8 @@
     </div>
 </div>
 
-@if(user.isDefined) {
+<!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+@if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
     <div class="row row-paddingtop-padding">
         <div class="col-md-2"></div>
         <div class="col-md-8">
