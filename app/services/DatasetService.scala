@@ -209,9 +209,5 @@ trait DatasetService {
    */
   def addToSpace(dataset: UUID, space: UUID)
 
-  /**
-   * For the space of (associated with) dataset, get its id
-   */
-  def getSpaceId(datasetId: UUID): Option[UUID]
 }
 

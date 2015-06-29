@@ -8,7 +8,7 @@
   filesOutside: List[models.File],
   rdfExported: Boolean,
   space: Option[ProjectSpace],
-  filesTags: Set[String])(implicit user: Option[securesocial.core.Identity])
+  filesTags: Set[String])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 
 @import helper._

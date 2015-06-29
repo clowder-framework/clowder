@@ -190,5 +190,4 @@ class CassandraDataset extends DatasetService {
 
   def addToSpace(dataset: UUID, space: UUID) {}
 
-  def getSpaceId(datasetId: UUID): Option[UUID] = None
 }
