@@ -25,7 +25,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
     )(Info.apply)(Info.unapply)
   )
 
-  def editProfile() = UserAction { implicit request =>
+  def editProfile() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     var avatarUrl: Option[String] = None
     var biography: Option[String] = None
@@ -107,7 +107,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
   }
 
 
-  def addFriend(email: String) = UserAction { implicit request =>
+  def addFriend(email: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
@@ -146,7 +146,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
   }
    
 
-  def viewProfile(email: Option[String]) = UserAction { implicit request =>
+  def viewProfile(email: Option[String]) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     var ownProfile: Option[Boolean] = None
     email match {
@@ -188,7 +188,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
     }
   }
 
-  def submitChanges = UserAction { implicit request =>
+  def submitChanges = AuthenticatedAction { implicit request =>
     implicit val user  = request.user
     bioForm.bindFromRequest.fold(
       errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty)),

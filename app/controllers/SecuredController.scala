@@ -1,6 +1,3 @@
-/**
- *
- */
 package controllers
 
 import api.Permission.Permission
@@ -32,6 +29,21 @@ trait SecuredController extends Controller {
     }
   }
 
+  /**
+   * Use when you want to require the user to be logged in on a private server or the server is public.
+   */
+  def PrivateServerAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (Permission.checkPrivateServer(userRequest.user)) {
+        block(userRequest)
+      } else {
+        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in to access this page."))
+      }
+    }
+  }
+
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
@@ -39,7 +51,8 @@ trait SecuredController extends Controller {
       if (userRequest.user.isDefined) {
         block(userRequest)
       } else {
-        Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
+        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in to access this page."))
       }
     }
   }
@@ -51,7 +64,8 @@ trait SecuredController extends Controller {
       if (Permission.checkServerAdmin(userRequest.user)) {
         block(userRequest)
       } else {
-        Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
+        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in as an administrator to access this page."))
       }
     }
   }
@@ -86,6 +100,6 @@ trait SecuredController extends Controller {
     }
 
     // 2) anonymous access
-    UserRequest(None, None, superAdmin=false, request)
+    UserRequest(None, None, superAdmin = false, request)
   }
 }

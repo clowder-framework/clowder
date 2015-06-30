@@ -43,7 +43,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   /**
    * Bookmarklet
    */
-  def bookmarklet() = UserAction { implicit request =>
+  def bookmarklet() = AuthenticatedAction { implicit request =>
     val protocol = Utils.protocol(request)
     Ok(views.html.bookmarklet(request.host, protocol)).as("application/javascript")
   }

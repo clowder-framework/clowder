@@ -25,7 +25,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     notes = "",
     responseClass = "None", httpMethod = "POST")
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
-  def createSpace() = UserAction(parse.json) { implicit request =>
+  def createSpace() = AuthenticatedAction(parse.json) { implicit request =>
       Logger.debug("Creating new space")
       val nameOpt = (request.body \ "name").asOpt[String]
       val descOpt = (request.body \ "description").asOpt[String]

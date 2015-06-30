@@ -60,7 +60,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "List all datasets",
       notes = "Returns list of datasets and descriptions.",
       responseClass = "None", httpMethod = "GET")
-  def list = UserAction { implicit request =>
+  def list = PrivateServerAction { implicit request =>
       val list = datasets.listDatasets().map(datasets.toJSON(_))
       Ok(toJson(list))
   }
@@ -68,7 +68,7 @@ class Datasets @Inject()(
   /**
    * List all datasets outside a collection.
    */
-  def listOutsideCollection(collectionId: UUID) = UserAction { implicit request =>
+  def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
       collections.get(collectionId) match {
         case Some(collection) => {
           val list = for (dataset <- datasets.listDatasetsChronoReverse(); if (!datasets.isInCollection(dataset, collection)))

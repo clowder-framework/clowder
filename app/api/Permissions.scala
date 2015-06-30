@@ -76,6 +76,15 @@ object Permission extends Enumeration {
     ViewUser,
     EditUser = Value
 
+  val READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
+    ViewSection, ViewSpace, ViewTags, ViewUser)
+
+  lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
+  lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+  lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+  lazy val users: services.UserService = DI.injector.getInstance(classOf[services.UserService])
+
 	def checkServerAdmin(user: Option[Identity]): Boolean = {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
 	}
@@ -100,14 +109,80 @@ object Permission extends Enumeration {
     checkPermission(user, permission, Some(resourceRef))
   }
 
-	def checkPermission(user: Option[Identity], permission: Permission, resourceRef: Option[ResourceRef] = None): Boolean = {
-    configuration(play.api.Play.current).getString("permissions").getOrElse("public") match {
-      case "public"  => true
-      case "private" => checkServerAdmin(user)
-      case "admin"   => checkServerAdmin(user)
-      case _         => checkServerAdmin(user)
+  def checkPermission(user: Option[Identity], permission: Permission, resourceRef: Option[ResourceRef] = None): Boolean = {
+    (user, configuration(play.api.Play.current).getString("permissions").getOrElse("public"), resourceRef) match {
+      case (Some(u), "public", Some(r)) => {
+        if (READONLY.contains(permission)) return true
+        else checkPermission(u, permission, r)
+      }
+      case (Some(u), "private", Some(r)) => checkPermission(u, permission, r)
+      case (Some(_), _, None) => true
+      case (None, "private", Some(res)) => checkPrivatePermissions(permission, res)
+      case (None, "public", _) => READONLY.contains(permission)
+      case (_, p, _) => {
+        Logger.error("Invalid permission scheme " + p)
+        false
+      }
     }
-	}
+  }
+
+  def checkPrivatePermissions(permission: Permission, resourceRef: ResourceRef): Boolean = {
+    // if not readonly, don't let user in
+    if (!READONLY.contains(permission)) return false
+    // check specific resource
+    resourceRef match {
+      case ResourceRef(ResourceRef.file, id) => false
+      case ResourceRef(ResourceRef.dataset, id) => false // TODO check if dataset is public datasets.get(r.id).isPublic()
+      case ResourceRef(ResourceRef.collection, id) => false
+      case ResourceRef(ResourceRef.space, id) => false
+      case ResourceRef(resType, id) => {
+        Logger.error("Unrecognized resource type " + resType)
+        false
+      }
+    }
+  }
+
+  def checkPermission(user: Identity, permission: Permission, resourceRef: ResourceRef): Boolean = {
+    resourceRef match {
+      case ResourceRef(ResourceRef.file, id) => true
+      case ResourceRef(ResourceRef.dataset, id) => {
+        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
+                                        dataset <- datasets.get(id)
+                                        spaceId <- dataset.space
+                                        role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
+                                        if role.permissions.contains(permission.toString)
+        } yield true
+        hasPermission getOrElse false
+      }
+      case ResourceRef(ResourceRef.collection, id) => {
+        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
+                                        collection <- collections.get(id)
+                                        spaceId <- collection.space
+                                        role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
+                                        if role.permissions.contains(permission.toString)
+        } yield true
+        hasPermission getOrElse false
+      }
+      case ResourceRef(ResourceRef.space, id) => {
+        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
+                                                  space <- spaces.get(id)
+                                                  role <- users.getUserRoleInSpace(clowderUser.id, space.id)
+                                                  if role.permissions.contains(permission.toString)
+        } yield true
+        hasPermission getOrElse false
+      }
+      case ResourceRef(resType, id) => {
+        Logger.error("Resource type not recognized " + resType)
+        false
+      }
+    }
+  }
+
+  def getUserByIdentity(identity: Identity): Option[User] = users.findByIdentity(identity)
+
+  def checkPrivateServer(user: Option[Identity]): Boolean = {
+    configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" || user.isDefined
+  }
 }
 
 /**

@@ -33,25 +33,9 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     val users: UserService = DI.injector.getInstance(classOf[UserService])
     if (users.listRoles().isEmpty) {
       Logger.debug("Ensuring roles exist")
-
-      // admin role
-      val adminPerm = Permission.values
-      val adminRole = new Role(name="Admin", description="Admin Role", permissions = adminPerm.map(_.toString).toSet)
-      users.updateRole(adminRole)
-
-      // editor role
-      val editorPerm = for(perm <- adminPerm if perm.toString.toLowerCase.indexOf("admin") == -1) yield perm
-      val editorRole = new Role(name="Editor", description="Editor Role", permissions = editorPerm.map(_.toString).toSet)
-      users.updateRole(editorRole)
-
-      // viewer role
-      val viewerPerm = Set(
-        Permission.ViewSpace, Permission.ViewCollection, Permission.ViewDataset, Permission.ViewFile,
-        Permission.ViewGeoStream, Permission.ViewMetadata, Permission.DownloadFiles,
-        Permission.AddTag, Permission.ViewTags, Permission.AddComment, Permission.ViewComments,
-        Permission.CreateSection, Permission.ViewSection)
-      val viewerRole = new Role(name="Viewer", description="Viewer Role", permissions = viewerPerm.map(_.toString))
-      users.updateRole(viewerRole)
+      users.updateRole(Role.Admin)
+      users.updateRole(Role.Editor)
+      users.updateRole(Role.Viewer)
     }
 
 

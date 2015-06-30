@@ -17,7 +17,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
    * Directs currently running extractor's server IPs to the webpage
    */
 
-  def getExtractorServersIP() = UserAction.async(parse.json) { implicit request =>
+  def getExtractorServersIP() = AuthenticatedAction.async(parse.json) { implicit request =>
       for {
         x <- ExtractionInfoSetUp.updateExtractorsInfo()
         status <- x
@@ -41,7 +41,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
 /**
  * Directs currently running extractors information to the webpage 
  */
-  def getExtractorNames() = UserAction { implicit request =>
+  def getExtractorNames() = AuthenticatedAction { implicit request =>
 
     val list_names = extractors.getExtractorNames()
     var jarr = new JsArray()
@@ -61,7 +61,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
 /**
  * Directs input type supported by currently running extractors information to the webpage
  */
-  def getExtractorInputTypes() = UserAction { implicit request =>
+  def getExtractorInputTypes() = AuthenticatedAction { implicit request =>
 
     val list_inputtypes = extractors.getExtractorInputTypes()
     var jarr = new JsArray()
@@ -81,7 +81,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
   /**
    * Directs DTS extractions requests information to the webpage
    */
-   def getDTSRequests() = UserAction { implicit request =>
+   def getDTSRequests() = AuthenticatedAction { implicit request =>
 
     var list_requests = dtsrequests.getDTSRequests()
     var startTime = models.ServerStartTime.startTime
@@ -92,7 +92,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
    /**
    * DTS Bookmarklet page
    */
-   def getBookmarkletPage() = UserAction { implicit request =>
+   def getBookmarkletPage() = AuthenticatedAction { implicit request =>
 
       Ok(views.html.dtsbookmarklet(Utils.baseUrl(request)))
   }
@@ -100,7 +100,7 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
   /**
    * DTS Chrome Extension page
    */
-  def getExtensionPage() = UserAction { implicit request =>
+  def getExtensionPage() = AuthenticatedAction { implicit request =>
     val configuration = play.api.Play.configuration
     val url = Utils.baseUrl(request)
     var hostname = if (url.indexOf('.') == -1) { url.substring(url.indexOf('/') + 2, url.lastIndexOf(':')) } else { url.substring(url.indexOf('/') + 2, url.indexOf('.')) }
