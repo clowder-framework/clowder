@@ -89,14 +89,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   }
 
   /** @deprecated use id instead of email */
-  @ApiOperation(value = "Add a friend.",
-    responseClass = "None", httpMethod = "POST")
-  def addUserFriend(email: String, newFriend: String) = PermissionAction(Permission.ViewUser) { implicit request =>
-    users.addUserFriend(email, newFriend)
-    Ok(Json.obj("status" -> "success"))
-  }
-
-  /** @deprecated use id instead of email */
   @ApiOperation(value = "Add a dataset View.",
     responseClass = "None", httpMethod = "POST")
   def addUserDatasetView(email: String, dataset: UUID) = PermissionAction(Permission.ViewUser) { implicit request =>
@@ -114,7 +106,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
 
   @ApiOperation(value = "Follow a user",
     responseClass = "None", httpMethod = "POST")
-  def follow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+  def follow(followeeUUID: UUID, name: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
@@ -136,7 +128,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
 
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+  def unfollow(followeeUUID: UUID, name: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {

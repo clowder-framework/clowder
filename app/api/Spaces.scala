@@ -32,7 +32,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
       (nameOpt, descOpt) match{
         case(Some(name), Some(description)) =>{
           // TODO: add creator
-          val userId = request.mediciUser.fold(UUID.generate())(_.id)
+          val userId = request.user.get.id
           val c = ProjectSpace(name = name, description = description, created = new Date(), creator = userId,
             homePage = List.empty, logoURL = None, bannerURL = None, collectionCount=0,
             datasetCount=0, userCount=0, metadata=List.empty)

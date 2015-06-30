@@ -2,6 +2,9 @@ package services
 
 import models.{Role, Profile, UUID, User, MiniEntity}
 import securesocial.core.Identity
+import util.Direction
+import util.Direction.Direction
+import util.Direction.Direction
 
 /**
  * Service definition to interact with the users.
@@ -37,7 +40,7 @@ trait UserService  {
    * @param filter is a json representation of the filter to be applied
    *
    */
-  def list(order: Option[String] = None, direction: Direction=DESC,
+  def list(order: Option[String] = None, direction: Direction = Direction.DESC,
            start: Option[String] = None, limit: Integer = 20,
            filter: Option[String] = None): List[User]
 
@@ -142,7 +145,6 @@ trait UserService  {
    * @return A list of users that are associated with a space
    */
   def listUsersInSpace(spaceId: UUID): List[User]
-  
 
   /**
    * List user roles.

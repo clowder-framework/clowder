@@ -205,9 +205,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Follow collection.",
     notes = "Add user to collection followers and add collection to user followed collections.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
-    request =>
-      val user = request.user
+  def follow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+      implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
@@ -237,9 +236,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Unfollow collection.",
     notes = "Remove user from collection followers and remove collection from user followed collections.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
-    request =>
-      val user = request.user
+  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+      implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {

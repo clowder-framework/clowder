@@ -7,6 +7,8 @@ import java.util.Date
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
+import securesocial.core.Identity
+
 import scala.collection.mutable.MutableList
 
 import java.util.ArrayList 
@@ -1770,9 +1772,8 @@ class Files @Inject()(
   @ApiOperation(value = "Follow file",
     notes = "Add user to file followers and add file to user followed files.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
-    request =>
-      val user = request.user
+  def follow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+      implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
@@ -1802,9 +1803,8 @@ class Files @Inject()(
   @ApiOperation(value = "Unfollow file",
     notes = "Remove user from file followers and remove file from user followed files.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
-    request =>
-      val user = request.user
+  def unfollow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+      implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {

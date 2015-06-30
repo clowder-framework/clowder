@@ -3,6 +3,7 @@ package models
 import play.api.Play.current
 import java.security.MessageDigest
 import play.api.Play.configuration
+import play.api.libs.json.Json
 
 import securesocial.core._
 
@@ -18,6 +19,7 @@ trait User extends Identity {
   def followedEntities: List[TypedID]
   def followers: List[UUID]
   def viewed: Option[List[UUID]]
+  def spaceandrole: List[UserSpaceAndRole]
 
   /**
    * Get the avatar URL for this user's profile
@@ -27,20 +29,8 @@ trait User extends Identity {
    *
    * @return Full gravatar URL for the user's profile picture
    */
-  def getAvatarUrl: String = {
-    val size = "256"
-    avatarUrl match {
-      case Some(url) => {
-        if (url.contains("?")) {
-          url+"&s="+size
-        } else {
-          url+"?s="+size
-        }
-      }
-      case None => {
-        val configuration = play.api.Play.configuration
-        val default_gravatar = configuration.getString("default_gravatar").getOrElse("")
-        val emailHash = getEmailHash()
+  def getAvatarUrl(size: Integer = 256): String = {
+    val default_gravatar = configuration.getString("default_gravatar").getOrElse("")
 
     if (profile.isDefined && profile.get.avatarUrl.isDefined) {
       profile.get.avatarUrl.get
@@ -76,14 +66,10 @@ trait User extends Identity {
 
 object User {
   def anonymous = new ClowderUser(UUID("000000000000000000000000"),
-  new IdentityId("anonymous", ""),
-  "Anonymous", "User", "Anonymous User",
-  None,
-  AuthenticationMethod.UserPassword)
-  // takes care of automatic conversion to/from JSON
-  implicit val roleFormat = Json.format[Role]
-  implicit val userSpaceAndRoleFormat = Json.format[UserSpaceAndRole]
-  implicit val userFormat = Json.format[User]
+    new IdentityId("anonymous", ""),
+    "Anonymous", "User", "Anonymous User",
+    None,
+    AuthenticationMethod.UserPassword)
 }
 
 case class ClowderUser(
@@ -110,7 +96,10 @@ case class ClowderUser(
   friends: Option[List[String]] = None,
 
   // social
-  viewed: Option[List[UUID]] = None
+  viewed: Option[List[UUID]] = None,
+
+  // spaces
+  spaceandrole: List[UserSpaceAndRole] = List.empty
 ) extends User
 
 case class Profile(

@@ -106,7 +106,7 @@ class Datasets @Inject()(
                       else {
                           d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))                 
                       }
-                      events.addObjectEvent(user, d.id, d.name, "create_dataset")
+                      events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
                       datasets.insert(d) match {
                         case Some(id) => {
                           files.index(UUID(file_id))
@@ -157,7 +157,7 @@ class Datasets @Inject()(
               else {
               	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))              	  
               }
-            events.addObjectEvent(user, d.id, d.name, "create_dataset")
+            events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
             datasets.insert(d) match {
                 case Some(id) => {
                   //In this case, the dataset has been created and inserted. Now notify the space service and check
@@ -173,7 +173,7 @@ class Datasets @Inject()(
                         case Some(dataset) => {
                           files.get(UUID(anId)) match {
                             case Some(file) => {
-                              attachExistingFileHelper(UUID(id), UUID(anId), dataset, file, user)
+                              attachExistingFileHelper(UUID(id), UUID(anId), dataset, file, request.user)
                               Ok(toJson(Map("status" -> "success")))
                             }
                             case None => {
@@ -218,7 +218,7 @@ class Datasets @Inject()(
 					      case Some(dataset) => {
 					          files.get(UUID(anId)) match {
 					              case Some(file) => {
-					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file, user)
+					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file, request.user)
 					            	  Ok(toJson(Map("status" -> "success")))
 					              }
 					              case None => {
@@ -1319,7 +1319,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Follow dataset.",
     notes = "Add user to dataset followers and add dataset to user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+  def follow(id: UUID, name: String) = AuthenticatedAction {
     request =>
       val user = request.user
 
@@ -1351,9 +1351,8 @@ class Datasets @Inject()(
   @ApiOperation(value = "Unfollow dataset.",
     notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
-    request =>
-      val user = request.user
+  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+      implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {

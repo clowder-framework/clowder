@@ -137,7 +137,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       implicit val user = request.user
       user match {
         case Some(identity) => {
-          val userId = request.mediciUser.fold(UUID.generate)(_.id)
+          val userId = request.user.get.id
           //need to get the submitValue before binding form data, in case of errors we want to trigger different forms
           request.body.asMultipartFormData.get.dataParts.get("submitValue").headOption match {
             case Some(x) => {

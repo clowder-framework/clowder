@@ -96,10 +96,10 @@ trait SecuredController extends Controller {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
       val superAdmin = request.cookies.get("superAdmin").isDefined
-      return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
+      return UserRequest(user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
     }
 
     // 2) anonymous access
-    UserRequest(None, None, superAdmin = false, request)
+    UserRequest(None, superAdmin = false, request)
   }
 }

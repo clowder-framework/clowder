@@ -8,7 +8,7 @@ import play.libs.Akka
 import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-mport models.{Role, ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
+import models.{Role, ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
 import java.util.Calendar
 import play.api.mvc.WithFilters
 import akka.actor.Cancellable

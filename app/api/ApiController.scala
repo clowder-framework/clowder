@@ -103,7 +103,7 @@ trait ApiController extends Controller {
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-      return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
+      return UserRequest(user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
     }
 
     // 2) basic auth, this allows you to call the api with your username/password
@@ -113,7 +113,7 @@ trait ApiController extends Controller {
       UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword).foreach { identity =>
         val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
         if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
-          return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
+          return UserRequest(user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
         }
       }
     }
@@ -124,12 +124,12 @@ trait ApiController extends Controller {
       // TODO this needs to become more secure
       if (key.nonEmpty) {
         if (key.head.equals(play.Play.application().configuration().getString("commKey"))) {
-          return UserRequest(Some(Permission.anonymous), None, superAdmin, request)
+          return UserRequest(Some(User.anonymous), superAdmin, request)
         }
       }
     }
 
     // 4) anonymous access
-    UserRequest(None, None, superAdmin=false, request)
+    UserRequest(None, superAdmin=false, request)
   }
 }

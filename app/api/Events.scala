@@ -22,8 +22,7 @@ class Events @Inject() (events: EventService) extends ApiController {
      @ApiOperation(value = "Insert Event",
       notes = "Insert an Event into the Events Collection",
       responseClass = "None", httpMethod = "POST")
-  def addEvent(event: Event) = SecuredAction(authorization = WithPermission(Permission.AddEvent)) {
-    implicit request =>
+  def addEvent(event: Event) = AuthenticatedAction {implicit request =>
       events.addEvent(event)
       Ok(toJson("added new event"))
   }

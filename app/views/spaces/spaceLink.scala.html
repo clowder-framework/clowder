@@ -1,4 +1,4 @@
-@(space: Option[ProjectSpace], resourceType: Int, resourceId: UUID)(implicit user: Option[securesocial.core.Identity])
+@(space: Option[ProjectSpace], resourceType: Int, resourceId: UUID)(implicit user: Option[models.User])
 
 @if(user.isDefined) {
     @if(space.isDefined) {

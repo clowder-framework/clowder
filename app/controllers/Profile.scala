@@ -11,10 +11,10 @@ import play.api.data.Forms._
 import services.UserService
 import services.mongodb.{MongoDBInstitutionService, MongoDBProjectService}
 
-class Profile @Inject() (users: UserService, files: FileService, datasets: DatasetService, collections: CollectionService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService, scheduler: SchedulerService) extends SecuredController {
-
 // TODO CATS-66 remove MongoDBInstitutionService, make part of UserService?
-class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService) extends  SecuredController {
+class Profile @Inject() (users: UserService, files: FileService, datasets: DatasetService, collections: CollectionService,
+                         institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService,
+                         scheduler: SchedulerService) extends SecuredController {
 
   val bioForm = Form(
     mapping(
@@ -31,57 +31,6 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
 
   def editProfile() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-    var avatarUrl: Option[String] = None
-    var biography: Option[String] = None
-    var currentprojects: List[String] = List.empty
-    var institution: Option[String] = None
-    var orcidID: Option[String] = None
-    var pastprojects: List[String] = List.empty
-    var position: Option[String] = None
-    user match {
-      case Some(x) => {
-        print(x.email.toString())
-        implicit val email = x.email
-        email match {
-          case Some(addr) => {
-            implicit val modeluser = users.findByEmail(addr.toString())
-            modeluser match {
-              case Some(muser) => {
-                muser.avatarUrl match {
-                  case Some(url) => {
-                    val questionMarkIdx :Int = url.indexOf("?")
-                    if (questionMarkIdx > -1) {
-                      avatarUrl = Option(url.substring(0, questionMarkIdx))
-                    } else {
-                      avatarUrl = Option(url)
-                    }
-                  }
-                  case None => avatarUrl = None
-                }
-                muser.biography match {
-                  case Some(filledOut) => biography = Option(filledOut)
-                  case None => biography = None
-                }
-                muser.currentprojects match {
-                  case x :: xs => currentprojects = x :: xs
-                  case nil => currentprojects = nil
-                }
-                muser.institution match {
-                  case Some(filledOut) => institution = Option(filledOut)
-                  case None => institution = None
-                }
-                muser.orcidID match {
-                  case Some(filledOut) => orcidID = Option(filledOut)
-                  case None => orcidID = None
-                }
-                muser.pastprojects match {
-                  case x :: xs => pastprojects = x :: xs
-                  case nil => pastprojects = nil
-                }
-                muser.position match {
-                  case Some(filledOut) => position = Option(filledOut)
-                  case None => position = None
-                }
 
     user match {
       case Some(muser) => {
@@ -98,7 +47,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
   }
 
 
-  def addFriend(email: String) = AuthenticatedAction { implicit request =>
+  def viewProfileUUID(uuid: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     val viewerUser = request.user
     var followers: List[(UUID, String, String, String)] = List.empty
@@ -212,7 +161,7 @@ class Profile @Inject()(users: UserService, institutions: MongoDBInstitutionServ
     }
   }
 
-  def submitChanges = AuthenticatedAction(Permission.LoggedIn) { implicit request =>
+  def submitChanges = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x: User) => {

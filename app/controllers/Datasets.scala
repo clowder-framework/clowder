@@ -21,7 +21,6 @@ import javax.inject.Inject
 import scala.Some
 import scala.xml.Utility
 import services.ExtractorMessage
-import api.WithPermission
 import scala.collection.mutable.ListBuffer
 import util.RequiredFieldsConfig
 import scala.collection.immutable._

@@ -113,16 +113,20 @@
 
 						@user match {
 							case Some(x) => {
-								<li class="dropdown">
-									<a href="#" class="dropdown-toggle nav-icon" data-toggle="dropdown" title="Administration"><span class="glyphicon glyphicon-cog"></span><b class="caret"></b></a>
-									<ul class="dropdown-menu" role="menu">
-										<li><a href="@routes.Admin.main">Customize</a></li>
-										<li><a href="@routes.Admin.listAdmins">List adminstrators</a></li>
-										<li><a href="@routes.Admin.newAdmin">Add administrator</a></li>
-										<li><a href="@routes.Extractors.listAllExtractions">Extractions</a></li>
-										<li><a href="@routes.Admin.adminIndex">Indexes</a></li>
-									</ul>
-								</li>
+								@if(api.Permission.checkServerAdmin(user)) {
+									<li class="dropdown">
+										<a href="#" class="dropdown-toggle nav-icon" data-toggle="dropdown" title="Administration"><span class="glyphicon glyphicon-cog"></span><b class="caret"></b></a>
+										<ul class="dropdown-menu" role="menu">
+											<li><a href="@routes.Admin.main">Customize</a></li>
+											<li><a href="@routes.Admin.listAdmins">List adminstrators</a></li>
+											<li><a href="@routes.Admin.newAdmin">Add administrator</a></li>
+											<li><a href="@routes.Admin.listRoles">List Roles</a></li>
+											<li><a href="@routes.Admin.createRole">Add Role</a></li>
+											<li><a href="@routes.Extractors.listAllExtractions">Extractions</a></li>
+											<li><a href="@routes.Admin.adminIndex">Indexes</a></li>
+										</ul>
+									</li>
+								}
 								<li class="dropdown">
 									<a href="#" class="dropdown-toggle nav-icon" data-toggle="dropdown" title="Logged in as @x.fullName"><img src="@x.getAvatarUrl(16)" style="width: 20px"><b class="caret"></b></a>
 									<ul class="dropdown-menu" role="menu">
@@ -141,22 +145,6 @@
                                 </li>
                             }
                         }
-
-						@if(api.Permission.checkServerAdmin(user)) {
-							<li class="dropdown">
-								<a href="#" class="dropdown-toggle" data-toggle="dropdown">
-									Administration<b class="caret"></b></a>
-								<ul class="dropdown-menu" role="menu">
-									<li><a href="@routes.Admin.main">Customize</a></li>
-									<li><a href="@routes.Admin.listAdmins">List adminstrators</a></li>
-									<li><a href="@routes.Admin.newAdmin">Add administrator</a></li>
-									<li><a href="@routes.Admin.listRoles">List Roles</a></li>
-									<li><a href="@routes.Admin.createRole">Add Role</a></li>
-									<li><a href="@routes.Extractors.listAllExtractions">Extractions</a></li>
-									<li><a href="@routes.Admin.adminIndex">Indexes</a></li>
-								</ul>
-							</li>
-						}
 					</ul>
 				</div>
 		</div>

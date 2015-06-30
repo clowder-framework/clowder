@@ -28,7 +28,7 @@ import com.wordnik.swagger.annotations.{ApiOperation, Api}
 class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
 
   @ApiOperation(value = "List all preview files", notes = "Returns list of preview files and descriptions.", responseClass = "None", httpMethod = "GET")
-  def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListPreviews)) {
+  def list = PermissionAction(Permission.ViewFile) {
     request =>
       val list = for (p <- previews.listPreviews()) yield jsonPreview(p)
       Ok(toJson(list))
@@ -38,7 +38,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     @ApiOperation(value = "Delete previews",
       notes = "Remove preview file from system).",
       responseClass = "None", httpMethod = "POST")
-    def removePreview(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeletePreviews)) {
+    def removePreview(id: UUID) = PermissionAction(Permission.AddFile) {
       request =>
         previews.get(id) match {
           case Some(preview) => {
@@ -49,12 +49,9 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-
-  def downloadPreview(id: UUID, datasetid: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
-      request =>
-        Redirect(routes.Previews.download(id))
-    }
+  def downloadPreview(id: UUID, datasetid: UUID) = PermissionAction(Permission.ViewFile) {request =>
+    Redirect(routes.Previews.download(id))
+  }
 
   /**
    * Download preview bytes.

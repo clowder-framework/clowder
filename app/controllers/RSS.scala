@@ -55,7 +55,7 @@ class RSS @Inject() (events: EventService) extends SecuredController {
     }
   }
 
-  def siteRSS(n: Option[Int]) = SecuredAction() { implicit request =>
+  def siteRSS(n: Option[Int]) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     val itemsToGet = n.getOrElse(defaultNumberOfItems)
@@ -81,7 +81,7 @@ class RSS @Inject() (events: EventService) extends SecuredController {
     Ok(rss)
   }
 
-  def siteRSSOfType(n: Option[Int], event_type: String) = SecuredAction() { implicit request =>
+  def siteRSSOfType(n: Option[Int], event_type: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     val itemsToGet = n.getOrElse(defaultNumberOfItems)

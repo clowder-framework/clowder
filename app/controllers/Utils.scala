@@ -80,28 +80,12 @@ object Utils {
       def unbind(key: String, value: URL) = Map(key -> value.toString)
     }
     def urlType: Mapping[URL] = Forms.of[URL]
-
-  implicit def uuidFormat: Formatter[UUID] = new Formatter[UUID] {
-    override val format = Some(("format.uuid", Nil))
-    def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.url", Nil)(key, data)
-    def unbind(key: String, value: UUID) = Map(key -> value.toString)
-  }
-  def uuidType: Mapping[UUID] = Forms.of[UUID]
-}
-
-  /*
-   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   *
-   * Currently, the following dataset elements are encoded:
-   * name
-   * description
-   */
-  def decodeDatasetElements(dataset: Dataset) : Dataset = {
-      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
-              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
-              							  
-      decodedDataset
+    implicit def uuidFormat: Formatter[UUID] = new Formatter[UUID] {
+      override val format = Some(("format.uuid", Nil))
+      def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.url", Nil)(key, data)
+      def unbind(key: String, value: UUID) = Map(key -> value.toString)
+    }
+    def uuidType: Mapping[UUID] = Forms.of[UUID]
   }
   
   /**
@@ -118,22 +102,6 @@ object Utils {
       val updatedName = updateEncodedTextNewlines(collection.name)
       val updatedDesc = updateEncodedTextNewlines(collection.description)
       collection.copy(name = updatedName, description = updatedDesc)
-  }
-
-
-  /**
-   * Encoded text can have newlines. When displayed via a view, they must be translated into linebreaks
-   * in order to render correctly.
-   *
-   * @param text The text to be updated with linebreaks
-   * @return An updated String with newlines replaced.
-   */
-  def updateEncodedTextNewlines(text: String): String = {
-    text.replace("\n", "<br>")
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
-              							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
-      decodedCollection
   }
 
   /**

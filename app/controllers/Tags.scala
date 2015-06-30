@@ -8,6 +8,8 @@ import play.api.Play.current
 import services.{CollectionService, DatasetService, FileService, SectionService}
 import util.Parsers
 
+import scala.collection.mutable.ListBuffer
+
 /**
  * Tagging.
  */

@@ -206,10 +206,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    */
   def collection(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
       Logger.debug(s"Showing collection $id")
-      implicit val user = request.user match {
-        case Some(x: User) => Some(x)
-        case _ => None
-      }
+      implicit val user = request.user
 
       collections.get(id) match {
         case Some(collection) => { 

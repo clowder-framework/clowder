@@ -1,4 +1,4 @@
-@(comments: List[models.Comment])(implicit user: Option[securesocial.core.Identity])
+@(comments: List[models.Comment])(implicit user: Option[models.User])
 
 @comments.reverse.map { c =>
 <div class="comment" id="comment_@c.id">
