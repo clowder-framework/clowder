@@ -299,6 +299,13 @@ class Datasets @Inject()(
           }
           commentsByDataset = commentsByDataset.sortBy(_.posted)
 
+          //Decode the comments so that their free text will display correctly in the view
+          var decodedCommentsByDataset = ListBuffer.empty[Comment]
+          for (aComment <- commentsByDataset) {
+            val dComment = Utils.decodeCommentElements(aComment)
+            decodedCommentsByDataset += dComment
+          }
+
           val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           val space = dataset.space.flatMap(spaces.get(_))
@@ -314,12 +321,12 @@ class Datasets @Inject()(
           space match {
             case Some(s) => {
                 decodedSpace = Utils.decodeSpaceElements(s)
-                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
+                Ok(views.html.dataset(datasetWithFiles, decodedCommentsByDataset.toList, filteredPreviewers.toList, metadata, userMetadata,
                 decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace), filesTags))
             }
             case None => {
                 Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)
-                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
+                Ok(views.html.dataset(datasetWithFiles, decodedCommentsByDataset.toList, filteredPreviewers.toList, metadata, userMetadata,
                 decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space, filesTags))
             }
           }
@@ -603,7 +610,42 @@ class Datasets @Inject()(
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
   }
-	
+
+  /**
+   * Show all users with access to a dataset (identified by its id)
+   */
+  def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
+    implicit val user = request.user
+    datasets.get(id) match {
+      case Some(dataset) => {
+        dataset.space match {
+          case Some(spaceId) => {
+            spaces.get(spaceId) match {
+              case Some(projectSpace) => {
+
+                val userList: List[User] = spaces.getUsersInSpace(spaceId)
+                if(!userList.isEmpty) {
+
+                  var userRoleMap = scala.collection.mutable.Map[UUID, String]()
+                  for(usr <- userList) {
+                    spaces.getRoleForUserInSpace(spaceId, usr.id) match {
+                      case Some(role) => userRoleMap += (usr.id -> role.name)
+                      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Role not found for dataset's user.")
+                    }
+                  }// for user ...
+                  Ok(views.html.datasets.users(dataset, projectSpace.name, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
+
+                } else { Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's users not found.") }
+              }
+              case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's space not found.")
+            }
+          }
+          case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's space not found.")
+        }
+      }
+      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset not found.")
+    }
+  }
 
   def metadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
       implicit val user = request.user

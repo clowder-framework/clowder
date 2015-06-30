@@ -20,7 +20,7 @@ trait DatasetService {
   /**
    * List all datasets in the system.
    */
-  def listDatasets(limit: Option[Integer] = None, space: Option[String] = None): List[Dataset]
+  def listDatasets(order: Option[String] = None, limit: Option[Integer] = None, space: Option[String] = None): List[Dataset]
 
   /**
    * List all datasets in the system in reverse chronological order.
