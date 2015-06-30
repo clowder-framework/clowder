@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], order: Option[String], direction: String, start: Option[String], limit: Int, filter: Option[String], mode: Option[String], deletePermission: Boolean, prev: String, next: String)(implicit user: Option[securesocial.core.Identity])
+@(spaces: List[models.ProjectSpace], order: Option[String], direction: String, start: Option[String], limit: Int, filter: Option[String], mode: Option[String], deletePermission: Boolean, prev: String, next: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 

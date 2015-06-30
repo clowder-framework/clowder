@@ -7,6 +7,14 @@ import java.util.Date
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
+import securesocial.core.Identity
+
+import scala.collection.mutable.MutableList
+
+import java.util.ArrayList 
+
+import org.bson.types.ObjectId
+
 import com.mongodb.casbah.Imports._
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import controllers.{Previewers, Utils}
@@ -27,6 +35,17 @@ import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 
 
+import javax.imageio.ImageIO
+
+import java.text.SimpleDateFormat
+import java.util.Date
+
+import scala.concurrent.Future
+ 
+import scala.util.control._
+import controllers.Utils
+
+
 /**
  * Json API for files.
  */
@@ -43,7 +62,9 @@ class Files @Inject()(
   previews: PreviewService,
   threeD: ThreeDService,
   sqarql: RdfSPARQLService,
-  thumbnails: ThumbnailService) extends ApiController {
+  thumbnails: ThumbnailService,
+  events: EventService,
+  userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Retrieve physical file object metadata",
       notes = "Get metadata of the file object (not the resource it describes) as JSON. For example, size of file, date created, content type, filename.",
@@ -262,7 +283,7 @@ class Files @Inject()(
 	        
 	        Logger.debug("Uploading file " + nameOfFile)
 	        // store file
-	        var realUser = user
+	        var realUser = user.asInstanceOf[Identity]
 	          if(!originalZipFile.equals("")){
 	             files.get(new UUID(originalZipFile)) match{
 	               case Some(originalFile) => {
@@ -279,7 +300,7 @@ class Files @Inject()(
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-	            	            
+              events.addObjectEvent(request.user, f.id, f.filename, "upload_file")
 	            val id = f.id
 	            if(showPreviews.equals("FileLevel"))
 	            	flags = flags + "+filelevelshowpreviews"
@@ -475,7 +496,7 @@ class Files @Inject()(
           
           Logger.debug("Uploading file " + nameOfFile)         
           // store file
-          var realUser = user
+          var realUser = user.asInstanceOf[Identity]
           if(!originalZipFile.equals("")) {
             files.get(new UUID(originalZipFile)) match {
               case Some(originalFile) => {
@@ -493,6 +514,7 @@ class Files @Inject()(
           // submit file for extraction
           file match {
             case Some(f) => {
+              events.addSourceEvent(request.user, f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
               val id = f.id.toString
               if (showPreviews.equals("FileLevel")) {
                 flags = flags + "+filelevelshowpreviews"
@@ -802,6 +824,11 @@ class Files @Inject()(
         Logger.debug("Adding user metadata to file " + id)
         val theJSON = Json.stringify(request.body)
         files.addUserMetadata(id, theJSON)
+        files.get(id) match {
+          case Some(file) =>{
+            events.addObjectEvent(request.user, file.id, file.filename, "addMetadata_file")
+          }
+        }
         files.index(id)
         configuration.getString("userdfSPARQLStore").getOrElse("no") match {
           case "yes" => {
@@ -1269,7 +1296,11 @@ class Files @Inject()(
   def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
 
     val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
-
+    files.get(id) match {
+    case Some(file) =>{
+      events.addObjectEvent(request.user, file.id, file.filename, "add_tags_file")
+      }
+    }
     // Now the real work: adding the tags.
     if ("" == error_str) {
       Ok(Json.obj("status" -> "success"))
@@ -1286,6 +1317,11 @@ class Files @Inject()(
   def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
 
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
+    files.get(id) match {
+          case Some(file) =>{
+            events.addObjectEvent(request.user, file.id, file.filename, "remove_tags_file")
+          }
+        }
 
     if ("" == error_str) {
       Ok(Json.obj("status" -> "success"))
@@ -1401,6 +1437,11 @@ class Files @Inject()(
             case Some(text) => {
               val comment = new Comment(identity, text, file_id = Some(id))
               comments.insert(comment)
+              files.get(id) match {
+              case Some(file) =>{
+                events.addSourceEvent(request.user, comment.id, comment.text, file.id, file.filename, "comment_file")
+                }
+              }
               files.index(id)
               Ok(comment.id.toString)
             }
@@ -1578,7 +1619,7 @@ class Files @Inject()(
   def removeFile(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       files.get(id) match {
         case Some(file) => {
-          
+          events.addObjectEvent(request.user, file.id, file.filename, "delete_file")
            //this stmt has to be before files.removeFile
           Logger.debug("Deleting file from indexes" + file.filename)
           current.plugin[VersusPlugin].foreach {        
@@ -1709,6 +1750,11 @@ class Files @Inject()(
 			    case Some(html) => {
 			        files.setNotesHTML(id, html)
 			        //index(id)
+              files.get(id) match {
+              case Some(file) => {
+                events.addObjectEvent(request.user, file.id, file.filename, "set_note_file")
+                }
+              }
 			        Ok(toJson(Map("status"->"success")))
 			    }
 			    case None => {
@@ -1722,6 +1768,78 @@ class Files @Inject()(
 	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
 	  }
     }
+
+  @ApiOperation(value = "Follow file",
+    notes = "Add user to file followers and add file to user followed files.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+      implicit val user = request.user
+
+      user match {
+        case Some(loggedInUser) => {
+          files.get(id) match {
+            case Some(file) => {
+              events.addObjectEvent(user, id, name, "follow_file")
+              files.addFollower(id, loggedInUser.id)
+              userService.followFile(loggedInUser.id, id)
+
+              val recommendations = getTopRecommendations(id, loggedInUser)
+              recommendations match {
+                case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+                case Nil => Ok(Json.obj("status" -> "success"))
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  @ApiOperation(value = "Unfollow file",
+    notes = "Remove user from file followers and remove file from user followed files.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+      implicit val user = request.user
+
+      user match {
+        case Some(loggedInUser) => {
+          files.get(id) match {
+            case Some(file) => {
+              events.addObjectEvent(user, id, name, "unfollow_file")
+              files.removeFollower(id, loggedInUser.id)
+              userService.unfollowFile(loggedInUser.id, id)
+              Ok
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = files.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
+  }
 
 }
 

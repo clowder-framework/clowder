@@ -14,9 +14,16 @@ import play.api.libs.json.Json._
 import services.{ExtractorMessage, _}
 import util.RequiredFieldsConfig
 import views.html.defaultpages.badRequest
-
-import scala.collection.immutable._
+import models._
+import fileutils.FilesUtils
+import api.Permission
+import javax.inject.Inject
+import scala.Some
+import scala.xml.Utility
+import services.ExtractorMessage
 import scala.collection.mutable.ListBuffer
+import util.RequiredFieldsConfig
+import scala.collection.immutable._
 
 
 /**
@@ -45,7 +52,7 @@ class Datasets @Inject()(
   def newDataset() = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      val spacesList = spaces.list()
+      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
       for (aSpace <- spacesList) {
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
@@ -112,12 +119,11 @@ class Datasets @Inject()(
         dataset.id -> allComments.size
       }.toMap
 
-
-      //Modifications to decode HTML entities that were stored in an encoded fashion as part 
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part
       //of the datasets names or descriptions
-      var decodedDatasetList = new ListBuffer[models.Dataset]()
+      val decodedDatasetList = ListBuffer.empty[models.Dataset]
       for (aDataset <- datasetList) {
-          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+        decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
       
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
@@ -145,9 +151,9 @@ class Datasets @Inject()(
       var prev, next = ""
       var datasetList = List.empty[models.Dataset]
       if (direction == "b") {
-        datasetList = datasets.listDatasetsBefore(date, limit)
+        datasetList = datasets.listUserDatasetsBefore(date, limit, email)
       } else if (direction == "a") {
-        datasetList = datasets.listDatasetsAfter(date, limit)
+        datasetList = datasets.listUserDatasetsAfter(date, limit, email)
       } else {
         badRequest
       }
@@ -174,7 +180,6 @@ class Datasets @Inject()(
         }
       }
       
-      datasetList= datasetList.filter(x=> x.author.email.toString == "Some(" +email +")")
 
       val commentMap = datasetList.map{dataset =>
         var allComments = comments.findCommentsByDatasetId(dataset.id)
@@ -187,13 +192,13 @@ class Datasets @Inject()(
         dataset.id -> allComments.size
       }.toMap
 
-      //Modifications to decode HTML entities that were stored in an encoded fashion as part 
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part
       //of the datasets names or descriptions
-      var decodedDatasetList = new ListBuffer[models.Dataset]()
+      val decodedDatasetList = ListBuffer.empty[models.Dataset]
       for (aDataset <- datasetList) {
-          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+        decodedDatasetList += Utils.decodeDatasetElements(aDataset)
       }
-      
+
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
         //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
         //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   

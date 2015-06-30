@@ -39,27 +39,18 @@ object Utils {
    * description
    *  
    */
+  def decodeDatasetElements(dataset: Dataset) : Dataset = {
+    val updatedName = updateEncodedTextNewlines(dataset.name)
+    val updatedDesc = updateEncodedTextNewlines(dataset.description)
+    dataset.copy(name = updatedName, description = updatedDesc)
+  }
+  
   def decodeSpaceElements(space: ProjectSpace): ProjectSpace = {
-      val decodedName = StringEscapeUtils.unescapeHtml(space.name)
-      val decodedDesc = StringEscapeUtils.unescapeHtml(space.description)
-      space.copy(name = decodedName, description = decodedDesc)
+    val decodedName = StringEscapeUtils.unescapeHtml(space.name)
+    val decodedDesc = StringEscapeUtils.unescapeHtml(space.description)
+    space.copy(name = decodedName, description = decodedDesc)
   }
-
-  //TODO UrlFormat2 definition is fine, have not been able to get it to work in Mapping. I think UrlFormat is better choice anyway
-  /*
-  val urlFormat2 = new Formatter[URL] {
-    def bind(key: String, data: Map[String, String]) = {
-      stringFormat.bind(key, data).right.flatMap { value =>
-        scala.util.control.Exception.allCatch[URL]
-          .either(toURL(value))
-          .left.map(e => Seq(FormError(key, "error.url", Nil)))
-      }
-    }
-    def unbind(key: String, value: URL) = Map(key -> value.toString)
-  }
-
-  def toURL(v:String):URL= {new URL(v)}
-  */
+  
   /**
    * Default formatter for the `String` type.
    */
@@ -67,6 +58,7 @@ object Utils {
     def bind(key: String, data: Map[String, String]) = data.get(key).toRight(Seq(FormError(key, "error.required", Nil)))
     def unbind(key: String, value: String) = Map(key -> value)
   }
+  
   /**
    * Exact copy of private function in play.api.data.format.Formats
    */
@@ -88,28 +80,12 @@ object Utils {
       def unbind(key: String, value: URL) = Map(key -> value.toString)
     }
     def urlType: Mapping[URL] = Forms.of[URL]
-
-  implicit def uuidFormat: Formatter[UUID] = new Formatter[UUID] {
-    override val format = Some(("format.uuid", Nil))
-    def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.url", Nil)(key, data)
-    def unbind(key: String, value: UUID) = Map(key -> value.toString)
-  }
-  def uuidType: Mapping[UUID] = Forms.of[UUID]
-}
-
-  /*
-   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   *
-   * Currently, the following dataset elements are encoded:
-   * name
-   * description
-   */
-  def decodeDatasetElements(dataset: Dataset) : Dataset = {
-      val decodedDataset = dataset.copy(name = StringEscapeUtils.unescapeHtml(dataset.name), 
-              							  description = StringEscapeUtils.unescapeHtml(dataset.description))
-              							  
-      decodedDataset
+    implicit def uuidFormat: Formatter[UUID] = new Formatter[UUID] {
+      override val format = Some(("format.uuid", Nil))
+      def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.url", Nil)(key, data)
+      def unbind(key: String, value: UUID) = Map(key -> value.toString)
+    }
+    def uuidType: Mapping[UUID] = Forms.of[UUID]
   }
   
   /**
@@ -123,10 +99,9 @@ object Utils {
    *  
    */
   def decodeCollectionElements(collection: Collection) : Collection  = {
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
-              							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
-      decodedCollection
+      val updatedName = updateEncodedTextNewlines(collection.name)
+      val updatedDesc = updateEncodedTextNewlines(collection.description)
+      collection.copy(name = updatedName, description = updatedDesc)
   }
 
   /**

@@ -4,7 +4,10 @@ import api.Permission.Permission
 import models.ResourceRef
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
 import play.api.mvc._
+import models.{User, UUID}
+import securesocial.core.{Authorization, SecureSocial, UserService, Authenticator}
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services.DI
@@ -37,7 +40,7 @@ trait ApiController extends Controller {
   def PrivateServerAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkPrivateServer(userRequest.user)) {
+      if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
@@ -49,7 +52,7 @@ trait ApiController extends Controller {
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (userRequest.user.isDefined) {
+      if (userRequest.user.isDefined || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
@@ -61,7 +64,7 @@ trait ApiController extends Controller {
   def ServerAdminAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkServerAdmin(userRequest.user)) {
+      if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
@@ -73,7 +76,7 @@ trait ApiController extends Controller {
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkPermission(userRequest.user, permission, resourceRef)) {
+      if (Permission.checkPermission(userRequest.user, permission, resourceRef) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
@@ -90,9 +93,6 @@ trait ApiController extends Controller {
     //    key it will assume you are anonymous!
     // 4) anonymous access
 
-    // is the user a superadmin (this should still check serverAdmin)
-    val superAdmin = request.cookies.get("superAdmin").isDefined || request.headers.get("superAdmin").isDefined
-
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     for (
       authenticator <- SecureSocial.authenticatorFromRequest(request);
@@ -100,7 +100,7 @@ trait ApiController extends Controller {
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-      return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
+      return UserRequest(user, superAdmin=false, request)
     }
 
     // 2) basic auth, this allows you to call the api with your username/password
@@ -110,7 +110,7 @@ trait ApiController extends Controller {
       UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword).foreach { identity =>
         val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
         if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
-          return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
+          return UserRequest(user, superAdmin=false, request)
         }
       }
     }
@@ -121,12 +121,12 @@ trait ApiController extends Controller {
       // TODO this needs to become more secure
       if (key.nonEmpty) {
         if (key.head.equals(play.Play.application().configuration().getString("commKey"))) {
-          return UserRequest(Some(Permission.anonymous), None, superAdmin, request)
+          return UserRequest(Some(User.anonymous), superAdmin=true, request)
         }
       }
     }
 
     // 4) anonymous access
-    UserRequest(None, None, superAdmin=false, request)
+    UserRequest(None, superAdmin=false, request)
   }
 }

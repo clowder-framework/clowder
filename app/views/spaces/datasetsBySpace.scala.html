@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], space: String)(implicit user: Option[securesocial.core.Identity])
+@(datasets: List[models.Dataset], space: String)(implicit user: Option[models.User])
 
 <h3>Datasets</h3>
 @if(datasets.size == 0) {
