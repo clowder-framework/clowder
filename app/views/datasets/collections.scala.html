@@ -34,8 +34,7 @@
                         @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                            | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
                                 Remove</a>
-                        }
-                        else {
+                        } else {
                             <a href="#" class="btn btn-link btn-xs disabled" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
                             Remove</a>
                         }

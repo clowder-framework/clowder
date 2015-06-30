@@ -84,6 +84,7 @@ object Permission extends Enumeration {
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
   lazy val users: services.UserService = DI.injector.getInstance(classOf[services.UserService])
+  lazy val comments: services.CommentService = DI.injector.getInstance(classOf[services.CommentService])
 
 	def checkServerAdmin(user: Option[Identity]): Boolean = {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
@@ -135,6 +136,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.dataset, id) => false // TODO check if dataset is public datasets.get(r.id).isPublic()
       case ResourceRef(ResourceRef.collection, id) => false
       case ResourceRef(ResourceRef.space, id) => false
+      case ResourceRef(ResourceRef.comment, id) => false
       case ResourceRef(resType, id) => {
         Logger.error("Unrecognized resource type " + resType)
         false
@@ -146,30 +148,55 @@ object Permission extends Enumeration {
     resourceRef match {
       case ResourceRef(ResourceRef.file, id) => true
       case ResourceRef(ResourceRef.dataset, id) => {
+        val dataset = datasets.get(id)
         val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                        dataset <- datasets.get(id)
-                                        spaceId <- dataset.space
-                                        role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
-                                        if role.permissions.contains(permission.toString)
-        } yield true
-        hasPermission getOrElse false
-      }
-      case ResourceRef(ResourceRef.collection, id) => {
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                        collection <- collections.get(id)
-                                        spaceId <- collection.space
-                                        role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
-                                        if role.permissions.contains(permission.toString)
-        } yield true
-        hasPermission getOrElse false
-      }
-      case ResourceRef(ResourceRef.space, id) => {
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                                  space <- spaces.get(id)
-                                                  role <- users.getUserRoleInSpace(clowderUser.id, space.id)
+                                                  spaceId <- dataset.get.space
+                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
                                                   if role.permissions.contains(permission.toString)
         } yield true
-        hasPermission getOrElse false
+
+        hasPermission getOrElse dataset.exists(_.author.email == user.email)
+      }
+      case ResourceRef(ResourceRef.collection, id) => {
+        val collection = collections.get(id)
+        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
+                                                  spaceId <- collection.get.space
+                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
+                                                  if role.permissions.contains(permission.toString)
+        } yield true
+        hasPermission getOrElse collection.exists(x => {
+          x.author match {
+            case Some(realAuthor) => {
+              realAuthor.email == user.email
+            }
+            case None => false
+          }
+        })
+      }
+      case ResourceRef(ResourceRef.space, id) => {
+        val space = spaces.get(id)
+        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
+                                                  role <- users.getUserRoleInSpace(clowderUser.id, space.get.id)
+                                                  if role.permissions.contains(permission.toString)
+        } yield true
+        hasPermission getOrElse space.exists(x => {
+          users.findById(x.creator) match {
+            case Some(realCreator) => {
+              realCreator.email == user.email
+            }
+            case None => false
+          }
+        })
+      }
+      case ResourceRef(ResourceRef.comment, id) => {
+        val comment = comments.get(id)
+        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
+                                                  dataset <- datasets.get(comment.get.dataset_id.get)
+                                                  spaceId <- dataset.space
+                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
+                                                  if role.permissions.contains(permission.toString)
+        } yield true
+        hasPermission getOrElse comment.exists(_.author.email == user.email)
       }
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)

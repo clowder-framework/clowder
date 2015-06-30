@@ -1,6 +1,8 @@
 @(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[securesocial.core.Identity])
 
+@import api.Permission
 @import helper._
+
 
 @main(space.name) {
 
@@ -19,9 +21,16 @@
             <p><span id="spacedescdisplay">@space.description</span></p>
         </div>
         <div class="pull-right col-md-2 col-lg-2 col-sm-2 text-center">
-            <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs">
-                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
-            </a>
+            <!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
+            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+                <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs">
+                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                </a>
+            } else {
+                <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs disabled">
+                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                </a>
+            }
         </div>
     </div>
     <div class="row">

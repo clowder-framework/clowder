@@ -112,9 +112,7 @@
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                       <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
                       @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          @if(user.isDefined) {
-                              @commentform(dataset.id.stringify, "dataset")
-                          }
+                          @commentform(dataset.id.stringify, "dataset")
                       }
                       <div class="list-unstyled" id="reply_@dataset.id.toString">
                          @comment(comments)
