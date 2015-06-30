@@ -27,3 +27,67 @@
     width: "500px",
     placeholder_text_multiple: "Select Users for this Level..."});
 </script>
+
+<script language="javascript">
+
+    var idNameObj = {};
+    var idEmailObj = {};
+
+    function isUndefined(value) {
+        return typeof value === 'undefined';
+    }
+
+    function getName(id) {
+        return idNameObj[id];
+    }
+
+    function getEmail(id) {
+        return idEmailObj[id];
+    }
+
+    //Define maps to easily look up names and emails based on the ID that is added or removed
+    $(document).ready(function() {
+        @for(extUser <- externalUsers) {
+            idNameObj["@extUser.id"] = "@extUser.fullName";
+            idEmailObj["@extUser.id"] = "@extUser.email";
+        }
+
+        @for((k,v) <- userRoleMap) {
+            idNameObj["@k.id"] = "@k.fullName";
+            idEmailObj["@k.id"] = "@k.email";
+        }
+    });
+
+    //Handle the change events when a user is added or removed from the selection lists
+    $(".chosen-select").chosen().change(function (event, params) {
+        var targetId = this.getAttribute("id");
+        if (!isUndefined(params.selected)) {
+            //Remove the newly selected ID from the options lists
+            var addedId = params.selected;
+            @for(roleLevel <- roleList) {
+                var currentId = "@roleLevel.replaceAll("\\s+", "")";
+                //Check to see if we are operating on the original target of the event. If so, don't do anything, it handles
+                //it on its own.
+                if (currentId != targetId) {
+                    $('#@roleLevel.replaceAll("\\s+", "") option[value=' + addedId + ']').remove();
+                    $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+                }
+            }
+        }
+        else if (!isUndefined(params.deselected)) {
+            //Add the newly deselected ID to the options lists
+            var removedId = params.deselected;
+            @for(roleLevel <- roleList) {
+                var currentId = "@roleLevel.replaceAll("\\s+", "")";
+                //Check to see if we are operating on the original target of the event. If so, don't do anything, it handles
+                //it on its own.
+                if (currentId != targetId) {
+                    $('#@roleLevel.replaceAll("\\s+", "")').prepend($("<option></option>").attr("value", params.deselected).text(getName(params.deselected)
+                        + " (" + getEmail(params.deselected) + ")"));
+                    $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+                }
+            }
+        }
+    });
+
+</script>

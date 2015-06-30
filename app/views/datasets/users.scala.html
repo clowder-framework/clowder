@@ -1,0 +1,43 @@
+@(dataset: models.Dataset, space: String, userRoleMap: scala.collection.mutable.Map[UUID,String], users: List[User])(implicit user: Option[securesocial.core.Identity])
+
+@main("Dataset") {
+
+    <div class="row">
+
+        <div class="row bottom-padding">
+            <div class="col-md-12" id="ds-title">
+                <h1 id="datasettitle">@dataset.name</h1>
+            </div>
+        </div>
+
+        <div class="row bottom-padding">
+            <div class="col-md-12">
+                <h4>Users with access to this dataset, excluding author:</h4>
+            </div>
+        </div>
+
+        <div class="row bottom-padding">
+            <div id ="users" class="col-md-12">
+                @if(users.isEmpty) {
+                    <div>No users.</div>
+                } else {
+                    <ol>
+                        @for(usr <- users) {
+                            <li>
+                                @if(!usr.fullName.isEmpty) {
+                                    @usr.fullName
+                                    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)) {
+                                        -- Space: @space | Role: @userRoleMap(usr.id)
+                                    }
+                                }
+                            </li>
+                        }
+                    </ol>
+                }
+            </div>
+        </div>
+
+    </div>
+
+}
+

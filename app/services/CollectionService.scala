@@ -18,7 +18,7 @@ trait CollectionService {
   /**
    * List collections in the system.
    */
-  def listCollections(limit: Option[Integer] = None, space: Option[String] = None): List[Collection]
+  def listCollections(order: Option[String] = None, limit: Option[Integer] = None, space: Option[String] = None): List[Collection]
 
   /**
    * List collections in the system in reverse chronological order.

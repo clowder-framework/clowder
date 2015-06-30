@@ -1,7 +1,7 @@
 @(datasetsInCollection: List[models.Dataset],
   collection: models.Collection,
   previewers: List[Previewer],
-  space: Option[ProjectSpace])(implicit user: Option[securesocial.core.Identity])
+  space: Option[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
 
 @import models.UUID
 
@@ -138,8 +138,20 @@
   			<li class="previous" id="addPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
   			<li class ="next" id="addPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
+
+		<div class="row border-top bottom-padding">
+			<div class="col-md-12">
+				<a href="@routes.Collections.users(collection.id)">
+					<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
+				</a>
+				<div class="alert-danger inner-item">
+					@flash.get("error")
+				</div>
+			</div>
+		</div>
+
 	</div>
-</div>
+
 <script language="javascript">
 	@if(user.isDefined) {
 		@if(collection.author.isDefined){

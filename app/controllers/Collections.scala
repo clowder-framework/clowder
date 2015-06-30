@@ -1,5 +1,9 @@
 package controllers
 
+import models.ProjectSpace
+import models.User
+import models.{UUID, Collection}
+import util.RequiredFieldsConfig
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
@@ -241,6 +245,42 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
         }
       }
+  }
+
+  /**
+   * Show all users with access to a collection (identified by its id)
+   */
+  def users(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewCollection)) { implicit request =>
+    implicit val user = request.user
+    collections.get(id) match {
+      case Some(collection) => {
+        collection.space match {
+          case Some(spaceId) => {
+            spaces.get(spaceId) match {
+              case Some(projectSpace) => {
+
+                val userList: List[User] = spaces.getUsersInSpace(spaceId)
+                if(!userList.isEmpty) {
+
+                  var userRoleMap = scala.collection.mutable.Map[UUID, String]()
+                  for(usr <- userList) {
+                    spaces.getRoleForUserInSpace(spaceId, usr.id) match {
+                      case Some(role) => userRoleMap += (usr.id -> role.name)
+                      case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Role not found for collection's user.")
+                    }
+                  }// for user ...
+                  Ok(views.html.collections.users(collection, projectSpace.name, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
+
+                } else { Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's users not found.") }
+              }
+              case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's space not found.")
+            }
+          }
+          case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's space not found.")
+        }
+      }
+      case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection not found.")
+    }
   }
 
   def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection) { implicit request =>

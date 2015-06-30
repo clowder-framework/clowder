@@ -48,31 +48,26 @@ trait SpaceService extends CRUDService[ProjectSpace] {
   def purgeExpiredResources(space: UUID)
 
   /**
-   * Service access to retrieve the collections that are contained by a specific space.
+   * Service access to retrieve a list of collections in a given space, of prescribed list length.
    *
-   * @param spaceId The identifier for the space to be checked
+   * @param space Identifies the space.
+   * @param order Sort order (if any) by created date
+   * @param limit Length of (the number of collections in) returned list.
    *
-   * @return A list that contains all of the collections attached to the space.
+   * @return A list of collections in a space; list's length is defined by 'limit'.
    */
-  def getCollectionsInSpace(spaceId: UUID): List[Collection]
+  def getCollectionsInSpace(space: Option[String] = None, order: Option[String] = None, limit: Option[Integer] = None): List[Collection]
 
   /**
-   * Service access to retrieve the datasets that are contained by a specific space.
+   * Service access to retrieve a list of datasets in a given space, of prescribed list length.
    *
-   * @param spaceId The identifier for the space to be checked
+   * @param space Identifies the space.
+   * @param order Sort order (if any) by created date
+   * @param limit Length of (the number of datasets in) returned list.
    *
-   * @return A list that contains all of the datasets attached to the space.
+   * @return A list of datasets in a space; list's length is defined by 'limit'.
    */
-  def getDatasetsInSpace(spaceId: UUID): List[Dataset]
-
-  /**
-   * Retrieve Datasets for a given Space, but only the requested amount.
-   *
-   * @param spaceId Identifies the space requested
-   * @param limit Limit to this number of datasets
-   * @return List of datasets attached to the given space, bounded by 'limit'.
-   */
-  def getDatasetsInSpaceWithLimit(spaceId: UUID, limit: Int): List[Dataset]
+  def getDatasetsInSpace(space: Option[String] = None, order: Option[String] = None, limit: Option[Integer] = None): List[Dataset]
 
   /**
    * Service call to update the information and configuration that are part of a space.

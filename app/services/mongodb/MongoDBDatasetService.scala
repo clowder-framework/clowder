@@ -59,7 +59,9 @@ class MongoDBDatasetService @Inject() (
   /**
    * List datasets in the system.
    */
-  def listDatasets(limit: Option[Integer], space: Option[String]): List[Dataset] = {
+  def listDatasets(order: Option[String], limit: Option[Integer], space: Option[String]): List[Dataset] = {
+    if (order.exists(_.equals("desc"))) { return listDatasetsChronoReverse(limit, space) }
+
     val filter = space match {
       case Some(s) => MongoDBObject("space" -> new ObjectId(s))
       case None => MongoDBObject()
