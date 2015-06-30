@@ -4,7 +4,10 @@ import api.Permission.Permission
 import models.ResourceRef
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
 import play.api.mvc._
+import models.{User, UUID}
+import securesocial.core.{Authorization, SecureSocial, UserService, Authenticator}
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services.DI

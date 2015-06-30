@@ -22,6 +22,8 @@ import views.html.defaultpages.badRequest
 
 import scala.collection.mutable.ListBuffer
 
+
+
 /**
  * Manage files.
  */
@@ -36,6 +38,8 @@ class Files @Inject() (
   previews: PreviewService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
+  users: UserService,
+  events: EventService,
   thumbnails: ThumbnailService) extends SecuredController {
 
   /**
@@ -121,8 +125,8 @@ class Files @Inject() (
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
         val datasetsNotContaining = datasets.findNotContainingFile(file.id).sortBy(_.name)              
-        var decodedDatasetsContaining = new ListBuffer[models.Dataset]()
-        var decodedDatasetsNotContaining = new ListBuffer[models.Dataset]()
+        val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
+        val decodedDatasetsNotContaining = ListBuffer.empty[models.Dataset]
         
         for (aDataset <- datasetsContainingFile) {
         	val dDataset = Utils.decodeDatasetElements(aDataset)
@@ -371,7 +375,8 @@ def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormDa
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-
+              var option_user = users.findByIdentity(identity)
+              events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
 	            if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"
 	            else if(showPreviews.equals("None"))

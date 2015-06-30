@@ -2,7 +2,9 @@ package controllers
 
 import models.ProjectSpace
 import models.User
-import models.{UUID, Collection}
+import play.api.data.Form
+import play.api.data.Forms._
+import models.{UUID, Collection, MiniUser, Event}
 import util.RequiredFieldsConfig
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -20,12 +22,15 @@ import util.RequiredFieldsConfig
 import views.html.defaultpages.badRequest
 
 import scala.collection.mutable.ListBuffer
-
+import services._
+import org.apache.commons.lang.StringEscapeUtils
+import models.User
 
 object ThumbnailFound extends Exception {}
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, spaces: SpaceService) extends SecuredController {  
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
+                            spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {  
 
   def newCollection() = PermissionAction(Permission.CreateCollection) { implicit request =>
       implicit val user = request.user
@@ -113,19 +118,19 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
       }
       collectionsWithThumbnails = collectionsWithThumbnails.reverse
-      
-      //Modifications to decode HTML entities that were stored in an encoded fashion as part 
+
+      //Modifications to decode HTML entities that were stored in an encoded fashion as part
       //of the collection's names or descriptions
-      var decodedCollections = new ListBuffer[models.Collection]()
+      val decodedCollections = ListBuffer.empty[models.Collection]
       for (aCollection <- collectionsWithThumbnails) {
-          val dCollection = Utils.decodeCollectionElements(aCollection)
-          decodedCollections += dCollection
+        val dCollection = Utils.decodeCollectionElements(aCollection)
+        decodedCollections += dCollection
       }
-      
-    //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-    val viewMode: Option[String] = 
+
+      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+      val viewMode: Option[String] =
         if (mode == null || mode == "") {
           request.cookies.get("view-mode") match {
               case Some(cookie) => Some(cookie.value)
@@ -184,6 +189,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
             List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
 
+          //Add to Events Table
+          var option_user = users.findByIdentity(identity)
+          events.addObjectEvent(option_user, collection.id, collection.name, "create_collection")
+
           // redirect to collection page
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
           Redirect(routes.Collections.collection(collection.id))
@@ -197,16 +206,20 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    */
   def collection(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
       Logger.debug(s"Showing collection $id")
-      implicit val user = request.user
+      implicit val user = request.user match {
+        case Some(x: User) => Some(x)
+        case _ => None
+      }
+
       collections.get(id) match {
         case Some(collection) => { 
           Logger.debug(s"Found collection $id")
           // only show previewers that have a matching preview object associated with collection
           Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
-          
+
           //Decode the encoded items
           val dCollection = Utils.decodeCollectionElements(collection)
-          
+
           for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
           val filteredPreviewers = for (
             previewer <- Previewers.findCollectionPreviewers;
@@ -221,7 +234,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           //Decode the datasets so that their free text will display correctly in the view
           val datasetsInside = datasets.listInsideCollection(id)
-          var decodedDatasetsInside = new ListBuffer[models.Dataset]()
+          val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetsInside) {
             val dDataset = Utils.decodeDatasetElements(aDataset)
             decodedDatasetsInside += dDataset

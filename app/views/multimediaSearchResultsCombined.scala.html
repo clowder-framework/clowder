@@ -1,4 +1,4 @@
-@(fileName:String="Query file", thumbnailId:Option[UUID], resultsList:List[(models.UUID, String, String, Double)])(implicit user: Option[securesocial.core.Identity])   		
+@(fileName:String="Query file", thumbnailId:Option[UUID], resultsList:List[(models.UUID, String, String, Double)])(implicit user: Option[models.User])
 
 @********************************************************************@
 @****   Template to display combined weighted search results    ***@

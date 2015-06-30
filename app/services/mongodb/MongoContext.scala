@@ -25,6 +25,7 @@ object MongoContext {
         typeHint = "_typeHint")
       registerCustomTransformer(UUIDTransformer)
       registerCustomTransformer(URLTransformer)
+      registerCustomTransformer(JodaDateTimeTransformer)
       registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
       registerClassLoader(Play.classloader)
     }
@@ -104,6 +105,17 @@ object MongoContext {
     def serialize(url: URL) = {
       Logger.trace("Serializing URL to String :" + url)
       url.toString
+    }
+  }
+
+  // joda.time to Date and vice versa
+  object JodaDateTimeTransformer extends CustomTransformer[org.joda.time.DateTime, java.util.Date] {
+    def deserialize(date: java.util.Date) = {
+      new org.joda.time.DateTime(date.getTime)
+    }
+
+    def serialize(date: org.joda.time.DateTime) = {
+      date.toDate
     }
   }
 }

@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
 import play.api.Logger
 import scala.util.Try
-import services.{DatasetService, CollectionService}
+import services._
 import javax.inject.{Singleton, Inject}
 import scala.util.Failure
 import scala.Some
@@ -19,9 +19,6 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import MongoContext.context
 import play.api.Play.current
-import services.AdminsNotifierPlugin
-import services.ElasticsearchPlugin
-
 
 
 /**
@@ -31,7 +28,7 @@ import services.ElasticsearchPlugin
  *
  */
 @Singleton
-class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends CollectionService {
+class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -111,6 +108,44 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
     }
   }
 
+  /**
+   * List collections for a specific user after a date.
+   */
+  def listUserCollectionsAfter(date: String, limit: Int, email: String): List[Collection] = {
+    val order = MongoDBObject("created"-> -1)
+    if (date == "") {
+      var collectionList = Collection.findAll.sort(order).limit(limit).toList
+      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList
+    } else {
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      Logger.info("After " + sinceDate)
+      var collectionList = Collection.find("created" $lt sinceDate).sort(order).limit(limit).toList
+      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList
+    }
+  }
+  
+  /**
+   * List collections for a specific user before a date.
+   */
+  def listUserCollectionsBefore(date: String, limit: Int, email: String): List[Collection] = {
+    var order = MongoDBObject("created"-> -1)
+    if (date == "") {
+      var collectionList = Collection.findAll.sort(order).limit(limit).toList
+      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList
+    } else {
+      order = MongoDBObject("created"-> 1)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      Logger.info("Before " + sinceDate)
+      var collectionList = Collection.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
+      collectionList = collectionList.filter(_ != collectionList.last)
+      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList
+    }
+  }
+  
   /**
    * Get collection.
    */
@@ -296,6 +331,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
           datasets.removeCollection(dataset.id, collection.id)
           datasets.index(dataset.id)
         }
+        for (follower <- collection.followers) {
+          userService.unfollowCollection(follower, collectionId)
+        }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
 
         current.plugin[ElasticsearchPlugin].foreach {
@@ -371,6 +409,22 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService)  extends Col
         MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
         $set("space" -> Some(new ObjectId(spaceId.stringify))),
         false, false)
+  }
+
+  /**
+   * Add follower to a collection.
+   */
+  def addFollower(id: UUID, userId: UUID) {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                      $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  /**
+   * Remove follower from a collection.
+   */
+  def removeFollower(id: UUID, userId: UUID) {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                      $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 }
 

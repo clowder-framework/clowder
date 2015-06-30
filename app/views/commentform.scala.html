@@ -1,4 +1,4 @@
-@(id: String, resourceType: String)(implicit user: Option[securesocial.core.Identity])
+@(id: String, resourceType: String)(implicit user: Option[models.User])
 
 @if(user.isDefined) {
   <form class="form-inline">
@@ -12,7 +12,7 @@
        var origText = "";
   
      function showEditComment(id) {
-       var commentText = $("#comment-body_" + id).html();
+       var commentText = $("#comment-body_" + id).html().replace(/<br>/g, "\n");
        origText = commentText;
        commentText = htmlDecode(commentText.replace(/<br>/g, "\n"));
        if ($("#commentField_" + id).length == 0) {
@@ -39,7 +39,7 @@
      }
      
      function cancelEditComment(id) {           
-           $("#comment-body_" + id).html(origText);
+           $("#comment-body_" + id).html(origText.replace(/\n/g, "<br>"));
            return false;
        }
      

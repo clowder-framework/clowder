@@ -32,9 +32,6 @@ body {
     max-height: 100%;
 }
 
-/* Custom page CSS
--------------------------------------------------- */
-
 /* Basic button bars */
 span.button-bar {
     width:50%;  
@@ -266,9 +263,8 @@ code {
 }
 
 .profilePicture {
-  margin-bottom:12px;
-  max-width:256px;
-  max-height:256px;
+  	width: 256px;
+    height: 256px;
 }
 
 .editProfileInput input[type='text']{
@@ -586,6 +582,40 @@ textarea, input[type='text'], input[type='password']{
 
 .dataset-preview {
     padding: 20px 0px;
+}
+
+.img_wrapper {
+	position: relative;
+	width: 128px;
+	height: 128px;
+	margin: 5px;
+	display: inline-block;
+}
+
+.img_hover {
+	position : absolute;
+	width: 128px;
+	height: 128px;
+	background-color: #ffa500;
+	top: 0;
+	left: 0;
+	opacity: 0;
+	transition: opacity 1s;
+	padding-top: 40%;
+	text-align: center;
+	text-color: #fff;
+}
+
+.img_wrapper:hover > .img_hover {
+	opacity: 0.9;
+}
+
+.img_thumbnail {
+	height: 128px;
+	width: 128px;
+	border:1px solid #d3d3d3; 
+	padding:3px; 
+	border-radius: 5px; 
 }
 
 #scrollTableGalleria{

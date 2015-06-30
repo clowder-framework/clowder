@@ -5,13 +5,15 @@ import javax.inject.{Inject, Singleton}
 import play.api.{Logger, Routes}
 import play.api.mvc.Action
 import services._
+import models.{User, Event}
+import play.api.Logger
 
 /**
  * Main application controller.
  */
 @Singleton
 class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
-                             spaces: SpaceService) extends SecuredController {
+                             spaces: SpaceService, events: EventService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    * @param path the path minus the slash
@@ -31,8 +33,20 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val filesCount = files.count()
     val collectionCount = collections.count()
     val spacesCount = spaces.count()
-    Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
-      AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    request.user match {
+      case Some(loggedInUser) => {
+        var newsfeedEvents = events.getEvents(
+          loggedInUser.followedEntities, Some(20)
+        ).sorted(Ordering.by((_: Event).created).reverse)
+        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
+          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+      }
+      case None => {
+        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
+          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, List()))
+      }
+    }
+
   }
   
   def options(path:String) = UserAction { implicit request =>
@@ -92,6 +106,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.removeAllTags,
         api.routes.javascript.Datasets.updateInformation,
         api.routes.javascript.Datasets.updateLicense,
+        api.routes.javascript.Datasets.follow,
+        api.routes.javascript.Datasets.unfollow,
         api.routes.javascript.Datasets.detachFile,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
@@ -101,10 +117,14 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.updateLicense,
         api.routes.javascript.Files.extract,
         api.routes.javascript.Files.removeFile,
+        api.routes.javascript.Files.follow,
+        api.routes.javascript.Files.unfollow,
         api.routes.javascript.Files.getTechnicalMetadataJSON,
+        api.routes.javascript.Files.filePreviewsList,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Previews.download,
+        api.routes.javascript.Previews.getMetadata,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.comment,
         api.routes.javascript.Sections.getTags,
@@ -125,9 +145,17 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.addDataset,
         api.routes.javascript.Spaces.updateSpace,
         api.routes.javascript.Spaces.updateUsers,
+        api.routes.javascript.Collections.follow,
+        api.routes.javascript.Collections.unfollow,
+        api.routes.javascript.Users.follow,
+        api.routes.javascript.Users.unfollow,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution,
-        api.routes.javascript.Users.getUser
+        api.routes.javascript.Users.getUser,
+        controllers.routes.javascript.Profile.viewProfileUUID,
+        controllers.routes.javascript.Files.file,
+        controllers.routes.javascript.Datasets.dataset,
+        controllers.routes.javascript.Collections.collection
       )
     ).as(JSON) 
   }

@@ -39,27 +39,18 @@ object Utils {
    * description
    *  
    */
+  def decodeDatasetElements(dataset: Dataset) : Dataset = {
+    val updatedName = updateEncodedTextNewlines(dataset.name)
+    val updatedDesc = updateEncodedTextNewlines(dataset.description)
+    dataset.copy(name = updatedName, description = updatedDesc)
+  }
+  
   def decodeSpaceElements(space: ProjectSpace): ProjectSpace = {
-      val decodedName = StringEscapeUtils.unescapeHtml(space.name)
-      val decodedDesc = StringEscapeUtils.unescapeHtml(space.description)
-      space.copy(name = decodedName, description = decodedDesc)
+    val decodedName = StringEscapeUtils.unescapeHtml(space.name)
+    val decodedDesc = StringEscapeUtils.unescapeHtml(space.description)
+    space.copy(name = decodedName, description = decodedDesc)
   }
-
-  //TODO UrlFormat2 definition is fine, have not been able to get it to work in Mapping. I think UrlFormat is better choice anyway
-  /*
-  val urlFormat2 = new Formatter[URL] {
-    def bind(key: String, data: Map[String, String]) = {
-      stringFormat.bind(key, data).right.flatMap { value =>
-        scala.util.control.Exception.allCatch[URL]
-          .either(toURL(value))
-          .left.map(e => Seq(FormError(key, "error.url", Nil)))
-      }
-    }
-    def unbind(key: String, value: URL) = Map(key -> value.toString)
-  }
-
-  def toURL(v:String):URL= {new URL(v)}
-  */
+  
   /**
    * Default formatter for the `String` type.
    */
@@ -67,6 +58,7 @@ object Utils {
     def bind(key: String, data: Map[String, String]) = data.get(key).toRight(Seq(FormError(key, "error.required", Nil)))
     def unbind(key: String, value: String) = Map(key -> value)
   }
+  
   /**
    * Exact copy of private function in play.api.data.format.Formats
    */
@@ -123,6 +115,21 @@ object Utils {
    *  
    */
   def decodeCollectionElements(collection: Collection) : Collection  = {
+      val updatedName = updateEncodedTextNewlines(collection.name)
+      val updatedDesc = updateEncodedTextNewlines(collection.description)
+      collection.copy(name = updatedName, description = updatedDesc)
+  }
+
+
+  /**
+   * Encoded text can have newlines. When displayed via a view, they must be translated into linebreaks
+   * in order to render correctly.
+   *
+   * @param text The text to be updated with linebreaks
+   * @return An updated String with newlines replaced.
+   */
+  def updateEncodedTextNewlines(text: String): String = {
+    text.replace("\n", "<br>")
       val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
               							  description = StringEscapeUtils.unescapeHtml(collection.description))
               							  
