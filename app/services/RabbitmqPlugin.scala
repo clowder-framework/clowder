@@ -211,7 +211,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
  * Get the exchange list for a given host
  */
   def getExchanges : Future[Response] = {
-    connect
     getRestEndPoint("/api/exchanges/" + vhost )
   }
   
@@ -219,7 +218,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
    * get list of queues attached to an exchange
    */
   def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
-    connect
     getRestEndPoint("/api/exchanges/"+ vhost +"/"+ exchange +"/bindings/source")
   }
   
@@ -243,7 +241,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
    */
 
   def getQueueDetails(qname: String): Future[Response] = {
-    connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname)
   }
 
@@ -253,7 +250,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
    */
 
   def getQueueBindings(qname: String): Future[Response] = {
-    connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname + "/bindings")
   }
 
