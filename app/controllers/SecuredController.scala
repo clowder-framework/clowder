@@ -35,7 +35,7 @@ trait SecuredController extends Controller {
   def PrivateServerAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkPrivateServer(userRequest.user)) {
+      if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
@@ -48,7 +48,7 @@ trait SecuredController extends Controller {
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (userRequest.user.isDefined) {
+      if (userRequest.user.isDefined || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
@@ -61,7 +61,7 @@ trait SecuredController extends Controller {
   def ServerAdminAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkServerAdmin(userRequest.user)) {
+      if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
@@ -74,7 +74,7 @@ trait SecuredController extends Controller {
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkPermission(userRequest.user, permission, resourceRef)) {
+      if (Permission.checkPermission(userRequest.user, permission, resourceRef) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
@@ -95,11 +95,10 @@ trait SecuredController extends Controller {
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-      val superAdmin = request.cookies.get("superAdmin").isDefined
-      return UserRequest(Some(identity), user, superAdmin && Permission.checkServerAdmin(Some(identity)), request)
+      return UserRequest(Some(identity), user, superAdmin=false, request)
     }
 
     // 2) anonymous access
-    UserRequest(None, None, superAdmin = false, request)
+    UserRequest(None, None, superAdmin=false, request)
   }
 }
