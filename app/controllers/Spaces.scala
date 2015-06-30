@@ -58,7 +58,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   /**
    * Space main page.
    */
-  def getSpace(id: UUID, limit: Int) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def getSpace(id: UUID, size: Int, direction: String) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
         case Some(s) => {

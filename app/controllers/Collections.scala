@@ -250,7 +250,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Show all users with access to a collection (identified by its id)
    */
-  def users(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewCollection)) { implicit request =>
+  def users(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
     implicit val user = request.user
     collections.get(id) match {
       case Some(collection) => {

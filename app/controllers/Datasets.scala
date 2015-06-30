@@ -614,7 +614,7 @@ class Datasets @Inject()(
   /**
    * Show all users with access to a dataset (identified by its id)
    */
-  def users(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
+  def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
