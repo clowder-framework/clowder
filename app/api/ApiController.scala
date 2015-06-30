@@ -100,7 +100,11 @@ trait ApiController extends Controller {
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
+<<<<<<< HEAD
       return UserRequest(user, superAdmin=false, request)
+=======
+      return UserRequest(Some(identity), user, superAdmin=false, request)
+>>>>>>> origin/feature/spaces
     }
 
     // 2) basic auth, this allows you to call the api with your username/password
