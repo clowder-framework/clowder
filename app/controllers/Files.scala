@@ -3,7 +3,7 @@ package controllers
 import java.io._
 import java.net.URLEncoder
 import javax.mail.internet.MimeUtility
-import models.{UUID, FileMD, File, Thumbnail}
+import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form
@@ -113,6 +113,13 @@ class Files @Inject() (
           commentsByFile ++= comments.findCommentsBySectionId(section.id)
         }
         commentsByFile = commentsByFile.sortBy(_.posted)
+
+        //Decode the comments so that their free text will display correctly in the view
+        var decodedCommentsByFile = ListBuffer.empty[Comment]
+        for (aComment <- commentsByFile) {
+          val dComment = Utils.decodeCommentElements(aComment)
+          decodedCommentsByFile += dComment
+        }
         
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
@@ -135,7 +142,7 @@ class Files @Inject() (
         val extractionsByFile = extractions.findByFileId(id)
         
 
-        Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews, 
+        Ok(views.html.file(file, id.stringify, decodedCommentsByFile.toList, previewsWithPreviewer, sectionsWithPreviews,
           extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList, userMetadata, isRDFExportEnabled, extractionsByFile))
       }
       case None => {

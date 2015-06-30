@@ -312,6 +312,13 @@ class Datasets @Inject()(
           }
           commentsByDataset = commentsByDataset.sortBy(_.posted)
 
+          //Decode the comments so that their free text will display correctly in the view
+          var decodedCommentsByDataset = ListBuffer.empty[Comment]
+          for (aComment <- commentsByDataset) {
+            val dComment = Utils.decodeCommentElements(aComment)
+            decodedCommentsByDataset += dComment
+          }
+
           val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           val space = dataset.space.flatMap(spaces.get(_))
@@ -327,12 +334,12 @@ class Datasets @Inject()(
           space match {
             case Some(s) => {
                 decodedSpace = Utils.decodeSpaceElements(s)
-                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
+                Ok(views.html.dataset(datasetWithFiles, decodedCommentsByDataset.toList, filteredPreviewers.toList, metadata, userMetadata,
                 decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace), filesTags))
             }
             case None => {
                 Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)
-                Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
+                Ok(views.html.dataset(datasetWithFiles, decodedCommentsByDataset.toList, filteredPreviewers.toList, metadata, userMetadata,
                 decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space, filesTags))
             }
           }
