@@ -34,7 +34,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
   def newCollection() = PermissionAction(Permission.CreateCollection) { implicit request =>
       implicit val user = request.user
-      val spacesList = spaces.list()
+      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
       for (aSpace <- spacesList) {
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)

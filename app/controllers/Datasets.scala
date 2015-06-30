@@ -52,7 +52,7 @@ class Datasets @Inject()(
   def newDataset() = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      val spacesList = spaces.list()
+      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
       for (aSpace <- spacesList) {
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
