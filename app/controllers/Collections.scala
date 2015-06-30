@@ -53,7 +53,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * List collections.
    */	
-  def list(when: String, date: String, limit: Int, space: Option[String] = None, mode: String) = PermissionAction(Permission.ViewSpace) { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String] = None, mode: String) =
+    PrivateServerAction { implicit request =>
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when

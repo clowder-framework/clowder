@@ -25,7 +25,7 @@ class Users @Inject()(users: UserService) extends ApiController {
    */
   @ApiOperation(value = "Return the user associated with the request.",
     responseClass = "User", httpMethod = "GET")
-  def getUser = UserAction { implicit request =>
+  def getUser = AuthenticatedAction { implicit request =>
     request.mediciUser match {
       case Some(user) => Ok(Json.toJson(user))
       case None => Unauthorized("Not authenticated")

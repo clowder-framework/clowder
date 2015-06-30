@@ -62,7 +62,8 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String) = UserAction { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String) =
+    PrivateServerAction { implicit request =>
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when
@@ -136,7 +137,7 @@ class Datasets @Inject()(
       Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space))
   }
 
-  def userDatasets(when: String, date: String, limit: Int, space: Option[String], mode: String, email: String) = UserAction { implicit request =>
+  def userDatasets(when: String, date: String, limit: Int, space: Option[String], mode: String, email: String) = AuthenticatedAction { implicit request =>
       implicit val user = request.user
       var direction = "b"
       if (when != "") direction = when

@@ -118,7 +118,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
     }
   }
 
-  def newSpace() = UserAction { implicit request =>
+  def newSpace() = AuthenticatedAction { implicit request =>
       implicit val user = request.user
     Ok(views.html.spaces.newSpace(spaceForm))
   }
@@ -135,7 +135,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
    * Submit action for new or edit space
    */
   // TODO this should check to see if user has editpsace for specific space
-  def submit() = UserAction { implicit request =>
+  def submit() = AuthenticatedAction { implicit request =>
       implicit val user = request.user
       user match {
         case Some(identity) => {
@@ -157,7 +157,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 
                     // insert space
                     spaces.insert(newSpace)
-                    val role = Role(name = "Admin")
+                    val role = Role.Admin
                     spaces.addUser(userId, role, newSpace.id)
                     //TODO - Put Spaces in Elastic Search?
                     // index collection
@@ -207,7 +207,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
    * Show the list page
    */
   def list(order: Option[String], direction: String, start: Option[String], limit: Int,
-           filter: Option[String], mode: String) = UserAction { implicit request =>
+           filter: Option[String], mode: String) = PrivateServerAction { implicit request =>
       implicit val user = request.user
       val d = if (direction.toLowerCase.startsWith("a")) {
         ASC
