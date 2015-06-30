@@ -24,7 +24,7 @@ class CassandraDataset extends DatasetService {
  /**
    * List datasets in the system.
    */
-  def listDatasets(limit: Option[Integer], space: Option[String]): List[Dataset] = {
+  def listDatasets(order: Option[String], limit: Option[Integer], space: Option[String]): List[Dataset] = {
     List.empty[Dataset]
   }
 
