@@ -85,6 +85,7 @@ GET            /collections                                                     
 GET            /collections/new                                                         @controllers.Collections.newCollection
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
+GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
 # ----------------------------------------------------------------------
