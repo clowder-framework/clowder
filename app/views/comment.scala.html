@@ -1,4 +1,4 @@
-@(comments: List[models.Comment])(implicit user: Option[securesocial.core.Identity])
+@(comments: List[models.Comment])(implicit user: Option[models.User])
 
 @import api.Permission
 
@@ -45,7 +45,6 @@
                             </a>
                         }
                     </div>
-
                     <div class="comment-reply">
                         <div class="comment-threads unstyled" id="reply_@c.id">
                         @comment(c.replies)
@@ -64,5 +63,3 @@
     	$("#comment_" + id).remove();
     }    
 </script>
-
-

@@ -1,34 +1,33 @@
-@(id: String, resourceType: String)(implicit user: Option[securesocial.core.Identity])
+@(id: String, resourceType: String)(implicit user: Option[models.User])
 
 <form class="form-inline">
 <textarea id="commentField_@id" class="comment-input-box"></textarea>
 <br />
 <button class="btn btn-primary" onclick="return postComment('@id', '@resourceType');" title="Post Comment"><span class="glyphicon glyphicon-comment"></span> Post</button>
 </form>
-
-<script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
-<script language="javascript">
-   var origText = "";
-
- function showEditComment(id) {
-   var commentText = $("#comment-body_" + id).html();
-   origText = commentText;
-   commentText = htmlDecode(commentText.replace(/<br>/g, "\n"));
-   if ($("#commentField_" + id).length == 0) {
-           var form="<form class=\"form-inline\">";
-           form += "<textarea id=\"editField_" + id + "\" class=\"comment-input-box\"></textarea>";
-           form += "<br />";
-           form += "<button class=\"btn btn-primary btn-sm\" title=\"Submit Edit\" onclick=\"return updateComment('" + id + "');\" style=\"margin-right:5px;\"><span class=\"glyphicon glyphicon-ok\"></span> Submit</button>";
-           form += "<button class=\"btn btn-default btn-sm\" title=\"Cancel\" onclick=\"return cancelEditComment('" + id + "');\"><span class=\"glyphicon glyphicon-remove\"></span> Cancel</button>";
-           form += "</form>";
-           $("#comment-body_" + id).html("<div class=\"comment-edit\" id=\"edit-form_" + id + "\">" + form + "</div>");
-           $("#editField_" + id).val(commentText);
+  <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+  <script language="javascript">
+       var origText = "";
+  
+     function showEditComment(id) {
+       var commentText = $("#comment-body_" + id).html().replace(/<br>/g, "\n");
+       origText = commentText;
+       commentText = htmlDecode(commentText.replace(/<br>/g, "\n"));
+       if ($("#commentField_" + id).length == 0) {
+               var form="<form class=\"form-inline\">";               
+               form += "<textarea id=\"editField_" + id + "\" class=\"comment-input-box\"></textarea>";
+               form += "<br />";
+               form += "<button class=\"btn btn-primary btn-sm\" title=\"Submit Edit\" onclick=\"return updateComment('" + id + "');\" style=\"margin-right:5px;\"><span class=\"glyphicon glyphicon-ok\"></span> Submit</button>";
+               form += "<button class=\"btn btn-default btn-sm\" title=\"Cancel\" onclick=\"return cancelEditComment('" + id + "');\"><span class=\"glyphicon glyphicon-remove\"></span> Cancel</button>";
+               form += "</form>";
+               $("#comment-body_" + id).html("<div class=\"comment-edit\" id=\"edit-form_" + id + "\">" + form + "</div>");
+               $("#editField_" + id).val(commentText);               
+           }
+       else {
+         notify("Error editing comment", "error");
        }
-   else {
-     notify("Error editing comment", "error");
-   }
        return false;
- }
+    }
 
  function updateComment(id) {
    var text = $("#editField_" + id).val();

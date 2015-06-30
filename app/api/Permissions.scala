@@ -13,9 +13,7 @@ import scala.concurrent.Future
  * List of all permissions used by the system to authorize users.
  */
 object Permission extends Enumeration {
-	val anonymous = new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
-
-	type Permission = Value
+  type Permission = Value
 
 	// spaces
 	val ViewSpace,
@@ -215,7 +213,8 @@ object Permission extends Enumeration {
 /**
  * A request that adds the User for the current call
  */
-case class UserRequest[A](user: Option[Identity], mediciUser: Option[User], superAdmin: Boolean = false, request: Request[A]) extends WrappedRequest[A](request)
+case class UserRequest[A](user: Option[User], superAdmin: Boolean = false, request: Request[A]) extends WrappedRequest[A](request)
+
 //
 //
 //import api.Permission._
