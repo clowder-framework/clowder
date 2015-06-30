@@ -119,6 +119,7 @@
       <td valign="top">
 	      <div style="margin-left: 45px;">
 	          <h1>@profile.fullName</h1>
+              <p style="margin-bottom: 24px">@profile.email.getOrElse("")</p>
 	      </div>
 	      <div style="margin-left: 45px;">
 			  <!-- Nav tabs -->
@@ -137,9 +138,7 @@
 			          <h5>
 			            @profile.profile.get.getPositionAtInstitution
 			          </h5>
-			          
-			          <p style="margin-bottom: 24px">@profile.email.getOrElse("")</p>
-			
+
 			          @profile.profile.get.orcidID match{
 			            case Some(info) => {
 			              <h4>Orcid ID</h4>
