@@ -74,7 +74,8 @@ trait SecuredController extends Controller {
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkPermission(userRequest.user, permission, resourceRef) || userRequest.superAdmin) {
+      val p = Permission.checkPermission(userRequest.user, permission, resourceRef)
+      if (p || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))

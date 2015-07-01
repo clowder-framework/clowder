@@ -165,7 +165,11 @@ object Permission extends Enumeration {
         hasPermission getOrElse collection.exists(x => {
           x.author match {
             case Some(realAuthor) => {
-              realAuthor.email == user.email
+              val r = for {
+                e1 <- realAuthor.email
+                e2 <- user.email}
+                yield e1 == e2
+              return r getOrElse false
             }
             case None => false
           }

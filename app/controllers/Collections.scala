@@ -1,17 +1,14 @@
 package controllers
 
-import models.ProjectSpace
-import models.User
+import models._
 import play.api.data.Form
 import play.api.data.Forms._
-import models.{UUID, Collection, MiniUser, Event}
 import util.RequiredFieldsConfig
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
 import api.Permission
-import models.{Collection, ProjectSpace, UUID}
 import org.apache.commons.lang.StringEscapeUtils
 import play.api.Logger
 import play.api.Play.current
@@ -24,7 +21,6 @@ import views.html.defaultpages.badRequest
 import scala.collection.mutable.ListBuffer
 import services._
 import org.apache.commons.lang.StringEscapeUtils
-import models.User
 
 object ThumbnailFound extends Exception {}
 
@@ -204,7 +200,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Collection.
    */
-  def collection(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
+  def collection(id: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) {
+    implicit request =>
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
 
