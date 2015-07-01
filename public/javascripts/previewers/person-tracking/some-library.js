@@ -181,7 +181,8 @@
                 // This results in creating new horizontal bars.
                 
                 for(var i=0; i < sortedFrameDataArray.length; i++) {
-                    var personDataArray = sortedFrameDataArray[i].data;
+                    // Since in JS, array is passed by reference by default, changes get reflected in sortedFrameDataArray variable too
+                    var personDataArray = sortedFrameDataArray[i].data; 
                     var frameIndexCounter = 1;
                     
                     for(var startIndex = 0; startIndex < personDataArray.length;) {
@@ -243,8 +244,8 @@
                 for(var i=0; i < sortedFrameDataArray.length; i++) {
                     labelArray.push(sortedFrameDataArray[i].label);
                 }
-                labelArray.push("Invalid");
-                console.log(sortedFrameDataArray); //Debug code. will be deleted
+                labelArray.push("Invalid"); // To mark a detection as invalid.
+                //console.log(sortedFrameDataArray); //Debug code. will be deleted
                                                         
                 //display video on screen and visualize person tracking
         		console.log("Updating tab " + Configuration.tab);    		
@@ -304,6 +305,7 @@
                     // Display bounding boxes on canvas
                     var renderBoundingBoxes = function(frame) {
 
+                        var series = plot.getData();
                         context.clearRect(0, 0, canvas.width(), canvas.height());
 
                         if(frameDataArray[frame-1] != null && frameDataArray[frame-1] != undefined){
@@ -327,7 +329,7 @@
 
                                 for(var k=0; k< series.length; k++){
                                     //Finding the series whose ID is same as that of the current person
-                                    if(personObj["@id"] == series[k].label.split(" ")[1]){
+                                    if(personObj["@id"] == series[k].label.split("Person_")[1]){
                                         personSeriesIndex = k;
                                         break;
                                     }
@@ -354,7 +356,7 @@
 
                                     for(var k=0; k< series.length; k++){
                                         //Finding the series whose ID is same as that of the current person
-                                        if(personObj["@id"] == series[k].label.split(" ")[1]){
+                                        if(personObj["@id"] == series[k].label.split("Person_")[1]){
                                             personSeriesIndex = k;
                                             break;
                                         }
@@ -449,31 +451,108 @@
                         if (milli != 0) {
                             time += milli
                         }
-                        return hr + ":" + min + ":" + sec + ":" + milli;
-                        //return val;
+                        //return hr + ":" + min + ":" + sec + ":" + milli;
+                        return val;
                     }
 
                     saveLabel = function (oldLabel){
 
-                        var newVal = $("#" + oldLabel+ "Select").val();
-                        if(oldLabel != newVal){
+                        var newLabel = $("#" + oldLabel+ "Select").val();
+                        var oldId = oldLabel.split("Person_")[1];
+                        var newId = newLabel.split("Person_")[1];
 
+                        // If there is a change in the label (synonymously ID) of a person
+                        if((oldLabel != newLabel) && (newLabel != "Invalid")) {                            
+
+                            // Debug code. To delete.
+                            /*console.log(sortedFrameDataArray);*/
+
+                            // Iterate through the sorted list of persons
                             for(var i=0; i < sortedFrameDataArray.length; i++) {
+                                
+                                // Find the person whose label is being changed
                                 if(sortedFrameDataArray[i].label == oldLabel){
-
+                                    
+                                    // Iterate through the sorted list of persons
                                     for(var j=0; j < sortedFrameDataArray.length; j++) {
-                                        if(sortedFrameDataArray[j].label == newVal){
+
+                                        // If there is another person whose label matches the label of the current person which is being edited
+                                        if(sortedFrameDataArray[j].label == newLabel){
+
+                                            /* Update the data of that person by adding information about the current person.
+                                               Basically merging the data of two persons into one since their labels (or IDs) match 
+                                               as per the information provided by the user. */
+
+                                            for (var k =0; k < sortedFrameDataArray[i].data.length ; k++) {
+                                                if (sortedFrameDataArray[i].data[k] != null) {
+                                                    sortedFrameDataArray[i].data[k][1] = parseInt(newId);
+                                                }
+                                            }
+
+                                            // If the person tracks are adjacent, remove the last null value from array before appending
+                                            /* TODO: Insert the bar coordinates properly so that blank spaces can be avoided.
+                                            var dataIndex = sortedFrameDataArray[j].data.lastIndexOf(null) - 1;
+                                            if (sortedFrameDataArray[j].data[dataIndex][0] + 1 == sortedFrameDataArray[i].data[0][0]) {
+                                                sortedFrameDataArray[j].data.splice(sortedFrameDataArray[j].data.lastIndexOf(null));    
+                                            }*/
                                             sortedFrameDataArray[j].data = sortedFrameDataArray[j].data.concat(sortedFrameDataArray[i].data);
                                             break;
                                         }
                                     }
-                                    //sortedFrameDataArray[i].label = newVal;
+
+                                    // Update the tracking metadata 
+                                    var arrayLength = sortedFrameDataArray[i].data.length;
+
+                                    for(var m = 0; m < arrayLength;) {
+
+                                        if(sortedFrameDataArray[i].data[m] != null) {
+
+                                            // Get the start and end frame indices of the current person track bar
+                                            var startIndex = sortedFrameDataArray[i].data[m][0];
+                                            var endIndex = sortedFrameDataArray[i].data[m + 1][0];
+                                            // console.log(startIndex + " " + endIndex); Debug code. Will be deleted.
+                                            m += 2;                                            
+
+                                            // Iterate through all frames in the selected range
+                                            for(var frameIndex = startIndex; frameIndex <= endIndex; frameIndex++) {                                                
+
+                                                var objList = frameDataArray[frameIndex].objectlist;
+
+                                                // When there is only one person in frame    
+                                                if(objList.object.length == undefined && objList.object["@id"]) {
+
+                                                    if (objList.object["@id"] == oldId) {
+                                                        objList.object["@id"] = newId;
+                                                    }
+                                                }
+                                                // When there are multiple persons in frame
+                                                else if(objList.object.length > 0) {
+
+                                                    for(var j = 0; j < objList.object.length; j++){
+
+                                                        if (objList.object[j]["@id"] == oldId) {
+                                                            objList.object[j]["@id"] = newId;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        else {
+
+                                            m++;
+                                        }
+                                    }
+
+                                    // Remove the current person from the sorted list
                                     sortedFrameDataArray.splice(i,1);
                                     break;
                                 }
                             }
 
-                            console.log(sortedFrameDataArray);
+                            // Debug code. To delete.
+                            /*console.log(sortedFrameDataArray);
+                            console.log("Tracking metadata");
+                            console.log(frameDataArray);*/
 
                             plot.setData(sortedFrameDataArray);
                             plot.setupGrid(); //only necessary if your new data will change the axes or grid
@@ -481,12 +560,82 @@
 
                             var index = $.inArray(oldLabel, labelArray);
                             labelArray.splice(index,1);
-                            //$("#" + newVal+ "Select").remove();
                             $("#" + oldLabel + "Div").remove();
-                        
-                        } else{
+                        }
+                        else if (newLabel == "Invalid") {
 
-                            $("#" + oldLabel + "Div").replaceWith('<a id="'+ label +'" href="#" onClick="editLabel(\'' + label + '\'); return false;">' + label + '</a>');
+                            // Iterate through the sorted list of persons
+                            for(var i=0; i < sortedFrameDataArray.length; i++) {
+                                
+                                // Find the person whose label is being changed
+                                if(sortedFrameDataArray[i].label == oldLabel){
+
+                                    // Update the tracking metadata
+                                    var arrayLength = sortedFrameDataArray[i].data.length;
+
+                                    for(var m = 0; m < arrayLength;) {
+
+                                        if(sortedFrameDataArray[i].data[m] != null) {
+
+                                            // Get the start and end frame indices of the current person track bar
+                                            var startIndex = sortedFrameDataArray[i].data[m][0];
+                                            var endIndex = sortedFrameDataArray[i].data[m + 1][0];
+                                            // console.log(startIndex + " " + endIndex); Debug code. Will be deleted
+                                            m += 2;                                            
+
+                                            // Iterate through all frames in the selected range
+                                            for(var frameIndex = startIndex; frameIndex <= endIndex; frameIndex++) {                                                
+
+                                                var objList = frameDataArray[frameIndex].objectlist;
+
+                                                // When there is only one person in frame    
+                                                if(objList.object.length == undefined && objList.object["@id"]) {
+
+                                                    if (objList.object["@id"] == oldId) {
+                                                        objList.object = null;
+                                                    }
+                                                }
+                                                // When there are multiple persons in frame
+                                                else if(objList.object.length > 0) {
+
+                                                    for(var j = 0; j < objList.object.length; j++){
+
+                                                        if (objList.object[j]["@id"] == oldId) {
+                                                            objList.object.splice(j,1);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        else {
+
+                                            m++;
+                                        }
+                                    }
+
+                                    // Remove the current person from the sorted list
+                                    sortedFrameDataArray.splice(i,1);
+                                    break;
+                                }
+                            }
+
+                            // Debug code. To delete.
+                            /*console.log(sortedFrameDataArray);
+                            console.log("Tracking metadata");
+                            console.log(frameDataArray);*/
+
+                            plot.setData(sortedFrameDataArray);
+                            plot.setupGrid(); //only necessary if your new data will change the axes or grid
+                            plot.draw();
+
+                            var index = $.inArray(oldLabel, labelArray);
+                            labelArray.splice(index,1);
+                            $("#" + oldLabel + "Div").remove();
+                        }
+                        // If there is no change in the label
+                        else{
+
+                            $("#" + oldLabel + "Div").replaceWith('<a id="'+ newLabel +'" href="#" onClick="editLabel(\'' + newLabel + '\'); return false;">' + newLabel + '</a>');
                         }                        
                     }
 
@@ -567,7 +716,7 @@
                     }
                     var placeholder = $("#placeholder");
                     plot = $.plot(placeholder, sortedFrameDataArray, options);
-                    series = plot.getData();
+                    //series = plot.getData();
 
                    panPlot = function () {
                         plot.getOptions().xaxes[0].min += offsetVal;
