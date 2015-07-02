@@ -1,4 +1,4 @@
-@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+@(dataset: Dataset)(implicit user: Option[models.User])
 
 @if(user.isDefined) {
     <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->

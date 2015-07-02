@@ -1,4 +1,4 @@
 { "name" : "Person Tracking",
   "main" : "some-library.js",
-  "contentType" : ["video/webm", "video/mp4"]
+  "contentType" : ["application/vnd.clowder+persontracking+xml"]
 }
