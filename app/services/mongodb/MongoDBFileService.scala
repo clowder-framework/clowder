@@ -50,7 +50,8 @@ class MongoDBFileService @Inject() (
   thumbnails: ThumbnailService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
-  storage: ByteStorageService) extends FileService {
+  storage: ByteStorageService,
+  userService: UserService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -101,6 +102,35 @@ class MongoDBFileService @Inject() (
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit).toList.reverse
+    }
+  }
+  
+  /**
+   * List files specific to a user after a specified date.
+   */
+  def listUserFilesAfter(date: String, limit: Int, email: String): List[File] = {
+    val order = MongoDBObject("uploadDate"-> -1 )
+    if (date == "") {
+      FileDAO.find(("isIntermediate" $ne true) ++ ("author.email" $eq email)).sort(order).limit(limit).toList
+    } else {
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      FileDAO.find(("isIntermediate" $ne true) ++ ("uploadDate" $lt sinceDate) ++ ("author.email" -> email))
+        .sort(order).limit(limit).toList
+    }
+  }
+
+  /**
+   * List files specific to a user before a specified date.
+   */
+  def listUserFilesBefore(date: String, limit: Int, email: String): List[File] = {
+    var order = MongoDBObject("uploadDate"-> -1)
+    if (date == "") {
+      FileDAO.find(("isIntermediate" $ne true) ++ ("author.email" $eq email)).sort(order).limit(limit).toList
+    } else {
+      order = MongoDBObject("uploadDate"-> 1)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      FileDAO.find(("isIntermediate" $ne true) ++ ("uploadDate" $gt sinceDate) ++ ("author.email" $eq email))
+        .sort(order).limit(limit).toList.reverse
     }
   }
 
@@ -606,6 +636,9 @@ class MongoDBFileService @Inject() (
           for(texture <- threeD.findTexturesByFileId(file.id)){
             ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
+          for (follower <- file.followers) {
+            userService.unfollowFile(follower, id)
+          }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
         }
@@ -890,6 +923,16 @@ class MongoDBFileService @Inject() (
 		    return unsuccessfulDumps.toList
 
 	}
+
+  def addFollower(id: UUID, userId: UUID) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def removeFollower(id: UUID, userId: UUID) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
 
 }
 

@@ -18,7 +18,7 @@ function editComment(commentId, commentText, reloadPage){
     request.done(function (response, textStatus, jqXHR){
         console.log("Response " + response);
         //Sucessful update of the DB - update the interface
-    	$("#comment-body_" + commentId).html(theText);
+    	$("#comment-body_" + commentId).html(theText.replace(/\n/g, "<br>"));
     });
 
      

@@ -1,6 +1,7 @@
 package services.mongodb
 
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.MongoDBObject
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -8,6 +9,7 @@ import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
+import services.{DI, AppConfigurationService}
 
 /**
  * Mongo Salat service.
@@ -35,6 +37,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // connect to the database
     mongoConnection = mongoURI.connect.fold(l => throw l, r => r)
+
+    // update database if needed
+    updateDatabase()
 
     // create indices.
     Logger.debug("Ensuring indices exist")
@@ -109,5 +114,25 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploadquery.files").drop()
     collection("versus.descriptors").drop()
     Logger.debug("**DANGER** Data deleted **DANGER**")
+  }
+
+  // ----------------------------------------------------------------------
+  // CODE TO UPDATE THE DATABASE
+  // ----------------------------------------------------------------------
+  def updateDatabase() {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    // migrate users to new model
+    if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-typehint-users")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        Logger.info("[MongoDBUpdate] : Fixing _typeHint for users.")
+        val q = MongoDBObject("_typeHint" -> "securesocial.core.SocialUser")
+        val o = MongoDBObject("$set" -> MongoDBObject("_typeHint" -> "models.ClowderUser"))
+        collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
+        appConfig.addPropertyValue("mongodb.updates", "fixing-typehint-users")
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix _typeHint for users.")
+      }
+    }
   }
 }

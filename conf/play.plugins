@@ -5,7 +5,7 @@
 9995:securesocial.core.DefaultIdGenerator
 9996:securesocial.core.providers.utils.DefaultPasswordValidator
 9997:services.SecureSocialTemplatesPlugin
-9998:services.mongodb.MongoUserService
+9998:services.mongodb.MongoDBSecureSocialUserService
 9999:securesocial.core.providers.utils.BCryptPasswordHasher
 10000:securesocial.core.providers.UsernamePasswordProvider
 #10001:services.VersusPlugin
