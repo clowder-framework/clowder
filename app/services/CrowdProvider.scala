@@ -1,4 +1,4 @@
-package services.securesocial
+package services
 
 import models.UUID
 import org.joda.time.DateTime

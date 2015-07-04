@@ -17,7 +17,7 @@
 #10007:securesocial.core.providers.XingProvider
 #10008:securesocial.core.providers.VkProvider
 #10009:securesocial.core.providers.InstagramProvider
-#10050:services.securesocial.CrowdProvider
+#10050:services.CrowdProvider
 #10090:services.MailerPlugin
 #10091:services.AdminsNotifierPlugin
 #10100:services.TempFilesPlugin
