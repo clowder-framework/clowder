@@ -46,6 +46,10 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[SectionIndexInfoService]).to(get("service.sectionIndexInfo", "services.mongodb.MongoDBSectionIndexInfoService"))    
     bind(classOf[MetadataService]).to(get("service.MetadataService", "services.mongodb.MongoDBMetadataService"))
     bind(classOf[ContextLDService]).to(get("service.ContextLDService", "services.mongodb.MongoDBContextLDService"))
+    bind(classOf[EventService]).to(get("service.events", "services.mongodb.MongoDBEventService"))
+    bind(classOf[SchedulerService]).to(get("service.jobs", "services.mongodb.MongoDBSchedulerService"))
+    bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
+ 
   }
 
   protected def get[T](key: String, missing: String) : Class[T] = {

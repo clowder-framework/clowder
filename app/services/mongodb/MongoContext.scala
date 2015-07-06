@@ -29,6 +29,7 @@ object MongoContext {
       registerCustomTransformer(UUIDTransformer)
       registerCustomTransformer(URLTransformer)
       registerCustomTransformer(JsValueTransformer)
+      registerCustomTransformer(JodaDateTimeTransformer)
       registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
       registerClassLoader(Play.classloader)
     }
@@ -125,4 +126,15 @@ object MongoContext {
     }
   }
 
+}
+  // joda.time to Date and vice versa
+  object JodaDateTimeTransformer extends CustomTransformer[org.joda.time.DateTime, java.util.Date] {
+    def deserialize(date: java.util.Date) = {
+      new org.joda.time.DateTime(date.getTime)
+    }
+
+    def serialize(date: org.joda.time.DateTime) = {
+      date.toDate
+    }
+  }
 }

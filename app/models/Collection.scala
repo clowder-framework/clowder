@@ -14,8 +14,9 @@ case class Collection(
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty,
   space: Option[UUID] = None,
-  jsonldMetadata : List[Metadata]= List.empty
-)
+  followers: List[UUID] = List.empty,
+  jsonldMetadata : List[Metadata]= List.empty)
+
 
 
 

@@ -6,7 +6,7 @@
         collectionsInside: List[models.Collection],
         filesOutside: List[models.File],
 		rdfExported: Boolean,
-		space: Option[ProjectSpace])(implicit user: Option[securesocial.core.Identity])
+		space: Option[ProjectSpace])(implicit user: Option[models.User])
 
 
 @import helper._
@@ -65,15 +65,13 @@
 	}
 
 @main("Dataset") {
-
 	<div class="row">
-	
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
 
             <div class="row">
                 <div class="col-md-12" id="ds-title">
-                    <h1>@dataset.name</h1>
+                    <h1 id="datasettitle">@Html(dataset.name)</h1>
                 </div>
             </div>
 
@@ -120,8 +118,8 @@
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @datasets.tags(dataset)
-            @datasets.collections(dataset, collectionsInside, collectionsOutside)
+			@datasets.tags(dataset)
+			@datasets.collections(dataset, collectionsInside, collectionsOutside)
 		</div>
 	</div>
 

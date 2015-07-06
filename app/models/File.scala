@@ -32,7 +32,8 @@ case class File(
   @deprecated("use Metadata","since the use of jsonld") xmlMetadata: Map[String, Any] = Map.empty,
   @deprecated("use Metadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
-  notesHTML: Option[String] = None )
+  notesHTML: Option[String] = None,
+  followers: List[UUID] = List.empty )
 
 case class Versus(
   fileId: UUID,

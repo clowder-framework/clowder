@@ -1,4 +1,4 @@
-@(filesList: List[(String, String)], isNameRequired: Boolean, isDescriptionRequired: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(filesList: List[(String, String)], isNameRequired: Boolean, isDescriptionRequired: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }

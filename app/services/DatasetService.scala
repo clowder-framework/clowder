@@ -36,6 +36,16 @@ trait DatasetService {
    * List datasets before a specified date.
    */
   def listDatasetsBefore(date: String, limit: Int): List[Dataset]
+
+    /**
+   * List datasets after a specified date for a specific user.
+   */
+  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset]
+  
+  /**
+   * List datasets before a specified date for a specific user.
+   */
+  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset]
   
   /**
    * Get dataset.
@@ -204,5 +214,14 @@ trait DatasetService {
 
   def setNotesHTML(id: UUID, notesHTML: String)
 
+  /**
+   * Add follower to a dataset.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a dataset.
+   */
+  def removeFollower(id: UUID, userId: UUID)
 }
 
