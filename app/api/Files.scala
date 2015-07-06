@@ -306,7 +306,7 @@ class Files @Inject()(
                 val createdAt: Date = dateFormat.parse(dateString)
                 
                 //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = ResourceRef("file", id)
+                val attachedTo = ResourceRef(ResourceRef.file, id)
                 val content = (json \ "content")
                 val version = None
                 val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)
@@ -334,7 +334,8 @@ class Files @Inject()(
       files.get(id) match {
         case Some(file) => {    
           //get metadata and also fetch context information
-          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef("file", id)).map(jsonMetadataWithContext(_))
+          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+            .map(jsonMetadataWithContext(_))
           Ok(toJson(listOfMetadata))
         }
         case None => {

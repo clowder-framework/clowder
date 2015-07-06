@@ -23,8 +23,6 @@ case class Metadata (
     content: JsValue,
     version: Option[String] = None)
 
-case class ResourceRef(resourceType: String, id: UUID)
-
 trait Agent {
   val id: UUID
   def typeOfAgent: String

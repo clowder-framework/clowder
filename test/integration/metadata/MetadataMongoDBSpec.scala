@@ -3,7 +3,7 @@ package integration.metadata
 import java.net.URL
 import java.util.Date
 import com.google.inject.Guice
-import models.{ResourceRef, UUID, Metadata, UserAgent}
+import models._
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import services.{DI, MetadataService, FileService}
 import play.api.libs.json.JsObject
@@ -22,7 +22,7 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
   val contextId = UUID.generate
   val testMetadata = Metadata(
     id = UUID.generate,
-    attachedTo = ResourceRef("file", fileId),
+    attachedTo = ResourceRef(ResourceRef.file, fileId),
     contextId = Some(contextId),
     createdAt = new Date,
     creator = testCreator,
@@ -39,9 +39,9 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
       val injector = Guice.createInjector(new services.ConfigurationModule)
       val metadata: MetadataService = injector.getInstance(classOf[MetadataService])
       val retrievedMetadata = metadata.getMetadataById(testMetadata.id)
-      val mdByattachTo = metadata.getMetadataByAttachTo(ResourceRef("file", fileId))
+      val mdByattachTo = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.file, fileId))
       assert(mdByattachTo(0).id == testMetadata.id)
-      val mdByCreator = metadata.getMetadataByCreator(ResourceRef("file", fileId), "cat:user")
+      val mdByCreator = metadata.getMetadataByCreator(ResourceRef(ResourceRef.file, fileId), "cat:user")
       assert(mdByCreator(0).id == testMetadata.id)
     }
    }

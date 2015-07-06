@@ -126,7 +126,6 @@ object MongoContext {
     }
   }
 
-}
   // joda.time to Date and vice versa
   object JodaDateTimeTransformer extends CustomTransformer[org.joda.time.DateTime, java.util.Date] {
     def deserialize(date: java.util.Date) = {

@@ -456,7 +456,7 @@ class Datasets @Inject()(
                 val createdAt: Date = dateFormat.parse(dateString)
                               
                 //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = ResourceRef("dataset", id)
+                val attachedTo = ResourceRef(ResourceRef.dataset, id)
                 val content = (json \ "content")
                 val version = None
                 val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)
@@ -486,7 +486,8 @@ class Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {    
           //get metadata and also fetch context information
-          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef("dataset", id)).map(jsonMetadataWithContext(_))
+          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+            .map(jsonMetadataWithContext(_))
           Ok(toJson(listOfMetadata))
         }
         case None => {

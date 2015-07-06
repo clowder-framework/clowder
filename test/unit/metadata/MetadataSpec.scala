@@ -13,7 +13,7 @@ import java.net.URL
 
 class MetadataSpec extends UnitSpec {
   val mockMetadata = mock[Metadata]
-  when(mockMetadata.attachedTo).thenReturn(ResourceRef("file", UUID.generate))
+  when(mockMetadata.attachedTo).thenReturn(ResourceRef(ResourceRef.file, UUID.generate))
   when(mockMetadata.creator).thenReturn(new UserAgent(id = UUID.generate, userId = Some(new URL("http://dts.ncsa.illinois.edu/user06"))))
   //when(mockMetadata.creator).thenReturn(new UserAgent(id = UUID.generate, userId = Some("http://xyz.com/user")))
       
