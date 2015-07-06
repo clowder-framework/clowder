@@ -29,5 +29,6 @@ case class Dataset(
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None,
   space: Option[UUID] = None,
+  spaces: Option[List[UUID]] = None,
   lastModifiedDate: Date = new Date())
 

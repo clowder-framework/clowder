@@ -42,7 +42,7 @@ class Datasets @Inject()(
   sparql: RdfSPARQLService,
   users: UserService,
   previewService: PreviewService,
-  spaces: SpaceService) extends SecuredController {
+  spaceService: SpaceService) extends SecuredController {
 
 
   object ActivityFound extends Exception {}
@@ -55,7 +55,7 @@ class Datasets @Inject()(
     implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      val spacesList = spaces.list()
+      val spacesList = spaceService.list()
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
       for (aSpace <- spacesList) {
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
@@ -314,7 +314,10 @@ class Datasets @Inject()(
 
           val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          val space = dataset.space.flatMap(spaces.get(_))
+          val space = dataset.space.flatMap(spaceService.get(_))
+
+
+
           var decodedSpace: ProjectSpace = null
           filesInDataset.map
           {
@@ -323,17 +326,30 @@ class Datasets @Inject()(
                 tag => filesTags += tag.name
               }
           }
+          val spaceList = spaceService.list()
+          var spaceList2: List[ProjectSpace]= List.empty[ProjectSpace]
+          dataset.spaces.map{
+            ds => ds.map {
+              sp => spaceService.get(sp) match {
+                case Some(s) => {
+                  spaceList2 = s :: spaceList2
+                }
+              }
+
+            }
+          }
 
           space match {
             case Some(s) => {
+
                 decodedSpace = Utils.decodeSpaceElements(s)
                 Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace), filesTags))
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace), Some(spaceList2), filesTags, spaceList))
             }
             case None => {
                 Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)
                 Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space, filesTags))
+                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space, Some(spaceList2), filesTags, spaceList))
             }
           }
         }

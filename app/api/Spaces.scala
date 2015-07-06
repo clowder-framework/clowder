@@ -122,7 +122,15 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     spaces.addDataset(UUID(datasetId), space)
     Ok(toJson("success"))
   }
-  
+
+//  def addDatasetToSpaces(space_list: List[UUID]) = SecuredAction(parse.json,
+//  authorization = WithPermission(Permission.EditCollection))
+//  {
+//    request => val datasetIds = (request.body \ "dataset_ids").as[List[String]]
+//
+//      datasetIds.map(dataset_id => spaces.addDataset(UUID(dataset_id), space))
+//      Ok(toJson("success"))
+//  }
   /**
    * REST endpoint: POST call to update the configuration information associated with a specific Space
    * 
