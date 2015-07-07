@@ -245,17 +245,18 @@
                     }                
                 }
 
-                /* Cloning frame data. This cloned array is used in rendering bounding boxes. 
-                   This is needed for rendering the bounding even when editing of tracks is in progress.
+                /* Cloning frame data arrays. These cloned arrays are used in rendering bounding boxes. 
+                   This is needed for rendering the bounding even when editing of tracks is in progress and for seeking video based on label clicks.
                 */
                 frameDataArrayCopy = JSON.parse(JSON.stringify(frameDataArray));
+                sortedFrameDataArrayCopy = JSON.parse(JSON.stringify(sortedFrameDataArray));
 
                 // Creating the label array
                 for(var i=0; i < sortedFrameDataArray.length; i++) {
                     labelArray.push(sortedFrameDataArray[i].label);
                 }                
                                                         
-                //display video on screen and visualize person tracking
+                // Display video on screen and visualize person tracking
         		console.log("Updating tab " + Configuration.tab);    		
                 
                 /*  If video preview is available, display it.
@@ -318,9 +319,7 @@
                     var renderBoundingBoxes = function(frame) {
 
                         var series = plot.getData();
-                        context.clearRect(0, 0, canvas.width(), canvas.height());
-
-                        console.log(frameDataArrayCopy[frame-1]);
+                        context.clearRect(0, 0, canvas.width(), canvas.height());                    
 
                         if(frameDataArrayCopy[frame-1] != null && frameDataArrayCopy[frame-1] != undefined){
 
@@ -494,7 +493,8 @@
                         isEditingInProgress = false;
                         hasTrackingDataChanged = false;
 
-                        // Copying back original array to copy array. Needed to render bounding boxes.
+                        // Copying back original array to copy array. Needed to render bounding boxes and to seek video based on label click.
+                        sortedFrameDataArrayCopy = JSON.parse(JSON.stringify(sortedFrameDataArray));
                         frameDataArrayCopy = JSON.parse(JSON.stringify(frameDataArray));
 
                         $("#btnSaveChanges").hide();
@@ -739,6 +739,32 @@
                         hasTrackingDataChanged = true;
                     }
 
+                    labelClicked = function(label) {
+                        
+                        // Seek video
+                        // Iterate through the sorted list of persons
+                        for(var i=0; i < sortedFrameDataArrayCopy.length; i++) {
+                            
+                            // Find the person whose label was clicked
+                            if(sortedFrameDataArrayCopy[i].label == label){
+                                
+                                var arrayLength = sortedFrameDataArrayCopy[i].data.length;
+
+                                for(var m = 0; m < arrayLength;) {
+
+                                    if(sortedFrameDataArrayCopy[i].data[m] != null) {
+                                        // Get the start and end frame indices of the current person track bar                                        
+                                        var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
+                                        var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];
+                                        video[0].currentTime = startIndex / videoFrameRate; // Set the current video position
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                        }                    
+                    }
+
                     var labelHoverIn = function(){
                         $(this).find(".glyphicon").fadeIn(100);
                     }
@@ -748,11 +774,12 @@
                     }
 
                     var formatLabel = function (label, series){
-                        return  '<span style="margin-left: 5px;" id="'+ label +'" ><a href="#" style="margin-right: 5px;">' + label + '</a> ' + 
-                                '<a href="javascript:void(0);" style="margin-right: 5px;">' +
-                                    '<i class="glyphicon glyphicon-edit" onClick="editLabel(\'' + label + '\'); return false;"></i></a>' + 
-                                '<a href="javascript:void(0);" style="margin-right: 5px;">' +
-                                    '<i class="glyphicon glyphicon-remove" onClick="removeLabel(\'' + label + '\'); return false;"></i></a></span>';
+                        return  '<span style="margin-left: 5px;" id="'+ label +'" >'+
+                                    '<a href="javascript:void(0);" onClick="labelClicked(\'' + label + '\'); return false;" style="margin-right: 5px;">' + label + '</a> ' + 
+                                    '<a href="javascript:void(0);" style="margin-right: 5px;">' +
+                                        '<i class="glyphicon glyphicon-edit" onClick="editLabel(\'' + label + '\'); return false;"></i></a>' + 
+                                    '<a href="javascript:void(0);" style="margin-right: 5px;">' +
+                                        '<i class="glyphicon glyphicon-remove" onClick="removeLabel(\'' + label + '\'); return false;"></i></a></span>';
                     }
 
                     var options = {
@@ -862,10 +889,14 @@
                         })
                         plot.lockCrosshair();
                     });
-
-                    //Debug code. Will be deleted.
+                    
                     placeholder.bind("plotclick", function (event, pos, item) {
-                        alert("You clicked at " + pos.x + ", " + pos.y);
+                        //Debug code. Will be deleted.                        
+                        if (item) {
+                            //plot.highlight(item.series, item.datapoint);
+                            var timeClicked = item.series.xaxis.ticks[item.dataIndex].label;
+                            console.log(item);
+                        }
                     });
                 })
                 .fail(function(jqxhr){
