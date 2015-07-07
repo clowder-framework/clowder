@@ -1,74 +1,32 @@
 package api
 
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.OutputStream
+import java.io.{FileInputStream, InputStream}
 import java.net.URL
-import java.net.HttpURLConnection
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.File
-import java.util.Date
-import java.util.ArrayList
-import java.io.BufferedWriter
-import java.io.FileWriter
-import java.io.FileReader
-import java.io.ByteArrayInputStream
-import scala.collection.mutable.MutableList
+import java.util.Calendar
+import javax.inject.Inject
+
+import com.wordnik.swagger.annotations.{Api, ApiOperation}
+import controllers.Utils
+import fileutils.FilesUtils
 import models._
 import play.api.Logger
-import play.api.Play.current
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json._
-import play.api.libs.ws.Response
-import javax.inject.Inject
-import scala.collection.mutable.ListBuffer
-import org.json.JSONObject
-import Transformation.LidoToCidocConvertion
-import jsonutils.JsonUtil
-import services._
-import fileutils.FilesUtils
-import controllers.Previewers
-import play.api.libs.json.JsString
-import scala.Some
-import services.DumpOfFile
-import services.ExtractorMessage
-import play.api.mvc.ResponseHeader
-import scala.util.parsing.json.JSONArray
-import models.Preview
-import play.api.mvc.SimpleResult
-import models.File
-import play.api.libs.json.JsObject
-import play.api.Play.configuration
-import com.wordnik.swagger.annotations.{ApiOperation, Api}
-import services.ExtractorMessage
-import scala.concurrent.Future
-import scala.util.control._
-import javax.activation.MimetypesFileTypeMap
-import java.util.Calendar
-import api.WithPermission
-import controllers.Utils
-import org.apache.commons.io.FileUtils
-import play.api.libs.MimeTypes
+import play.api.Play.{configuration, current}
 import play.api.http.ContentTypes
-import java.io.InputStream
-import scala.collection.mutable.HashMap
-import play.api.libs.ws.WS
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import play.api.libs.MimeTypes
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json._
+import play.api.libs.json.{JsObject, JsValue, _}
+import play.api.libs.ws.{Response, WS}
+import services.{DumpOfFile, ExtractorMessage, _}
+
+import scala.concurrent.Future
 
 
 /**
- * Json API for Extractions for files.
- *
- * @author Smruti Padhy
- *
+ * Json API for information about extractors and extractions.
  */
 @Api(value = "/extractions", listingPath = "/api-docs.json/extractions", description = "Extractions for Files.")
-class Extractions @Inject() (
+class Extractions @Inject()(
   files: FileService,
   extractions: ExtractionService,
   dtsrequests: ExtractionRequestsService,
@@ -152,7 +110,7 @@ class Extractions @Inject() (
 
                   val serverIP = request.host
                   dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
-              		val extra = Map("filename" -> f.filename)
+                  val extra = Map("filename" -> f.filename)
 
                   /*------------------*/
 
@@ -209,7 +167,7 @@ class Extractions @Inject() (
         fileurljs match {
 
           case Some(fileurl) => {
-            var source: InputStream =null
+            var source: InputStream = null
             try {
               /*
                * Downloads the file using 'fileurl' as specified in the request body
@@ -222,24 +180,26 @@ class Extractions @Inject() (
                * 
                */
               val urlsplit = fileurl.split("/")
-              val filename = urlsplit(urlsplit.length - 1) 
+              val filename = urlsplit(urlsplit.length - 1)
               val url = new URL(fileurl)
               Logger.debug("UploadbyURL: filename: " + filename)
               source = url.openConnection().getInputStream()
               val contentType = MimeTypes.forFileName(filename.toLowerCase()).getOrElse(ContentTypes.BINARY)
-              Logger.debug("ContentType of the file: "+contentType)
+              Logger.debug("ContentType of the file: " + contentType)
               val file = files.save(source, filename, Some(contentType), user, null)
               file match {
                 case Some(f) => {
                   var fileType = f.contentType
-				  val id = f.id
+                  val id = f.id
                   fileType = f.contentType
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
                   val host = Utils.baseUrl(request)
-              		val extra = Map("filename" -> f.filename)
+                  val extra = Map("filename" -> f.filename)
 
-                  current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, "")) }
+                  current.plugin[RabbitmqPlugin].foreach {
+                    _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, ""))
+                  }
                   /*--- Insert DTS Requests  ---*/
                   val clientIP = request.remoteAddress
                   val serverIP = request.host
@@ -256,9 +216,9 @@ class Extractions @Inject() (
                 println(e.printStackTrace())
                 BadRequest(toJson("File not attached"))
             } finally {
-                if (source != null)
-                  source.close
-           } //end of finally
+              if (source != null)
+                source.close
+            } //end of finally
           } //end of match some file url
           case None => {
             Ok("NO Url specified")
@@ -268,12 +228,12 @@ class Extractions @Inject() (
       case None => BadRequest(toJson("Not authorized."))
     }
   }
-  
+
   /**
    * Multiple File Upload for a given list of files' URLs using WS API
-   * 
+   *
    */
-    @ApiOperation(value = "Uploads files for a given list of files' URLs ",
+  @ApiOperation(value = "Uploads files for a given list of files' URLs ",
     notes = "Saves the uploaded files and sends it for extraction. Does not index the files. Returns id for the web resource ",
     responseClass = "None", httpMethod = "POST")
   def multipleUploadByURL() = SecuredAction(authorization = WithPermission(Permission.CreateFiles)) { implicit request =>
@@ -284,11 +244,11 @@ class Extractions @Inject() (
           val fileurlsjs = request.body.\("fileurls").asOpt[List[String]]
           Logger.debug("[multipleUploadByURLs] file Urls=" + fileurlsjs)
           val listURLs = fileurlsjs.getOrElse(List())
-          var listIds = for { fileurl <- listURLs } yield {
+          var listIds = for {fileurl <- listURLs} yield {
             var urlsplit = fileurl.split("/")
             var filename = urlsplit(urlsplit.length - 1)
             val futureResponse = WS.url(fileurl).get()
-            var fid = for { response <- futureResponse } yield {
+            var fid = for {response <- futureResponse} yield {
               if (response.status == 200) {
                 var inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
                 var file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
@@ -299,9 +259,11 @@ class Extractions @Inject() (
                     fileType = f.contentType
                     val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
                     val host = Utils.baseUrl(request)
-              			val extra = Map("filename" -> f.filename)
+                    val extra = Map("filename" -> f.filename)
                     Logger.debug("---hostURL------" + host);
-                    current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, "")) }
+                    current.plugin[RabbitmqPlugin].foreach {
+                      _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, ""))
+                    }
                     /*--- Insert DTS Requests  ---*/
                     val clientIP = request.remoteAddress
                     val serverIP = request.host
@@ -320,7 +282,7 @@ class Extractions @Inject() (
             fid
           }
 
-          for { x <- scala.concurrent.Future.sequence(listIds) } yield {
+          for {x <- scala.concurrent.Future.sequence(listIds)} yield {
             val uuid = UUID.generate
             extractions.save(new WebPageResource(uuid, pageurl, x.toMap))
             var uuidMap = Map("id" -> uuid.toString)
@@ -333,7 +295,7 @@ class Extractions @Inject() (
     }
   }
 
- /**
+  /**
    * *
    * For DTS service use case: suppose a user posts a file to the extractions API, no extractors and its corresponding queues in the Rabbitmq are available. Now she checks the status
    * for extractors, i.e., if any new extractor has subscribed to the Rabbitmq. If yes, she may again wants to submit the file for extraction again. Since she has already uploaded
@@ -354,8 +316,10 @@ class Extractions @Inject() (
               val fileType = file.contentType
               val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
               val host = Utils.baseUrl(request)
-        			val extra = Map("filename" -> file.filename)
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, extra, file.length.toString, null, "")) }
+              val extra = Map("filename" -> file.filename)
+              current.plugin[RabbitmqPlugin].foreach {
+                _.extract(ExtractorMessage(id, id, host, key, extra, file.length.toString, null, ""))
+              }
               Ok("Sent for Extraction. check the status")
             }
             case None =>
@@ -392,7 +356,7 @@ class Extractions @Inject() (
             case Some(file) => {
               //Get the list of extractors processing the file 
               val l = extractions.getExtractorList(file.id) map {
-                elist => 
+                elist =>
                   (elist._1, elist._2)
               }
               //Get the bindings
@@ -453,10 +417,10 @@ class Extractions @Inject() (
                   val status = computeStatus(rkeyResponse, file, l)
                   val jtags = FileOP.extractTags(file)
                   val jpreviews = FileOP.extractPreviews(id)
-                  val vdescriptors=files.getVersusMetadata(id) match {
-                  													case Some(vd)=>api.routes.Files.getVersusMetadataJSON(id).toString
-                  													case None=> ""
-                  													}
+                  val vdescriptors = files.getVersusMetadata(id) match {
+                    case Some(vd) => api.routes.Files.getVersusMetadataJSON(id).toString
+                    case None => ""
+                  }
 
                   Logger.debug("jtags: " + jtags.toString)
                   Logger.debug("jpreviews: " + jpreviews.toString)
@@ -501,28 +465,28 @@ class Extractions @Inject() (
               var listStatus = for {
                 (fid, url) <- mapIdUrl
               } yield {
-                Logger.debug("[checkExtractionsStatuses]---fid---" + fid)
-                var statuses = files.get(UUID(fid)) match {
-                  case Some(file) => {
-                    //Get the list of extractors processing the file 
-                    val l = extractions.getExtractorList(file.id)
-                    //Get the bindings
-                    var blist = plugin.getBindings
-                    var fstatus = for {
-                      rkeyResponse <- blist
-                    } yield {
-                      val status = computeStatus(rkeyResponse, file, l)
-                      Logger.debug(" [checkExtractionsStatuses]: l.toString : " + l.toString)
-                      Map("id" -> file.id.toString, "status" -> status)
-                    } //end of yield
-                    fstatus
-                  } //end of some file
-                  case None => {
-                    Future((Map("id" -> id.toString, "status" -> "No File Id found")))
-                  }
-                } //end of match file
-                statuses
-              } //end of outer yield
+                  Logger.debug("[checkExtractionsStatuses]---fid---" + fid)
+                  var statuses = files.get(UUID(fid)) match {
+                    case Some(file) => {
+                      //Get the list of extractors processing the file
+                      val l = extractions.getExtractorList(file.id)
+                      //Get the bindings
+                      var blist = plugin.getBindings
+                      var fstatus = for {
+                        rkeyResponse <- blist
+                      } yield {
+                          val status = computeStatus(rkeyResponse, file, l)
+                          Logger.debug(" [checkExtractionsStatuses]: l.toString : " + l.toString)
+                          Map("id" -> file.id.toString, "status" -> status)
+                        } //end of yield
+                      fstatus
+                    } //end of some file
+                    case None => {
+                      Future((Map("id" -> id.toString, "status" -> "No File Id found")))
+                    }
+                  } //end of match file
+                  statuses
+                } //end of outer yield
               for {
                 ls <- scala.concurrent.Future.sequence(listStatus)
               } yield {
@@ -539,8 +503,8 @@ class Extractions @Inject() (
       } //user
     } //Async 
   }
-  
-  
+
+
   def computeStatus(response: Response, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
 
     var isActivity = "false"
@@ -569,18 +533,19 @@ class Extractions @Inject() (
       if (l.size == 0) {
         Logger.debug("Inside If")
         val rkl = rkeylist.toArray
-       /**
-        * Routing key lists obtained from rabbitmq binding api looks this:
-        *  "amq.gen-ik6RuUOEuFxyLIffVCQwSA"
-        *  "ncsa.cv.face"
-        *  "ncsa.cv.eyes"
-        *  "*.file.image.#" (length of array after split of this string is greater than 2)
-        *  we split each routing key based on period "."
-        *  if the length of the array after split is greater than two, and it is equal to the file content type and flag is false (not processing)
-        *  then the queue for the extractor is there, extractor is either busy running other job or it is not currently running.
-        *   */
+
+        /**
+         * Routing key lists obtained from rabbitmq binding api looks this:
+         * "amq.gen-ik6RuUOEuFxyLIffVCQwSA"
+         * "ncsa.cv.face"
+         * "ncsa.cv.eyes"
+         * "*.file.image.#" (length of array after split of this string is greater than 2)
+         * we split each routing key based on period "."
+         * if the length of the array after split is greater than two, and it is equal to the file content type and flag is false (not processing)
+         * then the queue for the extractor is there, extractor is either busy running other job or it is not currently running.
+         **/
         for (s <- rkl) {
-          Logger.debug("s===== "+s)
+          Logger.debug("s===== " + s)
           var x = s.split("\\.")
           if (x.length > 2) {
             if (x(2).equals(mt(0)) && !flag) {
@@ -603,54 +568,55 @@ class Extractions @Inject() (
     } //end of outer else
     status
   }
-  
- @ApiOperation(value = "Lists servers IPs running the extractors",
+
+  @ApiOperation(value = "Lists servers IPs running the extractors",
     notes = "  ",
-    responseClass = "None", httpMethod = "GET") 
- def getExtractorServersIP() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
-	 
-     val listServersIPs = extractors.getExtractorServerIPList()
-	 val listServersIPsJson=toJson(listServersIPs)
-	 Ok(Json.obj("Servers" -> listServersIPs))
-      
+    responseClass = "None", httpMethod = "GET")
+  def getExtractorServersIP() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
+
+    val listServersIPs = extractors.getExtractorServerIPList()
+    val listServersIPsJson = toJson(listServersIPs)
+    Ok(Json.obj("Servers" -> listServersIPs))
+
   }
- @ApiOperation(value = "Lists the currenlty running extractors",
+
+  @ApiOperation(value = "Lists the currenlty running extractors",
     notes = "  ",
-    responseClass = "None", httpMethod = "GET") 
- def getExtractorNames() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
+    responseClass = "None", httpMethod = "GET")
+  def getExtractorNames() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
 
     val listNames = extractors.getExtractorNames()
-    val listNamesJson= toJson(listNames)
+    val listNamesJson = toJson(listNames)
     Ok(toJson(Map("Extractors" -> listNamesJson)))
-   }
- 
-/**
- * Temporary fix for BD-289: Get Details of Extractors' Servers IP, Names and Count
- */
- @ApiOperation(value = "Lists the currenlty details running extractors",
-    responseClass = "None", httpMethod = "GET") 
- def getExtractorDetails() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
+  }
+
+  /**
+   * Temporary fix for BD-289: Get Details of Extractors' Servers IP, Names and Count
+   */
+  @ApiOperation(value = "Lists the currenlty details running extractors",
+    responseClass = "None", httpMethod = "GET")
+  def getExtractorDetails() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
 
     val listNames = extractors.getExtractorDetail()
-    val listNamesJson= toJson(listNames)
+    val listNamesJson = toJson(listNames)
     Ok(listNamesJson)
-   }
+  }
 
 
- @ApiOperation(value = "Lists the input file format supported by currenlty running extractors",
+  @ApiOperation(value = "Lists the input file format supported by currenlty running extractors",
     notes = "  ",
-    responseClass = "None", httpMethod = "GET") 
- def getExtractorInputTypes() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) {  request =>
+    responseClass = "None", httpMethod = "GET")
+  def getExtractorInputTypes() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
 
     val listInputTypes = extractors.getExtractorInputTypes()
-    val listInputTypesJson= toJson(listInputTypes)
+    val listInputTypesJson = toJson(listInputTypes)
     Ok(Json.obj("InputTypes" -> listInputTypesJson))
-   }
-  
- @ApiOperation(value = "Lists dts extraction requests information",
+  }
+
+  @ApiOperation(value = "Lists dts extraction requests information",
     notes = "  ",
-    responseClass = "None", httpMethod = "GET") 
-  def getDTSRequests() = SecuredAction(parse.anyContent,authorization = WithPermission(Permission.Public)) { request =>
+    responseClass = "None", httpMethod = "GET")
+  def getDTSRequests() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
     Logger.debug("---GET DTS Requests---")
     var list_requests = dtsrequests.getDTSRequests()
     var startTime = models.ServerStartTime.startTime
@@ -681,14 +647,36 @@ class Extractions @Inject() (
 
         jarr = jarr :+ (Json.obj("clientIP" -> dtsreq.clientIP, "fileid" -> dtsreq.fileId.stringify, "filename" -> dtsreq.fileName, "fileType" -> dtsreq.fileType, "filesize" -> dtsreq.fileSize, "uploadDate" -> dtsreq.uploadDate, "extractors" -> js, "startTime" -> dtsreq.startTime, "endTime" -> dtsreq.endTime))
     }
-
     Ok(jarr)
-   
   }
+
+  def listExtractors() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { implicit request =>
+    Ok(Json.toJson(extractors.listExtractorsInfo()))
+  }
+
+  def getExtractorInfo(extractor_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ExtractMetadata)) { implicit request =>
+    Ok(Json.toJson(extractors.getExtractorInfo(extractor_id)))
+  }
+
+  def addExtractorInfo() = SecuredAction(parse.json, authorization = WithPermission(Permission.Public)) { implicit request =>
+    val extractionInfoResult = request.body.validate[ExtractorInfo]
+    extractionInfoResult.fold(
+      errors => {
+        BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
+      },
+      info => {
+        extractors.updateExtractorInfo(info) match {
+          case Some(u) => Ok(Json.obj("status" -> "OK", "message" -> ("Extractor info updated. ID = " + u.id)))
+          case None => BadRequest(Json.obj("status" -> "KO", "message" -> "Error updating extractor info"))
+        }
+      }
+    )
+  }
+
   /*convert list of JsObject to JsArray*/
-def getJsonArray(list: List[JsObject]): JsArray = {
+  def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
-  } 
-  
+  }
+
 
 }

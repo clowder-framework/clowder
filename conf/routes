@@ -231,8 +231,13 @@ POST           /api/files/:id/license                                           
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 
-#This may change depending on our discussion on identifying the details of extraction in DTS service
-# DTS Information
+# ----------------------------------------------------------------------
+# EXTRACTORS ENDPOINTS
+# ----------------------------------------------------------------------
+GET            /api/extractors                                                          @api.Extractions.listExtractors()
+GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
+POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
+
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
 GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames()
@@ -250,7 +255,6 @@ GET            /api/extractions/:id/metadata                                    
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
 
 # End of change segment
-
 
 POST           /api/files/:id/previews/:p_id                                            @api.Files.attachPreview(id: UUID, p_id: UUID)
 GET            /api/files/:id/listpreviews                                              @api.Files.filePreviewsList(id: UUID)
