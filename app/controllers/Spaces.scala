@@ -4,8 +4,8 @@ import java.net.URL
 import java.util.Date
 import javax.inject.Inject
 
-import api.{Permission, WithPermission}
-import models.{ProjectSpace, Role, UUID, User}
+import api.Permission
+import models._
 import play.api.Logger
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
@@ -16,10 +16,6 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
- *
- * @author Luigi Marini
- * @author Rob Kooper
- *
  */
 case class spaceFormData(
   name: String,
@@ -62,16 +58,14 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   /**
    * Space main page.
    */
-  def getSpace(id: UUID, limit: Int) = SecuredAction(authorization = WithPermission(Permission.ViewSpace)) { implicit request =>
+  def getSpace(id: UUID, size: Int, direction: String) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
         case Some(s) => {
 	        val creator = users.findById(s.creator)
 	        var creatorActual: User = null
-	        val collectionsInSpace = spaces.getCollectionsInSpace(id)
-
-	        val datasetsInSpace = spaces.getDatasetsInSpaceWithLimit(id, limit)
-
+	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(direction), Some(size))
+	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(direction), Some(size))
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
@@ -122,14 +116,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
     }
   }
 
-  def newSpace() = SecuredAction(authorization = WithPermission(Permission.CreateSpace)) {
-    implicit request =>
+  def newSpace() = AuthenticatedAction { implicit request =>
       implicit val user = request.user
     Ok(views.html.spaces.newSpace(spaceForm))
   }
 
-  def updateSpace(id:UUID) = SecuredAction(authorization = WithPermission(Permission.EditSpace)) {
-    implicit request =>
+  def updateSpace(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
@@ -140,12 +132,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
   /**
    * Submit action for new or edit space
    */
-  def submit() = SecuredAction(parse.anyContent) {
-    implicit request =>
+  // TODO this should check to see if user has editpsace for specific space
+  def submit() = AuthenticatedAction { implicit request =>
       implicit val user = request.user
       user match {
         case Some(identity) => {
-          val userId = request.mediciUser.fold(UUID.generate)(_.id)
+          val userId = request.user.get.id
           //need to get the submitValue before binding form data, in case of errors we want to trigger different forms
           request.body.asMultipartFormData.get.dataParts.get("submitValue").headOption match {
             case Some(x) => {
@@ -163,7 +155,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
 
                     // insert space
                     spaces.insert(newSpace)
-                    val role = Role(name = "Admin")
+                    val role = Role.Admin
                     spaces.addUser(userId, role, newSpace.id)
                     //TODO - Put Spaces in Elastic Search?
                     // index collection
@@ -183,10 +175,14 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                     Logger.debug("updating space " + formData.name)
                     spaces.get(formData.spaceId.get) match {
                       case Some(existing_space) => {
-                        val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                          homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
-                        spaces.update(updated_space)
-                        Redirect(routes.Spaces.getSpace(existing_space.id))
+                        if (Permission.checkPermission(user, Permission.EditSpace, Some(ResourceRef(ResourceRef.space, existing_space.id)))) {
+                          val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                            homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                          spaces.update(updated_space)
+                          Redirect(routes.Spaces.getSpace(existing_space.id))
+                        } else {
+                          Redirect(routes.Spaces.getSpace(existing_space.id)).flashing("error" -> "You are not authorized to edit this spaces")
+                        }
                       }
                       case None => {
                         BadRequest("The space does not exist")
@@ -209,9 +205,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
    * Show the list page
    */
   def list(order: Option[String], direction: String, start: Option[String], limit: Int,
-           filter: Option[String], mode: String) =
-    SecuredAction(authorization = WithPermission(Permission.Public)) {
-    implicit request =>
+           filter: Option[String], mode: String) = PrivateServerAction { implicit request =>
       implicit val user = request.user
       val d = if (direction.toLowerCase.startsWith("a")) {
         ASC
@@ -229,7 +223,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
       for (aSpace <- spaceList) {
         decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
-      val deletePermission = WithPermission(Permission.DeleteDataset).isAuthorized(user)
+      val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
       val prev = if (decodedSpaceList.size > 0) {
         spaces.getPrev(order, d, decodedSpaceList.head.created, limit, filter).getOrElse("")
       } else {

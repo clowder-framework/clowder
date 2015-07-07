@@ -34,6 +34,7 @@ import scala.Some
 import models.File
 import play.api.Play.configuration
 import controllers.Utils
+import services._
 
 /**
  * Dataset API.
@@ -52,7 +53,9 @@ class Datasets @Inject()(
   previews: PreviewService,
   extractions: ExtractionService,
   rdfsparql: RdfSPARQLService,
-  spaces: SpaceService) extends ApiController {
+  events: EventService,
+  spaces: SpaceService,
+  userService: UserService) extends ApiController {
 
   /**
    * List all datasets.
@@ -60,8 +63,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "List all datasets",
       notes = "Returns list of datasets and descriptions.",
       responseClass = "None", httpMethod = "GET")
-  def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) {
-    request =>
+  def list = PrivateServerAction { implicit request =>
       val list = datasets.listDatasets().map(datasets.toJSON(_))
       Ok(toJson(list))
   }
@@ -69,10 +71,7 @@ class Datasets @Inject()(
   /**
    * List all datasets outside a collection.
    */
-  def listOutsideCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.Public)) {
-    request =>
-
+  def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
       collections.get(collectionId) match {
         case Some(collection) => {
           val list = for (dataset <- datasets.listDatasetsChronoReverse(); if (!datasets.isInCollection(dataset, collection)))
@@ -92,7 +91,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Create new dataset",
       notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
       responseClass = "None", httpMethod = "POST")
-  def createDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDataset)) { request =>
+  def createDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     Logger.debug("--- API Creating new dataset ----")
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>
@@ -107,6 +106,7 @@ class Datasets @Inject()(
                       else {
                           d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))
                       }
+                      events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
                       datasets.insert(d) match {
                         case Some(id) => {
                           files.index(UUID(file_id))
@@ -146,7 +146,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Create new dataset with no file",
       notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name, description, and space. Optional list of existing file ids to add.",
       responseClass = "None", httpMethod = "POST")
-  def createEmptyDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDataset)) { request =>
+  def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>   
           (request.body \ "space").asOpt[String].map { space =>              
@@ -157,7 +157,8 @@ class Datasets @Inject()(
               else {
               	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))
               }
-              datasets.insert(d) match {
+            events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
+            datasets.insert(d) match {
                 case Some(id) => {
                   //In this case, the dataset has been created and inserted. Now notify the space service and check
                   //for the presence of existing files.
@@ -172,7 +173,7 @@ class Datasets @Inject()(
                         case Some(dataset) => {
                           files.get(UUID(anId)) match {
                             case Some(file) => {
-                              attachExistingFileHelper(UUID(id), UUID(anId), dataset, file)
+                              attachExistingFileHelper(UUID(id), UUID(anId), dataset, file, request.user)
                               Ok(toJson(Map("status" -> "success")))
                             }
                             case None => {
@@ -208,7 +209,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Attach multiple files to an existing dataset",
       notes = "Add multiple files, by ID, to a dataset that is already in the system. Requires file ids and dataset id.",
       responseClass = "None", httpMethod = "POST")
-  def attachMultipleFiles() = SecuredAction(authorization = WithPermission(Permission.CreateDataset)) { request =>
+  def attachMultipleFiles() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
       (request.body \ "datasetid").asOpt[String].map { dsId =>
           (request.body \ "existingfiles").asOpt[String].map { fileString =>
                   var idArray = fileString.split(",").map(_.trim())
@@ -217,7 +218,7 @@ class Datasets @Inject()(
 					      case Some(dataset) => {
 					          files.get(UUID(anId)) match {
 					              case Some(file) => {
-					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file)
+					            	  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file, request.user)
 					            	  Ok(toJson(Map("status" -> "success")))
 					              }
 					              case None => {
@@ -244,9 +245,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Reindex a dataset",
     notes = "Reindex the existing dataset, if recursive is set to true if will also reindex all files in that dataset.",
     httpMethod = "GET")
-  def reindex(id: UUID, recursive: Boolean) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateDataset)) {
-    request =>
+  def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
         case Some(ds) => {
           current.plugin[ElasticsearchPlugin].foreach {
@@ -270,9 +269,10 @@ class Datasets @Inject()(
    * @param dataset Reference to the model of the dataset that is specified
    * @param file Reference to the model of the file that is specified   
    */
-  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File) = {
+  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
       if (!files.isInDataset(file, dataset)) {
-            datasets.addFile(dsId, file)	            
+            datasets.addFile(dsId, file)	 
+            events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")        
             files.index(fileId)
             if (!file.xmlMetadata.isEmpty){
               datasets.index(dsId)
@@ -309,14 +309,12 @@ class Datasets @Inject()(
   @ApiOperation(value = "Attach existing file to dataset",
       notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def attachExistingFile(dsId: UUID, fileId: UUID) = SecuredAction(parse.anyContent,
-    authorization = WithPermission(Permission.CreateDataset), resourceId = Some(dsId)) {
-	request =>
+  def attachExistingFile(dsId: UUID, fileId: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dsId))) { implicit request =>
      datasets.get(dsId) match {
       case Some(dataset) => {
         files.get(fileId) match {
           case Some(file) => {
-        	  attachExistingFileHelper(dsId, fileId, dataset, file)
+        	  attachExistingFileHelper(dsId, fileId, dataset, file, request.user)
               Ok(toJson(Map("status" -> "success")))
             }
             case None => {
@@ -335,11 +333,10 @@ class Datasets @Inject()(
   @ApiOperation(value = "Detach file from dataset",
       notes = "File is not deleted, only separated from the selected dataset. If the file is an XML metadata file, the metadata are removed from the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateDataset), resourceId = Some(datasetId)) {
-    request =>
+  def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
      datasets.get(datasetId) match{
       case Some(dataset) => {
-    	  detachFileHelper(datasetId, fileId, dataset)
+    	  detachFileHelper(datasetId, fileId, dataset, request.user)
         }
         case None => {
           ignoreNotFound match {
@@ -359,12 +356,13 @@ class Datasets @Inject()(
    * @param dataset The reference to the model of the dataset being operated on
    * 
    */
-  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset) = {      
+  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset, user: Option[User]) = {      
 	  files.get(fileId) match {
 		  case Some(file) => {		       
 			  if(files.isInDataset(file, dataset)){
 				  //remove file from dataset
 				  datasets.removeFile(dataset.id, file.id)
+          events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "detach_file_dataset") 
 				  files.index(fileId)
 				  if (!file.xmlMetadata.isEmpty)
 					  datasets.index(datasetId)
@@ -411,8 +409,7 @@ class Datasets @Inject()(
   //////////////////
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
-  def listInCollection(collectionId: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewCollection)) {
-    request =>
+  def listInCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
       collections.get(collectionId) match {
         case Some(collection) => {
           val list = for (dataset <- datasets.listInsideCollection(collectionId)) yield datasets.toJSON(dataset)
@@ -423,8 +420,7 @@ class Datasets @Inject()(
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
-  def addMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
-    request =>
+  def addMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       Logger.debug(s"Adding metadata to dataset $id")
       datasets.addMetadata(id, Json.stringify(request.body))
       datasets.index(id)
@@ -434,16 +430,23 @@ class Datasets @Inject()(
   @ApiOperation(value = "Add user-generated metadata to dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def addUserMetadata(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
-    request =>
-      Logger.debug(s"Adding user metadata to dataset $id")
+  def addUserMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    implicit val user = request.user  
+    Logger.debug(s"Adding user metadata to dataset $id")
       datasets.addUserMetadata(id, Json.stringify(request.body))
-      datasets.index(id)
-      configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-        case "yes" => datasets.setUserMetadataWasModified(id, true)
-        case _ => Logger.debug("userdfSPARQLStore not enabled")
+    
+    datasets.get(id) match {
+      case Some(dataset) => {
+        events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
       }
-      Ok(toJson(Map("status" -> "success")))
+    }
+     
+    datasets.index(id)
+    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+      case "yes" => datasets.setUserMetadataWasModified(id, true)
+      case _ => Logger.debug("userdfSPARQLStore not enabled")
+    }
+    Ok(toJson(Map("status" -> "success")))
   }
   
   
@@ -465,8 +468,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "List files in dataset",
       notes = "Datasets and descriptions.",
       responseClass = "None", httpMethod = "GET")
-  def datasetFilesList(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewDataset)) {
-    request =>
+  def datasetFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
         case Some(dataset) => {
           val list = for (f <- dataset.files) yield jsonFile(f)
@@ -502,9 +504,9 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update dataset administrative information",
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
-  def updateInformation(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.EditDataset)) {
-    implicit request =>
-      if (UUID.isValid(id.stringify)) {          
+  def updateInformation(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    implicit val user = request.user  
+    if (UUID.isValid(id.stringify)) {          
 
           //Set up the vars we are looking for
           var description: String = null;
@@ -538,6 +540,11 @@ class Datasets @Inject()(
           Logger.debug(s"updateInformation for dataset with id  $id. Args are $description and $name")
           
           datasets.updateInformation(id, description, name)
+          datasets.get(id) match {
+            case Some(dataset) => {
+              events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+            }
+          }
           Ok(Json.obj("status" -> "success"))
       } 
       else {
@@ -583,9 +590,8 @@ class Datasets @Inject()(
   @ApiOperation(value = "Update license information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
       responseClass = "None", httpMethod = "POST")
-  def updateLicense(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.EditLicense)) {
-    implicit request =>
-      if (UUID.isValid(id.stringify)) {          
+  def updateLicense(id: UUID) = PermissionAction(Permission.EditLicense, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+      if (UUID.isValid(id.stringify)) {
 
           //Set up the vars we are looking for
           var licenseType: String = null;
@@ -697,8 +703,7 @@ class Datasets @Inject()(
    * One returned field is "tags", containing a list of string values.
    */
   @ApiOperation(value = "Get the tags associated with this dataset", notes = "Returns a JSON object of multiple fields", responseClass = "None", httpMethod = "GET")
-  def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
-    implicit request =>
+  def getTags(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       Logger.info(s"Getting tags for dataset with id  $id.")
       /* Found in testing: given an invalid ObjectId, a runtime exception
        * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
@@ -721,8 +726,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove tag of dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeTag(id: UUID) = SecuredAction(parse.json, authorization = WithPermission(Permission.DeleteTag)) {
-    implicit request =>
+  def removeTag(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       Logger.debug("Removing tag " + request.body)
       request.body.\("tagId").asOpt[String].map {
         tagId =>
@@ -740,8 +744,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Add tags to dataset",
       notes = "Requires that the request body contains a 'tags' field of List[String] type.",
       responseClass = "None", httpMethod = "POST")
-  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddTag)) {
-    implicit request =>
+  def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       addTagsHelper(TagCheck_Dataset, id, request)
   }
 
@@ -752,8 +755,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove tags of dataset",
       notes = "Requires that the request body contains a 'tags' field of List[String] type.",
       responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTag)) {
-    implicit request =>
+  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       removeTagsHelper(TagCheck_Dataset, id, request)
   }
   				
@@ -771,7 +773,7 @@ class Datasets @Inject()(
  *      which contains the cause of the error, such as "No 'tags' specified", and
  *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
  */
-  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]) = {
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]) = {
     val tagCheck = checkErrorsForTag(obj_type, id, request)
 
     val error_str = tagCheck.error_str
@@ -788,6 +790,11 @@ class Datasets @Inject()(
         case TagCheck_File => files.addTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => {
           datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
+          datasets.get(id) match {
+            case Some(dataset) => {
+              events.addObjectEvent(request.user, id, dataset.name, "add_tags_dataset")
+            }
+          }
           datasets.index(id)
         }
         case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
@@ -803,7 +810,7 @@ class Datasets @Inject()(
     }
   }
 
-  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]) = {
+  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]) = {
     val tagCheck = checkErrorsForTag(obj_type, id, request)
 
     val error_str = tagCheck.error_str
@@ -820,9 +827,14 @@ class Datasets @Inject()(
         case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => {
         	datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+          datasets.get(id) match {
+            case Some(dataset) => {
+              events.addObjectEvent(request.user, id, dataset.name, "remove_tags_dataset")
+            }
+          }
         	datasets.index(id)
 
-          }
+        }
 
         case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
       }
@@ -870,7 +882,7 @@ class Datasets @Inject()(
   *      userId of these posts is USERID_ANONYMOUS -- in this case, we'd like to
   *      record the extractor_id, but omit the userId field, so we leave userOpt as None.
   */
-  def checkErrorsForTag(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): TagCheck = {
+  def checkErrorsForTag(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): TagCheck = {
     val userObj = request.user
     Logger.debug("checkErrorsForTag: user id: " + userObj.get.identityId.userId + ", user.firstName: " + userObj.get.firstName
       + ", user.LastName: " + userObj.get.lastName + ", user.fullName: " + userObj.get.fullName)
@@ -926,8 +938,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Remove all tags of dataset",
       notes = "Forcefully remove all tags for this dataset.  It is mainly intended for testing.",
       responseClass = "None", httpMethod = "POST")
-  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTag)) {
-    implicit request =>
+  def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       Logger.info(s"Removing all tags for dataset with id: $id.")
       if (UUID.isValid(id.stringify)) {
         datasets.get(id) match {
@@ -953,8 +964,7 @@ class Datasets @Inject()(
   // ---------- Tags related code ends ------------------
 
   @ApiOperation(value = "Add comment to dataset", notes = "", responseClass = "None", httpMethod = "POST")
-  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.AddComment)) {
-    implicit request =>
+  def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       request.user match {
         case Some(identity) => {
           request.body.\("text").asOpt[String] match {
@@ -962,6 +972,11 @@ class Datasets @Inject()(
               val comment = new Comment(identity, text, dataset_id = Some(id))
               comments.insert(comment)
               datasets.index(id)
+              datasets.get(id) match {
+                case Some(dataset) => {
+                  events.addSourceEvent(request.user, comment.id, comment.text , dataset.id, dataset.name, "add_comment_dataset")
+                }
+              }
               Ok(comment.id.toString())
             }
             case None => {
@@ -977,8 +992,7 @@ class Datasets @Inject()(
   /**
    * List datasets satisfying a user metadata search tree.
    */
-  def searchDatasetsUserMetadata = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) {
-    request =>
+  def searchDatasetsUserMetadata = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
       Logger.debug("Searching datasets' user metadata for search tree.")
 
       var searchJSON = Json.stringify(request.body)
@@ -999,8 +1013,7 @@ class Datasets @Inject()(
   /**
    * List datasets satisfying a general metadata search tree.
    */
-  def searchDatasetsGeneralMetadata = SecuredAction(authorization = WithPermission(Permission.ViewDataset)) {
-    request =>
+  def searchDatasetsGeneralMetadata = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
       Logger.debug("Searching datasets' metadata for search tree.")
 
       var searchJSON = Json.stringify(request.body)
@@ -1024,8 +1037,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Is being processed",
       notes = "Return whether a dataset is currently being processed by a preprocessor.",
       responseClass = "None", httpMethod = "GET")
-  def isBeingProcessed(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewDataset)) {
-    request =>
+  def isBeingProcessed(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
         case Some(dataset) => {
           val filesInDataset = dataset.files map {f => files.get(f.id).get}
@@ -1082,8 +1094,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Get dataset previews",
       notes = "Return the currently existing previews of the selected dataset (full description, including paths to preview files, previewer names etc).",
       responseClass = "None", httpMethod = "GET")
-  def getPreviews(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewDataset)) {
-    request =>
+  def getPreviews(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
         case Some(dataset) => {
           val innerFiles = dataset.files map {f => files.get(f.id).get}
@@ -1130,12 +1141,11 @@ class Datasets @Inject()(
   @ApiOperation(value = "Detach and delete dataset", 
           notes = "Detaches all files before proceeding to perform the stanadard delete on the dataset.",
           responseClass = "None", httpMethod="DELETE")
-  def detachAndDeleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDataset), resourceId = Some(id)) {
-      request =>          
-          datasets.get(id) match{              
+  def detachAndDeleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+          datasets.get(id) match{
               case Some(dataset) => {                  
                   for (f <- dataset.files) {                      
-                      detachFileHelper(dataset.id, f.id, dataset)
+                    detachFileHelper(dataset.id, f.id, dataset, request.user)
                   }
             	  deleteDatasetHelper(dataset.id, request)
             	  Ok(toJson(Map("status" -> "success")))
@@ -1154,7 +1164,7 @@ class Datasets @Inject()(
    * @param request The implicit request parameter which is part of the REST API call
    * 
    */
-  def deleteDatasetHelper(id: UUID, request: RequestWithUser[AnyContent]) = {
+  def deleteDatasetHelper(id: UUID, request: UserRequest[AnyContent]) = {
       datasets.get(id) match {
         case Some(dataset) => {
           //remove dataset from RDF triple store if triple store is used
@@ -1162,6 +1172,7 @@ class Datasets @Inject()(
             case "yes" => rdfsparql.removeDatasetFromGraphs(id)
             case _ => Logger.debug("userdfSPARQLStore not enabled")
           }
+          events.addObjectEvent(request.user, dataset.id, dataset.name, "delete_dataset")
           datasets.removeDataset(id)
 
           current.plugin[ElasticsearchPlugin].foreach {
@@ -1181,16 +1192,14 @@ class Datasets @Inject()(
   @ApiOperation(value = "Delete dataset",
       notes = "Cascading action (deletes all previews and metadata of the dataset and all files existing only in the deleted dataset).",
       responseClass = "None", httpMethod = "POST")
-  def deleteDataset(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeleteDataset), resourceId = Some(id)) {
-    implicit request => 
-        deleteDatasetHelper(id, request)      
+  def deleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+        deleteDatasetHelper(id, request)
   }
 
   @ApiOperation(value = "Get the user-generated metadata of the selected dataset in an RDF file",
       notes = "",
       responseClass = "None", httpMethod = "GET")
-  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewMetadata)) {implicit request =>
-    
+  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     current.plugin[RDFExportService].isDefined match{
       case true => {
         current.plugin[RDFExportService].get.getRDFUserMetadataDataset(id.toString, mappingNumber) match{
@@ -1236,8 +1245,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Get URLs of dataset's RDF metadata exports",
       notes = "URLs of metadata exported as RDF from XML files contained in the dataset, as well as the URL used to export the dataset's user-generated metadata as RDF.",
       responseClass = "None", httpMethod = "GET")
-  def getRDFURLsForDataset(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewMetadata)) { request =>
-
+  def getRDFURLsForDataset(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     current.plugin[RDFExportService].isDefined match{
       case true =>{
 	    current.plugin[RDFExportService].get.getRDFURLsForDataset(id.toString)  match {
@@ -1256,8 +1264,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Get technical metadata of the dataset",
       notes = "",
       responseClass = "None", httpMethod = "GET")
-  def getTechnicalMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewMetadata)) {
-    request =>
+  def getTechnicalMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
         case Some(dataset) => Ok(datasets.getTechnicalMetadataJSON(id))
         case None => Logger.error("Error finding dataset" + id); InternalServerError
@@ -1265,7 +1272,7 @@ class Datasets @Inject()(
   }
 
   
-  def getXMLMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewMetadata)) { request =>
+  def getXMLMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id)  match {
       case Some(dataset) => {
         Ok(datasets.getXMLMetadataJSON(id))
@@ -1274,7 +1281,7 @@ class Datasets @Inject()(
     }
   }
 
-  def getUserMetadataJSON(id: UUID) = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ViewMetadata)) { request =>
+  def getUserMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id)  match {
       case Some(dataset) => {
         Ok(datasets.getUserMetadataJSON(id))
@@ -1287,7 +1294,7 @@ class Datasets @Inject()(
     }
   }
   
-  def setNotesHTML(id: UUID) = SecuredAction(authorization=WithPermission(Permission.CreateNote))  { implicit request =>
+  def setNotesHTML(id: UUID) = PermissionAction(Permission.CreateNote, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
 		    request.body.\("notesHTML").asOpt[String] match {
@@ -1309,6 +1316,78 @@ class Datasets @Inject()(
     }
   }
 
+  @ApiOperation(value = "Follow dataset.",
+    notes = "Add user to dataset followers and add dataset to user followed datasets.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID, name: String) = AuthenticatedAction {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(loggedInUser) => {
+          datasets.get(id) match {
+            case Some(dataset) => {
+              events.addObjectEvent(user, id, name, "follow_dataset")
+              datasets.addFollower(id, loggedInUser.id)
+              userService.followDataset(loggedInUser.id, id)
+
+              val recommendations = getTopRecommendations(id, loggedInUser)
+              recommendations match {
+                case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+                case Nil => Ok(Json.obj("status" -> "success"))
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  @ApiOperation(value = "Unfollow dataset.",
+    notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+      implicit val user = request.user
+
+      user match {
+        case Some(loggedInUser) => {
+          datasets.get(id) match {
+            case Some(dataset) => {
+              events.addObjectEvent(user, id, name, "unfollow_dataset")
+              datasets.removeFollower(id, loggedInUser.id)
+              userService.unfollowDataset(loggedInUser.id, id)
+              Ok
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = datasets.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
+  }
 }
 
 object ActivityFound extends Exception {}

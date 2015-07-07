@@ -22,10 +22,13 @@ GET            /assets/*file                                                    
 POST           /users/registerThroughAdmins                                             controllers.Users.handleStartSignUp
 
 # Profile
+# deprecated use profile/:uuid
 GET            /profile/viewProfile                                                     @controllers.Profile.viewProfile(email: Option[String])
+# deprecated use /profile/:uuid
+GET            /profile/viewProfile/:uuid                                               @controllers.Profile.viewProfileUUID(uuid: UUID)
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
 GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
-GET            /profile/addFriend                                                       @controllers.Profile.addFriend(email: String)
+GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
 
 # Utilities
 GET            /utils/authenticationRequired                                            @controllers.RedirectUtility.authenticationRequired
@@ -52,7 +55,9 @@ POST           /extraction/upload                                               
 #End
 
 # Files
+
 GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
+
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
@@ -76,6 +81,7 @@ GET            /datasets/addToDataset/:id/:name/:desc                           
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID)
+GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
 
@@ -84,6 +90,7 @@ GET            /collections                                                     
 GET            /collections/new                                                         @controllers.Collections.newCollection
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
+GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
 # ----------------------------------------------------------------------
@@ -91,11 +98,12 @@ GET            /collections/:collection_id/previews                             
 # ----------------------------------------------------------------------
 GET            /spaces                                                                  @controllers.Spaces.list(order: Option[String] ?= None, direction: String ?= "asc", start: Option[String] ?= None, limit: Int ?= 12, filter: Option[String] ?= None, mode: String ?= "")
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
-GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9)
+GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # Tags
+
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET           /tags/list/ordered                                                        @controllers.Tags.tagListOrdered
 GET           /tags/list/weighted                                                       @controllers.Tags.tagListWeighted
@@ -221,6 +229,8 @@ GET            /api/files/:id/versus_metadata                                   
 GET            /api/files/:id/technicalmetadatajson                                     @api.Files.getTechnicalMetadataJSON(id: UUID)
 GET            /api/files/:id/xmlmetadatajson                                           @api.Files.getXMLMetadataJSON(id: UUID)
 GET            /api/files/:id/usermetadatajson                                          @api.Files.getUserMetadataJSON(id: UUID)
+POST           /api/files/:id/follow                                                    @api.Files.follow(id: UUID, name: String)
+POST           /api/files/:id/unfollow                                                  @api.Files.unfollow(id: UUID, name: String)
 POST           /api/files/:id/comment                                                   @api.Files.comment(id: UUID)
 POST           /api/files/:id/setNotesHTML                                              @api.Files.setNotesHTML(id: UUID)
 DELETE         /api/files/:id                                                           @api.Files.removeFile(id: UUID)
@@ -288,6 +298,8 @@ POST           /api/spaces/:id/updateUsers                                      
 GET            /api/collections                                                         @api.Collections.listCollections
 POST           /api/collections                                                         @api.Collections.createCollection()
 GET            /api/collections/list                                                    @api.Collections.listCollections
+POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID, name: String)
+POST           /api/collections/:id/unfollow                                            @api.Collections.unfollow(id: UUID, name: String)
 POST           /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
 POST           /api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound          @api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
 DELETE         /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
@@ -320,6 +332,8 @@ GET            /api/datasets/:id/listFiles                                      
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/setNotesHTML                                           @api.Datasets.setNotesHTML(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
+POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID, name: String)
+POST           /api/datasets/:id/unfollow                                               @api.Datasets.unfollow(id: UUID, name: String)
 
 POST           /api/datasets/:id/removeTag                                              @api.Datasets.removeTag(id: UUID)
 GET            /api/datasets/:id/tags                                                   @api.Datasets.getTags(id: UUID)
@@ -347,7 +361,10 @@ GET            /api/previews/:id/metadata                                       
 POST           /api/previews/:id/annotationAdd                                          @api.Previews.attachAnnotation(id: UUID)
 POST           /api/previews/:id/annotationEdit                                         @api.Previews.editAnnotation(id: UUID)
 GET            /api/previews/:id/annotationsList                                        @api.Previews.listAnnotations(id: UUID)
+
+GET            /api/previews                                                            @api.Previews.list
 GET            /api/previews/:id                                                        @api.Previews.download(id: UUID)
+DELETE         /api/previews/:id                                                        @api.Previews.removePreview(id: UUID)
 POST           /api/previews                                                            @api.Previews.upload(iipKey: String ?= "")
 
 
@@ -434,12 +451,11 @@ GET            /api/users/:id                                                   
 GET            /api/me                                                                  @api.Users.getUser()
 
 POST           /api/users/updateUserField                                               @api.Users.updateUserField(email: String, field: String, fieldText: String)
-
-POST           /api/users/addUserFriend                                                 @api.Users.addUserFriend(email: String, newFriend: String)
-
 POST           /api/users/addUserDatasetView                                            @api.Users.addUserDatasetView(email: String, dataset: UUID)
-
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
+POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
+POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
+POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)
 
 
 # ----------------------------------------------------------------------
@@ -447,3 +463,9 @@ POST           /api/users/createNewListInUser                                   
 # ----------------------------------------------------------------------
 GET            /api/version                                                             @api.Status.version
 GET            /api/status                                                              @api.Status.status
+
+# ----------------------------------------------------------------------
+# RSS
+# ----------------------------------------------------------------------
+GET            /rss                                                                     @controllers.RSS.siteRSS(limit: Option[Int])
+GET            /rss/:etype                                                              @controllers.RSS.siteRSSOfType(limit: Option[Int], etype: String)

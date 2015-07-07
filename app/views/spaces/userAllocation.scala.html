@@ -1,4 +1,4 @@
-@(userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[securesocial.core.Identity])
+@(userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[models.User])
 
 <div class="row">
     @for(roleLevel <- roleList){

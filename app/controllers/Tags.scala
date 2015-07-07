@@ -1,26 +1,17 @@
 package controllers
 
-import models.Dataset
-import models.Tag
-
-import api.WithPermission
-import api.Permission
-import util.Parsers
-import scala.collection.mutable.ListBuffer
-import play.api.Logger
-import scala.collection.mutable.Map
-import services.{SectionService, FileService, DatasetService}
 import javax.inject.Inject
+
+import api.Permission
 import play.api.Logger
-import services.{CollectionService, DatasetService, FileService, SectionService}
 import play.api.Play.current
+import services.{CollectionService, DatasetService, FileService, SectionService}
+import util.Parsers
 
-
+import scala.collection.mutable.ListBuffer
 
 /**
  * Tagging.
- * 
- * @author Luigi Marini
  */
 class Tags @Inject()(collections: CollectionService, datasets: DatasetService, files: FileService, sections: SectionService) extends SecuredController {
 
@@ -32,18 +23,30 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
    * The code will query the datasets, files and sections and combine the lists into a single sorted list
    * and display it to the user.
    */
-  def search(tag: String, start: String, size: Integer, mode: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewDataset)) { implicit request =>
+  def search(tag: String, start: String, size: Integer, mode: String) = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
-    var nextItems = collection.mutable.ListBuffer.empty[AnyRef]
-    var prevItems = collection.mutable.ListBuffer.empty[AnyRef]
+    var nextItems = ListBuffer.empty[AnyRef]
+    var prevItems = ListBuffer.empty[AnyRef]
+    var tempItems = ListBuffer.empty[models.Dataset]
 
     // Clean up leading, trailing and multiple contiguous white spaces.
     val tagCleaned = tag.trim().replaceAll("\\s+", " ")
 
     // get all datasets tagged
-    nextItems ++= datasets.findByTag(tagCleaned, start, size + 1, false)
-    if (start != "") prevItems ++= datasets.findByTag(tagCleaned, start, size + 1, true)
+    //Modifications to decode HTML entities that were stored in an encoded fashion as part
+    //of the datasets names or descriptions
+    tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, false)
+    for (aDataset <- tempItems) {
+      nextItems += Utils.decodeDatasetElements(aDataset)
+    }
+    tempItems = ListBuffer.empty[models.Dataset]
+    if (start != "") {
+      tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, true)
+      for (aDataset <- tempItems) {
+        prevItems += Utils.decodeDatasetElements(aDataset)
+      }
+    }
 
     // get all files tagged
     nextItems ++= files.findByTag(tagCleaned, start, size + 1, false)
@@ -108,13 +111,13 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     Ok(views.html.searchByTag(tag, nextItems.slice(0, size).toList, prev, next, size, viewMode))
   }
 
-  def tagCloud() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewTags)) { implicit request =>
+  def tagCloud() = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
     Ok(views.html.tagCloud(computeTagWeights))
   }
 
-  def tagListWeighted() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewTags)) { implicit request =>
+  def tagListWeighted() = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
     val tags = computeTagWeights
@@ -132,7 +135,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     }
   }
 
-  def tagListOrdered() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewTags)) { implicit request =>
+  def tagListOrdered() = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
     Ok(views.html.tagListChar(createTagList))

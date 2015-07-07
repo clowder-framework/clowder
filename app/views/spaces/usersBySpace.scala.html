@@ -1,5 +1,6 @@
-@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[securesocial.core.Identity])
+@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[models.User])
 
+@import api.Permission
 @import play.api.libs.json._
 
 
@@ -28,11 +29,17 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator
 
 
 
-@if(user.isDefined) {
+<!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
+@if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
 	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="modal"
 	data-target="#modalUser" id="edituseralloc"
 	title="Edit User Allocation">
 	    <span class="glyphicon glyphicon-edit"></span> Edit
+	</a>
+} else {
+	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed disabled"
+	id="edituseralloc" title="Edit User Allocation">
+		<span class="glyphicon glyphicon-edit"></span> Edit
 	</a>
 }
 

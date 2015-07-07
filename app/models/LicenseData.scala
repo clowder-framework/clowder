@@ -1,6 +1,6 @@
 package models
 
-import api.{Permission, WithPermission}
+import api.Permission
 import securesocial.core.Identity
 
 /**
@@ -26,7 +26,7 @@ case class LicenseData (
      */
     def isDownloadAllowed(user: Option[Identity]) = {
       (m_licenseType != "license1") || m_allowDownload || (user match {
-        case Some(x) => WithPermission(Permission.DownloadFiles).isAuthorized(x) || isRightsOwner(x.fullName)
+        case Some(x) => Permission.checkPermission(user, Permission.DownloadFiles) || isRightsOwner(x.fullName)
         case None => false
       })
     }

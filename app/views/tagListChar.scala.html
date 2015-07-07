@@ -1,4 +1,4 @@
-@(tagMap: Map[Char, Map[String, Integer]])(implicit user: Option[securesocial.core.Identity])
+@(tagMap: Map[Char, Map[String, Integer]])(implicit user: Option[models.User])
 
 @main("Tag list") {
     @if(tagMap.isEmpty) {

@@ -15,7 +15,7 @@ import org.scalatest._
 //@DoNotDiscover
 class ApplicationSpec extends IntegrationSpec with ServerFixture {
 
-  implicit val user: Option[securesocial.core.Identity] = None
+  implicit val user: Option[models.User] = None
 
   "Application" should "send 404 on a bad request" in {
     route(FakeRequest(GET, "/wut")) shouldBe (None)
@@ -29,7 +29,7 @@ class ApplicationSpec extends IntegrationSpec with ServerFixture {
   }
 
   "Application" should "render index template" in {
-    val html = views.html.index(List.empty, 0, 0, 0, 0, "Clowder", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    val html = views.html.index(List.empty, 0, 0, 0, 0, "Clowder", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", List.empty[models.Event])
     contentType(html) shouldBe ("text/html")
     contentAsString(html) should include ("Clowder")
     contentAsString(html) should include ("Hello stranger!")

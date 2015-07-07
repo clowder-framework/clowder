@@ -20,7 +20,7 @@ trait DatasetService {
   /**
    * List all datasets in the system.
    */
-  def listDatasets(limit: Option[Integer] = None, space: Option[String] = None): List[Dataset]
+  def listDatasets(order: Option[String] = None, limit: Option[Integer] = None, space: Option[String] = None): List[Dataset]
 
   /**
    * List all datasets in the system in reverse chronological order.
@@ -36,7 +36,17 @@ trait DatasetService {
    * List datasets before a specified date.
    */
   def listDatasetsBefore(date: String, limit: Int, space: Option[String] = None): List[Dataset]
-
+  
+  /**
+   * List datasets after a specified date for a specific user.
+   */
+  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset]
+  
+  /**
+   * List datasets before a specified date for a specific user.
+   */
+  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset]
+  
   /**
    * Get dataset.
    */
@@ -209,5 +219,14 @@ trait DatasetService {
    */
   def addToSpace(dataset: UUID, space: UUID)
 
+  /**
+   * Add follower to a dataset.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a dataset.
+   */
+  def removeFollower(id: UUID, userId: UUID)
 }
 

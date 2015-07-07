@@ -1,21 +1,17 @@
 package api
 
-import play.api.mvc.Controller
-import play.api.libs.json.Json._
-import play.api.Play.current
-import services._
 import javax.inject.Inject
-import services.ExtractorMessage
-import models.{Feature, UUID, MultimediaFeatures}
-import play.api.libs.json.JsObject
-import scala.Some
+
 import controllers.Utils
+import models.{Feature, MultimediaFeatures, UUID}
+import play.api.Play.current
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json._
+import play.api.mvc.Controller
+import services._
 
 /**
  * Index data.
- * 
- * @author Luigi Marini
- *
  */
 @Inject
 class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: PreviewService) extends Controller with ApiController {
@@ -23,7 +19,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
   /**
    * Submit section, preview, file for indexing.
    */
-  def index() = SecuredAction(authorization=WithPermission(Permission.MultimediaIndexDocument)) { request =>
+  def index() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { implicit request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
             previews.get(UUID(preview_id)) match {
@@ -35,7 +31,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
 	            current.plugin[RabbitmqPlugin].foreach{
                 // TODO replace null with None
 	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, null, ""))}
-	            var fileType = p.contentType
+	            val fileType = p.contentType
 	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id,fileType) }
 	            Ok(toJson("success"))
       	      case None => BadRequest(toJson("Missing parameter [preview_id]"))
@@ -52,7 +48,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
   /**
    * Add feature to index.
    */
-  def features() = SecuredAction(authorization=WithPermission(Permission.MultimediaIndexDocument)) { request =>
+  def features() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { implicit request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
         val sectionUUID = UUID(section_id)
         multimediaSearch.findFeatureBySection(sectionUUID) match {

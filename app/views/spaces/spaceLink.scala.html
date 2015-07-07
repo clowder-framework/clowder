@@ -1,4 +1,4 @@
-@(dataset: Dataset, space: Option[List[ProjectSpace]], resourceType: Int, resourceId: UUID, previewers: List[Previewer], spacesList: List[ProjectSpace])(implicit user: Option[securesocial.core.Identity])
+@(dataset: Dataset, space: Option[List[ProjectSpace]], resourceType: Int, resourceId: UUID, previewers: List[Previewer], spacesList: List[ProjectSpace])(implicit Option[models.User]))
 <div id="spaces" >
 @if(user.isDefined) {
     @if(space.isDefined) {

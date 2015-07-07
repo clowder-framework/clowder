@@ -3,7 +3,6 @@ package models
 import java.util.Date
 import securesocial.core.Identity
 
-
 case class Collection(
   id: UUID = UUID.generate,
   name: String = "N/A",
@@ -14,4 +13,5 @@ case class Collection(
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty,
   space: Option[UUID] = None,
-  lastModifiedDate: Date = new Date())
+  lastModifiedDate: Date = new Date(),
+  followers: List[UUID] = List.empty)

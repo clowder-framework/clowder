@@ -1,14 +1,9 @@
 package controllers
 
-import play.mvc.Controller
 import play.api.Logger
-import play.api.mvc.Action
 import play.api.mvc.Results
-import securesocial.core.providers.utils.RoutesHelper
 import securesocial.core.IdentityProvider
-import play.api.mvc.Action
-import api.WithPermission
-import api.Permission
+import securesocial.core.providers.utils.RoutesHelper
 
 /**
  * Utility controller to be called, typically as a redirect, from the client side when an AJAX error is received,
@@ -23,7 +18,7 @@ class RedirectUtility extends SecuredController {
      * Requires no args, provides the generic message "You must be logged in to perform that action.".
      * 
      */
-    def authenticationRequired() = Action { implicit request =>        
+    def authenticationRequired() = UserAction { implicit request =>
         Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You must be logged in to perform that action.")
     }
     
@@ -37,7 +32,7 @@ class RedirectUtility extends SecuredController {
      *  @param msg A String that will be the specific error message passed to the login panel
      *  @param url The originating window href for the failed authentication
      */
-    def authenticationRequiredMessage(msg: String, url: String) = Action { implicit request =>
+    def authenticationRequiredMessage(msg: String, url: String) = UserAction { implicit request =>
         Logger.trace("The authentication required message is " + msg)
         var errMsg = "You must be logged in to perform that action."
         var origUrlPresent = false
@@ -68,7 +63,7 @@ class RedirectUtility extends SecuredController {
      * 
      * @param msg A String that will be the specific error message passed to the view to display
      */
-    def incorrectPermissions(msg: String) = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>        
+    def incorrectPermissions(msg: String) = UserAction { implicit request =>
         Logger.trace("The incorrectPermissions message is " + msg)
         var errMsg = "You do not have the permissions required to view that location."
         if (msg != null && !msg.trim().equals("")) {

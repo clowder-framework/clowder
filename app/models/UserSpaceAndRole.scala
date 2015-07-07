@@ -5,6 +5,6 @@ package models
  * then it is an exception case.
  */
 case class UserSpaceAndRole (
-        spaceId: UUID = null,            
-        role: Role = null
+  spaceId: UUID = null,
+  role: Role = null // TODO replace with UUID
 )

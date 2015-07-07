@@ -1,13 +1,17 @@
-@(profile: User, ownProfile: Option[Boolean])(implicit user: Option[securesocial.core.Identity] = None)
+@(profile: User, ownProfile: Option[Boolean], followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)], followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], myFiles : List[(UUID, String, String)], myDatasets : List[(UUID, String, String)], myCollections : List[(UUID, String, String)] )(implicit user: Option[models.User] = None)
 @main("Profile") {
 <div class="page-header">
-
   <table>
     <tr>
       <td valign="top">
-        <img src=@profile.getAvatarUrl class="profilePicture">
+        <img src=@profile.getAvatarUrl(256) class="profilePicture">
         <div align="center">
           <h4><a href="@routes.Datasets.userDatasets("", "", 12, None, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
+          <h4>
+            Followed by
+            <span id="followerSize">@profile.followers.size</span>
+            people
+          </h4>
           @user match {
             case Some(viewer) => {
               @ownProfile match {
@@ -18,8 +22,93 @@
                 }
                 case None => {
                   <h4>
-                    <a href="@routes.Profile.addFriend(profile.email.getOrElse(""))">Add Friend</a>
+                    <button
+                      id="userFollowButton"
+                      type="button"
+                      class="followButton 
+                        @if(profile.followers.contains(viewer.id)) {
+                          btn btn-danger
+                        }else {
+                          btn btn-success
+                        }
+                      "
+                      data-toggle="button"
+                      aria-pressed="
+                        @if(profile.followers.contains(viewer.id)) {
+                          true
+                        }else {
+                          false
+                        }
+                      "
+                      autocomplete="off"
+                      objectId="@profile.id.stringify"
+                      objectName="@profile.fullName"
+                      objectType="user"
+                    >
+                      <!-- Is there a way to store a scala variable somewhere?... -->
+                      @if(profile.followers.contains(viewer.id)) {
+                        Unfollow
+                      } else {
+                        Follow
+                      }
+                    </button>
                   </h4>
+                  <div id="recommendPanel" class="panel panel-default" style="display : none;">
+                    <div class="panel-heading">
+                      <h4 class="panel-title">
+                        <a data-parent="#accordion"
+                            href="#collapseThree"
+                            aria-expanded="true"
+                            style="float:left;">
+                          Also follow these?
+                        </a>
+                        <a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
+                        <div style="clear : both;"></div>
+                      </h4>
+                    </div>
+                    <div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
+                      <div id="recommendDiv" class="panel-body">
+                      </div>
+                    </div>
+                  </div>
+
+                  <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
+                  <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
+                  <script>
+                    function followCallback(data) {
+                        var $followerSize = $('#followerSize');
+                        var followerSize = parseInt($followerSize.text());
+                        $followerSize.text(followerSize + 1);
+
+                        var newRowHtml = '<tr><td>@viewer.id</td></tr>';
+                        $('#followersTable tr:last').after(newRowHtml);
+                        recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
+                                              data['recommendations']);
+                    }
+
+                    function unfollowCallback() {
+                        var $followerSize = $('#followerSize');
+                        var followerSize = parseInt($followerSize.text());
+                        $followerSize.text(followerSize - 1);
+
+                        $('#followersTable').find('td').filter(function () {
+                            return $(this).text().trim() == '@viewer.id';
+                        }).first().remove();
+                    }
+
+                    $(document).ready(function() {
+                      $(document).on('click', '.followButton', function() {
+                        var id = $(this).attr('objectId');
+                        var name = $(this).attr('objectName');
+                        var type = $(this).attr('objectType');
+                        if ($(this).attr('id') === '') {
+                          followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
+                        } else {
+                          followHandler.call(this, jsRoutes, id, name, type, followCallback, unfollowCallback);
+                        }
+                      });
+                    });
+                  </script>
                 }
               }
             }
@@ -27,59 +116,383 @@
           }
         </div>
       </td>
-      <td>
-        <div style="margin-left: 45px;">
-          <h1>@profile.fullName</h1>
-          <h5>
-            @profile.position
-            @profile.position match{
-              case Some(info) => {
-                @profile.institution match{
-                  case Some(info) => {at}
-                  case None => {}
-                }
-              }
-              case None => {}
-            }
-            @profile.institution
-          </h5>
-          
-          <p style="margin-bottom: 24px">@profile.email.getOrElse("")</p>
+      <td valign="top">
+	      <div style="margin-left: 45px;">
+	          <h1>@profile.fullName</h1>
+              <p style="margin-bottom: 24px">@profile.email.getOrElse("")</p>
+	      </div>
+	      <div style="margin-left: 45px;">
+			  <!-- Nav tabs -->
+			  <ul class="nav nav-tabs">
+			    <li role="presentation" class="nav active"><a href="#home" data-toggle="tab">Profile</a></li>
+			    <li role="presentation" class="nav"><a href="#followers" data-toggle="tab">Followers</a></li>
+			    <li role="presentation" class="nav"><a href="#following" data-toggle="tab">Following</a></li>
+			    <li role="presentation" class="nav"><a href="#files" data-toggle="tab">My Files</a></li>
+			    <li role="presentation" class="nav"><a href="#datasets" data-toggle="tab">My Datasets</a></li>
+			    <li role="presentation" class="nav"><a href="#collections" data-toggle="tab">My Collections</a></li>
+			  </ul>
+			  
+			  <div class="tab-content">
+				<div role="tabpanel" class="tab-pane fade in active" id="home">
+                  @if(profile.profile.isDefined) {
+			          <h5>
+			            @profile.profile.get.getPositionAtInstitution
+			          </h5>
 
-          @profile.orcidID match{
-            case Some(info) => {
-              <h4>Orcid ID</h4>
-              <a href="http://orcid.org/@info" target="_blank"> <p>@info</p> </a>
-            }
-            case None => {}
-          }
-
-          @profile.biography match{
-            case Some(info) => {
-              <h4>Biography</h4>
-              <p>@info</p>
-            }
-            case None => {}
-          }
-          @profile.currentprojects match{
-            case x :: xs => {
-              <h4>Current Projects</h4>
-              <p>@profile.getCurrentProjectsString()</p>
-            }
-            case nil => {}
-          }
-          @profile.pastprojects match{
-            case x :: xs => {
-              <h4>Past Projects</h4>
-              <p>@profile.getPastProjectsString()</p>
-            }
-            case nil => {}
-          }
-
-        </div>
-      </td> 
+			          @profile.profile.get.orcidID match{
+			            case Some(info) => {
+			              <h4>Orcid ID</h4>
+			              <a href="http://orcid.org/@info" target="_blank"> <p>@info</p> </a>
+			            }
+			            case None => {}
+			          }
+                      @if(profile.profile.get.biography.nonEmpty) {
+                        <h4>Biography</h4>
+                        <p>@profile.profile.get.biography</p>
+			          }
+                      @if(profile.profile.get.currentprojects.nonEmpty) {
+                        <h4>Current Projects</h4>
+                        <p>@profile.profile.get.currentprojects.mkString(", ")</p>
+                      }
+                      @if(profile.profile.get.pastprojects.nonEmpty) {
+                        <h4>Past Projects</h4>
+                        <p>@profile.profile.get.pastprojects.mkString(", ")</p>
+			          }
+                  }
+			    </div>
+			    
+			    <div role="tabpanel" class="tab-pane fade" id="followers">
+			    	<div class="row" style="margin-top : 15px;">
+			    	@for(row <- followers) {
+					  	<div class = "img_wrapper">
+					  		<div class = "img_hover">
+								<a href="@routes.Profile.viewProfileUUID(row._1)">
+								@row._4
+					  			</a>
+					  		</div>
+						      <img src="@row._3" class="img_thumbnail">
+					  	</div>
+					}
+					</div> 
+			    </div>
+			    
+			    <div role="tabpanel" class="tab-pane fade" id="files">
+		    	<div class="row" style="margin-top : 15px;">
+				  	<div class="panel-body">
+						@for(fileInfo <- myFiles) {
+				    	<div class="col-md-3" style="margin-top: 30px">
+					    	<div class="panel panel-default">
+							  <div class="panel-heading">
+							    	<a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
+							  </div>
+							  <div class="panel-body">
+							    @fileInfo._3
+							  </div>
+							</div>
+						</div>
+				    	}
+					</div>
+				</div> 
+		    </div>
+		    
+		    <div role="tabpanel" class="tab-pane fade" id="datasets">
+		    	<div class="row" style="margin-top : 15px;">
+				  	<div class="panel-body">
+						@for(datasetInfo <- myDatasets) {
+				    	<div class="col-md-3" style="margin-top: 30px">
+					    	<div class="panel panel-default">
+							  <div class="panel-heading">
+							    	<a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
+							  </div>
+							  <div class="panel-body">
+							    @datasetInfo._3
+							  </div>
+							</div>
+						</div>
+				    	}
+					</div>
+				</div> 
+		    </div>
+		    
+		    <div role="tabpanel" class="tab-pane fade" id="collections">
+		    	<div class="row" style="margin-top : 15px;">
+				  	<div class="panel-body">
+						@for(collectionInfo <- myCollections) {
+				    	<div class="col-md-3" style="margin-top: 30px">
+					    	<div class="panel panel-default">
+							  <div class="panel-heading">
+							    	<a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
+							  </div>
+							  <div class="panel-body">
+							    @collectionInfo._3
+							  </div>
+							</div>
+						</div>
+				    	}
+					</div>
+				</div> 
+		      </div>
+			    
+			    <div role="tabpanel" class="tab-pane fade" id="following">
+					<div class="panel-group" id="accordion" style="margin-top: 15px">
+					
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">
+								<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Users</a>
+							</h4>
+						</div>
+						<div id="collapseOne" class="panel-collapse collapse in">
+							<div class="panel-body">
+								<div class="row" style="margin-top : 15px;">
+							    	@for(userInfo <- followedUsers) {
+									  	<div class = "img_wrapper">
+									  		<div class = "img_hover">
+									  			<a href="@routes.Profile.viewProfileUUID(userInfo._1)">
+									  			@userInfo._2
+									  			</a>
+									  			<div>
+                                                  @if(user != ownProfile) {
+                                                    <h4>
+                                                      @if(user.get.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
+                                                        <button id="followButton" type="button"
+                                                        class="btn btn-danger"
+                                                        data-toggle="button"
+                                                        aria-pressed="true"
+                                                        autocomplete="off"
+                                                        objectId = "@userInfo._1.stringify"
+                                                        objectType = "user">
+                                                          Unfollow
+                                                        </button>
+                                                      } else {
+                                                        <button id="followButton" type="button"
+                                                        class="btn btn-success"
+                                                        data-toggle="button"
+                                                        aria-pressed="false"
+                                                        autocomplete="off"
+                                                        objectId = "@userInfo._1.stringify"
+                                                        objectType = "user">
+                                                          Follow
+                                                        </button>
+                                                      }
+                                                    </h4>
+                                                    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+                                                  }
+									  			</div>
+									  		</div>
+										    <img src=@userInfo._4 class="img_thumbnail">
+									  </div>
+									}
+								</div> 
+							</div>
+						</div>
+					</div>
+					
+					<div class="panel panel-default">
+							<div class="panel-heading">
+								<h4 class="panel-title">
+									<a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Files</a>
+								</h4>
+							</div>
+							<div id="collapseTwo" class="panel-collapse collapse">
+								<div class="panel-body">
+									@for(fileInfo <- followedFiles) {
+							    	<div class="col-md-3" style="margin-top: 30px">
+								    	<div class="panel panel-default">
+										  <div class="panel-heading">
+										    	<a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
+										  </div>
+										  <div class="panel-body">
+										    @fileInfo._3
+										  </div>
+										  <div class="panel-footer">
+										  	@user match {
+												case Some(viewer) => {
+													@ownProfile match {
+                                                      case Some(sameProfile) => {
+                                                        <h4>
+                                <button
+                                  id="followButton"
+                                  type="button"
+                                  class="
+                                    @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
+                                      btn btn-danger
+                                    }else {
+                                      btn btn-success
+                                    }
+                                  "
+                                  data-toggle="button"
+                                  aria-pressed="
+                                    @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
+                                      true
+                                    }else {
+                                      false
+                                    }
+                                  "
+                                  autocomplete="off"
+                                  objectId = "@fileInfo._1.stringify"
+                              objectType = "file"
+                                >
+                                @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
+                                    Unfollow
+                                  } else {
+                                    Follow
+                                  }
+                                </button>
+                              </h4>
+                            <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+                                                      }
+                                                      case None => {
+                                                      }
+                                                    }												
+												}
+											}
+										</div>
+									</div>
+								</div>
+								}
+							</div>
+						</div>
+					</div>
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">
+								<a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Datasets</a>
+							</h4>
+						</div>
+						<div id="collapseThree" class="panel-collapse collapse">
+							<div class="panel-body">
+								@for(datasetInfo <- followedDatasets) {
+						    	<div class="col-md-3" style="margin-top: 30px">
+							    	<div class="panel panel-default">
+									  <div class="panel-heading">
+									    	<a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
+									  </div>
+									  <div class="panel-body">
+									    @datasetInfo._3
+									  </div>
+									  <div class="panel-footer">
+									  	@user match {
+											case Some(viewer) => {
+												@ownProfile match {
+                                                  case Some(sameProfile) => {
+                                                    <h4>
+                              <button
+                                id="followButton"
+                                type="button"
+                                class="
+                                  @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
+                                    btn btn-danger
+                                  }else {
+                                    btn btn-success
+                                  }
+                                "
+                                data-toggle="button"
+                                aria-pressed="
+                                  @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
+                                    true
+                                  }else {
+                                    false
+                                  }
+                                "
+                                autocomplete="off"
+                                objectType="dataset"
+                                objectId="@datasetInfo._1.stringify"
+                              >
+                              @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
+                                  Unfollow
+                                } else {
+                                  Follow
+                                }
+                              </button>
+                            </h4>
+                          <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+                                                  }
+                                                  case None => {
+                                                  }
+                                                }												
+											}
+										}
+									  </div>
+									</div>
+								</div>
+						    	}	
+							</div>
+						</div>
+					</div>
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">
+								<a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">Collections</a>
+							</h4>
+						</div>
+						<div id="collapseFour" class="panel-collapse collapse">
+							<div class="panel-body">
+								@for(collectionInfo <- followedCollections) {
+						    	<div class="col-md-3" style="margin-top: 30px">
+							    	<div class="panel panel-default">
+									  <div class="panel-heading">
+									    	<a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
+									  </div>
+									  <div class="panel-body">
+									    @collectionInfo._3
+									  </div>
+									  <div class="panel-footer">
+									  	@user match {
+											case Some(viewer) => {
+												@ownProfile match {
+                                                  case Some(sameProfile) => {
+                                                    <h4>
+                              <button
+                                id="followButton"
+                                type="button"
+                                class="
+                                  @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
+                                    btn btn-danger
+                                  }else {
+                                    btn btn-success
+                                  }
+                                "
+                                data-toggle="button"
+                                aria-pressed="
+                                  @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
+                                    true
+                                  }else {
+                                    false
+                                  }
+                                "
+                                autocomplete="off"
+                                objectType="collection"
+                                objectId="@collectionInfo._1.stringify"
+                              >
+                              @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
+                                  Unfollow
+                                } else {
+                                  Follow
+                                }
+                              </button>
+                            </h4>                         
+                          <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+                                                  }
+                                                  case None => {
+                                                  }
+                          						}						
+											}
+										}
+									</div>
+								</div>
+						    	}
+							</div>
+						</div>
+					</div>
+		    	</div>	
+		     </div>
+		   </div>
+			    	    
+			</div>
+		</div>
+	  </td> 
     </tr>
   </table>
-
 </div>
 }

@@ -8,7 +8,7 @@ import play.libs.Akka
 import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import models.{Role, ServerStartTime, CORSFilter, ExtractionInfoSetUp}
+import models.{Role, ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
 import java.util.Calendar
 import play.api.mvc.WithFilters
 import akka.actor.Cancellable
@@ -21,6 +21,8 @@ import julienrf.play.jsonp.Jsonp
  */
 object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) with GlobalSettings {
   var extractorTimer: Cancellable = null
+  var jobTimer: Cancellable = null
+
 
   override def onStart(app: Application) {
     ServerStartTime.startTime = Calendar.getInstance().getTime
@@ -31,29 +33,11 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     // create default roles
     val users: UserService = DI.injector.getInstance(classOf[UserService])
-    if (users.listRoles().size == 0) {
+    if (users.listRoles().isEmpty) {
       Logger.debug("Ensuring roles exist")
-
-      // admin role
-      val adminPerm = Permission.values
-      val adminRole = new Role(name="Admin", description="Admin Role", permissions = adminPerm.map(_.toString).toSet)
-      users.updateRole(adminRole)
-
-      // editor role
-      val editorPerm = for(perm <- adminPerm if perm.toString.toLowerCase.indexOf("admin") == -1) yield perm
-      val editorRole = new Role(name="Editor", description="Editor Role", permissions = editorPerm.map(_.toString).toSet)
-      users.updateRole(editorRole)
-
-      // viewer role
-      val viewerPerm = List(Permission.Public,
-        Permission.ViewSpace, Permission.ViewCollection, Permission.ViewSpace,
-        Permission.Public, Permission.ViewDataset, Permission.ViewDataset, Permission.ViewMetadata,
-        Permission.ViewTags, Permission.AddComment, Permission.CreateSection, Permission.ViewSection,
-        Permission.AddTag, Permission.Public, Permission.ViewMetadata, Permission.ViewFile,
-        Permission.ViewFile, Permission.AddTag, Permission.GSViewDatapoints, Permission.GSViewSensor,
-        Permission.GSViewSensor, Permission.GSViewSensor, Permission.DownloadFiles)
-      val viewerRole = new Role(name="Viewer", description="Viewer Role", permissions = viewerPerm.map(_.toString).toSet)
-      users.updateRole(viewerRole)
+      users.updateRole(Role.Admin)
+      users.updateRole(Role.Editor)
+      users.updateRole(Role.Viewer)
     }
 
 
@@ -61,11 +45,18 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
       ExtractionInfoSetUp.updateExtractorsInfo()
     }
 
+    // Use if Mailer Server and stmp in Application.conf are set up
+
+    jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
+      JobsScheduler.runScheduledJobs()
+    }
+
     Logger.info("Application has started")
   }
 
   override def onStop(app: Application) {
     extractorTimer.cancel()
+    jobTimer.cancel()
     Logger.info("Application shutdown")
   }
 

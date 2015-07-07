@@ -28,9 +28,9 @@ function disableFields() {
 	$('#description').addClass("hiddenholdspace");	
 	$("input[name=radiogroup]").attr('disabled', true);
 	$("#spaceid").attr('disabled', true);
-	$('#namelabel').html(name);
+	$('#namelabel').html(htmlEncode(name).replace(/\n/g, "<br>"));
 	$('#namelabel').show();
-	$('#desclabel').html(desc);
+	$('#desclabel').html(htmlEncode(desc).replace(/\n/g, "<br>"));
 	$('#desclabel').show();
 }
 
@@ -126,7 +126,7 @@ function createEmptyDataset(data) {
  		
 	//Remove error messages if present
 	clearErrors();
-	
+
 	//Disable input elements
 	disableFields();
 	

@@ -1,4 +1,4 @@
-@(roles: List[Role])
+@(roles: List[Role])(implicit user: Option[models.User])
 
 @main("Manage Roles") {
     <script src="@routes.Assets.at("javascripts/manageRoles.js")" type="text/javascript"></script>

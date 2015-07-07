@@ -1,5 +1,6 @@
+@(dataset: Dataset, filesTags: Set[String])(implicit user: Option[models.User])
 
-@(dataset: Dataset, filesTags: Set[String])(implicit user: Option[securesocial.core.Identity])
+@import api.Permission
 
 <div class="row bottom-padding">
     <div class="col-md-12">
@@ -7,31 +8,49 @@
     </div>
 </div>
 
-<div class="row bottom-padding">
-    <div id ="tagList" class="col-md-12">
+<!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
+@if(Permission.checkPermission(Permission.ViewTags, ResourceRef(ResourceRef.dataset, dataset.id))) {
+    <div class="row bottom-padding">
+        <div id ="tagList" class="col-md-12">
         @dataset.tags.map { tag =>
             <div id='@tag.name' class="tag">
                 <a href="@routes.Tags.search(tag.name)">@tag.name</a>
-                @if(user.isDefined) {
+                <!-- If the user can delete the tag, the link is enabled, otherwise the link is not present to save space. -->
+                @if(Permission.checkPermission(Permission.DeleteTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
                     <a href="#"> <span id="@tag.name" class="glyphicon glyphicon-remove tag-delete"></span></a>
                 }
             </div>
         }
+        </div>
     </div>
-</div>
+}
 
 <div class="row bottom-padding">
     <div class="col-md-12">
-        <form class="form-inline requiresLogin requiresLoginCommunity">
-            <div class="input-group input-group-sm">
-                <input type="text" id="tagField" class="form-control">
-                <span class="input-group-btn">
-                    <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-                        <span class="glyphicon glyphicon-tag"></span> Tag
-                    </button>
-                </span>
-            </div>
-        </form>
+        <!-- If the user can add tags to the dataset, the form is enabled, otherwise the form is present but disabled to provide consistent UE. -->
+        @if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
+            <form class="form-inline requiresLogin requiresLoginCommunity">
+                <div class="input-group input-group-sm">
+                    <input type="text" id="tagField" class="form-control">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+                            <span class="glyphicon glyphicon-tag"></span> Tag
+                        </button>
+                    </span>
+                </div>
+            </form>
+        } else {
+            <form class="form-inline requiresLogin requiresLoginCommunity">
+                <div class="input-group input-group-sm">
+                    <input disabled type="text" id="tagField" class="form-control">
+                    <span class="input-group-btn">
+                        <button disabled class="btn btn-default btn-large" id="tagB" title="Add Tag">
+                            <span class="glyphicon glyphicon-tag"></span> Tag
+                        </button>
+                    </span>
+                </div>
+            </form>
+        }
     </div>
 </div>
 
@@ -43,20 +62,23 @@
         <div class="collapse" id="tagsFromFiles">
             <div class="well">
 
-                @filesTags.map { tag =>
-                    <div class="tag">
-                        <a href="@routes.Tags.search(tag)">@tag</a>
-                    </div>
-                }
-                @dataset.files.map { file =>
-                @file.sections.map { section =>
-                    @section.tags.map { tag =>
+                <!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
+                @if(Permission.checkPermission(Permission.ViewTags, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @filesTags.map { tag =>
                         <div class="tag">
-                            <a href="@routes.Tags.search(tag.name)">@tag.name</a>
+                            <a href="@routes.Tags.search(tag)">@tag</a>
                         </div>
                     }
+                    @dataset.files.map { file =>
+                        @file.sections.map { section =>
+                            @section.tags.map { tag =>
+                                <div class="tag">
+                                    <a href="@routes.Tags.search(tag.name)">@tag.name</a>
+                                </div>
+                            }
+                        }
+                    }
                 }
-            }
 
 
             </div>

@@ -1,8 +1,10 @@
 package services
 
-import models.{Role, UUID, User}
+import models.{Role, Profile, UUID, User, MiniEntity}
 import securesocial.core.Identity
-import models.Role
+import util.Direction
+import util.Direction.Direction
+import util.Direction.Direction
 
 /**
  * Service definition to interact with the users.
@@ -14,16 +16,43 @@ import models.Role
  *
  * @author Rob Kooper
  */
-trait UserService {
+trait UserService  {
+  def get(id: UUID): Option[User]
+
+  def insert(model: User): Option[String]
+
+  def update(model: User)
+
+  def delete(id: UUID)
+
+  /**
+   * The number of objects that are available based on the filter
+   */
+  def count(filter: Option[String] = None): Long
+
+  /**
+   * Return a list objects that are available based on the filter as well as the other options.
+   *
+   * @param order the key to use to order the data, default is natural ordering of underlying implementation
+   * @param direction the direction to order the data in
+   * @param start the first element that should be returned based on the order key
+   * @param limit the maximum number of elements to return
+   * @param filter is a json representation of the filter to be applied
+   *
+   */
+  def list(order: Option[String] = None, direction: Direction = Direction.DESC,
+           start: Option[String] = None, limit: Integer = 20,
+           filter: Option[String] = None): List[User]
+
   /**
    * The number of users
    */
-  def count(): Long
+  def count(): Long = count(None)
 
   /**
    * List all users in the system.
    */
-  def list: List[User]
+  def list: List[User] = list(limit=Integer.MAX_VALUE)
 
   /**
    * Return a specific user based on the id provided.
@@ -47,16 +76,15 @@ trait UserService {
   def findByEmail(email: String): Option[User]
 
   /**
+   * Update the give user profile
+   */
+  def updateProfile(id: UUID, profile: Profile)
+
+  /**
    * Updates a value in the User Model
    * TODO: use UUID instead of email
    */
   def updateUserField(email: String, field: String, fieldText: Any)
-
-  /**
-   * Adds a friend
-   * TODO: use UUID instead of email
-   */
-  def addUserFriend(email: String, newFriend: String)
 
   /**
    * Adds a dataset view
@@ -117,7 +145,6 @@ trait UserService {
    * @return A list of users that are associated with a space
    */
   def listUsersInSpace(spaceId: UUID): List[User]
-  
 
   /**
    * List user roles.
@@ -149,4 +176,49 @@ trait UserService {
    */
   def updateRole(role: Role)
 
+
+  /**
+   * Follow a file.
+   */
+  def followFile(followerId: UUID, fileId: UUID)
+
+  /**
+   * Unfollow a file.
+   */
+  def unfollowFile(followerId: UUID, fileId: UUID)
+
+  /**
+   * Follow a dataset.
+   */
+  def followDataset(followerId: UUID, datasetId: UUID)
+
+  /**
+   * Unfollow a dataset.
+   */
+  def unfollowDataset(followerId: UUID, datasetId: UUID)
+
+  /**
+   * Follow a collection.
+   */
+  def followCollection(followerId: UUID, collectionId: UUID)
+
+  /**
+   * Unfollow a collection.
+   */
+  def unfollowCollection(followerId: UUID, collectionId: UUID)
+
+  /*
+   * Follow a user.
+   */
+  def followUser(followeeId: UUID, followerId: UUID)
+
+  /**
+   * Unfollow a user.
+   */
+  def unfollowUser(followeeId: UUID, followerId: UUID)
+
+  /**
+   * return List[MiniEntity] - the top N recommendations rooted from sourceID
+   */
+  def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int): List[MiniEntity]
 }

@@ -1,42 +1,62 @@
 package api
 
+import java.io.{BufferedReader, FileInputStream, FileReader}
+import javax.inject.{Inject, Singleton}
+
+import models.{ResourceRef, ThreeDAnnotation, UUID}
 import play.api.Logger
-import java.io.FileInputStream
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
 import play.api.libs.json.JsObject
 import com.mongodb.WriteConcern
-import models.{UUID, ThreeDAnnotation}
+import models.{Preview, UUID, ThreeDAnnotation}
 import play.api.libs.json.JsValue
 import play.api.libs.concurrent.Execution.Implicits._
 import java.io.BufferedReader
 import java.io.FileReader
 import javax.inject.{Inject, Singleton}
 import services.{TileService, PreviewService}
-
+import com.wordnik.swagger.annotations.{ApiOperation, Api}
 /**
  * Files and datasets previews.
- *
- * @author Luigi Marini
- *
  */
 @Singleton
 class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
 
-  def downloadPreview(id: UUID, datasetid: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
+  @ApiOperation(value = "List all preview files", notes = "Returns list of preview files and descriptions.", responseClass = "None", httpMethod = "GET")
+  def list = PermissionAction(Permission.ViewFile) {
+    request =>
+      val list = for (p <- previews.listPreviews()) yield jsonPreview(p)
+      Ok(toJson(list))
+  }
+
+
+    @ApiOperation(value = "Delete previews",
+      notes = "Remove preview file from system).",
+      responseClass = "None", httpMethod = "POST")
+    def removePreview(id: UUID) = PermissionAction(Permission.AddFile) {
       request =>
-        Redirect(routes.Previews.download(id))
+        previews.get(id) match {
+          case Some(preview) => {
+            previews.remove(id)
+            Ok(toJson(Map("status"->"success")))
+          }
+          case None => Ok(toJson(Map("status" -> "success")))
+        }
     }
+
+  def downloadPreview(id: UUID, datasetid: UUID) = PermissionAction(Permission.ViewFile) {request =>
+    Redirect(routes.Previews.download(id))
+  }
 
   /**
    * Download preview bytes.
    */
-  def download(id: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
-      request =>
+  def download(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
         previews.getBlob(id) match {
 
           case Some((inputStream, filename, contentType, contentLength)) => {
@@ -50,7 +70,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                   case (start, end) =>
 
                     inputStream.skip(start)
-                    import play.api.mvc.{SimpleResult, ResponseHeader}
+                    import play.api.mvc.{ResponseHeader, SimpleResult}
                     SimpleResult(
                       header = ResponseHeader(PARTIAL_CONTENT,
                         Map(
@@ -81,9 +101,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Upload a preview.
    */
-  def upload(iipKey: String = "") =
-    SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.AddFile)) {
-      implicit request =>
+  def upload(iipKey: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
         request.body.file("File").map {
           f =>
             Logger.debug("Uploading file " + f.filename)
@@ -100,21 +118,21 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
             if (f.filename.endsWith(".imageurl")) {
               val iipRefReader = new BufferedReader(new FileReader(f.ref.file));
 
-              val serverLine = iipRefReader.readLine();
+              val serverLine = iipRefReader.readLine()
               var urlEnd = serverLine.indexOf("/", serverLine.indexOf("://") + 3)
               if (urlEnd == -1) {
                 urlEnd = serverLine.length()
               }
               val iipURL = serverLine.substring(8, urlEnd)
 
-              val imageLine = iipRefReader.readLine();
+              val imageLine = iipRefReader.readLine()
               val iipImage = imageLine.substring(imageLine.lastIndexOf("/") + 1)
 
               iipRefReader.close()
 
               previews.setIIPReferences(id, iipURL, iipImage, iipKey)
             }
-            Logger.debug("Preview ID^^^^^"+id.toString);
+            Logger.debug("Preview ID^^^^^"+id.toString)
             Ok(toJson(Map("id" -> id.stringify)))
         }.getOrElse {
           BadRequest(toJson("File not attached."))
@@ -126,9 +144,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    *
    */
 
-  def uploadMetadata(id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.AddFile)) {
-      request =>
+  def uploadMetadata(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
         Logger.debug(request.body.toString)
         request.body match {
           case JsObject(fields) => {
@@ -150,11 +166,9 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Get preview metadata.
    *
    */
-  def getMetadata(id: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
-      request =>
+  def getMetadata(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
         previews.get(id) match {
-          case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString)))
+          case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType)))
           case None => Logger.error("Preview metadata not found " + id); InternalServerError
         }
     }
@@ -162,9 +176,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Add pyramid tile to preview.
    */
-  def attachTile(preview_id: UUID, tile_id: UUID, level: String) =
-    SecuredAction(authorization = WithPermission(Permission.AddFile)) {
-      request =>
+  def attachTile(preview_id: UUID, tile_id: UUID, level: String) =  PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, preview_id)))(parse.json) { implicit request =>
         request.body match {
           case JsObject(fields) => {
             previews.get(preview_id) match {
@@ -188,16 +200,14 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Find tile for given preview, level and filename (row and column).
    */
-  def getTile(dzi_id_dir: String, level: String, filename: String) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
-      request =>
+  def getTile(dzi_id_dir: String, level: String, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, UUID(dzi_id_dir.replaceAll("_files", ""))))) { implicit request =>
         val dzi_id = dzi_id_dir.replaceAll("_files", "")
         tiles.findTile(UUID(dzi_id), filename, level) match {
           case Some(tile) => {
 
             tiles.getBlob(tile.id) match {
 
-              case Some((inputStream, filename, contentType, contentLength)) => {
+              case Some((inputStream, tilename, contentType, contentLength)) => {
                 request.headers.get(RANGE) match {
                   case Some(value) => {
                     val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
@@ -208,7 +218,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                       case (start, end) =>
 
                         inputStream.skip(start)
-                        import play.api.mvc.{SimpleResult, ResponseHeader}
+                        import play.api.mvc.{ResponseHeader, SimpleResult}
                         SimpleResult(
                           header = ResponseHeader(PARTIAL_CONTENT,
                             Map(
@@ -226,7 +236,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                   case None => {
                     Ok.chunked(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
-                      .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
+                      .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + tilename))
 
                   }
                 }
@@ -243,9 +253,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Add annotation to 3D model preview.
    */
-  def attachAnnotation(preview_id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.AddFile)) {
-      request =>
+  def attachAnnotation(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, preview_id)))(parse.json) { implicit request =>
         val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
         val y_coord = (request.body \ "y_coord").asOpt[String].getOrElse("0.0")
         val z_coord = (request.body \ "z_coord").asOpt[String].getOrElse("0.0")
@@ -261,9 +269,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-  def editAnnotation(preview_id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.AddFile)) {
-      request =>
+  def editAnnotation(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, preview_id)))(parse.json) { implicit request =>
         Logger.debug("thereq: " + request.body.toString)
         val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
         val y_coord = (request.body \ "y_coord").asOpt[String].getOrElse("0.0")
@@ -286,9 +292,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-  def listAnnotations(preview_id: UUID) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ViewFile)) {
-      request =>
+  def listAnnotations(preview_id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, preview_id))) { implicit request =>
         previews.get(preview_id) match {
           case Some(preview) => {
             val annotationsOfPreview = previews.listAnnotations(preview_id)
@@ -302,6 +306,11 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
   def jsonAnnotation(annotation: ThreeDAnnotation): JsValue = {
     toJson(Map("x_coord" -> annotation.x_coord.toString, "y_coord" -> annotation.y_coord.toString, "z_coord" -> annotation.z_coord.toString, "description" -> annotation.description))
+  }
+
+
+  def jsonPreview(preview: Preview): JsValue = {
+    toJson(Map("id" -> preview.id.toString, "filename" -> preview.filename.getOrElse(""), "contentType" -> preview.contentType))
   }
 
 }

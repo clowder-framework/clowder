@@ -10,10 +10,10 @@
   space: Option[ProjectSpace],
   spaces: Option[List[ProjectSpace]],
   filesTags: Set[String],
-  spaceList: List[ProjectSpace])(implicit user: Option[securesocial.core.Identity])
-
+  spaceList: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
+@import api.Permission
 @import collection.JavaConverters._
 @import com.mongodb.casbah.Imports.DBObject
 @import play.api.Play.current
@@ -69,15 +69,13 @@
 	}
 
 @main("Dataset") {
-
 	<div class="row">
-	
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
 
             <div class="row">
                 <div class="col-md-12" id="ds-title">
-                    <h1 id="datasettitle">@dataset.name</h1>
+                    <h1 id="datasettitle">@Html(dataset.name)</h1>
                 </div>
             </div>
 
@@ -94,18 +92,25 @@
                         @datasets.home(dataset, spaces, previews, spaceList)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
-                      @if(user.isDefined) {
-                          <div id="add-file-btn">
-                              <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
-                              class="btn btn-primary btn-sm requiresLogin" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                                  <span class="glyphicon glyphicon-export"></span> Add File
-                              </a>
-                          </div>
+                      <div id="add-file-btn">
+                      <!-- If the user can edit the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                      @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                          <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
+                          class="btn btn-primary btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                              <span class="glyphicon glyphicon-export"></span> Add File
+                          </a>
+                      } else {
+                          <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
+                          class="btn btn-primary btn-sm disabled" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                              <span class="glyphicon glyphicon-export"></span> Add File
+                          </a>
                       }
+                      </div>
                       @files.grid(dataset.files, dataset.id)
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
-                      @if(user.isDefined) {
+                      <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
+                      @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
                           @commentform(dataset.id.stringify, "dataset")
                       }
                       <div class="list-unstyled" id="reply_@dataset.id.toString">
@@ -114,9 +119,12 @@
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
                     @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
                   </div>
-                  <div role="tabpanel" class="tab-pane fade" id="tab-notes">
-                    @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
-                  </div>
+                  <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
+                  @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                      <div role="tabpanel" class="tab-pane fade" id="tab-notes">
+                      @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
+                      </div>
+                  }
                 </div>
 			</div>
 		</div>
@@ -125,6 +133,9 @@
 		<div class="col-md-4 col-left-border">
             @datasets.tags(dataset, filesTags)
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
+            @if(user.isDefined) {
+                @datasets.userLink(dataset)
+            }
 		</div>
 	</div>
 

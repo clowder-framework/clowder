@@ -18,7 +18,7 @@ trait CollectionService {
   /**
    * List collections in the system.
    */
-  def listCollections(limit: Option[Integer] = None, space: Option[String] = None): List[Collection]
+  def listCollections(order: Option[String] = None, limit: Option[Integer] = None, space: Option[String] = None): List[Collection]
 
   /**
    * List collections in the system in reverse chronological order.
@@ -34,6 +34,16 @@ trait CollectionService {
    * List collections before a specified date.
    */
   def listCollectionsBefore(date: String, limit: Int, space: Option[String] = None): List[Collection]
+  
+  /**
+   * List collections for a specific user after a specified date.
+   */
+  def listUserCollectionsAfter(date: String, limit: Int, email: String) : List[Collection]
+  
+  /**
+   * List collections for a specific user before a specified date.
+   */
+  def listUserCollectionsBefore(date: String, limit: Int, email: String) : List[Collection]
   
   /**
    * Get collection.
@@ -96,6 +106,16 @@ trait CollectionService {
    * Set new thumbnail.
    */
   def createThumbnail(collectionId: UUID)
+
+  /**
+   * Add follower to a collection.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a collection.
+   */
+  def removeFollower(id: UUID, userId: UUID)
 
   /**
    * Associate a collection with a space

@@ -1,22 +1,31 @@
-@(dataset: Dataset)(implicit user: Option[securesocial.core.Identity])
+@(dataset: Dataset)(implicit user: Option[models.User])
 
-@if(user.isDefined) {
+@import api.Permission
+
+<!-- If the user can edit the dataset license info, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+@if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
     <a class="btn btn-default btn-xs accordion-toggle collapsed" data-toggle="collapse"
     data-parent="#accordion6" href="#collapseSix" id="editlicense"
     title="Edit License Information">
         <span class="glyphicon glyphicon-chevron-down"></span> Edit License
     </a>
-}
 
-<div id="collapseSix" class="accordion-body collapse">
-    <div class="panel panel-primary">
-        <div class="panel-body">
-        @if(user.isDefined) {
-            @licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
-        }
+    <div id="collapseSix" class="accordion-body collapse">
+        <div class="panel panel-primary">
+            <div class="panel-body">
+            @if(user.isDefined) {
+                @licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
+            }
+            </div>
         </div>
     </div>
-</div>
+} else {
+    <a class="btn btn-default btn-xs accordion-toggle collapsed disabled" data-toggle="collapse"
+    data-parent="#accordion6" href="#collapseSix" id="editlicense"
+    title="Edit License Information">
+        <span class="glyphicon glyphicon-chevron-down"></span> Edit License
+    </a>
+}
 
 <script type="text/javascript" language="javascript">
     $(document).ready(function() {
