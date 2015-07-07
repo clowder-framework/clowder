@@ -42,13 +42,13 @@ class MongoDBMetadataService @Inject() (
 
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
   def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata] = {
-    MetadataDAO.find(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType,
+    MetadataDAO.find(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify))).toList
   }
 
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
   def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent: String): List[Metadata] = {
-    val metadata = MetadataDAO.find(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType,
+    val metadata = MetadataDAO.find(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)))
 
     for (md <- metadata.toList; if (md.creator.typeOfAgent == typeofAgent)) yield md

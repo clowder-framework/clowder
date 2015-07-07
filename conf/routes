@@ -259,8 +259,6 @@ POST           /api/files/:id/previews/:p_id                                    
 GET            /api/files/:id/listpreviews                                              @api.Files.filePreviewsList(id: UUID)
 GET            /api/files/:id/getPreviews                                               @api.Files.getPreviews(id: UUID)
 GET            /api/files/:id/isBeingProcessed                                          @api.Files.isBeingProcessed(id: UUID)
-#GET		/api/files/:three_d_file_id/:filename			    @api.Files.getGeometry(three_d_file_id: UUID, filename)
-GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
 GET            /api/queries/:id                                                         @api.Files.downloadquery(id: UUID)
 # TODO please use /api/files/:id/blob to get the actual data see MMDB-1685
 GET            /api/files/:id                                                           @api.Files.download(id: UUID)
@@ -283,6 +281,13 @@ POST           /api/datasets/:id/metadata.jsonld                                
 GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
 POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
 GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
+
+#----------------------------------------------------------------------
+# 3D FILES
+#----------------------------------------------------------------------
+#GET		/api/files/:three_d_file_id/:filename			    @api.Files.getGeometry(three_d_file_id: UUID, filename)
+GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
+
 
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
