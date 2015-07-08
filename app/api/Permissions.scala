@@ -147,12 +147,17 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.file, id) => true
       case ResourceRef(ResourceRef.dataset, id) => {
         val dataset = datasets.get(id)
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                                  spaceId <- dataset.get.space
-                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
-                                                  if role.permissions.contains(permission.toString)
-        } yield true
+        var hasPermission: Option[Boolean] = None
 
+        for (clowderUser <- getUserByIdentity(user)) {
+          dataset.get.spaces.map{
+             spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+               if(role.permissions.contains(permission.toString))
+                 hasPermission = Some(true)
+                 return hasPermission.get
+             }
+          }
+        }
         hasPermission getOrElse dataset.exists(_.author.email == user.email)
       }
       case ResourceRef(ResourceRef.collection, id) => {
@@ -192,14 +197,41 @@ object Permission extends Enumeration {
       }
       case ResourceRef(ResourceRef.comment, id) => {
         val comment = comments.get(id)
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                                  dataset <- datasets.get(comment.get.dataset_id.get)
-                                                  spaceId <- dataset.space
-                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
-                                                  if role.permissions.contains(permission.toString)
-        } yield true
-        hasPermission getOrElse comment.exists(_.author.email == user.email)
+        var hasPermission: Option[Boolean] = None
+        if(comment.get.dataset_id.isDefined) {
+          for (clowderUser <- getUserByIdentity(user)) {
+            for (dataset <- datasets.get(comment.get.dataset_id.get)) {
+              dataset.spaces.map {
+                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                  if (role.permissions.contains(permission.toString)) {
+                    hasPermission = Some(true)
+                  }
+                }
+              }
+            }
+          }
+          hasPermission getOrElse comment.exists(_.author.email == user.email)
+        }
+        else if(comment.get.file_id.isDefined) {
+          val datasetList = datasets.findByFileId(comment.get.file_id.get)
+          for (clowderUser <- getUserByIdentity(user)) {
+            datasetList.flatMap(_.spaces).map {
+              spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                  if(role.permissions.contains(permission.toString)) {
+                    hasPermission = Some(true)
+                  }
+                }
+
+            }
+          }
+          hasPermission getOrElse comment.exists(_.author.email == user.email)
+        }
+        else {
+          hasPermission getOrElse comment.exists(_.author.email == user.email)
+        }
       }
+
+
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)
         false

@@ -9,7 +9,7 @@ import controllers.Utils
 import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import services.{AdminsNotifierPlugin, SpaceService, UserService}
+import services.{DatasetService, AdminsNotifierPlugin, SpaceService, UserService}
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
@@ -19,7 +19,7 @@ import scala.collection.mutable.ListBuffer
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
-class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends ApiController {
+class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -117,14 +117,27 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     Ok(toJson("success"))
   }
 
-//  def addDatasetToSpaces(space_list: List[UUID]) = SecuredAction(parse.json,
-//  authorization = WithPermission(Permission.EditCollection))
-//  {
-//    request => val datasetIds = (request.body \ "dataset_ids").as[List[String]]
-//
-//      datasetIds.map(dataset_id => spaces.addDataset(UUID(dataset_id), space))
-//      Ok(toJson("success"))
-//  }
+  @ApiOperation(value = "Associate a dataset to multiple spaces",
+  notes= "",
+  responseClass="None", httpMethod ="POST")
+  def addDatasetToSpaces(space_list: List[String], dataset_id: UUID) = PermissionAction(Permission.EditCollection)(parse.json) {
+    implicit request =>
+      val space_ids = (request.body \ "space_ids").as[List[String]]
+      val dataset_id =( request.body \ "dataset_id").as[String]
+      val current_spaces = datasetService.get(UUID(dataset_id)).map(_.spaces).get
+      var new_spaces: List[UUID] = List.empty
+      current_spaces.map{
+        aSpace =>
+          if(!space_ids.contains(aSpace)) {
+          spaces.removeDataset(UUID(dataset_id), aSpace)
+        }
+          else {
+            new_spaces = aSpace :: new_spaces
+          }
+      }
+      new_spaces.map(space_id => spaces.addDataset(UUID(dataset_id), space_id))
+      Ok(toJson("success"))
+  }
   /**
    * REST endpoint: POST call to update the configuration information associated with a specific Space
    * 

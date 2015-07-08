@@ -104,7 +104,7 @@ class Datasets @Inject()(
                           d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
                       }
                       else {
-                          d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))
+                          d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), spaces = List(UUID(space)))
                       }
                       events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
                       datasets.insert(d) match {
@@ -155,7 +155,7 @@ class Datasets @Inject()(
                   d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
               }
               else {
-              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))
+              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), spaces = List(UUID(space)))
               }
             events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
             datasets.insert(d) match {

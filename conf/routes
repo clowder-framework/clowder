@@ -291,7 +291,7 @@ POST           /api/spaces/:id/addCollection                                    
 POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
-
+POST           /api/spaces/addDatasetToSpaces                                           @api.Spaces.addDatasetToSpaces(space_list: List[String] ?= List.empty, dataset_id: UUID)
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
 # ----------------------------------------------------------------------

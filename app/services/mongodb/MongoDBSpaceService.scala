@@ -195,12 +195,22 @@ class MongoDBSpaceService @Inject() (
   /**
    * Associate a dataset with a space
    *
-   * @param collection dataset id
+   * @param dataset dataset id
    * @param space space id
    */
   def addDataset(dataset: UUID, space: UUID): Unit = {
     log.debug(s"Space Service - Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
+  }
+
+  /**
+   * Remove association betweren dataset and a space
+   * @param dataset dataset id
+   * @param space space id
+   */
+  def removeDataset(dataset:UUID, space:UUID): Unit = {
+    log.debug(s"Space Service - removing $dataset from $space")
+    datasets.removeFromSpace(dataset, space)
   }
 
   /**
@@ -274,20 +284,30 @@ class MongoDBSpaceService @Inject() (
               //It was last modified longer than the time to live, so remiove it.
               for (colDataset <- aCollection.datasets) {
                   //Remove all the datasets in the collection if they don't have their own space.
-                  colDataset.space match {
-                      case Some(anId) => {
-                          if (anId == space) {
-                              //The dataset space id is the same, so go ahead and remove it as well.
-                              datasets.removeDataset(colDataset.id)
-                          }
-                          //Nothing to be done in the else case, as it will simply detach the dataset when the collection is deleted.
-                      }
-
-                      case None => {
-                          //In this case, the dataset is in the default space, so do not remove it, it will detach on collection deletion.
-                          log.debug("collection being purged contained a dataset in the default space. The dataset will not be deleted.")
-                      }
+                var datasetOnlyInSpace: Option[Boolean] = None
+                colDataset.spaces.map {
+                      // Id the dataset exists in a space different than the one being detached, we want to keep the dataset.
+                  spaceId => if(spaceId != space) {
+                    datasetOnlyInSpace = Some(false)
+                  } else {
+                    //Detach the dataset from the space that is currently being etached.
+                    datasets.removeFromSpace(colDataset.id, spaceId)
+                    datasetOnlyInSpace match {
+                        //We only want to set this as true, if it was None, if it was false, we don't want to indicate that ths=is is the only space the dataset is in.
+                      case None => datasetOnlyInSpace = Some(true)
+                    }
                   }
+                }
+                datasetOnlyInSpace match {
+                  case Some(true) => {
+                    //If the dataset only exists in the current space, it can be removed.
+                    datasets.removeDataset(colDataset.id)
+                  }
+                  case None => {
+                    //In this case, the dataset is in the default space, so do not remove it, it will detach on collection deletion.
+                    log.debug("collection being purged contained a dataset in the default space. The dataset will not be deleted.")
+                  }
+                }
               }
 
               //Remove the collection. Any remaining datasets are to be simply detached.
