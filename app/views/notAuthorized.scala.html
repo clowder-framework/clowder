@@ -1,4 +1,4 @@
-@()(implicit user: Option[models.User])
+@(msg: String)(implicit  user: Option[models.User])
 
 @main("Not authorized") {
 	<div class="page-header">
@@ -6,7 +6,11 @@
 	</div>
 	<div class="row">
 		<div class="col-md-12">
-			You are not authorized to proceed with your request.
+			@if(msg != null){
+				You are not authorized to proceed with @msg
+			}else{
+				You are not authorized to proceed with your request.
+			}
 		</div>
 	</div>
 }
