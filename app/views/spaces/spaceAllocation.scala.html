@@ -1,0 +1,126 @@
+@(resourceId: UUID, resourceType: Int, spacesList: List[ProjectSpace], space: Option[List[ProjectSpace]])(implicit user: Option[securesocial.core.Identity])
+<div class="row">
+    <select class = "chosen-select2" multiple style="..." id ="spacesAvailable">
+        @for(curOption <- space) {
+            @for(curSpace <- curOption) {
+                <option value="@curSpace.id" id ="@curSpace.name" selected>@curSpace.name</option>
+            }
+        }
+        @for(curSpace <-spacesList) {
+            <option value="@curSpace.id" id ="@curSpace.name" >@curSpace.name</option>
+        }
+    </select>
+</div>
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+<script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
+
+<script language="javascript">
+    $(".chosen-select2").chosen({
+        width: "90%",
+        placeholder_text_multiple: "Select spaces for this dataset"
+    });
+</script>
+
+<script language = "javascript">
+    var idNameObj = {};
+
+    resource_type_enum = {
+    DATASET : 0,
+    COLLECTION : 1
+    }
+
+    function isUndefined(value) {
+        return typeof value === 'undefined';
+    }
+
+    function getName(id) {
+        return idNameObj[id];
+    }
+    $(document).ready(function() {
+        @for(space <- spacesList) {
+            idNameObj["@space.name"] = "@space.id";
+        }
+    });
+
+    $(".chosen-select2").chosen().change(function(event, params) {
+        var targetId = this.getAttribute("id");
+        if(!isUndefined(params.selected)) {
+            var addedId = params.selected;
+            @for(space<-spacesList) {
+                var currentId = "@space";
+                if(currentId != targetId) {
+                    $('#@space.id option [value=' + addedId + ']').remove();
+                    $('#@space.id').trigger("chosen:updated");
+                }
+            }
+            $('ul.chosen-choices li.search-field').css("width", "0");
+        }
+        else if(!isUndefined(params.deselected)) {
+            var removedId= params.deselected;
+            @for(space <- spacesList) {
+                var currentId = "@space"
+                if(currentId != targetId) {
+                $('#@space.id').prepend($("<option></option>").attr("value", params.deselected).text(getName(params.deselected)));
+                $('#@space.id').trigger("chosen:updated");
+                }
+
+            }
+        }
+
+        $('#spaces_add').click(function() {
+            $('#modalSpaces').modal('hide');
+            if(@resourceType == resource_type_enum.DATASET) {
+              updateDatasetInSpaces();
+            } else if(@resourceType == resource_type_enum.COLLECTION) {
+              updateCollectionInSpaces();
+            }
+        })
+
+    });
+
+    function updateCollectionInSpaces(){
+
+    };
+
+    function updateDatasetInSpaces() {
+        var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get();
+        var names = $('#spacesAvailable option:selected').map(function(){ return this.id }).get();
+        console.log('Adding spaces' + ids + ' to dataset');
+        var jsonData = JSON.stringify({"space_ids": ids, "resource_id": "@resourceId"});
+        var request = jsRoutes.api.Spaces.addDatasetToSpaces(ids,"@resourceId").ajax({
+            data: jsonData,
+            type: 'POST',
+            contentType: "application/json",
+        });
+
+        request.done(function(response, textStatus, jqXH){
+            console.log("Successful response from add Datasets")
+            updateSpacesEditLink(ids, names)
+        });
+
+        request.fail(function(jqHR, textStatus, errorThrown){
+            console.error("The following error occurred: " + textStatus, errorThrown);
+        })
+    }
+
+    function updateSpacesEditLink(ids, names) {
+        var edit_spaces = $("#editSpaces");
+        $("#spaces").text('');
+        $("#spaces").html(edit_spaces);
+       for(var i=0; i < ids.length; i++){
+       $("<a href="+ jsRoutes.controllers.Spaces.getSpace(ids[i]).url +" > " + names[i] + " </a>").insertBefore('#editSpaces')
+       }
+
+    }
+
+    if($('ul.chosen-choices .search-field input').attr('class') == 'default') {
+        $('ul.chosen-choices li.search-field').css("width", "80%");
+        $('ul.chosen-choices li.search-field input[type="text"]').css("width", "100%");
+    }
+
+    function spaceAddDataset() {
+        var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get()
+
+        console.log('Adding spaces' + ids + ' to dataset');
+    }
+</script>
