@@ -296,12 +296,18 @@ class Files @Inject()(
                 creator = s.get
                 //if creator is found, continue processing
 
+                val context: JsValue = (json \ "@context")
+
                 // check if the context is a URL to external endpoint
-                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+                val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
 
                 // check if context is a JSON-LD document
-                val contextID: Option[UUID] = (json \ "@context").asOpt[JsValue]
-                  .map(contextService.addContext(new JsString("context name"), _))
+                val contextID: Option[UUID] =
+                  if (context.isInstanceOf[JsObject]) {
+                    context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                  } else if (context.isInstanceOf[JsArray]) {
+                    context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                  } else None
 
                 // when the new metadata is added
                 val createdAt = new Date()
