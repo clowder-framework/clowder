@@ -49,8 +49,6 @@ function showModal(spaces, resource_id, resource_type) {
     });
 }
 
-
-
 function addCollectionToSpace(collection_id, space_id, space_name) {
 
     var request = jsRoutes.api.Spaces.addCollection(space_id).ajax({
@@ -89,26 +87,6 @@ function addDatasetToSpace(dataset_id, space_id, space_name) {
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
     });
-}
-
-function addDatasetToSpace2(dataset_id, space_ids, space_names) {
-    for (space_id in space_ids) {
-        var request = jsRoutes.api.Spaces.addDataset(space_id).ajax({
-            type: 'POST',
-            data: JSON.stringify({'dataset_id': dataset_id}),
-            dataType: "json",
-            contentType: "application/json; charset:utf-8"
-        });
-        request.done(function(response, textStatus, jqXHR) {
-            console.log('Dataset '+ dataset_id + 'added to space ' + space_id);
-            updateSpaceEdit(space_id, space_name)
-        });
-
-        request.fail(function(jqXHR, textStatus, errorThrown) {
-            console.error("The following error occurred: " + textStatus, errorThrown);
-        });
-    }
-    $('#modalSpaces').modal('hide');
 }
 
 function updateSpaceEditLink(space_id, space_name) {
