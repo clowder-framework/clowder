@@ -13,9 +13,11 @@ GET            /                                                                
 
 # Map static resources from the /public folder to the /assets URL path
 #GET      /documentation/api/*testFile                                        controllers.Assets.at(path="/public/docs/api", testFile)
+GET            /contexts/metadata.jsonld                                         controllers.Assets.at(path="/public", file="/jsonld/contexts/metadata.jsonld")
 GET            /assets/img/glyphicons-halflings-white.png                               controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
 GET            /assets/img/glyphicons-halflings.png                                     controllers.Assets.at(path="/public", file="/images/glyphicons-halflings.png")
 GET            /assets/*file                                                            controllers.Assets.at(path="/public", file)
+
 
 # Users
 POST           /users/registerThroughAdmins                                             controllers.Users.handleStartSignUp
