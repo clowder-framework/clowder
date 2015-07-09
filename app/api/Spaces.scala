@@ -122,20 +122,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   responseClass="None", httpMethod ="POST")
   def addDatasetToSpaces(space_list: List[String], dataset_id: UUID) = PermissionAction(Permission.EditCollection)(parse.json) {
     implicit request =>
-      val space_ids = (request.body \ "space_ids").as[List[String]]
-      val dataset_id =( request.body \ "dataset_id").as[String]
-      val current_spaces = datasetService.get(UUID(dataset_id)).map(_.spaces).get
+      //val space_ids = (request.body \ "space_ids").as[List[String]]
+      //val dataset_id =( request.body \ "dataset_id").as[String]
+      val current_spaces = datasetService.get(dataset_id).map(_.spaces).get
       var new_spaces: List[UUID] = List.empty
       current_spaces.map{
         aSpace =>
-          if(!space_ids.contains(aSpace)) {
-          spaces.removeDataset(UUID(dataset_id), aSpace)
+          if(!space_list.contains(aSpace)) {
+          spaces.removeDataset(dataset_id, aSpace)
         }
           else {
             new_spaces = aSpace :: new_spaces
           }
       }
-      new_spaces.map(space_id => spaces.addDataset(UUID(dataset_id), space_id))
+      space_list.map {
+        aSpace => if(!new_spaces.contains(aSpace) && !current_spaces.contains(UUID(aSpace))) {
+          new_spaces = UUID(aSpace) :: new_spaces
+        }
+      }
+      new_spaces.map(space_id => spaces.addDataset(dataset_id, space_id))
       Ok(toJson("success"))
   }
   /**

@@ -339,7 +339,7 @@ class Datasets @Inject()(
             }
           }
 
-          var decodedSpaces: List[ProjectSpace] = null
+          var decodedSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
           spaceList2.map{
             aSpace =>
                 decodedSpaces= Utils.decodeSpaceElements(aSpace)  :: decodedSpaces

@@ -1,4 +1,4 @@
-@(dataset: Dataset, space: Option[List[ProjectSpace]], resourceType: Int, resourceId: UUID, previewers: List[Previewer], spacesList: List[ProjectSpace])(implicit user: Option[models.User])
+@(space: Option[List[ProjectSpace]], resourceType: Int, resourceId: UUID, previewers: List[Previewer], spacesList: List[ProjectSpace])(implicit user: Option[models.User])
 <span id="spaces" >
 @if(user.isDefined) {
     @if(space.isDefined) {
@@ -49,10 +49,10 @@ aria-labelledby="myModalLabel" aria-hidden="true">
             </div>
             <div class = "modal-body" style= "padding-left: 30px;">
 
-                @spaces.datasetAllocation(dataset, spacesList, space)
+                @spaces.spaceAllocation(resourceId, resourceType, spacesList, space)
             </div>
             <div class ="modal-footer">
-                <button class ="btn btn-primary" id="space_add_dataset" title = "Update Spaces Information">
+                <button class ="btn btn-primary" id="spaces_add" title = "Update Spaces Information">
                     <span class ="glyphicon glyphico-edit"></span> Submit
                 </button>
 

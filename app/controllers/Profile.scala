@@ -138,7 +138,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
                   myFiles = myFiles.++(List((fset.id, fset.filename, fset.contentType)))
                 }
               }
-              case None => {}
+
             }
             Ok(views.html.profile(existingUser, ownProfile, followers, followedUsers, followedFiles, followedDatasets, followedCollections, myFiles, myDatasets, myCollections))
         
