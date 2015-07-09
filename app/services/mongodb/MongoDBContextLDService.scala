@@ -30,8 +30,7 @@ class MongoDBContextLDService extends ContextLDService{
   /** Add context for metadata **/
   def addContext(contextName: JsString, contextld: JsValue): UUID = {
     val mid = ContextLDDAO.insert(new ContextLD(UUID.generate, contextName, contextld), WriteConcern.Safe)
-    val id = UUID(mid.get.toString())
-    id
+    UUID(mid.get.toString())
   }
 
   /** Get context  **/

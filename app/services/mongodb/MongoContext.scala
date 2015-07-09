@@ -117,7 +117,6 @@ object MongoContext {
   object JsValueTransformer extends CustomTransformer[play.api.libs.json.JsValue, DBObject] {
     def deserialize(value: DBObject) = {
       play.api.libs.json.Json.parse(com.mongodb.util.JSON.serialize(value))
-
     }
 
     def serialize(value: play.api.libs.json.JsValue) = {

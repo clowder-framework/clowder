@@ -2,13 +2,7 @@ package models
 
 import java.net.URL
 import java.util.Date
-import play.api.libs.json.JsObject
-import play.api.libs.json.Writes
-import play.api.libs.json.Reads
-import play.api.libs.json.Json
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsError
+import play.api.libs.json._
 import play.api.data.validation.ValidationError
 
 /**
@@ -18,6 +12,7 @@ case class Metadata (
     id: UUID = UUID.generate,
     attachedTo: ResourceRef,
     contextId: Option[UUID] = None,
+    contextURL: Option[URL] = None,
     createdAt: Date = new Date(),
     creator: Agent,
     content: JsValue,

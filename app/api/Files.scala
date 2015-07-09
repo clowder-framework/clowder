@@ -14,6 +14,7 @@ import java.io.FileReader
 import java.io.ByteArrayInputStream
 import javax.mail.internet.MimeUtility
 
+import _root_.util.JSONLD
 import securesocial.core.Identity
 
 import scala.collection.mutable.MutableList
@@ -294,18 +295,23 @@ class Files @Inject()(
               case s: JsSuccess[Agent] => {
                 creator = s.get
                 //if creator is found, continue processing
-                //read context from request if exists (might not be part of json)
-                val context = (json \ "@context").asOpt[JsValue]
-                //add to db and get an ID
-                val contextID = context.map(contextService.addContext(new JsString("context name"), _))
 
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsValue]
+                  .map(contextService.addContext(new JsString("context name"), _))
+
+                // when the new metadata is added
                 val createdAt = new Date()
 
                 //parse the rest of the request to create a new models.Metadata object
                 val attachedTo = ResourceRef(ResourceRef.file, id)
                 val content = (json \ "content")
                 val version = None
-                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
 
                 //add metadata to mongo
                 metadataService.addMetadata(metadata)
@@ -331,7 +337,7 @@ class Files @Inject()(
         case Some(file) => {    
           //get metadata and also fetch context information
           val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-            .map(jsonMetadataWithContext(_))
+            .map(JSONLD.jsonMetadataWithContext(_))
           Ok(toJson(listOfMetadata))
         }
         case None => {
@@ -342,36 +348,17 @@ class Files @Inject()(
   }
 
   /**
-   * Converts models.Metadata object and context information to JsValue object. 
-   */
-  private def jsonMetadataWithContext(metadata: Metadata): JsValue = {
-    //fetch context from mongo using its id
-    val contextLd = metadata.contextId.flatMap(contextService.getContextById(_)).getOrElse(JsNull)
-    val contextJson = JsObject(Seq("@context" -> contextLd))
-
-    //convert metadata to json using implicit writes in Metadata model
-    val metadataJson = (toJson(metadata)).asInstanceOf[JsObject]
-
-    //combine the two json objects and return 
-    contextJson ++ metadataJson
-  }
-  
-  /**
    * Add Versus metadata to file: use by Versus Extractor
    * REST enpoint:POST api/files/:id/versus_metadata
    */
   def addVersusMetadata(id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) { request =>
 
-     Logger.debug("INSIDE ADDVersusMetadata=: "+id.toString )
+     Logger.trace("INSIDE ADDVersusMetadata=: "+id.toString )
       files.get(id) match {
         case Some(file) => {
-          Logger.debug("******ADD Versus Metadata:*****")
-          val list = request.body \ ("versus_descriptors")
-                    
-          //files.addVersusMetadata(id, list)
+          Logger.debug("Adding Versus Metadata to file " + id.toString())
           files.addVersusMetadata(id, request.body)
-          
           Ok("Added Versus Descriptor")
         }
         case None => {
@@ -379,7 +366,6 @@ class Files @Inject()(
           NotFound
         }
       }
-
     }
 
   

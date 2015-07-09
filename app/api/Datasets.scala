@@ -3,6 +3,7 @@
  */
 package api
 
+import java.net.URL
 import java.util.Date
 import java.text.SimpleDateFormat
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
@@ -32,7 +33,7 @@ import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsNull
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsError
-import util.License
+import util.{JSONLD, License}
 import scala.Some
 import models.File
 import play.api.Play.configuration
@@ -443,19 +444,23 @@ class Datasets @Inject()(
             json.validate[Agent] match {
               case s: JsSuccess[Agent] => {
                 creator = s.get
-                //if creator is found, continue processing
-                //read context from request if exists (might not be part of json)
-                val context = (json \ "@context").asOpt[JsValue]
-                //add to db and get an ID
-                val contextID = context.map(contextService.addContext(new JsString("context name"), _))
 
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                  .map(contextService.addContext(new JsString("context name"), _))
+
+                // when the new metadata is added
                 val createdAt = new Date()
                               
                 //parse the rest of the request to create a new models.Metadata object
                 val attachedTo = ResourceRef(ResourceRef.dataset, id)
                 val content = (json \ "content")
                 val version = None
-                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, createdAt, creator, content, version)
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
 
                 //add metadata to mongo
                 metadataService.addMetadata(metadata)
@@ -483,7 +488,7 @@ class Datasets @Inject()(
         case Some(dataset) => {    
           //get metadata and also fetch context information
           val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
-            .map(jsonMetadataWithContext(_))
+            .map(JSONLD.jsonMetadataWithContext(_))
           Ok(toJson(listOfMetadata))
         }
         case None => {
@@ -491,21 +496,6 @@ class Datasets @Inject()(
           InternalServerError
         }
       }
-  }
-
-  /**
-   * Converts models.Metadata object and context information to JsValue object. 
-   */
-  def jsonMetadataWithContext(metadata: Metadata): JsValue = {
-    //fetch context from mongo using its id
-    val contextLd = metadata.contextId.flatMap(contextService.getContextById(_)).getOrElse(JsNull)
-    val contextJson = JsObject(Seq("@context" -> contextLd))
-
-    //convert metadata to json using implicit writes in Metadata model
-    val metadataJson = (toJson(metadata)).asInstanceOf[JsObject]
-
-    //combine the two json objects and return 
-    contextJson ++ metadataJson
   }
   
   @ApiOperation(value = "Add user-generated metadata to dataset",
@@ -528,8 +518,7 @@ class Datasets @Inject()(
     }
     Ok(toJson(Map("status" -> "success")))
   }
-  
-  
+
   def datasetFilesGetIdByDatasetAndFilename(datasetId: UUID, filename: String): Option[String] = {
     datasets.get(datasetId) match {
       case Some(dataset) => {
