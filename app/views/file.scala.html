@@ -102,6 +102,14 @@
 	     	 	}
 			}			
 		}
+		else if("@p._2" === "External resource"){
+			Configuration.authenticatedFileModify = false;
+			@if(user.isDefined) {
+	     	 	@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+					Configuration.authenticatedFileModify = true;
+	     	 	}
+			}			
+		}
 	</script>
 	<script type="text/javascript" src="@(routes.Assets.at(p._3) + "/" + p._4)"></script>
 }
