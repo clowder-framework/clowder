@@ -520,9 +520,7 @@ textarea, input[type='text'], input[type='password']{
 #scrollTableGalleria{
 	width: 100%;
 }
-#scrollTableGalleria thead,#scrollTableGalleria tbody,#scrollTableGalleria tr,#scrollTableGalleria td,#scrollTableGalleria th{
-	display:block;
-}
+
 #scrollTableGalleria tr:after{
 	content: ' ';
     display: block;
