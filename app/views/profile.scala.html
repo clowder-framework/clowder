@@ -1,4 +1,6 @@
 @(profile: User, ownProfile: Option[Boolean], followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)], followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], myFiles : List[(UUID, String, String)], myDatasets : List[(UUID, String, String)], myCollections : List[(UUID, String, String)] )(implicit user: Option[models.User] = None)
+
+
 @main("Profile") {
 <div class="page-header">
   <table>
@@ -25,7 +27,7 @@
                     <button
                       id="userFollowButton"
                       type="button"
-                      class="followButton 
+                      class="followButton
                         @if(profile.followers.contains(viewer.id)) {
                           btn btn-danger
                         }else {
@@ -131,7 +133,7 @@
 			    <li role="presentation" class="nav"><a href="#datasets" data-toggle="tab">My Datasets</a></li>
 			    <li role="presentation" class="nav"><a href="#collections" data-toggle="tab">My Collections</a></li>
 			  </ul>
-			  
+
 			  <div class="tab-content">
 				<div role="tabpanel" class="tab-pane fade in active" id="home">
                   @if(profile.profile.isDefined) {
@@ -160,7 +162,7 @@
 			          }
                   }
 			    </div>
-			    
+
 			    <div role="tabpanel" class="tab-pane fade" id="followers">
 			    	<div class="row" style="margin-top : 15px;">
 			    	@for(row <- followers) {
@@ -173,77 +175,77 @@
 						      <img src="@row._3" class="img_thumbnail">
 					  	</div>
 					}
-					</div> 
+					</div>
 			    </div>
-			    
+
 			    <div role="tabpanel" class="tab-pane fade" id="files">
 		    	<div class="row" style="margin-top : 15px;">
 				  	<div class="panel-body">
 						@for(fileInfo <- myFiles) {
-				    	<div class="col-md-3" style="margin-top: 30px">
+				    	<div class="col-md-4" style="margin-top: 30px">
 					    	<div class="panel panel-default">
-							  <div class="panel-heading">
+							  <div class="panel-heading caption break-word">
 							    	<a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
 							  </div>
-							  <div class="panel-body">
-							    @fileInfo._3
+							  <div class="panel-body caption break-word">
+							    <p>@fileInfo._3</p>
 							  </div>
 							</div>
 						</div>
 				    	}
 					</div>
-				</div> 
+				</div>
 		    </div>
-		    
+
 		    <div role="tabpanel" class="tab-pane fade" id="datasets">
 		    	<div class="row" style="margin-top : 15px;">
 				  	<div class="panel-body">
 						@for(datasetInfo <- myDatasets) {
-				    	<div class="col-md-3" style="margin-top: 30px">
+				    	<div class="col-md-4" style="margin-top: 30px">
 					    	<div class="panel panel-default">
-							  <div class="panel-heading">
+							  <div class="panel-heading caption break-word">
 							    	<a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
 							  </div>
-							  <div class="panel-body">
-							    @datasetInfo._3
+							  <div class="panel-body caption break-word">
+							    <p>@datasetInfo._3</p>
 							  </div>
 							</div>
 						</div>
 				    	}
 					</div>
-				</div> 
+				</div>
 		    </div>
-		    
+
 		    <div role="tabpanel" class="tab-pane fade" id="collections">
 		    	<div class="row" style="margin-top : 15px;">
 				  	<div class="panel-body">
 						@for(collectionInfo <- myCollections) {
-				    	<div class="col-md-3" style="margin-top: 30px">
+				    	<div class="col-md-4" style="margin-top: 30px">
 					    	<div class="panel panel-default">
-							  <div class="panel-heading">
-							    	<a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
+							  <div class="panel-heading caption break-word">
+                                 <a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
 							  </div>
-							  <div class="panel-body">
-							    @collectionInfo._3
+							  <div class="panel-body caption break-word">
+                                  <p>@collectionInfo._3</p>
 							  </div>
 							</div>
 						</div>
 				    	}
 					</div>
-				</div> 
+				</div>
 		      </div>
-			    
+
 			    <div role="tabpanel" class="tab-pane fade" id="following">
 					<div class="panel-group" id="accordion" style="margin-top: 15px">
-					
+
 					<div class="panel panel-default">
-						<div class="panel-heading">
+						<div class="panel-heading caption break-word">
 							<h4 class="panel-title">
 								<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Users</a>
 							</h4>
 						</div>
 						<div id="collapseOne" class="panel-collapse collapse in">
-							<div class="panel-body">
+							<div class="panel-body caption break-word">
 								<div class="row" style="margin-top : 15px;">
 							    	@for(userInfo <- followedUsers) {
 									  	<div class = "img_wrapper">
@@ -283,21 +285,21 @@
 										    <img src=@userInfo._4 class="img_thumbnail">
 									  </div>
 									}
-								</div> 
+								</div>
 							</div>
 						</div>
 					</div>
-					
+
 					<div class="panel panel-default">
-							<div class="panel-heading">
+							<div class="panel-heading caption break-word">
 								<h4 class="panel-title">
 									<a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Files</a>
 								</h4>
 							</div>
 							<div id="collapseTwo" class="panel-collapse collapse">
-								<div class="panel-body">
+								<div class="panel-body caption break-word">
 									@for(fileInfo <- followedFiles) {
-							    	<div class="col-md-3" style="margin-top: 30px">
+							    	<div class="col-md-4" style="margin-top: 30px">
 								    	<div class="panel panel-default">
 										  <div class="panel-heading">
 										    	<a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
@@ -344,7 +346,7 @@
                                                       }
                                                       case None => {
                                                       }
-                                                    }												
+                                                    }
 												}
 											}
 										</div>
@@ -355,15 +357,15 @@
 						</div>
 					</div>
 					<div class="panel panel-default">
-						<div class="panel-heading">
+						<div class="panel-heading caption break-word">
 							<h4 class="panel-title">
 								<a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Datasets</a>
 							</h4>
 						</div>
 						<div id="collapseThree" class="panel-collapse collapse">
-							<div class="panel-body">
+							<div class="panel-body caption break-word">
 								@for(datasetInfo <- followedDatasets) {
-						    	<div class="col-md-3" style="margin-top: 30px">
+						    	<div class="col-md-4" style="margin-top: 30px">
 							    	<div class="panel panel-default">
 									  <div class="panel-heading">
 									    	<a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
@@ -410,26 +412,26 @@
                                                   }
                                                   case None => {
                                                   }
-                                                }												
+                                                }
 											}
 										}
 									  </div>
 									</div>
 								</div>
-						    	}	
+						    	}
 							</div>
 						</div>
 					</div>
 					<div class="panel panel-default">
-						<div class="panel-heading">
+						<div class="panel-heading caption break-word">
 							<h4 class="panel-title">
 								<a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">Collections</a>
 							</h4>
 						</div>
 						<div id="collapseFour" class="panel-collapse collapse">
-							<div class="panel-body">
+							<div class="panel-body caption break-word">
 								@for(collectionInfo <- followedCollections) {
-						    	<div class="col-md-3" style="margin-top: 30px">
+						    	<div class="col-md-4" style="margin-top: 30px">
 							    	<div class="panel panel-default">
 									  <div class="panel-heading">
 									    	<a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>

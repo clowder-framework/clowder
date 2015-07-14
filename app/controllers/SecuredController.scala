@@ -5,8 +5,7 @@ import api.{Permission, UserRequest}
 import models.ResourceRef
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
-import services.{SpaceService, DI}
-
+import services.{DatasetService, CollectionService, SpaceService, DI}
 import scala.concurrent.Future
 
 /**
@@ -28,7 +27,6 @@ trait SecuredController extends Controller {
       block(userRequest)
     }
   }
-  lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
   /**
    * Use when you want to require the user to be logged in on a private server or the server is public.
    */
@@ -78,15 +76,15 @@ trait SecuredController extends Controller {
       if (p || userRequest.superAdmin) {
         block(userRequest)
       } else {
-
+        lazy val space: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+        lazy val collection: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+        lazy val dataset: DatasetService = DI.injector.getInstance(classOf[DatasetService])
         val messgae = {
           resourceRef.get match {
             // TODO "Not authorized" occurs with other ResourceRef.Type or there is resourceRef.parse
-            //case ResourceRef(ResourceRef.file, id) => false
-            //case ResourceRef(ResourceRef.dataset, id) => false
-            //case ResourceRef(ResourceRef.collection, id) => false
-            case ResourceRef(ResourceRef.space, id) => spaces.get(id).get.name
-            //case ResourceRef(ResourceRef.comment, id) => false
+            case ResourceRef(ResourceRef.dataset, id) => dataset.get(id).get.name
+            case ResourceRef(ResourceRef.collection, id) => collection.get(id).get.name
+            case ResourceRef(ResourceRef.space, id) => space.get(id).get.name
             case ResourceRef(resType, id) => {
               "error resource"
             }
