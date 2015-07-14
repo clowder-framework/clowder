@@ -347,7 +347,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     implicit val user = request.user
     user match {
       case Some(x) => {
-        Ok(views.html.roles.listRoles(userService.listRoles().sortWith(_.name.toLowerCase < _.name.toLowerCase)))
+        Ok(views.html.roles.listRoles(userService.listRoles().sortWith(_.name.toLowerCase < _.name.toLowerCase), Permission.values.toList))
       }
     }
   }

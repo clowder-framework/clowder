@@ -1,4 +1,4 @@
-@(roles: List[Role])(implicit user: Option[models.User])
+@(roles: List[Role], permissionList: List[api.Permission.Value])(implicit user: Option[models.User])
 
 @main("Manage Roles") {
     <script src="@routes.Assets.at("javascripts/manageRoles.js")" type="text/javascript"></script>
@@ -24,10 +24,11 @@
                     <thead><tr><th>Name</th><th>Description</th><th>Permissions</th><th>Edit / Delete</th></tr></thead>
                     @for(role <- roles) {
                         <tr><td>@role.name</td><td>@role.description</td><td id="permission">
-
-                        @for(permission <- role.permissions){
-                            @permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2"),
+                        @if(!role.permissions.isEmpty) {
+                            @for( p <- permissionList filter { role.permissions contains _.toString() } map { _.toString() } ) {
+                                @Html(p.replaceFirst("(\\p{Ll})(\\p{Lu})", "$1 $2").replaceFirst("(\\w) (.+)", "$1 <b><i>$2</i></b>").replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2")),
                             }
+                        }
                         </td>
                         <td>
                             <a href="@routes.Admin.editRole(role.id)" class ="btn btn-link"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a>
@@ -39,7 +40,7 @@
             }
         </div>
     </div>
-    <script languate ="javascript">
+    <script language ="javascript">
         //Changes the id's in the permissions. And replaces the last ',' with a '.'
         var renumberpermission = function() {
             Array.prototype.reduce.call($('td#permission'), function(i, next) {
@@ -49,7 +50,6 @@
                 if(text.trim()) {
                     input.replaceWith("<td>"+ text.substring(0, text.lastIndexOf(',')) + ".</td>");
                 }
-
                 if(input.attr('id').match(/permission_\d+|/)) {
                     return i + 1;
                 }
@@ -59,3 +59,4 @@
         renumberpermission();
     </script>
 }
+
