@@ -8,14 +8,14 @@ import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
 import play.api.libs.json.JsObject
 import com.mongodb.WriteConcern
-import models.{UUID, ThreeDAnnotation}
+import models.{Preview, UUID, ThreeDAnnotation}
 import play.api.libs.json.JsValue
 import play.api.libs.concurrent.Execution.Implicits._
 import java.io.BufferedReader
 import java.io.FileReader
 import javax.inject.{Inject, Singleton}
 import services.{TileService, PreviewService}
-
+import com.wordnik.swagger.annotations.{ApiOperation, Api}
 /**
  * Files and datasets previews.
  *
@@ -24,6 +24,29 @@ import services.{TileService, PreviewService}
  */
 @Singleton
 class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
+
+  @ApiOperation(value = "List all preview files", notes = "Returns list of preview files and descriptions.", responseClass = "None", httpMethod = "GET")
+  def list = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ListPreviews)) {
+    request =>
+      val list = for (p <- previews.listPreviews()) yield jsonPreview(p)
+      Ok(toJson(list))
+  }
+
+
+    @ApiOperation(value = "Delete previews",
+      notes = "Remove preview file from system).",
+      responseClass = "None", httpMethod = "POST")
+    def removePreview(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DeletePreviews)) {
+      request =>
+        previews.get(id) match {
+          case Some(preview) => {
+            previews.remove(id)
+            Ok(toJson(Map("status"->"success")))
+          }
+          case None => Ok(toJson(Map("status" -> "success")))
+        }
+    }
+
 
   def downloadPreview(id: UUID, datasetid: UUID) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
@@ -154,7 +177,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
       request =>
         previews.get(id) match {
-          case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString)))
+          case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType)))
           case None => Logger.error("Preview metadata not found " + id); InternalServerError
         }
     }
@@ -302,6 +325,11 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
   def jsonAnnotation(annotation: ThreeDAnnotation): JsValue = {
     toJson(Map("x_coord" -> annotation.x_coord.toString, "y_coord" -> annotation.y_coord.toString, "z_coord" -> annotation.z_coord.toString, "description" -> annotation.description))
+  }
+
+
+  def jsonPreview(preview: Preview): JsValue = {
+    toJson(Map("id" -> preview.id.toString, "filename" -> preview.filename.getOrElse(""), "contentType" -> preview.contentType))
   }
 
 }

@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity])
+@(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[models.User])
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._

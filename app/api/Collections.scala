@@ -2,8 +2,9 @@ package api
 
 import play.api.Logger
 import play.api.Play.current
-import models.{UUID, Collection}
+import models._
 import services._
+import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
@@ -13,6 +14,7 @@ import com.wordnik.swagger.annotations.ApiOperation
 import java.util.Date
 import controllers.Utils
 
+
 /**
  * Manipulate collections.
  * 
@@ -20,7 +22,7 @@ import controllers.Utils
  */
 @Api(value = "/collections", listingPath = "/api-docs.json/collections", description = "Collections are groupings of datasets")
 @Singleton
-class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService) extends ApiController {
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: EventService) extends ApiController {
 
     
   @ApiOperation(value = "Create a collection",
@@ -49,9 +51,22 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       responseClass = "None", httpMethod = "POST")
   def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
                     authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
-
+    
     collections.addDataset(collectionId, datasetId) match {
-      case Success(_) => Ok(toJson(Map("status" -> "success")))
+      case Success(_) => {
+
+        collections.get(collectionId) match {
+        case Some(collection) => {
+          datasets.get(datasetId) match {
+            case Some(dataset) => {
+              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection") 
+            }
+          }
+
+        }
+      }
+      Ok(toJson(Map("status" -> "success")))
+    }
       case Failure(t) => InternalServerError
     }
   }
@@ -87,8 +102,20 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
                     authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
 
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
-      case Success(_) => Ok(toJson(Map("status" -> "success")))
-      case Failure(t) => InternalServerError
+      case Success(_) => {
+
+        collections.get(collectionId) match {
+        case Some(collection) => {
+          datasets.get(datasetId) match {
+            case Some(dataset) => {
+              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection") 
+            }
+          }
+        }
+      }
+      Ok(toJson(Map("status" -> "success")))
+    }
+    case Failure(t) => InternalServerError
     }
   }
   
@@ -99,6 +126,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
     collections.get(collectionId) match {
       case Some(collection) => {
+        events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection") 
         collections.delete(collectionId)
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
@@ -177,6 +205,80 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         }
         case _ => Ok("received something else: " + request.body + '\n')
       }
+  }
+
+  @ApiOperation(value = "Follow collection.",
+    notes = "Add user to collection followers and add collection to user followed collections.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(loggedInUser) => {
+          collections.get(id) match {
+            case Some(collection) => {
+              events.addObjectEvent(user, id, name, "follow_collection")
+              collections.addFollower(id, loggedInUser.id)
+              userService.followCollection(loggedInUser.id, id)
+
+              val recommendations = getTopRecommendations(id, loggedInUser)
+              recommendations match {
+                case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+                case Nil => Ok(Json.obj("status" -> "success"))
+              }
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  @ApiOperation(value = "Unfollow collection.",
+    notes = "Remove user from collection followers and remove collection from user followed collections.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
+    request =>
+      val user = request.user
+
+      user match {
+        case Some(loggedInUser) => {
+          collections.get(id) match {
+            case Some(collection) => {
+              events.addObjectEvent(user, id, name, "unfollow_collection")
+              collections.removeFollower(id, loggedInUser.id)
+              userService.unfollowCollection(loggedInUser.id, id)
+              Ok
+            }
+            case None => {
+              NotFound
+            }
+          }
+        }
+        case None => {
+          Unauthorized
+        }
+      }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = collections.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
   }
 
 }

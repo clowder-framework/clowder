@@ -1,4 +1,4 @@
-@(dataset: Dataset, collectionsInside: List[models.Collection], collectionsOutside: List[models.Collection])(implicit user: Option[securesocial.core.Identity])
+@(dataset: Dataset, collectionsInside: List[models.Collection], collectionsOutside: List[models.Collection])(implicit user: Option[models.User])
 
 <div class="row border-top bottom-padding">
     <div class="col-md-12">
@@ -13,13 +13,13 @@
                 <div class="col-md-2">
                     @if(!collection.thumbnail_id.isEmpty){
                         <a href="@(routes.Collections.collection(collection.id))">
-                            <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.get)))" alt="Thumbnail of @(collection.name)">
+                            <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.get)))" alt="Thumbnail of @Html(collection.name)">
                         </a>
                     }
                 </div>
                 <div class="col-md-10">
                     <div>
-                        <a href="@(routes.Collections.collection(collection.id))">@collection.name</a>
+                        <a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a>
                     </div>
                     <div>
                         @if(collection.datasets.size == 1) {
@@ -29,7 +29,7 @@
                             @collection.datasets.size datasets
                         }
                         @if(user.isDefined) {
-                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)', '@dataset.id', event)" title="Remove from collection">
                                 Remove</a>
                         }
                     </div>
@@ -46,7 +46,7 @@
             <select id="collectionAddSelect" class="chosen-select">
                 <option value=""></option>
                 @collectionsOutside.map { collection =>
-                    <option value="@(collection.id)">@(collection.name)</option>
+                    <option value="@(collection.id)">@(collection.name.replace("<br>", "\n"))</option>
                 }
             </select>
         </div>

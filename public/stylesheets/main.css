@@ -32,9 +32,6 @@ body {
     max-height: 100%;
 }
 
-/* Custom page CSS
--------------------------------------------------- */
-
 /* Basic button bars */
 span.button-bar {
     width:50%;  
@@ -239,9 +236,8 @@ code {
 }
 
 .profilePicture {
-  margin-bottom:12px;
-  max-width:256px;
-  max-height:256px;
+  	width: 256px;
+    height: 256px;
 }
 
 .editProfileInput input[type='text']{
@@ -516,6 +512,39 @@ textarea, input[type='text'], input[type='password']{
     padding: 20px 0px;
 }
 
+.img_wrapper {
+	position: relative;
+	width: 128px;
+	height: 128px;
+	margin: 5px;
+	display: inline-block;
+}
+
+.img_hover {
+	position : absolute;
+	width: 128px;
+	height: 128px;
+	background-color: #ffa500;
+	top: 0;
+	left: 0;
+	opacity: 0;
+	transition: opacity 1s;
+	padding-top: 40%;
+	text-align: center;
+	text-color: #fff;
+}
+
+.img_wrapper:hover > .img_hover {
+	opacity: 0.9;
+}
+
+.img_thumbnail {
+	height: 128px;
+	width: 128px;
+	border:1px solid #d3d3d3; 
+	padding:3px; 
+	border-radius: 5px; 
+}
 
 #scrollTableGalleria{
 	width: 100%;
@@ -583,4 +612,65 @@ textarea, input[type='text'], input[type='password']{
 }
 .galleria-fscr:active{
     color: #fff;
+}
+
+
+
+.prevIframeWrap{
+	width: 36em;
+    height: 27em;
+    padding: 0;
+    overflow: hidden;
+    align-content: center;
+}
+.prevIframe{
+	width: 72em;
+	-moz-transform: scale(0.5);
+	-moz-transform-origin: 0 0;
+	-o-transform: scale(0.5);
+    -o-transform-origin: 0 0;
+    -webkit-transform: scale(0.5);
+    -webkit-transform-origin: 0 0;
+    height: 54em;
+    border: none;
+    background-image: url("../javascripts/previewers/iframe/images/iframe_error.jpg");
+    background-size: cover;
+}
+.iframeLink{
+	position: relative;
+	top: -27em;
+	width: 36em;
+	height: 30em;
+	display:block;
+	margin-bottom: -26em;
+	border: 1px solid grey;
+}
+.iframeLink:hover {
+	opacity:0.5;
+}
+.iframeBtn{
+	bottom: -27em;
+	position: relative;
+	left: 17em;
+}
+.iframeModalDiv{
+	width: 72%;
+	overflow:hidden !important;
+	position: fixed !important;
+    left: 14% !important;
+    top: 5% !important;
+}
+.iframeModal{
+/* 	height: 60em; */
+/* 	width: 100%; */
+}
+
+.iframeModalDivInternal{
+	position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;
+}
+.iframeModalDivInternal iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+.iframeClose{
+	font-size: 30px !important;
+	margin-top: -5px !important;
 }
