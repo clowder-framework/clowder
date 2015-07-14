@@ -26,11 +26,11 @@ object ThumbnailFound extends Exception {}
 
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
-                            spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {  
+                            spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   def newCollection() = PermissionAction(Permission.CreateCollection) { implicit request =>
       implicit val user = request.user
-      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
+      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
       for (aSpace <- spacesList) {
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
@@ -160,7 +160,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       user match {
         case Some(identity) => {
           if (colName == null || colDesc == null || colSpace == null) {
-            val spacesList = spaces.list()
+            val spacesList = spaceService.list()
             var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
             for (aSpace <- spacesList) {
               decodedSpaceList += Utils.decodeSpaceElements(aSpace)
@@ -234,18 +234,30 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             decodedDatasetsInside += dDataset
           }
 
-          val space = collection.space.flatMap(spaces.get(_))
-          var decodedSpace: ProjectSpace = null;
-          space match {
+          var collectionSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          collection.spaces.map{
+            sp=> spaceService.get(sp) match {
               case Some(s) => {
-                  decodedSpace = Utils.decodeSpaceElements(s)
-                  Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpace)))
+                collectionSpaces = s :: collectionSpaces
               }
-              case None => {
-                  Logger.error("Problem in decoding the space element for this dataset: " + dCollection.name)
-                  Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, space))
-              }
+              case None => Logger.error(s"space with id $sp on collection $id doesn't exist.")
+            }
           }
+
+          var otherSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
+          spacesList.map {
+            aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) {
+              otherSpaces = aSpace:: otherSpaces
+            }
+          }
+
+          var decodedSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          collectionSpaces.map {
+            aSpace => decodedSpaces = Utils.decodeSpaceElements(aSpace) :: decodedSpaces
+          }
+
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces), otherSpaces))
 
         }
         case None => {
@@ -263,15 +275,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case Some(collection) => {
         collection.space match {
           case Some(spaceId) => {
-            spaces.get(spaceId) match {
+            spaceService.get(spaceId) match {
               case Some(projectSpace) => {
 
-                val userList: List[User] = spaces.getUsersInSpace(spaceId)
+                val userList: List[User] = spaceService.getUsersInSpace(spaceId)
                 if(!userList.isEmpty) {
 
                   var userRoleMap = scala.collection.mutable.Map[UUID, String]()
                   for(usr <- userList) {
-                    spaces.getRoleForUserInSpace(spaceId, usr.id) match {
+                    spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
                       case Some(role) => userRoleMap += (usr.id -> role.name)
                       case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Role not found for collection's user.")
                     }

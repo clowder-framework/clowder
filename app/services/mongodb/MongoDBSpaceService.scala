@@ -192,6 +192,10 @@ class MongoDBSpaceService @Inject() (
     collections.addToSpace(collection, space)
   }
 
+  def removeCollection(collection:UUID, space:UUID): Unit = {
+    log.debug(s"Space Service - removing $collection from $space")
+    collections.removeFromSpace(collection, space)
+  }
   /**
    * Associate a dataset with a space
    *

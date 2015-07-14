@@ -17,6 +17,8 @@ trait SpaceService extends CRUDService[ProjectSpace] {
 
   def addCollection(collection: UUID, space: UUID)
 
+  def removeCollection(collection: UUID, space:UUID)
+
   def addDataset(dataset: UUID, space: UUID)
 
   def removeDataset(dataset:UUID, space: UUID)

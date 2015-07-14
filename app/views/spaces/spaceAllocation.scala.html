@@ -1,12 +1,12 @@
-@(resourceId: UUID, resourceType: Int, spacesList: List[ProjectSpace], space: Option[List[ProjectSpace]])(implicit user: Option[securesocial.core.Identity])
+@(resourceId: UUID, resourceType: Int, otherSpaces: List[ProjectSpace], resourceSpaces: Option[List[ProjectSpace]])(implicit user: Option[securesocial.core.Identity])
 <div class="row">
     <select class = "chosen-select2" multiple style="..." id ="spacesAvailable">
-        @for(curOption <- space) {
+        @for(curOption <- resourceSpaces) {
             @for(curSpace <- curOption) {
                 <option value="@curSpace.id" id ="@curSpace.name" selected>@curSpace.name</option>
             }
         }
-        @for(curSpace <-spacesList) {
+        @for(curSpace <-otherSpaces) {
             <option value="@curSpace.id" id ="@curSpace.name" >@curSpace.name</option>
         }
     </select>
@@ -37,7 +37,7 @@
         return idNameObj[id];
     }
     $(document).ready(function() {
-        @for(space <- spacesList) {
+        @for(space <- otherSpaces) {
             idNameObj["@space.name"] = "@space.id";
         }
     });
@@ -46,7 +46,7 @@
         var targetId = this.getAttribute("id");
         if(!isUndefined(params.selected)) {
             var addedId = params.selected;
-            @for(space<-spacesList) {
+            @for(space<-otherSpaces) {
                 var currentId = "@space";
                 if(currentId != targetId) {
                     $('#@space.id option [value=' + addedId + ']').remove();
@@ -57,7 +57,7 @@
         }
         else if(!isUndefined(params.deselected)) {
             var removedId= params.deselected;
-            @for(space <- spacesList) {
+            @for(space <- otherSpaces) {
                 var currentId = "@space"
                 if(currentId != targetId) {
                 $('#@space.id').prepend($("<option></option>").attr("value", params.deselected).text(getName(params.deselected)));
@@ -80,7 +80,27 @@
 
     function updateCollectionInSpaces(){
 
-    };
+        var ids = $('#spacesAvailable option:selected').map(function() { return this.value}).get();
+        var names = $('#spacesAvailable option:selected').map(function() { return this.id}).get();
+
+        console.log('Adding spaces ' + ids + ' to collection');
+        var jsonData = JSON.stringify({"space_ids ": ids, " resource_id ": "@resourceId"});
+        var request = jsRoutes.api.Spaces.addCollectionToSpaces(ids, "@resourceId").ajax({
+            data: jsonData,
+            type: 'POST',
+            contentType: "application/json",
+        });
+
+        request.done(function(response, textStatus, jqXH) {
+            console.log("Syccessful response from add Collections");
+            updateSpacesEditLink(ids, names)
+        });
+
+        request.fail(function(jqHR, textStatus, errorThrown) {
+            console.error("The following error occurred: " + textStatus, errorThrown);
+        });
+
+    }
 
     function updateDatasetInSpaces() {
         var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get();
@@ -94,7 +114,7 @@
         });
 
         request.done(function(response, textStatus, jqXH){
-            console.log("Successful response from add Datasets")
+            console.log("Successful response from add Datasets");
             updateSpacesEditLink(ids, names)
         });
 

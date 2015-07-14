@@ -1,8 +1,8 @@
-@(space: Option[List[ProjectSpace]], resourceType: Int, resourceId: UUID, previewers: List[Previewer], spacesList: List[ProjectSpace])(implicit user: Option[models.User])
+@(resourceSpaces: Option[List[ProjectSpace]], resourceType: Int, resourceId: UUID, otherSpaces: List[ProjectSpace])(implicit user: Option[models.User])
 <span id="spaces" >
 @if(user.isDefined) {
-    @if(space.isDefined) {
-        @for(sp <- space) {
+    @if(resourceSpaces.isDefined) {
+        @for(sp <- resourceSpaces) {
             @for(s <- sp) {
                 <a href="@routes.Spaces.getSpace(s.id)" id="space_link">
                 @s.name</a>
@@ -17,7 +17,7 @@
             <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span>
         </a>
     }
-    @if(space.isEmpty) {
+    @if(resourceSpaces.isEmpty) {
         <a href="#" id="space_link">Default</a>
         <a href="javascript:changeSpace('@resourceId', @resourceType)">
             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
@@ -25,8 +25,8 @@
     }
 }
 @if(user.isEmpty) {
-    @if(!space.isEmpty) {
-        @for(sp <- space) {
+    @if(!resourceSpaces.isEmpty) {
+        @for(sp <- resourceSpaces) {
             @for(s <- sp) {
                 <a href="@routes.Spaces.getSpace(s.id)" id="space_link">
                 @s.name</a>
@@ -34,7 +34,7 @@
         }
     }
 
-    @if(space.isEmpty) {
+    @if(resourceSpaces.isEmpty) {
         <a href="#" id="space_link">Default</a>
     }
 }
@@ -49,13 +49,12 @@ aria-labelledby="myModalLabel" aria-hidden="true">
             </div>
             <div class = "modal-body" style= "padding-left: 30px;">
 
-                @spaces.spaceAllocation(resourceId, resourceType, spacesList, space)
+                @spaces.spaceAllocation(resourceId, resourceType, otherSpaces, resourceSpaces)
             </div>
             <div class ="modal-footer">
                 <button class ="btn btn-primary" id="spaces_add" title = "Update Spaces Information">
                     <span class ="glyphicon glyphico-edit"></span> Submit
                 </button>
-
                 <a href="#" class ="btn btn-default" id = "closebutton" data-dismiss="modal">Close</a>
             </div>
         </div>

@@ -322,32 +322,33 @@ class Datasets @Inject()(
               }
           }
 
-          var spaceList2: List[ProjectSpace]= List.empty[ProjectSpace]
+          var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
           dataset.spaces.map{
                   sp => spaceService.get(sp) match {
                     case Some(s) => {
-                      spaceList2 = s :: spaceList2
+                      datasetSpaces = s :: datasetSpaces
                     }
                     case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
                   }
 
           }
-          var spaceList: List[ProjectSpace] = List.empty[ProjectSpace]
-          spaceService.list().map{
-            aSpace => if(! spaceList2.map(_.id).contains(aSpace.id)) {
-              spaceList = aSpace :: spaceList
+          var otherSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          val spaceList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
+          spaceList.map{
+            aSpace => if(! datasetSpaces.map(_.id).contains(aSpace.id)) {
+              otherSpaces = aSpace :: otherSpaces
             }
           }
 
           var decodedSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
-          spaceList2.map{
+          datasetSpaces.map{
             aSpace =>
                 decodedSpaces= Utils.decodeSpaceElements(aSpace)  :: decodedSpaces
 
           }
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, spaceList))
+          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces))
 
         }
         case None => {

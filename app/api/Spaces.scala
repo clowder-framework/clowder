@@ -9,7 +9,7 @@ import controllers.Utils
 import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import services.{DatasetService, AdminsNotifierPlugin, SpaceService, UserService}
+import services.{DatasetService, AdminsNotifierPlugin, SpaceService, UserService, CollectionService}
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
@@ -19,7 +19,7 @@ import scala.collection.mutable.ListBuffer
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
-class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService) extends ApiController {
+class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService, collectionService: CollectionService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -106,6 +106,32 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     val collectionId = (request.body \ "collection_id").as[String]
     spaces.addCollection(UUID(collectionId), space)
     Ok(toJson("success"))
+  }
+
+  @ApiOperation(value = " Associate a collection to multiple spaces",
+  notes = "",
+  responseClass = "None", httpMethod="POST"
+  )
+  def addCollectionToSpaces(space_list: List[String], collection_id: UUID) = PermissionAction(Permission.EditCollection)(parse.json) {
+    implicit request =>
+      val current_spaces = collectionService.get(collection_id).map(_.spaces).get
+      var new_spaces: List[UUID] = List.empty
+      current_spaces.map{
+        aSpace =>
+          if(!space_list.contains(aSpace)) {
+            spaces.removeCollection(collection_id, aSpace)
+          }
+          else {
+            new_spaces = aSpace :: new_spaces
+          }
+      }
+      space_list.map {
+        aSpace => if(!new_spaces.contains(aSpace) && !current_spaces.contains(UUID(aSpace))) {
+          new_spaces = UUID(aSpace) :: new_spaces
+        }
+      }
+      new_spaces.map(space_id => spaces.addCollection(collection_id, space_id))
+      Ok(toJson("success"))
   }
 
   @ApiOperation(value = "Associate a dataset with a space",

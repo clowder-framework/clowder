@@ -13,5 +13,6 @@ case class Collection(
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty,
   space: Option[UUID] = None,
+  spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty)
