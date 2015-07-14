@@ -155,7 +155,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
       var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
       var colSpace = request.body.asFormUrlEncoded.getOrElse("space", null)
-        
+
       implicit val user = request.user
       user match {
         case Some(identity) => {
@@ -174,11 +174,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
           }
           else {
-              collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, space = Some(UUID(colSpace(0))))
+            val stringSpaces = colSpace(0).split(",")
+            var colSpaces: List[UUID] = List.empty
+            stringSpaces.map{
+              aSpace => colSpaces = UUID(aSpace) :: colSpaces
+            }
+              collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, spaces = colSpaces)
           }
 
           Logger.debug("Saving collection " + collection.name)
-          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), space = collection.space))
+          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), spaces = collection.spaces))
 
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
