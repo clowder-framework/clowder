@@ -25,9 +25,13 @@
                     @for(role <- roles) {
                         <tr><td>@role.name</td><td>@role.description</td><td id="permission">
                         @if(!role.permissions.isEmpty) {
-                            @for( p <- permissionList filter { role.permissions contains _.toString() } map { _.toString() } ) {
-                                @Html(p.replaceFirst("(\\p{Ll})(\\p{Lu})", "$1 $2").replaceFirst("(\\w) (.+)", "$1 <b><i>$2</i></b>").replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2")),
-                            }
+                            <table class="table-progressive">
+                                @for( p <- permissionList filter { role.permissions contains _.toString() } map { _.toString() } ) {
+                                    <tr><td>
+                                        @Html(p.replaceFirst("(\\p{Ll})(\\p{Lu})", "$1 $2").replaceFirst("(\\w) (.+)", "$1 <b>$2</b>").replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2"))
+                                    </td></tr>
+                                }
+                            </table>
                         }
                         </td>
                         <td>
@@ -40,23 +44,5 @@
             }
         </div>
     </div>
-    <script language ="javascript">
-        //Changes the id's in the permissions. And replaces the last ',' with a '.'
-        var renumberpermission = function() {
-            Array.prototype.reduce.call($('td#permission'), function(i, next) {
-                var input = $(next);
-                input.attr('id', input.attr('id')+ '_' + i + '_');
-                var text = input.html();
-                if(text.trim()) {
-                    input.replaceWith("<td>"+ text.substring(0, text.lastIndexOf(',')) + ".</td>");
-                }
-                if(input.attr('id').match(/permission_\d+|/)) {
-                    return i + 1;
-                }
-                    return i;
-            }, 0);
-        }
-        renumberpermission();
-    </script>
 }
 
