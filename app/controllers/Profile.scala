@@ -14,7 +14,7 @@ import services.mongodb.{MongoDBInstitutionService, MongoDBProjectService}
 // TODO CATS-66 remove MongoDBInstitutionService, make part of UserService?
 class Profile @Inject() (users: UserService, files: FileService, datasets: DatasetService, collections: CollectionService,
                          institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService,
-                         scheduler: SchedulerService) extends SecuredController {
+                         scheduler: SchedulerService, spaces: SpaceService) extends SecuredController {
 
   val bioForm = Form(
     mapping(
@@ -55,9 +55,11 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     var followedFiles: List[(UUID, String, String)] = List.empty
     var followedDatasets: List[(UUID, String, String)] = List.empty
     var followedCollections: List[(UUID, String, String)] = List.empty
+    var followedSpaces: List[(UUID, String, String)] = List.empty
     var myFiles : List[(UUID, String, String)] = List.empty
     var myDatasets: List[(UUID, String, String)] = List.empty
     var myCollections: List[(UUID, String, String)] = List.empty
+    var mySpaces: List[(UUID, String, String)] = List.empty
     var maxDescLength = 50
     var ownProfile: Option[Boolean] = None
     var muser = users.findById(uuid)
@@ -77,6 +79,9 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
         }
         
         for (tidObject <- existingUser.followedEntities) {
+          println(tidObject)
+          println(tidObject.objectType)
+          println(ResourceRef.space.toString())
               if (tidObject.objectType == "user") {
                 var followedUser = users.get(tidObject.id)
                 followedUser match {
@@ -105,6 +110,13 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
                     followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
                   }
                 }
+              } else if (tidObject.objectType == "'space") {
+                var followedSpace = spaces.get(tidObject.id)
+                followedSpace match {
+                  case Some(fspace) => {
+                    followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
+                  }
+                }
               }
             }
 
@@ -127,7 +139,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
                 var userDatasets: List[Dataset] = datasets.listUserDatasetsAfter("", 12, addr.toString())
                 var userCollections: List[Collection] = collections.listUserCollectionsAfter("", 12, addr.toString())
                 var userFiles : List[File] = files.listUserFilesAfter("", 12, addr.toString())
-                
+
                 for (dset <- userDatasets) {
                   myDatasets = myDatasets.++(List((dset.id, dset.name, dset.description.substring(0, Math.min(maxDescLength, dset.description.length())))))
                 }
@@ -140,7 +152,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
               }
               case None => {}
             }
-            Ok(views.html.profile(existingUser, ownProfile, followers, followedUsers, followedFiles, followedDatasets, followedCollections, myFiles, myDatasets, myCollections))
+            Ok(views.html.profile(existingUser, ownProfile, followers, followedUsers, followedFiles, followedDatasets, followedCollections, followedSpaces, myFiles, myDatasets, myCollections))
         
       }
       case None => {

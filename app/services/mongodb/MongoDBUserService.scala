@@ -275,6 +275,16 @@ class MongoDBUserService @Inject() (
     RoleDAO.save(role)
   }
 
+  override def followResource(followerId: UUID, resourceRef: ResourceRef) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+      $addToSet("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(resourceRef.id, resourceRef.resourceType.toString()))))
+  }
+
+  override def unfollowResource(followerId: UUID, resourceRef: ResourceRef) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+      $pull("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(resourceRef.id, resourceRef.resourceType.toString()))))
+  }
+
   override def followFile(followerId: UUID, fileId: UUID) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
                         $addToSet("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(fileId, "file"))))

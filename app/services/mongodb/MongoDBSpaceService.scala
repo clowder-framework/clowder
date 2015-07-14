@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
 import com.mongodb.DBObject
@@ -358,6 +359,16 @@ class MongoDBSpaceService @Inject() (
    */
   def changeUserRole(userId: UUID, role: Role, space: UUID): Unit = {
       users.changeUserRoleInSpace(userId, role, space)
+  }
+
+  def addFollower(id: UUID, userId: UUID) {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def removeFollower(id: UUID, userId: UUID) {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 }
 

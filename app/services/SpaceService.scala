@@ -129,4 +129,14 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    *
    */
   def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Option[Role]
+
+  /**
+   * Add follower to a file.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a file.
+   */
+  def removeFollower(id: UUID, userId: UUID)
 }
