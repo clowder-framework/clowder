@@ -82,9 +82,9 @@ trait SecuredController extends Controller {
         val messgae = {
           resourceRef.get match {
             // TODO "Not authorized" occurs with other ResourceRef.Type or there is resourceRef.parse
-            case ResourceRef(ResourceRef.dataset, id) => dataset.get(id).get.name
-            case ResourceRef(ResourceRef.collection, id) => collection.get(id).get.name
-            case ResourceRef(ResourceRef.space, id) => space.get(id).get.name
+            case ResourceRef(ResourceRef.dataset, id) => "dataset " + dataset.get(id).get.name
+            case ResourceRef(ResourceRef.collection, id) => "collection" + collection.get(id).get.name
+            case ResourceRef(ResourceRef.space, id) => "space" + space.get(id).get.name
             case ResourceRef(resType, id) => {
               "error resource"
             }
