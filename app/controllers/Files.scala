@@ -151,14 +151,12 @@ class Files @Inject() (
             case Some(plugin) => {
               Logger.debug("Polyglot plugin found")
               
-              val ct = file.contentType
-              Logger.debug("content type = " + ct)
-              
-              //for content type with multiple parts get the ending part (e.g. for 'application/pdf' get 'pdf')
-              val lastDividerIndex = (ct.replace("/", ".").lastIndexOf(".")) + 1
+              val fname = file.filename
+              //use name of the file to get the extension (pdf or txt or jpg) to use an input type for Polyglot
+              val lastDividerIndex = (fname.replace("/", ".").lastIndexOf(".")) + 1
               //drop all elements left of last divider index
-              val contentTypeEnding = ct.drop(lastDividerIndex)
-              Logger.debug("content type ends in " + contentTypeEnding)
+              val contentTypeEnding = fname.drop(lastDividerIndex)
+              Logger.debug("file name ends in " + contentTypeEnding)
               //get output formats from Polyglot plugin and pass as the last parameter to view
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
