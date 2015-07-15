@@ -1,5 +1,7 @@
 @(roles: List[Role], permissionList: List[api.Permission.Value])(implicit user: Option[models.User])
 
+@import api.Permission; var prevResourceStr = ""
+
 @main("Manage Roles") {
     <script src="@routes.Assets.at("javascripts/manageRoles.js")" type="text/javascript"></script>
     <script>
@@ -26,11 +28,21 @@
                         <tr><td>@role.name</td><td>@role.description</td><td id="permission">
                         @if(!role.permissions.isEmpty) {
                             <table class="table-progressive">
-                                @for( p <- permissionList filter { role.permissions contains _.toString() } map { _.toString() } ) {
-                                    <tr><td>
-                                        @Html(p.replaceFirst("(\\p{Ll})(\\p{Lu})", "$1 $2").replaceFirst("(\\w) (.+)", "$1 <b>$2</b>").replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2"))
-                                    </td></tr>
-                                }
+                                <tr><td>
+                                    @for( p <- permissionList filter { role.permissions contains _.toString() } map { _.toString() } ) {
+                                        @defining(p) { permissionStr =>
+                                            @defining(p.replaceFirst("(\\p{Ll})(\\p{Lu})", "$1 $2").replaceFirst("\\w+ (.+[^s])[s]?", "$1")) { currResourceStr =>
+                                                @if(currResourceStr == prevResourceStr) {
+                                                    |
+                                                } else {
+                                                    @{prevResourceStr = currResourceStr}
+                                                    @Html("</td></tr><tr><td><b>"+ currResourceStr.replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") +": </b>")
+                                                }
+                                                @Html(permissionStr.replaceFirst("(\\p{Ll})(\\p{Lu})", "$1 $2").replaceFirst("(\\w+) .+", "$1"))
+                                            }
+                                        }
+                                    }
+                                </td></tr>
                             </table>
                         }
                         </td>
