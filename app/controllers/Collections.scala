@@ -154,7 +154,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       Logger.debug("------- in Collections.submit ---------")
       var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
       var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-      var colSpace = request.body.asFormUrlEncoded.getOrElse("space", null)
+      var colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
 
       implicit val user = request.user
       user match {
@@ -177,7 +177,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             val stringSpaces = colSpace(0).split(",")
             var colSpaces: List[UUID] = List.empty
             stringSpaces.map{
-              aSpace => colSpaces = UUID(aSpace) :: colSpaces
+              aSpace => if(aSpace != "") colSpaces = UUID(aSpace) :: colSpaces
             }
               collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, spaces = colSpaces)
           }

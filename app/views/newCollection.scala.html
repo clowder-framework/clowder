@@ -52,7 +52,6 @@
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Space:</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
                 <select name="space" id="spaceid" class = "chosen-select2" multiple style="width: 342px;">
-                    <option value="default">Default</option>
                     @spaces.map { space =>
                         <option value="@(space.id)">@(space.name)</option>
                     }
