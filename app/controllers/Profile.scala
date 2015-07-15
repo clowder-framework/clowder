@@ -79,9 +79,6 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
         }
         
         for (tidObject <- existingUser.followedEntities) {
-          println(tidObject)
-          println(tidObject.objectType)
-          println(ResourceRef.space.toString())
               if (tidObject.objectType == "user") {
                 var followedUser = users.get(tidObject.id)
                 followedUser match {
