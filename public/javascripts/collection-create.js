@@ -49,3 +49,4 @@ function createCollection() {
     
     return true;
 }
+
