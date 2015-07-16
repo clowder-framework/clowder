@@ -271,7 +271,10 @@ function attachFiles() {
 		//Update the input we are adding to the form programmatically      
 		var name = $('#name');
 	    var desc = $('#description');
-	    var space = $('#spaceid').find(":selected").val();
+		var spaceList = [];
+		$('#spaceid').find(":selected").each(function(i, selected) {
+			spaceList[i] = $(selected).val();
+		});
 	    
 	    console.log("isNameRequried is " + isNameRequired);
 	    console.log("isDescRequired is " + isDescRequired);
@@ -297,10 +300,10 @@ function attachFiles() {
 		var encDescription = htmlEncode(desc.val());
 	    
 		if (ids.length == 0) {
-			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":space});
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":spaceList});
 		}
 		else {
-			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":space, "existingfiles":ids});
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":spaceList, "existingfiles":ids});
 		}	
 	    	                         	                        
 	    request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
