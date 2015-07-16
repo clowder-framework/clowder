@@ -151,7 +151,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                                                 created = new Date, creator = userId, homePage = formData.homePage,
                                                 logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                                                 collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
-                                                resourceTimeToLive = formData.resourceTimeToLive, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                                                resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
 
                     // insert space
                     spaces.insert(newSpace)
