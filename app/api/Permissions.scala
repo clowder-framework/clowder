@@ -162,11 +162,16 @@ object Permission extends Enumeration {
       }
       case ResourceRef(ResourceRef.collection, id) => {
         val collection = collections.get(id)
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                                  spaceId <- collection.get.space
-                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
-                                                  if role.permissions.contains(permission.toString)
-        } yield true
+        var hasPermission: Option[Boolean] = None
+
+        for(clowderUser <- getUserByIdentity(user)) {
+          collection.get.spaces.map {
+            spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+              if(role.permissions.contains(permission.toString))
+                hasPermission = Some(true)
+            }
+          }
+        }
         hasPermission getOrElse collection.exists(x => {
           x.author match {
             case Some(realAuthor) => {

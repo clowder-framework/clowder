@@ -27,7 +27,7 @@
     resource_type_enum = {
     DATASET : 0,
     COLLECTION : 1
-    }
+    };
 
     function isUndefined(value) {
         return typeof value === 'undefined';
@@ -128,7 +128,7 @@
         $("#spaces").text('');
         $("#spaces").html(edit_spaces);
        for(var i=0; i < ids.length; i++){
-       $("<a href="+ jsRoutes.controllers.Spaces.getSpace(ids[i]).url +" > " + names[i] + " </a>").insertBefore('#editSpaces')
+       $("<a class = 'space-pills' href="+ jsRoutes.controllers.Spaces.getSpace(ids[i]).url +" > " + names[i] + " </a>").insertBefore('#editSpaces')
        }
 
     }

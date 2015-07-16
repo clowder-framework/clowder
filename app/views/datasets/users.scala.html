@@ -27,7 +27,7 @@
                                 @if(!usr.fullName.isEmpty) {
                                     @usr.fullName
                                     @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)) {
-                                        -- Space: @spaceMap(usr.id) | Role: @userRoleMap(usr.id)
+                                        -- Space: @spaceMap(usr.id).substring(2) | Role: @userRoleMap(usr.id).substring(2)
                                     }
                                 }
                             </li>

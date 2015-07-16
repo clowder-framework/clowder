@@ -278,30 +278,42 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     implicit val user = request.user
     collections.get(id) match {
       case Some(collection) => {
-        collection.space match {
-          case Some(spaceId) => {
-            spaceService.get(spaceId) match {
-              case Some(projectSpace) => {
-
-                val userList: List[User] = spaceService.getUsersInSpace(spaceId)
-                if(!userList.isEmpty) {
-
-                  var userRoleMap = scala.collection.mutable.Map[UUID, String]()
-                  for(usr <- userList) {
-                    spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
-                      case Some(role) => userRoleMap += (usr.id -> role.name)
-                      case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Role not found for collection's user.")
-                    }
-                  }// for user ...
-                  Ok(views.html.collections.users(collection, projectSpace.name, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
-
-                } else { Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's users not found.") }
+        var userList: List[User] = List.empty
+        var userRoleMap = scala.collection.mutable.Map[UUID, String]()
+        var spaceMap = scala.collection.mutable.Map[UUID, String]()
+        collection.spaces.map {
+          spaceId => spaceService.get(spaceId) match {
+            case Some(projectSpace) => {
+              val space_users: List[User] = spaceService.getUsersInSpace(spaceId)
+              var new_users: List[User] = List.empty
+              space_users.map {
+                aUser => if (!userList.contains(aUser)) {
+                  new_users = aUser :: new_users
+                }
               }
-              case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's space not found.")
+              userList = userList ::: new_users
+              if (!space_users.isEmpty) {
+                space_users.map {
+                  usr => spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
+                    case Some(role) => {
+                      val cur_role = userRoleMap getOrElse(usr.id, "")
+                      userRoleMap += (usr.id -> (cur_role + ", " + role.name))
+                    }
+                    case None => Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error Role not found for collection $id user $usr.")
+
+                  }
+                    val curSpace = spaceMap getOrElse(usr.id, "")
+                    spaceMap += (usr.id -> (curSpace + ", " + projectSpace.name))
+                }
+              }
             }
+            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> "Error: Collection's space not found.");
           }
-          case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's space not found.")
         }
+        if(!userList.isEmpty){
+          Ok(views.html.collections.users(collection, spaceMap, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
+
+         } else { Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's users not found.") }
       }
       case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection not found.")
     }

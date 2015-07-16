@@ -118,7 +118,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       var new_spaces: List[UUID] = List.empty
       current_spaces.map{
         aSpace =>
-          if(!space_list.contains(aSpace)) {
+          if(!space_list.contains(aSpace.toString)) {
             spaces.removeCollection(collection_id, aSpace)
           }
           else {
@@ -154,9 +154,9 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       var new_spaces: List[UUID] = List.empty
       current_spaces.map{
         aSpace =>
-          if(!space_list.contains(aSpace)) {
-          spaces.removeDataset(dataset_id, aSpace)
-        }
+          if(!space_list.contains(aSpace.toString)) {
+            spaces.removeDataset(dataset_id, aSpace)
+          }
           else {
             new_spaces = aSpace :: new_spaces
           }

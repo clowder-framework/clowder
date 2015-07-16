@@ -12,7 +12,6 @@ case class Collection(
   datasets: List[Dataset] = List.empty,
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty,
-  space: Option[UUID] = None,
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty)

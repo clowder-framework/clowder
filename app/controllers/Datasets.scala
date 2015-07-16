@@ -671,25 +671,31 @@ class Datasets @Inject()(
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        var userList: List[User]=  List.empty[User]
+        var userList: List[User]=  List.empty
         var userRoleMap = scala.collection.mutable.Map[UUID, String]()
         var spaceMap = scala.collection.mutable.Map[UUID, String]()
         dataset.spaces.map{
           space_id => spaceService.get(space_id) match {
             case Some(projectSpace) => {
-              val new_users = spaceService.getUsersInSpace(space_id)
-               userList :+ new_users
-              if(!new_users.isEmpty) {
-                for(usr <-new_users) {
+              val space_users: List[User] = spaceService.getUsersInSpace(space_id)
+              var new_users: List[User] = List.empty
+              space_users.map {
+                aUser => if(!userList.contains(aUser)) {
+                  new_users = aUser :: new_users
+                }
+              }
+               userList = userList ::: new_users
+              if(!space_users.isEmpty) {
+                space_users.map { usr =>
                   spaceService.getRoleForUserInSpace(space_id, usr.id) match {
                     case Some(role) => {
                       val cur_role = userRoleMap getOrElse(usr.id, "")
-                      userRoleMap += (usr.id -> (cur_role + role.name))
+                      userRoleMap += (usr.id -> (cur_role + ", " + role.name))
                     }
                     case None => Redirect(routes.Datasets.dataset(id)).flashing("error"-> s"Error: Role not found for dataset $id user $usr.")
                   }
                   val curSpace = spaceMap getOrElse(usr.id, "")
-                  spaceMap += (usr.id -> (curSpace + projectSpace.name))
+                  spaceMap += (usr.id -> (curSpace + ", " + projectSpace.name))
                 }
               }
             }

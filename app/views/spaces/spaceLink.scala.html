@@ -4,7 +4,7 @@
     @if(resourceSpaces.isDefined) {
         @for(sp <- resourceSpaces) {
             @for(s <- sp) {
-                <a href="@routes.Spaces.getSpace(s.id)" id="space_link">
+                <a class= 'space-pills' href="@routes.Spaces.getSpace(s.id)" id="space_link">
                 @s.name</a>
             }
         }
@@ -12,7 +12,7 @@
         @*<a href="javascript:changeSpace('@resourceId', @resourceType)">*@
             @*<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>*@
         @*</a>*@
-        <a class = "btn btn-default btn-xs accordion-toggle collapsed" data-toggle="modal"
+        <a class= 'space-pills' class = "btn btn-default btn-xs accordion-toggle collapsed" data-toggle="modal"
         data-target="#modalSpaces" id="editSpaces" title = "Edit Spaces">
             <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span>
         </a>
@@ -28,7 +28,7 @@
     @if(!resourceSpaces.isEmpty) {
         @for(sp <- resourceSpaces) {
             @for(s <- sp) {
-                <a href="@routes.Spaces.getSpace(s.id)" id="space_link">
+                <a class= 'space-pills' href="@routes.Spaces.getSpace(s.id)" id="space_link">
                 @s.name</a>
             }
         }
