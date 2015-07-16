@@ -154,7 +154,6 @@ object Permission extends Enumeration {
              spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                if(role.permissions.contains(permission.toString))
                  hasPermission = Some(true)
-
              }
           }
         }
