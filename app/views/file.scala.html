@@ -667,14 +667,15 @@
             <div class="row ds-section-sm border-top">
               <h4>Tags</h4>
               <ul id="tagList">
+				  <!-- Do the tags need to have [File] and [Section] appeneded to them? -->
                   @file.tags.map { tag =>
-                    <li><a href="@routes.Tags.search(tag.name)" id="@tag.name">@tag.name [File]</a>
+                    <li><a href="@routes.Tags.search(tag.name)" id="@tag.name" data-id="@tag.id" class="tag">@Html(tag.name) [File]</a>
                         <a href='javascript:void(0);'>
-                            <i style='display:none;' id='@tag.name' class='glyphicon glyphicon-remove'></i></a></li>
+                            <i style='display:none;' id='@tag.name' data-id='@tag.id' class='glyphicon glyphicon-remove'></i></a></li>
                   }
                   @file.sections.map { section =>
                     @section.tags.map { tag =>
-                      <li><a href="@routes.Tags.search(tag.name)">@tag.name [Section]</a></li>
+                      <li><a href="@routes.Tags.search(tag.name)">@Html(tag.name) [Section]</a></li>
                     }
                   }
               </ul>
@@ -697,9 +698,17 @@
                 </script>
               }
               <script language="javascript">
+                //The removeTag code is almost identical to the code in tags.scala.html. Should be unified.
                 function removeTag() {
                   var tagId = $(this).attr("id");
                   console.log("Removing tag " + tagId);
+                  //The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
+				  //and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
+				  //
+				  //The real question is since that tags have UUIDs, why aren't they simply removed in that manner. In the add, the dom element isn't added until success
+				  //so the ID could be returned there and added into the elements as needed.
+                  var tagDataId = $(this).attr("data-id");
+        		  console.log("data-id to remove is " + tagDataId);
                   
                   var request = jsRoutes.api.Files.removeTags('@file.id').ajax({
                     data: JSON.stringify({"tags":[tagId]}),
@@ -709,7 +718,7 @@
 
                   request.done(function (response, textStatus, jqXHR) {
                     console.log("Response " + textStatus);
-                    $("#" + tagId).parents("li").remove();
+                    $("[data-id=" + tagDataId + "].tag").parents("li").remove();
                   });
 
                   request.fail(function (jqXHR, textStatus, errorThrown){
@@ -732,6 +741,7 @@
                 }
 
                 $(function() {
+                  var tmpId = 1;
                   if(window["userDefined"] == true)
                     $("#tagList").children("li").each(function(){
                       $(this).hover(
@@ -742,6 +752,7 @@
                   
                   $('#tagB').click(function() {
                     var tag = $('#tagField').val();
+                    tag = htmlEncode(tag);
                      
                     var isTagPresent = false;
                     $("#tagList").children("li").each(function (index, tagLi) {
@@ -760,8 +771,8 @@
                        
                       request.done(function (response, textStatus, jqXHR){
                         console.log("Response " + response);
-                        var url = "../tags/search?tag=" + tag;
-                        $newTag = $("<li><a href='" + url + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + tag +"' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+                        var url = jsRoutes.controllers.Tags.search(tag).url;
+                        $newTag = $("<li><a href='" + url + "'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='tag'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
                         $newTag.hover(removeIconMouseIn,removeIconMouseOut);
                         $newTag.find(".glyphicon-remove").click(removeTag);
                         $('#tagField').val("");
