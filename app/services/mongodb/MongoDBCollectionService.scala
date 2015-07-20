@@ -411,6 +411,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
         false, false)
   }
 
+   def updateName(collectionId: UUID, name: String){
+     val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+     $set("name" -> name), false, false, WriteConcern.Safe)
+   }
+
   /**
    * Add follower to a collection.
    */
