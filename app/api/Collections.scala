@@ -157,6 +157,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
                "created" -> collection.created.toString))
   }
 
+  @ApiOperation(value = "Update a collection name",
+  notes= "Takes one argument, a UUID of the collection. Request body takes a key-value pair for the name",
+  responseClass = "None", httpMethod = "POST")
   def updateCollectionName(id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id)))(parse.json) {
     implicit request =>
       implicit val user = request.user
@@ -186,10 +189,41 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         Logger.error(s"The given id $id is not a valid ObjectId.")
         BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
-
-
   }
 
+  @ApiOperation(value = "Update collection description",
+  notes = "Takes one argument, a UUID of the collection. Request body takes key-value pair for the description")
+  def updateCollectionDescription(id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id)))(parse.json) {
+    implicit request =>
+      implicit val user = request.user
+      if (UUID.isValid(id.stringify)) {
+        var description: String = null
+        val aResult = (request.body \ "description").validate[String]
+        aResult match {
+          case s: JsSuccess[String] => {
+            description = s.get
+          }
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson(s"description data is missing"))
+          }
+        }
+        Logger.debug(s"Update title for dataset with id $id. New description: $description")
+        collections.updateDescription(id, description)
+        collections.get(id) match {
+          case Some(collection) => {
+            events.addObjectEvent(user, id, collection.name, " update_collection_information")
+          }
+
+        }
+        Ok(Json.obj("status" -> "success"))
+      }
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+
+  }
   /**
    * Add preview to file.
    */

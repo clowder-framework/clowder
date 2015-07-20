@@ -42,7 +42,12 @@
                         @spaces.spaceLink(space, 1, collection.id)
                     </dd>
 					<dt>Description:</dt>
-					<dd>@Html(collection.description)</dd>
+					<dd ><p id="collection_desc"  style="display:inline">@Html(collection.description)</p>
+						<a id="edit-description" href="javascript:updateDescription()">
+						<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+					</a></dd>
+
+
 				</dl>
 
 				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
@@ -239,7 +244,7 @@
 
 	function updateTitle() {
 	 var cur_title = $('#collectiontitle').text();
-	 $('<input type = "text" id="title_input"></input>').insertAfter($('#collectiontitle'));
+	 $('<input type = "text" id="title_input" style="width:80%"/>').insertAfter($('#collectiontitle'));
 	 $('<button id="update_title" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
 	 $('#title_input').val(cur_title);
 	 $('#collectiontitle').text("");
@@ -272,6 +277,44 @@
 			}
 		});
 
+	}
+
+	function updateDescription() {
+		var cur_description = $('#collection_desc').text().trim();
+		$('<input type ="text" id = "desc_input" style="width:80%"/>').insertAfter($('#collection_desc'));
+		$('<button id = "update_desc" onclick = "saveDescription()"> Save </button>').insertAfter($('#desc_input'));
+		$('#desc_input').val(cur_description);
+		$('#collection_desc').text("");
+		$('#edit-description').css("display", "none");
+	}
+
+	function saveDescription() {
+		var description = $('#desc_input').val();
+		var encDescription = htmlEncode(description);
+		jsonData = JSON.stringify({"description": description});
+
+		var request = jsRoutes.api.Collections.updateCollectionDescription(collectionId).ajax({
+			data: jsonData,
+			type: 'POST',
+			contentType: "application/json"
+		});
+
+		request.done(function(response, textStatus,jqXHR) {
+			$('#collection_desc').text(encDescription.replace(/\n/g, "<br>"));
+			$('#desc_input').remove();
+			$('#update_desc').remove();
+			$('#edit-description').css("display", "inline");
+			$('#collection_desc').css("display", "inline");
+
+		});
+
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			console.error("The following error occurred: " + textStatus, errorThrown);
+			var errMsg = " You must be logged in to update the information about a collection.";
+			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+				notify("The collection information was not updated due to: " + errorThrown, "error");
+			}
+		});
 	}
 </script>
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>

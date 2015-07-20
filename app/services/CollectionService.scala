@@ -81,6 +81,11 @@ trait CollectionService {
   def updateName(id: UUID, name: String)
 
   /**
+   * Update description of the dataset
+   */
+  def updateDescription(id: UUID, description: String)
+
+  /**
    * Delete collection and any reference of it
    */
   def delete(collectionId: UUID): Try[Unit]
