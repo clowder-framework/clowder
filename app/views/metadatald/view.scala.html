@@ -10,20 +10,27 @@
     }
 
     @printContent(content: JsValue) = {
-        @if(content.isInstanceOf[JsObject]) {
-            <ul>
-            @for((key, value) <- content.asInstanceOf[JsObject].fields) {
-                <li><strong>@key:</strong> @printContent(value) </li>
+        @content match {
+            case o: JsObject => {
+                <ul>
+                    @for((key, value) <- o.fields) {
+                        <li><strong>@key:</strong> @printContent(value) </li>
+                    }
+                </ul>
             }
-            </ul>
-        } else {
-            @if(content.isInstanceOf[JsArray]) {
-                @for((value, i) <- content.asInstanceOf[JsArray].value.zipWithIndex) {
+            case a: JsArray => {
+                @for((value, i) <- a.value.zipWithIndex) {
                     <div class="md-array">@printContent(value)</div>
                 }
-            } else {
-                @content <br>
             }
+            case s: JsString => {
+                @if(s.value.startsWith("http")) {
+                    <a href="@s.value">@s.value</a>
+                } else {
+                    @s.value
+                }
+            }
+            case _ => {@content}
         }
     }
 
