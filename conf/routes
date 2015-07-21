@@ -1,16 +1,22 @@
-# Routes
+# ----------------------------------------------------------------------
+# ROUTES
 # This file defines all application routes (Higher priority routes first)
-# ~~~~
+# ----------------------------------------------------------------------
 
 #make this the first rule
-#OPTIONS        /*path                                                       @controllers.Application.options(path)
-OPTIONS        /*path                                                                   api.ApiHelp.options(path)
 
+#OPTIONS       /*path                                                                   @controllers.Application.options(path)
+OPTIONS        /*path                                                                   api.ApiHelp.options(path)
 GET            /*path/                                                                  @controllers.Application.untrail(path: String)
 
-# Home page
+# ----------------------------------------------------------------------
+# HOME PAGE
+# ----------------------------------------------------------------------
+
 GET            /                                                                        @controllers.Application.index
 
+
+# ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
 #GET      /documentation/api/*testFile                                        controllers.Assets.at(path="/public/docs/api", testFile)
 GET            /contexts/metadata.jsonld                                         controllers.Assets.at(path="/public", file="/jsonld/contexts/metadata.jsonld")
@@ -18,66 +24,78 @@ GET            /assets/img/glyphicons-halflings-white.png                       
 GET            /assets/img/glyphicons-halflings.png                                     controllers.Assets.at(path="/public", file="/images/glyphicons-halflings.png")
 GET            /assets/*file                                                            controllers.Assets.at(path="/public", file)
 
-
-# Users
+# ----------------------------------------------------------------------
+# USERS
+# ----------------------------------------------------------------------
 POST           /users/registerThroughAdmins                                             controllers.Users.handleStartSignUp
 
-# Profile
+# ----------------------------------------------------------------------
+# PROFILE
+# ----------------------------------------------------------------------
 # deprecated use profile/:uuid
 GET            /profile/viewProfile                                                     @controllers.Profile.viewProfile(email: Option[String])
-# deprecated use /profile/:uuid
+# deprecated use profile/:uuid
 GET            /profile/viewProfile/:uuid                                               @controllers.Profile.viewProfileUUID(uuid: UUID)
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
 GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
 GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
 
-# Utilities
+
+# ----------------------------------------------------------------------
+# UTILITIES
+# ----------------------------------------------------------------------
 GET            /utils/authenticationRequired                                            @controllers.RedirectUtility.authenticationRequired
 GET            /utils/authenticationRequiredMessage/:msg/:url                           @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
 GET            /utils/noPermissions                                                     @controllers.RedirectUtility.incorrectPermissions(msg ?= null)
 
-# DTS Information
+# ----------------------------------------------------------------------
+# DTS INFORMATION
+# ----------------------------------------------------------------------
 GET            /extractions/requests                                                    @controllers.ExtractionInfo.getDTSRequests()
 GET            /extractions/servers_ips                                                 @controllers.ExtractionInfo.getExtractorServersIP()
 GET            /extractions/extractors_names                                            @controllers.ExtractionInfo.getExtractorNames()
 GET            /extractions/supported_input_types                                       @controllers.ExtractionInfo.getExtractorInputTypes()
 
-#DTS Bookmarklet
+# ----------------------------------------------------------------------
+# DTS BOOKMARKLET
+# ----------------------------------------------------------------------v
 GET            /bookmarklet                                                             @controllers.ExtractionInfo.getBookmarkletPage()
 GET            /bookmarklet.js                                                          @controllers.Application.bookmarklet
 
-
-#DTS Chrome extension
+# ----------------------------------------------------------------------
+# DTS CHROME EXTENSIONS
+# ----------------------------------------------------------------------
 GET            /extensions/dts/chrome                                                   @controllers.ExtractionInfo.getExtensionPage()
-
 #This may not require; This is only for testing. It will change in subsequent version
 GET            /extraction/form                                                         @controllers.Files.extractFile
 POST           /extraction/upload                                                       @controllers.Files.uploadExtract()
 #End
 
-# Files
-
+# ----------------------------------------------------------------------
+# FILES
+# ----------------------------------------------------------------------
 GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
 GET            /files/:id                                                               @controllers.Files.file(id: UUID)
 GET            /files/:id/blob                                                          @controllers.Files.download(id: UUID)
-#GET    /queries/:id/blob				  @controllers.Files.downloadquery(id: UUID)
-#GET    /files/:id/similar                @controllers.Files.findSimilar(id: UUID)
+GET            /files/:id/download/:format                                              @controllers.Files.downloadAsFormat(id: UUID, format: String)
+#GET           /queries/:id/blob				                                        @controllers.Files.downloadquery(id: UUID)
+#GET           /files/:id/similar                                                       @controllers.Files.findSimilar(id: UUID)
 POST           /upload                                                                  @controllers.Files.upload
 POST           /uploadSelectQuery                                                       @controllers.Files.uploadSelectQuery
-#POST   /uploadAjax					      @controllers.Files.uploadAjax
+#POST          /uploadAjax					                                            @controllers.Files.uploadAjax
 POST           /uploaddnd/:id                                                           @controllers.Files.uploaddnd(id: UUID)
-#POST  	/reactiveUpload					  @controllers.Files.reactiveUpload
+#POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 
-# Datasets
-
+# ----------------------------------------------------------------------
+# DATASETS
+# ----------------------------------------------------------------------
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
 GET            /datasets/userDatasets                                                   @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", email: String)
-
 GET            /datasets/new                                                            @controllers.Datasets.newDataset
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -86,10 +104,10 @@ GET            /datasets/:id                                                    
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
 
-# Collections
-
+# ----------------------------------------------------------------------
+# COLLECTIONS
+# ----------------------------------------------------------------------
 GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
-
 GET            /collections/new                                                         @controllers.Collections.newCollection
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
@@ -118,15 +136,21 @@ GET            /tags/list/ordered                                               
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
 GET            /tags/cloud                                                              @controllers.Tags.tagCloud
 
-# Authentication
+
+# ----------------------------------------------------------------------
+# AUTHENTICATION
+# ----------------------------------------------------------------------
 GET            /loginTest                                                               controllers.Authentication.login
 POST           /loginTest                                                               controllers.Authentication.loginSubmit
 GET            /notAuthorized                                                           controllers.Authentication.notAuthorized
 
-# Search
+
+# ----------------------------------------------------------------------
+# SEARCH
+# ----------------------------------------------------------------------
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
 GET            /multimediasearch                                                        @controllers.Search.multimediasearch
-#GET     /multimediaserach1                                                  @controllers.Search.multimediasearch1(f, id: UUID)
+#GET           /multimediaserach1                                                       @controllers.Search.multimediasearch1(f, id: UUID)
 GET            /advanced                                                                @controllers.Search.advanced
 GET            /SearchByText                                                            @controllers.Search.SearchByText(query: String ?= "")
 POST           /uploadquery                                                             @controllers.Search.uploadquery
@@ -136,16 +160,25 @@ GET            /files/:id/similar                                               
 GET            /queries/:id/similar                                                     @controllers.Search.findSimilarToQueryFile(id: UUID, typeToSearch:String, sectionsSelected:List[String] ?= List.empty )
 POST           /queries/similarWeightedIndexes                                          @controllers.Search.findSimilarWeightedIndexes()
 
-# Previewers
+
+# ----------------------------------------------------------------------
+# PREVIEWERS
+# ----------------------------------------------------------------------
 GET            /previewers/list                                                         controllers.Previewers.list
 
-## SecureSocial ##
 
-# Login page
+# ----------------------------------------------------------------------
+# SECURE SOCIAL
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# LOGIN PAGES
+# ----------------------------------------------------------------------
 GET            /login                                                                   securesocial.controllers.LoginPage.login
 GET            /logout                                                                  securesocial.controllers.LoginPage.logout
 
-# User Registration
+# ----------------------------------------------------------------------
+# USER REGISTRATION
+# ----------------------------------------------------------------------
 GET            /signup                                                                  securesocial.controllers.Registration.startSignUp
 POST           /signup                                                                  securesocial.controllers.Registration.handleStartSignUp
 GET            /signup/:token                                                           securesocial.controllers.Registration.signUp(token)
@@ -157,12 +190,18 @@ POST           /reset/:token                                                    
 GET            /password                                                                securesocial.controllers.PasswordChange.page
 POST           /password                                                                securesocial.controllers.PasswordChange.handlePasswordChange
 
-# Providers entry points
+
+# ----------------------------------------------------------------------
+# PROVIDERS ENTRY POINTS
+# ----------------------------------------------------------------------
 GET            /authenticate/:provider                                                  securesocial.controllers.ProviderController.authenticate(provider)
 POST           /authenticate/:provider                                                  securesocial.controllers.ProviderController.authenticateByPost(provider)
 GET            /not-authorized                                                          securesocial.controllers.ProviderController.notAuthorized
 
-# Administration pages
+
+# ----------------------------------------------------------------------
+# ADMIN PAGES
+# ----------------------------------------------------------------------
 GET            /admin                                                                   @controllers.Admin.main
 GET            /admin/indexAdmin                                                        @controllers.Admin.adminIndex
 GET            /admin/test                                                              @controllers.Admin.test
@@ -174,7 +213,6 @@ GET            /admin/measures                                                  
 GET            /admin/indexers                                                          @controllers.Admin.getIndexers
 GET            /admin/indexes                                                           @controllers.Admin.getIndexes
 GET            /admin/sections                                                          @controllers.Admin.getSections
-
 GET            /admin/addAdmin                                                          @controllers.Admin.newAdmin
 GET            /admin/listAdmins                                                        @controllers.Admin.listAdmins
 POST           /admin/submitNew                                                         @controllers.Admin.submitNew
@@ -182,36 +220,42 @@ POST           /admin/createIndex                                               
 POST           /admin/index/:id/build                                                   @controllers.Admin.buildIndex(id:String)
 DELETE         /admin/index/:id                                                         @controllers.Admin.deleteIndex(id:String)
 DELETE         /admin/index                                                             @controllers.Admin.deleteAllIndexes
-
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 POST           /admin/theme                                                             @controllers.Admin.setTheme
 
-# Javascript Endpoints
+# ----------------------------------------------------------------------
+# JAVASCRIPT ENDPOINTS
+# ----------------------------------------------------------------------
 GET            /javascriptRoutes                                                        @controllers.Application.javascriptRoutes
 
-# API documentation using Swagger
+# ----------------------------------------------------------------------
+# API DOCUMENTATION USING SWAGGER
+# ----------------------------------------------------------------------
 GET            /api-docs.json                                                           controllers.ApiHelpController.getResources
 GET            /api-docs.json/datasets                                                  controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
 GET            /api-docs.json/files                                                     controllers.ApiHelpController.getResource(path = "/api-docs.json/files")
 GET            /api-docs.json/collections                                               controllers.ApiHelpController.getResource(path = "/api-docs.json/collections")
 GET            /api-docs.json/extractions                                               controllers.ApiHelpController.getResource(path = "/api-docs.json/extractions")
 
-# Rest API
+
+
+# ----------------------------------------------------------------------
+# RESTful API
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# FILES ENDPOINT
+# ----------------------------------------------------------------------
 POST           /api/files/:three_d_file_id/geometries/:geometry_id                      @api.Files.attachGeometry(three_d_file_id: UUID,geometry_id: UUID)
 POST           /api/files/:three_d_file_id/3dTextures/:texture_id                       @api.Files.attachTexture(three_d_file_id: UUID,texture_id: UUID)
 POST           /api/files/:file_id/thumbnails/:thumbnail_id                             @api.Files.attachThumbnail(file_id: UUID,thumbnail_id: UUID)
-# attach query thumbnail
 POST           /api/queries/:file_id/thumbnails/:thumbnail_id                           @api.Files.attachQueryThumbnail(file_id: UUID,thumbnail_id: UUID)
 GET            /api/files                                                               @api.Files.list
 POST           /api/files                                                               @api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
 POST           /api/files/withFlags/:flags                                              @api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST           /api/files/searchusermetadata                                            @api.Files.searchFilesUserMetadata
 POST           /api/files/searchmetadata                                                @api.Files.searchFilesGeneralMetadata
-
 POST           /api/uploadToDataset/withFlags/:id/:flags                                @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST           /api/uploadToDataset/:id                                                 @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
-
-
 POST           /api/files/uploadIntermediate/:idAndFlags                                @api.Files.uploadIntermediate(idAndFlags)
 POST           /api/files/sendJob/:fileId/:fileType                                     @api.Files.sendJob(fileId: UUID,fileType)
 GET            /api/files/getRDFURLsForFile/:id                                         @api.Files.getRDFURLsForFile(id: UUID)
@@ -220,22 +264,17 @@ GET            /api/files/:id/blob                                              
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
-
 POST           /api/files/:id/versus_metadata                                           @api.Files.addVersusMetadata(id:UUID)
 GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)
-
+GET            /api/files/:id/usermetadatajson                                          @api.Files.getUserMetadataJSON(id: UUID)
 POST           /api/files/:id/usermetadata                                              @api.Files.addUserMetadata(id: UUID)
-GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)
 GET            /api/files/:id/technicalmetadatajson                                     @api.Files.getTechnicalMetadataJSON(id: UUID)
 GET            /api/files/:id/xmlmetadatajson                                           @api.Files.getXMLMetadataJSON(id: UUID)
-GET            /api/files/:id/usermetadatajson                                          @api.Files.getUserMetadataJSON(id: UUID)
 POST           /api/files/:id/follow                                                    @api.Files.follow(id: UUID, name: String)
 POST           /api/files/:id/unfollow                                                  @api.Files.unfollow(id: UUID, name: String)
 POST           /api/files/:id/comment                                                   @api.Files.comment(id: UUID)
 POST           /api/files/:id/setNotesHTML                                              @api.Files.setNotesHTML(id: UUID)
 DELETE         /api/files/:id                                                           @api.Files.removeFile(id: UUID)
-
-
 GET            /api/files/:id/tags                                                      @api.Files.getTags(id: UUID)
 POST           /api/files/:id/tags                                                      @api.Files.addTags(id: UUID)
 POST           /api/files/:id/tags/remove                                               @api.Files.removeTags(id: UUID)
@@ -245,13 +284,17 @@ POST           /api/files/:id/license                                           
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 
-#This may change depending on our discussion on identifying the details of extraction in DTS service
-# DTS Information
+# ----------------------------------------------------------------------
+# EXTRACTORS ENDPOINTS
+# ----------------------------------------------------------------------
+GET            /api/extractors                                                          @api.Extractions.listExtractors()
+GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
+POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
+
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
 GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames()
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
-
 #API for temporary fix for BD-289
 GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()
 POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL()
@@ -261,19 +304,25 @@ GET            /api/extractions/:id/status                                      
 POST           /api/extractions/:id/submit                                              @api.Extractions.submitExtraction(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
-
 # End of change segment
+
+# ----------------------------------------------------------------------
+# PREVIEWS ENDPOINT
+# ----------------------------------------------------------------------
 POST           /api/files/:id/previews/:p_id                                            @api.Files.attachPreview(id: UUID, p_id: UUID)
 GET            /api/files/:id/listpreviews                                              @api.Files.filePreviewsList(id: UUID)
 GET            /api/files/:id/getPreviews                                               @api.Files.getPreviews(id: UUID)
 GET            /api/files/:id/isBeingProcessed                                          @api.Files.isBeingProcessed(id: UUID)
+#GET		   /api/files/:three_d_file_id/:filename			                        @api.Files.getGeometry(three_d_file_id: UUID, filename)
+GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
 GET            /api/queries/:id                                                         @api.Files.downloadquery(id: UUID)
 # TODO please use /api/files/:id/blob to get the actual data see MMDB-1685
 GET            /api/files/:id                                                           @api.Files.download(id: UUID)
 
-# DANGER
+# ----------------------------------------------------------------------
+# DANGEROUS ENDPOINTS
+# ----------------------------------------------------------------------
 GET            /api/delete-data                                                         api.Admin.deleteAllData
-
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
@@ -327,13 +376,16 @@ DELETE         /api/collections/:coll_id                                        
 POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
 GET            /api/collections/:coll_id                                                @api.Collections.getCollection(coll_id: UUID)
 
+
+# ----------------------------------------------------------------------
+# DATASETS ENDPOINT
+# ----------------------------------------------------------------------
 GET            /api/datasets                                                            @api.Datasets.list
 POST           /api/datasets                                                            @api.Datasets.createDataset
 POST           /api/datasets/createempty                                                @api.Datasets.createEmptyDataset
 POST           /api/datasets/attachmultiple                                             @api.Datasets.attachMultipleFiles
 POST           /api/datasets/searchusermetadata                                         @api.Datasets.searchDatasetsUserMetadata
 POST           /api/datasets/searchmetadata                                             @api.Datasets.searchDatasetsGeneralMetadata
-
 GET            /api/datasets/listOutsideCollection/:coll_id                             @api.Datasets.listOutsideCollection(coll_id: UUID)
 POST           /api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound                @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
 DELETE         /api/datasets/:ds_id/:file_id                                            @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
@@ -351,17 +403,14 @@ POST           /api/datasets/:id/setNotesHTML                                   
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID, name: String)
 POST           /api/datasets/:id/unfollow                                               @api.Datasets.unfollow(id: UUID, name: String)
-
 POST           /api/datasets/:id/removeTag                                              @api.Datasets.removeTag(id: UUID)
 GET            /api/datasets/:id/tags                                                   @api.Datasets.getTags(id: UUID)
 POST           /api/datasets/:id/tags                                                   @api.Datasets.addTags(id: UUID)
 POST           /api/datasets/:id/tags/remove                                            @api.Datasets.removeTags(id: UUID)
 POST           /api/datasets/:id/tags/remove_all                                        @api.Datasets.removeAllTags(id: UUID)
 DELETE         /api/datasets/:id/tags                                                   @api.Datasets.removeTags(id: UUID)
-
 POST           /api/datasets/:id/editing                                                @api.Datasets.updateInformation(id: UUID)
 POST           /api/datasets/:id/license                                                @api.Datasets.updateLicense(id: UUID)
-
 GET            /api/datasets/:id/isBeingProcessed                                       @api.Datasets.isBeingProcessed(id: UUID)
 GET            /api/datasets/:id/getPreviews                                            @api.Datasets.getPreviews(id: UUID)
 POST           /api/datasets/:ds_id/files/:file_id                                      @api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
@@ -369,6 +418,10 @@ GET            /api/datasets/:id                                                
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 
+
+# ----------------------------------------------------------------------
+# PREVIEWS ENDPOINT
+# ----------------------------------------------------------------------
 GET            /api/previews/:preview_id/textures/dataset/:datasetid/json               @api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
 GET            /api/previews/:preview_id/textures/dataset/:dataset_id//:filename        @api.Files.downloadByDatasetAndFilename(dataset_id: UUID, filename, preview_id: UUID)
 GET            /api/previews/:dzi_id_dir/:level/:filename                               @api.Previews.getTile(dzi_id_dir, level, filename)
@@ -378,22 +431,22 @@ GET            /api/previews/:id/metadata                                       
 POST           /api/previews/:id/annotationAdd                                          @api.Previews.attachAnnotation(id: UUID)
 POST           /api/previews/:id/annotationEdit                                         @api.Previews.editAnnotation(id: UUID)
 GET            /api/previews/:id/annotationsList                                        @api.Previews.listAnnotations(id: UUID)
-
 GET            /api/previews                                                            @api.Previews.list
 GET            /api/previews/:id                                                        @api.Previews.download(id: UUID)
 DELETE         /api/previews/:id                                                        @api.Previews.removePreview(id: UUID)
 POST           /api/previews                                                            @api.Previews.upload(iipKey: String ?= "")
-
-
 POST           /api/indexes                                                             @api.Indexes.index
 POST           /api/indexes/features                                                    @api.Indexes.features
 
+
+# ----------------------------------------------------------------------
+# SECTIONS ENDPOINT
+# ----------------------------------------------------------------------
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
 
 POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
-
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
 POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
@@ -401,20 +454,18 @@ POST           /api/sections/:id/tags/remove_all                                
 DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
 
 
-# geostreaming
-
+# ----------------------------------------------------------------------
+# GEOSTREAMS ENDPOINT
+# ----------------------------------------------------------------------
 POST           /api/geostreams/datapoints                                               api.Geostreams.addDatapoint
-
 GET            /api/geostreams/datapoints                                               api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/averages                                      api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/trends                                        api.Geostreams.searchDatapoints(operator = "trends", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/bin/:time/:depth                              api.Geostreams.binDatapoints(time, depth: Double, raw: Boolean ?= false, since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty)
 GET            /api/geostreams/datapoints/:id                                           api.Geostreams.getDatapoint(id: String)
-
 GET            /api/geostreams/cache                                                    api.Geostreams.cacheListAction
 GET            /api/geostreams/cache/invalidate                                         api.Geostreams.cacheInvalidateAction
 GET            /api/geostreams/cache/:id                                                api.Geostreams.cacheFetchAction(id)
-
 POST           /api/geostreams/sensors                                                  api.Geostreams.createSensor
 GET            /api/geostreams/sensors/update                                           api.Geostreams.updateStatisticsStreamSensor()
 GET            /api/geostreams/sensors/:id                                              api.Geostreams.getSensor(id: String)
@@ -423,40 +474,51 @@ GET            /api/geostreams/sensors/:id/streams                              
 GET            /api/geostreams/sensors/:id/update                                       api.Geostreams.updateStatisticsSensor(id: String)
 GET            /api/geostreams/sensors                                                  api.Geostreams.searchSensors(geocode: Option[String] ?= None, sensor_name: Option[String] ?= None)
 DELETE         /api/geostreams/sensors/:id                                              api.Geostreams.deleteSensor(id: String)
-
 POST           /api/geostreams/streams                                                  api.Geostreams.createStream
 GET            /api/geostreams/streams/update                                           api.Geostreams.updateStatisticsStreamSensor()
 GET            /api/geostreams/streams/:id                                              api.Geostreams.getStream(id: String)
 GET            /api/geostreams/streams/:id/update                                       api.Geostreams.updateStatisticsStream(id: String)
 GET            /api/geostreams/streams                                                  api.Geostreams.searchStreams(geocode: Option[String] ?= None, stream_name: Option[String] ?= None)
 DELETE         /api/geostreams/streams/:id                                              api.Geostreams.deleteStream(id: String)
-
 DELETE         /api/geostreams/dropall                                                  api.Geostreams.deleteAll
 GET            /api/geostreams/counts                                                   api.Geostreams.counts
-
 GET            /geostreams                                                              controllers.Geostreams.browse
 
+# ----------------------------------------------------------------------
+# THUMBNAILS ENDPOINT
+# ----------------------------------------------------------------------
+POST           /api/fileThumbnail                                                       @api.Thumbnails.uploadThumbnail
+GET            /api/thumbnails                                                          @api.Thumbnails.list
+DELETE         /api/thumbnails/:id                                                      @api.Thumbnails.removeThumbnail(id: UUID)
 
-POST           /api/tiles                                                               @api.ZoomIt.uploadTile
-POST           /api/geometries                                                          @api.Geometry.uploadGeometry
-POST           /api/3dTextures                                                          @api.ThreeDTexture.uploadTexture
-POST           /api/fileThumbnail                                                       @api.Thumbnail.uploadThumbnail
 
+
+# ----------------------------------------------------------------------
+# SENSORS ENDPOINT
+# ----------------------------------------------------------------------
 GET            /api/sensors                                                             api.Sensors.list
 POST           /api/sensors                                                             api.Sensors.add
 GET            /api/sensors/:id                                                         api.Sensors.get(id)
 GET            /api/sensors/search                                                      api.Sensors.search
 DELETE         /api/sensors/:id                                                         api.Sensors.delete(id)
 
+# ----------------------------------------------------------------------
+# COMMENTS ENDPOINT
+# ----------------------------------------------------------------------
 POST           /api/comment/:id                                                         @api.Comments.comment(id: UUID)
 DELETE         /api/comment/:id/removeComment                                           @api.Comments.removeComment(id: UUID)
 POST           /api/comment/:id/editComment                                             @api.Comments.editComment(id: UUID)
 
+
+# ----------------------------------------------------------------------
+# MISC./OTHER ENDPOINTS
+# ----------------------------------------------------------------------
+POST           /api/tiles                                                               @api.ZoomIt.uploadTile
+POST           /api/geometries                                                          @api.Geometry.uploadGeometry
+POST           /api/3dTextures                                                          @api.ThreeDTexture.uploadTexture
 GET            /api/search                                                              @api.Search.search(query: String ?= "")
 POST           /api/sparqlquery                                                         @api.Search.querySPARQL
-
 POST           /api/projects/addproject                                                 @api.Projects.addproject(project: String)
-
 POST           /api/institutions/addinstitution                                         @api.Institutions.addinstitution(institution: String)
 
 
@@ -467,7 +529,6 @@ GET            /api/users                                                       
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
 GET            /api/me                                                                  @api.Users.getUser()
-
 POST           /api/users/updateUserField                                               @api.Users.updateUserField(email: String, field: String, fieldText: String)
 POST           /api/users/addUserDatasetView                                            @api.Users.addUserDatasetView(email: String, dataset: UUID)
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])

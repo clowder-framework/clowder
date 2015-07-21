@@ -103,7 +103,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       case Some(x) => {
         Logger.info("Searching ElasticSearch for " + query)
         val response = x.prepareSearch(index)
-          .setTypes("file", "dataset")
+          .setTypes("file", "dataset","collection")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(QueryBuilders.queryString(query).analyzer("snowball"))
           .setFrom(0).setSize(60).setExplain(true)
@@ -130,7 +130,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           qbqs.field(f.trim())
         }
         val response = x.prepareSearch(index)
-          .setTypes("file", "dataset")
+          .setTypes("file", "dataset","collection")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(qbqs.analyzer("snowball"))
           .setFrom(0).setSize(60).setExplain(true)
