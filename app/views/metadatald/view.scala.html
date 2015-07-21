@@ -55,11 +55,21 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date, index: Int) = {
-        @if(agent.isInstanceOf[ExtractorAgent]) {
-            Extracted by <a href="@agent.asInstanceOf[ExtractorAgent].extractorId.get">
-                @agent.asInstanceOf[ExtractorAgent].extractorId.get
-            </a> on @dateFormatter(date)
+    @printHeader(agent: Agent, date: java.util.Date) = {
+        @agent match {
+            case a: ExtractorAgent => {
+                Extracted by <a href="@a.extractorId.get">
+                    @agent.asInstanceOf[ExtractorAgent].extractorId.get
+                </a> on @dateFormatter(date)
+            }
+            case a: UserAgent => {
+                Extracted by <a href="@a.userId.get">
+                    @agent.asInstanceOf[ExtractorAgent].extractorId.get
+                </a> on @dateFormatter(date)
+            }
+            case _ => {
+                Extracted by unknown agent on @dateFormatter(date)
+            }
         }
     }
 
@@ -73,7 +83,7 @@
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt, i)
+                    @printHeader(m.creator, m.createdAt)
                 </span>
             </div>
             <div id="collapse_@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@i">
