@@ -14,14 +14,35 @@
             case o: JsObject => {
                 <ul>
                     @for((key, value) <- o.fields) {
-                        <li><strong>@key:</strong> @printContent(value) </li>
+                        @value match {
+                            case o: JsObject => {
+                                <li class="md-block">
+                                    <a class="collapse-icon">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </a>
+                                    <strong>@key:</strong> @printContent(value)
+                                </li>
+                            }
+                            case o: JsArray => {
+                                <li class="md-block">
+                                    <a class="collapse-icon">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </a>
+                                    <strong>@key:</strong> @printContent(value)
+                                </li>
+                            }
+                            case _ => {<li class="md-block"><strong>@key:</strong> @printContent(value)</li>}
+                        }
+
                     }
                 </ul>
             }
             case a: JsArray => {
+                <ul>
                 @for((value, i) <- a.value.zipWithIndex) {
-                    <div class="md-array">@printContent(value)</div>
+                    <li class="md-block">@printContent(value)</li>
                 }
+                </ul>
             }
             case s: JsString => {
                 @if(s.value.startsWith("http")) {
@@ -48,8 +69,8 @@
     @for((m, i) <- metadata.zipWithIndex) {
         <div class="panel panel-default">
             <div class="panel-heading" role="tab" id="heading_@i">
-                <a data-toggle="collapse" href="#collapse_@i">
-                    <span class="glyphicon glyphicon-minus"></span>
+                <a data-toggle="collapse" href="#collapse_@i" class="collapse-icon">
+                    <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
                     @printHeader(m.creator, m.createdAt, i)
@@ -57,7 +78,9 @@
             </div>
             <div id="collapse_@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@i">
                 <div class="panel-body">
-                    @printContent(m.content)
+                    <div class="tree">
+                        @printContent(m.content)
+                    </div>
                 </div>
             </div>
         </div>
@@ -69,10 +92,23 @@
 
             $('.collapse')
                 .on('shown.bs.collapse', function(){
-                    $(this).parent().find(".glyphicon-plus").removeClass("glyphicon-plus").addClass("glyphicon-minus");
+                    $(this).parent().find(".panel-icon").removeClass("glyphicon-plus").addClass("glyphicon-minus");
                 })
                 .on('hidden.bs.collapse', function(){
-                    $(this).parent().find(".glyphicon-minus").removeClass("glyphicon-minus").addClass("glyphicon-plus");
+                    $(this).parent().find(".panel-icon").removeClass("glyphicon-minus").addClass("glyphicon-plus");
                 });
+
+            $('.tree li').on('click', function (e) {
+                console.log("clicked");
+                var children = $(this).find('> ul > li');
+                if (children.is(":visible")) {
+                    children.hide('fast');
+                    $(this).find(".glyphicon-minus").removeClass("glyphicon-minus").addClass("glyphicon-plus");
+                } else {
+                    children.show('fast');
+                    $(this).find(".glyphicon-plus").removeClass("glyphicon-plus").addClass("glyphicon-minus");
+                }
+                e.stopPropagation();
+            });
         })
     </script>
