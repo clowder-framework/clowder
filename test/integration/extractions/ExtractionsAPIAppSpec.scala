@@ -111,6 +111,7 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       contentAsString(result) must include ("Extractors")
       info("content"+contentAsString(result))
     }
+
  "respond to the getExtractorServerIPsAction" in {
       val Some(result) = route(FakeRequest(GET, "/api/extractions/servers_ips"))
       info("Status="+status(result))
@@ -137,6 +138,49 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       contentType(result) mustEqual Some("application/json")
     }
 
+    "respond to the removeThumbnail(id:UUID) function routed by DELETE /api/thumbnails/:id  " in {
+
+      //link up json file here before fake request.
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/thumbnails?key=" + secretKey))
+      info("Status="+status(result))
+      status(result) mustEqual OK
+      info("contentType="+contentType(result))
+      contentType(result) mustEqual Some("application/json")
+      contentAsString(result) must include ("filename")
+      info("content"+contentAsString(result))
+      val json: JsValue = Json.parse(contentAsString(result))
+      val readableString: String = Json.prettyPrint(json)
+      info("Pretty JSON format")
+      info(readableString)
+      val nameResult = json.validate[List[FileName]]
+      val fileInfo = nameResult match {
+        case JsSuccess(list : List[FileName], _) => list
+          info("Mapping file model to Json worked")
+          info("Number of files in System " + list.length.toString())
+          info(list.toString())
+          // info(list.filter(_.filename contains "morrowplots.jpg").toString().split(",")(2))
+          // val id = list.filter(_.filename contains "morrowplots.jpg").toString().split(",")(2)
+
+          info(list.filter(_.filename contains "morrowplots-thumb.jpg").toString().split(",")(2))
+          val id = list.filter(_.filename contains "morrowplots-thumb.jpg").toString().split(",")(2)
+
+          // After finding specific "id" of file call RESTful API to get JSON information
+          info("DELETE /api/thumbnails/" + id)
+          val Some(result_get) = route(FakeRequest(DELETE, "/api/thumbnails/" + id + "?key=" + secretKey))
+          info("Status_Get="+status(result_get))
+          status(result_get) mustEqual OK
+          info("contentType_Get="+contentType(result_get))
+          contentType(result_get) mustEqual Some("application/json")
+          val json: JsValue = Json.parse(contentAsString(result_get))
+          val readableString: String = Json.prettyPrint(json)
+          info("Pretty JSON format")
+          info(readableString)
+        case e: JsError => {
+          info("Errors: " + JsError.toFlatJson(e).toString())
+        }
+      }
+    }
 
     "respond to the removeFile(id:UUID) function routed by DELETE /api/files/:id for morrow-plots file  " in {
       //link up json file here before fake request.
@@ -207,6 +251,7 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
           // After finding specific "id" of file call RESTful API to get JSON information
           info("DELETE /api/files/" + id)
           val Some(result_get) = route(FakeRequest(DELETE, "/api/files/" + id + "?key=" + secretKey))
+
           info("Status_Get="+status(result_get))
           status(result_get) mustEqual OK
           info("contentType_Get="+contentType(result_get))
