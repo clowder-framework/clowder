@@ -1,0 +1,71 @@
+@(metadata: List[models.Metadata])
+    @import play.api.libs.json.JsString
+    @import play.api.libs.json.JsObject
+    @import play.api.libs.json.JsValue
+    @import play.api.libs.json.JsArray
+
+    @dateFormatter(date: java.util.Date) = @{
+        val formatter = new java.text.SimpleDateFormat("MMM d, yyyy")
+        formatter.format(date)
+    }
+
+    @printContent(content: JsValue) = {
+        @if(content.isInstanceOf[JsObject]) {
+            <ul>
+            @for((key, value) <- content.asInstanceOf[JsObject].fields) {
+                <li><strong>@key:</strong> @printContent(value) </li>
+            }
+            </ul>
+        } else {
+            @if(content.isInstanceOf[JsArray]) {
+                @for((value, i) <- content.asInstanceOf[JsArray].value.zipWithIndex) {
+                    <div class="md-array">@printContent(value)</div>
+                }
+            } else {
+                @content <br>
+            }
+        }
+    }
+
+    @printHeader(agent: Agent, date: java.util.Date, index: Int) = {
+        @if(agent.isInstanceOf[ExtractorAgent]) {
+            Extracted by <a href="@agent.asInstanceOf[ExtractorAgent].extractorId.get">
+                @agent.asInstanceOf[ExtractorAgent].extractorId.get
+            </a> on @dateFormatter(date)
+        }
+    }
+
+    @if(metadata.size == 0) {
+        <h4>No metadata available for this resource</h4>
+    }
+    @for((m, i) <- metadata.zipWithIndex) {
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="heading_@i">
+                <a data-toggle="collapse" href="#collapse_@i">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </a>
+                <span>
+                    @printHeader(m.creator, m.createdAt, i)
+                </span>
+            </div>
+            <div id="collapse_@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@i">
+                <div class="panel-body">
+                    @printContent(m.content)
+                </div>
+            </div>
+        </div>
+    }
+
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+
+            $('.collapse')
+                .on('shown.bs.collapse', function(){
+                    $(this).parent().find(".glyphicon-plus").removeClass("glyphicon-plus").addClass("glyphicon-minus");
+                })
+                .on('hidden.bs.collapse', function(){
+                    $(this).parent().find(".glyphicon-minus").removeClass("glyphicon-minus").addClass("glyphicon-plus");
+                });
+        })
+    </script>

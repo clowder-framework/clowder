@@ -58,7 +58,6 @@ POST           /extraction/upload                                               
 # Files
 
 GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
-
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
@@ -95,6 +94,13 @@ GET            /collections/new                                                 
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
+
+# ----------------------------------------------------------------------
+# JSON-LD Metadata
+# ----------------------------------------------------------------------
+GET            /metadata/:id                                                            @controllers.Metadata.view(id: UUID)
+GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
+GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
 
 # ----------------------------------------------------------------------
 # Spaces
@@ -272,7 +278,7 @@ POST           /api/remove-admin                                                
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 #----------------------------------------------------------------------
-# JSON-LD ENDPOINTS
+# JSON-LD METADATA
 #----------------------------------------------------------------------
 POST           /api/contexts                                                            @api.ContextLD.addContext()
 GET            /api/contexts/:id                                                        @api.ContextLD.getContextById(id: UUID)

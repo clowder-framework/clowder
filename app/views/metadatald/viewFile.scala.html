@@ -1,0 +1,16 @@
+@(file: File, metadata: List[models.Metadata])
+
+@main("Metadata") {
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-header">
+                <h1>Metadata for <a href="@routes.Files.file(file.id)">@file.filename</a></h1>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            @view(metadata)
+        </div>
+    </div>
+}

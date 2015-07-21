@@ -485,6 +485,13 @@
                 </div>
             </div>
 
+			<div class="row border-top">
+				<div class="col-md-12">
+					<h4>JSON-LD metadata</h4>
+					<a href="@routes.Metadata.file(file.id)">Show JSON-LD metadata in new page</a>
+				</div>
+			</div>
+
 			@if(!file.xmlMetadata.isEmpty) {
                 <div id='xmlMetadata_@(file.id.toString)'>
                     <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
