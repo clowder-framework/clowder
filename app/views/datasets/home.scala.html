@@ -12,25 +12,64 @@
             </div>
             <div class="col-md-6">
                 <ul class="list-unstyled">
-                    <li><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                    <li  style="display:inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                    @datasets.editLicense(dataset)
                 </ul>
             </div>
         </div>
     </div>
     <div class="col-md-12 box-white-space" id="aboutdesc">
-        @Html(dataset.description)
+        <p id ="ds_description" style="display:inline">@Html(dataset.description)</p>
+        <a id="edit-description" href="javascript:updateDescription()">
+            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+        </a>
     </div>
 
     @datasets.previews(dataset, previewers)
 
     <div class="col-md-12 box-white-space">
-        @datasets.editInfo(dataset)
-        @datasets.editLicense(dataset)
+
         @datasets.deleteButton(dataset)
         @datasets.follow(dataset)
     </div>
 
-
-
-
 </div>
+<script>
+    function updateDescription() {
+		var cur_description = $('#ds_description').text().trim();
+		$('<textarea id = "desc_input" style="width:80%"/>').insertAfter($('#ds_description'));
+		$('<button id = "update_desc" onclick = "saveDescription()"> Save </button>').insertAfter($('#desc_input'));
+		$('#desc_input').val(cur_description);
+		$('#ds_description').text("");
+		$('#edit-description').css("display", "none");
+	}
+
+	function saveDescription() {
+		var description = $('#desc_input').val();
+		var encDescription = htmlEncode(description);
+		jsonData = JSON.stringify({"description": description});
+
+		var request = jsRoutes.api.Datasets.updateDescription("@dataset.id").ajax({
+			data: jsonData,
+			type: 'PUT',
+			contentType: "application/json"
+		});
+
+		request.done(function(response, textStatus,jqXHR) {
+			$('#ds_description').text(encDescription.replace(/\n/g, "<br>"));
+			$('#desc_input').remove();
+			$('#update_desc').remove();
+			$('#edit-description').css("display", "inline");
+			$('#ds_description').css("display", "inline");
+
+		});
+
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			console.error("The following error occurred: " + textStatus, errorThrown);
+			var errMsg = " You must be logged in to update the information about a collection.";
+			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+				notify("The collection information was not updated due to: " + errorThrown, "error");
+			}
+		});
+	}
+</script>
