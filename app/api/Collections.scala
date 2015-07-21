@@ -159,7 +159,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   @ApiOperation(value = "Update a collection name",
   notes= "Takes one argument, a UUID of the collection. Request body takes a key-value pair for the name",
-  responseClass = "None", httpMethod = "POST")
+  responseClass = "None", httpMethod = "PUT")
   def updateCollectionName(id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id)))(parse.json) {
     implicit request =>
       implicit val user = request.user
@@ -179,7 +179,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         collections.updateName(id, name)
         collections.get(id) match {
           case Some(collection) => {
-            events.addObjectEvent(user, id, collection.name, " update_collection_information")
+            events.addObjectEvent(user, id, collection.name, "update_collection_information")
           }
 
         }
@@ -192,7 +192,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   }
 
   @ApiOperation(value = "Update collection description",
-  notes = "Takes one argument, a UUID of the collection. Request body takes key-value pair for the description")
+  notes = "Takes one argument, a UUID of the collection. Request body takes key-value pair for the description",
+  responseClass = "None", httpMethod = "PUT")
   def updateCollectionDescription(id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id)))(parse.json) {
     implicit request =>
       implicit val user = request.user
