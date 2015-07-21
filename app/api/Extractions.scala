@@ -650,15 +650,24 @@ class Extractions @Inject()(
     Ok(jarr)
   }
 
+  @ApiOperation(value = "Lists information about all known extractors",
+    notes = "  ",
+    responseClass = "None", httpMethod = "GET")
   def listExtractors() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { implicit request =>
     Ok(Json.toJson(extractors.listExtractorsInfo()))
   }
 
-  def getExtractorInfo(extractor_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ExtractMetadata)) { implicit request =>
+  @ApiOperation(value = "Lists information about a specific extractor",
+    notes = "  ",
+    responseClass = "None", httpMethod = "GET")
+  def getExtractorInfo(extractor_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { implicit request =>
     Ok(Json.toJson(extractors.getExtractorInfo(extractor_id)))
   }
 
-  def addExtractorInfo() = SecuredAction(parse.json, authorization = WithPermission(Permission.Public)) { implicit request =>
+  @ApiOperation(value = "Register information about an extractor. Used when an extractor starts up.",
+    notes = "  ",
+    responseClass = "None", httpMethod = "POST")
+  def addExtractorInfo() = SecuredAction(parse.json, authorization = WithPermission(Permission.AddFilesMetadata)) { implicit request =>
     val extractionInfoResult = request.body.validate[ExtractorInfo]
     extractionInfoResult.fold(
       errors => {
