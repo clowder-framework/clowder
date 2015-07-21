@@ -209,7 +209,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Attach multiple files to an existing dataset",
       notes = "Add multiple files, by ID, to a dataset that is already in the system. Requires file ids and dataset id.",
       responseClass = "None", httpMethod = "POST")
-  def attachMultipleFiles() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
+  def attachMultipleFiles() = PermissionAction(Permission.AddResourceToDataset)(parse.json) { implicit request =>
       (request.body \ "datasetid").asOpt[String].map { dsId =>
           (request.body \ "existingfiles").asOpt[String].map { fileString =>
                   var idArray = fileString.split(",").map(_.trim())
@@ -309,7 +309,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Attach existing file to dataset",
       notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
       responseClass = "None", httpMethod = "POST")
-  def attachExistingFile(dsId: UUID, fileId: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dsId))) { implicit request =>
+  def attachExistingFile(dsId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dsId))) { implicit request =>
      datasets.get(dsId) match {
       case Some(dataset) => {
         files.get(fileId) match {

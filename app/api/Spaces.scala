@@ -102,7 +102,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Associate a collection with a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def addCollection(space: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
+  def addCollection(space: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
     val collectionId = (request.body \ "collection_id").as[String]
     spaces.addCollection(UUID(collectionId), space)
     Ok(toJson("success"))
@@ -111,7 +111,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "Associate a dataset with a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def addDataset(space: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
+  def addDataset(space: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
     val datasetId = (request.body \ "dataset_id").as[String]
     spaces.addDataset(UUID(datasetId), space)
     Ok(toJson("success"))

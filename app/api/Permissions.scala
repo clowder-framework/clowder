@@ -20,18 +20,21 @@ object Permission extends Enumeration {
     CreateSpace,
     DeleteSpace,
     EditSpace,
+    AddResourceToSpace,
     
     // datasets
     ViewDataset,
     CreateDataset,
     DeleteDataset,
     EditDataset,
+    AddResourceToDataset,
     
     // collections
     ViewCollection,
     CreateCollection,
     DeleteCollection,
     EditCollection,
+    AddResourceToCollection,
     
     // files
     AddFile,

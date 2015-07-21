@@ -1,12 +1,34 @@
 @(space: Option[ProjectSpace], resourceType: Int, resourceId: UUID)(implicit user: Option[models.User])
+@import api.Permission
 
 @if(user.isDefined) {
     @if(space.isDefined) {
         <a href="@routes.Spaces.getSpace(space.get.id)" id="space_link">
         @space.map(_.name).getOrElse("N/A")</a>
-        <a href="javascript:changeSpace('@resourceId', @resourceType)">
-            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-        </a>
+        <!-- Need to check permission by resource type. -->
+        @if(resourceType == 0) {
+            <!-- If the user can add resources to the space for this dataset, the link is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+            @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.dataset, resourceId))) {
+                <a href="javascript:changeSpace('@resourceId', @resourceType)">
+                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                </a>
+            } else {
+                <a class="btn btn-xs disabled" role="button" href="javascript:changeSpace('@resourceId', @resourceType)">
+                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                </a>
+            }
+        } else { @if(resourceType == 1) {
+            <!-- If the user can add resources to the space for this collection, the link is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+            @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.collection, resourceId))) {
+                <a href="javascript:changeSpace('@resourceId', @resourceType)">
+                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                </a>
+            } else {
+                <a class="btn btn-xs disabled" role="button"  href="javascript:changeSpace('@resourceId', @resourceType)">
+                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                </a>
+            }
+        }}
     }
     @if(space.isEmpty) {
         <a href="#" id="space_link">Default</a>

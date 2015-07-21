@@ -177,12 +177,12 @@
   			<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
 		<!-- If the user can edit the collection, the buttons are enabled, otherwise the buttons are present but disabled to provide consistent UE. -->
-		@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
-			<button id="addDatasetBtn" class="btn btn-default requiresLogin" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
+		@if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+			<button id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
 				Add</button>
 			<button id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display : none ;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
 		} else {
-			<button disabled id="addDatasetBtn" class="btn btn-default requiresLogin" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
+			<button disabled id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
 				Add</button>
 			<button disabled id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display : none ;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
 		}

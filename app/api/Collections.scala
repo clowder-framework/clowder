@@ -54,7 +54,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Add dataset to collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => {
 
