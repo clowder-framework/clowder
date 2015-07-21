@@ -212,7 +212,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         collections.updateDescription(id, description)
         collections.get(id) match {
           case Some(collection) => {
-            events.addObjectEvent(user, id, collection.name, " update_collection_information")
+            events.addObjectEvent(user, id, collection.name, "update_collection_information")
           }
 
         }
