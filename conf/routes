@@ -269,11 +269,13 @@ POST           /api/files/:id/license                                           
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 
+# ----------------------------------------------------------------------
+# EXTRACTORS ENDPOINTS
+# ----------------------------------------------------------------------
+GET            /api/extractors                                                          @api.Extractions.listExtractors()
+GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
+POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 
-# ----------------------------------------------------------------------
-# DTS ENDPOINTS
-# This may change depending on our discussion on identifying the details of extraction in DTS service
-# ----------------------------------------------------------------------
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
 GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames()
@@ -397,6 +399,7 @@ POST           /api/indexes/features                                            
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
+POST    	   /api/sections/:id/description											@api.Sections.description(id: UUID)
 POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)

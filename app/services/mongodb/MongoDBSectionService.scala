@@ -87,14 +87,18 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.dao.collection.save(doc)
     id.toString
   }
-  
+
+  def setDescription(id: UUID, descr: String) {
+	    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("description" -> Some(descr)), false, false, WriteConcern.Safe)
+  }
+
   /**
    * Update thumbnail used to represent this section.
    */
   def updateThumbnail(sectionId: UUID, thumbnailId: UUID) {
     SectionDAO.update(MongoDBObject("_id" -> new ObjectId(sectionId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
-  }
+   }
   
 }
 

@@ -55,13 +55,17 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     
     collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+    collection("previews.files").ensureIndex(MongoDBObject("section_id" -> -1))
+    collection("previews.files").ensureIndex(MongoDBObject("file_id" -> -1))
     
     collection("textures.files").ensureIndex(MongoDBObject("file_id" -> 1))
     collection("tiles.files").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+    collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
     
     collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
+    collection("dtsrequests").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
 
   }
