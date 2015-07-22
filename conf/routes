@@ -291,6 +291,8 @@ POST           /api/spaces/:id/addCollection                                    
 POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
+POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
+POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT

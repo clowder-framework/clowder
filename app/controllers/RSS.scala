@@ -29,6 +29,9 @@ class RSS @Inject() (events: EventService) extends SecuredController {
       case "user" => {
         routes.Profile.viewProfileUUID(obj_id.get)
       }
+      case "space" => {
+        routes.Spaces.getSpace(obj_id.get)
+      }
       case _ => {
         routes.Application.index()
       }
