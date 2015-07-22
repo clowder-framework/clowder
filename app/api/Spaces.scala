@@ -3,13 +3,13 @@ package api
 import java.util.Date
 import javax.inject.Inject
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
-import models.{ResourceRef, UUID, ProjectSpace}
+import models._
 import play.api.Logger
 import controllers.Utils
 import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import services.{AdminsNotifierPlugin, SpaceService, UserService}
+import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService}
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
@@ -19,7 +19,7 @@ import scala.collection.mutable.ListBuffer
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
-class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends ApiController {
+class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: EventService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -307,5 +307,76 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
         BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
       }
   }
-          
+
+  @ApiOperation(value = "Follow space",
+    notes = "Add user to space followers and add space to user followed spaces.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+    implicit val user = request.user
+
+    user match {
+      case Some(loggedInUser) => {
+        spaces.get(id) match {
+          case Some(file) => {
+            events.addObjectEvent(user, id, name, "follow_space")
+            spaces.addFollower(id, loggedInUser.id)
+            userService.followResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
+
+            val recommendations = getTopRecommendations(id, loggedInUser)
+            recommendations match {
+              case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+              case Nil => Ok(Json.obj("status" -> "success"))
+            }
+          }
+          case None => {
+            NotFound
+          }
+        }
+      }
+      case None => {
+        Unauthorized
+      }
+    }
+  }
+
+  @ApiOperation(value = "Unfollow space",
+    notes = "Remove user from space followers and remove space from user followed spaces.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+    implicit val user = request.user
+
+    user match {
+      case Some(loggedInUser) => {
+        spaces.get(id) match {
+          case Some(file) => {
+            events.addObjectEvent(user, id, name, "unfollow_space")
+            spaces.removeFollower(id, loggedInUser.id)
+            userService.unfollowResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
+            Ok
+          }
+          case None => {
+            NotFound
+          }
+        }
+      }
+      case None => {
+        Unauthorized
+      }
+    }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = spaces.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
+  }
 }

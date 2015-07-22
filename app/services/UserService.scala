@@ -1,6 +1,6 @@
 package services
 
-import models.{Role, Profile, UUID, User, MiniEntity}
+import models._
 import securesocial.core.Identity
 import util.Direction
 import util.Direction.Direction
@@ -176,6 +176,15 @@ trait UserService  {
    */
   def updateRole(role: Role)
 
+  /**
+   * Follow a file.
+   */
+  def followResource(followerId: UUID, resourceRef: ResourceRef)
+
+  /**
+   * Unfollow a file.
+   */
+  def unfollowResource(followerId: UUID, resourceRef: ResourceRef)
 
   /**
    * Follow a file.
