@@ -549,9 +549,7 @@ textarea, input[type='text'], input[type='password']{
 #scrollTableGalleria{
 	width: 100%;
 }
-#scrollTableGalleria thead,#scrollTableGalleria tbody,#scrollTableGalleria tr,#scrollTableGalleria td,#scrollTableGalleria th{
-	display:block;
-}
+
 #scrollTableGalleria tr:after{
 	content: ' ';
     display: block;
@@ -569,13 +567,16 @@ textarea, input[type='text'], input[type='password']{
 	width: 5%;
 }
 #scrollTableGalleria .galleriaTheThumbnail{
-	width: 35%;
+	width: 20%;
 }
-#scrollTableGalleria .galleriaInfo{
+#scrollTableGalleria .galleriaPosition{
+	width: 20%;
+}
+#scrollTableGalleria .galleriaDescr{
 	width: 35%;
 }
 #scrollTableGalleria .galleriaFindSimilar{
-	width: 25%;
+	width: 20%;
 }
 #scrollTableGalleria thead{
 	width:98%;

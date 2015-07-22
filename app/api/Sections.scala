@@ -166,6 +166,26 @@ class Sections @Inject()(
       }
   }
   
+  def description(id: UUID) = SecuredAction(authorization=WithPermission(Permission.AddSections))  { implicit request =>
+	  request.user match {
+	    case Some(identity) => {
+		    request.body.\("description").asOpt[String] match {
+			    case Some(descr) => {
+			        sections.setDescription(id, descr)
+			        Ok(toJson(Map("status"->"success")))
+			    }
+			    case None => {
+			    	Logger.error("no section description specified.")
+			    	BadRequest(toJson("no section description specified."))
+			    }
+		    }
+	    }
+	    case None =>
+	      Logger.error(("No user identity found in the request, request body: " + request.body))
+	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+	  }
+    }
+
   /**
    * Add thumbnail to section.
    */
