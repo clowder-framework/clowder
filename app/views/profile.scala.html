@@ -1,4 +1,4 @@
-@(profile: User, ownProfile: Option[Boolean], followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)], followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], myFiles : List[(UUID, String, String)], myDatasets : List[(UUID, String, String)], myCollections : List[(UUID, String, String)] )(implicit user: Option[models.User] = None)
+@(profile: User, ownProfile: Option[Boolean], followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)], followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], myFiles : List[(UUID, String, String)], myDatasets : List[(UUID, String, String)], myCollections : List[(UUID, String, String)] )(implicit user: Option[models.User] = None)
 @main("Profile") {
 <div class="page-header">
   <table>
@@ -182,10 +182,10 @@
 						@for(fileInfo <- myFiles) {
 				    	<div class="col-md-3" style="margin-top: 30px">
 					    	<div class="panel panel-default">
-							  <div class="panel-heading">
+							  <div class="panel-heading caption break-word">
 							    	<a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
 							  </div>
-							  <div class="panel-body">
+							  <div class="panel-body caption break-word">
 							    @fileInfo._3
 							  </div>
 							</div>
@@ -201,10 +201,10 @@
 						@for(datasetInfo <- myDatasets) {
 				    	<div class="col-md-3" style="margin-top: 30px">
 					    	<div class="panel panel-default">
-							  <div class="panel-heading">
+							  <div class="panel-heading caption break-word">
 							    	<a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
 							  </div>
-							  <div class="panel-body">
+							  <div class="panel-body caption break-word">
 							    @datasetInfo._3
 							  </div>
 							</div>
@@ -220,10 +220,10 @@
 						@for(collectionInfo <- myCollections) {
 				    	<div class="col-md-3" style="margin-top: 30px">
 					    	<div class="panel panel-default">
-							  <div class="panel-heading">
+							  <div class="panel-heading caption break-word">
 							    	<a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
 							  </div>
-							  <div class="panel-body">
+							  <div class="panel-body caption break-word">
 							    @collectionInfo._3
 							  </div>
 							</div>
@@ -243,7 +243,7 @@
 							</h4>
 						</div>
 						<div id="collapseOne" class="panel-collapse collapse in">
-							<div class="panel-body">
+							<div class="panel-body caption break-word">
 								<div class="row" style="margin-top : 15px;">
 							    	@for(userInfo <- followedUsers) {
 									  	<div class = "img_wrapper">
@@ -287,8 +287,74 @@
 							</div>
 						</div>
 					</div>
-					
-					<div class="panel panel-default">
+
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h4 class="panel-title">
+                                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">Spaces</a>
+                                </h4>
+                            </div>
+                            <div id="collapseSpaces" class="panel-collapse collapse">
+                                <div class="panel-body">
+                                @for(info <- followedSpaces) {
+                                    <div class="col-md-3" style="margin-top : 30 px">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <a href="@routes.Spaces.getSpace(info._1)">@info._2.toString</a>
+                                            </div>
+                                            <div class="panel-body">
+                                            @info._3
+                                            </div>
+                                            <div class="panel-footer">
+                                            @user match {
+                                                case Some(viewer) => {
+                                                    @ownProfile match {
+                                                        case Some(sameProfile) => {
+                                                            <h4>
+                                                                <button
+                                                                id="followButton"
+                                                                type="button"
+                                                                class="
+                                                                    @if(viewer.followedEntities.filter(x => (x.id == info._1)).nonEmpty) {
+                                                                        btn btn-danger
+                                                                    } else {
+                                                                        btn btn-success
+                                                                    }
+                                                                "
+                                                                data-toggle="button"
+                                                                aria-pressed="
+                                                                    @if(viewer.followedEntities.filter(x => (x.id == info._1)).nonEmpty) {
+                                                                        true
+                                                                    } else {
+                                                                        false
+                                                                    }
+                                                                "
+                                                                autocomplete="off"
+                                                                objectType="space"
+                                                                objectId="@info._1.stringify"
+                                                                >
+                                                                @if(viewer.followedEntities.filter(x => (x.id == info._1)).nonEmpty) {
+                                                                    Unfollow
+                                                                } else {
+                                                                    Follow
+                                                                }
+                                                                </button>
+                                                            </h4>
+                                                        }
+                                                        case None => {
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel panel-default">
 							<div class="panel-heading">
 								<h4 class="panel-title">
 									<a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Files</a>
@@ -299,10 +365,10 @@
 									@for(fileInfo <- followedFiles) {
 							    	<div class="col-md-3" style="margin-top: 30px">
 								    	<div class="panel panel-default">
-										  <div class="panel-heading">
+										  <div class="panel-heading caption break-word">
 										    	<a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
 										  </div>
-										  <div class="panel-body">
+										  <div class="panel-body caption break-word">
 										    @fileInfo._3
 										  </div>
 										  <div class="panel-footer">
@@ -340,7 +406,6 @@
                                   }
                                 </button>
                               </h4>
-                            <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
                                                       }
                                                       case None => {
                                                       }
@@ -365,10 +430,10 @@
 								@for(datasetInfo <- followedDatasets) {
 						    	<div class="col-md-3" style="margin-top: 30px">
 							    	<div class="panel panel-default">
-									  <div class="panel-heading">
+									  <div class="panel-heading caption break-word">
 									    	<a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
 									  </div>
-									  <div class="panel-body">
+									  <div class="panel-body caption break-word">
 									    @datasetInfo._3
 									  </div>
 									  <div class="panel-footer">
@@ -406,7 +471,6 @@
                                 }
                               </button>
                             </h4>
-                          <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
                                                   }
                                                   case None => {
                                                   }
@@ -431,10 +495,10 @@
 								@for(collectionInfo <- followedCollections) {
 						    	<div class="col-md-3" style="margin-top: 30px">
 							    	<div class="panel panel-default">
-									  <div class="panel-heading">
+									  <div class="panel-heading caption break-word">
 									    	<a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
 									  </div>
-									  <div class="panel-body">
+									  <div class="panel-body caption break-word">
 									    @collectionInfo._3
 									  </div>
 									  <div class="panel-footer">
@@ -472,7 +536,6 @@
                                 }
                               </button>
                             </h4>                         
-                          <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
                                                   }
                                                   case None => {
                                                   }
@@ -481,8 +544,9 @@
 										}
 									</div>
 								</div>
+                                </div>
 						    	}
-							</div>
+
 						</div>
 					</div>
 		    	</div>	
@@ -495,4 +559,5 @@
     </tr>
   </table>
 </div>
+    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
 }
