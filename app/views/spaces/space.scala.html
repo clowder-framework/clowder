@@ -21,6 +21,23 @@
             <p><span id="spacedescdisplay">@space.description</span></p>
         </div>
         <div class="pull-right col-md-2 col-lg-2 col-sm-2 text-center">
+            @if(!space.followers.contains(user.get.id)) {
+                <button id="followButton"
+                class="btn btn-success followButton btn-xs"
+                objectId="@space.id"
+                objectName="@space.name"
+                objectType="space">
+                    Follow
+                </button>
+            } else {
+                <button id="followButton"
+                class="btn btn-danger followButton btn-xs"
+                objectId="@space.id"
+                objectName="@space.name"
+                objectType="space">
+                    Unfollow
+                </button>
+            }
             <!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
                 <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs">
@@ -44,4 +61,17 @@
             @spaces.spaceConfiguration(space)            
         </div>
     </div>
+
+    <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
+    <script type="text/javascript" language="javascript">
+        $(document).ready(function() {
+            $(document).on('click', '.followButton', function() {
+                var id = $(this).attr('objectId');
+                var name = $(this).attr('objectName');
+                var type = $(this).attr('objectType');
+                followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
+            });
+        });
+    </script>
+
 }

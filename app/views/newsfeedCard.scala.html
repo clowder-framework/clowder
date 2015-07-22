@@ -13,6 +13,9 @@
     case "user" => {
       user: <a href="@routes.Profile.viewProfileUUID(obj_id.get)">@obj_name.get</a>
     }
+    case "space" => {
+      space: <a href="@routes.Spaces.getSpace(obj_id.get)">@obj_name.get</a>
+    }
     case _ => {
       @obj_type: @obj_name.get
     }
