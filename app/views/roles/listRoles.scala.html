@@ -1,5 +1,6 @@
-@(roles: List[Role], permissionList: List[api.Permission.Value])(implicit user: Option[models.User])
+@(roles: List[Role])(implicit user: Option[models.User])
 
+<!-- Need this in order to declare the var: -->
 @import api.Permission; var prevResourceStr = ""
 
 @main("Manage Roles") {
@@ -29,7 +30,7 @@
                         @if(!role.permissions.isEmpty) {
                             <table class="table-progressive">
                                 <tr><td>
-                                    @for( p <- permissionList filter { role.permissions contains _.toString() } map { _.toString() } ) {
+                                    @for( p <- api.Permission.values.toList filter { role.permissions contains _.toString() } map { _.toString() } ) {
                                         @defining(p) { permissionStr =>
                                             @defining(p.replaceFirst("(\\p{Ll})(\\p{Lu})", "$1 $2").replaceFirst("\\w+ (.+[^s])[s]?", "$1")) { currResourceStr =>
                                                 @if(currResourceStr == prevResourceStr) {
