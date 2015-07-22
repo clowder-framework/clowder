@@ -82,8 +82,6 @@
 
         var ids = $('#spacesAvailable option:selected').map(function() { return this.value}).get();
         var names = $('#spacesAvailable option:selected').map(function() { return this.id}).get();
-
-        console.log('Adding spaces ' + ids + ' to collection');
         var jsonData = JSON.stringify({"space_ids ": ids, " resource_id ": "@resourceId"});
         var request = jsRoutes.api.Spaces.addCollectionToSpaces(ids, "@resourceId").ajax({
             data: jsonData,
@@ -92,7 +90,6 @@
         });
 
         request.done(function(response, textStatus, jqXH) {
-            console.log("Syccessful response from add Collections");
             updateSpacesEditLink(ids, names)
         });
 
@@ -105,7 +102,6 @@
     function updateDatasetInSpaces() {
         var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get();
         var names = $('#spacesAvailable option:selected').map(function(){ return this.id }).get();
-        console.log('Adding spaces' + ids + ' to dataset');
         var jsonData = JSON.stringify({"space_ids": ids, "resource_id": "@resourceId"});
         var request = jsRoutes.api.Spaces.addDatasetToSpaces(ids,"@resourceId").ajax({
             data: jsonData,
@@ -114,7 +110,6 @@
         });
 
         request.done(function(response, textStatus, jqXH){
-            console.log("Successful response from add Datasets");
             updateSpacesEditLink(ids, names)
         });
 
@@ -141,6 +136,5 @@
     function spaceAddDataset() {
         var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get()
 
-        console.log('Adding spaces' + ids + ' to dataset');
     }
 </script>

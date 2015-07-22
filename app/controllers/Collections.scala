@@ -175,11 +175,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           else {
             val stringSpaces = colSpace(0).split(",")
-            var colSpaces: List[UUID] = List.empty
-            stringSpaces.map{
-              aSpace => if(aSpace != "") colSpaces = UUID(aSpace) :: colSpaces
-            }
-              collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, spaces = colSpaces)
+            val colSpaces: List[UUID] = stringSpaces.map{aSpace => if(aSpace != "") UUID(aSpace)}.asInstanceOf[List[UUID]]
+            collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, spaces = colSpaces)
           }
 
           Logger.debug("Saving collection " + collection.name)
@@ -249,13 +246,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
-          var otherSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
-          val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
-          spacesList.map {
-            aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) {
-              otherSpaces = aSpace:: otherSpaces
-            }
-          }
+          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace).asInstanceOf[List[ProjectSpace]]
 
           var decodedSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
           collectionSpaces.map {
@@ -285,12 +276,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           spaceId => spaceService.get(spaceId) match {
             case Some(projectSpace) => {
               val space_users: List[User] = spaceService.getUsersInSpace(spaceId)
-              var new_users: List[User] = List.empty
-              space_users.map {
-                aUser => if (!userList.contains(aUser)) {
-                  new_users = aUser :: new_users
-                }
-              }
+              val new_users: List[User] = space_users.map{aUser => if (!userList.contains(aUser)) aUser}.asInstanceOf[List[User]]
+
               userList = userList ::: new_users
               if (!space_users.isEmpty) {
                 space_users.map {
