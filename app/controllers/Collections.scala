@@ -174,8 +174,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
           }
           else {
-            val stringSpaces = colSpace(0).split(",")
-            val colSpaces: List[UUID] = stringSpaces.map{aSpace => if(aSpace != "") UUID(aSpace)}.asInstanceOf[List[UUID]]
+            val stringSpaces = colSpace(0).split(",").toList
+            val colSpaces: List[UUID] = stringSpaces.map(aSpace => if(aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
             collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, spaces = colSpaces)
           }
 
@@ -246,12 +246,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
-          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace).asInstanceOf[List[ProjectSpace]]
-
-          var decodedSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
-          collectionSpaces.map {
-            aSpace => decodedSpaces = Utils.decodeSpaceElements(aSpace) :: decodedSpaces
-          }
+          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+          val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces), otherSpaces))
 
@@ -270,13 +266,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     collections.get(id) match {
       case Some(collection) => {
         var userList: List[User] = List.empty
-        var userRoleMap = scala.collection.mutable.Map[UUID, String]()
-        var spaceMap = scala.collection.mutable.Map[UUID, String]()
+        var userRoleMap = Map[UUID, String]()
+        var spaceMap = Map[UUID, String]()
         collection.spaces.map {
           spaceId => spaceService.get(spaceId) match {
             case Some(projectSpace) => {
               val space_users: List[User] = spaceService.getUsersInSpace(spaceId)
-              val new_users: List[User] = space_users.map{aUser => if (!userList.contains(aUser)) aUser}.asInstanceOf[List[User]]
+              val new_users: List[User] = space_users.map{aUser => if (!userList.contains(aUser)) aUser else None}.filter(_ != None).asInstanceOf[List[User]]
 
               userList = userList ::: new_users
               if (!space_users.isEmpty) {

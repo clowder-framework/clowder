@@ -330,22 +330,10 @@ class Datasets @Inject()(
                     }
                     case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
                   }
-
-          }
-          var otherSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
-          val spaceList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
-          spaceList.map{
-            aSpace => if(! datasetSpaces.map(_.id).contains(aSpace.id)) {
-              otherSpaces = aSpace :: otherSpaces
-            }
           }
 
-          var decodedSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
-          datasetSpaces.map{
-            aSpace =>
-                decodedSpaces= Utils.decodeSpaceElements(aSpace)  :: decodedSpaces
-
-          }
+          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+          val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
           decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces))
@@ -635,8 +623,8 @@ class Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         var userList: List[User]=  List.empty
-        var userRoleMap = scala.collection.mutable.Map[UUID, String]()
-        var spaceMap = scala.collection.mutable.Map[UUID, String]()
+        var userRoleMap = Map[UUID, String]()
+        var spaceMap = Map[UUID, String]()
         dataset.spaces.map{
           space_id => spaceService.get(space_id) match {
             case Some(projectSpace) => {
