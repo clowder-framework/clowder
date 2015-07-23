@@ -77,7 +77,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
   @ApiOperation(value = "List spaces",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list() = UserAction { implicit request => {
+  def list() = UserAction { implicit request =>
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
 
     val userSpaces = request.user match {
@@ -90,6 +90,27 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     }
     Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
   }
+
+  @ApiOperation(value = "List spaces a user can add to",
+    notes = "Retrieves a list of spaces that the user has permission to add to",
+    responseClass = "None", httpMethod = "GET")
+  def listSpacesCanAdd() = UserAction { implicit request =>
+    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+
+    val userSpaces = request.user match {
+      case Some(user) => user.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
+      case None => spaces.list()
+    }
+
+    implicit val user = request.user
+    for (aSpace <- userSpaces) {
+      //For each space in the list, check if the user has permission to add something to it, if so
+      //decode it and add it to the list to pass back to the view.
+      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
+        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+      }
+    }
+    Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
   }
 
   def spaceToJson(space: ProjectSpace) = {

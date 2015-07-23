@@ -29,13 +29,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                             spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {  
 
   def newCollection() = PermissionAction(Permission.CreateCollection) { implicit request =>
-      implicit val user = request.user
-      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
-      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-      for (aSpace <- spacesList) {
-          decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+    implicit val user = request.user
+    val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
+    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+    for (aSpace <- spacesList) {
+      //For each space in the list, check if the user has permission to add something to it, if so
+      //decode it and add it to the list to pass back to the view.
+      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
+        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
-      Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
+    }
+    Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
   }
 
   /**

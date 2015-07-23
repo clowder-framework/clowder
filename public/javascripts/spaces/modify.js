@@ -9,7 +9,7 @@ resource_type_enum = {
 
 function changeSpace(resource_id, resource_type) {
 
-    var request = jsRoutes.api.Spaces.list().ajax({
+    var request = jsRoutes.api.Spaces.listSpacesCanAdd().ajax({
         type: 'GET'
     });
 

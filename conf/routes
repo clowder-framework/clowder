@@ -105,9 +105,9 @@ POST           /spaces/submit                                                   
 # Tags
 
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
-GET           /tags/list/ordered                                                        @controllers.Tags.tagListOrdered
-GET           /tags/list/weighted                                                       @controllers.Tags.tagListWeighted
-GET           /tags/cloud                                                               @controllers.Tags.tagCloud
+GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
+GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
+GET            /tags/cloud                                                              @controllers.Tags.tagCloud
 
 
 # Authentication
@@ -284,6 +284,7 @@ POST           /api/changeAppearance                                            
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
 GET            /api/spaces                                                              @api.Spaces.list()
+GET            /api/spaces/listSpacesCanAdd                                             @api.Spaces.listSpacesCanAdd()
 GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)

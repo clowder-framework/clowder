@@ -50,16 +50,22 @@ class Datasets @Inject()(
    * or by selecting multiple existing files.
    */
   def newDataset() = PermissionAction(Permission.CreateDataset) { implicit request =>
-      implicit val user = request.user
-      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
-      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-      for (aSpace <- spacesList) {
-          decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+    implicit val user = request.user
+    val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
+    var spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
+
+    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+    for (aSpace <- spacesList) {
+      //For each space in the list, check if the user has permission to add something to it, if so
+      //decode it and add it to the list to pass back to the view.
+      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
+        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
-      Ok(views.html.newDataset(filesList, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
+    }
+
+    Ok(views.html.newDataset(filesList, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
-  
+
   def addToDataset(id: UUID, name: String, desc: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       implicit val user = request.user
       val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
