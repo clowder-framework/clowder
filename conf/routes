@@ -56,6 +56,9 @@ GET            /extractions/servers_ips                                         
 GET            /extractions/extractors_names                                            @controllers.ExtractionInfo.getExtractorNames()
 GET            /extractions/supported_input_types                                       @controllers.ExtractionInfo.getExtractorInputTypes()
 
+
+GET            /files/:file_id/extractors                                               @controllers.Extractors.submitExtraction(file_id: UUID)
+
 # ----------------------------------------------------------------------
 # DTS BOOKMARKLET
 # ----------------------------------------------------------------------v
@@ -276,6 +279,9 @@ GET            /api/extractors                                                  
 GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 
+POST           /api/extractions                                                         @api.Extractions.submitToExtractor
+
+
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
 GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames()
@@ -286,7 +292,6 @@ POST           /api/extractions/upload_url                                      
 POST           /api/extractions/multiple_uploadby_url                                   @api.Extractions.multipleUploadByURL()
 POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
 GET            /api/extractions/:id/status                                              @api.Extractions.checkExtractorsStatus(id:UUID)
-POST           /api/extractions/:id/submit                                              @api.Extractions.submitExtraction(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
 # End of change segment
@@ -399,7 +404,7 @@ POST           /api/indexes/features                                            
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
-POST    	   /api/sections/:id/description											@api.Sections.description(id: UUID)
+POST           /api/sections/:id/description                                            @api.Sections.description(id: UUID)
 POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)

@@ -1,0 +1,43 @@
+@(extractors: List[ExtractorInfo], file_id: UUID)
+
+@main("Extractors") {
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Parameters</th>
+                <th>Submit</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for(e <- extractors) {
+                <tr>
+                    <td>@e.name</td>
+                    <td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>
+                    <td><button class="btn" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@file_id.stringify')">Submit</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <script type="text/javascript">
+        function submit(extractor_name, textbox_id, file_id) {
+            var params = $('#'+textbox_id).val();
+            if (params === "") params = "{}";
+            var dataBody = {'extractor':extractor_name, 'file_id':file_id, 'parameters': JSON.parse(params)};
+            var request = jsRoutes.api.Extractions.submitToExtractor().ajax({
+                data: JSON.stringify(dataBody),
+                type: 'POST',
+                contentType: "application/json",
+            });
+
+            request.done(function (response, textStatus, jqXHR){
+                notify("Submitted successfully", "success");
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+            });
+        }
+    </script>
+}
+

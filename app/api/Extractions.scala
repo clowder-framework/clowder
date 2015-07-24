@@ -687,5 +687,29 @@ class Extractions @Inject()(
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
 
-
+  def submitToExtractor() = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) { implicit request =>
+    Logger.debug(s"Submitting file for extraction with body $request.body" )
+    val extractor = (request.body \ "extractor").as[String]
+    val file_id = UUID((request.body \ "file_id").as[String])
+    val parameters = (request.body \ "parameters").as[JsObject]
+    files.get(file_id) match {
+      case Some(f) => {
+        val id = f.id
+        val fileType = f.contentType
+        val flags = ""
+        val host = Utils.baseUrl(request)
+        val clientIP = request.remoteAddress
+        val serverIP = request.host
+        dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+        val extra = Map("filename" -> f.filename, "parameters" -> parameters.toString)
+        val key = "extractors." + extractor
+        current.plugin[RabbitmqPlugin].foreach {
+          // TODO replace null with None
+          _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
+        }
+        Ok(Json.obj("status" -> "OK"))
+      }
+      case None => BadRequest(toJson(Map("request" -> "File not found")))
+    }
+  }
 }
