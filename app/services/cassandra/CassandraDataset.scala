@@ -1,11 +1,11 @@
 package services.cassandra
 
-import models.{UUID, Dataset, Collection}
+import api.UserRequest
+import models._
 import services.DatasetService
 import play.api.libs.json.{JsNull, JsValue}
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
-import models.File
 
 /**
  * Store datasets in Cassandra.
@@ -14,70 +14,47 @@ import models.File
  *
  */
 class CassandraDataset extends DatasetService {
+  /**
+   * Count all datasets
+   */
+  def count(space: Option[String]): Long = -1
+
  /**
-  * Count all datasets
+  * Return a list of datasets in a space, this does not check for permissions
   */
- def count(space: Option[String]): Long = {
-  -1
- }
+ def listSpace(limit: Integer, space: String): List[Dataset] = List.empty[Dataset]
 
  /**
-   * List datasets in the system.
-   */
-  def listDatasets(order: Option[String], limit: Option[Integer], space: Option[String]): List[Dataset] = {
-    List.empty[Dataset]
-  }
+  * Return a list of datasets in a space starting at a specific date, this does not check for permissions
+  */
+ def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset] = List.empty[Dataset]
 
-  /**
-   * List datasets in the system in reverse chronological order.
-   */
-  def listDatasetsChronoReverse(limit: Option[Integer], space: Option[String]): List[Dataset] = {
-    List.empty[Dataset]
-  }
+ /**
+  * Return a list of datasets the user has access to.
+  */
+ def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
 
-  /**
-   * List datasets after a specified date.
-   */
-  def listDatasetsAfter(date: String, limit: Int, space: Option[String]): List[Dataset] = {
-    List.empty[Dataset]
-  }
+ /**
+  * Return a list of datasets the user has access to starting at a specific date.
+  */
+ def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
 
-  /**
-   * List datasets before a specified date.
-   */
-  def listDatasetsBefore(date: String, limit: Int, space: Option[String]): List[Dataset] = {
-    List.empty[Dataset]
-  }
-  
-    /**
-   * List datasets after a specified date.
-   */
-  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset] = {
-    List.empty[Dataset]
-  }
-  
-  /**
-   * List datasets before a specified date.
-   */
-  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset] = {
-    List.empty[Dataset]
-  }
-  /**
+ /**
+  * Return a list of datasets the user has created.
+  */
+ def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset] = List.empty[Dataset]
+
+ /**
+  * Return a list of datasets the user has created starting at a specific date.
+  */
+ def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset] = List.empty[Dataset]
+
+ /**
    * Get dataset.
    */
   def get(id: UUID): Option[Dataset] = {
     None
   }
-
-  /**
-   * Lastest dataset in chronological order.
-   */
-  def latest(space: Option[String]): Option[Dataset] = None
-
-  /**
-   * First dataset in chronological order.
-   */
-  def first(space: Option[String]): Option[Dataset] = None
 
   def insert(dataset: Dataset): Option[String] = None
 

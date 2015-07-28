@@ -6,7 +6,8 @@
       <td valign="top">
         <img src=@profile.getAvatarUrl(256) class="profilePicture">
         <div align="center">
-          <h4><a href="@routes.Datasets.userDatasets("", "", 12, None, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
+            <h4><a href="@routes.Datasets.list("", "", 12, None, "", Some(profile.id.stringify))">View Datasets</a> </h4>
+            <h4><a href="@routes.Collections.list("", "", 12, None, "", Some(profile.id.stringify))">View Collections</a> </h4>
           <h4>
             Followed by
             <span id="followerSize">@profile.followers.size</span>

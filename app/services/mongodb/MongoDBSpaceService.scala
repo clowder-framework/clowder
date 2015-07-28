@@ -44,7 +44,7 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def getCollectionsInSpace(space: Option[String], order: Option[String], limit: Option[Integer]): List[Collection] = {
-      collections.listCollections(order, limit, space)
+      collections.listSpace(limit.getOrElse(12), space.getOrElse(""))
   }
 
   /**
@@ -54,7 +54,7 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def getDatasetsInSpace(space: Option[String], order: Option[String], limit: Option[Integer]): List[Dataset] = {
-      datasets.listDatasets(order, limit, space)
+      datasets.listSpace(limit.getOrElse(12), space.getOrElse(""))
   }
 
   def insert(dataset: ProjectSpace): Option[String] = {

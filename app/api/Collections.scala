@@ -139,7 +139,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "",
       responseClass = "None", httpMethod = "GET")
   def listCollections() = PermissionAction(Permission.ViewSpace) { implicit request =>
-    val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
+    val list = for (collection <- collections.listAccess(0, request.user, request.superAdmin)) yield jsonCollection(collection)
     Ok(toJson(list))
   }
 

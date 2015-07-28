@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, Dataset, Collection}
+import models.{User, UUID, Dataset, Collection}
 import scala.util.Try
 
 /**
@@ -16,49 +16,39 @@ trait CollectionService {
   def count(space: Option[String] = None): Long
 
   /**
-   * List collections in the system.
+   * Return a list of datasets in a space, this does not check for permissions
    */
-  def listCollections(order: Option[String] = None, limit: Option[Integer] = None, space: Option[String] = None): List[Collection]
+  def listSpace(limit: Integer, space: String): List[Collection]
 
   /**
-   * List collections in the system in reverse chronological order.
+   * Return a list of datasets in a space starting at a specific date, this does not check for permissions
    */
-  def listCollectionsChronoReverse(limit: Option[Integer] = None, space: Option[String] = None): List[Collection]
-  
+  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection]
+
   /**
-   * List collections after a specified date.
+   * Return a list of datasets the user has access to.
    */
-  def listCollectionsAfter(date: String, limit: Int, space: Option[String] = None): List[Collection]
-  
+  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Collection]
+
   /**
-   * List collections before a specified date.
+   * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listCollectionsBefore(date: String, limit: Int, space: Option[String] = None): List[Collection]
-  
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Collection]
+
   /**
-   * List collections for a specific user after a specified date.
+   * Return a list of datasets the user has created.
    */
-  def listUserCollectionsAfter(date: String, limit: Int, email: String) : List[Collection]
-  
+  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Collection]
+
   /**
-   * List collections for a specific user before a specified date.
+   * Return a list of datasets the user has created starting at a specific date.
    */
-  def listUserCollectionsBefore(date: String, limit: Int, email: String) : List[Collection]
-  
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Collection]
+
   /**
    * Get collection.
    */
   def get(id: UUID): Option[Collection]
-
-  /**
-   * Lastest collection in chronological order.
-   */
-  def latest(space: Option[String] = None): Option[Collection]
-
-  /**
-   * First collection in chronological order.
-   */
-  def first(space: Option[String] = None): Option[Collection]
 
   /**
    * Create collection.
@@ -87,12 +77,12 @@ trait CollectionService {
   /**
    * List all collections outside a dataset.
    */
-  def listOutsideDataset(datasetId: UUID): List[Collection]
+  def listOutsideDataset(datasetId: UUID, user: Option[User], superAdmin: Boolean): List[Collection]
 
   /**
    * List all collections inside a dataset.
    */
-  def listInsideDataset(datasetId: UUID): List[Collection]
+  def listInsideDataset(datasetId: UUID, user: Option[User], superAdmin: Boolean): List[Collection]
 
 
   def isInDataset(dataset: Dataset, collection: Collection): Boolean

@@ -953,12 +953,13 @@ class Files @Inject()(
               for (dataset <- datasetList) {
                 if (dataset.thumbnail_id.isEmpty) {
                   datasets.updateThumbnail(dataset.id, thumbnail_id)
-                  val collectionList = collections.listInsideDataset(dataset.id)                  
-                  for(collection <- collectionList){
-                    if (collection.thumbnail_id.isEmpty) {
-                      collections.updateThumbnail(collection.id, thumbnail_id)
-                    }
-                  }                  
+                  dataset.collections.foreach(c => {
+                    collections.get(UUID(c)).foreach(col => {
+                      if (col.thumbnail_id.isEmpty) {
+                        collections.updateThumbnail(col.id, thumbnail_id)
+                      }
+                    })
+                  })
                 }
               }
               Ok(toJson(Map("status" -> "success")))

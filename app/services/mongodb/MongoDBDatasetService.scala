@@ -6,6 +6,7 @@ import java.util.{ArrayList, Date}
 import javax.inject.{Inject, Singleton}
 
 import Transformation.LidoToCidocConvertion
+import api.UserRequest
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
@@ -22,7 +23,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
 import services._
 import services.mongodb.MongoContext.context
-import util.Parsers
+import util.{Formatters, Parsers}
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -58,100 +59,110 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
-   * List datasets in the system.
+   * Return a list of datasets in a space, this does not check for permissions
    */
-  def listDatasets(order: Option[String], limit: Option[Integer], space: Option[String]): List[Dataset] = {
-    if (order.exists(_.equals("desc"))) { return listDatasetsChronoReverse(limit, space) }
-
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    limit match {
-      case Some(l) => Dataset.find(filter).limit(l).toList
-      case None => Dataset.find(filter).toList
-    }
+  def listSpace(limit: Integer, space: String): List[Dataset] = {
+    list(None, false, limit, Some(space), None, superAdmin=false, None)
   }
 
   /**
-   * List datasets in the system in reverse chronological order.
+   * Return a list of datasets in a space starting at a specific date, this does not check for permissions
    */
-  def listDatasetsChronoReverse(limit: Option[Integer], space: Option[String]): List[Dataset] = {
-    val order = MongoDBObject("created"-> -1)
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    limit match {
-      case Some(l) => Dataset.find(filter).sort(order).limit(l).toList
-      case None => Dataset.find(filter).sort(order).toList
-    }
+  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset] = {
+    list(Some(date), nextPage, limit, Some(space), None, superAdmin=false, None)
   }
 
   /**
-   * List datasets after a specified date.
+   * Return a list of datasets the user has access to.
    */
-  def listDatasetsAfter(date: String, limit: Int, space: Option[String]): List[Dataset] = {
-    val order = MongoDBObject("created"-> -1)
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
+  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = {
+    list(None, false, limit, None, user, superAdmin, None)
+  }
+
+  /**
+   * Return a list of datasets the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, user, superAdmin, None)
+  }
+
+  /**
+   * Return a list of datasets the user has created.
+   */
+  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset] = {
+    list(None, false, limit, None, user, superAdmin, Some(owner))
+  }
+
+  /**
+   * Return a list of datasets the user has created starting at a specific date.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, user, superAdmin, Some(owner))
+  }
+
+  /**
+   * Monster function, does all the work. Will create a filters and sorts based on the given parameters
+   */
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): List[Dataset] = {
+    // filter =
+    // - owner   == show datasets owned by owner that user can see
+    // - space   == show all datasets in space
+    // - access  == show all datasets the user can see
+    // - default == public only
+    val public = MongoDBObject("public" -> true)
+    val filter = owner match {
+      case Some(o) => {
+        val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
+        user match {
+          case Some(u) => {
+            if (superAdmin) {
+              author
+            } else {
+              author ++ $or(u.spaceandrole.map(x => MongoDBObject("space" -> new ObjectId(x.spaceId.stringify))) :+ public)
+            }
+          }
+          case None => {
+            author ++ public
+          }
+        }
+      }
+      case None => {
+        space match {
+          case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+          case None => {
+            user match {
+              case Some(u) => {
+                $or(u.spaceandrole.map(x => MongoDBObject("space" -> new ObjectId(x.spaceId.stringify))) :+ public :+
+                  MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+              }
+              case None => public
+            }
+          }
+        }
+      }
     }
-    if (date == "") {
-      Dataset.find(filter).sort(order).limit(limit).toList
+    val filterDate = date match {
+      case Some(d) => {
+        if (nextPage) {
+          ("created" $lt Formatters.iso8601(d))
+        } else {
+          ("created" $gt Formatters.iso8601(d))
+        }
+      }
+      case None => {
+        MongoDBObject()
+      }
+    }
+
+    val sort = if (date.isDefined && !nextPage) {
+      MongoDBObject("created"-> 1) ++ MongoDBObject("name" -> 1)
     } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
-      Logger.info("After " + sinceDate)
-      Dataset.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
+      MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
-  }
-
-  /**
-   * List datasets before a specified date.
-   */
-  def listDatasetsBefore(date: String, limit: Int, space: Option[String]): List[Dataset] = {
-    var order = MongoDBObject("created"-> -1)
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    if (date == "") {
-      Dataset.find(filter).sort(order).limit(limit).toList
+    if (date.isEmpty || nextPage) {
+      Dataset.find(filter ++ filterDate).sort(sort).limit(limit).toList
     } else {
-      order = MongoDBObject("created"-> 1)
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
-      Logger.info("Before " + sinceDate)
-      var datasetList = Dataset.find(filter ++ ("created" $gt sinceDate)).sort(order).limit(limit + 1).toList.reverse
-      datasetList = datasetList.filter(_ != datasetList.last)
-      datasetList
-    }
-  }
-
-  /**
-   * List datasets after a specified date.
-   */
-  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset] = {
-    val order = MongoDBObject("uploadDate"-> -1)
-    if (date == "") {
-      Dataset.find("author.email" $eq email).sort(order).limit(limit).toList
-    } else {
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
-      Dataset.find(("uploadDate" $lt sinceDate) ++ ("author.email" -> email)).sort(order).limit(limit).toList
-    }
-  }
-
-  /**
-   * List datasets before a specified date.
-   */
-  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset] = {
-    var order = MongoDBObject("uploadDate"-> -1)
-    if (date == "") {
-      Dataset.find("author.email" $eq email).sort(order).limit(limit).toList
-    } else {
-      order = MongoDBObject("uploadDate"-> 1)
-      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
-      Dataset.find(("uploadDate" $gt sinceDate) ++ ("author.email" $eq email))
-        .sort(order).limit(limit).toList.reverse
+      Dataset.find(filter ++ filterDate).sort(sort).limit(limit).toList.reverse
     }
   }
 
@@ -162,11 +173,11 @@ class MongoDBDatasetService @Inject() (
     Logger.debug(s"List datasets inside collection $collectionId")
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
-        for (dataset <- listDatasetsChronoReverse(); if(isInCollection(dataset,collection))) yield dataset
+        collection.datasets.map(d => get(d.id)).flatten
       }
       case None =>{
         Logger.debug(s"Collection $collectionId not found")
-        return List.empty
+        List.empty
       }
     }
   }
@@ -184,30 +195,6 @@ class MongoDBDatasetService @Inject() (
    */
   def get(id: UUID): Option[Dataset] = {
     Dataset.findOneById(new ObjectId(id.stringify))
-  }
-
-  def latest(space: Option[String]): Option[Dataset] = {
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    val results = Dataset.find(filter).sort(MongoDBObject("created" -> -1)).limit(1).toList
-    if (results.size > 0)
-      Some(results(0))
-    else
-      None
-  }
-
-  def first(space: Option[String]): Option[Dataset] = {
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    val results = Dataset.find(filter).sort(MongoDBObject("created" -> 1)).limit(1).toList
-    if (results.size > 0)
-      Some(results(0))
-    else
-      None
   }
 
   /**
@@ -626,7 +613,7 @@ class MongoDBDatasetService @Inject() (
     Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
     val dataset = get(id).get
     val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
-    Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
+    Logger.debug("existingTags before user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map {
       tag =>
@@ -933,8 +920,7 @@ class MongoDBDatasetService @Inject() (
   def removeDataset(id: UUID) {
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
-        for (collection <- collections.listInsideDataset(id))
-          collections.removeDataset(collection.id, dataset.id)
+        dataset.collections.foreach(c => collections.removeDataset(UUID(c), dataset.id))
         for (comment <- comments.findCommentsByDatasetId(id)) {
           comments.removeComment(comment)
         }
@@ -991,10 +977,14 @@ class MongoDBDatasetService @Inject() (
         var dsCollsId = ""
         var dsCollsName = ""
 
-        for(collection <- collections.listInsideDataset(dataset.id)){
-          dsCollsId = dsCollsId + collection.id.stringify + " %%% "
-          dsCollsName = dsCollsName + collection.name + " %%% "
-        }
+        dataset.collections.foreach(c => {
+          collections.get(UUID(c)) match {
+            case Some(collection) => {
+              dsCollsId = dsCollsId + collection.id.stringify + " %%% "
+              dsCollsName = dsCollsName + collection.name + " %%% "
+            }
+          }
+        })
 
         val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
