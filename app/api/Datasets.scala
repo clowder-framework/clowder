@@ -64,7 +64,7 @@ class Datasets @Inject()(
       notes = "Returns list of datasets and descriptions.",
       responseClass = "None", httpMethod = "GET")
   def list = PrivateServerAction { implicit request =>
-      val list = datasets.listUser(0, request.user, request.superAdmin, request.user.get).map(datasets.toJSON(_))
+      val list = datasets.listAccess(0, request.user, request.superAdmin).map(datasets.toJSON(_))
       Ok(toJson(list))
   }
 
@@ -74,12 +74,12 @@ class Datasets @Inject()(
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
       collections.get(collectionId) match {
         case Some(collection) => {
-          val list = for (dataset <- datasets.listUser(0, request.user, request.superAdmin, request.user.get); if (!datasets.isInCollection(dataset, collection)))
+          val list = for (dataset <- datasets.listAccess(0, request.user, request.superAdmin); if (!datasets.isInCollection(dataset, collection)))
           yield datasets.toJSON(dataset)
           Ok(toJson(list))
         }
         case None => {
-          val list = datasets.listUser(0, request.user, request.superAdmin, request.user.get).map(datasets.toJSON(_))
+          val list = datasets.listAccess(0, request.user, request.superAdmin).map(datasets.toJSON(_))
           Ok(toJson(list))
         }
       }
