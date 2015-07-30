@@ -14,4 +14,5 @@ case class Collection(
   previews: List[Preview] = List.empty,
   space: Option[UUID] = None,
   lastModifiedDate: Date = new Date(),
-  followers: List[UUID] = List.empty)
+  followers: List[UUID] = List.empty,
+  requests: List[RequestResource] = List.empty)

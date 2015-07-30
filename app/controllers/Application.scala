@@ -38,6 +38,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         var newsfeedEvents = events.getEvents(
           loggedInUser.followedEntities, Some(20)
         ).sorted(Ordering.by((_: Event).created).reverse)
+        newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(loggedInUser, Some(20))
         Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
       }
@@ -157,7 +158,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Profile.viewProfileUUID,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
-        controllers.routes.javascript.Collections.collection
+        controllers.routes.javascript.Collections.collection,
+        controllers.routes.javascript.Spaces.acceptrequest
       )
     ).as(JSON) 
   }

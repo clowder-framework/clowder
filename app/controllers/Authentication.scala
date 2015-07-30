@@ -39,10 +39,12 @@ object Authentication extends SecuredController {
       user => Ok("Login successfull")
     )
   }
-  
-  def notAuthorized = UserAction { implicit request =>
+  /**
+   * Deny user request to access resource.
+   */
+ def notAuthorized(message: String, id: String, resourceType: String ) = UserAction { implicit request =>
     implicit val user = request.user
-    Ok(views.html.notAuthorized())
+    Ok(views.html.notAuthorized(message, id, resourceType))
   }
   
 }

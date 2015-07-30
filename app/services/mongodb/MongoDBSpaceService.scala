@@ -9,16 +9,15 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
 import com.mongodb.DBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import models.{UserSpace, ProjectSpace, UUID}
+import models._
+import org.bson.types.ObjectId
+import play.api.Logger
 import play.{Logger => log}
 import play.api.Play._
 import services._
 import MongoContext.context
 import util.Direction._
-import models.Collection
-import models.Dataset
-import models.Role
-import models.User
+
 
 /**
  * Store Spaces in MongoDB.
@@ -369,6 +368,18 @@ class MongoDBSpaceService @Inject() (
   def removeFollower(id: UUID, userId: UUID) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+    def addRequest(id: UUID, userId: UUID, username: String) {
+    Logger.info("put request for a space")
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $addToSet("requests"-> MongoDBObject("_id" -> new ObjectId(userId.stringify), "name" -> username, "comment" -> "N/A" )), false, false, WriteConcern.Safe)
+  }
+
+  def removeRequest(id: UUID, userId: UUID) {
+    Logger.info("remove request for a space ")
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $pull("requests" -> MongoDBObject( "_id" -> new ObjectId(userId.stringify))), false, false, WriteConcern.Safe)
   }
 }
 

@@ -139,4 +139,14 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * Remove follower from a file.
    */
   def removeFollower(id: UUID, userId: UUID)
+
+  /**
+   * Add authorization request to a space.
+   */
+  def addRequest(id: UUID, userId: UUID, username: String)
+
+  /**
+   * Remove authorization request.
+   */
+  def removeRequest(id: UUID, userId: UUID)
 }

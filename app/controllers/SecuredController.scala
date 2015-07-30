@@ -2,10 +2,10 @@ package controllers
 
 import api.Permission.Permission
 import api.{Permission, UserRequest}
-import models.ResourceRef
+import models.{RequestResource, ResourceRef}
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
-import services.DI
+import services.{DatasetService, CollectionService, SpaceService, DI}
 
 import scala.concurrent.Future
 
@@ -78,7 +78,47 @@ trait SecuredController extends Controller {
       if (p || userRequest.superAdmin) {
         block(userRequest)
       } else {
-        Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
+        lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+        lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+        lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+
+        val (messgae:String, requestid:String) = {
+          resourceRef.get match {
+            // TODO "Not authorized" occurs with other ResourceRef.Type or there is resourceRef.parse
+            case ResourceRef(ResourceRef.dataset, id) => {
+              val dataset = datasets.get(id).get
+              if(dataset.requests.contains(RequestResource(userRequest.user.get.id)) ) {
+                Pair("dataset " + dataset.name + ". \nAuthorization is pending" , "")
+              } else{
+                Pair("dataset " + dataset.name, id.toString)
+              }
+          }
+            case ResourceRef(ResourceRef.collection, id) => {
+              val collection = collections.get(id).get
+              if(collection.requests.contains(RequestResource(userRequest.user.get.id)) ) {
+                Pair("collection " + collection.name + ". \nAuthorization is pending" , "")
+              } else{
+                Pair("collection " + collection.name, id.toString)
+              }
+            }
+            case ResourceRef(ResourceRef.space, id) => {
+              val space = spaces.get(id).get
+              if(space.requests.contains(RequestResource(userRequest.user.get.id)) ) {
+                Pair("space " + space.name + ". \nAuthorization is pending" , "")
+              } else{
+                Pair("space " + space.name, id.toString)
+              }
+            }
+
+            case ResourceRef(resType, id) => {
+              Pair("error resource", null)
+            }
+          }
+        }
+
+
+
+        Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access " + messgae, requestid, resourceRef.get.resourceType.toString)))
       }
     }
   }

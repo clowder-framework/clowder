@@ -132,4 +132,45 @@ function updateUsersInSpace(spaceId, url) {
     return false;
 }
 
+function acceptSpaceRequest(id, user, role){
+    var request = jsRoutes.controllers.Spaces.acceptrequest(id, user, role).ajax({
+       // data : JSON.stringify({text: encText}),
+        type : 'GET',
+        contentType : "application/json"
+    });
+    request.done ( function ( response, textStatus, jqXHR ) {
+        $("#requestli_"+user).hide();
+        console.log("Successful accept request");
+    });
+    request.fail(function(jqXHR, textStatus, errorThrown) {
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to accept request.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Error posting comment : " + errorThrown, "error");
+        }
+    });
+    return false;
+}
+
+function rejectSpaceRequest(id, user){
+    var request = jsRoutes.controllers.Spaces.rejectrequest(id, user).ajax({
+        // data : JSON.stringify({text: encText}),
+        type : 'GET',
+        contentType : "application/json"
+    });
+    request.done ( function ( response, textStatus, jqXHR ) {
+        $("#requestli_"+user).hide();
+        console.log("Successful accept request");
+    });
+    request.fail(function(jqXHR, textStatus, errorThrown) {
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to reject request.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Error posting comment : " + errorThrown, "error");
+        }
+    });
+    return false;
+}
+
+
 window['changeSpace'] = changeSpace;

@@ -9,7 +9,8 @@ import models._
 import play.api.Logger
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
-import services.{SpaceService, UserService}
+import play.api.libs.json.Json
+import services.{EventService, SpaceService, UserService}
 import util.Direction._
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -28,7 +29,7 @@ case class spaceFormData(
   isTimeToLiveEnabled: Boolean,
   submitButtonValue:String)
 
-class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
+class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -129,6 +130,56 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
         case None => InternalServerError("Space not found")
       }
     }
+
+   def addrequest(id: UUID) = PermissionAction(Permission.RequestSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+      implicit val user = request.user
+      spaces.get(id) match {
+        case Some(s) => {
+            Logger.info("request submited in addrequest@controller.Space")
+          events.addRequestEvent(user, users.get(spaces.get(id).get.creator).get, id, spaces.get(id).get.name, "postrequest_space")
+          spaces.addRequest(id, user.get.id, user.get.fullName)
+          //userService.unfollowResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
+          Ok(views.html.notAuthorized( "Authorization submits", null, null))
+        }
+        case None => InternalServerError("Space not found")
+      }
+    }
+
+
+  def acceptrequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        Logger.info("request submited in acceptrequest@controller.Space")
+        events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "acceptrequest_space")
+        //events.addObjectEvent(user, id, name, "unfollow_space")
+        spaces.removeRequest(id, UUID(requestuser))
+        role match{
+          case "Admin" => spaces.changeUserRole(UUID(requestuser), Role.Admin, id )
+          case "Editor" => spaces.changeUserRole(UUID(requestuser), Role.Editor, id )
+          case "Viewer" => spaces.changeUserRole(UUID(requestuser), Role.Viewer, id )
+          case _ => Logger.debug("Role cannot resolve" + role)
+        }
+        Ok(Json.obj("status" -> "success"))
+      }
+      case None => InternalServerError("Space not found")
+    }
+  }
+
+
+  def rejectrequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        Logger.info("request submited in addrequest@controller.Space")
+        events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "rejectrequest_space")
+        //events.addObjectEvent(user, id, name, "unfollow_space")
+        spaces.removeRequest(id, UUID(requestuser))
+        Ok(Json.obj("status" -> "success"))
+      }
+      case None => InternalServerError("Space not found")
+    }
+  }
   /**
    * Submit action for new or edit space
    */

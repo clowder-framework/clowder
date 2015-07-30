@@ -30,5 +30,6 @@ case class Dataset(
   notesHTML: Option[String] = None,
   lastModifiedDate: Date = new Date(),
   space: Option[UUID] = None,
-  followers: List[UUID] = List.empty)
+  followers: List[UUID] = List.empty,
+  requests: List[RequestResource] = List.empty)
 
