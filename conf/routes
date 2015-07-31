@@ -344,6 +344,8 @@ POST           /api/datasets/:id/tags/remove                                    
 POST           /api/datasets/:id/tags/remove_all                                        @api.Datasets.removeAllTags(id: UUID)
 DELETE         /api/datasets/:id/tags                                                   @api.Datasets.removeTags(id: UUID)
 
+PUT            /api/datasets/:id/title                                                  @api.Datasets.updateName(id:UUID)
+PUT            /api/datasets/:id/description                                            @api.Datasets.updateDescription(id: UUID)
 POST           /api/datasets/:id/editing                                                @api.Datasets.updateInformation(id: UUID)
 POST           /api/datasets/:id/license                                                @api.Datasets.updateLicense(id: UUID)
 

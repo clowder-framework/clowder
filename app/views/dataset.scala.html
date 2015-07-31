@@ -168,7 +168,7 @@
         function updateTitle() {
             var cur_title = $('#datasettitle').text();
             $('<input type="text" id = "title_input" style="width:80%"/>').insertAfter($('#datasettitle'));
-            $('<button id="update_title" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+            $('<button id="update_title" class= "btn btn-xs" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
             $('#title_input').val(cur_title);
             $('#datasettitle').text("");
             $('#edit-title').css("display", "none");
