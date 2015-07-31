@@ -245,7 +245,7 @@
 	function updateTitle() {
 	 var cur_title = $('#collectiontitle').text();
 	 $('<input type = "text" id="title_input" style="width:80%"/>').insertAfter($('#collectiontitle'));
-	 $('<button id="update_title" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+	 $('<button id="update_title" class="btn btn-sm" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
 	 $('#title_input').val(cur_title);
 	 $('#collectiontitle').text("");
 	 $('#edit-title').css("display", "none");
@@ -281,8 +281,10 @@
 
 	function updateDescription() {
 		var cur_description = $('#collection_desc').text().trim();
-		$('<input type ="text" id = "desc_input" style="width:80%"/>').insertAfter($('#collection_desc'));
-		$('<button id = "update_desc" onclick = "saveDescription()"> Save </button>').insertAfter($('#desc_input'));
+		$('<div class = "edit_desc"></div>').insertAfter($('#collection_desc'));
+		$(".edit_desc").append('<input type ="text" id = "desc_input" style="width:100%"/>')
+		$(".edit_desc").append('<br/>');
+		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm" onclick = "saveDescription()"> Save </button>');
 		$('#desc_input').val(cur_description);
 		$('#collection_desc').text("");
 		$('#edit-description').css("display", "none");
@@ -301,8 +303,7 @@
 
 		request.done(function(response, textStatus,jqXHR) {
 			$('#collection_desc').text(encDescription.replace(/\n/g, "<br>"));
-			$('#desc_input').remove();
-			$('#update_desc').remove();
+			$('.edit_desc').remove();
 			$('#edit-description').css("display", "inline");
 			$('#collection_desc').css("display", "inline");
 
