@@ -113,7 +113,7 @@ GET           /tags/cloud                                                       
 # Authentication
 GET            /loginTest                                                               controllers.Authentication.login
 POST           /loginTest                                                               controllers.Authentication.loginSubmit
-GET            /notAuthorized                                                           controllers.Authentication.notAuthorized
+GET            /notAuthorized                                                           controllers.Authentication.notAuthorized(msg ?= null)
 
 # Search
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
