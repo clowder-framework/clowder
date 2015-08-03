@@ -1,0 +1,40 @@
+@(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, roleList: List[String])(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
+@import helper._
+
+@main(space.name) {
+    <div class="page-header">
+        <h1>Invite new users to @space.name<h1>
+    </div>
+
+    @form(action = routes.Spaces.inviteToSpace(space.id), 'enctype -> "multipart/form-data", 'class -> "form-horizontal", 'autocomplete -> "off", 'method -> "POST") {
+        <fieldset class="email-new-users">
+
+            @inputText(myForm("addressList"), '_label -> "Email addresses", 'type -> "Email", 'multiple -> "true")
+            @select(myForm("role"), options(roleList), '_label -> "Role", 'placeholder -> "Select a default role for all recipients")
+            @textarea(myForm("message"), '_label -> "Message")
+
+        </fieldset>
+        <div class="form-actions">
+            <input type="submit" class="btn btn-primary" value="Send"/>
+        </div>
+    }
+}
+<script language="javascript">
+$('form').submit(function() {
+    var addrList = $('#addressList').val().split(',');
+    for(var i = 0; i < addrList.length; i++){
+        $('form fieldset').append('<input type="hidden" name="addresses['+i+']" value='+addrList[i]+' />');
+    }
+});
+</script>
+
+<style type="text/css">
+    textarea {
+        width: 100%;
+        height: 100px;
+    }
+    input#addressList{
+        width: 100%
+    }
+
+</style>

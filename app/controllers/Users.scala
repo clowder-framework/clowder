@@ -94,7 +94,7 @@ object Users extends Controller {
     (uuid, token)
   }
   
-  private def sendEmail(subject: String, recipient: String, body: Html) {
+   def sendEmail(subject: String, recipient: String, body: Html) {
     import com.typesafe.plugin._
     import play.api.libs.concurrent.Execution.Implicits._
 

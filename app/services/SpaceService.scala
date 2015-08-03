@@ -1,11 +1,8 @@
 package services
 
-import models.{UUID, ProjectSpace}
+import models._
+import securesocial.core.providers.Token
 import services.core.CRUDService
-import models.Collection
-import models.Dataset
-import models.User
-import models.Role
 
 /**
  * Service to manipulate spaces.
@@ -75,7 +72,7 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * @param spaceId The identifier for the space to be updated
    * @param name The updated name information, HTMLEncoded since it is free text
    * @param description The updated description information, HTMLEncoded since it is free text
-   * @param timeToLIve The updated amount of time, in milliseconds, that resources should be preserved in the space
+   * @param timeToLive The updated amount of time, in milliseconds, that resources should be preserved in the space
    * @param expireEnabled The updated flag, indicating whether or not the space should allow resources to expire
    *
    */
@@ -94,7 +91,7 @@ trait SpaceService extends CRUDService[ProjectSpace] {
   /**
    * Remove a user from the space.
    *
-   * @param user The identifier of the user to be removed from the space
+   * @param userId The identifier of the user to be removed from the space
    * @param space The identifier for the space that the user is being removed from
    */
   def removeUser(userId: UUID, space: UUID)
@@ -139,4 +136,19 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * Remove follower from a file.
    */
   def removeFollower(id: UUID, userId: UUID)
+
+  /**
+   * Add Invitation to a Space
+   */
+  def addInvitationToSpace(invite: SpaceInvite)
+
+  /**
+   * Remove Invitation to a space
+   */
+  def removeInvitationToSpace(inviteId: UUID, spaceId: UUID)
+
+  /**
+   * Find an invitation by ID
+   */
+  def getInvitationToSpace(inviteId: UUID): Option[SpaceInvite]
 }

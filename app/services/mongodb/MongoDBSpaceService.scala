@@ -9,9 +9,11 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
 import com.mongodb.DBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import models.{UserSpace, ProjectSpace, UUID}
+import models.{UserSpace, ProjectSpace, UUID, SpaceInvite}
+import org.bson.types.ObjectId
 import play.{Logger => log}
 import play.api.Play._
+import securesocial.core.providers.Token
 import services._
 import MongoContext.context
 import util.Direction._
@@ -57,8 +59,8 @@ class MongoDBSpaceService @Inject() (
       datasets.listDatasets(order, limit, space)
   }
 
-  def insert(dataset: ProjectSpace): Option[String] = {
-    ProjectSpaceDAO.insert(dataset).map(_.toString)
+  def insert(space: ProjectSpace): Option[String] = {
+    ProjectSpaceDAO.insert(space).map(_.toString)
   }
 
   def update(space: ProjectSpace): Unit = {
@@ -196,7 +198,7 @@ class MongoDBSpaceService @Inject() (
   /**
    * Associate a dataset with a space
    *
-   * @param collection dataset id
+   * @param dataset dataset id
    * @param space space id
    */
   def addDataset(dataset: UUID, space: UUID): Unit = {
@@ -370,9 +372,23 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
+
+  def addInvitationToSpace(invite: SpaceInvite) {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(invite.space.stringify)),
+      $addToSet("invitations"-> MongoDBObject("_id" -> new ObjectId(invite.id.stringify), "role" -> invite.role )), false, false, WriteConcern.Safe)
+    SpaceInviteDAO.insert(invite)
+  }
+
+  def  removeInvitationToSpace(inviteId: UUID, spaceId: UUID) {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
+      $pull("invitations" -> MongoDBObject( "_id" -> new ObjectId(inviteId.stringify))), false, false, WriteConcern.Safe)
+    SpaceInviteDAO.removeById(new ObjectId(inviteId.stringify))
+  }
+
+  def getInvitationToSpace(inviteId: UUID): Option[SpaceInvite] = {
+    SpaceInviteDAO.findOneById(new ObjectId(inviteId.stringify))
+  }
 }
-
-
 /**
    * Salat ProjectSpace model companion.
    */
@@ -390,5 +406,12 @@ class MongoDBSpaceService @Inject() (
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
   case Some(x) => new SalatDAO[UserSpace, ObjectId](collection = x.collection("spaces.users")) {}
+    }
+  }
+
+  object SpaceInviteDAO extends ModelCompanion[SpaceInvite, ObjectId] {
+    val dao = current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No mongoSalatPlugin");
+      case Some(x) => new SalatDAO[SpaceInvite, ObjectId](collection = x.collection("spaces.invites")) {}
     }
   }

@@ -4,6 +4,7 @@ import java.net.URL
 import java.util.Date
 import play.api.libs.json.JsObject
 import util.SpaceConfig
+import securesocial.core.providers.Token
 
 /**
  * A space definines a partition of the data so that authorization can be enforced on it.
@@ -42,6 +43,11 @@ case class UserSpace (
    datasetCount: Integer,
    userCount: Integer)
 
+case class SpaceInvite(
+    id: UUID = UUID.generate,
+    email: String,
+    space: UUID,
+    role: Role)
    
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
