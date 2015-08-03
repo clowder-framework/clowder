@@ -39,6 +39,7 @@ object Authentication extends SecuredController {
       user => Ok("Login successfull")
     )
   }
+
   /**
    * Deny user request to access resource.
    */

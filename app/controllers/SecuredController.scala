@@ -6,7 +6,6 @@ import models.{RequestResource, ResourceRef}
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services.{DatasetService, CollectionService, SpaceService, DI}
-
 import scala.concurrent.Future
 
 /**
@@ -28,7 +27,6 @@ trait SecuredController extends Controller {
       block(userRequest)
     }
   }
-
   /**
    * Use when you want to require the user to be logged in on a private server or the server is public.
    */
@@ -115,10 +113,8 @@ trait SecuredController extends Controller {
             }
           }
         }
-
-
-
-        Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access " + messgae, requestid, resourceRef.get.resourceType.toString)))
+        Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access "
+          + messgae, requestid, resourceRef.get.resourceType.toString)))
       }
     }
   }
