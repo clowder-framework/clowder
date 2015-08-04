@@ -26,26 +26,26 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: E
     responseClass = "None", httpMethod = "POST")
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
   def createSpace() = AuthenticatedAction(parse.json) { implicit request =>
-      Logger.debug("Creating new space")
-      val nameOpt = (request.body \ "name").asOpt[String]
-      val descOpt = (request.body \ "description").asOpt[String]
-      (nameOpt, descOpt) match{
-        case(Some(name), Some(description)) =>{
-          // TODO: add creator
-          val userId = request.user.get.id
-          val c = ProjectSpace(name = name, description = description, created = new Date(), creator = userId,
-            homePage = List.empty, logoURL = None, bannerURL = None, collectionCount=0,
-            datasetCount=0, userCount=0, metadata=List.empty)
-          spaces.insert(c) match {
-            case Some(id) => {
-              Ok(toJson(Map("id" -> id)))
-            }
-            case None => Ok(toJson(Map("status" -> "error")))
+    Logger.debug("Creating new space")
+    val nameOpt = (request.body \ "name").asOpt[String]
+    val descOpt = (request.body \ "description").asOpt[String]
+    (nameOpt, descOpt) match {
+      case (Some(name), Some(description)) => {
+        // TODO: add creator
+        val userId = request.user.get.id
+        val c = ProjectSpace(name = name, description = description, created = new Date(), creator = userId,
+          homePage = List.empty, logoURL = None, bannerURL = None, collectionCount = 0,
+          datasetCount = 0, userCount = 0, metadata = List.empty)
+        spaces.insert(c) match {
+          case Some(id) => {
+            Ok(toJson(Map("id" -> id)))
           }
-
+          case None => Ok(toJson(Map("status" -> "error")))
         }
-        case (_, _) => BadRequest(toJson("Missing required parameters"))
+
       }
+      case (_, _) => BadRequest(toJson("Missing required parameters"))
+    }
   }
 
   @ApiOperation(value = "Remove a space",
@@ -86,7 +86,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: E
     }
 
     for (aSpace <- userSpaces) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+      decodedSpaceList += Utils.decodeSpaceElements(aSpace)
     }
     Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
   }
@@ -116,202 +116,210 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: E
     spaces.addDataset(UUID(datasetId), space)
     Ok(toJson("success"))
   }
-  
+
   /**
    * REST endpoint: POST call to update the configuration information associated with a specific Space
-   * 
-   *  Takes one arg, id:
-   *  
-   *  id, the UUID associated with the space that will be updated 
-   *  
-   *  The data contained in the request body will defined by the following String key-value pairs:
-   *  
-   *  description -> The text for the updated description for the space
-   *  name -> The text for the updated name for this space
-   *  timetolive -> Text that represents an integer for the number of hours to retain resources
-   *  enabled -> Text that represents a boolean flag for whether or not the space should purge resources that have expired
-   *  
+   *
+   * Takes one arg, id:
+   *
+   * id, the UUID associated with the space that will be updated
+   *
+   * The data contained in the request body will defined by the following String key-value pairs:
+   *
+   * description -> The text for the updated description for the space
+   * name -> The text for the updated name for this space
+   * timetolive -> Text that represents an integer for the number of hours to retain resources
+   * enabled -> Text that represents a boolean flag for whether or not the space should purge resources that have expired
+   *
    */
-  @ApiOperation(value = "Update the information associated with a space", notes="",
+  @ApiOperation(value = "Update the information associated with a space", notes = "",
     responseClass = "None", httpMethod = "POST")
   def updateSpace(spaceid: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceid)))(parse.json) { implicit request =>
-      if (UUID.isValid(spaceid.stringify)) {
+    if (UUID.isValid(spaceid.stringify)) {
 
-          //Set up the vars we are looking for
-          var description: String = null
-          var name: String = null
-          var timeAsString: String = null
-          var enabled: Boolean = false
-          
-          var aResult: JsResult[String] = (request.body \ "description").validate[String]
-          
-          // Pattern matching
-          aResult match {
-              case s: JsSuccess[String] => {
-                description = s.get
-              }
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-                BadRequest(toJson("description data is missing from the updateSpace call."))
-              }                            
-          }
-          
-          aResult = (request.body \ "name").validate[String]
-          
-          // Pattern matching
-          aResult match {
-              case s: JsSuccess[String] => {
-                name = s.get
-              }
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-                BadRequest(toJson("name data is missing from the updateSpace call."))
-              }                            
-          }
-          
-          aResult = (request.body \ "timetolive").validate[String]
-          
-          // Pattern matching
-          aResult match {
-              case s: JsSuccess[String] => {
-                timeAsString = s.get
-              }
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-                BadRequest(toJson("timetolive data is missing from the updateSpace call."))
-              }                            
-          }
-          
-          // Pattern matching
-          (request.body \ "enabled").validate[Boolean] match {
-              case b: JsSuccess[Boolean] => {
-                enabled = b.get
-              }
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-                BadRequest(toJson("enabled data is missing from the updateSpace call."))
-              }                            
-          }
-          
-          Logger.debug(s"updateInformation for dataset with id  $spaceid. Args are $description, $name, $enabled, and $timeAsString")
-          
-          //Generate the expiration time and the boolean flag
-          val timeToLive =  timeAsString.toInt*60*60*1000L
-          //val expireEnabled = enabledAsString.toBoolean
-          Logger.debug("converted values are " + timeToLive + " and " + enabled)
-          
-          spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled)
-          Ok(Json.obj("status" -> "success"))
-      } 
-      else {
-        Logger.error(s"The given id $spaceid is not a valid ObjectId.")
-        BadRequest(toJson(s"The given id $spaceid is not a valid ObjectId."))
+      //Set up the vars we are looking for
+      var description: String = null
+      var name: String = null
+      var timeAsString: String = null
+      var enabled: Boolean = false
+
+      var aResult: JsResult[String] = (request.body \ "description").validate[String]
+
+      // Pattern matching
+      aResult match {
+        case s: JsSuccess[String] => {
+          description = s.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson("description data is missing from the updateSpace call."))
+        }
       }
+
+      aResult = (request.body \ "name").validate[String]
+
+      // Pattern matching
+      aResult match {
+        case s: JsSuccess[String] => {
+          name = s.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson("name data is missing from the updateSpace call."))
+        }
+      }
+
+      aResult = (request.body \ "timetolive").validate[String]
+
+      // Pattern matching
+      aResult match {
+        case s: JsSuccess[String] => {
+          timeAsString = s.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson("timetolive data is missing from the updateSpace call."))
+        }
+      }
+
+      // Pattern matching
+      (request.body \ "enabled").validate[Boolean] match {
+        case b: JsSuccess[Boolean] => {
+          enabled = b.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson("enabled data is missing from the updateSpace call."))
+        }
+      }
+
+      Logger.debug(s"updateInformation for dataset with id  $spaceid. Args are $description, $name, $enabled, and $timeAsString")
+
+      //Generate the expiration time and the boolean flag
+      val timeToLive = timeAsString.toInt * 60 * 60 * 1000L
+      //val expireEnabled = enabledAsString.toBoolean
+      Logger.debug("converted values are " + timeToLive + " and " + enabled)
+
+      spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled)
+      Ok(Json.obj("status" -> "success"))
+    }
+    else {
+      Logger.error(s"The given id $spaceid is not a valid ObjectId.")
+      BadRequest(toJson(s"The given id $spaceid is not a valid ObjectId."))
+    }
   }
-  
-   /**
-   *  REST endpoint: POST call to update the user information associated with a specific Space
-   * 
-   *  Takes one arg, spaceId:
-   *  
-   *  spaceId, the UUID associated with the space that will be updated 
-   *  
-   *  The data contained in the request body will defined by the following String key-value pairs:
-   *  
-   *  rolesandusers -> A map that contains a role level as a key and a comma separated String of user IDs as the value
-   *  
+
+  /**
+   * REST endpoint: POST call to update the user information associated with a specific Space
+   *
+   * Takes one arg, spaceId:
+   *
+   * spaceId, the UUID associated with the space that will be updated
+   *
+   * The data contained in the request body will defined by the following String key-value pairs:
+   *
+   * rolesandusers -> A map that contains a role level as a key and a comma separated String of user IDs as the value
+   *
    */
-  @ApiOperation(value = "Update the information associated with a space", notes="",
+  @ApiOperation(value = "Update the information associated with a space", notes = "",
     responseClass = "None", httpMethod = "POST")
   def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
-      if (UUID.isValid(spaceId.stringify)) {
-           val aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
-          
-          // Pattern matching
-          aResult match {
-              case aMap: JsSuccess[Map[String, String]] => {
-				//Set up a map of existing users to check against
-                val existingUsers = spaces.getUsersInSpace(spaceId)
-                var existUserRole: Map[String, String] = Map.empty
-                for (aUser <- existingUsers) {
-                    spaces.getRoleForUserInSpace(spaceId, aUser.id) match {
-                        case Some(aRole) => {
-                        	existUserRole += (aUser.id.stringify -> aRole.name)
-                        }
-                        case None => Logger.debug("This shouldn't happen. A user in a space should always have a role.")
-                    }                    
-                }
-				                 
-				val roleMap: Map[String, String] = aMap.get
-				for ((k, v) <- roleMap) {
-				    //The role needs to exist
-				    userService.findRoleByName(k) match {
-				        case Some (aRole) => {
-				            val idArray: Array[String] = v.split(",").map(_.trim())
-					        				            
-				            //Deal with all the ids that were sent up (changes and adds)				            
-						    for (aUserId <- idArray) {
-						        //For some reason, an empty string is getting through as aUserId on length
-						        if (aUserId != "") {								        
-							        if (existUserRole.contains(aUserId)) {
-							            //The user exists in the space already							            
-							            existUserRole.get(aUserId) match { 
-							                case Some(existRole) => {
-									            if (existRole != k) {
-									                spaces.changeUserRole(UUID(aUserId), aRole, spaceId)
-									            }									            
-							                }
-							                case None => Logger.debug("This shouldn't happen. A user that is assigned to a space should always have a role.")
-							            }
-							        }							            
-							        else {
-							            //New user completely to the space
-						                spaces.addUser(UUID(aUserId), aRole, spaceId)
-						            }							        
-						        }
-						        else {
-					                Logger.debug("There was an empty string that counted as an array...")
-					            }
-						    }
-				            				            
-				            
-				            //Deal with users that were removed
-				            for (existUserId <- existUserRole.keySet) {
-				                if (!idArray.contains(existUserId)) {
-				                    //Check if the role is for this level
-				                    existUserRole.get(existUserId) match {
-				                        case Some(existRole) => {				                            
-				                            if (existRole == k) {				                                
-				                                //In this case, the level is correct, so it is a removal						                        
-							                    spaces.removeUser(UUID(existUserId), spaceId)
-				                            }
-				                        }
-				                        case None => Logger.debug("This should never happen. A user in a space should always have a role.")
-				                    }			                    
-				                }
-				            }				            
-				        }
-				        case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
-				    }				    
-				}
-				Ok(Json.obj("status" -> "success"))
+    if (UUID.isValid(spaceId.stringify)) {
+      val aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
+
+      // Pattern matching
+      aResult match {
+        case aMap: JsSuccess[Map[String, String]] => {
+          //Set up a map of existing users to check against
+          val existingUsers = spaces.getUsersInSpace(spaceId)
+          var existUserRole: Map[String, String] = Map.empty
+          for (aUser <- existingUsers) {
+            spaces.getRoleForUserInSpace(spaceId, aUser.id) match {
+              case Some(aRole) => {
+                existUserRole += (aUser.id.stringify -> aRole.name)
               }
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-                BadRequest(toJson("rolesandusers data is missing from the updateUsers call."))
-              }                            
+              case None => Logger.debug("This shouldn't happen. A user in a space should always have a role.")
+            }
           }
+
+          val roleMap: Map[String, String] = aMap.get
+
+          for ((k, v) <- roleMap) {
+            //Deal with users that were removed
+            userService.findRoleByName(k) match {
+              case Some(aRole) => {
+                val idArray: Array[String] = v.split(",").map(_.trim())
+                for (existUserId <- existUserRole.keySet) {
+                  if (!idArray.contains(existUserId)) {
+                    //Check if the role is for this level
+                    existUserRole.get(existUserId) match {
+                      case Some(existRole) => {
+                        if (existRole == k) {
+                          //In this case, the level is correct, so it is a removal
+                          spaces.removeUser(UUID(existUserId), spaceId)
+                        }
+                      }
+                      case None => Logger.debug("This should never happen. A user in a space should always have a role.")
+                    }
+                  }
+                }
+              }
+              case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
+            }
+          }
+
+          for ((k, v) <- roleMap) {
+            //The role needs to exist
+            userService.findRoleByName(k) match {
+              case Some(aRole) => {
+                val idArray: Array[String] = v.split(",").map(_.trim())
+
+                //Deal with all the ids that were sent up (changes and adds)
+                for (aUserId <- idArray) {
+                  //For some reason, an empty string is getting through as aUserId on length
+                  if (aUserId != "") {
+                    if (existUserRole.contains(aUserId)) {
+                      //The user exists in the space already
+                      existUserRole.get(aUserId) match {
+                        case Some(existRole) => {
+                          if (existRole != k) {
+                            spaces.changeUserRole(UUID(aUserId), aRole, spaceId)
+                          }
+                        }
+                        case None => Logger.debug("This shouldn't happen. A user that is assigned to a space should always have a role.")
+                      }
+                    }
+                    else {
+                      //New user completely to the space
+                      spaces.addUser(UUID(aUserId), aRole, spaceId)
+                    }
+                  }
+                  else {
+                    Logger.debug("There was an empty string that counted as an array...")
+                  }
+                }
+              }
+              case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
+            }
+          }
+          Ok(Json.obj("status" -> "success"))
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson("rolesandusers data is missing from the updateUsers call."))
+        }
       }
-      else {
-        Logger.error(s"The given id $spaceId is not a valid ObjectId.")
-        BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
-      }
+    }
+    else {
+      Logger.error(s"The given id $spaceId is not a valid ObjectId.")
+      BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
+    }
   }
 
   @ApiOperation(value = "Follow space",
     notes = "Add user to space followers and add space to user followed spaces.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+  def follow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     user match {
@@ -324,7 +332,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: E
 
             val recommendations = getTopRecommendations(id, loggedInUser)
             recommendations match {
-              case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+              case x :: xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
               case Nil => Ok(Json.obj("status" -> "success"))
             }
           }
@@ -342,7 +350,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: E
   @ApiOperation(value = "Unfollow space",
     notes = "Remove user from space followers and remove space from user followed spaces.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     user match {
