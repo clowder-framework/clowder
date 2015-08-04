@@ -381,6 +381,16 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
   }
 
+  def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String) {
+    val doc = JSON.parse(Json.stringify(metadata)).asInstanceOf[DBObject]
+    FileDAO.findOneById(new ObjectId(fileId.stringify)) match {
+      case None => None
+      case Some(file) => {        
+        FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify), "metadata.extractor_id" -> extractor_id), $set("metadata.$" -> doc), false, false, WriteConcern.Safe)
+      }
+    }
+  }
+
   def get(id: UUID): Option[File] = {
     FileDAO.findOneById(new ObjectId(id.stringify)) match {
       case Some(file) => {
