@@ -1,13 +1,10 @@
 package models
 
 /**
- * Created by yanzhao3 on 7/29/15.
+ * Contains information about an authorization request
+ *
+ * @author Yan Zhao
  */
-//trait RequestResource extends scala.AnyRef {
-//  def id: UUID
-//  def name: String = "N/A"
-//  def comment: String = "N/A"
-//}
 
 case class RequestResource(
 id: UUID,

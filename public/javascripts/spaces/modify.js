@@ -132,7 +132,7 @@ function updateUsersInSpace(spaceId, url) {
     return false;
 }
 
-function acceptSpaceRequest(id, user, role, url){
+function acceptSpaceRequest(id, user, role){
     var request = jsRoutes.controllers.Spaces.acceptrequest(id, user, role).ajax({
         type : 'GET',
         contentType : "application/json"
@@ -140,7 +140,6 @@ function acceptSpaceRequest(id, user, role, url){
     request.done ( function ( response, textStatus, jqXHR ) {
         $("#requestli_"+user).hide();
         console.log("Successful accept request");
-       // window.location.href = url;
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
@@ -152,7 +151,7 @@ function acceptSpaceRequest(id, user, role, url){
     return false;
 }
 
-function rejectSpaceRequest(id, user, url){
+function rejectSpaceRequest(id, user){
     var request = jsRoutes.controllers.Spaces.rejectrequest(id, user).ajax({
         type : 'GET',
         contentType : "application/json"
@@ -160,7 +159,6 @@ function rejectSpaceRequest(id, user, url){
     request.done ( function ( response, textStatus, jqXHR ) {
         $("#requestli_"+user).hide();
         console.log("Successful reject request");
-       // window.location.href = url;
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
