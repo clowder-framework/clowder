@@ -9,7 +9,9 @@ import models._
 import play.api.Logger
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
+import play.api.libs.concurrent.Akka
 import play.api.libs.json.Json
+import securesocial.core.providers.utils.Mailer
 import services.{EventService, SpaceService, UserService}
 import util.Direction._
 
@@ -135,10 +137,29 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-            Logger.info("request submited in addrequest@controller.Space")
+          Logger.info("request submited in addrequest@controller.Space  " )
           events.addRequestEvent(user, users.get(spaces.get(id).get.creator).get, id, spaces.get(id).get.name, "postrequest_space")
           spaces.addRequest(id, user.get.id, user.get.fullName)
-          //userService.unfollowResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
+
+          //sending emails to the space's creator
+          import com.typesafe.plugin._
+          import play.api.Play.current
+          import scala.concurrent.duration._
+          import play.api.libs.concurrent.Execution.Implicits._
+
+          val subject: String = "Authorization Request from medici"
+          val recipient:String = users.get(spaces.get(id).get.creator).get.email.get.toString
+          val body = views.html.spaces.requestemail(user.get, id.toString, spaces.get(id).get.name)
+          Logger.debug("Sending registration email to %s".format(recipient))
+          Logger.debug("Registration mail = [%s]".format(body))
+          Akka.system.scheduler.scheduleOnce(1.seconds) {
+          val mail = use[MailerPlugin].email
+            mail.setSubject(subject)
+            mail.setRecipient(recipient)
+            mail.setFrom(Mailer.fromAddress)
+
+            mail.send("", body.body)
+          }
           Ok(views.html.notAuthorized( "Authorization submits", null, null))
         }
         case None => InternalServerError("Space not found")
@@ -152,7 +173,6 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       case Some(s) => {
         Logger.info("request submited in acceptrequest@controller.Space")
         events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "acceptrequest_space")
-        //events.addObjectEvent(user, id, name, "unfollow_space")
         spaces.removeRequest(id, UUID(requestuser))
         role match{
           case "Admin" => spaces.changeUserRole(UUID(requestuser), Role.Admin, id )
@@ -171,9 +191,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        Logger.info("request submited in addrequest@controller.Space")
+        Logger.info("request submited in rejectrequest@controller.Space")
         events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "rejectrequest_space")
-        //events.addObjectEvent(user, id, name, "unfollow_space")
         spaces.removeRequest(id, UUID(requestuser))
         Ok(Json.obj("status" -> "success"))
       }

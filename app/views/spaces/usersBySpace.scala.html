@@ -86,28 +86,27 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator
 					<li id="requestli_@user.id.stringify">
 						<a href="@routes.Profile.viewProfileUUID(user.id)">@user.name</a>
 						<br><br>
-					<button class="btn btn-default btn-xs" id="requestadmin_@user.id.stringify" title="accept space request as admin" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Admin')">
+					<button class="btn btn-default btn-xs" id="requestadmin_@user.id.stringify" title="accept space request as admin" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Admin', '@(routes.Spaces.getSpace(space.id))')">
 						Accept as Admin
 					</button>
-					<button class="btn btn-default btn-xs" id="requesteditor_@user.id.stringify" title="accept space request as editor" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Editor')">
+					<button class="btn btn-default btn-xs" id="requesteditor_@user.id.stringify" title="accept space request as editor" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Editor', '@(routes.Spaces.getSpace(space.id))')">
 						Accept as Editor
 					</button>
-					<button class="btn btn-default btn-xs" id="requestviewer_@user.id.stringify" title="accept space request as viwer" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Viewer')">
+					<button class="btn btn-default btn-xs" id="requestviewer_@user.id.stringify" title="accept space request as viwer" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Viewer', '@(routes.Spaces.getSpace(space.id))')">
 						Accept as Viewer
 					</button>
-						@*TODO : onclick= "return updateUsersInSpace('@space.id', '@(routes.Spaces.getSpace(space.id))')"*@
-					<button class="btn btn-default btn-xs" id="requestrej_@user.id.stringify" title="reject space request" >
+					<button class="btn btn-default btn-xs" id="requestrej_@user.id.stringify" title="reject space request" onclick= "return rejectSpaceRequest('@space.id', '@user.id.toString', '@(routes.Spaces.getSpace(space.id))')">
 						Reject Request
 					</button>
 					</li>
 				}
 				</ul>
 				@if( space.requests.length ==0) {
-					<p>All request accepted.</p>
+					<p>No more request.</p>
 				}
 			</div>
 			<div class="modal-footer">
-				<a href="#" class="btn btn-default" id="closebutton" data-dismiss="modal" onclick= "return freshSpace('@space.id')">Close</a>
+				<button class="btn btn-default" type="button" data-dismiss="modal" onClick= "window.location.reload();">Close</button>
 			</div>
 		</div>
 	</div>

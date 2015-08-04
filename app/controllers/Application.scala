@@ -159,7 +159,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Collections.collection,
-        controllers.routes.javascript.Spaces.acceptrequest
+        controllers.routes.javascript.Spaces.acceptrequest,
+        controllers.routes.javascript.Spaces.rejectrequest
       )
     ).as(JSON) 
   }
