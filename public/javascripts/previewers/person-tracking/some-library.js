@@ -12,23 +12,23 @@
 		dataType : "json"
 	});	   
 
-	request.done(function(data) {
+	request.done(function(technicalMetadata) {        
 	    
-        // if there are no technical metadata then display a message
-		if (data == null)
+        // if there is no technical metadata then display a message
+		if (technicalMetadata == null)
 			return;
-		if (data == undefined)
+		if (technicalMetadata == undefined)
 			return;
-		if (data.length == 0)
+		if (technicalMetadata.length == 0)
 			return;
 
 		var trackingMetadataIndex = -1;
 
         // Search metadata for person tracking
-        for (var i=0; i<data.length; i++) {
-            if (data[i]["person-tracking-result"] == undefined)
+        for (var i=0; i<technicalMetadata.length; i++) {
+            if (technicalMetadata[i]["person-tracking-result"] == undefined)
                 continue;
-            if (data[i]["person-tracking-result"] == "")
+            if (technicalMetadata[i]["person-tracking-result"] == "")
                 continue;
             trackingMetadataIndex = i;
             break;
@@ -118,15 +118,16 @@
         ).done(function(){
             console.log("downloaded JS sciprts");
 
-            if(data[trackingMetadataIndex]["person-tracking-result"].frame != undefined){
+            if(technicalMetadata[trackingMetadataIndex]["person-tracking-result"].frame != undefined){
 
                 // Processing JSON data            
-                var jsonFrameArray = data[trackingMetadataIndex]["person-tracking-result"].frame;
+                var jsonFrameArray = technicalMetadata[trackingMetadataIndex]["person-tracking-result"].frame;
                 var jsonFrameArrayLength = jsonFrameArray.length;
-                var videoHeight = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@video-height"]);
-                var videoWidth = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@video-width"]);
-                var videoFrameRate = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@frame-rate"]);
-                var endFrameNumber = parseInt(data[trackingMetadataIndex]["person-tracking-result"]["@end-frame"]);
+                var videoHeight = parseInt(technicalMetadata[trackingMetadataIndex]["person-tracking-result"]["@video-height"]);
+                var videoWidth = parseInt(technicalMetadata[trackingMetadataIndex]["person-tracking-result"]["@video-width"]);
+                var videoFrameRate = parseInt(technicalMetadata[trackingMetadataIndex]["person-tracking-result"]["@frame-rate"]);
+                var endFrameNumber = parseInt(technicalMetadata[trackingMetadataIndex]["person-tracking-result"]["@end-frame"]);
+                var extractorId = technicalMetadata[trackingMetadataIndex]["extractor_id"];
 
                 // Pass 1: Rearrange data
                 for(var i = 0; i < jsonFrameArrayLength; i++) {
@@ -427,9 +428,7 @@
                     var maxFrames = 300;
                     var numPeople = sortedFrameDataArray.length + 1;                
                     var offsetVal = 5;
-
                     var ticksArray = new Array();
-
                     var timeInSec = Math.ceil(totalFrames / videoFrameRate);
 
                     for (var i = 1; i <= timeInSec; i++) {
@@ -472,20 +471,46 @@
                     savePersonTrackingChanges = function() {
 
                         isEditingInProgress = false;
-                        hasTrackingDataChanged = false;                    
+                        hasTrackingDataChanged = false;
 
-                        // Re-write the global array based on the current changes.
-                        sortedFrameDataArray = JSON.parse(JSON.stringify(sortedFrameDataArrayCopy));
-                        labelArray = JSON.parse(JSON.stringify(labelArrayCopy));
-                        frameDataArray = JSON.parse(JSON.stringify(frameDataArrayCopy));
+                        // Update Person tracking metadata in the database
+                        var technicalMetadataCopy = JSON.parse(JSON.stringify(technicalMetadata));
+                        technicalMetadataCopy[trackingMetadataIndex]["person-tracking-result"].frame = frameDataArrayCopy;
+                        var requestData = JSON.stringify(technicalMetadataCopy[trackingMetadataIndex]);
+                        console.log(requestData);
+                        
+                        var jsRoutesObject = jsRoutes.api.Files.updateMetadata(Configuration.id, extractorId);
+                        var setMetadataApiUrl = jsRoutesObject.url;                        
+                        var request = $.ajax({
+                            type : "POST",
+                            url : setMetadataApiUrl,
+                            contentType : "application/json",
+                            data: requestData
+                        });
 
-                        $("#btnSaveChanges").hide();
-                        $("#btnCancelChanges").hide();
+                        request.success(function(response) {                            
 
-                        // Redraw graph
-                        plot.setData(sortedFrameDataArray);
-                        plot.setupGrid();
-                        plot.draw();
+                            // Re-write the global array based on the current changes.
+                            sortedFrameDataArray = JSON.parse(JSON.stringify(sortedFrameDataArrayCopy));
+                            labelArray = JSON.parse(JSON.stringify(labelArrayCopy));
+                            frameDataArray = JSON.parse(JSON.stringify(frameDataArrayCopy));
+                            technicalMetadata = JSON.parse(JSON.stringify(technicalMetadataCopy));                            
+
+                            $("#btnSaveChanges").hide();
+                            $("#btnCancelChanges").hide();
+
+                            // Redraw graph
+                            plot.setData(sortedFrameDataArray);
+                            plot.setupGrid();
+                            plot.draw();
+                        })
+                        .fail(function(jqxhr){
+                            console.log("Failed to update person tracking metadata.");            
+                            console.log("Updating tab " + Configuration.tab);
+                            console.log(jqxhr);
+                            $(Configuration.tab).append("<br/>");
+                            $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, person-tracking metadata update failed. Please try again.</h4></div>');
+                        });
                     }
 
                     cancelPersonTrackingChanges = function() {
@@ -499,12 +524,6 @@
 
                         $("#btnSaveChanges").hide();
                         $("#btnCancelChanges").hide();
-
-                        /*Debug code. Will be deleted
-                        console.log("Data before cancel");
-                        console.log(sortedFrameDataArray);
-                        console.log("Copy before cancel");
-                        console.log(sortedFrameDataArrayCopy);*/
 
                         // Redraw graph
                         plot.setData(sortedFrameDataArray);
@@ -564,7 +583,6 @@
                                             // Get the start and end frame indices of the current person track bar
                                             var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
                                             var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];
-                                            // console.log(startIndex + " " + endIndex); Debug code. Will be deleted.
                                             m += 2;                                            
 
                                             // Iterate through all frames in the selected range
@@ -602,11 +620,6 @@
                                     break;
                                 }
                             }
-
-                            // Debug code. To delete.
-                            /*console.log(sortedFrameDataArrayCopy);
-                            console.log("Tracking metadata");
-                            console.log(sortedFrameDataArray);*/
 
                             // Redraw graph
                             plot.setData(sortedFrameDataArrayCopy);
@@ -716,16 +729,24 @@
                                     }
                                 }
 
+                                // Clean up data. Remove array items containing null values.
+                                for(var k = 0; k < frameDataArrayCopy.length; k++) {
+
+                                    if(frameDataArrayCopy[k].objectlist.object == null) {                                        
+                                        /*  
+                                            Remove the entire frame from the array to avoid null values from getting stored in the database
+                                            and in turn from being displayed on the page. Null values in metadata will break the user interface.
+                                        */
+                                        frameDataArrayCopy.splice(k,1);
+                                        k--;
+                                    }
+                                }
+
                                 // Remove the current person from the sorted list
                                 sortedFrameDataArrayCopy.splice(i,1);
                                 break;
                             }
-                        }
-
-                        // Debug code. To delete.
-                        /*console.log(sortedFrameDataArrayCopy);
-                        console.log("Tracking metadata");
-                        console.log(frameDataArray);*/
+                        }                    
 
                         // Redraw graph
                         plot.setData(sortedFrameDataArrayCopy);
@@ -895,7 +916,7 @@
                         if (item) {
                             //plot.highlight(item.series, item.datapoint);
                             var timeClicked = item.series.xaxis.ticks[item.dataIndex].label;
-                            console.log(item);
+                            console.debug(item);
                         }
                     });
                 })
