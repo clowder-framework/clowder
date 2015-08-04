@@ -150,5 +150,5 @@ trait SpaceService extends CRUDService[ProjectSpace] {
   /**
    * Find an invitation by ID
    */
-  def getInvitationToSpace(inviteId: UUID): Option[SpaceInvite]
+  def getInvitationToSpace(inviteId: String): Option[SpaceInvite]
 }

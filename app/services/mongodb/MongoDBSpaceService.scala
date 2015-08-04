@@ -385,8 +385,8 @@ class MongoDBSpaceService @Inject() (
     SpaceInviteDAO.removeById(new ObjectId(inviteId.stringify))
   }
 
-  def getInvitationToSpace(inviteId: UUID): Option[SpaceInvite] = {
-    SpaceInviteDAO.findOneById(new ObjectId(inviteId.stringify))
+  def getInvitationToSpace(inviteId: String): Option[SpaceInvite] = {
+    SpaceInviteDAO.findOne(MongoDBObject("invite_id" -> inviteId))
   }
 }
 /**

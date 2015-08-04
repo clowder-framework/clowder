@@ -64,7 +64,7 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
             if ( UsernamePasswordProvider.sendWelcomeEmail ) {
               Mailer.sendWelcomeEmail(saved)
             }
-            spaces.getInvitationToSpace(UUID(token)) match {
+            spaces.getInvitationToSpace(token) match {
               case Some(invite) => {
                 users.findByEmail(invite.email) match {
                   case Some(user) => {

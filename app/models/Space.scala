@@ -45,6 +45,7 @@ case class UserSpace (
 
 case class SpaceInvite(
     id: UUID = UUID.generate,
+    invite_id: String,
     email: String,
     space: UUID,
     role: Role)
