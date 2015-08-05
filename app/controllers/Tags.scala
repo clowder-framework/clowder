@@ -115,13 +115,13 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def tagCloud() = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
-    Ok(views.html.tagCloud(computeTagWeights(request.user)))
+    Ok(views.html.tagCloud(computeTagWeights(user)))
   }
 
   def tagListWeighted() = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
-    val tags = computeTagWeights(request.user)
+    val tags = computeTagWeights(user)
 
     if (tags.isEmpty) {
       Ok(views.html.tagList(List.empty[(String, Double)]))

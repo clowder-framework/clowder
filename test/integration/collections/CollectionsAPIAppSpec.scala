@@ -293,7 +293,6 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
           status(result2) mustEqual OK
           info("contentType="+contentType(result2))
           contentType(result2) mustEqual Some("application/json")
-          println(contentAsString(result2))
           contentAsString(result2) must include ("name")
           info("content"+contentAsString(result2))
           val json: JsValue = Json.parse(contentAsString(result2))

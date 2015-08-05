@@ -51,23 +51,21 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * Service access to retrieve a list of collections in a given space, of prescribed list length.
    *
    * @param space Identifies the space.
-   * @param order Sort order (if any) by created date
    * @param limit Length of (the number of collections in) returned list.
    *
    * @return A list of collections in a space; list's length is defined by 'limit'.
    */
-  def getCollectionsInSpace(space: Option[String] = None, order: Option[String] = None, limit: Option[Integer] = None): List[Collection]
+  def getCollectionsInSpace(space: Option[String] = None, limit: Option[Integer] = None): List[Collection]
 
   /**
    * Service access to retrieve a list of datasets in a given space, of prescribed list length.
    *
    * @param space Identifies the space.
-   * @param order Sort order (if any) by created date
    * @param limit Length of (the number of datasets in) returned list.
    *
    * @return A list of datasets in a space; list's length is defined by 'limit'.
    */
-  def getDatasetsInSpace(space: Option[String] = None, order: Option[String] = None, limit: Option[Integer] = None): List[Dataset]
+  def getDatasetsInSpace(space: Option[String] = None, limit: Option[Integer] = None): List[Dataset]
 
   /**
    * Service call to update the information and configuration that are part of a space.

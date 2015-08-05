@@ -22,8 +22,6 @@ import scala.collection.mutable.ListBuffer
 import services._
 import org.apache.commons.lang.StringEscapeUtils
 
-object ThumbnailFound extends Exception {}
-
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
                             spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {  
@@ -138,17 +136,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
     var collectionsWithThumbnails = List.empty[models.Collection]
     for (collection <- collectionList) {
-      var collectionThumbnail: Option[String] = None
-      try {
-        for (dataset <- collection.datasets) {
-          if (!dataset.thumbnail_id.isEmpty) {
-            collectionThumbnail = dataset.thumbnail_id
-            throw ThumbnailFound
-          }
-        }
-      } catch {
-        case ThumbnailFound =>
-      }
+      val collectionThumbnail = collection.datasets.find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
       val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
       collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
     }
