@@ -187,62 +187,67 @@
                 // This results in creating new horizontal bars.
                 
                 for(var i=0; i < sortedFrameDataArray.length; i++) {
-                    // Since in JS, array is passed by reference by default, changes get reflected in sortedFrameDataArray variable too
-                    var personDataArray = sortedFrameDataArray[i].data; 
-                    var frameIndexCounter = 1;
+
+                    //Check for missing indices
+                    if(sortedFrameDataArray[i] != undefined) {
+
+                        // Since in JS, array is passed by reference by default, changes get reflected in sortedFrameDataArray variable too
+                        var personDataArray = sortedFrameDataArray[i].data; 
+                        var frameIndexCounter = 1;
                     
-                    for(var startIndex = 0; startIndex < personDataArray.length;) {
-                       
-                       // When at least three elements are present in the array
-                       if(personDataArray[startIndex + 2] != undefined ) {
-                            // First two elements are in sequence
-                            if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
-                                // Second and third elements are also in sequence
-                                if(personDataArray[startIndex][0] + frameIndexCounter + 1 == personDataArray[startIndex + 2][0]) {
-                                    // Remove the second element and upate the frame index counter
-                                    personDataArray.splice(startIndex + 1,1);
-                                    frameIndexCounter++;
-                                }
-                                // Second and third element are not in sequence
-                                else {
-                                    // Insert a null between second and third element. Update frame index counter, move start index
-                                    personDataArray.splice(startIndex + 2,0,null);
-                                    frameIndexCounter = 1;
-                                    startIndex += 3; 
-                                }
-                            }
-                            // First and second elements are not in sequence
-                            else {
-                                // Insert a null between first and second elements. Update start index
-                                personDataArray.splice(startIndex + 1,0,null);
-                                startIndex += 2;
-                            }
-                       }
-                       // When only two or less items are remaining.
-                       else {
-                            // If there are two elements
-                            if(personDataArray[startIndex + 1] != undefined) {
-                                // Check if the two elements are in sequence
+                        for(var startIndex = 0; startIndex < personDataArray.length;) {
+                           
+                           // When at least three elements are present in the array
+                           if(personDataArray[startIndex + 2] != undefined ) {
+                                // First two elements are in sequence
                                 if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
-                                    // Insert a null at the end of the array. Not really needed. Just for logical completion of algorithm.
-                                    personDataArray.splice(startIndex + 2,0,null);
-                                    break;
+                                    // Second and third elements are also in sequence
+                                    if(personDataArray[startIndex][0] + frameIndexCounter + 1 == personDataArray[startIndex + 2][0]) {
+                                        // Remove the second element and upate the frame index counter
+                                        personDataArray.splice(startIndex + 1,1);
+                                        frameIndexCounter++;
+                                    }
+                                    // Second and third element are not in sequence
+                                    else {
+                                        // Insert a null between second and third element. Update frame index counter, move start index
+                                        personDataArray.splice(startIndex + 2,0,null);
+                                        frameIndexCounter = 1;
+                                        startIndex += 3; 
+                                    }
                                 }
-                                // If the two elements are not in sequence
+                                // First and second elements are not in sequence
                                 else {
-                                    // Insert a null between the first and second elements and after the elements
+                                    // Insert a null between first and second elements. Update start index
                                     personDataArray.splice(startIndex + 1,0,null);
-                                    personDataArray.splice(startIndex + 2,0,null);
+                                    startIndex += 2;
+                                }
+                           }
+                           // When only two or less items are remaining.
+                           else {
+                                // If there are two elements
+                                if(personDataArray[startIndex + 1] != undefined) {
+                                    // Check if the two elements are in sequence
+                                    if(personDataArray[startIndex][0] + frameIndexCounter == personDataArray[startIndex + 1][0]) {
+                                        // Insert a null at the end of the array. Not really needed. Just for logical completion of algorithm.
+                                        personDataArray.splice(startIndex + 2,0,null);
+                                        break;
+                                    }
+                                    // If the two elements are not in sequence
+                                    else {
+                                        // Insert a null between the first and second elements and after the elements
+                                        personDataArray.splice(startIndex + 1,0,null);
+                                        personDataArray.splice(startIndex + 2,0,null);
+                                        break;
+                                    }
+                                }
+                                // If there is only one element left
+                                else {
+                                    // Insert a null after the element. Not really needed. Just for logical completion of algorithm.
+                                    personDataArray.splice(startIndex + 1,0,null);
                                     break;
                                 }
-                            }
-                            // If there is only one element left
-                            else {
-                                // Insert a null after the element. Not really needed. Just for logical completion of algorithm.
-                                personDataArray.splice(startIndex + 1,0,null);
-                                break;
-                            }
-                        }    
+                            }    
+                        }
                     }                
                 }
 
@@ -254,7 +259,10 @@
 
                 // Creating the label array
                 for(var i=0; i < sortedFrameDataArray.length; i++) {
-                    labelArray.push(sortedFrameDataArray[i].label);
+                    //Check for missing indices
+                    if(sortedFrameDataArray[i] != undefined) {
+                        labelArray.push(sortedFrameDataArray[i].label);
+                    }
                 }                
                                                         
                 // Display video on screen and visualize person tracking
@@ -542,82 +550,86 @@
 
                             // Iterate through the sorted list of persons
                             for(var i=0; i < sortedFrameDataArrayCopy.length; i++) {
+
+                                //Check for missing indices
+                                if(sortedFrameDataArrayCopy[i] != undefined) {
                                 
-                                // Find the person whose label is being changed
-                                if(sortedFrameDataArrayCopy[i].label == oldLabel){
-                                    
-                                    // Iterate through the sorted list of persons
-                                    for(var j=0; j < sortedFrameDataArrayCopy.length; j++) {
+                                    // Find the person whose label is being changed
+                                    if(sortedFrameDataArrayCopy[i].label == oldLabel){
+                                        
+                                        // Iterate through the sorted list of persons
+                                        for(var j=0; j < sortedFrameDataArrayCopy.length; j++) {
 
-                                        // If there is another person whose label matches the label of the current person which is being edited
-                                        if(sortedFrameDataArrayCopy[j].label == newLabel){
+                                            // If there is another person whose label matches the label of the current person which is being edited
+                                            if(sortedFrameDataArrayCopy[j].label == newLabel){
 
-                                            /* Update the data of that person by adding information about the current person.
-                                               Basically merging the data of two persons into one since their labels (or IDs) match 
-                                               as per the information provided by the user. */
+                                                /* Update the data of that person by adding information about the current person.
+                                                   Basically merging the data of two persons into one since their labels (or IDs) match 
+                                                   as per the information provided by the user. */
 
-                                            for (var k =0; k < sortedFrameDataArrayCopy[i].data.length ; k++) {
-                                                if (sortedFrameDataArrayCopy[i].data[k] != null) {
-                                                    sortedFrameDataArrayCopy[i].data[k][1] = parseInt(newId);
-                                                }
-                                            }
-
-                                            // If the person tracks are adjacent, remove the last null value from array before appending
-                                            /* TODO: Insert the bar coordinates properly so that blank spaces can be avoided.
-                                            var dataIndex = sortedFrameDataArrayCopy[j].data.lastIndexOf(null) - 1;
-                                            if (sortedFrameDataArrayCopy[j].data[dataIndex][0] + 1 == sortedFrameDataArrayCopy[i].data[0][0]) {
-                                                sortedFrameDataArrayCopy[j].data.splice(sortedFrameDataArrayCopy[j].data.lastIndexOf(null));    
-                                            }*/
-                                            sortedFrameDataArrayCopy[j].data = sortedFrameDataArrayCopy[j].data.concat(sortedFrameDataArrayCopy[i].data);
-                                            break;
-                                        }
-                                    }
-
-                                    // Update the tracking metadata 
-                                    var arrayLength = sortedFrameDataArrayCopy[i].data.length;
-
-                                    for(var m = 0; m < arrayLength;) {
-
-                                        if(sortedFrameDataArrayCopy[i].data[m] != null) {
-
-                                            // Get the start and end frame indices of the current person track bar
-                                            var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
-                                            var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];
-                                            m += 2;                                            
-
-                                            // Iterate through all frames in the selected range
-                                            for(var frameIndex = startIndex; frameIndex <= endIndex; frameIndex++) {                                                
-
-                                                var objList = frameDataArrayCopy[frameIndex].objectlist;
-
-                                                // When there is only one person in frame    
-                                                if(objList.object.length == undefined && objList.object["@id"]) {
-
-                                                    if (objList.object["@id"] == oldId) {
-                                                        objList.object["@id"] = newId;
+                                                for (var k =0; k < sortedFrameDataArrayCopy[i].data.length ; k++) {
+                                                    if (sortedFrameDataArrayCopy[i].data[k] != null) {
+                                                        sortedFrameDataArrayCopy[i].data[k][1] = parseInt(newId);
                                                     }
                                                 }
-                                                // When there are multiple persons in frame
-                                                else if(objList.object.length > 0) {
 
-                                                    for(var j = 0; j < objList.object.length; j++){
+                                                // If the person tracks are adjacent, remove the last null value from array before appending
+                                                /* TODO: Insert the bar coordinates properly so that blank spaces can be avoided.
+                                                var dataIndex = sortedFrameDataArrayCopy[j].data.lastIndexOf(null) - 1;
+                                                if (sortedFrameDataArrayCopy[j].data[dataIndex][0] + 1 == sortedFrameDataArrayCopy[i].data[0][0]) {
+                                                    sortedFrameDataArrayCopy[j].data.splice(sortedFrameDataArrayCopy[j].data.lastIndexOf(null));    
+                                                }*/
+                                                sortedFrameDataArrayCopy[j].data = sortedFrameDataArrayCopy[j].data.concat(sortedFrameDataArrayCopy[i].data);
+                                                break;
+                                            }
+                                        }
 
-                                                        if (objList.object[j]["@id"] == oldId) {
-                                                            objList.object[j]["@id"] = newId;
+                                        // Update the tracking metadata 
+                                        var arrayLength = sortedFrameDataArrayCopy[i].data.length;
+
+                                        for(var m = 0; m < arrayLength;) {
+
+                                            if(sortedFrameDataArrayCopy[i].data[m] != null) {
+
+                                                // Get the start and end frame indices of the current person track bar
+                                                var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
+                                                var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];
+                                                m += 2;                                            
+
+                                                // Iterate through all frames in the selected range
+                                                for(var frameIndex = startIndex; frameIndex <= endIndex; frameIndex++) {                                                
+
+                                                    var objList = frameDataArrayCopy[frameIndex].objectlist;
+
+                                                    // When there is only one person in frame    
+                                                    if(objList.object.length == undefined && objList.object["@id"]) {
+
+                                                        if (objList.object["@id"] == oldId) {
+                                                            objList.object["@id"] = newId;
+                                                        }
+                                                    }
+                                                    // When there are multiple persons in frame
+                                                    else if(objList.object.length > 0) {
+
+                                                        for(var j = 0; j < objList.object.length; j++){
+
+                                                            if (objList.object[j]["@id"] == oldId) {
+                                                                objList.object[j]["@id"] = newId;
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
-                                        }
-                                        else {
+                                            else {
 
-                                            m++;
+                                                m++;
+                                            }
                                         }
+
+                                        // Remove the current person from the sorted list
+                                        sortedFrameDataArrayCopy.splice(i,1);
+                                        break;
                                     }
-
-                                    // Remove the current person from the sorted list
-                                    sortedFrameDataArrayCopy.splice(i,1);
-                                    break;
                                 }
                             }
 
@@ -683,68 +695,72 @@
 
                         // Iterate through the sorted list of persons
                         for(var i=0; i < sortedFrameDataArrayCopy.length; i++) {
+
+                            //Check for missing indices
+                            if(sortedFrameDataArrayCopy[i] != undefined) {
                             
-                            // Find the person whose label is being changed
-                            if(sortedFrameDataArrayCopy[i].label == oldLabel){
+                                // Find the person whose label is being changed
+                                if(sortedFrameDataArrayCopy[i].label == oldLabel){
 
-                                // Update the tracking metadata
-                                var arrayLength = sortedFrameDataArrayCopy[i].data.length;
+                                    // Update the tracking metadata
+                                    var arrayLength = sortedFrameDataArrayCopy[i].data.length;
 
-                                for(var m = 0; m < arrayLength;) {
+                                    for(var m = 0; m < arrayLength;) {
 
-                                    if(sortedFrameDataArrayCopy[i].data[m] != null) {
+                                        if(sortedFrameDataArrayCopy[i].data[m] != null) {
 
-                                        // Get the start and end frame indices of the current person track bar
-                                        var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
-                                        var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];                                        
-                                        m += 2;                                            
+                                            // Get the start and end frame indices of the current person track bar
+                                            var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
+                                            var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];                                        
+                                            m += 2;                                            
 
-                                        // Iterate through all frames in the selected range
-                                        for(var frameIndex = startIndex; frameIndex <= endIndex; frameIndex++) {                                                
+                                            // Iterate through all frames in the selected range
+                                            for(var frameIndex = startIndex; frameIndex <= endIndex; frameIndex++) {                                                
 
-                                            var objList = frameDataArrayCopy[frameIndex].objectlist;
+                                                var objList = frameDataArrayCopy[frameIndex].objectlist;
 
-                                            // When there is only one person in frame    
-                                            if(objList.object.length == undefined && objList.object["@id"]) {
+                                                // When there is only one person in frame    
+                                                if(objList.object.length == undefined && objList.object["@id"]) {
 
-                                                if (objList.object["@id"] == oldId) {
-                                                    objList.object = null;
+                                                    if (objList.object["@id"] == oldId) {
+                                                        objList.object = null;
+                                                    }
                                                 }
-                                            }
-                                            // When there are multiple persons in frame
-                                            else if(objList.object.length > 0) {
+                                                // When there are multiple persons in frame
+                                                else if(objList.object.length > 0) {
 
-                                                for(var j = 0; j < objList.object.length; j++){
+                                                    for(var j = 0; j < objList.object.length; j++){
 
-                                                    if (objList.object[j]["@id"] == oldId) {
-                                                        objList.object.splice(j,1);
+                                                        if (objList.object[j]["@id"] == oldId) {
+                                                            objList.object.splice(j,1);
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                    }
-                                    else {
+                                        else {
 
-                                        m++;
+                                            m++;
+                                        }
                                     }
+
+                                    // Clean up data. Remove array items containing null values.
+                                    for(var k = 0; k < frameDataArrayCopy.length; k++) {
+
+                                        if(frameDataArrayCopy[k].objectlist.object == null) {                                        
+                                            /*  
+                                                Remove the entire frame from the array to avoid null values from getting stored in the database
+                                                and in turn from being displayed on the page. Null values in metadata will break the user interface.
+                                            */
+                                            frameDataArrayCopy.splice(k,1);
+                                            k--;
+                                        }
+                                    }
+
+                                    // Remove the current person from the sorted list
+                                    sortedFrameDataArrayCopy.splice(i,1);
+                                    break;
                                 }
-
-                                // Clean up data. Remove array items containing null values.
-                                for(var k = 0; k < frameDataArrayCopy.length; k++) {
-
-                                    if(frameDataArrayCopy[k].objectlist.object == null) {                                        
-                                        /*  
-                                            Remove the entire frame from the array to avoid null values from getting stored in the database
-                                            and in turn from being displayed on the page. Null values in metadata will break the user interface.
-                                        */
-                                        frameDataArrayCopy.splice(k,1);
-                                        k--;
-                                    }
-                                }
-
-                                // Remove the current person from the sorted list
-                                sortedFrameDataArrayCopy.splice(i,1);
-                                break;
                             }
                         }                    
 
@@ -765,23 +781,27 @@
                         // Seek video
                         // Iterate through the sorted list of persons
                         for(var i=0; i < sortedFrameDataArrayCopy.length; i++) {
-                            
-                            // Find the person whose label was clicked
-                            if(sortedFrameDataArrayCopy[i].label == label){
+
+                            //Check for missing indices
+                            if(sortedFrameDataArrayCopy[i] != undefined) {
                                 
-                                var arrayLength = sortedFrameDataArrayCopy[i].data.length;
+                                // Find the person whose label was clicked
+                                if(sortedFrameDataArrayCopy[i].label == label){
+                                    
+                                    var arrayLength = sortedFrameDataArrayCopy[i].data.length;
 
-                                for(var m = 0; m < arrayLength;) {
+                                    for(var m = 0; m < arrayLength;) {
 
-                                    if(sortedFrameDataArrayCopy[i].data[m] != null) {
-                                        // Get the start and end frame indices of the current person track bar                                        
-                                        var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
-                                        var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];
-                                        video[0].currentTime = startIndex / videoFrameRate; // Set the current video position
-                                        break;
+                                        if(sortedFrameDataArrayCopy[i].data[m] != null) {
+                                            // Get the start and end frame indices of the current person track bar                                        
+                                            var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
+                                            var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];
+                                            video[0].currentTime = startIndex / videoFrameRate; // Set the current video position
+                                            break;
+                                        }
                                     }
+                                    break;
                                 }
-                                break;
                             }
                         }                    
                     }
