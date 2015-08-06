@@ -47,7 +47,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     if (order.exists(_.equals("desc"))) { return listCollectionsChronoReverse(limit, space) }
 
     val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
       case None => MongoDBObject()
     }
     limit match {
@@ -62,7 +62,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def listCollectionsChronoReverse(limit: Option[Integer], space: Option[String]): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
     val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
       case None => MongoDBObject()
     }
     limit match {
@@ -77,7 +77,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def listCollectionsAfter(date: String, limit: Int, space: Option[String]): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
     val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
       case None => MongoDBObject()
     }
     if (date == "") {
@@ -85,6 +85,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
+      Collection.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
       Collection.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
@@ -95,7 +96,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def listCollectionsBefore(date: String, limit: Int, space: Option[String]): List[Collection] = {
     var order = MongoDBObject("created" -> -1)
     val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
       case None => MongoDBObject()
     }
     if (date == "") {
@@ -407,8 +408,16 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def addToSpace(collectionId: UUID, spaceId: UUID): Unit = {
       val result = Collection.update(
         MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
-        $set("space" -> Some(new ObjectId(spaceId.stringify))),
+        $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))),
         false, false)
+  }
+
+  def removeFromSpace(collectionId: UUID, spaceId: UUID): Unit = {
+    val result = Collection.update(
+    MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+    $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
+    false, false)
+
   }
 
   /**
