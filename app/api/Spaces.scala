@@ -3,13 +3,13 @@ package api
 import java.util.Date
 import javax.inject.Inject
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
-import models.{ResourceRef, UUID, ProjectSpace}
+import models._
 import play.api.Logger
 import controllers.Utils
 import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import services.{AdminsNotifierPlugin, SpaceService, UserService}
+import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
@@ -19,7 +19,7 @@ import scala.collection.mutable.ListBuffer
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
-class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends ApiController {
+class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService, collectionService: CollectionService, events: EventService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -108,6 +108,32 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     Ok(toJson("success"))
   }
 
+  @ApiOperation(value = " Associate a collection to multiple spaces",
+  notes = "",
+  responseClass = "None", httpMethod="POST"
+  )
+  def addCollectionToSpaces(space_list: List[String], collection_id: UUID) = PermissionAction(Permission.EditCollection)(parse.json) {
+    implicit request =>
+      val current_spaces = collectionService.get(collection_id).map(_.spaces).get
+      var new_spaces: List[UUID] = List.empty
+      current_spaces.map{
+        aSpace =>
+          if(!space_list.contains(aSpace.toString)) {
+            spaces.removeCollection(collection_id, aSpace)
+          }
+          else {
+            new_spaces = aSpace :: new_spaces
+          }
+      }
+      space_list.map {
+        aSpace => if(!new_spaces.contains(aSpace) && !current_spaces.contains(UUID(aSpace))) {
+          new_spaces = UUID(aSpace) :: new_spaces
+        }
+      }
+      new_spaces.map(space_id => spaces.addCollection(collection_id, space_id))
+      Ok(toJson("success"))
+  }
+
   @ApiOperation(value = "Associate a dataset with a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
@@ -116,7 +142,31 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
     spaces.addDataset(UUID(datasetId), space)
     Ok(toJson("success"))
   }
-  
+
+  @ApiOperation(value = "Associate a dataset to multiple spaces",
+  notes= "",
+  responseClass="None", httpMethod ="POST")
+  def addDatasetToSpaces(space_list: List[String], dataset_id: UUID) = PermissionAction(Permission.EditCollection)(parse.json) {
+    implicit request =>
+      val current_spaces = datasetService.get(dataset_id).map(_.spaces).get
+      var new_spaces: List[UUID] = List.empty
+      current_spaces.map{
+        aSpace =>
+          if(!space_list.contains(aSpace.toString)) {
+            spaces.removeDataset(dataset_id, aSpace)
+          }
+          else {
+            new_spaces = aSpace :: new_spaces
+          }
+      }
+      space_list.map {
+        aSpace => if(!new_spaces.contains(aSpace) && !current_spaces.contains(UUID(aSpace))) {
+          new_spaces = UUID(aSpace) :: new_spaces
+        }
+      }
+      new_spaces.map(space_id => spaces.addDataset(dataset_id, space_id))
+      Ok(toJson("success"))
+  }
   /**
    * REST endpoint: POST call to update the configuration information associated with a specific Space
    * 
@@ -307,5 +357,76 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService) extends A
         BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
       }
   }
-          
+
+  @ApiOperation(value = "Follow space",
+    notes = "Add user to space followers and add space to user followed spaces.",
+    responseClass = "None", httpMethod = "POST")
+  def follow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+    implicit val user = request.user
+
+    user match {
+      case Some(loggedInUser) => {
+        spaces.get(id) match {
+          case Some(file) => {
+            events.addObjectEvent(user, id, name, "follow_space")
+            spaces.addFollower(id, loggedInUser.id)
+            userService.followResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
+
+            val recommendations = getTopRecommendations(id, loggedInUser)
+            recommendations match {
+              case x::xs => Ok(Json.obj("status" -> "success", "recommendations" -> recommendations))
+              case Nil => Ok(Json.obj("status" -> "success"))
+            }
+          }
+          case None => {
+            NotFound
+          }
+        }
+      }
+      case None => {
+        Unauthorized
+      }
+    }
+  }
+
+  @ApiOperation(value = "Unfollow space",
+    notes = "Remove user from space followers and remove space from user followed spaces.",
+    responseClass = "None", httpMethod = "POST")
+  def unfollow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+    implicit val user = request.user
+
+    user match {
+      case Some(loggedInUser) => {
+        spaces.get(id) match {
+          case Some(file) => {
+            events.addObjectEvent(user, id, name, "unfollow_space")
+            spaces.removeFollower(id, loggedInUser.id)
+            userService.unfollowResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
+            Ok
+          }
+          case None => {
+            NotFound
+          }
+        }
+      }
+      case None => {
+        Unauthorized
+      }
+    }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = spaces.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
+  }
 }

@@ -1,7 +1,8 @@
 @(datasetsInCollection: List[models.Dataset],
   collection: models.Collection,
   previewers: List[Previewer],
-  space: Option[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  collectionSpaces: Option[List[ProjectSpace]],
+  otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
 @import models.UUID
@@ -39,7 +40,7 @@
 					}
                     <dt>Space:</dt>
                     <dd>
-                        @spaces.spaceLink(space, 1, collection.id)
+ 						@spaces.spaceLink(collectionSpaces, 1, collection.id, otherSpaces)
                     </dd>
 					<dt>Description:</dt>
 					<dd ><p id="collection_desc"  style="display:inline">@Html(collection.description)</p>

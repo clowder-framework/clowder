@@ -113,7 +113,7 @@ GET            /tags/cloud                                                      
 # Authentication
 GET            /loginTest                                                               controllers.Authentication.login
 POST           /loginTest                                                               controllers.Authentication.loginSubmit
-GET            /notAuthorized                                                           controllers.Authentication.notAuthorized
+GET            /notAuthorized                                                           controllers.Authentication.notAuthorized(msg ?= null)
 
 # Search
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
@@ -291,6 +291,10 @@ POST           /api/spaces/:id/addCollection                                    
 POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
+POST           /api/spaces/addDatasetToSpaces                                           @api.Spaces.addDatasetToSpaces(space_list: List[String] ?= List.empty, dataset_id: UUID)
+POST           /api/spaces/addCollectionToSpaces                                        @api.Spaces.addCollectionToSpaces(space_list: List[String]?= List.empty, collection_id: UUID)
+POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
+POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT

@@ -136,8 +136,11 @@ function createEmptyDataset(data) {
 	//Update the input we are adding to the form programmatically      
 	var name = $('#name');
 	var desc = $('#description');
-	var space = $('#spaceid').find(":selected").val();
 
+	var spaceList = [];
+	$('#spaceid').find(":selected").each(function(i, selected) {
+		spaceList[i] = $(selected).val();
+	});
     //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
     //variables.
     var error = false;
@@ -178,8 +181,8 @@ function createEmptyDataset(data) {
    
     if (id == "__notset") {
     	//Case for the primary file that is submitted. It will create the dataset and obtain the id.     
-    	console.log("space is " + space);
-    	var jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":space});
+    	console.log("spaces are " + spaceList);
+    	var jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":spaceList});
     	console.log("jsondata is " + jsonData);
         var request = null;		                         	                        
         request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
@@ -268,7 +271,10 @@ function attachFiles() {
 		//Update the input we are adding to the form programmatically      
 		var name = $('#name');
 	    var desc = $('#description');
-	    var space = $('#spaceid').find(":selected").val();
+		var spaceList = [];
+		$('#spaceid').find(":selected").each(function(i, selected) {
+			spaceList[i] = $(selected).val();
+		});
 	    
 	    console.log("isNameRequried is " + isNameRequired);
 	    console.log("isDescRequired is " + isDescRequired);
@@ -294,10 +300,10 @@ function attachFiles() {
 		var encDescription = htmlEncode(desc.val());
 	    
 		if (ids.length == 0) {
-			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":space});
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":spaceList});
 		}
 		else {
-			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":space, "existingfiles":ids});
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":spaceList, "existingfiles":ids});
 		}	
 	    	                         	                        
 	    request = jsRoutes.api.Datasets.createEmptyDataset().ajax({

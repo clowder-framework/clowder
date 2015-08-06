@@ -142,6 +142,36 @@ $(document ).ready(function() {
     	          console.log("Failed to unfollow");
     	        });
     	    }
-    	}
+	} else if(jsObjectType === "space" ) {
+		if (followButton.text( ).trim() === "Follow") {
+			jsRoutes.api.Spaces.follow(jsObjectId).ajax({
+				type: "POST"
+			})
+				.done(function(data) {
+					followButton.text("Unfollow");
+					followButton.removeClass('btn-success');
+					followButton.addClass('btn-danger');
+					followCallback();
+				})
+				.fail(function(data) {
+					console.log(data);
+					console.log("Failed to follow");
+				});
+		} else {
+			jsRoutes.api.Spaces.unfollow(jsObjectId).ajax({
+				type: "POST"
+			})
+				.done(function(data) {
+					followButton.text("Follow");
+					followButton.removeClass('btn-danger');
+					followButton.addClass('btn-success');
+					unfollowCallback();
+				})
+				.fail(function(data) {
+					console.log(data);
+					console.log("Failed to unfollow");
+				});
+		}
+	}
   });
 });
