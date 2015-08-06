@@ -108,9 +108,9 @@ POST           /spaces/submit                                                   
 # Tags
 
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
-GET           /tags/list/ordered                                                        @controllers.Tags.tagListOrdered
-GET           /tags/list/weighted                                                       @controllers.Tags.tagListWeighted
-GET           /tags/cloud                                                               @controllers.Tags.tagCloud
+GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
+GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
+GET            /tags/cloud                                                              @controllers.Tags.tagCloud
 
 
 # Authentication
@@ -294,6 +294,8 @@ POST           /api/spaces/:id/addCollection                                    
 POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
+POST           /api/spaces/addDatasetToSpaces                                           @api.Spaces.addDatasetToSpaces(space_list: List[String] ?= List.empty, dataset_id: UUID)
+POST           /api/spaces/addCollectionToSpaces                                        @api.Spaces.addCollectionToSpaces(space_list: List[String]?= List.empty, collection_id: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
 
