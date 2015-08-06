@@ -86,14 +86,16 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator
 					<li id="requestli_@user.id.stringify">
 						<a href="@routes.Profile.viewProfileUUID(user.id)">@user.name</a>
 						<br><br>
-					<button class="btn btn-default btn-xs" id="requestadmin_@user.id.stringify" title="accept space request as admin" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Admin')">
-						Accept as Admin
-					</button>
-					<button class="btn btn-default btn-xs" id="requesteditor_@user.id.stringify" title="accept space request as editor" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Editor')">
-						Accept as Editor
-					</button>
-					<button class="btn btn-default btn-xs" id="requestviewer_@user.id.stringify" title="accept space request as viwer" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString', 'Viewer')">
-						Accept as Viewer
+
+						<select id="roleSelect" class="chosen-select btn btn-default btn-xs">
+							<option value="Viewer">Viewer</option>
+							<option value="Admin">Admin</option>
+							<option value="Editor">Editor</option>
+
+						</select>
+
+					<button class="btn btn-default btn-xs" id="requestviewer_@user.id.stringify" title="accept space request" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString')">
+						Accept
 					</button>
 					<button class="btn btn-default btn-xs" id="requestrej_@user.id.stringify" title="reject space request" onclick= "return rejectSpaceRequest('@space.id', '@user.id.toString')">
 						Reject Request
