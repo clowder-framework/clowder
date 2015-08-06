@@ -168,7 +168,7 @@ class MongoDBUserService @Inject() (
    * 
    */
   def addUserToSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
-      Logger.info("add user to space")
+      Logger.debug("add user to space")
       val spaceData = UserSpaceAndRole(spaceId, role)
       val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));  
   }
@@ -180,7 +180,7 @@ class MongoDBUserService @Inject() (
    * 
    */
   def removeUserFromSpace(userId: UUID, spaceId: UUID): Unit = {
-      Logger.info("remove user from space")
+      Logger.debug("remove user from space")
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
     		  $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
   }

@@ -39,6 +39,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           loggedInUser.followedEntities, Some(20)
         ).sorted(Ordering.by((_: Event).created).reverse)
         newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(loggedInUser, Some(20))
+          .sorted(Ordering.by((_: Event).created).reverse)
         Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
       }

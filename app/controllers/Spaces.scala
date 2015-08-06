@@ -14,10 +14,6 @@ import play.api.libs.json.Json
 import securesocial.core.providers.utils.Mailer
 import services.{EventService, SpaceService, UserService}
 import util.Direction._
-import com.typesafe.plugin._
-import play.api.Play.current
-import scala.concurrent.duration._
-import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
@@ -141,7 +137,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Logger.info("request submited in controller.Space.addRequest  " )
+          Logger.debug("request submited in controller.Space.addRequest  " )
           events.addRequestEvent(user, users.get(spaces.get(id).get.creator).get, id, spaces.get(id).get.name, "postrequest_space")
           spaces.addRequest(id, user.get.id, user.get.fullName)
 
@@ -161,7 +157,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        Logger.info("request submited in controllers.Space.addrequest ")
+        Logger.debug("request submited in controllers.Space.addrequest ")
         events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "acceptrequest_space")
         spaces.removeRequest(id, UUID(requestuser))
         role match{
@@ -181,7 +177,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        Logger.info("request submited in controller.Space.rejectRequest")
+        Logger.debug("request submited in controller.Space.rejectRequest")
         events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "rejectrequest_space")
         spaces.removeRequest(id, UUID(requestuser))
         Ok(Json.obj("status" -> "success"))

@@ -395,13 +395,13 @@ class MongoDBSpaceService @Inject() (
   }
 
     def addRequest(id: UUID, userId: UUID, username: String) {
-    Logger.info("put request for a space")
+    Logger.debug("put request for a space")
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $addToSet("requests"-> MongoDBObject("_id" -> new ObjectId(userId.stringify), "name" -> username, "comment" -> "N/A" )), false, false, WriteConcern.Safe)
   }
 
   def removeRequest(id: UUID, userId: UUID) {
-    Logger.info("remove request for a space ")
+    Logger.debug("remove request for a space ")
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $pull("requests" -> MongoDBObject( "_id" -> new ObjectId(userId.stringify))), false, false, WriteConcern.Safe)
   }

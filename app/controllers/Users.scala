@@ -102,6 +102,7 @@ object Users extends Controller {
 
     if ( Logger.isDebugEnabled ) {
       Logger.debug("Sending email to %s".format(recipient))
+      Logger.debug("From %s".format(subject))
       Logger.debug("Mail = [%s]".format(body))
     }
 
