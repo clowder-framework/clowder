@@ -280,28 +280,8 @@
 			  	<div class="row border-top">
 			  	  <div class="col-md-12">
                     <h4>Sections</h4>
-                    <div class="galleriaHelp">Click on icon at bottom-right of gallery to toggle sections gallery fullscreen view</div>
-				  	<div id="galleria" style="float:left;clear:none;width:100%;height:400px;">
-					  	@sections.map { s =>
-					  		@if(s.preview.isDefined || s.thumbnail_id.isDefined) {
-					  			@if(s.thumbnail_id.isDefined){
-					  				<img src="@(routes.Files.thumbnail(UUID(s.thumbnail_id.get)))"				  			
-					  			} else {
-					  				<img src="@api.routes.Previews.download(s.preview.get.id)"
-					  			}					  			
-					  				class="img-polaroid" height="100px"
-					  			@if(s.startTime.isDefined) {
-					  		 		data-title="Shot" data-description="Starts at @s.startTime seconds."  data_time="@s.startTime"
-					  		 	} else {
-					  		 		if (s.area.isDefined) {
-					  		 			data-title="Area" data-description="@s.area.toString"
-					  		 		} else {
-										data-title="Unknown" data-description="Unknown info"
-					  		 		}
-					  		 	}
-					  		 	>
-					  		}
-					  	}
+				  	<div class="galleriaHelp">Click on icon at bottom-right of gallery to toggle sections gallery fullscreen view</div>
+				  	<div id="galleria" style="float:left;clear:none;width:100%;height:400px;">					  	
 				  	</div>
 				  	<script type="text/javascript">
 				  		$(document).ready(function() {
@@ -434,6 +414,28 @@
 			    	$(function() {
 					    // Load the classic theme
 					    Galleria.loadTheme('@routes.Assets.at("javascripts/galleria-classic/galleria.classic.min.js")');
+
+						galleriaData = [];
+					    @sections.map { s =>
+							@if(s.preview.isDefined) {
+								galleriaItem = {};
+								galleriaItem["image"] = "@api.routes.Previews.download(s.preview.get.id)"; 					  			
+								@if(s.startTime.isDefined) {
+									galleriaItem["title"] = "Shot";
+									galleriaItem["description"] = "Starts at @s.startTime seconds.";
+							 	} else {
+							 		if (s.area.isDefined) {
+							 			galleriaItem["title"] = "Area";
+							 			galleriaItem["description"] = "@s.area.toString";
+							 		} else {
+							 			galleriaItem["title"] = "Unknown";
+							 			galleriaItem["description"] = "Unknown info";
+							 		}
+							 	}
+								galleriaData.push(galleriaItem);
+							}							
+						}
+
 					    @if(navOnSectionClick){
 					    	Galleria.configure({
 						        showInfo: false
@@ -458,13 +460,16 @@
 							                }));
 							            });
 							          }
-							        }
+							        },
+							        dataSource: galleriaData
 						    });
 					    }
 					    @if(!navOnSectionClick){
 					    	// Initialize Galleria
-						    Galleria.run('#galleria');
+					    	Galleria.run('#galleria', {dataSource: galleriaData});
 					    }
+
+					    var gallery = $('#galleria').data('galleria');
 
 						Galleria.ready(function(options) {
 						    // 'this' is the gallery instance
