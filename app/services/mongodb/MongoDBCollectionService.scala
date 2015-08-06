@@ -33,12 +33,15 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   /**
    * Count all collections
    */
-  def count(space: Option[String]): Long = {
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    Collection.count(filter)
+  def count(): Long = {
+    Collection.count( MongoDBObject())
+  }
+
+  /**
+   * Return the count of collections in a space, this does not check for permissions
+   */
+  def countSpace(space: String): Long = {
+    count(None, false, Some(space), None, superAdmin=false, None)
   }
 
   /**
@@ -56,6 +59,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
   /**
+   * Return the count of collections the user has access to.
+   */
+  def countAccess(user: Option[User], superAdmin: Boolean): Long = {
+    count(None, false, None, user, superAdmin, None)
+  }
+
+  /**
    * Return a list of collections the user has access to.
    */
   def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Collection] = {
@@ -67,6 +77,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Collection] = {
     list(Some(date), nextPage, limit, None, user, superAdmin, None)
+  }
+
+  /**
+   * Return the count of collections the user has created.
+   */
+  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long = {
+    count(None, false, None, user, superAdmin, Some(owner))
   }
 
   /**
@@ -84,9 +101,29 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
   /**
-   * Monster function, does all the work. Will create a filters and sorts based on the given parameters
+   * Return count of the requested collections
+   */
+  private def count(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, space, user, superAdmin, owner)
+    Collection.count(filter)
+  }
+
+  /**
+   * Return a list of the requested collections
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): List[Collection] = {
+    val (filter, sort) = filteredQuery(date, nextPage, space, user, superAdmin, owner)
+    if (date.isEmpty || nextPage) {
+      Collection.find(filter).sort(sort).limit(limit).toList
+    } else {
+      Collection.find(filter).sort(sort).limit(limit).toList.reverse
+    }
+  }
+
+  /**
+   * Monster function, does all the work. Will create a filters and sorts based on the given parameters
+   */
+  private def filteredQuery(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]):(DBObject, DBObject) = {
     // filter =
     // - owner   == show collections owned by owner that user can see
     // - space   == show all collections in space
@@ -142,11 +179,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     } else {
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
-    if (date.isEmpty || nextPage) {
-      Collection.find(filter ++ filterDate).sort(sort).limit(limit).toList
-    } else {
-      Collection.find(filter ++ filterDate).sort(sort).limit(limit).toList.reverse
-    }
+    (filter ++ filterDate, sort)
   }
 
   /**

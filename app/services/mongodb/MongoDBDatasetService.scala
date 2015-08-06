@@ -50,12 +50,15 @@ class MongoDBDatasetService @Inject() (
   /**
    * Count all datasets
    */
-  def count(space: Option[String]): Long = {
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    Dataset.count(filter)
+  def count(): Long = {
+    Dataset.count(MongoDBObject())
+  }
+
+  /**
+   * Count all datasets in a space
+   */
+  def countSpace(space: String): Long = {
+    count(None, false, Some(space), None, superAdmin=false, None)
   }
 
   /**
@@ -73,6 +76,13 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
+   * Count all datasets the user has access to.
+   */
+  def countAccess(user: Option[User], superAdmin: Boolean): Long = {
+    count(None, false, None, user, superAdmin, None)
+  }
+
+  /**
    * Return a list of datasets the user has access to.
    */
   def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = {
@@ -84,6 +94,13 @@ class MongoDBDatasetService @Inject() (
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = {
     list(Some(date), nextPage, limit, None, user, superAdmin, None)
+  }
+
+  /**
+   * Count all datasets the user has created.
+   */
+  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long = {
+    count(None, false, None, user, superAdmin, Some(owner))
   }
 
   /**
@@ -101,9 +118,30 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
-   * Monster function, does all the work. Will create a filters and sorts based on the given parameters
+   * return count based on input
+   */
+  private def count(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, space, user, superAdmin, owner)
+    Dataset.count(filter)
+  }
+
+
+  /**
+   * return list based on input
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): List[Dataset] = {
+    val (filter, sort) = filteredQuery(date, nextPage, space, user, superAdmin, owner)
+    if (date.isEmpty || nextPage) {
+      Dataset.find(filter).sort(sort).limit(limit).toList
+    } else {
+      Dataset.find(filter).sort(sort).limit(limit).toList.reverse
+    }
+  }
+
+  /**
+   * Monster function, does all the work. Will create a filters and sorts based on the given parameters
+   */
+  private def filteredQuery(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
@@ -159,11 +197,8 @@ class MongoDBDatasetService @Inject() (
     } else {
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
-    if (date.isEmpty || nextPage) {
-      Dataset.find(filter ++ filterDate).sort(sort).limit(limit).toList
-    } else {
-      Dataset.find(filter ++ filterDate).sort(sort).limit(limit).toList.reverse
-    }
+
+    (filter ++ filterDate, sort)
   }
 
   /**

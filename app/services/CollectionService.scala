@@ -13,35 +13,50 @@ trait CollectionService {
   /**
    * The number of collections
    */
-  def count(space: Option[String] = None): Long
+  def count(): Long
 
   /**
-   * Return a list of datasets in a space, this does not check for permissions
+   * Return the count of collections in a space, this does not check for permissions
+   */
+  def countSpace(space: String): Long
+
+  /**
+   * Return a list of collections in a space, this does not check for permissions
    */
   def listSpace(limit: Integer, space: String): List[Collection]
 
   /**
-   * Return a list of datasets in a space starting at a specific date, this does not check for permissions
+   * Return a list of collections in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection]
 
   /**
-   * Return a list of datasets the user has access to.
+   * Return the count of collections the user has access to.
+   */
+  def countAccess(user: Option[User], superAdmin: Boolean): Long
+
+  /**
+   * Return a list of collections the user has access to.
    */
   def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Collection]
 
   /**
-   * Return a list of datasets the user has access to starting at a specific date.
+   * Return a list of collections the user has access to starting at a specific date.
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Collection]
 
   /**
-   * Return a list of datasets the user has created.
+   * Return the count of collections the user has created.
+   */
+  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long
+
+  /**
+   * Return a list of collections the user has created.
    */
   def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Collection]
 
   /**
-   * Return a list of datasets the user has created starting at a specific date.
+   * Return a list of collections the user has created starting at a specific date.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Collection]
 

@@ -14,10 +14,15 @@ import com.mongodb.casbah.Imports._
  *
  */
 class CassandraDataset extends DatasetService {
-  /**
-   * Count all datasets
-   */
-  def count(space: Option[String]): Long = -1
+ /**
+  * Count all datasets
+  */
+ def count(): Long = -1
+
+ /**
+  * Count all datasets in a space, this does not check for permissions
+  */
+ def countSpace(space: String): Long = -1
 
  /**
   * Return a list of datasets in a space, this does not check for permissions
@@ -30,6 +35,11 @@ class CassandraDataset extends DatasetService {
  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset] = List.empty[Dataset]
 
  /**
+  * Return a count of datasets in a space, this does not check for permissions
+  */
+ def countAccess(user: Option[User], superAdmin: Boolean): Long = -1
+
+ /**
   * Return a list of datasets the user has access to.
   */
  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
@@ -38,6 +48,11 @@ class CassandraDataset extends DatasetService {
   * Return a list of datasets the user has access to starting at a specific date.
   */
  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
+
+ /**
+  * Return a count of datasets the user has created.
+  */
+ def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long = -1
 
  /**
   * Return a list of datasets the user has created.

@@ -15,7 +15,12 @@ trait DatasetService {
   /**
    * The number of datasets
    */
-  def count(space: Option[String] = None): Long
+  def count(): Long
+
+  /**
+   * Return a count of datasets in a space, this does not check for permissions
+   */
+  def countSpace(space: String): Long
 
   /**
    * Return a list of datasets in a space, this does not check for permissions
@@ -28,6 +33,11 @@ trait DatasetService {
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset]
 
   /**
+   * Return a count of datasets the user has access to.
+   */
+  def countAccess(user: Option[User], superAdmin: Boolean): Long
+
+  /**
    * Return a list of datasets the user has access to.
    */
   def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset]
@@ -36,6 +46,11 @@ trait DatasetService {
    * Return a list of datasets the user has access to starting at a specific date.
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset]
+
+  /**
+   * Return a count of datasets the user has created.
+   */
+  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long
 
   /**
    * Return a list of datasets the user has created.
