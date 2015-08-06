@@ -132,7 +132,8 @@ function updateUsersInSpace(spaceId, url) {
     return false;
 }
 
-function acceptSpaceRequest(id, user, role){
+function acceptSpaceRequest(id, user){
+    var role = $("#roleSelect").val();
     var request = jsRoutes.controllers.Spaces.acceptRequest(id, user, role).ajax({
         type : 'GET',
         contentType : "application/json"
@@ -145,7 +146,7 @@ function acceptSpaceRequest(id, user, role){
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to accept request.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Error accepting request from "+user);
+            notify("Error accepting request from "+ user);
         }
     });
     return false;
