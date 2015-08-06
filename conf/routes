@@ -100,9 +100,9 @@ GET            /spaces                                                          
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
-GET            /spaces/:id/addrequest                                                   @controllers.Spaces.addrequest(id:UUID)
-GET            /spaces/:id/acceptrequest                                                @controllers.Spaces.acceptrequest(id:UUID, user:String, role:String)
-GET            /spaces/:id/rejectrequest                                                @controllers.Spaces.rejectrequest(id:UUID, user:String)
+GET            /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
+GET            /spaces/:id/acceptRequest                                                @controllers.Spaces.acceptRequest(id:UUID, user:String, role:String)
+GET            /spaces/:id/rejectRequest                                                @controllers.Spaces.rejectRequest(id:UUID, user:String)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # Tags

@@ -14,6 +14,10 @@ import play.api.libs.json.Json
 import securesocial.core.providers.utils.Mailer
 import services.{EventService, SpaceService, UserService}
 import util.Direction._
+import com.typesafe.plugin._
+import play.api.Play.current
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
@@ -133,20 +137,15 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
     }
 
-   def addrequest(id: UUID) = PermissionAction(Permission.RequestSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+   def addRequest(id: UUID) = PermissionAction(Permission.RequestSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Logger.info("request submited in addrequest@controller.Space  " )
+          Logger.info("request submited in controller.Space.addRequest  " )
           events.addRequestEvent(user, users.get(spaces.get(id).get.creator).get, id, spaces.get(id).get.name, "postrequest_space")
           spaces.addRequest(id, user.get.id, user.get.fullName)
 
           //sending emails to the space's creator
-          import com.typesafe.plugin._
-          import play.api.Play.current
-          import scala.concurrent.duration._
-          import play.api.libs.concurrent.Execution.Implicits._
-
           val subject: String = "Authorization Request from medici"
           val recipient:String = users.get(spaces.get(id).get.creator).get.email.get.toString
           val body = views.html.spaces.requestemail(user.get, id.toString, spaces.get(id).get.name)
@@ -157,7 +156,6 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             mail.setSubject(subject)
             mail.setRecipient(recipient)
             mail.setFrom(Mailer.fromAddress)
-
             mail.send("", body.body)
           }
           Ok(views.html.notAuthorized( "Authorization submits", null, null))
@@ -167,11 +165,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     }
 
 
-  def acceptrequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        Logger.info("request submited in acceptrequest@controller.Space")
+        Logger.info("request submited in controllers.Space.addrequest ")
         events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "acceptrequest_space")
         spaces.removeRequest(id, UUID(requestuser))
         role match{
@@ -187,11 +185,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   }
 
 
-  def rejectrequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        Logger.info("request submited in rejectrequest@controller.Space")
+        Logger.info("request submited in controller.Space.rejectRequest")
         events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "rejectrequest_space")
         spaces.removeRequest(id, UUID(requestuser))
         Ok(Json.obj("status" -> "success"))

@@ -133,7 +133,7 @@ function updateUsersInSpace(spaceId, url) {
 }
 
 function acceptSpaceRequest(id, user, role){
-    var request = jsRoutes.controllers.Spaces.acceptrequest(id, user, role).ajax({
+    var request = jsRoutes.controllers.Spaces.acceptRequest(id, user, role).ajax({
         type : 'GET',
         contentType : "application/json"
     });
@@ -152,7 +152,7 @@ function acceptSpaceRequest(id, user, role){
 }
 
 function rejectSpaceRequest(id, user){
-    var request = jsRoutes.controllers.Spaces.rejectrequest(id, user).ajax({
+    var request = jsRoutes.controllers.Spaces.rejectRequest(id, user).ajax({
         type : 'GET',
         contentType : "application/json"
     });
